@@ -653,7 +653,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     if (manifest[result.record.hash]) return result; // Bytes and row already committed: nothing to do.
 
-    const commitFields = { concept: 'media', id: result.record.hash, editor: editor.email };
+    const commitFields = { scope: 'media' as const, id: result.record.hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -762,7 +762,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const objectKey = r2Key(hash, row.ext);
 
     // Commit the manifest row removal FIRST. The order is load-bearing (see the docstring).
-    const commitFields = { concept: 'media', id: hash, editor: editor.email };
+    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -855,7 +855,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     // ONE atomic commit removing EVERY deletable row, folded over removeMediaEntry.
     let next = manifest;
     for (const hash of plan.deletable) next = removeMediaEntry(next, hash);
-    const commitFields = { concept: 'media', id: 'bulk', editor: editor.email };
+    const commitFields = { scope: 'media' as const, id: 'bulk', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -1059,7 +1059,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     }
 
     const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };
-    const commitFields = { concept: 'media', id: hash, editor: editor.email };
+    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -1256,7 +1256,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const changes: FileChange[] = plan.entries.map((e) => ({ path: e.path, content: e.newMarkdown }));
     changes.push({ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, record)) });
 
-    const commitFields = { concept: 'media', id: oldHash, editor: editor.email };
+    const commitFields = { scope: 'media' as const, id: oldHash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -1413,7 +1413,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     if (changed.length === 0) throw redirect(303, '/admin/media?altPropagated=1');
 
     const changes: FileChange[] = changed.map((e) => ({ path: e.path, content: e.newMarkdown }));
-    const commitFields = { concept: 'media', id: hash, editor: editor.email };
+    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,

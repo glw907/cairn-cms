@@ -431,7 +431,10 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
     expect(location).toBe('/admin/posts');
     const record = captured.find((r) => r.event === 'preview.cleanup_failed');
     expect(record).toMatchObject({ concept: 'posts', id: ID });
-    expect(String(record?.reason)).toContain('disk I/O error');
+    // The stringified throw rides `error`, the field its five siblings use; `reason` is reserved
+    // for the snake_case enums the events header rules.
+    expect(String(record?.error)).toContain('disk I/O error');
+    expect(record).not.toHaveProperty('reason');
   });
 });
 

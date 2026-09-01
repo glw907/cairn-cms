@@ -132,6 +132,22 @@ describe('mediaLibraryUpload (Task 2)', () => {
     expect(committed[hash].slug).toBe('first');
   });
 
+  it('logs commit.succeeded under scope, never a concept a site could also declare', async () => {
+    const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
+    gh.install();
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const routes = createContentRoutesInternal(runtime());
+
+    await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }));
+
+    const committed = infoSpy.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((r) => r.event === 'commit.succeeded');
+    expect(committed).toHaveLength(1);
+    expect(committed[0].scope).toBe('media');
+    expect(committed[0]).not.toHaveProperty('concept');
+  });
+
   it('commits nothing when the hash already exists (idempotent)', async () => {
     const hash = shortHash(await hashBytes(PNG_2));
     const existingRow: MediaEntry = {

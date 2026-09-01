@@ -139,7 +139,7 @@ export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
     const raw = await backend.readFile(config.configPath, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
 
-    const commitFields = { concept: 'nav', id: 'site-config', editor: editor.email };
+    const commitFields = { scope: 'nav' as const, id: 'site-config', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,

@@ -544,7 +544,7 @@ function isMissingTableError(err: unknown): boolean {
  *  still swallowed, since the primary action has already committed (or, for discard, proceeds
  *  regardless) by the time this runs and failing it outright would be worse, but it logs
  *  `preview.cleanup_failed` so a stale row, the exact id-reuse collision this cleanup exists to
- *  close, is not silently invisible to an operator. The logged `reason` is the error's stringified
+ *  close, is not silently invisible to an operator. The logged `error` is the failure's stringified
  *  message; a store-level delete keyed by concept and id carries no token, so this cannot leak
  *  one. Publish deliberately never calls this: the ended page needs the row to outlive the branch,
  *  a stated coupling, not an oversight.
@@ -556,7 +556,7 @@ async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor,
   } catch (err) {
     if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;
     if (isMissingTableError(err)) return;
-    log.warn('preview.cleanup_failed', { concept: concept.id, id, reason: String(err) });
+    log.warn('preview.cleanup_failed', { concept: concept.id, id, error: String(err) });
   }
 }
 
@@ -1559,7 +1559,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       log.info('entry.published', { ...commitFields, batch: false });
       // Only after the publish lands: a diagnostic that a live address now has a new owner.
       if (collision) {
-        log.warn('publish.address_collision', {
+        log.warn('publish.address_collided', {
           editor: editor.email,
           address,
           displacedConcept: collision.concept,

@@ -12,7 +12,7 @@ import type { CairnRuntime } from '../content/types.js';
 import { validateNavLayout, validateAccessComposition, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type PublishActionEntry } from './publish-actions.js';
-import { logCommitFailed, commitFailure } from './commit-log.js';
+import { logCommitFailed, commitFailure, type CommitLogFields } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 import type { PreviewTokenConfig } from './preview.js';
@@ -310,7 +310,7 @@ export interface ContentRoutesContext {
    *  reason; any other error is unexpected and logs at error with the stringified cause.
    */
   logCommitFailed(
-    fields: { concept: string; id: string; editor: string },
+    fields: CommitLogFields,
     err: unknown,
     event?: 'commit.failed' | 'publish.failed',
   ): void;
@@ -320,7 +320,7 @@ export interface ContentRoutesContext {
    *  and rethrow anything else.
    */
   commitFailure<T>(
-    fields: { concept: string; id: string; editor: string },
+    fields: CommitLogFields,
     err: unknown,
     payload: T,
     opts?: { event?: 'commit.failed' | 'publish.failed' },

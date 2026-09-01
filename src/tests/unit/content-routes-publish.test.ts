@@ -279,7 +279,7 @@ describe('publishAction', () => {
     expect(record?.batch).toBe(false);
   });
 
-  it('logs publish.address_collision but still publishes when another entry holds the address', async () => {
+  it('logs publish.address_collided but still publishes when another entry holds the address', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     // A pages concept with an undated permalink, so the address is the entry's own path-derived
@@ -310,10 +310,10 @@ describe('publishAction', () => {
       .find((r) => r.event === 'entry.published');
     expect(published).toBeTruthy();
 
-    // A publish.address_collision warning is emitted naming the displaced entry.
+    // A publish.address_collided warning is emitted naming the displaced entry.
     const collision = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; editor?: string; address?: string; displacedConcept?: string; displacedId?: string })
-      .find((r) => r.event === 'publish.address_collision');
+      .find((r) => r.event === 'publish.address_collided');
     expect(collision).toBeTruthy();
     expect(collision?.address).toBe('/about-copy');
     expect(collision?.displacedConcept).toBe('pages');
@@ -321,7 +321,7 @@ describe('publishAction', () => {
     expect(collision?.editor).toBe('ed@t');
   });
 
-  it('emits no publish.address_collision when the address is free', async () => {
+  it('emits no publish.address_collided when the address is free', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const rt = pagesRuntime();
     const gh = new GithubDouble({
@@ -340,7 +340,7 @@ describe('publishAction', () => {
 
     const collision = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string })
-      .find((r) => r.event === 'publish.address_collision');
+      .find((r) => r.event === 'publish.address_collided');
     expect(collision).toBeUndefined();
   });
 

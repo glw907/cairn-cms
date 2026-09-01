@@ -12,7 +12,7 @@ import { extractReferenceEdges, type ReferenceEdge } from './references.js';
 import { extractIncludes } from './includes.js';
 import { resolveTaxonomyField, coerceTags } from './taxonomy.js';
 import type { ConceptDescriptor } from './types.js';
-import type { PreviewFragmentResolve } from '../render/resolve-include.js';
+import type { MarkedFragmentResolve } from '../render/resolve-include.js';
 
 /** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
 export interface ManifestEntry {
@@ -548,14 +548,17 @@ export function manifestLinkResolver(targets: { concept: string; id: string; per
  *  those bodies. A resolved fragment's raw markdown body is returned for a hit; a dangling id
  *  returns undefined, which the render step turns into the missing-fragment notice. The
  *  returned resolver's `previewTitle` looks up the same target's title for the preview-only
- *  boundary cue (ratified 4B); the build-time resolver carries no such property.
+ *  boundary cue (ratified 4B); the build-time resolver carries no such property. `entry` names
+ *  the entry being previewed, so an `include.missing` from this body says which one it came from.
  */
 export function manifestFragmentResolver(
   targets: { id: string; title: string; body: string }[] | null,
-): PreviewFragmentResolve | undefined {
+  entry?: string,
+): MarkedFragmentResolve | undefined {
   if (!targets) return undefined;
   const byId = new Map(targets.map((t) => [t.id, t]));
-  const resolve: PreviewFragmentResolve = (id: string) => byId.get(id)?.body;
+  const resolve: MarkedFragmentResolve = (id: string) => byId.get(id)?.body;
   resolve.previewTitle = (id: string) => byId.get(id)?.title;
+  if (entry !== undefined) resolve.entry = entry;
   return resolve;
 }

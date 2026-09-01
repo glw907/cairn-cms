@@ -4005,7 +4005,8 @@ when the remediation pass lands.
 ## audit-log-auth-session-destroyed: `auth.session.destroyed`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "An editor reports being signed out unexpectedly" — today this record cannot confirm or deny it for that editor, since it carries nothing.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Carry `email`. It is the only event whose documented field list is literally `none` (auth-routes.ts:229 emits log.info('auth.session.destroyed') with no argumen).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. The record names the deleted row's own email and fires only on a real deletion; `docs/reference/log-events.md`'s row states both. Seam fit: `deleteSession` returns `Promise<string | null>`, so a caller that ignores the value behaves exactly as before, and the dev fake AUTH_DB gained the matching statement handler.
+- **Shape:** Name the session's subject without an extra read: `deleteSession` becomes `DELETE FROM session WHERE id = ? RETURNING email` and answers with the deleted row's email, which the logout record carries. Logout is a public admin path, so the guard resolves no editor onto it and the row is the only place the subject exists. No returned row means no record.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 2.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4027,7 +4028,8 @@ when the remediation pass lands.
 ## audit-log-dictionary-added: `dictionary.added`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "An author says a word keeps flagging as misspelled" — a count plus the `retried` flag answers that; the words themselves are not needed to diagnose it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Replace the `words` payload with a count. content-routes-dictionary.ts:126 ships the added words, which are by construction a slice of the author's draft (the t).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. `dictionary.added` and `dictionary.add_conflict` both carry `wordCount`, and the reference rows note the client keeps the pending words. Seam fit: contract-consistency, not confidentiality; the same words reach the public commit message and the committed file. The dead `commitFields` variable at `content-routes-dictionary.ts:126`, a fifth pseudo-concept whose `id` would have been the first added word if ever wired, is deleted in the same change.
+- **Shape:** Ship a count, never the flagged tokens: both `dictionary.added` and `dictionary.add_conflict` carry `wordCount` in place of `words`, conforming the records to the documented `dictionary.*` content contract.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 5.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4041,7 +4043,8 @@ when the remediation pass lands.
 ## audit-log-auth-channel-session-destroyed: `auth.channel.session.destroyed`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. The keep rests on "an extra D1 read"; D1 supports DELETE ... RETURNING subject, one statement (store.ts:334-336), and the hash is local. factory.ts:903 carries nothing, the same defect reshaped at rank 2 on the same kind of blind delete. Evenness forbids splitting them.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11, alongside rank 2 as the verify record requires. Seam fit: the channel subsystem keeps its spec-level posture that no record carries a roster identity, so the evenness fix lands in the subsystem's own currency rather than borrowing the magic-link subsystem's raw-email convention.
+- **Shape:** `destroyChannelSession` becomes `DELETE ... RETURNING subject`, and the logout record derives the channel's own pseudonym from the returned subject, `(await deriveIdentity(salt, subject, '')).slice(0, 16)`, which reconstructs the exact `correlationId` the request flow produced. The raw subject never reaches a record. The verify-refused revocation in `resolveSubject`, silent until now, gains the same record; confirm's orphan cleanup keeps its own flow's `correlationId` and takes nothing from the destroyed row. Every emit fires only on a real deletion, and a salt fault at teardown skips the record rather than failing the request.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 7.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md) (verdict overturned there).
 
@@ -4196,7 +4199,8 @@ when the remediation pass lands.
 ## audit-log-commit-succeeded: `commit.succeeded`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "Did that save actually reach GitHub?" — the highest-value success record in the vocabulary, and `branch` distinguishes a pending-branch save from a default-branch commit.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: The `concept` field is overloaded with pseudo-concepts. Five of eleven emit sites pass a value that is not a declared concept: nav-routes.ts:141 {concept:'nav',).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11, in the same change as `commit.failed` (audit-log-commit-failed). Seam fit: `scope` is a superset of `config.invalid`'s existing three values, so a site's log filter reads one field across both vocabularies, and `commit-log.ts` types the two shapes as a union so a site name can never reach `scope`.
+- **Shape:** `concept` stays only on entry-scoped commits. The four non-entry surfaces move to `scope: 'nav' | 'settings' | 'vocabulary' | 'media'`, the axis `config.invalid` already reports on, so a pseudo-concept can no longer collide with a name a site may legally declare.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 28.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4208,10 +4212,11 @@ when the remediation pass lands.
 - **Any-site case:** "Which entries went live in the 09:14 publish-all, and which didn't?" — `batch` plus the doc's operator rule ("a failed publish-all logs one publish.failed per entry, so the log names everything that didn't go live").
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md) (verdict overturned there).
 
-## audit-log-taxonomy-unmarked-field: `taxonomy.unmarked_field`  (reshape, 2026-08-26, any-site audit)
+## audit-log-taxonomy-unmarked-field: `taxonomy.field_unmarked`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "My tag pages are blank and nothing is failing" — a concept declares a multiselect named tags/freetags/categories but marks no `taxonomy: true` field, so the tag index reads empty with no error anywhere. Fires once per index build (content-index.ts:101).
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Rename to conform to the grammar events.ts ratifies in its own header ("A past-tense verb phrase names an occurrence; a state adjective names a detected conditi).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. Both renames landed together, as the verify record requires; `docs/extend/debug-your-site.md` and the reference table follow. Seam fit: an event name is public-observable contract, so both renames ride the one unpublished breaking window with a `Consumers must:` line naming them.
+- **Shape:** Rename to the grammar `events.ts` ratifies in its own header: `taxonomy.unmarked_field` becomes `taxonomy.field_unmarked`, a state adjective naming a detected condition. The verify record found a second bare noun phrase, `publish.address_collision`, which becomes `publish.address_collided`; any rename lands both.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 30.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4247,14 +4252,16 @@ when the remediation pass lands.
 ## audit-log-content-field-behavior-failed: `content.field_behavior_failed`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "One of my field validators is being silently swallowed and I don't know which" — the engine deliberately keeps the save working (fieldset.ts comment: "A developer's cross-field validate() is a bug, not an author fault; log and treat the field as valid rather than breaking the save"), so the log is the entire signal.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Carry `concept` beside `field`. fieldset.ts:450 logs a bare field *name*, and field names repeat across concepts by design (tags, summary, date), so a site with).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. Seam fit: the argument is optional, so `Fieldset.validate` stays call-compatible for any site that builds a fieldset itself; a concept binds its own id when `normalizeConcepts` builds the descriptor, so no engine call site has to remember to pass one.
+- **Shape:** Carry an owner label beside `field`, threaded as an optional third argument through `Fieldset.validate`: the concept id on the content path, and the component's own directive name on the component-attribute path, which has no concept at all. A fieldset is a standalone object a site may share across concepts, so it cannot supply the label itself. The label is a schema identifier, never a value.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 35.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
 ## audit-log-include-missing: `include.missing`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "A visitor reported a grey 'this include doesn't name a fragment' box somewhere on the site" — the directive renders a calm notice instead of failing, so the log is the only trace.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Two distinct authoring faults share one name and one field: resolve-include.ts:127 logs {fragment: ''} for a missing/empty attribute (a malformed directive) and).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. Seam fit: `entry` rides the resolver the VFile already carries, the same mechanism `previewTitle` uses, because a site's own `render` forwards the resolver it receives by reference while it would never forward a render option it has not heard of.
+- **Shape:** Separate the two authoring faults with `reason: 'empty_fragment' | 'not_found'`, snake_case per the grammar line in `events.ts`, and name the containing entry as `<concept>/<id>`. `fragment` is author-typed document content and unbounded, so it is capped at its first 160 characters rather than dropped.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 36.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4300,7 +4307,8 @@ when the remediation pass lands.
 ## audit-log-media-resolver-absent: `media.resolver_absent`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A developer's first deploy renders literal `media:abc123` strings in the page source, because media is configured on with no resolveMedia wired. Fires once at construction, which is the right cadence.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Drop the `enabled` field. public-routes.ts:193 emits {enabled: true} and the doc row documents it as "(always `true`)": a field that can only hold one value car).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. Seam fit: the diagnostic is unchanged, since the event fires only in the misconfigured case and its own existence already carries what the field said.
+- **Shape:** Drop the `enabled` field. `public-routes.ts` emitted `{enabled: true}` and the reference row documented it as "(always `true`)"; a field that can hold one value is dead payload in a contract.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 42.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4314,7 +4322,8 @@ when the remediation pass lands.
 ## audit-log-preview-cleanup-failed: `preview.cleanup_failed`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Preview links still resolving for entries an editor deleted, traced to accumulating stale rows. The degradation policy is right (doc: "The primary action already succeeded; a stale row is a lesser evil than failing it") and it correctly stays silent on the two expected conditions, a missing binding and an un-migrated table.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Emit `error: String(err)` with no `reason`, and update the doc row. content-routes-core.ts:507 logs {concept, id, reason: String(err)}, putting a stringified th).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. Seam fit: the leak-safety reasoning in the `clearPreviewTokens` header (the delete is keyed by concept and id, so no token is in scope) carries to the new field name rather than being dropped.
+- **Shape:** Move the stringified throw from `reason`, which the events header reserves for snake_case enum values, to `error`, the field its five sibling failure records already use. The reference row follows.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 44.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
@@ -4458,7 +4467,7 @@ when the remediation pass lands.
 - **Any-site case:** The most common admin support question — "why can't this role reach that screen" — answered with the role and the target in one line, and distinguishable from auth.role.unknown (no rule versus no valid role). Four emit sites share one shape (email, role, target) across requireAccess, the engine's own gated screens, and createSectionAction's 403 branch; the uniform `target` is the right generic form, since a screen id, a site route target, and 'media' all read the same way to a query.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 
-## audit-log-publish-address-collision: `publish.address_collision`  (keep, 2026-08-26, any-site audit)
+## audit-log-publish-address-collision: `publish.address_collided`  (keep, 2026-08-26, any-site audit)
 
 - **Verdict:** keep. A page silently stops resolving after an unrelated publish, with no error anywhere. The engine deliberately does not refuse (doc: "last-write-wins, now visible"), so the log is the entire mechanism by which the consequence is observable. displacedConcept/displacedId is the generic shape, not a URL string an anonymous site would have to parse.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
@@ -4506,7 +4515,8 @@ when the remediation pass lands.
 ## audit-log-commit-failed: `commit.failed`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "My editor pressed save and nothing happened", the most common failure a content site has. CLAUDE.md routes here first: "A save that does nothing points at a commit failure: a conflict reason is a stale-edit collision, and an error field is the GitHub failure to act on." The warn/error split is principled and centralized in commit-log.ts. Listed in docs/admin/troubleshooting.md.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Inherits the pseudo-concept overload charged to commit.succeeded verbatim: the same commitFields objects flow through the shared logCommitFailed helper in commi).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 11, in the same change as `commit.succeeded` (audit-log-commit-succeeded), as the verify record charged. Seam fit: both events read the one `CommitLogFields` union in `commit-log.ts`, so the two can never drift apart again.
+- **Shape:** Inherits the pseudo-concept fix charged to `commit.succeeded` verbatim: the same `commitFields` objects flow through the shared `logCommitFailed` helper, so the entry-scoped `concept` and the non-entry `scope` split lands on both events at once.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 69.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 

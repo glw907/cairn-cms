@@ -322,11 +322,15 @@ describe('channel sessions', () => {
     expect(await resolveChannelSession(db, 'token-hash-2', now + 5_000)).toBeNull();
   });
 
-  it('destroys a session by token hash', async () => {
+  it('destroys a session by token hash and returns the subject the deleted row carried', async () => {
     const now = 16_000_000;
     await createChannelSession(session(), 'token-hash-3', 'subject-1', now, 1_000_000);
-    await destroyChannelSession(session(), 'token-hash-3');
+    expect(await destroyChannelSession(session(), 'token-hash-3')).toBe('subject-1');
     expect(await resolveChannelSession(db, 'token-hash-3', now)).toBeNull();
+  });
+
+  it('returns null when no session row matched, so the caller can skip its record', async () => {
+    expect(await destroyChannelSession(session(), 'token-hash-never-existed')).toBeNull();
   });
 
   it('revokes every session for a subject', async () => {

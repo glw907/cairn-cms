@@ -297,7 +297,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const parsedConfig = parseSiteConfigOrFail(raw, 'settings');
     if (!parsedConfig.ok) return parsedConfig.failure;
 
-    const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
+    const commitFields = { scope: 'settings' as const, id: 'tidy', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -434,7 +434,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       }
     }
 
-    const commitFields = { concept: 'vocabulary', id: 'site-config', editor: editor.email };
+    const commitFields = { scope: 'vocabulary' as const, id: 'site-config', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,

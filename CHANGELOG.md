@@ -151,6 +151,47 @@
 
 ### Changed
 
+- The log vocabulary's remaining ten evenness defects close, across every emit site and the
+  reference table. Two events rename, four records change shape, one field is dropped, and two
+  session-teardown records now fire only when a row was actually destroyed.
+
+  `taxonomy.unmarked_field` becomes `taxonomy.field_unmarked` and `publish.address_collision`
+  becomes `publish.address_collided`, so both names read as the state adjective and past-tense
+  verb phrase the vocabulary's own grammar rules.
+
+  `auth.session.destroyed` and `auth.channel.session.destroyed` now name their subject.
+  `deleteSession` and `destroyChannelSession` both delete with `RETURNING`, one statement and one
+  round trip as before, and answer with the row's own email or subject. The magic-link record
+  carries that email; the channel record never carries the roster subject, only the same
+  pseudonymous `correlationId` the request flow derives from it, and the channel's third teardown
+  path, a session `resolveSubject` revokes when the site's `verify` hook refuses it, now emits the
+  record too instead of revoking silently. Both events fire only when a row was actually
+  destroyed, so a stale cookie whose row already expired leaves no record.
+
+  `commit.succeeded` and `commit.failed` stop overloading `concept` with the four non-entry
+  surfaces. An entry commit still carries `concept`; a nav, settings, vocabulary, or media commit
+  carries `scope` instead, the same axis `config.invalid` already reports on, so a site that
+  declares a concept named `media` or `nav` can no longer collide with one.
+
+  `dictionary.added` and `dictionary.add_conflict` carry `wordCount` in place of `words`,
+  conforming the records to the documented `dictionary.*` content contract; the editor's own
+  screen still holds the pending words, so a recurring conflict stays traceable.
+  `content.field_behavior_failed` gains `owner`, the schema identifier (a concept id, or a
+  component's directive name for the attribute path) that says which schema the named field
+  belongs to; `Fieldset.validate` takes it as an optional third argument. `include.missing` gains
+  `reason` (`empty_fragment` or `not_found`), separating the two authoring faults it used to
+  report under one name, plus `entry`, the containing entry; its `fragment` value is capped at 160
+  characters. `preview.cleanup_failed` moves its stringified throw from `reason` to `error`,
+  matching its five siblings and leaving `reason` to the snake_case enums.
+  `media.resolver_absent` drops `enabled`, a field with one possible value.
+
+  Consumers must: rename `taxonomy.unmarked_field` to `taxonomy.field_unmarked` and
+  `publish.address_collision` to `publish.address_collided` in any log filter or alert; read
+  `scope` rather than `concept` on a `commit.succeeded`/`commit.failed` for a nav, settings,
+  vocabulary, or media commit; and expect no `auth.session.destroyed` or
+  `auth.channel.session.destroyed` record when a logout's session id or token names no row, so an
+  alert counting sign-outs now counts real ones only.
+
 - `ReproContext` (`/reproductions`) gains an optional `mediaBase` prop, defaulting to
   `/repro-assets`, threaded to both places a mounted story reaches its media base: the
   `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's own

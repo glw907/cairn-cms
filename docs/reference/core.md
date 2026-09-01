@@ -525,7 +525,10 @@ Stability tier: Extension API.
 
 - `FieldDescriptor` is the plain-data descriptor union the form, validator, and inference all read.
 - `Fieldset` is the schema a `defineFieldset` call returns, carrying the descriptors, the behavior table,
-  the validator, and the Standard Schema property.
+  the validator, and the Standard Schema property. `validate` takes an optional third argument, `owner`,
+  which names the schema for diagnostics: a concept binds its own id, and a component binds its directive
+  name. The value reaches only the
+  [`content.field_behavior_failed`](log-events.md) record, never the validated data.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
   declared `required: true` is a required key.
 - `FieldsetOptions` carries the `refine` cross-field check and the `behavior` table.

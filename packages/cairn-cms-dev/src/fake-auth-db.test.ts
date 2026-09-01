@@ -337,3 +337,16 @@ test("the editor-removal cascade's own delete clears every row that editor minte
   expect(res.meta.changes).toBe(2);
   expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-c').first()).not.toBeNull();
 });
+
+// Mirrors the exact SQL src/lib/auth/store.ts's deleteSession builds. The dispatch table throws on
+// an unhandled statement, so logout would break the dev site outright without this handler.
+const DELETE_SESSION = 'DELETE FROM session WHERE id = ? RETURNING email';
+
+test("logout's session delete answers no row, the signal that skips the destroyed record", async () => {
+  const db = createFakeAuthDb();
+
+  // The fixture hook injects locals.cairnEditor directly, so no session row ever exists in dev.
+  const row = await db.prepare(DELETE_SESSION).bind('any-session-id').first<{ email: string }>();
+
+  expect(row).toBeNull();
+});

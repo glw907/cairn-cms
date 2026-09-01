@@ -223,9 +223,18 @@ export async function resolveSession(db: D1Database, id: string, now: number): P
   return row ? toEditor(row) : null;
 }
 
-/** Delete a session (logout). */
-export async function deleteSession(db: D1Database, id: string): Promise<void> {
-  await db.prepare('DELETE FROM session WHERE id = ?').bind(id).run();
+/**
+ * Delete a session (logout), answering with the email the deleted row carried, or null when the
+ * id named no row. `RETURNING` keeps this one statement and one round trip, and gives the logout
+ * record a subject the caller has no other way to reach: logout is a public admin path, so the
+ * guard never resolves an editor onto it.
+ */
+export async function deleteSession(db: D1Database, id: string): Promise<string | null> {
+  const row = await db
+    .prepare('DELETE FROM session WHERE id = ? RETURNING email')
+    .bind(id)
+    .first<{ email: string }>();
+  return row?.email ?? null;
 }
 
 /** The full allowlist, sorted by email. */

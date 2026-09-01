@@ -13,7 +13,7 @@ import { readSeoFields, resolveImageUrl } from './seo-fields.js';
 import { createLinkResolver, createFragmentResolver } from './site-resolver.js';
 import type { SiteRender } from '../content/types.js';
 import type { LinkResolve } from '../content/links.js';
-import type { FragmentResolve } from '../render/resolve-include.js';
+import type { FragmentResolve, MarkedFragmentResolve } from '../render/resolve-include.js';
 import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
 import { log } from '../log/index.js';
@@ -147,6 +147,16 @@ export async function composeEntryData(
   const image = heroImage?.absoluteUrl ?? (rawImage ? resolveImageUrl(rawImage, origin) : undefined);
   const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
   // A dated entry is an article; an undated one (a page) is a website.
+  // Stamp the containing entry onto the engine's own fragment resolver, the marker
+  // remarkResolveIncludes reads to name the entry in an include.missing record. A caller that
+  // substitutes its own resolver (previewLoad) stamps it where it builds it, so nothing here
+  // mutates a function it did not create.
+  let resolveFragment = overrides?.resolveFragment;
+  if (!resolveFragment) {
+    const built: MarkedFragmentResolve = createFragmentResolver(site);
+    built.entry = `${entry.concept}/${entry.id}`;
+    resolveFragment = built;
+  }
   const seo = buildSeoMeta({
     title: entry.title,
     description: fields.description || entry.excerpt || description,
@@ -169,7 +179,7 @@ export async function composeEntryData(
       concept: entry.concept,
       frontmatter: entry.frontmatter,
       resolve: overrides?.resolveLink ?? createLinkResolver(site),
-      resolveFragment: overrides?.resolveFragment ?? createFragmentResolver(site),
+      resolveFragment,
       resolveMedia,
     }),
     canonicalUrl,
@@ -190,7 +200,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
   // rather than per entryLoad or per image, which keeps the warning loud-once and out of the
   // prerender hot path. Resolution is unchanged; resolveMedia alone still gates the hero projection.
   if (assetsEnabled && !resolveMedia) {
-    log.warn('media.resolver_absent', { enabled: true });
+    log.warn('media.resolver_absent');
   }
 
   /** One entry by request path, rendered through the site renderer, or a 404. */

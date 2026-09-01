@@ -1,13 +1,4 @@
 [
-  "audit-log-auth-session-destroyed",
-  "audit-log-dictionary-added",
-  "audit-log-commit-succeeded",
-  "audit-log-taxonomy-unmarked-field",
-  "audit-log-content-field-behavior-failed",
-  "audit-log-include-missing",
-  "audit-log-media-resolver-absent",
-  "audit-log-preview-cleanup-failed",
-  "audit-log-commit-failed",
   "audit-cli-chip-ground-collision-rendered-rule",
   "audit-cli-form-font-parity-rendered-rule",
   "audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm"

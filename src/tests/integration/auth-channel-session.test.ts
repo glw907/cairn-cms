@@ -146,14 +146,55 @@ describe('logout', () => {
       expect(sessionDelete?.opts.secure).toBe(true);
       expect(pendingDelete?.opts.secure).toBe(true);
       const destroyedRecords = infoSpy.mock.calls
-        .map((c) => c[0] as { event?: string })
+        .map((c) => c[0] as Record<string, unknown>)
         .filter((r) => r.event === 'auth.channel.session.destroyed');
-      expect(destroyedRecords.length).toBeGreaterThan(0);
+      expect(destroyedRecords).toHaveLength(1);
+      // The record never carries the roster identity, only the channel's own pseudonym.
+      expect(JSON.stringify(destroyedRecords[0])).not.toContain('sub-logout');
+      expect(destroyedRecords[0].correlationId).toMatch(/^[0-9a-f]{16}$/);
     } finally {
       vi.restoreAllMocks();
     }
 
     expect(await channel.resolveSubject(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }))).toBeNull();
+  });
+
+  it('records the same correlation id the request flow derived for that subject', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-correlate' }));
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const token = await signIn(channel, 'correlate@x.test', 'sub-correlate');
+      // The request flow's own record for this identity, derived from the salted subject hash.
+      await channel.actions.request(makeEvent({ contact: 'correlate@x.test' }));
+      const requested = infoSpy.mock.calls
+        .map((c) => c[0] as { event?: string; correlationId?: string })
+        .filter((r) => r.event === 'auth.channel.requested' && r.correlationId);
+      expect(requested.length).toBeGreaterThan(0);
+
+      await channel.actions.logout(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }));
+      const destroyed = infoSpy.mock.calls
+        .map((c) => c[0] as { event?: string; correlationId?: string })
+        .filter((r) => r.event === 'auth.channel.session.destroyed');
+      expect(destroyed).toHaveLength(1);
+      expect(destroyed[0].correlationId).toBe(requested[requested.length - 1].correlationId);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('logs nothing when the session cookie names no row, so the record means a real deletion', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig());
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.logout(
+        makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: 'a-token-whose-row-is-gone' }) }),
+      );
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it('is a no-op, still clearing cookies, when no session cookie is present', async () => {
@@ -198,7 +239,21 @@ describe('resolveSubject', () => {
     const verify = vi.fn<NonNullable<AuthChannelConfig<ChannelTestEnv>['verify']>>(async () => false);
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-verify', verify }));
     const token = await signIn(channel, 'verify@x.test', 'sub-verify');
-    const subject = await channel.resolveSubject(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }));
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    let subject: string | null;
+    try {
+      subject = await channel.resolveSubject(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }));
+      // The revocation records like any other session teardown, under the pseudonym derived from
+      // the subject the session resolved to, never the subject itself.
+      const destroyed = infoSpy.mock.calls
+        .map((c) => c[0] as Record<string, unknown>)
+        .filter((r) => r.event === 'auth.channel.session.destroyed');
+      expect(destroyed).toHaveLength(1);
+      expect(destroyed[0].correlationId).toMatch(/^[0-9a-f]{16}$/);
+      expect(JSON.stringify(destroyed[0])).not.toContain('sub-verify');
+    } finally {
+      infoSpy.mockRestore();
+    }
     expect(subject).toBeNull();
     // verify receives the binding and nothing else: a narrow context, never the event, since a
     // false here destroys the session row on every authenticated request. Asserted member by

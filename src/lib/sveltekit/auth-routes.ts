@@ -387,6 +387,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  session id to invalidate is read the same way: from the derived name first, the other form
    *  when that one is absent, so a stranded id is found too.
    *
+   *  The `auth.session.destroyed` record names the email the deleted row carried, read back from
+   *  the delete's own `RETURNING`: logout is a public admin path, so the guard never resolves an
+   *  editor onto it and the row is the only place the subject exists. It fires only when a row
+   *  was actually destroyed.
+   *
    *  A `deleteSession` fault is caught and logged here, never rethrown to `viewAction`'s generic
    *  `fail(500)`: this action posts to the bare `/admin`, whose own load (`indexLoad`) always
    *  redirects away before ever rendering a component that reads `form`, so a `fail()` here would
@@ -412,8 +417,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     event.cookies.delete(cookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
     if (id) {
       try {
-        await deleteSession(db, id);
-        log.info('auth.session.destroyed');
+        // The record fires only when a row was actually destroyed, and names the email that row
+        // carried: a cookie outliving its own expired row destroys nothing, and a record for it
+        // would claim a sign-out that never happened.
+        const email = await deleteSession(db, id);
+        if (email !== null) log.info('auth.session.destroyed', { email });
       } catch (err) {
         log.error('auth.session.destroy_failed', { error: String(err) });
       }

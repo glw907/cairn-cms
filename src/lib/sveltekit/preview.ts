@@ -29,7 +29,7 @@ import { createContentIndex } from '../delivery/content-index.js';
 import { composeEntryData, type PublicRoutesConfig, type EntryData } from '../delivery/public-routes.js';
 import type { SeoMeta } from '../delivery/seo.js';
 import type { LinkResolve } from '../content/links.js';
-import type { FragmentResolve } from '../render/resolve-include.js';
+import type { FragmentResolve, MarkedFragmentResolve } from '../render/resolve-include.js';
 import { createMediaResolver, type MediaResolve } from '../render/resolve-media.js';
 import { parseMediaManifest } from '../media/manifest.js';
 import type { Backend } from '../github/backend.js';
@@ -252,6 +252,7 @@ async function buildPreviewResolvers(
   backend: Backend,
   manifest: Manifest,
   concept: ConceptDescriptor,
+  entryId: string,
   mediaBranch: string | null,
 ): Promise<PreviewResolvers> {
   // Link targets: every manifest entry whose concept is routable, the same not-a-link-target
@@ -286,7 +287,13 @@ async function buildPreviewResolvers(
     // Never set previewTitle: that boundary cue is EditPage's own in-admin affordance (the
     // resolved fragment gets a quiet "From ..." eyebrow there), not a public-facing signal.
     // Wrapping the call in a plain arrow drops the property while keeping resolution identical.
-    if (fragmentResolver) resolveFragment = (id) => fragmentResolver(id);
+    // The wrapper does carry `entry`, so an include.missing from this body names the entry the
+    // preview is showing.
+    if (fragmentResolver) {
+      const forwarded: MarkedFragmentResolve = (id) => fragmentResolver(id);
+      forwarded.entry = `${concept.id}/${entryId}`;
+      resolveFragment = forwarded;
+    }
   }
 
   // Media: createMediaResolver, never manifestMediaResolver (whose hardcoded url form ignores a
@@ -445,7 +452,7 @@ export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesCon
     const publishedEntry = mainRaw !== null ? createContentIndex([{ path, raw: mainRaw }], concept).byId(row.entryId) : undefined;
     if (!publishedEntry) rejectPreview('branch_gone', { concept: concept.id, id: row.entryId });
 
-    const resolvers = await buildPreviewResolvers(runtime, backend, manifest, concept, null);
+    const resolvers = await buildPreviewResolvers(runtime, backend, manifest, concept, row.entryId, null);
     const data = await composeEntryData(config, publishedEntry, resolvers);
     return {
       ...data,
@@ -463,7 +470,7 @@ export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesCon
 
   const draftRow = manifestEntryFromFile(concept, { path, raw: draftRaw });
   const upsertedManifest = upsertEntry(manifest, draftRow);
-  const resolvers = await buildPreviewResolvers(runtime, backend, upsertedManifest, concept, branch);
+  const resolvers = await buildPreviewResolvers(runtime, backend, upsertedManifest, concept, row.entryId, branch);
   const data = await composeEntryData(config, draftEntry, resolvers);
   return {
     ...data,

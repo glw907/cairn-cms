@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
-import type { CairnAdapter } from '../../lib/content/types.js';
+import type { CairnAdapter, ConceptDescriptor } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
@@ -85,6 +85,12 @@ describe('composeRuntime URL policy', () => {
 
   it('derives the same concepts as the delivery path', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
-    expect(runtime.concepts).toEqual(buildSiteDescriptors(testAdapter, testSiteConfig));
+    const delivered = buildSiteDescriptors(testAdapter, testSiteConfig);
+    // `validate` is a fresh closure per normalize call (it binds the concept id as the
+    // field-behavior owner label), so the two paths agree in behavior under different function
+    // identities: compare the data structurally, then the validator by what it answers.
+    const structural = (cs: ConceptDescriptor[]) => cs.map((c) => ({ ...c, validate: null }));
+    expect(structural(runtime.concepts)).toEqual(structural(delivered));
+    expect(runtime.concepts.map((c) => c.validate({}, ''))).toEqual(delivered.map((c) => c.validate({}, '')));
   });
 });

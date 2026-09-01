@@ -421,6 +421,22 @@ alongside the component recipes above and below it.
   the same element, so a hand-composed chip carries no weight utility of its own. Values are
   measured, not invented (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract
   lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
+- **Badge tier: `badge-error`/`badge-success`, the raw daisyUI alternative to `StatusChip`
+  (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01).** Both classes are blessed in
+  the admin CSS safelist and compile into the packaged sheet on both admin themes. Reach for one
+  directly, without `StatusChip`, only for a stock daisyUI-flavored surface outside the chip
+  vocabulary (a raw `badge` a site's own markup already builds on daisyUI's own semantic-color
+  convention); reach for `StatusChip` for anything in the chip register grammar above, since only
+  `StatusChip` carries the register set's ground-tuned band, the `size` vocabulary, and the
+  `legend` accessible-name pattern. Each tone's fill and its own `-content` ink (`--color-error`/
+  `--color-error-content`, `--color-success`/`--color-success-content`) clear the register set's
+  own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged themes: measured light error 4.848, light
+  success 4.915, dark error 6.298, dark success 7.036 (`badge-tier-legibility.test.ts`, the same
+  canvas-readback method `status-chip-register-tuning.test.ts` measures the chip registers with).
+  `badge-soft`, `badge-outline`, and `badge-dash`, the safelist's other blessed badge classes,
+  carry no color of their own (each resolves through whichever `badge-<tone>` class, if any, sets
+  `--badge-color`; standalone, each renders at the base ink-on-surface contrast every other admin
+  surface already relies on), so neither carries a tone of its own to measure.
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty

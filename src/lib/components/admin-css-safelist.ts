@@ -103,11 +103,18 @@ export const ADMIN_CSS_SAFELIST = [
   'badge-soft',
   'badge-outline',
   'badge-dash',
-  // `badge-error`/`badge-success` (chip register second generation, 2026-08-26): these compiled
-  // only as a side effect of StatusChip's own first-generation doc comment naming them in prose
-  // (Tailwind's scanner is a naive text match, blind to comment-versus-code context), not from any
-  // real usage; that prose is gone with the tone/dot retirement, so they are blessed here
-  // deliberately instead of being silently dropped from the de facto public shipped sheet.
+  // `badge-error`/`badge-success` (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01):
+  // these first compiled only as a side effect of StatusChip's own first-generation doc comment
+  // naming them in prose (Tailwind's scanner is a naive text match, blind to comment-versus-code
+  // context), then stayed blessed here as an incidental side effect of preserving the de facto
+  // public sheet once that prose left with the tone/dot retirement. The badge-tier ruling made the
+  // blessing deliberate: each tone's fill and its dedicated -content ink clear the register set's
+  // own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged themes (measured light error 4.848,
+  // light success 4.915, dark error 6.298, dark success 7.036; badge-tier-legibility.test.ts is the
+  // standing proof), so both stay blessed as a documented, measured badge-tier recipe, the raw
+  // daisyUI alternative to `StatusChip` (docs/internal/admin-design-system.md names the when-to-use
+  // line). `badge-soft`/`badge-outline`/`badge-dash` carry no color of their own and so carry no
+  // legibility measurement of their own; they stay blessed above as shape-only modifiers.
   'badge-error',
   'badge-success',
 ] as const;

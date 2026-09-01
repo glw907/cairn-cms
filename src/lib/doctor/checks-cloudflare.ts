@@ -8,8 +8,7 @@
 //   https://developers.cloudflare.com/api/resources/email_sending/
 // - Zone lookup, `{ result: [{ id }] }`: GET /zones?name=<domain>
 //   https://developers.cloudflare.com/api/resources/zones/
-// - Zone settings, `{ result: { value } }` where always_use_https carries 'on' | 'off' and
-//   security_header nests `value.strict_transport_security.{enabled,max_age}`:
+// - Zone settings, `{ result: { value } }` where always_use_https carries 'on' | 'off':
 //   GET /zones/{zone_id}/settings/{setting_id}
 //   https://developers.cloudflare.com/api/resources/zones/subresources/settings/
 // - D1 query, `{ sql }` in, `{ result: [{ results: [...] }] }` out:
@@ -20,9 +19,6 @@ import type { CheckOutcome, CheckResult, DoctorCheck, DoctorContext } from './ty
 import { cfGet, cfPost, NO_ACCOUNT, NO_FROM, NO_TOKEN } from './cloudflare-api.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import { DEFAULT_ROLES, resolveOwnerLevelRoles } from '../auth/roles.js';
-
-// 30 days. The production zones run two years; anything under a month is a trivial pin.
-const MIN_HSTS_MAX_AGE = 2592000;
 
 function fromDomain(from: string): string {
   return from.slice(from.indexOf('@') + 1);
@@ -126,56 +122,6 @@ export const edgeHttpsForced: DoctorCheck = {
         return pass('Always Use HTTPS is on');
       }
       return fail(`always_use_https is ${setting.value ?? 'unreadable'}`);
-    } catch (err) {
-      return fail(err instanceof Error ? err.message : String(err));
-    }
-  },
-};
-
-interface SecurityHeaderValue {
-  strict_transport_security?: { enabled?: boolean; max_age?: number };
-}
-
-// This check reads the ZONE's own HSTS setting, which is a separate thing from the
-// Strict-Transport-Security header cairn's own admin responses already send: `applySecurityHeaders`
-// (`sveltekit/admin-response.ts`) sets `max-age` on every `/admin` response regardless of this
-// zone setting, so an editor's browser is already pinned to https for the admin host either way.
-// A zone with this setting off still leaves the REST of the site (every non-admin route, static
-// assets) with no HSTS at all, which is the real gap this check reports; its wording says so
-// explicitly rather than implying the zone is the only thing protecting anything.
-export const edgeHsts: DoctorCheck = {
-  id: 'edge.hsts',
-  conditionId: 'edge.hsts-off',
-  title: 'Zone HSTS',
-  async run(ctx: DoctorContext): Promise<CheckResult> {
-    if (!ctx.cfToken) return NO_TOKEN;
-    if (!ctx.from) return NO_FROM;
-    try {
-      const setting = await readZoneSetting<SecurityHeaderValue>(
-        ctx,
-        fromDomain(ctx.from),
-        'security_header'
-      );
-      if ('fail' in setting) return setting.fail;
-      const sts = setting.value?.strict_transport_security;
-      if (sts?.enabled !== true) {
-        return fail(
-          "the zone's HSTS setting is off, so nothing at the zone level adds " +
-            "Strict-Transport-Security to a non-/admin route. cairn's admin responses carry their " +
-            'own max-age regardless of this setting. This reads the zone setting only, so if the ' +
-            'site adds the header another way, check a live response before acting on this'
-        );
-      }
-      const maxAge = sts.max_age ?? 0;
-      if (maxAge < MIN_HSTS_MAX_AGE) {
-        return fail(
-          `the zone's HSTS max-age ${maxAge} is under the ${MIN_HSTS_MAX_AGE} (30 day) floor, ` +
-            'so the zone under-protects any route it is the only source of HSTS for. ' +
-            "cairn's admin responses set their own Strict-Transport-Security max-age " +
-            'regardless of this setting'
-        );
-      }
-      return pass(`the zone sends HSTS with max-age ${maxAge}`);
     } catch (err) {
       return fail(err instanceof Error ? err.message : String(err));
     }

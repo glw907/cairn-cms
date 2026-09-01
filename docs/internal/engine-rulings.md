@@ -4454,7 +4454,8 @@ when the remediation pass lands.
 ## audit-cli-edge-https-forced-and-edge-hsts: `edge.https-forced and edge.hsts`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Split the pair. conditions.ts:35-42 gives edge.https-not-forced a cairn-owned why (JS-free sign-in form POST, CSRF guard, opaque 403 over http), severity blocker: Arm A holds, keep it gating. edge.hsts is severity 'warning' yet returns fail: retire. Also, report.ts:8-12 has no advisory tier to demote into.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Demote both to advisory (report, never gate), or drop edge.hsts entirely. The narrower https claim that IS cairn's (the __Host- cookie prefix needs https) is al).
+- **Reopens on:** closed. Executed by the conventions pass, Task 10, on the verifier's shape (the ranking's own 'demote both to advisory' shape below is superseded, per round-2 B-1): `edgeHsts` and its entry in the default check registry (`checks-cloudflare.ts`, `assemble.ts`) are removed, and the `edge.hsts-off` condition retires from `src/lib/diagnostics/conditions.ts`. `edge.https-forced` is untouched and stays gating.
+- **Shape:** Split the pair rather than demoting both, per the verification pass, which overturned the ranking's shape: keep `edge.https-forced` as a gating check (its condition is cairn-owned: the JS-free admin sign-in form POST hits an opaque 403 over http, a failure mode a generic tool cannot name), and retire `edge.hsts` outright, since its own registry entry is severity 'warning' yet the check returns a gating `fail()`, and the doctor carries no advisory tier to demote either one into.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 4.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md) (verdict overturned there).
 
@@ -4483,7 +4484,8 @@ when the remediation pass lands.
 ## audit-cli-admin-mount-shape-check: `admin.mount-shape check`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Arm A holds (the four-file /admin mount is cairn's contract and nobody else's), but the check has no failing state: 'This check never fails; it skips with guidance when it cannot see the mount.' It spends one of nineteen report lines to say 'I could not tell'.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Fold into the three-state result the ROADMAP already demands: make 'could not find a file to check' a distinct status (INFO) from 'checked and passed'. One chan).
+- **Reopens on:** closed. Executed by the conventions pass, Task 10: `admin.mount-shape` returns `info(ADMIN_MOUNT_GUIDANCE)` in place of `skip(...)` on both its no-mount-found branches; it still never fails, so the never-fails design the audit praised survives unchanged.
+- **Shape:** Fold the check into the doctor's third status tier: 'could not find a file to check' becomes a distinct `info` result from 'checked and passed' (the same distinction `config.csrf-disable`, rank 16, needs), rather than the `skip` the check returns today for both 'nothing wired' and 'could not tell'.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 8.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
@@ -4497,7 +4499,8 @@ when the remediation pass lands.
 ## audit-cli-config-tidy-key-check-and-its-active-anthropic-probe: `config.tidy-key check and its active Anthropic probe`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Tidy is cairn's feature so the tidy.enabled-to-binding relationship is Arm A, but validating an Anthropic key is Anthropic's grammar. Three outcome modes, an outbound third-party call and a fail-soft branch for an opt-in feature that is off by default; and on a real deployed site the secret is 'invisible to any CLI', so the live probe can only fire against a local .dev.vars a developer can curl by hand.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Keep the presence-and-wiring half; drop the live Anthropic call or move it behind a flag. The doctor already has a ratified idiom for a check that touches a liv).
+- **Reopens on:** open; partially executed. The conventions pass, Task 10 fixed the C16 two-jobs half: `config.tidy-key` now carries its own `config.tidy-key-missing` condition id in `src/lib/diagnostics/conditions.ts`, with its own docsAnchor (`is-it-working.md#configure-the-tidy-api-key`), so a failure no longer prints the wrangler-bindings remediation. The active, unconditional Anthropic probe is untouched and remains open; the remediation pass closes it.
+- **Shape:** Two independent defects. (1) C16's two-jobs finding: `config.tidy-key` shares `conditionId: 'config.bindings-missing'` with the wrangler-bindings check, so a tidy-key failure prints remediation written for a missing EMAIL/AUTH_DB binding; give it its own condition id. (2) Arm A fails on the active half: validating an Anthropic key is Anthropic's grammar, not cairn's; keep the presence-and-wiring half, and either drop the live call or move it behind the same opt-in flag discipline `--send-test` and `--probe` already establish for a live third-party touch.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 10.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
@@ -4521,6 +4524,11 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 13.
 - **Any-site case:** Arm A passes cleanly: a two-place cairn contract (defineRoles in the adapter, createAuthGuard({ roles }) in hooks.server.ts) whose failure is silent and security-relevant, the role resolving to 'none' and an editor losing access with no error anywhere. Nothing outside the engine knows the two places must agree.
+- **Annotation (conventions pass, Task 10):** the keep stands. `auth.role-wiring`'s could-not-see
+  branches (`src/hooks.server.ts` absent, no `createAuthGuard` call found, or its argument an
+  unreadable bare identifier) convert from `skip` to `info`, matching the doctor's new status
+  vocabulary; its no-custom-roles branch (the guard fallback already matches the declared
+  vocabulary) stays `skip`, since that branch really is not applicable, not merely unseen.
 
 ## audit-cli-cairn-media-seed-header-repeatable: `cairn-media-seed --header (repeatable)`  (keep, 2026-08-26, any-site audit)
 
@@ -4541,7 +4549,8 @@ when the remediation pass lands.
 ## audit-cli-config-csrf-disable-check: `config.csrf-disable check`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Arm A passes emphatically: the CSRF handoff (cairn disabling SvelteKit's checkOrigin and taking ownership in its own guard) is the most security-load-bearing configuration contract the engine has and is invisible to every generic tool. But a bare sv create scaffold 'writes no svelte.config.js at all', so the check skips on every such site and 'the run looks clean while the CSRF-handoff check never executed: a silent green'.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Read vite.config.ts as well as svelte.config.js (a site carries either depending on when it was scaffolded), and make 'could not find a file to check' a distinc).
+- **Reopens on:** closed. Executed by the conventions pass, Task 10: `config.csrf-disable` reads both `svelte.config.js` and `vite.config.ts`, returns `unchecked` only when neither file exists, and fails, never passes or skips, when at least one file is readable but neither carries an uncommented `checkOrigin: false` (security round N9's found-in-neither clause).
+- **Shape:** Read `vite.config.ts` as well as `svelte.config.js` (a bare `sv create` scaffold wires the adapter, and any CSRF disable, inside `vite.config.ts`'s plugin call instead), and make 'could not find a file to check' (neither file exists) a result distinct from 'checked and found nothing', which must still read as a real fail, never a false pass or skip.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 16.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
@@ -4705,7 +4714,8 @@ when the remediation pass lands.
 ## audit-cli-config-site-config-check: `config.site-config check`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Arm A is unambiguous: 'the doctor runs the engine's own parser and URL-policy validator', the parseSiteConfig / requireOrigin pattern again, including the Contract v2 hard-error on a stale per-concept content: block. A consumer cannot get this right by hand because the parser's rules change with the engine. AND Arm B fires: the engine's own scaffolder diverged from the engine's own checker, on 100% of scaffolded sites.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Add src/theme/site.config.yaml to SITE_CONFIG_PATHS, and derive the list from the same constant the template bake uses so the scaffolder and the checker cannot ).
+- **Reopens on:** closed. Executed by the conventions pass, Task 10: `src/theme/site.config.yaml` joins `SITE_CONFIG_PATHS` in `checks-local.ts`, and the not-found branch returns `unchecked` rather than `skip`. The one-source derivation off the template bake's own constant is left as a `// WATCH:` comment beside the list, routed to the internals pass's dogfood work rather than executed here.
+- **Shape:** Add `src/theme/site.config.yaml` to `SITE_CONFIG_PATHS` (the path the engine's own scaffolder bakes to, per `create-cairn-site`'s and the showcase's template), and derive the candidate list from the same constant the template bake uses, so the scaffolder and the checker cannot diverge again.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 39.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
@@ -4761,7 +4771,8 @@ when the remediation pass lands.
 ## audit-cli-config-dependency-floors-check: `config.dependency-floors check`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. The best-shaped mechanism in the doctor: the floors are 'read from the installed @glw907/cairn-cms/package.json so the floors are declared once', so the check is correct on 0.51.0 and on 0.96.0 and on every future release with no doctor change, and can never disagree with package.json, supported-toolchain.md, or the peer warning npm printed at install. Arm A is total. The failure it catches is severe and silent: svelte 5.56.1 miscompiles parenthesized boolean groupings and a consumer compiles the package's shipped .svelte sources directly.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Read pnpm-lock.yaml and yarn.lock, not only package-lock.json. Neither is exotic, and today a consumer on either gets a silent skip on the one check that would ).
+- **Reopens on:** closed. Executed by the conventions pass, Task 10: `config.dependency-floors` reads `package-lock.json`, then `pnpm-lock.yaml`, then `yarn.lock` in that order, judging whichever resolves first against the engine's peer ranges; it returns `unchecked` only when none of the three exists.
+- **Shape:** Read `pnpm-lock.yaml` and `yarn.lock` alongside `package-lock.json`, so a pnpm or yarn consumer gets a real verdict instead of a silent skip that never changes the exit code; failing that, at minimum give the no-lockfile-found case the INFO-vs-PASS (here, unchecked-vs-skip) distinction rank 8 needs.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 47.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 

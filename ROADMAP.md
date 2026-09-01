@@ -591,34 +591,6 @@ The original decision framing, for the record:
      revalidate a saved one, with no prompt and no browser trip. Both belong to this entry's root
      rather than as unrelated copy bugs.
 
-- **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
-  filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
-  (`configCsrfDisable`, condition `config.csrf-disable-missing`) reads
-  `const text = await ctx.readFile('svelte.config.js'); if (text === null) return
-  skip('svelte.config.js not found');`. Verified live: `npx sv@latest create --template
-  minimal --types ts --no-add-ons` (sv 0.17.0, run 2026-08-14) emits **no
-  `svelte.config.js` at all**, wiring the adapter inside `vite.config.ts`'s plugin call
-  instead (`sveltekit({ compilerOptions: {...}, adapter: adapter() })`, `adapter` from
-  `@sveltejs/adapter-auto` by default). So this check fires its skip path on every site built
-  from a current `sv create` scaffold, not an edge case; it has already fired, not merely a
-  condition that could. A skip is not visually distinct from a pass in the doctor's own report, so
-  the run looks clean while the CSRF-handoff check never executed: a silent green, the worse
-  failure mode for a readiness check to have. **Narrowed 2026-08-17 by the capture run, which
-  bounds the blast radius without dissolving the defect.** The recorded credentialed report
-  (`packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt`) shows
-  `PASS  Framework CSRF handoff` on a site `create-cairn-site` had just built, because that tool
-  bakes its template from `examples/showcase`, which carries `svelte.config.js`. So the silent
-  skip reaches a hand-built or bare `sv create` site, never a cairn scaffold. That is the harder
-  case to notice, not the easier one, since nobody is watching those sites for it.
-  `docs/reference/doctor.md` had generalized the skip to every scaffold and was corrected in the
-  same pass. Candidate fix: read the adapter and CSRF
-  configuration from `vite.config.ts` as well as `svelte.config.js` (a site may carry either,
-  depending on when it was scaffolded), and make "could not find a file to check" a result
-  distinct from "checked and passed" wherever the doctor reports it, so a consumer reading the
-  report can tell the two apart. Full evidence:
-  `docs/internal/record/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
-  filed rather than fixed").
-
 - **The DMARC instruction in `own-your-domain.md` was a faithful mirror of a bug in the CLI's own
   closing copy, filed off Pass D's Task 13 production gate (2026-08-14).**
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs:801-804` prints "add it to that
@@ -648,17 +620,6 @@ The original decision framing, for the record:
   extend track that the server allow-list exceeds what the editor UI can submit. Full evidence:
   `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`, "The refutations" section,
   `docs/editors/manage-the-media-library.md` (claims:editors rank 9).
-
-- **The doctor's `config.site-config` check skips on every `create-cairn-site` site, filed off Pass
-  D's Task 13 production gate (2026-08-14).** `src/lib/doctor/checks-local.ts:138`
-  (`SITE_CONFIG_PATHS`) looks for `site.config.yaml`, `src/lib/site.config.yaml`, or
-  `src/site.config.yaml`; the baked template ships it at `src/theme/site.config.yaml`, which is in
-  none of the three, so the check reports a skip rather than a pass on every scaffolded site.
-  `docs/reference/doctor.md:21` tells an admin to run the doctor from the directory holding a file
-  that, per the candidate list, is never actually where the tool looks for it on their site.
-  Pass D's `docs/admin/is-it-working.md` documents this as a known exception rather than fixing
-  the code. Full evidence: `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`,
-  persona walk, `docs/admin`, rank 6 (NARROWED, second-round verify).
 
 - **A fold-coverage gap, found and closed inside Pass D (2026-08-14).** Two fold agents scoped
   to `docs/editors/` and `docs/extend/` reported completion for nine CONFIRMED/NARROWED gate

@@ -363,10 +363,29 @@ export default config;
     expect(result.detail).toContain('heuristic');
   });
 
-  it('skips when svelte.config.js is absent', async () => {
+  it('reports unchecked when neither svelte.config.js nor vite.config.ts exists', async () => {
     const result = await configCsrfDisable.run(ctx({}));
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('unchecked');
     expect(result.detail).toContain('svelte.config.js');
+    expect(result.detail).toContain('vite.config.ts');
+  });
+
+  it('reads the disable off vite.config.ts when svelte.config.js is absent (the bare sv create shape)', async () => {
+    const result = await configCsrfDisable.run(
+      ctx({ 'vite.config.ts': CSRF_DISABLED, 'src/hooks.server.ts': CAIRN_HOOKS })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('fails, never passes or skips, when both files exist but neither carries the disable', async () => {
+    const result = await configCsrfDisable.run(
+      ctx({
+        'svelte.config.js': 'export default { kit: {} };',
+        'vite.config.ts': 'export default { plugins: [] };',
+      })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('heuristic');
   });
 
   it('ties to the config.csrf-disable-missing condition', () => {
@@ -399,9 +418,14 @@ describe('config.site-config', () => {
     expect(result.status).toBe('pass');
   });
 
-  it('skips when site.config.yaml is absent from every conventional location', async () => {
+  it('finds the config at src/theme, where create-cairn-site and the showcase bake it', async () => {
+    const result = await configSiteConfig.run(ctx({ 'src/theme/site.config.yaml': GOOD_SITE_CONFIG }));
+    expect(result.status).toBe('pass');
+  });
+
+  it('reports unchecked when site.config.yaml is absent from every conventional location', async () => {
     const result = await configSiteConfig.run(ctx({}));
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('unchecked');
     expect(result.detail).toContain('src/lib/site.config.yaml');
   });
 
@@ -589,8 +613,8 @@ describe('config.tidy-key', () => {
     expect(result.detail).toContain('ANTHROPIC_API_KEY');
   });
 
-  it('reuses the config.bindings-missing condition (no new registry entry)', () => {
-    expect(configTidyKey.conditionId).toBe('config.bindings-missing');
+  it('carries its own condition id, not borrowing config.bindings-missing', () => {
+    expect(configTidyKey.conditionId).toBe('config.tidy-key-missing');
   });
 });
 
@@ -641,26 +665,26 @@ export const handle = createAuthGuard(guardOpts);
     expect(result.detail).toContain('no custom roles');
   });
 
-  it('skips when hooks.server is absent, since the wiring cannot be read', async () => {
+  it('reports info when hooks.server is absent, since the wiring cannot be read', async () => {
     const result = await roleWiring.run(ctx({}, { roles: CUSTOM_ROLES }));
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('info');
     expect(result.detail).toContain('hooks.server');
   });
 
-  it('skips when no createAuthGuard call is in the hooks (wrapped in another module)', async () => {
+  it('reports info when no createAuthGuard call is in the hooks (wrapped in another module)', async () => {
     const wrapped = `export { handle } from './lib/my-guard';\n`;
     const result = await roleWiring.run(
       ctx({ 'src/hooks.server.ts': wrapped }, { roles: CUSTOM_ROLES })
     );
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('info');
     expect(result.detail).toContain('no createAuthGuard');
   });
 
-  it('skips (not fails) when the guard is passed a bare options identifier the doctor cannot read', async () => {
+  it('reports info (not fail) when the guard is passed a bare options identifier the doctor cannot read', async () => {
     const result = await roleWiring.run(
       ctx({ 'src/hooks.server.ts': INDIRECT_HOOKS }, { roles: CUSTOM_ROLES })
     );
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('info');
     expect(result.detail).toContain('options object');
     expect(result.detail).toContain('cannot read');
   });

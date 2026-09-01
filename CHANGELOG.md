@@ -578,6 +578,40 @@
   `undefined` there directly; nothing else changes for a site already passing a declared
   `RolesDeclaration`.
 
+- `cairn-doctor` gains a four-status vocabulary and a third exit code, closing the doctor's
+  anti-silent-green gaps the any-site audit found (the conventions pass, Task 10). Every check now
+  resolves to PASS, FAIL, SKIP, INFO, or UNCHECKED. SKIP keeps its old meaning, not applicable at
+  all, and never gates. INFO is new: a heuristic that couldn't see enough to answer, or an advisory
+  finding; never gates. UNCHECKED is new: a deterministic check's required input was absent or
+  unreadable, distinct from SKIP because the check IS applicable and would have an answer if it
+  could look; it drives a new exit code, **3**, when no check failed (exit 1 still wins over exit 3
+  when a run carries both). `admin.mount-shape` and `auth.role-wiring`'s could-not-see branches move
+  from SKIP to INFO; `auth.role-wiring`'s no-custom-roles branch stays SKIP. `edge.hsts` retires
+  outright (its own condition was severity `warning` yet the check returned a gating `fail()`, and
+  the doctor has no advisory tier to demote into); `edge.https-forced` is unchanged and stays
+  gating, since it names a cairn-owned failure (the JS-free admin sign-in form POST hits an opaque
+  403 over http). `config.csrf-disable` now reads `vite.config.ts` as well as `svelte.config.js` (a
+  bare `sv create` scaffold wires the adapter, and any CSRF disable, inside `vite.config.ts`
+  instead), returns UNCHECKED only when neither file exists, and fails rather than passing or
+  skipping when a readable file carries no disable. `config.site-config` adds
+  `src/theme/site.config.yaml` to its candidate paths (where `create-cairn-site` and the showcase
+  bake it) and returns UNCHECKED rather than SKIP when none matches. `config.dependency-floors` now
+  reads `pnpm-lock.yaml` and `yarn.lock` alongside `package-lock.json`, judging whichever it finds
+  first, and returns UNCHECKED only when none of the three exists; a pnpm or yarn consumer gets a
+  real pass/fail verdict instead of a silent skip. `config.tidy-key` carries its own condition id,
+  `config.tidy-key-missing`, rather than borrowing `config.bindings-missing` (a tidy-key failure no
+  longer prints the wrangler-bindings remediation). See
+  [`cairn-doctor`](docs/reference/doctor.md#status-vocabulary) and
+  [Is it working?](docs/admin/is-it-working.md).
+
+  **Consumers must:** a CI job that gates on `cairn-doctor`'s exit code alone still works
+  unmodified (both 1 and 3 are nonzero), but a pnpm or yarn site that previously read a silent SKIP
+  on `config.dependency-floors` now gets a real verdict, which may surface a below-floor dependency
+  that was invisible before. A job that wants to distinguish a real failure (exit 1) from an
+  unchecked environment gap (exit 3), to warn on the latter without blocking on it, captures the
+  exit code and branches on it; see the CI wiring example in the reference page. Nothing else in the
+  report's shape changed: every prior PASS/FAIL/SKIP line still prints exactly as before.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

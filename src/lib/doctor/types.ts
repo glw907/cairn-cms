@@ -4,7 +4,7 @@
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AiPosture } from '../content/types.js';
 
-type CheckStatus = 'pass' | 'fail' | 'skip';
+type CheckStatus = 'pass' | 'fail' | 'skip' | 'info' | 'unchecked';
 
 export interface CheckResult {
   status: CheckStatus;
@@ -35,10 +35,32 @@ export function fail(detail: string): CheckResult {
 
 /**
  * Build a skipped check result; `detail` names the missing input the check could not run
- * without.
+ * without. `skip` means the check is not applicable at all (an opt-in feature that is off, a
+ * role vocabulary with nothing custom to wire); it never gates. Contrast {@link unchecked}, for
+ * a check that IS applicable but could not look.
  */
 export function skip(detail: string): CheckResult {
   return { status: 'skip', detail };
+}
+
+/**
+ * Build an informational check result; `detail` carries the finding and, where relevant, its own
+ * guidance. `info` covers a heuristic that could not see enough to render a verdict, or a finding
+ * that is advisory rather than a deploy blocker. It never gates, the same as {@link skip}, but
+ * unlike skip it names something the check actually observed.
+ */
+export function info(detail: string): CheckResult {
+  return { status: 'info', detail };
+}
+
+/**
+ * Build an unchecked result; `detail` names the input a deterministic check needed and could not
+ * read (an absent or unreadable file, a lockfile format none of the readers recognize). Unlike
+ * {@link skip}, `unchecked` means the check WOULD have an answer if it could look, so it drives
+ * exit 3 rather than passing the run silently.
+ */
+export function unchecked(detail: string): CheckResult {
+  return { status: 'unchecked', detail };
 }
 
 export interface DoctorCheck {

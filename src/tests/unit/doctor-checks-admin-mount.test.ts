@@ -42,9 +42,9 @@ describe('admin.mount-shape', () => {
     expect(result.detail).toMatch(/CairnAdminShell/);
   });
 
-  it('skips with guidance when the mount files are all absent', async () => {
+  it('reports info with guidance when the mount files are all absent', async () => {
     const result = await adminMountShape.run(ctx({}));
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('info');
     // The guidance detail names the expected files and the one-line fix.
     expect(result.detail).toMatch(/CairnAdminShell/);
     expect(result.detail).toMatch(/shellLoad/);

@@ -21,7 +21,6 @@ import { configDependencyFloors } from './check-floors.js';
 import {
   emailSenderOnboarded,
   edgeHttpsForced,
-  edgeHsts,
   authStore,
   roleVocabulary,
   emailNormalization,
@@ -191,7 +190,7 @@ export async function deriveMissingInputs(
 }
 
 /**
- * The default registry: the local config checks, the four Cloudflare checks, and the GitHub App
+ * The default registry: the local config checks, the Cloudflare checks, and the GitHub App
  * chain. The live send is opt-in (--send-test) and never sits here; the bin appends it. A
  * fresh array per call, so that append mutates nothing shared.
  */
@@ -210,7 +209,6 @@ export function defaultChecks(): DoctorCheck[] {
     configDependencyFloors,
     emailSenderOnboarded,
     edgeHttpsForced,
-    edgeHsts,
     authStore,
     roleVocabulary,
     roleWiring,

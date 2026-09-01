@@ -50,8 +50,12 @@ PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and h
 8 passed, 3 failed, 8 skipped
 ```
 
-This report reflects an earlier engine release; the dependency-floor version numbers you see when
-you run this yourself are newer.
+This report reflects an earlier engine release, so the dependency-floor version numbers you see
+when you run this yourself are newer. It also predates two statuses a current run can show
+alongside PASS, FAIL, and SKIP. `INFO` marks a heuristic that couldn't see enough to answer, or an
+advisory finding; it's never a deploy blocker. `UNCHECKED` marks a check that genuinely needed an
+input, like a lockfile or a config file, and found none of the candidates it looks for. That's
+different from a SKIP, which means the check doesn't apply at all.
 
 Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
 this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the
@@ -122,9 +126,11 @@ Match what your doctor printed to the section that explains it:
 - `Email sending domain`, `Live test send` —
   [Onboard the sending domain](#onboard-the-sending-domain), `email.sender-not-onboarded`,
   `email.send-failed`
-- `Wrangler bindings`, `Media bucket binding`, `Tidy API key` —
+- `Wrangler bindings`, `Media bucket binding` —
   [Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings),
   `config.bindings-missing`
+- `Tidy API key` — [Configure the Tidy API key](#configure-the-tidy-api-key),
+  `config.tidy-key-missing`
 - `Workers Logs sink` — [Turn on observability](#turn-on-observability),
   `config.observability-off`
 - `Framework CSRF handoff` — [Wire cairn's CSRF guard](#wire-cairns-csrf-guard),
@@ -137,7 +143,6 @@ Match what your doctor printed to the section that explains it:
   `config.site-config-invalid`
 - `Dependency floors` — [Meet the dependency floors](#meet-the-dependency-floors),
   `config.dependency-floors-unmet`
-- `Zone HSTS` — [Turn on HSTS](#turn-on-hsts), `edge.hsts-off`
 - `AI posture, effective` —
   [Make the stated AI posture effective](#make-the-stated-ai-posture-effective),
   `ai.posture-not-effective`
@@ -227,10 +232,10 @@ named `AUTH_DB` in your `wrangler.jsonc` (or `wrangler.toml`), then redeploy; se
 [Wire the delivery surface](../extend/wire-the-delivery-surface.md) and
 [Cloudflare](../reference/cloudflare.md) for the shape.
 
-This same condition id also covers two other checks: a storage bucket your site expects for
-images but `wrangler.jsonc` doesn't declare (only on a site with an image library), and a key for
-the tidy-up feature. The check's own detail line names which of the three actually failed, so read
-that rather than assuming it's always the `EMAIL`/`AUTH_DB` pair.
+This same condition id also covers one other check: a storage bucket your site expects for images
+but `wrangler.jsonc` doesn't declare (only on a site with an image library). The check's own
+detail line names which of the two actually failed, so read that rather than assuming it's always
+the `EMAIL`/`AUTH_DB` pair.
 
 ## Turn on observability
 
@@ -319,14 +324,15 @@ loudly.
 declares, then reinstall so your lockfile re-resolves; for example,
 `npm install --save-dev svelte@^5.56.10`.
 
-## Turn on HSTS
+## Configure the Tidy API key
 
-**`edge.hsts-off`, a warning.** Your zone isn't sending a meaningful `Strict-Transport-Security`
-header, so nothing pins HTTPS for your site once someone has visited it over plain HTTP once. Your
-admin is covered either way, since cairn's own admin responses carry their own HSTS header; this
-is about every other page on your site.
+**`config.tidy-key-missing`, a warning.** Your site config has `tidy.enabled: true`, but no
+`ANTHROPIC_API_KEY` is set anywhere the check can read, or the key it found is no longer valid.
+Tidy's suggestions are unavailable until this is fixed; nothing else on your site is affected,
+since Tidy is opt-in.
 
-**Act:** turn on HSTS for your zone, with a max-age of six months or more.
+**Ask a developer:** set `ANTHROPIC_API_KEY` with `wrangler secret put ANTHROPIC_API_KEY` for a
+deployed site, or in `.dev.vars` for local development, and confirm the key is current.
 
 ## Make the stated AI posture effective
 

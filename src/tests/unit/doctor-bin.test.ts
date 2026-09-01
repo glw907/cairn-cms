@@ -126,7 +126,7 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-  it('returns the twenty checks in registry order', () => {
+  it('returns the nineteen checks in registry order', () => {
     expect(defaultChecks().map((c) => c.id)).toEqual([
       'config.bindings',
       'config.media-bucket',
@@ -141,7 +141,6 @@ describe('defaultChecks', () => {
       'config.dependency-floors',
       'email.sender-onboarded',
       'edge.https-forced',
-      'edge.hsts',
       'auth.store',
       'auth.role-vocabulary',
       'auth.role-wiring',
@@ -162,7 +161,7 @@ describe('defaultChecks', () => {
   it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
     const first = defaultChecks();
     first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-    expect(defaultChecks()).toHaveLength(20);
+    expect(defaultChecks()).toHaveLength(19);
   });
 });
 
@@ -173,18 +172,25 @@ const BIN = resolve(process.cwd(), 'dist/doctor/bin.js');
 const built = existsSync(BIN);
 
 describe('packaged bin (needs dist/doctor/bin.js; run npm run package to unskip)', () => {
-  it.skipIf(!built)('reports skips and exits cleanly from a bare dir with an empty env', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cairn-doctor-'));
-    const out = spawnSync(process.execPath, [BIN], {
-      cwd: dir,
-      env: { PATH: process.env.PATH },
-      encoding: 'utf8',
-    });
-    expect(out.status).not.toBeNull();
-    expect([0, 1]).toContain(out.status);
-    expect(out.stdout).toContain('SKIP');
-    expect(out.stdout).toMatch(/\d+ passed, \d+ failed, \d+ skipped/);
-  });
+  it.skipIf(!built)(
+    'reports skip, info, and unchecked from a bare dir with an empty env, exiting 3',
+    () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cairn-doctor-'));
+      const out = spawnSync(process.execPath, [BIN], {
+        cwd: dir,
+        env: { PATH: process.env.PATH },
+        encoding: 'utf8',
+      });
+      // No wrangler config, no local files, and no credentials: every deterministic check whose
+      // input is genuinely absent (the CSRF handoff, the site config, the dependency floors)
+      // reports unchecked rather than a silent skip, so the run exits 3, not 0 or 1.
+      expect(out.status).toBe(3);
+      expect(out.stdout).toContain('SKIP');
+      expect(out.stdout).toContain('INFO');
+      expect(out.stdout).toContain('UNCHECKED');
+      expect(out.stdout).toMatch(/\d+ passed, \d+ failed, \d+ skipped, \d+ info, \d+ unchecked/);
+    }
+  );
 
   it.skipIf(!built)('prints usage to stderr and exits 2 on an unknown flag', () => {
     const out = spawnSync(process.execPath, [BIN, '--bogus'], {
@@ -212,9 +218,9 @@ describe('packaged bin (needs dist/doctor/bin.js; run npm run package to unskip)
       });
 
       expect(out.status).not.toBeNull();
-      expect([0, 1]).toContain(out.status);
+      expect([0, 1, 3]).toContain(out.status);
       expect(out.stderr).toContain('cairn-doctor: --fix failed to install the admin-screens skill');
-      expect(out.stdout).toMatch(/\d+ passed, \d+ failed, \d+ skipped/);
+      expect(out.stdout).toMatch(/\d+ passed, \d+ failed, \d+ skipped, \d+ info, \d+ unchecked/);
     }
   );
 });

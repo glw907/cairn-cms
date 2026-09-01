@@ -2,9 +2,9 @@
 // cairn-doctor: the environment preflight. A thin shell over index.ts (where the unit tests
 // reach the logic): parse the flags, assemble the context with the real fetch and filesystem,
 // run the default registry plus the opt-in live send, print the report. Bad flags go to
-// stderr with exit 2; a failed check exits 1; a clean or all-skip run exits 0. The codes go
-// through process.exitCode, never process.exit, so a piped stdout flushes the whole report
-// before the process ends.
+// stderr with exit 2; a failed check exits 1; an unchecked check with no failure exits 3; a
+// clean run (pass, skip, and info only) exits 0. The codes go through process.exitCode, never
+// process.exit, so a piped stdout flushes the whole report before the process ends.
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { liveProbeCheck } from './check-probe.js';
@@ -80,9 +80,12 @@ async function main(): Promise<void> {
     checks.push(liveProbeCheck(args.probe === true ? undefined : args.probe));
   }
 
-  const { results, failed } = await runDoctor(checks, ctx);
+  const { results, failed, unchecked } = await runDoctor(checks, ctx);
   console.log(formatReport(results));
-  process.exitCode = failed > 0 ? 1 : 0;
+  // A failure always wins the exit code; short of that, an unchecked result (a deterministic
+  // check whose input the doctor could not read at all) drives exit 3, distinct from the clean
+  // exit 0 a run of only pass/skip/info results earns.
+  process.exitCode = failed > 0 ? 1 : unchecked > 0 ? 3 : 0;
 }
 
 await main();

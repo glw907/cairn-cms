@@ -9,12 +9,14 @@ const TAG: Record<CheckResult['status'], string> = {
   pass: 'PASS',
   fail: 'FAIL',
   skip: 'SKIP',
+  info: 'INFO',
+  unchecked: 'UNCHECKED',
 };
 
 /**
- * Render a completed doctor run as plain text: one PASS/FAIL/SKIP line per check, then a
- * why/remediation block per failed check (resolved from the condition registry by its
- * `conditionId`), then a pass/fail/skip count. Throws if a failed check's `conditionId` has no
+ * Render a completed doctor run as plain text: one PASS/FAIL/SKIP/INFO/UNCHECKED line per check,
+ * then a why/remediation block per failed check (resolved from the condition registry by its
+ * `conditionId`), then a count of every status. Throws if a failed check's `conditionId` has no
  * registry entry.
  */
 export function formatReport(results: { check: DoctorCheck; result: CheckResult }[]): string {
@@ -30,7 +32,10 @@ export function formatReport(results: { check: DoctorCheck; result: CheckResult 
 
   const count = (status: CheckResult['status']) =>
     results.filter(({ result }) => result.status === status).length;
-  lines.push('', `${count('pass')} passed, ${count('fail')} failed, ${count('skip')} skipped`);
+  lines.push(
+    '',
+    `${count('pass')} passed, ${count('fail')} failed, ${count('skip')} skipped, ${count('info')} info, ${count('unchecked')} unchecked`
+  );
 
   return lines.join('\n');
 }

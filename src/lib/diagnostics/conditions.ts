@@ -125,13 +125,13 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		remediation: "Raise the devDependency range in the site's package.json to the engine peer range and reinstall so the lockfile re-resolves, for example `npm install --save-dev svelte@^5.56.10`.",
 		docsAnchor: 'is-it-working.md#meet-the-dependency-floors',
 	},
-	'edge.hsts-off': {
-		id: 'edge.hsts-off',
+	'config.tidy-key-missing': {
+		id: 'config.tidy-key-missing',
 		severity: 'warning',
-		title: 'HSTS is off',
-		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so nothing pins https for the site at large and a later http visit reaches the origin over plain transport. The admin host is covered either way, since cairn\'s own admin responses carry their own max-age, so this is about every other route.',
-		remediation: "Turn on HSTS for the zone, with a max-age of six months or more. The check's own floor is 30 days.",
-		docsAnchor: 'is-it-working.md#turn-on-hsts',
+		title: 'The Tidy Anthropic key is missing or invalid',
+		why: "Tidy is enabled in site.config.yaml, but no ANTHROPIC_API_KEY is set anywhere the doctor can read (neither the wrangler vars nor .dev.vars), or Anthropic rejected a literal key value the doctor could read locally. Tidy's suggestions are unavailable until this is fixed; nothing else on the site is affected, since tidy is an opt-in feature.",
+		remediation: 'Set ANTHROPIC_API_KEY with `wrangler secret put ANTHROPIC_API_KEY` for a deployed site (or in .dev.vars for local development), and confirm the key is current.',
+		docsAnchor: 'is-it-working.md#configure-the-tidy-api-key',
 	},
 	'ai.posture-not-effective': {
 		id: 'ai.posture-not-effective',

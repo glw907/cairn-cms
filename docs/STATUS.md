@@ -18,16 +18,21 @@ chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**The conventions pass (slice 4a) is EXECUTING** on worktree `.claude/worktrees/conventions`
-(branch `conventions`, workflow mode, sequential), from the committed plan
-`docs/superpowers/plans/2026-08-30-conventions-pass.md`. Checkpoint after Task 8
-(2026-08-31 evening): Tasks 1-8 ALL ACCEPTED (worktree head `c7db6e4f`, the auth-channel
-fold; the auth trio 6/7/8 each accepted first-review). One open conductor item rides chunk
-3's head: the 3F doc-cleanup escalation found the media config's `variants` field has zero
-reachable runtime consumers post-preset-drop (`presetUrl` is demoted off every subpath), so
-chunk 3 deletes the one false sentence in `data-tiers.md`, fixes the adjacent narrow-asset
-srcset imprecision in `core.md`, and files the dead-`variants` scope question into the
-friction log for triage to 4b/internals — the field's fate is NOT this pass's to decide. Spend: ~4.2M (transcript-measured) after eight of eleven tasks;
+**The conventions pass (slice 4a) is in its PASS-END RITUAL** on worktree
+`.claude/worktrees/conventions`. All eleven tasks plus both doc residuals ACCEPTED;
+code-simplifier landed (`a43986bf`, gates green). The four-reviewer fan-out returned three
+real findings, and a consolidated Opus fix round is executing: the SECURITY BLOCKER
+(absent-cookie short-circuit before `consumeToken` voids the `nonce_hash IS NULL` compat
+path — scaffold bootstrap sign-in, in-flight upgrade links, and hand-seeded recovery rows
+all refused; fix = attempt consume with null nonce), the rethrow-guard narrowing (a
+site-supplied `limit()` throwing redirect/error now degrades to open in sectionAction),
+and the pending-cookie TTL coincidence (ordinary same-browser timeout misdiagnosed as
+wrong-browser). One design question is with Geoff: the throttle/nonce login-lockout
+regression (an attacker POSTing request/minute keeps the live token bound to their nonce
+while the cooldown blocks the editor's own re-request). Remaining ritual after the fold:
+CI-derived gate list + from-scratch consumer build, HISTORY/ROADMAP/post-mortem, budgets.
+4b pre-work is banked in scratchpad (4b-docket.md, 4b-usage-map.md; Tier 1 has zero
+consumer usage anywhere). Spend: ~4.2M (transcript-measured) after eight of eleven tasks;
 the ceiling is RAISED to 7M (Geoff, 2026-08-31, on the chunk-1 numbers: the overrun is
 review rigor, not waste), so the pass runs to completion without a budget stop. Tasks 7
 and 8 upshifted to Opus implementers (security-critical interactions). Decisions taken: the overnight

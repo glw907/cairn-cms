@@ -620,10 +620,10 @@ page-heading recipes from `docs/internal/admin-design-system.md`.
 Stability tier: Extension API.
 
 ```ts
-let { eyebrow, title, subtitle, action, children }: {
+let { eyebrow, title, meta, action, children }: {
   eyebrow?: string;
   title: string;
-  subtitle?: string;
+  meta?: string;
   action?: Snippet;
   children: Snippet;
 };
@@ -632,25 +632,27 @@ let { eyebrow, title, subtitle, action, children }: {
 The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
 out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
 screen, a Club-style events or members list say, wraps its own `<table>` in this to reuse the
-shared header and card frame instead of rebuilding it. `eyebrow` names a grouping, such as a
-custom nav section's label, and is omitted entirely when there is none to name. `title` is the
-display-face heading. `subtitle` is the muted one-line note under it, a live count or a scope
-note. `action` is an optional header-right control such as a filter or a primary button.
+shared header and card frame instead of rebuilding it. The header band composes the preceding
+`PageHeader`, so `eyebrow`, `title`, `meta`, and `action` carry its identical contract and rhythm.
 `children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
-shell.
+shell that sits directly under `PageHeader`'s own offset.
 
-`OfficeList` moved here from `/components` in CHANGELOG `0.94.0`: `PageHeader`, this
-component's own later generalization above, already lived on the toolkit, and a header-plus-card
-screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay; they cover different
-shapes, a header primitive versus a full list-screen scaffold, never a duplicate. A new build
-reaches for `PageHeader` first; `OfficeList` stays correct where it already ships.
+`OfficeList` moved here from `/components` in CHANGELOG `0.94.0`. `PageHeader`, this component's
+own later generalization documented preceding it, already lived on the toolkit, and a
+header-plus-card screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay. They
+cover different shapes, a header primitive versus a full list-screen scaffold, never a duplicate.
+A new build reaches for `PageHeader` first. `OfficeList` stays correct where it already ships.
+
+`OfficeList`'s own header markup collapsed onto `PageHeader` in the 4b conformance pass, Task 9.
+The `subtitle` prop renamed to `meta` with no forwarding alias, and the merged header band adopted
+`PageHeader`'s rhythm as the toolkit's one office-header rhythm.
 
 ```svelte
 <script lang="ts">
   import { OfficeList } from '@glw907/cairn-cms/admin-toolkit';
 </script>
 
-<OfficeList eyebrow="Club" title="Events" subtitle="12 upcoming">
+<OfficeList eyebrow="Club" title="Events" meta="12 upcoming">
   {#snippet action()}
     <button type="button" class="btn btn-primary btn-sm">New event</button>
   {/snippet}

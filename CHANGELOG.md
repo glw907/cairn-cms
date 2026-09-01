@@ -813,6 +813,20 @@
   on `result.outcome === 'minted'` before reading `token` and `expiresAt`, where the old call
   returned that pair directly.
 
+- `OfficeList` (`/admin-toolkit`, slice 4b, Task 9; settles `audit-admin-officelist`) collapses to
+  a thin card-frame wrapper that composes `PageHeader` for its header band, retiring the second
+  eyebrow/title/subtitle/action implementation the two components had drifted into. `PageHeader`
+  itself gains a `self-start` wrap on its action slot, ported from `OfficeList` first so the
+  action-alignment fix survives the collapse. This is a visible rhythm and type-size change on
+  every screen built on `OfficeList`: the header band now renders at `PageHeader`'s own rhythm
+  (`mb-10` header offset, `gap-0.5` inner stack, the balanced `text-wrap` title) instead of
+  `OfficeList`'s former tighter `mb-6`/`gap-0`, and its meta line moves from `type-body` (14px) to
+  `type-meta` (13px); the card underneath keeps its own tighter proximity, sitting directly under
+  that offset with no separate margin of its own. **Consumers must:** rename `OfficeList`'s
+  `subtitle` prop to `meta` (no forwarding alias survives); expect the office header to adopt
+  `PageHeader`'s rhythm (`mb-10`, the meta line at `type-meta`) on every screen composing
+  `OfficeList`.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

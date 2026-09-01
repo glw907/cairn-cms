@@ -450,7 +450,10 @@ alongside the component recipes above and below it.
   - The page follows the F3 proximity-grouping scale (the named 4/8px steps documented as a comment
     beside the theme tokens in `cairn-admin.css`; design arc 2026-07-15): the header stands apart as
     the page's one loose element (`PageHeader`'s own `mb-10`), the toolbar belongs to the card below
-    it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`).
+    it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). `OfficeList` (a custom
+    `/admin/` screen's own header-plus-card scaffold) follows the same F3 header rhythm: it composes
+    `PageHeader` for its header band (`mb-10`, `gap-0.5`, the `meta` line at `type-meta`), then its
+    card hugs that offset directly with no toolbar tier between them.
   - `EntrySummary.summary` stays off the list (the density ruling; it still serves the edit page).
   - Chip register (ruling 9 of the 2026-07-20 admin-toolkit adoption map, re-expressed for the
     second-generation register grammar): New, Edited, and Published all take `StatusChip`'s

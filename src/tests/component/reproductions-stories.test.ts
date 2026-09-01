@@ -978,8 +978,9 @@ describe('toolkit/custom-screen', () => {
   it("renders the doc snippet's composed screen: one heading, the office list, and each event's status chip", async () => {
     const screen = await mountPosed(getStory('toolkit/custom-screen'));
 
-    // OfficeList alone supplies the page's one h1; the doc snippet no longer composes it with
-    // PageHeader, so there is exactly one heading here (WCAG 1.3.1: a page names one title).
+    // OfficeList alone supplies the page's one h1 (via its own composed PageHeader, Task 9); the
+    // doc snippet does not additionally compose a standalone PageHeader, so there is exactly one
+    // heading here (WCAG 1.3.1: a page names one title).
     const headings = screen.container.querySelectorAll('h1');
     expect(headings).toHaveLength(1);
     await expect.element(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();

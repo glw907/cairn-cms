@@ -21,6 +21,14 @@ default `<h1>`/`<p>` margins do not collapse inside a flex column, so they leake
 `gap-0.5` intent into a roughly 58px rendered title-to-meta gap. Both elements zero their margin and
 the meta line restores a deliberate 4px with its own `mt-1`, matching `OfficeList` exactly.
 
+The 4b conformance pass's Task 9 finished the convergence the other direction: `OfficeList`'s own
+`self-start` wrap on the action slot (the flex row's default stretch otherwise pulls a header
+action full-width below `sm`) ported in here first, then `OfficeList` itself collapsed to a thin
+card-frame that composes this component for its header band. `OfficeList`'s old duplicate
+eyebrow/title/subtitle/action markup is gone; this is now the toolkit's one office-header
+implementation, and every screen built on `OfficeList` picked up this component's `mb-10` rhythm,
+`gap-0.5` inner stack, and `text-wrap: balance` title as a visible (intended) rhythm change.
+
 Props stay data-plus-slots throughout: `eyebrow`/`title`/`meta` are plain strings and `action` is
 a snippet the caller fully authors, so this component carries no domain knowledge of what an
 eyebrow names or what an action does.
@@ -68,7 +76,12 @@ today.
     <h1 class="page-h1 m-0 type-title font-bold font-[family-name:var(--font-display)]">{title}</h1>
     {#if meta}<p class="m-0 mt-1 type-meta text-muted">{meta}</p>{/if}
   </div>
-  {#if action}{@render action()}{/if}
+  {#if action}
+    <!-- The flex row default (stretch) pulls the action full-width below `sm`; pin it to its
+         intrinsic content width instead (ported from OfficeList, Task 9 of the 2026-09-01
+         conformance pass, so a naive OfficeList-onto-PageHeader collapse would not regress it). -->
+    <div class="self-start">{@render action()}</div>
+  {/if}
 </header>
 
 <style>

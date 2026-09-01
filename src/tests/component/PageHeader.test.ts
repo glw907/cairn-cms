@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
+import { page } from 'vitest/browser';
 import PageHeader from '../../lib/admin-toolkit/PageHeader.svelte';
+// The mobile action width test below measures against the compiled sheet, the same reasoning
+// OfficeList's own suite states: the bare component render carries no stylesheet at all, so an
+// unstyled stretched action would silently pass a DOM-structure-only test without proving the
+// self-start fix (ported from OfficeList, Task 9 of the 2026-09-01 conformance pass).
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 /** A snippet with no render-time params, e.g. a fixed action button. */
 function staticSnippet(html: string) {
@@ -56,5 +62,49 @@ describe('PageHeader', () => {
       action: staticSnippet('<button type="button">New post</button>'),
     });
     expect(withAction.container.querySelector('button')?.textContent).toBe('New post');
+  });
+
+  it('wraps the action in a self-start container, so it never stretches full-width in the row', async () => {
+    // Ported from OfficeList (Task 9): the flex row default (stretch) pulls the action full-width
+    // below `sm` unless it is pinned to its intrinsic content width.
+    const withAction = await render(PageHeader, {
+      title: 'Posts',
+      action: staticSnippet('<button type="button">New post</button>'),
+    });
+    const button = withAction.container.querySelector('button')!;
+    const wrapper = button.parentElement as HTMLElement;
+    expect(wrapper.classList.contains('self-start')).toBe(true);
+  });
+
+  describe('the mobile action width (compiled sheet)', () => {
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      // The compiled sheet's utility classes are all scoped under the [data-theme='cairn-admin']
+      // selector (DaisyUI's theme gating), so nothing in it matches without the attribute set.
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      await page.viewport(1280, 720);
+    });
+
+    it('pins the header action to intrinsic width instead of stretching full-width below sm', async () => {
+      await page.viewport(390, 700);
+      const screen = await render(PageHeader, {
+        title: 'Posts',
+        action: staticSnippet('<button type="button">New post</button>'),
+      });
+      const header = screen.container.querySelector('header')!;
+      const button = screen.container.querySelector('button')!;
+      const wrapper = button.parentElement as HTMLElement;
+      expect(getComputedStyle(wrapper).alignSelf).toBe('flex-start');
+      expect(wrapper.getBoundingClientRect().width).toBeLessThan(header.getBoundingClientRect().width);
+    });
   });
 });

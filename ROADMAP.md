@@ -1410,8 +1410,9 @@ the named human gates only):**
   dogfoods it: every top-level built-in admin screen now renders its header through `PageHeader`
   (closing the 2026-07-15 audit's finding 11, "page-header idiom five ways"), and `ConceptList`
   and `CairnMediaLibrary` additionally converge their search, filter, count, table, and pager
-  markup onto `ListToolbar`/`AdminTable`/`Pagination`/`StatusChip`. `OfficeList` keeps its own
-  contract unchanged this wave (see the entry below). Whether the toolkit belongs on the `1.0`
+  markup onto `ListToolbar`/`AdminTable`/`Pagination`/`StatusChip`. `OfficeList` kept its own
+  contract unchanged in this wave (it later converged onto `PageHeader`'s rhythm in the 4b
+  conformance pass, 2026-09-01). Whether the toolkit belongs on the `1.0`
   readiness checklist as a versioned seam (the extending-developer story is stronger with it) is
   still an open call. The next wave holds:
   - **ASC's own import swap.** aksailingclub-org's admin still imports its first-party
@@ -1424,14 +1425,6 @@ the named human gates only):**
     an identity label and a single-use on/off pill (`CairnTidySettings`'s tidy-convention toggle)
     both stayed bespoke this wave, correctly: neither has a second consumer yet. Mint a shared
     toggle device once a third one demonstrates the repetition, not before.
-- **OfficeList's PageHeader convergence, filed at the T7 adoption sweep (2026-07-20).**
-  `OfficeList`'s own header is the exact shape `PageHeader` generalized from, but its rhythm
-  differs (`mb-6` versus `PageHeader`'s `mb-10`); re-expressing OfficeList's internals on
-  PageHeader would visibly change the vertical rhythm of every custom `/admin/` screen a site
-  already built on it, so it is not behavior-preserving (ruling 8 of the pass's adoption map).
-  OfficeList stays hand-rolled with its exported contract unchanged this wave. Whether to
-  converge its spacing onto PageHeader (a breaking visual change for an existing consumer) is
-  a question for a later major.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

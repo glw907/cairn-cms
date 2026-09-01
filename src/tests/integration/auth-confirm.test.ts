@@ -153,28 +153,58 @@ describe('CSRF token rotation at successful login', () => {
 describe('same-browser binding (login-CSRF)', () => {
   const confirmUrl = 'https://test.dev/admin/auth/confirm';
 
-  it('refuses a confirm from a browser with no pending cookie, under its own error code', async () => {
+  it('refuses a BOUND token from a browser with no pending cookie, under its own error code, and leaves it confirmable', async () => {
     // The attacker's own emailed link, put in front of a victim's browser, lands the victim in
-    // the attacker's session unless the confirming browser proves it is the one that asked.
+    // the attacker's session unless the confirming browser proves it is the one that asked. The
+    // refusal is the consume's own predicate answering (nonce_hash = NULL is never true in SQL),
+    // not a short-circuit before it, so the row survives for the browser that asked.
     const token = await liveToken('ed@x.dev');
     const redirect = await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies() })),
     );
     expect(redirect.location).toBe('/admin/login?error=no-pending-request');
     expect(await countRows('session')).toBe(0);
+    expect(await countRows('magic_token')).toBe(1);
+
+    const fromTheBoundBrowser = await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies(pendingSeed()) })),
+    );
+    expect(fromTheBoundBrowser.location).toBe('/admin');
+    expect(await countRows('session')).toBe(1);
   });
 
-  it('checks the pending cookie before consuming, so a cross-browser click never burns the token', async () => {
-    const token = await liveToken('ed@x.dev');
-    await expectRedirect(() =>
+  it('confirms an UNBOUND token row with no pending cookie, the pre-0004 semantics the NULL column keeps', async () => {
+    // A row whose nonce_hash is NULL: written before migrations/0004_login_nonce.sql, by
+    // create-cairn-site's bootstrap INSERT, or hand-seeded as a lockout recovery. The confirm
+    // passes null rather than refusing on the absent cookie, so `nonce_hash IS NULL` matches and
+    // the link still signs the editor in. Losing this would strand every such row unconfirmable.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const token = generateToken();
+    const now = Date.now();
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now + 10_000, now);
+    expect(await db.prepare('SELECT nonce_hash FROM magic_token').first<{ nonce_hash: string | null }>()).toEqual({
+      nonce_hash: null,
+    });
+
+    const redirect = await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies() })),
     );
-    expect(await countRows('magic_token')).toBe(1);
-    // The same link still works from the browser that asked for it.
+    expect(redirect.location).toBe('/admin');
+    expect(await countRows('session')).toBe(1);
+    expect(await countRows('magic_token')).toBe(0);
+  });
+
+  it('reads expired, not no-pending-request, when the cookie survives the token it was minted with', async () => {
+    // The message-priority the longer pending-cookie life exists to produce: an ordinary editor
+    // clicking a stale link arrives WITH their cookie and reads the accurate instruction.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const token = generateToken();
+    const now = Date.now();
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now - 1, now, await hashToken(PENDING_NONCE));
     const redirect = await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies(pendingSeed()) })),
     );
-    expect(redirect.location).toBe('/admin');
+    expect(redirect.location).toBe('/admin/login?error=expired');
   });
 
   it('refuses a pending cookie holding some other browser’s nonce and leaves the token unburned', async () => {

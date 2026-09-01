@@ -201,8 +201,10 @@ audience](../extend/add-a-second-audience.md) for the wiring. A shared `migratio
 cairn's auth migrations to the channel database and the channel's schema to the auth store.
 
 Every statement is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and
-`INSERT OR IGNORE` for the version row), so a database provisioned by running the DDL directly can
-adopt the file without the apply aborting on `table already exists`.
+`INSERT OR IGNORE` for the version row), so a database provisioned by running the DDL directly
+adopts the file the same way any other does: run `wrangler d1 migrations apply <channel-db>`, which
+changes nothing and records the `d1_migrations` marker itself. Insert that marker by hand only if
+you can't run the migration runner.
 
 `createAuthChannel`'s own actions only ever read the `schema_version` row back to confirm a
 channel's binding has already been migrated. None of them re-runs the migration.

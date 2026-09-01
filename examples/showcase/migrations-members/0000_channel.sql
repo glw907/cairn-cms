@@ -5,9 +5,10 @@
 -- schema to the other the first time either is migrated.
 --
 -- Every statement is idempotent. A site that provisioned this schema by running the DDL directly,
--- before the engine packaged it, can point a migrations_dir here without the apply aborting on
--- "table already exists"; that site inserts the d1_migrations marker instead of re-applying (the
--- CHANGELOG's `Consumers must:` line carries the exact step).
+-- before the engine packaged it, points a migrations_dir here and runs the ordinary
+-- `wrangler d1 migrations apply`: the apply cannot abort on "table already exists", it changes
+-- nothing, and it records the d1_migrations marker itself. Hand-inserting that marker stays the
+-- fallback for an operator who must not run the migration runner at all.
 --
 -- identity_salt is deliberately absent: it is a per-deployment random value, and a file published
 -- on npm and pinned byte for byte by a test cannot carry one, so provisionSalt writes it lazily on

@@ -56,24 +56,46 @@ real editor hammering the sign-in button doesn't flood their own inbox.
 
 ## Sign-in binds to the browser that asked
 
-A magic link only works in the browser that requested it. The request action leaves a random nonce
-in a `cairn_login_pending` cookie (`HttpOnly`, `SameSite=Lax`, `__Host-` prefixed on https, and
-ten minutes long, like the token), and stores that nonce's SHA-256 hash on the token row. The
-confirm action requires the cookie back and compares the two hashes inside the same atomic
-`DELETE` that consumes the token, so a link confirmed anywhere else is refused.
+A magic link only works in the browser that requested it. The login page's own load leaves a random
+nonce in a `cairn_login_pending` cookie (`HttpOnly`, `SameSite=Lax`, `__Host-` prefixed on https,
+and an hour long, six times the token's ten minutes), the request action reuses it, and that
+action stores the nonce's SHA-256 hash on the token row. The confirm action reads the cookie back
+and compares the two hashes inside the same atomic `DELETE` that consumes the token, so a link
+confirmed anywhere else is refused.
+
+The cookie deliberately outlives the token. The nonce is opaque, and its only meaning is the
+`nonce_hash` on a live token row, which its own ten-minute expiry sweeps, so a cookie that
+survives the row grants nothing. What the longer life buys is the ordinary late click: an editor
+opening a link fifteen minutes later still arrives carrying the cookie and reads "that link
+expired" instead of a message about a different browser.
 
 The binding closes a login-CSRF: without it, an attacker can request a link for *their own*
 address and put it in front of an editor's browser, and the editor lands in the attacker's session,
 where their next edit publishes under the attacker's account. It also stops a link-following mail
 scanner from spending an editor's link before the editor clicks it.
 
-Two properties of the refusal matter to an operator:
+Three properties of the refusal matter to an operator:
 
-* The cookie check runs **before** the consume, so a click from the wrong browser doesn't burn the
-  link. The editor's own browser can still use it.
-* A missing cookie has its own error code, `?error=no-pending-request`, distinct from `expired`,
-  and its own page copy naming the same-browser requirement. "Request a new one" is exactly the
-  advice that reproduces the failure on a second device.
+* The comparison **is** the consuming `DELETE`'s own predicate, not a check ahead of it, so a
+  click from the wrong browser doesn't burn the link. The editor's own browser can still use it.
+* A confirm from a browser holding no cookie passes SQL `NULL` rather than refusing outright. A
+  row that carries a binding then matches nothing and survives; a row with **no** binding matches
+  `nonce_hash IS NULL` and still signs the editor in.
+* Only a bound row's refusal takes the distinct `?error=no-pending-request` code, with its own
+  page copy naming this browser's missing pending sign-in. "Request a new one" alone is exactly
+  the advice that reproduces the failure on a second device. The engine exports that code as
+  `NO_PENDING_REQUEST_ERROR` from `@glw907/cairn-cms/sveltekit`, so a site rendering its own login
+  page branches on the constant.
+
+### An unbound token row is scanner-confirmable, by design
+
+A `magic_token` row whose `nonce_hash` is `NULL` confirms from any browser, exactly as every row
+did before this migration. Three things write one: a row minted by an engine older than the
+migration, `create-cairn-site`'s bootstrap `INSERT`, and a recovery row an operator seeds by hand
+to break a lockout. Each is a case where nobody's browser holds a matching nonce, so binding the
+row would make it unusable. The engine's own request action always writes a binding, so an
+unbound row is never the steady state of a running site. Treat one as what it is: a link a mail
+scanner can spend, live for the ten minutes of its own expiry.
 
 The cost is deliberate: an editor who requests a link on a desktop and opens it on a phone, or
 whose mail app opens links in a WebView with its own cookie jar, is refused and has to request the

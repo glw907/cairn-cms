@@ -191,10 +191,12 @@
   `limits: { session: { ttlMs } }`); (3) add the `ctx` parameter to `lookup` and to `verify`, and
   read the binding off `ctx.env` rather than from a captured closure; (4) copy
   `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql` into the channel binding's
-  own `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`. If the channel
-  database is ALREADY provisioned (the schema was applied by running the DDL directly, so
-  `d1_migrations` holds no row for it), insert the `d1_migrations` marker for `0000_channel.sql`
-  rather than re-applying the migration. Nothing changes for `revokeSessions`.
+  own `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`, then run
+  `wrangler d1 migrations apply <channel-db>`. Run it on an already-provisioned channel database
+  too: every statement in the file is idempotent, so the apply is a no-op against the existing
+  schema and records its own `d1_migrations` marker, which is safer than hand-inserting that
+  marker. Hand-inserting it stays available for an operator who must not run the migration runner
+  at all. Nothing changes for `revokeSessions`.
 
 - `adminAction` gains an OPT-IN `access?: { target: string; ownerOnly?: boolean }` member on its
   options bag, the authorization sequence `createSectionAction` already ran. Absent, which is
@@ -243,7 +245,12 @@
   from `@glw907/cairn-cms/delivery` instead of deriving it with
   `ReturnType<typeof createPublicRoutes>` (see the amended retires-pass line below); `AuthRoutes`,
   `EditorRoutes`, `NavRoutes`, and `SectionAction` keep their existing names and shapes, so no
-  action is needed for those beyond the type now being hand-declared rather than derived.
+  action is needed for those beyond the type now being hand-declared rather than derived. One
+  test-only consequence of the `createAuthGuard: Handle` annotation: a guard test that drives the
+  returned handle with a structural fake event no longer satisfies kit's own `Handle` parameter
+  types, so it needs an `as unknown as`-style shim on the handle before the call. The engine's own
+  suite does this once per file (`src/tests/integration/auth-guard.test.ts`'s `asHandle`) rather
+  than casting at every call site.
 
 - `createCairnAdmin` now returns a narrowed `CairnAdminRoutes`, the same Pick-composed pattern
   `ContentRoutes` (foundations-B) already established: `Pick`-composed over a new internal wide
@@ -257,9 +264,11 @@
   type-level capability withdrawal, not a runtime boundary: `createCairnAdmin` returns the same
   object `createCairnAdminInternal` builds, so every action is still present and still runs the
   session, CSRF, and view gates it always ran; a site that annotated a hand-held reference to one of
-  the ten (uncommon, since the documented mount is `export const actions = admin.actions;`) recovers
-  them with a spread (`{ ...admin.actions }`) or a cast, the same recovery `ContentRoutes`'s own
-  narrowing documented.
+  the ten (uncommon, since the documented mount is `export const actions = admin.actions;`) keeps
+  them dispatchable at runtime with a spread (`{ ...admin.actions }`), which copies the properties
+  the object still carries, and recovers them in TYPES with a cast, since a spread reproduces the
+  narrowed type rather than widening it. That is the same recovery `ContentRoutes`'s own narrowing
+  documented.
 
 - The engine ratifies a **canonical-home rule**: every exported name has exactly one declaring
   subpath, and any other barrel that publishes it does so as a recorded re-export naming that home
@@ -526,8 +535,12 @@
   `{ outcome: 'no-binding' }`, or `{ outcome: 'failed'; error }` (a throwing `limit()` no longer
   propagates; it is captured into this arm, with degrade-to-open on either `no-binding` or `failed`
   staying each caller's own decision, exactly as the retired functions' contract already stated).
-  `createSectionAction`'s inline rate-limit reimplementation now calls `resolveRateLimit`, with its
-  own `key()` try/catch and `redirect()`/`error()` rethrow guard unchanged; the three log events
+  `createSectionAction`'s inline rate-limit reimplementation now calls `resolveRateLimit`. Its
+  `redirect()`/`error()` rethrow guard still covers both throw sites, in two places rather than
+  one: the `key()` try/catch rethrows those two shapes as before, and the `failed` arm rethrows
+  `result.error` when it is one of them, since `resolveRateLimit` now captures a throwing
+  `limit()` instead of letting it propagate. `resolveRateLimit` itself stays kit-agnostic (it
+  imports no `@sveltejs/kit` symbol), so the carve-out lives at the call site. The three log events
   (`admin.action.rate_limited`, `admin.action.rate_limit_absent`, `admin.action.rate_limit_failed`)
   are unchanged. `/auth-store`: `deleteEditor` and `setEditorRole` both gain an `ownerRoles`
   parameter and fold the anti-lockout guard into their own atomic write, becoming the one call a
@@ -792,32 +805,49 @@
   `event.cookies` on one of the five actions above now sees a 500 instead of a 403 response body.
 
 - A magic link now only signs in the browser that requested it, closing the login-CSRF
-  `login-csrf-no-same-browser-binding` filed (`requestAction`/`confirmAction`). `requestAction`
-  leaves a random nonce in a `cairn_login_pending` cookie (`HttpOnly`, `SameSite=Lax`, `__Host-`
-  prefixed and `Secure` through the same `csrfSecure` derivation every cairn cookie now uses, and
-  bounded by the token's own ten-minute TTL) and stores that nonce's SHA-256 hash on the token
-  row; `consumeToken` compares the two inside its one atomic `DELETE`
-  (`AND (nonce_hash IS NULL OR nonce_hash = ?)`), so the compare never runs against a secret in
-  TypeScript. The binding is value-bound, not presence-only: a browser with a pending login of its
-  own still cannot confirm another browser's token. The cookie is minted unconditionally and
-  identically on all four `requestAction` exits (send-ok, the non-editor neutral answer, throttled,
-  send-failed), before anything branches on allowlist membership, so the response headers carry no
-  membership oracle; it is reused while unexpired rather than rotated, so a throttled resend leaves
-  the link already in the inbox confirmable; and it is deleted on a successful confirm and at
-  logout only, never on a failed confirm, which would turn one stumble into a lockout. The cookie
-  check runs before the consume, so a click from the wrong browser refuses without burning the
-  token. A confirm with no pending cookie redirects to `/admin/login?error=no-pending-request`, its
-  own code distinct from `expired`, with page copy on `LoginPage`/`ConfirmPage` naming the
-  same-browser requirement, and logs the new `auth.link.refused` event
-  (`reason: 'no_pending_cookie'`). The deliberate cost: a link requested on one device and opened
-  on another (or in a mail app's own WebView cookie jar) is refused, with re-requesting from the
-  clicking browser as the escape hatch. Consumers must: apply migration 0004 before deploying
+  `login-csrf-no-same-browser-binding` filed (`loginLoad`/`requestAction`/`confirmAction`). The
+  login load and the request action both leave a random nonce in a `cairn_login_pending` cookie
+  (`HttpOnly`, `SameSite=Lax`, `__Host-` prefixed and `Secure` through the same `csrfSecure`
+  derivation every cairn cookie now uses, and living six times the token's own ten-minute TTL) and
+  the request action stores that nonce's SHA-256 hash on the token row; `consumeToken` compares
+  the two inside its one atomic `DELETE` (`AND (nonce_hash IS NULL OR nonce_hash = ?)`), so the
+  compare never runs against a secret in TypeScript. The binding is value-bound, not
+  presence-only: a browser with a pending login of its own still cannot confirm another browser's
+  token. The cookie is set unconditionally and identically on all four `requestAction` exits
+  (send-ok, the non-editor neutral answer, throttled, send-failed), before anything branches on
+  allowlist membership, so the response headers carry no membership oracle; it is reused while
+  unexpired rather than rotated, so a throttled resend leaves the link already in the inbox
+  confirmable; and it is deleted on a successful confirm and at logout only, never on a failed
+  confirm, which would turn one stumble into a lockout. Minting it in `loginLoad` too means a
+  browser holds a nonce before it POSTs anything, so two concurrent cookie-less requests cannot
+  each mint one and strand the surviving token against the losing cookie; the cookie outliving
+  its token grants nothing, since the nonce is opaque and its only meaning is the `nonce_hash` on
+  a live row, and it buys the ordinary case where a late click arrives carrying the cookie and
+  reads "that link expired" rather than a false different-browser message.
+
+  The binding check IS the consuming `DELETE`'s own predicate, never a short-circuit ahead of it,
+  so a click from the wrong browser refuses without burning the token: the row is not deleted
+  unless its `nonce_hash` matches. A confirm carrying no pending cookie passes `null` rather than
+  refusing outright, which is what keeps an UNBOUND row (`nonce_hash IS NULL`: written before this
+  migration, by `create-cairn-site`'s bootstrap `INSERT`, or hand-seeded as a lockout recovery)
+  confirmable on its pre-migration terms. Only a bound row redirects to
+  `/admin/login?error=no-pending-request`, its own code distinct from `expired`, with page copy on
+  `LoginPage`/`ConfirmPage` naming this browser's missing pending sign-in, and logs the new
+  `auth.link.refused` event (`reason: 'no_pending_cookie'`). That error code is now exported as
+  `NO_PENDING_REQUEST_ERROR` from `@glw907/cairn-cms/sveltekit`, so both pages and a site's own
+  login page branch on the constant rather than a duplicated string literal; the wire value is
+  unchanged. The deliberate cost: a link requested on one device and opened on another (or in a
+  mail app's own WebView cookie jar) is refused, with re-requesting from the clicking browser as
+  the escape hatch. Consumers must: apply migration 0004 before deploying
   (`cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/` then
   `npx wrangler d1 migrations apply <auth-db> --remote`). An un-migrated `AUTH_DB` is a total login
   outage with no second channel, since every confirm names the `nonce_hash` column;
   `npx cairn doctor`'s `auth.store` check now fails when the column is absent, so run it before the
-  deploy. The column is nullable and a row without a binding still confirms, so applying the
-  migration cannot strand a link already in an inbox.
+  deploy, and if a deploy slips through anyway the store maps D1's `no such column: nonce_hash`
+  onto the new `auth.store-unmigrated` condition, whose message names the migration to apply,
+  rather than leaving a bare 500 on the login POST. The column is nullable and a row without a
+  binding still confirms, whatever the confirming browser carries, so applying the migration
+  cannot strand a link already in an inbox.
 
 ## 0.96.0
 

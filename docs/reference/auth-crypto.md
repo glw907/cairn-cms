@@ -145,8 +145,16 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
   consume is the pattern to copy:
 
   ```sql
-  DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email
+  DELETE FROM magic_token
+  WHERE token_hash = ? AND expires_at > ? AND (nonce_hash IS NULL OR nonce_hash = ?)
+  RETURNING email
   ```
+
+  The third predicate is the same-browser binding: the third parameter is the hash of the nonce
+  the confirming browser carries in its pending-login cookie, so a link opened anywhere else
+  matches no row and the requesting browser's own link survives. `nonce_hash IS NULL` keeps a row
+  written before that column existed confirmable. Comparing in SQL rather than in TypeScript is
+  deliberate: no `===` runs against a secret.
 
 - Send a token in a POST body, never in a URL: a URL lands in server access logs, browser
   history, and the `Referer` header of any outbound link the landing page renders.

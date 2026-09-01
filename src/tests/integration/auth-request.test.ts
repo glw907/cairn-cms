@@ -168,7 +168,11 @@ describe('login nonce cookie (same-browser binding)', () => {
 
     for (const jar of [sendOk, throttled, neutral, sendFailed]) {
       const set = pendingSet(jar);
-      expect(set.opts).toEqual({ path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 600 });
+      // maxAge is six times the token's own ten-minute TTL: the cookie holds an opaque nonce whose
+      // server-side binding dies with the token row, so outliving the row grants nothing, and an
+      // ordinary late click then arrives WITH the cookie and reads "expired" rather than the false
+      // "different browser" message.
+      expect(set.opts).toEqual({ path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 3600 });
       expect(set.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
     }
   });
@@ -210,20 +214,38 @@ describe('login nonce cookie (same-browser binding)', () => {
     expect(redirect.location).toBe('/admin');
   });
 
-  it('leaves the surviving cookie confirming the surviving token across two cookie-less concurrent requests', async () => {
-    // The pending-cookie analogue of the CSRF double-mint WATCH: one browser, no cookie yet, two
-    // request POSTs in flight. Whichever token row survives must be bound to the nonce the jar
-    // ends up holding.
+  it('mints the pending cookie in loginLoad, so a browser holds a nonce before it POSTs anything', async () => {
+    const { routes } = routesWithSink();
+    const cookies = makeRecordingCookies();
+    routes.loginLoad(makeEvent({ url: 'https://test.dev/admin/login', cookies }));
+    const set = pendingSet(cookies);
+    expect(set.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(set.opts).toEqual({ path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 3600 });
+  });
+
+  it('leaves the loginLoad-minted nonce binding the surviving token across two concurrent POSTs', async () => {
+    // The deployed shape a single shared in-process jar cannot model: each concurrent request
+    // reads the Cookie header the browser sent at request start, never the other request's own
+    // Set-Cookie, which is why two cookie-less POSTs could each mint a nonce and strand the
+    // surviving token against the losing one. Two separate jars seeded from one browser's
+    // cookies is that shape. loginLoad minted the nonce when the form rendered, so both requests
+    // read the same value and the surviving row is bound to what the browser still holds.
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const { routes, sent } = routesWithSink();
-    const cookies = makeRecordingCookies();
+
+    const browser = makeRecordingCookies();
+    routes.loginLoad(makeEvent({ url: 'https://test.dev/admin/login', cookies: browser }));
+    const minted = pendingSet(browser).value;
+
+    const first = makeRecordingCookies({ [pending]: minted });
+    const second = makeRecordingCookies({ [pending]: minted });
     await Promise.all([
-      routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies })),
-      routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies })),
+      routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: first })),
+      routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: second })),
     ]);
+    expect(pendingSet(first).value).toBe(minted);
+    expect(pendingSet(second).value).toBe(minted);
     expect(await countRows('magic_token')).toBe(1);
-    const values = new Set(cookies.sets.filter((s) => s.name === pending).map((s) => s.value));
-    expect(values.size).toBe(1);
 
     const surviving = await db.prepare('SELECT token_hash FROM magic_token').first<{ token_hash: string }>();
     const hashes = await Promise.all(sent.map((message) => hashToken(tokenOf(message))));
@@ -231,7 +253,11 @@ describe('login nonce cookie (same-browser binding)', () => {
     expect(index).toBeGreaterThanOrEqual(0);
     const redirect = await expectRedirect(() =>
       routes.confirmAction(
-        makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: tokenOf(sent[index]) }, cookies }),
+        makeEvent({
+          url: 'https://test.dev/admin/auth/confirm',
+          form: { token: tokenOf(sent[index]) },
+          cookies: browser,
+        }),
       ),
     );
     expect(redirect.location).toBe('/admin');

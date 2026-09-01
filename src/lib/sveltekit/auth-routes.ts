@@ -80,12 +80,52 @@ export interface ConfirmData {
 const LOGIN_PENDING_COOKIE_BASE = 'cairn_login_pending';
 
 /**
- * The `?error=` code a confirm from a browser carrying no pending-login cookie redirects with,
- * deliberately distinct from `expired`. Absence is a statement about the requester's own browser,
- * not about the link, and the two need different instructions: "request a new one" is the exact
- * advice that reproduces the failure for someone clicking on a second device.
+ * The `?error=` code a confirm redirects with when this browser carries no pending-login cookie
+ * and the token row it submitted is bound to some other browser's nonce, deliberately distinct
+ * from `expired`. The two need different instructions: "request a new one" is the exact advice
+ * that reproduces the failure for someone clicking on a second device.
+ *
+ * Exported so `LoginPage` and `ConfirmPage` branch on this value rather than on a duplicated
+ * string literal. The wire format is the literal below, so a site rendering its own login page
+ * may compare `data.error` against it too.
  */
-const NO_PENDING_REQUEST_ERROR = 'no-pending-request';
+export const NO_PENDING_REQUEST_ERROR = 'no-pending-request';
+
+/**
+ * How long the pending-login cookie outlives the token it was minted alongside, as a multiple of
+ * {@link TOKEN_TTL_MS}. The cookie holds an opaque nonce whose only meaning is the `nonce_hash`
+ * on a live token row, and a row dies with its own ten-minute TTL, so a cookie that outlives it
+ * grants nothing. What the longer life buys is the ordinary case: an editor who clicks a link
+ * after the token expired arrives WITH their cookie and reads "that link expired" rather than the
+ * false "different browser" message a cookie-less arrival produces.
+ */
+const PENDING_COOKIE_TTL_MULTIPLE = 6;
+
+/**
+ * Reuse this browser's unexpired pending-login nonce or mint a fresh one, and (re)set the cookie
+ * that carries it. Both the login load and the request action call it, so a browser holds a nonce
+ * from the moment it renders the sign-in form, before it has POSTed anything: two concurrent
+ * cookie-less POSTs can otherwise mint two nonces, and whichever `Set-Cookie` the browser keeps
+ * last may not be the one the surviving token row is bound to.
+ *
+ * Reuse-unexpired-or-mint, never unconditional rotation: a browser never sends back an expired
+ * cookie, so a value that arrives is live, and rotating it on a throttled resend would point the
+ * browser at a nonce no live token is bound to, locking the editor out of the link already in
+ * their inbox. The read and the write sit in one synchronous step with no await between them.
+ */
+function mintOrReusePendingNonce(event: CairnEvent): string {
+  const secure = csrfSecure({ url: event.url, platform: event.platform });
+  const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+  const nonce = event.cookies.get(pendingCookie) ?? generateToken();
+  event.cookies.set(pendingCookie, nonce, {
+    path: '/',
+    httpOnly: true,
+    secure,
+    sameSite: 'lax',
+    maxAge: Math.floor((TOKEN_TTL_MS * PENDING_COOKIE_TTL_MULTIPLE) / 1000),
+  });
+  return nonce;
+}
 
 /**
  * The loggable form of a send failure. The engine's own senders throw clean errors, but `send` is
@@ -126,28 +166,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     log.info('auth.link.requested', { email: email.slice(0, 320) });
 
     const now = Date.now();
-    // The pending-login nonce, minted BEFORE anything branches on whether this email is an
-    // editor, so all four exits below (send-ok, the non-editor neutral answer, throttled, and
+    // The pending-login nonce, set BEFORE anything branches on whether this email is an editor,
+    // so all four exits below (send-ok, the non-editor neutral answer, throttled, and
     // send-failed) carry one byte-identical Set-Cookie. A cookie emitted only on the editor path
     // would be a one-request allowlist oracle sitting in the response headers, which is exactly
     // the leak the neutral answer exists to close. Only the server-side binding rides token issue.
-    //
-    // Reuse-unexpired-or-mint, never unconditional rotation: a browser never sends back an
-    // expired cookie, so a value that arrives is live, and rotating it on a throttled resend
-    // would point the browser at a nonce no live token is bound to, locking the editor out of
-    // the link already in their inbox. The read and the write sit in one synchronous step with
-    // no await between them, so two concurrent cookie-less requests cannot mint two nonces and
-    // strand the surviving token against the losing cookie.
-    const secure = csrfSecure({ url: event.url, platform: event.platform });
-    const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
-    const nonce = event.cookies.get(pendingCookie) ?? generateToken();
-    event.cookies.set(pendingCookie, nonce, {
-      path: '/',
-      httpOnly: true,
-      secure,
-      sameSite: 'lax',
-      maxAge: Math.floor(TOKEN_TTL_MS / 1000),
-    });
+    // `loginLoad` already ran this for any browser that rendered the sign-in form, so the usual
+    // case here is a reuse, not a mint.
+    const nonce = mintOrReusePendingNonce(event);
 
     // Bootstrap: an empty allowlist plus a matching configured owner inserts the owner row
     // atomically, before the lookup below, so the normal flow finds it and proceeds exactly as
@@ -193,8 +219,16 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     return { status: 'sent', sent: true };
   }
 
-  /** GET /admin/login. Public. Carries the site name, an optional `?error`, and the CSRF token. */
+  /**
+   * GET /admin/login. Public. Carries the site name, an optional `?error`, and the CSRF token.
+   *
+   * It also leaves the pending-login nonce in this browser, the same reuse-or-mint the CSRF token
+   * already gets, so the browser holds one before it POSTs anything. Two concurrent cookie-less
+   * POSTs would otherwise each mint their own nonce, and the browser keeps only one of the two
+   * `Set-Cookie` values, which may not be the one the surviving token row is bound to.
+   */
   function loginLoad(event: CairnEvent): LoginData {
+    mintOrReusePendingNonce(event);
     return {
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
@@ -223,11 +257,18 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * valid token yields the email; the handler creates a session, sets the cookie, and redirects
    * to /admin. An invalid, replayed, or expired token redirects to the login page.
    *
-   * The same-browser check runs BEFORE the consume, so a link opened in another browser (a
-   * forwarded message, a mail scanner following the link, an attacker putting their own link in
-   * front of a victim) refuses without burning the token the requesting browser can still use.
-   * A missing cookie takes its own error code; a present-but-wrong nonce is indistinguishable
-   * from a stale link and reads as expired.
+   * The same-browser check lives inside the consuming `DELETE`'s own predicate, so a link opened
+   * in another browser (a forwarded message, a mail scanner following the link, an attacker
+   * putting their own link in front of a victim) refuses without burning the token the requesting
+   * browser can still use: the row is not deleted unless its `nonce_hash` matches.
+   *
+   * A browser carrying no pending cookie is NOT short-circuited before the consume. It passes
+   * `null`, which is exactly what an unbound row (`nonce_hash IS NULL`, written before
+   * migrations/0004_login_nonce.sql, by `create-cairn-site`'s bootstrap INSERT, or by a
+   * hand-seeded recovery row) needs in order to stay confirmable; a bound row compares against
+   * NULL in SQL, which is never true, so it is neither consumed nor confirmed and the handler
+   * falls through to the no-pending-request redirect below. A present-but-wrong nonce is
+   * indistinguishable from a stale link and reads as expired.
    */
   async function confirmAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
@@ -241,17 +282,25 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     const secure = csrfSecure({ url: event.url, platform: event.platform });
     const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
     const nonce = event.cookies.get(pendingCookie);
-    if (!nonce) {
-      log.warn('auth.link.refused', { reason: 'no_pending_cookie' });
-      throw redirect(303, `/admin/login?error=${NO_PENDING_REQUEST_ERROR}`);
-    }
 
     const now = Date.now();
-    const email = await consumeToken(db, await hashToken(token), now, await hashToken(nonce));
+    const email = await consumeToken(db, await hashToken(token), now, nonce ? await hashToken(nonce) : null);
     // A failed confirm leaves the pending cookie alone. Deleting it here would turn one mistyped
     // or stale attempt into a lockout: the next click would refuse for the absent cookie instead,
     // and the editor would have to notice they must request the link again from this browser.
-    if (!email) throw redirect(303, '/admin/login?error=expired');
+    //
+    // Which refusal the editor reads is decided here, after the consume, since only the consume's
+    // own predicate knows whether the row was bound. A cookie-less browser that failed against a
+    // bound row gets the distinct no-pending-request code, because "request a new one" is the
+    // exact advice that reproduces the failure on a second device; everything else, including a
+    // present-but-wrong nonce, reads as expired.
+    if (!email) {
+      if (!nonce) {
+        log.warn('auth.link.refused', { reason: 'no_pending_cookie' });
+        throw redirect(303, `/admin/login?error=${NO_PENDING_REQUEST_ERROR}`);
+      }
+      throw redirect(303, '/admin/login?error=expired');
+    }
     log.info('auth.token.confirmed', { email });
 
     const id = generateSessionId();

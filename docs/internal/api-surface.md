@@ -544,6 +544,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavNode`: { label: string; url?: string; children?: NavNode[] }
 - `NavRoutes`: { navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>; navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>> }
 - `NavSaveFailure`: { error: string }
+- `NO_PENDING_REQUEST_ERROR`: "no-pending-request"
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `OrphanByteRow`: { key: string; hash: string }

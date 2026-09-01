@@ -940,6 +940,33 @@ export const load = auth.loginLoad;
 export const actions = { request: auth.requestAction };
 ```
 
+### `NO_PENDING_REQUEST_ERROR`
+
+Stability tier: Unstable API.
+
+```ts
+declare const NO_PENDING_REQUEST_ERROR: 'no-pending-request';
+```
+
+The `?error=` code `confirmAction` redirects with when the confirming browser carries no
+pending-login cookie and the submitted token is bound to another browser's nonce. It's distinct
+from `expired` because the two need different instructions: telling someone to request a new link
+reproduces the refusal on a second device, so the copy has to name this browser.
+
+`LoginPage` and `ConfirmPage` branch on this constant, and a site rendering its own login page
+compares `data.error` against it rather than against a copied string literal. The wire value is the
+preceding literal, and it doesn't change with the constant's name.
+
+```ts
+import { NO_PENDING_REQUEST_ERROR } from '@glw907/cairn-cms/sveltekit';
+
+function signInMessage(error: string | null): string {
+  return error === NO_PENDING_REQUEST_ERROR
+    ? 'This browser has no pending sign-in. Request a new link and open it here.'
+    : 'That link expired.';
+}
+```
+
 ### `createEditorRoutes`
 
 Stability tier: Unstable API.

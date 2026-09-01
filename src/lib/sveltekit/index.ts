@@ -6,6 +6,7 @@
 export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess, type AuthGuardOptions } from './guard.js';
 export {
   createAuthRoutes,
+  NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
   type RequestResult,
   type AuthRoutes,

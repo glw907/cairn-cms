@@ -213,6 +213,11 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
  * never a cookie value.
  */
 export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
+  // WATCH: this branch is unreachable from any well-typed caller, since `cookies` is declared
+  // non-nullable, so it is untested by construction. It goes live the moment CookieJar (or this
+  // parameter) widens to admit null or undefined, and the consequence is worth remembering
+  // before that happens: a hand-mounted route calling the CSRF helpers directly gets a raw 500
+  // here rather than the 403 the guard's own path produces.
   if (!event.cookies) throw new Error('cairn: no cookie jar on this event');
   return event.cookies;
 }

@@ -95,15 +95,25 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-two entries', () => {
+  it('resolves the un-migrated auth-store condition (the login POST no longer 500s bare)', () => {
+    const c = condition('auth.store-unmigrated');
+    expect(c.severity).toBe('blocker');
+    expect(c.why).toMatch(/nonce_hash/);
+    expect(c.remediation).toMatch(/0004_login_nonce\.sql/);
+    expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+    expect(c.logEvent).toBeUndefined();
+  });
+
+  it('pins the registry at twenty-three entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
     // skill.admin-screens-stale for the packaged skill's doctor delivery, plus
     // config.no-referrer-blanket for the blanket no-referrer doctor check, minus the retired
     // edge.hsts-off, plus config.tidy-key-missing (its own condition id, no longer borrowing
-    // config.bindings-missing). Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(22);
+    // config.bindings-missing), plus auth.store-unmigrated for the missing-0004 login fault the
+    // store now names. Grow this count only with a registry change.
+    expect(allConditions()).toHaveLength(23);
   });
 
   it('resolves the tidy-key condition (its own id, no longer borrowing config.bindings-missing)', () => {

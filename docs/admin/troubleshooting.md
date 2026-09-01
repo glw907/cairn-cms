@@ -41,11 +41,17 @@ sign-in links right now" both only ever show for an address that's already on yo
 your person quotes either one back to you, the problem isn't the invite; move on to the sending
 domain and the auth store checks above.
 
-A third message points somewhere else entirely: "That link was opened in a different browser than
-the one that asked for it." A sign-in link only works in the browser that requested it, so asking
-on a laptop and opening the mail on a phone refuses by design. Tell the person to request the link
-from the browser they'll open it in, then use that new link there. The mail apps that open links in
-their own built-in viewer are the usual cause.
+A third message points somewhere else entirely: "This browser has no pending sign-in." A sign-in
+link only works in the browser that requested it, so asking on a laptop and opening the mail on a
+phone refuses by design. Tell the person to request a new link and open it in the same browser. The
+mail apps that open links in their own built-in viewer are the usual cause.
+
+If your site has exactly one owner and that owner is locked out entirely, a developer can seed a
+recovery link directly in `AUTH_DB`: insert a `magic_token` row with the owner's email, the SHA-256
+hash of a link token, an `expires_at` a few minutes out, and `nonce_hash` left `NULL`. A row with no
+`nonce_hash` confirms from any browser, which is the whole point of the escape hatch and also why it
+should expire quickly. Details are in
+[the security model](../extend/security-model.md#an-unbound-token-row-is-scanner-confirmable-by-design).
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`,
 `auth.link.refused`.

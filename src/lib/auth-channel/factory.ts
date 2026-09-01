@@ -449,8 +449,11 @@ async function refundGateCharge(
  * Degrades to open on an absent binding (`auth.channel.rate_limit_absent`) or a throwing
  * `key()`/`limit()` call (`auth.channel.rate_limit_failed`), mirroring `section-action.ts`'s own
  * rate-limit branch exactly, including the one exception: a thrown SvelteKit `redirect()` or
- * `error()` from a site-supplied `key()` override rethrows untouched rather than degrading, since
- * a site relying on either as control flow must not be silently swallowed. Returns false, having
+ * `error()` rethrows untouched rather than degrading, from a site-supplied `key()` override and
+ * from the binding's own `limit()` alike, since a site relying on either as control flow must not
+ * be silently swallowed. `section-action.ts` reaches the same place by two routes, since
+ * `resolveRateLimit` captures a throwing `limit()` into its `failed` arm and that call site
+ * rethrows the two shapes off the arm. Returns false, having
  * logged `auth.channel.rate_limited`, only when the binding itself denies
  * (`result?.success !== true`, so a malformed non-boolean response reads as blocked, not a pass).
  */
@@ -666,6 +669,14 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // Step 7: reuse the unexpired _pending cookie when present (a browser never sends back an
     // expired one), or mint a fresh nonce. mintCode's own conditional upsert is the sole
     // authority on whether a reused nonce's cooldown has elapsed.
+    //
+    // `secure` here is the bare url.protocol test, deliberately NOT the engine's own csrfSecure,
+    // which can raise a non-https request's answer through PUBLIC_ORIGIN. Every channel write
+    // path runs assertOriginAndScheme first, and that fails http closed on any non-local host, so
+    // the only requests reaching this line over http are local dev, where a Secure cookie would
+    // be discarded by the browser anyway. A weak-cookie mint on a deployed host is therefore
+    // unreachable rather than merely unlikely. This divergence, and checkChannelRateLimit's from
+    // resolveRateLimit, are recorded fold candidates for pass 4b, not accidents.
     const secure = event.url.protocol === 'https:';
     const pendingCookie = cookieName(pendingBase, secure);
     const existingNonce = event.cookies.get(pendingCookie);

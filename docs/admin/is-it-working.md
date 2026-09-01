@@ -350,7 +350,7 @@ declares it.
 
 ## Provision the auth store
 
-Four related conditions, all about the database that tracks who can sign in.
+Five related conditions, all about the database that tracks who can sign in.
 
 **`auth.store-unreachable`, a blocker.** Your `AUTH_DB` database is missing, doesn't carry the
 sign-in tables, or holds no owner row at all, so no sign-in link can be minted for anyone. A site
@@ -363,6 +363,15 @@ an actual fail here almost always means a hand-wired site.
 `0004_login_nonce.sql` adds the column sign-in links bind to), seed the owner row, and
 confirm the `AUTH_DB` binding in `wrangler.jsonc` points at the right database. See
 [Add cairn to a SvelteKit app](../extend/add-cairn-to-a-sveltekit-app.md).
+
+**`auth.store-unmigrated`, a blocker.** Your `AUTH_DB` is missing
+`migrations/0004_login_nonce.sql`, which adds the column every sign-in link binds itself to, so
+each attempt to sign in fails outright. Unlike the four others, `cairn-doctor` never reports this
+one by name at run time: the `Auth store (D1)` check catches the same gap before you deploy, and
+after a deploy the site answers with the condition itself the first time somebody tries to sign in.
+
+**Ask a developer:** copy `migrations/0004_login_nonce.sql` out of the package into the site's own
+`migrations` directory and run `wrangler d1 migrations apply <db> --remote`.
 
 **`auth.unknown-role`, a warning.** An editor's row carries a role name your site doesn't
 declare, usually from a pruned configuration or a hand-edited database row. That person can still

@@ -134,9 +134,10 @@ from the one your site's `AUTH_DB` uses:
 A shared `migrations_dir` runs cairn's own auth migrations against the channel database, and the
 channel's schema against the site's auth store, the first time you apply either. Copy the engine's
 packaged migration, `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql`, into that
-separate directory and apply it with `wrangler d1 migrations apply MEMBER_DB`. Every statement in
-it is idempotent, so a database you provisioned by hand before the file shipped can adopt it: insert
-the `d1_migrations` marker for `0000_channel.sql` rather than re-applying. See [the auth channel
+separate directory and apply it with `wrangler d1 migrations apply MEMBER_DB`. Run that same command
+on a database you provisioned by hand before the file shipped: every statement is idempotent, so the
+apply changes nothing and records the `d1_migrations` marker for you. Insert that marker by hand only
+if you can't run the migration runner. See [the auth channel
 reference](../reference/auth-channel.md#the-packaged-migration) for what the schema holds.
 
 Test the channel against a real D1-shaped double with `@glw907/cairn-cms-dev`'s

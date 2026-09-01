@@ -18,6 +18,8 @@ import {
   insertOwnerIfEmpty,
 } from '../../lib/auth/store.js';
 import { insertPreviewToken, findPreviewToken } from '../../lib/auth/preview-store.js';
+import { CairnError } from '../../lib/diagnostics/error.js';
+import type { D1Database } from '@cloudflare/workers-types';
 
 const db = env.AUTH_DB;
 
@@ -472,5 +474,45 @@ describe('email normalization (the store owns it)', () => {
 
     await createSession(db, 'sid-mixed', 'Ed@X.dev', now + 10_000, now);
     expect((await resolveSession(db, 'sid-mixed', now))?.email).toBe('ed@x.dev');
+  });
+});
+
+describe('an un-migrated AUTH_DB fails as a named condition', () => {
+  // A site that deployed the nonce-binding engine without migrations/0004_login_nonce.sql: D1
+  // answers both statements that name the column with "no such column: nonce_hash", which reached
+  // the editor as a bare 500 on the login POST and named nothing an operator could act on.
+  const noSuchColumn = new Error('D1_ERROR: no such column: nonce_hash at offset 42');
+
+  /** A D1 double whose every statement rejects the way an un-migrated database does. */
+  function unmigratedDb(): D1Database {
+    const statement = { bind: () => statement, run: () => Promise.reject(noSuchColumn), first: () => Promise.reject(noSuchColumn) };
+    return {
+      prepare: () => statement,
+      batch: () => Promise.reject(noSuchColumn),
+    } as unknown as D1Database;
+  }
+
+  it('names migration 0004 when issueToken hits the missing column', async () => {
+    const err = await issueToken(unmigratedDb(), 'ed@x.dev', 'hash', Date.now() + 10_000, Date.now(), 'nonce').catch(
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(CairnError);
+    expect((err as CairnError).conditionId).toBe('auth.store-unmigrated');
+    expect((err as CairnError).message).toContain('migrations/0004_login_nonce.sql');
+    expect((err as CairnError).cause).toBe(noSuchColumn);
+  });
+
+  it('names migration 0004 when consumeToken hits the missing column', async () => {
+    const err = await consumeToken(unmigratedDb(), 'hash', Date.now()).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CairnError);
+    expect((err as CairnError).conditionId).toBe('auth.store-unmigrated');
+    expect((err as CairnError).message).toContain('migrations/0004_login_nonce.sql');
+  });
+
+  it('rethrows any other D1 fault untouched, so the mapping stays narrow', async () => {
+    const other = new Error('D1_ERROR: network unreachable');
+    const statement = { bind: () => statement, first: () => Promise.reject(other) };
+    const db = { prepare: () => statement } as unknown as D1Database;
+    await expect(consumeToken(db, 'hash', Date.now())).rejects.toBe(other);
   });
 });

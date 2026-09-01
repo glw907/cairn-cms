@@ -268,7 +268,8 @@ describe('auth.store', () => {
     expect(calls).toHaveLength(3);
     const bodies = calls.map((c) => JSON.parse(String(c.init?.body)) as { sql: string; params?: unknown[] });
     expect(bodies[0].sql).toContain("type='table'");
-    expect(bodies[1].sql).toContain('table_info(magic_token)');
+    // The table-valued pragma read as a plain SELECT, the shape the D1 REST /query endpoint takes.
+    expect(bodies[1].sql).toBe("SELECT name FROM pragma_table_info('magic_token')");
     expect(bodies[2].sql).toContain('role IN (?)');
     expect(bodies[2].params).toEqual(['owner']);
     expect(calls.every((c) => bearer(c) === 'Bearer tok')).toBe(true);

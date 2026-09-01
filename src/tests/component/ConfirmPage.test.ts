@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ConfirmPage from '../../lib/components/ConfirmPage.svelte';
+import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-routes.js';
 
 describe('ConfirmPage', () => {
   it('renders a POST confirm form carrying the token and a CSRF field', async () => {
@@ -15,12 +16,15 @@ describe('ConfirmPage', () => {
     await expect.element(screen.getByText(/expired|invalid/i)).toBeInTheDocument();
   });
 
-  it('names the same-browser requirement instead of the expired copy for a link opened elsewhere', async () => {
+  it('names the same-browser requirement instead of the expired copy when no sign-in is pending here', async () => {
     const screen = await render(ConfirmPage, {
-      data: { token: 'tok123', siteName: 'Test Site', error: 'no-pending-request', csrf: 'csrf-tok' },
+      data: { token: 'tok123', siteName: 'Test Site', error: NO_PENDING_REQUEST_ERROR, csrf: 'csrf-tok' },
     });
-    await expect.element(screen.getByText(/browser you.ll open it in/i)).toBeInTheDocument();
+    // The heading states only what the engine knows; it never asserts a second browser.
+    await expect.element(screen.getByRole('heading', { name: /this browser has no pending sign-in/i })).toBeInTheDocument();
+    await expect.element(screen.getByText(/open it in this browser/i)).toBeInTheDocument();
     expect(screen.container.textContent ?? '').not.toMatch(/invalid or expired/i);
+    expect(screen.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
   });
 
   it("shows the action's own error, not the generic expired-link copy, on an unexpected confirm failure", async () => {

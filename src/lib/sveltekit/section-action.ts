@@ -233,7 +233,8 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
           // hand-rolled auth check inside key(), say) must not be swallowed into a degrade-to-open
           // pass, mirroring adminAction's own audit-sink guard (./admin-action.js) exactly:
           // rethrow both untouched before logging. resolveRateLimit captures a throwing limit()
-          // into its own 'failed' arm, so this catch only ever fires for a throwing key().
+          // into its own 'failed' arm, so this catch only ever fires for a throwing key(); the
+          // same rethrow for a throwing limit() rides that arm below.
           let key: string | undefined;
           try {
             key = config.rateLimit.key(ctx);
@@ -249,6 +250,13 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
           if (key !== undefined) {
             const result = await resolveRateLimit(limiter, key);
             if (result.outcome === 'failed') {
+              // The same control-flow carve-out the key() catch above applies, on the arm
+              // resolveRateLimit captures a throwing limit() into. resolveRateLimit stays
+              // kit-agnostic by design (it lives under ../cloudflare and imports no kit
+              // symbol), so the rethrow has to happen here, at the one call site that knows
+              // about kit: a limiter that throws redirect() or error() is a site's own hard
+              // stop, and degrading it to open would run the handler the site meant to refuse.
+              if (isRedirect(result.error) || isHttpError(result.error)) throw result.error;
               log.warn('admin.action.rate_limit_failed', {
                 path,
                 action: opts.action,

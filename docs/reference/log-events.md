@@ -16,7 +16,7 @@ in production, see the [read cairn's logs guide](../admin/troubleshooting.md).
 |---|---|---|---|
 | `auth.link.requested` | info | The login view's `?/request` action runs (`POST /admin/login?/request`). | `email` |
 | `auth.token.minted` | info | A token is issued for an allow-listed editor. | `email`, `expiresAt` |
-| `auth.link.refused` | warn | A confirm arrives from a browser carrying no pending-login cookie, so it can't be the browser that requested the link. The check runs before the consume, so the token survives, and the confirm redirects to `/admin/login?error=no-pending-request`. | `reason` (`no_pending_cookie`) |
+| `auth.link.refused` | warn | A confirm arrives from a browser carrying no pending-login cookie and the token is bound to another browser's nonce, so it can't be the browser that requested the link. The binding is the consuming `DELETE`'s own predicate, so the token survives, and the confirm redirects to `/admin/login?error=no-pending-request`. An unbound token row (`nonce_hash IS NULL`) confirms instead and logs nothing here. | `reason` (`no_pending_cookie`) |
 | `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |
 | `auth.session.created` | info | A session row is created after a confirm. | `email` |

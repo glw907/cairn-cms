@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import LoginPage from '../../lib/components/LoginPage.svelte';
+import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-routes.js';
 
 describe('LoginPage', () => {
   it('renders an email form posting to the request action with a CSRF field', async () => {
@@ -51,16 +52,41 @@ describe('LoginPage', () => {
     expect(screen.container.textContent).not.toMatch(/that link expired/i);
   });
 
-  it('names the same-browser requirement when the link was opened in another browser', async () => {
+  it('names the same-browser requirement when this browser holds no pending sign-in', async () => {
     // Distinct from the expired copy on purpose: "request a new one" is exactly the instruction
     // that reproduces the failure for someone who asks on a desktop and clicks on a phone.
     const screen = await render(LoginPage, {
-      data: { siteName: 'Test Site', error: 'no-pending-request', csrf: 'csrf-tok' },
+      data: { siteName: 'Test Site', error: NO_PENDING_REQUEST_ERROR, csrf: 'csrf-tok' },
       form: null,
     });
-    await expect.element(screen.getByText(/browser you.ll open it in/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/no pending sign-in/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/open it in this browser/i)).toBeInTheDocument();
     expect(screen.container.textContent).not.toMatch(/that link expired/i);
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+  });
+
+  it('gives each refusal its own title and a focusable alert, the JS-free landing signal', async () => {
+    // A redirect lands here carrying its reason only in a query string. The title is what a
+    // screen reader announces first, and tabindex="-1" lets an assistive technology move straight
+    // to the refusal instead of reading down to it.
+    const noPending = await render(LoginPage, {
+      data: { siteName: 'Test Site', error: NO_PENDING_REQUEST_ERROR, csrf: 'csrf-tok' },
+      form: null,
+    });
+    expect(document.title).toBe('No pending sign-in · Cairn');
+    expect(noPending.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
+    noPending.unmount();
+
+    const expired = await render(LoginPage, {
+      data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' },
+      form: null,
+    });
+    expect(document.title).toBe('Sign-in link expired · Cairn');
+    expect(expired.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
+    expired.unmount();
+
+    await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
+    expect(document.title).toBe('Sign in · Cairn');
   });
 
   it('shows a send-error warning and keeps the form available', async () => {

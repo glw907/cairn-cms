@@ -149,6 +149,15 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		remediation: 'Create the database, apply the auth schema with `wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and check the AUTH_DB binding id in wrangler.jsonc.',
 		docsAnchor: 'is-it-working.md#provision-the-auth-store',
 	},
+	'auth.store-unmigrated': {
+		id: 'auth.store-unmigrated',
+		severity: 'blocker',
+		title: 'Auth store is missing a login migration',
+		why: 'Every sign-in writes and reads magic_token.nonce_hash, the column that binds a magic link to the browser that asked for it, so an AUTH_DB without migrations/0004_login_nonce.sql answers each login with a bare D1 "no such column" fault and nobody can sign in.',
+		remediation:
+			'Copy migrations/0004_login_nonce.sql from the package into the site\'s own migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`.',
+		docsAnchor: 'is-it-working.md#provision-the-auth-store',
+	},
 	'auth.unknown-role': {
 		id: 'auth.unknown-role',
 		severity: 'warning',

@@ -9,8 +9,28 @@
 // consumer provisioning an editor from an address as a user typed it would otherwise write a shadow
 // row that can never sign in yet still counts toward the last-owner guards.
 import type { D1Database } from '@cloudflare/workers-types';
+import { CairnError } from '../diagnostics/error.js';
 
 type EditorCols = { email: string; display_name: string; role: string };
+
+/**
+ * Rethrow the one D1 fault a correct deployment can still produce as a named condition. An
+ * `AUTH_DB` that never received migrations/0004_login_nonce.sql answers both the token issue and
+ * the token consume with `no such column: nonce_hash`, which reaches the editor as a bare 500 on
+ * the login POST and tells the operator nothing. The two statements that name the column route
+ * their failure through here so the message names the migration to apply; anything else rethrows
+ * untouched, since this module diagnoses nothing it does not recognize.
+ */
+function rethrowStoreFailure(err: unknown): never {
+  if (/no such column:?\s*(?:\w+\.)?nonce_hash/i.test(String(err))) {
+    throw new CairnError('auth.store-unmigrated', {
+      cause: err,
+      message:
+        'cairn: AUTH_DB has no magic_token.nonce_hash column; apply migrations/0004_login_nonce.sql before signing in',
+    });
+  }
+  throw err;
+}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -54,15 +74,19 @@ export async function issueToken(
   nonceHash: string | null = null,
 ): Promise<void> {
   const key = normalizeEmail(email);
-  await db.batch([
-    // Replace this email's prior token, and sweep any expired token while here (no cron needed).
-    db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(key, now),
-    db
-      .prepare(
-        'INSERT INTO magic_token (token_hash, email, expires_at, created_at, nonce_hash) VALUES (?, ?, ?, ?, ?)',
-      )
-      .bind(tokenHash, key, expiresAt, now, nonceHash),
-  ]);
+  try {
+    await db.batch([
+      // Replace this email's prior token, and sweep any expired token while here (no cron needed).
+      db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(key, now),
+      db
+        .prepare(
+          'INSERT INTO magic_token (token_hash, email, expires_at, created_at, nonce_hash) VALUES (?, ?, ?, ?, ?)',
+        )
+        .bind(tokenHash, key, expiresAt, now, nonceHash),
+    ]);
+  } catch (err) {
+    rethrowStoreFailure(err);
+  }
 }
 
 /** True when a magic-link token for this email was issued at or after `since`, for the send cooldown. */
@@ -94,15 +118,19 @@ export async function consumeToken(
   now: number,
   nonceHash: string | null = null,
 ): Promise<string | null> {
-  const row = await db
-    .prepare(
-      `DELETE FROM magic_token
+  try {
+    const row = await db
+      .prepare(
+        `DELETE FROM magic_token
        WHERE token_hash = ? AND expires_at > ? AND (nonce_hash IS NULL OR nonce_hash = ?)
        RETURNING email`,
-    )
-    .bind(tokenHash, now, nonceHash)
-    .first<{ email: string }>();
-  return row?.email ?? null;
+      )
+      .bind(tokenHash, now, nonceHash)
+      .first<{ email: string }>();
+    return row?.email ?? null;
+  } catch (err) {
+    rethrowStoreFailure(err);
+  }
 }
 
 /** Create a session row. */
@@ -219,6 +247,10 @@ async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string
  *
  * It runs after the atomic write and cannot change that write's outcome; it only names which of
  * the two things happened, so it stays outside the conditional statement the guard depends on.
+ * A concurrent write landing between the guarded statement and this read can therefore mislabel
+ * the refusal (a row removed in that window reads as `not-found` where `last-owner` was true, and
+ * the reverse). That is a message-only error: the guarded write itself already refused correctly,
+ * and no caller acts on the discriminant beyond choosing which sentence to show.
  */
 async function editorRowStillPresent(
   db: D1Database,
@@ -254,6 +286,19 @@ async function editorRowStillPresent(
  * owner) from a plain miss (no such editor); that read cannot change the outcome, it only names
  * which of the two happened. `removeOwnerIfNotLast` survives alongside this as the narrower
  * owner-only guard.
+ *
+ * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
+ * write is then unguarded: with no role names to count, there is no last-owner row to protect, so
+ * the plain `DELETE` runs. `defineRoles` always resolves at least one owner-capability name, so
+ * `[]` is unreachable through the engine's own callers; it is reachable only from a site calling
+ * this `/auth-store` export directly, which is exactly the caller that has taken the decision on
+ * itself.
+ *
+ * The cascade is deliberately two statements, not one batch with the removal: the editor `DELETE`
+ * has to commit and report its own `changes` before the sweep runs, since the sweep is
+ * conditional on the removal having happened. Access dies with the editor row regardless of when
+ * the sweep lands, because `resolveSession` INNER JOINs `editor`, so a session row outliving its
+ * editor by a moment resolves to null and authorizes nothing.
  */
 export async function deleteEditor(
   db: D1Database,
@@ -361,6 +406,12 @@ export async function insertOwnerIfEmpty(
  * present and this was a last-owner demotion) from a plain miss (no such editor); that read
  * cannot change the outcome, it only names which of the two happened.
  * `demoteOwnerIfNotLast` survives alongside this as the narrower owner-only guard.
+ *
+ * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
+ * write is then unguarded: with no role names to count, no change can demote a last owner, so the
+ * plain `UPDATE` runs. `defineRoles` always resolves at least one owner-capability name, so `[]`
+ * is unreachable through the engine's own callers; it is reachable only from a site calling this
+ * `/auth-store` export directly.
  */
 export async function setEditorRole(
   db: D1Database,

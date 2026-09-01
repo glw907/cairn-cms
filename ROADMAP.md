@@ -865,6 +865,18 @@ the named human gates only):**
 
 ## Next
 
+- **Per-IP rate limiting on the auth request and confirm actions (filed 2026-08-31, conventions-pass
+  security review).** The per-email send cooldown is the only pressure control on either action
+  today, and the throttled status plus the send-failure status are membership oracles that lean on
+  it; the `RateLimitLike` seam and `resolveRateLimit` are the mechanism already in the engine, so
+  this is wiring a limiter the auth routes never got, not a new subsystem.
+
+- **Fold the auth-channel's cookie-secure derivation and `checkChannelRateLimit` onto `csrfSecure`
+  and `resolveRateLimit` (filed 2026-08-31, the conventions pass's own recorded divergences).** The
+  channel derives `secure` from a bare `event.url.protocol` and reimplements the rate-limit branch
+  inline; both are recorded at their sites as deliberate and safe today (`assertOriginAndScheme`
+  fails http closed off localhost), and both are one convergence away from the engine's grammar.
+
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
   logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`, and stacked
   `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus.
@@ -1331,7 +1343,8 @@ the named human gates only):**
     zone setting reads, misleading an operator into changing a correct setting (severity raised
     from DX/low, docs friction log, triaged 2026-08-14: reproduced on two live migrations, not
     one).** `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts:67-76`, called by
-    `edgeHttpsForced` and `edgeHsts`) still fails with a bare `` `${settingId} read returned
+    `edgeHttpsForced`, its one remaining caller since `edgeHsts` retired with the `edge.hsts-off`
+    condition) still fails with a bare `` `${settingId} read returned
     ${res.status}` `` and prints a fix that assumes the setting is off, while `emailSenderOnboarded`
     and the D1 checks in the same file already route the identical status through
     `permissionFail` (`:42-46`), which names the missing token scope instead. First found on the
@@ -2292,6 +2305,12 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   enable vitest's typecheck project so these assertions run under the test command they visually
   sit inside, or to leave the current split and document what they are, so a reader isn't misled by
   where the assertion lives. No trigger yet; take this up only if the split causes a real miss.
+- **A request-time verifier code as the cross-device-preserving alternative to the login nonce
+  (filed 2026-08-31, conventions-pass security review).** The nonce binds a link to one browser and
+  charges for it: a link requested on a desktop and opened on a phone refuses. A short verifier the
+  request page shows and the confirm page asks for would bind the same way while letting the click
+  land anywhere, at the cost of one thing the editor has to carry across. The promote trigger is a
+  real report of the cross-device refusal biting a site's editors, not the theory.
 - **Migrate the engine's own editor default from magic-link to codes.** The auth-channel factory
   design (`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`, decision 6) named
   this out of scope on purpose: `magic_token` and the editor magic-link flow are untouched by

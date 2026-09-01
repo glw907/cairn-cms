@@ -174,7 +174,10 @@ export const authStore: DoctorCheck = {
       // still cannot serve a login, because the engine's confirm binds each token to the
       // requesting browser through magic_token.nonce_hash. The failure mode is a total login
       // outage with no second channel, so this probe is the pre-deploy catch for it.
-      const columns = await d1Query(ctx, facts.authDbId, 'PRAGMA table_info(magic_token)');
+      // The table-valued form, never a bare `PRAGMA table_info(...)`: the D1 REST /query endpoint
+      // is documented for SQL statements, and a plain SELECT over the pragma function is the one
+      // shape that is certainly accepted there. Both return the same `name` column.
+      const columns = await d1Query(ctx, facts.authDbId, "SELECT name FROM pragma_table_info('magic_token')");
       if ('fail' in columns) return columns.fail;
       if (!columns.value.some((row) => row.name === 'nonce_hash')) {
         return fail('magic_token has no nonce_hash column; apply migrations/0004_login_nonce.sql');

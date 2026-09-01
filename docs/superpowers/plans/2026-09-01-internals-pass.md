@@ -9,7 +9,8 @@
 > two-round adversarial review (round 1: `engine-triage` + `web-auth-security-reviewer`
 > for Tasks 9-10's auth surface + the cleanliness-and-beauty lens; fold; round 2:
 > `engine-triage` verification) — run AFTER 4b merges so the review reads the real
-> surface; (4) get Geoff's rulings on the SIX open decisions in the header below.
+> surface. Geoff's rulings on the six decisions are RATIFIED (header below); only (1)
+> and (3) remain before dispatch.
 
 > **For agentic workers:** execute through the `cairn-implementer` chain per task
 > (implementer, `diff-reviewer`, full gate), workflow mode via
@@ -47,7 +48,15 @@ From-scratch `npm ci` in `examples/showcase` before trusting any e2e.
 **Token ceiling (provisional):** 5M (gate-building plus one large component reshape;
 lighter than 4b's surface work). **Checkpoint interval:** every four tasks.
 
-## Open decisions (Geoff rules at plan approval; proposals stated)
+## The rulings (RATIFIED — Geoff, 2026-09-01 sitting, mid-4b)
+
+All six decisions below are SETTLED. Geoff ratified the four contested calls explicitly
+(the scope cut to internals-B, documented divergence on access semantics, the
+`registerEditor(api)` shape, the first-request tripwire) and let the three stated
+defaults stand unobjected (the indexed-access parenthetical convention, the engine-owned
+`SITE_CONFIG_PATHS` constant, the items-3+10 merge). The proposals below are retained as
+the rationale record; they are no longer open questions. The remaining pre-dispatch
+gates are only the 4b-merge anchor reconciliation and the two-round adversarial review.
 
 1. **MarkdownEditor collapse shape (docket item 9; three sources, three shapes).**
    PROPOSED: the int-rank/int-verify shape — collapse the ELEVEN remaining `register*`

@@ -1395,98 +1395,98 @@ when the remediation pass lands.
 ## audit-sveltekit-orphanbyterow: `OrphanByteRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. An R2 key/hash row inside the orphan scan's result, reachable only as result.orphanedBytes[i]; no site drives the janitorial action.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: the interface lost its `export` (no cross-module consumer) and stays module-internal in `media/orphan-scan.ts`. Survives structurally inside `MediaOrphanScanResult.orphanedBytes`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 1.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-brokenrefrow: `BrokenRefRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A row of the orphan scan's referenced-but-absent half, reached only by property access from an engine-only action.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: the interface lost its `export` (no cross-module consumer) and stays module-internal in `media/orphan-scan.ts`. Survives structurally inside `MediaOrphanScanResult.brokenRefs`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 2.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-bulkdeleteskip: `BulkDeleteSkip`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Its reason literals ('still-referenced','uncommitted') are the engine's own bulk-delete refusal vocabulary for its own dialog.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `media/bulk-delete-plan.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 3.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-repointplacement: `RepointPlacement`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A before/after diff row rendered inside the engine's media replace-preview modal.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content/media-rewrite.ts`, the retires pass's three-case rule: `content-routes-media.ts` imports it directly for `MediaReplacePreviewEntry.placements` and the replace action's own plan typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 4.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-altplacement: `AltPlacement`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Its three bucket literals are copy decisions in one engine modal; near-identical to RepointPlacement.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content/media-rewrite.ts`, the retires pass's three-case rule: both `content-routes-media.ts` and `CairnMediaLibrary.svelte` import it directly for their own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 5.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-branchref: `BranchRef`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None, and it leaks the cairn/<concept>/<id> pending-branch layout into the public surface.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `media/rewrite-plan.ts`, the retires pass's three-case rule: `content-routes-media.ts` imports it directly for `MediaReplacePreviewPlan.branchDelta` and `MediaAltPreviewPlan.branchDelta`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 6.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediaorphanscanresult: `MediaOrphanScanResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Returned by an owner-only maintenance action inside the engine's Media Library.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `media/orphan-scan.ts`, the retires pass's three-case rule: both `content-routes-media.ts` and `CairnMediaLibrary.svelte` import it directly for their own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 7.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediaorphanpurgeresult: `MediaOrphanPurgeResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The purge modal's result bag, consumed in-process by the engine's own component.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 8.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediaaltpreviewentry: `MediaAltPreviewEntry`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A row inside MediaAltPreviewPlan, itself an engine two-step modal's intermediate state.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: the interface lost its `export` (no cross-module consumer) and stays module-internal in `content-routes-media.ts`. Survives structurally inside `MediaAltPreviewPlan.entries`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 9.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediaaltpreviewplan: `MediaAltPreviewPlan`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The preview half of a preview-then-apply flow entirely inside the engine's Media Library.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 10.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediareplacepreviewentry: `MediaReplacePreviewEntry`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A row inside the replace-preview plan; no site drives mediaReplacePreviewAction.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 11.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediareplacepreviewplan: `MediaReplacePreviewPlan`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None, and its branchDelta member drags the pending-branch model public with it.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 12.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediabulkdeleteresult: `MediaBulkDeleteResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The bulk-delete action's result bag, rendered by the engine's own library screen.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 13.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-dictionaryaddresult: `DictionaryAddResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A single-field wrapper over string[], echoed back to the editor component in the same process.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-dictionary.ts`, the retires pass's three-case rule: `content-routes-dictionary.test.ts` imports it directly.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 14.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1500,70 +1500,70 @@ when the remediation pass lands.
 ## audit-sveltekit-tidyresult: `TidyResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. It also pins Anthropic SDK field naming (input_tokens/output_tokens) into cairn's public surface.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-tidy.ts`, since `tidyAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 16.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediaaltpropagatefailure: `MediaAltPropagateFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None directly. components.md shows the union ContentFormFailure as the form prop, never this arm.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 17.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediabulkfailure: `MediaBulkFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Structurally identical to five siblings; six exported names for { error: string } is itself an evenness defect.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 18.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediaupdatefailure: `MediaUpdateFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A site mounting CairnMediaLibrary types form as ContentFormFailure, the union, not this arm.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `mediaUpdateAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 19.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediareplacefailure: `MediaReplaceFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None; same union-not-arm reasoning as MediaUpdateFailure.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 20.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediadeleterefusal: `MediaDeleteRefusal`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The engine's own still-referenced refusal, rendered by the engine's own delete dialog.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `mediaDeleteAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 21.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-mediauploadfailure: `MediaUploadFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { error: string } again, delivered through the ContentFormFailure union.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `uploadAction`'s and `mediaLibraryUploadAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 22.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-vocabularysavefailure: `VocabularySaveFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { error: string } from an engine settings action; kit's generated ActionData types the form.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-settings.ts`, since `vocabularySaveAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 23.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-settingssavefailure: `SettingsSaveFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { error: string }; nothing in the docs asks a site to write this name.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-settings.ts`, since `settingsSaveAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 24.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-navsavefailure: `NavSaveFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The doc's own nav-editor example passes data: NavLoadData and lets kit's ActionData type the form.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: the interface lost its `export` (no cross-module consumer) and stays module-internal in `nav-routes.ts`. Survives structurally inside `NavRoutes.navSaveAction`'s return type; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 25.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1673,7 +1673,15 @@ when the remediation pass lands.
 ## audit-sveltekit-usageentry: `UsageEntry`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None by name; reached through usage[hash].entries. Its origin member also publishes the pending-branch model.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1, per the 2026-08-31 sitting's
+  ruling on the carried decision below: every export row drops from `content-routes-media.ts`,
+  `content-routes.ts`, and `sveltekit/index.ts`, and the interface keeps its module-level `export`
+  in `media/usage.ts` (the retires pass's three-case rule): the type has eight-plus in-engine
+  namers (`content-routes-media.ts`, `media/orphan-scan.ts`, `media/bulk-delete-plan.ts`,
+  `content-routes-core.ts`, `CairnMediaLibrary.svelte`), so inlining it at one remaining use site
+  is not viable, the docket's premise for that branch being false at HEAD. `ContentFormFailure`'s
+  surviving `usage?: UsageEntry[]` field is the public recovery: a consumer indexes
+  `NonNullable<ContentFormFailure['usage']>[number]`.
 - **Progress note (conventions pass, Task 5, 2026-08-31):** does NOT retire in this task. The
   flattened `ContentFormFailure` itself carries `usage?: UsageEntry[]` (set by a blocked media
   delete or replace), so the flat keep is its own surviving carrier; retiring the name here would
@@ -1694,8 +1702,18 @@ when the remediation pass lands.
 ## audit-sveltekit-uploadresult: `UploadResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The proposed home is wrong: media/index.ts's header restricts /media to node-safe projection and excludes admin/ingest internals, and createMediaRoute sets the opposite precedent. Membership alone cannot carry it: Unstable, no worked example, consumed by components/media-upload-outcome.ts like the retired result bags.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Shape:** Move it to /media beside MediaEntry, whose type its own body names, so a developer finds cairn's media vocabulary in one subpath instead of split between /media and /sveltekit.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 1, per the verify-wins
+  resolution (the conductor default, stated and unobjected at the 2026-08-31 sitting): the
+  VERIFIED flat retire runs, not the ranked reshape-and-relocate below (`verify-route-factories.md`
+  line 126 overturns the rank file's `/media` relocate, since `media/index.ts`'s own header
+  restricts that subpath to node-safe pure projection and explicitly excludes the manifest CRUD
+  and ingest internals this type belongs to). Its barrel and subpath re-exports drop
+  (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export`
+  in `content-routes-media.ts`, the retires pass's three-case rule: `media-upload-outcome.ts`
+  imports it directly, and `uploadAction`'s/`mediaLibraryUploadAction`'s return type also composes
+  into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts`
+  emitter must be able to name.
+- **Shape:** Move it to /media beside MediaEntry, whose type its own body names, so a developer finds cairn's media vocabulary in one subpath instead of split between /media and /sveltekit. Declined at execution: the verify-wins resolution above runs the flat retire instead.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 38.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 

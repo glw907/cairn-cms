@@ -653,6 +653,61 @@
   exit code and branches on it; see the CI wiring example in the reference page. Nothing else in the
   report's shape changed: every prior PASS/FAIL/SKIP line still prints exactly as before.
 
+- The conformance pass (slice 4b, Task 1) executes the Tier 1 media-janitorial retire batch: 25
+  ratified any-site-audit verdicts (`docs/internal/engine-rulings.md`, `rank-route-factories.md`
+  ranks 1-25 plus rank 38) all leave `@glw907/cairn-cms/sveltekit`. Each stays an engine-internal
+  shape at its declaring module (`content-routes-media.ts`, `content-routes-settings.ts`,
+  `content-routes-tidy.ts`, `content-routes-dictionary.ts`, `nav-routes.ts`, `media/orphan-scan.ts`),
+  per the retires-pass precedent: a type still consumed in-process goes internal in the module
+  that needs it, either kept as a module-level export for a cross-module consumer
+  (`CairnMediaLibrary.svelte`, `media-upload-outcome.ts`, or the module composing it into
+  `createContentRoutesInternal`'s wide return shape) or dropped to a bare, non-exported
+  declaration where none remains. By family: the orphan-scan surface
+  (`MediaOrphanScanResult`, `OrphanByteRow`, `BrokenRefRow`) and the replace/alt-propagation
+  preview pairs (`MediaReplacePreviewEntry`, `MediaReplacePreviewPlan`, `MediaAltPreviewEntry`,
+  `MediaAltPreviewPlan`, `RepointPlacement`, `AltPlacement`, `BranchRef`) retire; the six
+  structurally-identical `{ error: string }`-shaped refusal types (`MediaAltPropagateFailure`,
+  `MediaBulkFailure`, `MediaUpdateFailure`, `MediaUploadFailure`, `SettingsSaveFailure`,
+  `NavSaveFailure`) and the two richer refusals mirroring each other (`MediaDeleteRefusal`,
+  `MediaReplaceFailure`) retire; the three settings/tidy/dictionary result bags
+  (`VocabularySaveFailure`, `TidyResult`, `DictionaryAddResult`) and the bulk-delete result pair
+  (`MediaBulkDeleteResult`, `BulkDeleteSkip`) and the orphan-purge result
+  (`MediaOrphanPurgeResult`) retire. `UploadResult` (rank 38) executes the verify-corrected flat
+  retire rather than the ranked relocate to `/media`: `verify-route-factories.md` overturns the
+  rank file's reshape-and-relocate, since `/media`'s own header restricts that subpath to
+  node-safe pure projection and explicitly excludes the manifest CRUD and ingest internals
+  `UploadResult` belongs to. **Consumers must:** a site importing `MediaDeleteRefusal`,
+  `MediaUpdateFailure`, `MediaReplaceFailure`, `MediaAltPropagateFailure`, `MediaBulkFailure`,
+  `MediaUploadFailure`, `VocabularySaveFailure`, `SettingsSaveFailure`, or `NavSaveFailure` from
+  `@glw907/cairn-cms/sveltekit` to annotate one of `CairnMediaLibrary`'s, the settings screen's,
+  or the nav editor's own action failures replaces it with `ContentFormFailure` where the action
+  already routes through the flattened union (every media-delete, media-replace, and
+  media-alt-propagation refusal), or reads the action's return type through inference instead of
+  a named import for the settings, nav, upload, and dictionary actions, none of which route
+  through `ContentFormFailure`. A site importing `UploadResult` to annotate `uploadAction`'s
+  success branch, `MediaBulkDeleteResult` to annotate `mediaBulkDeleteAction`'s return,
+  `MediaOrphanPurgeResult`/`MediaOrphanScanResult` to annotate the orphan scan/purge actions,
+  `MediaReplacePreviewPlan`/`MediaReplacePreviewEntry` to annotate the replace preview,
+  `MediaAltPreviewPlan`/`MediaAltPreviewEntry` to annotate the alt-propagation preview,
+  `TidyResult` to annotate `tidyAction`'s success branch, or `DictionaryAddResult` to annotate
+  `dictionaryAddAction`'s success branch, reads the action's return type through inference
+  instead; none of these ten media-janitorial and settings/tidy/dictionary actions are reachable
+  outside `createCairnAdmin`'s own composition (the media-janitorial ten) or already returned an
+  inferred shape a hand-mounting site read structurally. `RepointPlacement`, `AltPlacement`,
+  `BranchRef`, `BulkDeleteSkip`, `OrphanByteRow`, and `BrokenRefRow` had no supported import path
+  of their own (each was always reached as a nested field of an already-retired or already-inferred
+  parent shape); a site that named one directly reads the parent action's return type structurally
+  instead.
+
+- `UsageEntry` retires from `@glw907/cairn-cms/sveltekit` (slice 4b, Task 1), the sitting's
+  ruling on the carried decision the conventions pass (Task 5) routed here: the shape stays a
+  module-internal named type in `media/usage.ts` (the module-level export stays, since the type
+  has eight-plus in-engine namers across `content-routes-media.ts`, `media/orphan-scan.ts`,
+  `media/bulk-delete-plan.ts`, `content-routes-core.ts`, and `CairnMediaLibrary.svelte`, so
+  inlining it at one remaining use site is not viable). `ContentFormFailure.usage` is its
+  surviving public carrier. **Consumers must:** index the element type off the carrier —
+  `NonNullable<ContentFormFailure['usage']>[number]` — instead of importing `UsageEntry` by name.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

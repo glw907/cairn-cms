@@ -18,15 +18,18 @@ holds until the chassis slice per the initiative design. CI on `main` is fully g
 
 ## Immediate next action
 
-**Author the 4b plan** (the cross-surface conformance sweep). Inputs are BANKED at
-`docs/internal/record/2026-09-01-4b-planning-inputs/` (the docket with the sitting's four
-brainstorm rulings and two conductor defaults appended, and the consumer usage map — Tier 1
-has zero consumer usage anywhere). Geoff requires a FULL adversarial review of the plan on
-the 4a model (engine-triage round 1 plus web-auth-security-reviewer if auth surface appears,
-fold with dispositions recorded in the plan, engine-triage round 2 verification of the folded
-revision) before approval; Geoff has authorized executing the twice-reviewed plan in workflow
-mode. Execution runs on a fresh worktree off `main` (4a is merged, so `main` carries the
-ruled conventions 4b builds against).
+**The conformance pass (4b) is EXECUTING in workflow mode** on worktree
+`.claude/worktrees/conformance` (branch `conformance` off `main` at `6621245f`). Plan:
+`docs/superpowers/plans/2026-09-01-conformance-pass.md` — twice-reviewed on the mandated
+model (round 1: engine-triage + web-auth-security-reviewer + an Opus cleanliness-and-beauty
+lens Geoff added mid-review, now a standing pass dimension; round 2: engine-triage
+verification; all findings folded, dispositions in the plan's review-folds section). Geoff
+authorized the full arc: execute, pass-end ritual, merge to `main`, push. 14 tasks,
+sequential, `pass-execute.js` chain; Tasks 5 and 11 upshifted to Opus implementers
+(security-critical). Ceiling 6M, checkpoint every four tasks. Resume prompt for a fresh
+session: "In ~/Projects/cairn-cms, resume the conformance pass (4b) mid-execution: invoke
+cairn-pass, read docs/STATUS.md and the plan, verify worktree `conformance` state, then
+continue the pass-execute workflow chain from the last completed task."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

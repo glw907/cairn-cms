@@ -295,9 +295,10 @@ for the zone. This is a per-zone setting that the dashboard or API turns on, not
 can flip. The media resolver always returns the bare full-size delivery path; `transformations`
 governs only the responsive `srcset` a rendered image gets alongside it. While it is off, a rendered
 image carries no `srcset`, only its full-size src, so a fresh zone serves correct images rather than
-dead `/cdn-cgi/image` URLs. Once it is on and an asset's width is known, the resolver also attaches a
-`srcset` built from a small fixed width ladder. Flip it to `true` only after enabling Transformations
-on the zone.
+dead `/cdn-cgi/image` URLs. Once it is on, the asset's width is known, and more than one ladder
+width fits under the asset's own width, the resolver also attaches a `srcset` built from that
+fixed width ladder; a narrower asset gets no `srcset`. Flip it to `true` only after enabling
+Transformations on the zone.
 
 Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the

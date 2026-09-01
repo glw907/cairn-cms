@@ -57,9 +57,7 @@ guessing from a URL extension. The render resolver always returns the bare full-
 when the zone has transformations on and an asset's width is known, it also attaches a responsive
 `srcset` built from a small fixed width ladder, reaching Cloudflare's
 [Image Transformations](https://developers.cloudflare.com/images/transform-images/transform-via-url/)
-for each candidate. The `variants` field's named presets declared on that same `media` block are
-available separately, through `presetUrl`, for a site's own on-demand transform calls; the automatic
-`srcset` does not use them.
+for each candidate.
 
 ```mermaid
 flowchart LR

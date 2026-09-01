@@ -755,6 +755,24 @@
   caller already passes keeps parsing exactly as before, and a caller may now also pass a raw ISO
   timestamp.
 
+- `TidyClient` (`/sveltekit`, slice 4b, Task 4; settles `audit-sveltekit-tidyclient` and
+  `audit-log-tidy-succeeded`) narrows from the transcribed Anthropic Messages wire shape to a
+  narrow, engine-owned contract: `tidy(request, options)` takes `{ model, system, text, effort? }`
+  and returns `{ corrected, refused, tokens: { input, output } }`; the optional model-listing
+  probe (`models?.list`, which `probeTidyKey`'s zero-token key-health check degrades to
+  `'unknown'` without) and the cancellation option (`options?: { signal }`, paired with
+  `tidyTimeoutMs` so a request still actually cancels when the deadline fires) both carry over,
+  re-expressed in engine-owned terms. `max_tokens`, `output_config.effort`, `stop_reason`, and
+  `usage.*` no longer reach the public contract, so a vendor field rename stops being a cairn
+  break; the real Anthropic SDK mapping moves into an internal adapter
+  (`lazyAnthropicClient`, `content-routes-context.ts`). `tidy.succeeded`'s log record carries the
+  same reshape: its `usage` field becomes `tokens: { input, output }`. **Consumers must:** a site
+  injecting a hand-rolled `TidyClient` fake (through `ContentRoutesConfig.tidy.client`, for a
+  gateway or proxy in front of Anthropic) implements `tidy(request, options)` returning
+  `{ corrected, refused, tokens: { input, output } }` in place of `messages.create`'s wire body;
+  `models?.list` is unchanged for a client that already implements it. A site reading
+  `tidy.succeeded` log records renames its `usage` field read to `tokens`.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

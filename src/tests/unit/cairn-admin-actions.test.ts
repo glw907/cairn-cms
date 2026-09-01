@@ -306,13 +306,12 @@ describe('content actions', () => {
   // `runtime.tidy.enabled`, so a forwarded factory that is invoked proves the dep crossed the
   // composition boundary.
   it('forwards deps.tidy.client to the tidy action', async () => {
-    const create = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'the trail' }],
-      model: 'claude-test',
-      stop_reason: 'end_turn' as const,
-      usage: { input_tokens: 3, output_tokens: 3 },
+    const tidyFn = vi.fn(async () => ({
+      corrected: 'the trail',
+      refused: false,
+      tokens: { input: 3, output: 3 },
     }));
-    const anthropic = vi.fn(() => ({ messages: { create } }));
+    const anthropic = vi.fn(() => ({ tidy: tidyFn }));
     const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
     const admin = createCairnAdmin(tidyRuntime, { ...deps, tidy: { client: anthropic } });
 
@@ -338,13 +337,13 @@ describe('content actions', () => {
 
     const res = (await admin.actions.tidy(event as never)) as { corrected?: string };
     expect(anthropic).toHaveBeenCalledTimes(1);
-    expect(create).toHaveBeenCalledTimes(1);
+    expect(tidyFn).toHaveBeenCalledTimes(1);
     expect(res.corrected).toBe('the trail');
   });
 
   it('forwards deps.tidy.timeoutMs to the tidy action, mapping a deadline overrun to fail(502)', async () => {
     let sawSignal: AbortSignal | undefined;
-    const create = vi.fn((_body: unknown, options?: { signal?: AbortSignal }) => {
+    const tidyFn = vi.fn((_request: unknown, options?: { signal?: AbortSignal }) => {
       sawSignal = options?.signal;
       return new Promise((_resolve, reject) => {
         options?.signal?.addEventListener('abort', () => {
@@ -353,8 +352,8 @@ describe('content actions', () => {
           reject(err);
         });
       });
-    }) as unknown as TidyClient['messages']['create'];
-    const anthropic = vi.fn(() => ({ messages: { create } })) as unknown as (opts: {
+    }) as unknown as TidyClient['tidy'];
+    const anthropic = vi.fn(() => ({ tidy: tidyFn })) as unknown as (opts: {
       apiKey: string;
     }) => TidyClient;
     const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
@@ -592,7 +591,7 @@ describe('settings view', () => {
     // The settings load now actively probes the key (save-500-honest-errors, Task 5), so a fake
     // client stands in for the real SDK; models.list resolving proves the probe reads 'valid'.
     const anthropic = vi.fn(() => ({
-      messages: { create: async () => { throw new Error('unused'); } },
+      tidy: async () => { throw new Error('unused'); },
       models: { list: async () => ({ data: [] }) },
     }));
     const admin = createCairnAdmin(tidyRuntime(), { ...deps, tidy: { client: anthropic } });

@@ -30,6 +30,7 @@ export type {
   // The export-rule sweep (C2 breaking-window pass, R4 ruling): every type a route factory's
   // return type names, down to its own nested shapes, becomes importable from this subpath.
   TidyClient,
+  TidyEffort,
   MediaLibraryEntry,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes } from './nav-routes.js';

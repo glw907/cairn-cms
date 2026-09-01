@@ -1664,7 +1664,16 @@ when the remediation pass lands.
 ## audit-sveltekit-tidyclient: `TidyClient`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site pointing tidy at its own gateway or proxy supplies a client. Rare, but real, and no other seam serves it.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 4: `TidyClient` narrows to
+  `tidy(request, options)`, taking `{ model, system, text, effort? }` and returning
+  `{ corrected, refused, tokens: { input, output } }`, plus the unchanged optional `models.list`
+  probe. `max_tokens`, `output_config.effort`, `stop_reason`, and `usage.*` all leave the public
+  contract; the Anthropic wire shape (`AnthropicWireClient`) is a module-internal type inside
+  `lazyAnthropicClient` in `content-routes-context.ts`, the one adapter that still speaks it. Seam
+  fit: the narrow interface keeps both load-bearing members the wire shape carried (the
+  model-listing probe `probeTidyKey` degrades without, and the cancellation signal
+  `tidyTimeoutMs` pairs with), re-expressed in engine-owned terms, so a site's hand-rolled gateway
+  client still only needs to implement one small method.
 - **Shape:** Replace the transcribed Anthropic wire shape (max_tokens, output_config.effort, stop_reason, usage.*) with a narrow engine-owned interface taking a prompt and a system string and returning corrected text plus a coarse usage record, with the SDK adapter kept internal.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 33.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
@@ -4034,7 +4043,14 @@ when the remediation pass lands.
 ## audit-log-tidy-succeeded: `tidy.succeeded`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. "Our Anthropic bill jumped" — a per-editor token total is exactly the query, and this is the only record carrying it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Project the two numbers the engine means (inputTokens, outputTokens) instead of re-exporting the vendor object. content-routes-tidy.ts:258 passes `usage: messag).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 4, alongside the `TidyClient`
+  narrowing (audit-sveltekit-tidyclient): the record's `usage` field becomes `tokens: { input,
+  output }`, the engine's own two numbers, projected off `TidyClient.tidy`'s coarse token record
+  rather than re-exporting the vendor `usage` object (`content-routes-tidy.ts`'s `tidy.succeeded`
+  emit). `docs/reference/log-events.md`'s row updated in the same task. Seam fit: the field name
+  change lands in the same unpublished window as the client narrowing that motivates it, so a site
+  reading this record updates both at once.
+- **Shape:** Project the two numbers the engine means (input, output token counts) as `tokens: { input, output }` instead of re-exporting the vendor `usage` object; `content-routes-tidy.ts`'s `tidy.succeeded` emit reads them off `TidyClient.tidy`'s own coarse token record.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 14.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
 

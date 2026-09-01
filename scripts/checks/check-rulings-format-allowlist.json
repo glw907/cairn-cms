@@ -3,7 +3,6 @@
   "audit-render-strattr",
   "audit-log-auth-session-destroyed",
   "audit-log-dictionary-added",
-  "audit-log-tidy-succeeded",
   "audit-log-commit-succeeded",
   "audit-log-taxonomy-unmarked-field",
   "audit-log-content-field-behavior-failed",

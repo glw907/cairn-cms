@@ -3,19 +3,20 @@
 // network call or real key is ever made. The real SDK client is used in production; this is injected
 // only through createCairnAdmin's `tidy.client` option when CAIRN_DEV_BACKEND is set.
 //
-// The TidyClient contract (src/lib/sveltekit/content-routes.ts) is structural: messages.create takes
-// the prompt and returns a Message-shaped object. The action reads the user message's text, so the
-// stub keys its reply off that text rather than the prompt.
+// The TidyClient contract (src/lib/sveltekit/content-routes.ts) is the narrow, engine-owned
+// interface: `tidy(request)` takes the prompt and returns the corrected text plus a coarse token
+// record, no Anthropic wire shape involved. The action reads the request's own `text`, so the stub
+// keys its reply off that rather than the prompt.
 import type { ContentRoutesConfig } from '@glw907/cairn-cms/sveltekit';
 import { SEED_EDITOR } from './fake-github.js';
 
 // NonNullable<ContentRoutesConfig['tidy']>['client'] is the optional client factory; unwrap it once
-// more so its return type (the structural TidyClient) is reachable for the messages.create body.
+// more so its return type (the narrow TidyClient) is reachable for the tidy() request shape.
 type TidyClientFactory = NonNullable<NonNullable<ContentRoutesConfig['tidy']>['client']>;
 
-// The body the engine's tidy action sends to messages.create, derived from the client contract so
-// the stub stays in lockstep with it.
-type TidyCreateBody = Parameters<ReturnType<TidyClientFactory>['messages']['create']>[0];
+// The request the engine's tidy action sends to tidy(), derived from the client contract so the
+// stub stays in lockstep with it.
+type TidyRequest = Parameters<ReturnType<TidyClientFactory>['tidy']>[0];
 
 /**
  * Build the fake client factory the showcase passes to createCairnAdmin's `tidy.client` option. The
@@ -23,20 +24,11 @@ type TidyCreateBody = Parameters<ReturnType<TidyClientFactory>['messages']['crea
  */
 export function createFakeAnthropic(): NonNullable<ContentRoutesConfig['tidy']>['client'] {
   return () => ({
-    messages: {
-      async create(params: TidyCreateBody) {
-        // The user message carries the buffer the editor sent. When it is the seed entry's body,
-        // return the canned correction; otherwise echo it back so tidy reports "Nothing to fix"
-        // rather than inventing edits.
-        const input = params.messages[0]?.content ?? '';
-        const corrected = input.trim() === SEED_EDITOR.body ? SEED_EDITOR.corrected : input;
-        return {
-          content: [{ type: 'text' as const, text: corrected }],
-          model: 'claude-showcase-stub',
-          stop_reason: 'end_turn' as const,
-          usage: { input_tokens: 24, output_tokens: 24 },
-        };
-      },
+    async tidy(request: TidyRequest) {
+      // The seed entry's body gets the canned correction; anything else echoes back so tidy
+      // reports "Nothing to fix" rather than inventing edits.
+      const corrected = request.text.trim() === SEED_EDITOR.body ? SEED_EDITOR.corrected : request.text;
+      return { corrected, refused: false, tokens: { input: 24, output: 24 } };
     },
   });
 }

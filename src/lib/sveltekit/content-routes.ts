@@ -23,7 +23,7 @@ import { createTidyActions } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
 import { createDictionaryActions } from './content-routes-dictionary.js';
 
-export type { ContentRoutesConfig, TidyClient, AttentionItem } from './content-routes-context.js';
+export type { ContentRoutesConfig, TidyClient, TidyEffort, AttentionItem } from './content-routes-context.js';
 
 export type {
   AdminShellData,

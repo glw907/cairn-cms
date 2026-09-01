@@ -22,7 +22,7 @@ import type { CairnEvent } from './types.js';
 export interface TidyResult {
   corrected: string;
   model: string;
-  tokens: { input_tokens: number; output_tokens: number };
+  tokens: { input: number; output: number };
 }
 
 /**
@@ -154,11 +154,6 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     // never from the author's text, so the untrusted text cannot reshape the instructions.
     const system = buildTidyPrompt(resolveTidyConventions(tidy.conventions));
     const model = tidy.model || DEFAULT_TIDY_MODEL;
-    // max_tokens sized to comfortably exceed the input token count: a proofread runs at roughly input
-    // length, never lowballed. Sonnet 5's tokenizer counts up to about 1.35x more tokens than the
-    // prior generation, and the 24,000-character cap is at most about 8,000 input tokens even at that
-    // rate, so this ceiling still leaves generous headroom.
-    const maxTokens = 16_000;
 
     // Bound the model call with the Worker's own deadline (shorter than the platform limit), so a slow
     // call becomes a retryable fail(502) rather than a platform timeout. The client also drives its own
@@ -172,21 +167,20 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       deadlineHit = true;
       controller.abort();
     }, ctx.tidyTimeoutMs);
-    let message: Awaited<ReturnType<TidyClient['messages']['create']>>;
+    let result: Awaited<ReturnType<TidyClient['tidy']>>;
     try {
       const client = ctx.anthropicClient({ apiKey });
-      message = await client.messages.create(
+      result = await client.tidy(
         {
           model,
-          max_tokens: maxTokens,
           system,
-          messages: [{ role: 'user', content: text }],
+          text,
           // A short proofread does not need extended reasoning; a model with effort tiers runs
           // adaptive thinking by default, so this caps it at the low tier rather than sending a
           // thinking parameter (budget_tokens 400s on Sonnet 5). Sent only when the configured model
-          // actually has effort tiers: the API answers `output_config` on one that does not (Haiku
+          // actually has effort tiers: the API answers an effort tier on one that does not (Haiku
           // 4.5, say) with a 400, so omitting it there is the request the model actually accepts.
-          ...(supportsEffort(model) ? { output_config: { effort: 'low' as const } } : {}),
+          ...(supportsEffort(model) ? { effort: 'low' as const } : {}),
         },
         // The signal rides the request options, so the deadline timer above actually cancels the call.
         { signal: controller.signal },
@@ -243,24 +237,19 @@ export function createTidyActions(ctx: ContentRoutesContext) {
 
     // A model refusal (the streaming-classifier intervention) is a clean fail(422): the author's text is
     // untouched, so the editor can leave it as-is.
-    if (message.stop_reason === 'refusal') {
+    if (result.refused) {
       log.warn('tidy.refused', { editor: editor.email, model });
       return fail(422, { error: 'Tidy declined to edit this text.' } satisfies TidyFailure);
     }
 
-    // Read the output as plain text: concatenate the text blocks (a normal response is one). An empty
-    // result is treated as a model error rather than silently returning an empty document.
-    const corrected = message.content
-      .filter((block) => block.type === 'text' && typeof block.text === 'string')
-      .map((block) => block.text ?? '')
-      .join('');
-    if (corrected.length === 0) {
+    // An empty result is treated as a model error rather than silently returning an empty document.
+    if (result.corrected.length === 0) {
       log.warn('tidy.empty', { editor: editor.email, model });
       return fail(502, { error: 'Tidy returned nothing. Try again.' } satisfies TidyFailure);
     }
 
-    log.info('tidy.succeeded', { editor: editor.email, model: message.model, usage: message.usage });
-    return { corrected, model: message.model, tokens: message.usage };
+    log.info('tidy.succeeded', { editor: editor.email, model, tokens: result.tokens });
+    return { corrected: result.corrected, model, tokens: result.tokens };
   }
 
   return { tidyAction };

@@ -557,9 +557,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SlotDef`: { name: string; label: string; kind: "markdown" | "inline" | "repeatable"; required?: boolean; help?: string; itemFields?: Record<string, FieldDescriptor>; itemLabel?: ((item: Record<string, string | boolean>, index: number) => string) }
 - `TextareaField`: { type: "textarea"; rows?: number; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `TextField`: { type: "text"; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `TidyClient`: { messages: { create(body: { model: string; max_tokens: number; system: string; messages: { role: "user"; content: string }[]; output_config?: { effort?: "low" | "medium" | "high" | "xhigh" | "max" } }, options?: { signal?: AbortSignal }): Promise<{ content: { type: string; text?: string }[]; model: string; stop_reason: string | null; usage: { input_tokens: number; output_tokens: number } }> }; models?: { list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown> } }
+- `TidyClient`: { tidy: (request: { model: string; system: string; text: string; effort?: TidyEffort }, options?: { signal?: AbortSignal }) => Promise<{ corrected: string; refused: boolean; tokens: { input: number; output: number } }>; models?: { list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown> } }
 - `TidyConfig`: { enabled?: boolean; model?: string; conventions?: Partial<TidyConventions> }
 - `TidyConventions`: { fixes: boolean; oxfordComma?: "always" | "complex-only" | "never"; numberStyle?: "under-ten" | "under-hundred" | "always-numerals"; measurements?: "abbreviate" | "spell-out"; percent?: "sign" | "word"; emDash?: "spaced" | "closed"; enDashRanges: boolean; ellipsis?: "single-char" | "three-dots"; timeFormat?: "5 PM" | "5pm" | "5 p.m."; smartQuotes: boolean; brandCaps: boolean }
+- `TidyEffort`: "low" | "medium" | "high" | "xhigh" | "max"
 - `UnauditedActionError`: typeof UnauditedActionError
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }

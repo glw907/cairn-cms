@@ -59,6 +59,10 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['--verbose'])).toThrowError(/--verbose/);
     expect(() => parseArgs(['--verbose'])).toThrowError(/Usage: cairn-doctor/);
   });
+
+  it('parses --help as a bare boolean', () => {
+    expect(parseArgs(['--help'])).toEqual({ help: true });
+  });
 });
 
 describe('contextFromEnv', () => {
@@ -218,6 +222,17 @@ describe('packaged bin (needs dist/doctor/bin.js; run npm run package to unskip)
     });
     expect(out.status).toBe(2);
     expect(out.stderr).toContain('Usage: cairn-doctor');
+  });
+
+  it.skipIf(!built)('prints usage and exits 0 on --help, without running any check', () => {
+    const out = spawnSync(process.execPath, [BIN, '--help'], {
+      cwd: tmpdir(),
+      env: { PATH: process.env.PATH },
+      encoding: 'utf8',
+    });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('Usage: cairn-doctor');
+    expect(out.stdout).not.toMatch(/passed, \d+ failed/);
   });
 
   it.skipIf(!built)(

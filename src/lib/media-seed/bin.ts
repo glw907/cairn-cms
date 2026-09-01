@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { readR2Buckets } from '../doctor/wrangler-config.js';
-import { normalizeManifest, parseArgs, resolveBucket } from './assemble.js';
+import { normalizeManifest, parseArgs, resolveBucket, USAGE } from './assemble.js';
 import { seedMedia } from './run.js';
 import type { SeedDeps } from './run.js';
 
@@ -55,6 +55,11 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 2;
+    return;
+  }
+
+  if ('help' in args) {
+    console.log(USAGE);
     return;
   }
 

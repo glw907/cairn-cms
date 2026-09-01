@@ -11,8 +11,14 @@ import {
   resolveBucket,
   seedMedia,
 } from '../../lib/media-seed/index.js';
-import type { SeedDeps, SeedItem } from '../../lib/media-seed/index.js';
+import type { MediaSeedArgs, SeedDeps, SeedItem } from '../../lib/media-seed/index.js';
 import { readR2Buckets } from '../../lib/doctor/wrangler-config.js';
+
+/** Narrows `parseArgs`' union return, since the `--help` shape never carries `headers`/`from`. */
+function expectParsed(args: ReturnType<typeof parseArgs>): MediaSeedArgs {
+  if ('help' in args) throw new Error('expected parsed args, got the --help shape');
+  return args;
+}
 
 describe('parseArgs', () => {
   it('parses a bare --from', () => {
@@ -39,14 +45,9 @@ describe('parseArgs', () => {
   });
 
   it('lets a later --header for the same name win', () => {
-    const args = parseArgs([
-      '--from',
-      'https://example.com',
-      '--header',
-      'X-Token: one',
-      '--header',
-      'X-Token: two',
-    ]);
+    const args = expectParsed(
+      parseArgs(['--from', 'https://example.com', '--header', 'X-Token: one', '--header', 'X-Token: two'])
+    );
     expect(args.headers).toEqual({ 'X-Token': 'two' });
   });
 
@@ -83,6 +84,12 @@ describe('parseArgs', () => {
     expect(() =>
       parseArgs(['--from', 'https://example.com', '--header', ': value'])
     ).toThrowError(/--header must be 'Name: value'/);
+  });
+
+  // --help short-circuits the otherwise-required --from, the same way the other three bins
+  // answer --help before validating anything else.
+  it('reads --help without requiring --from', () => {
+    expect(parseArgs(['--help'])).toEqual({ help: true });
   });
 });
 
@@ -344,6 +351,16 @@ const BIN = resolve(process.cwd(), 'dist/media-seed/bin.js');
 const built = existsSync(BIN);
 
 describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to unskip)', () => {
+  it.skipIf(!built)('prints usage and exits 0 on --help, without requiring --from', () => {
+    const out = spawnSync(process.execPath, [BIN, '--help'], {
+      cwd: tmpdir(),
+      env: { PATH: process.env.PATH },
+      encoding: 'utf8',
+    });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('Usage: cairn-media-seed');
+  });
+
   it.skipIf(!built)('prints usage to stderr and exits 2 on a missing --from', () => {
     const out = spawnSync(process.execPath, [BIN], {
       cwd: tmpdir(),

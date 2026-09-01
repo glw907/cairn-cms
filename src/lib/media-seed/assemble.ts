@@ -4,8 +4,9 @@
 import { parseMediaManifest } from '../media/manifest.js';
 import type { R2BucketEntry } from '../doctor/wrangler-config.js';
 
-const USAGE =
-  "Usage: cairn-media-seed --from <base-url> [--header 'Name: value']... [--bucket <name>]";
+/** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
+export const USAGE =
+  "Usage: cairn-media-seed --from <base-url> [--header 'Name: value']... [--bucket <name>] [--help]";
 
 /** The parsed CLI flags: the deployed site to download from, any auth headers, and an optional explicit bucket name. */
 export interface MediaSeedArgs {
@@ -14,12 +15,20 @@ export interface MediaSeedArgs {
   bucket?: string;
 }
 
+/** `--help` printed `USAGE` and exited before `--from` (or anything else) was required. */
+export interface MediaSeedHelpArgs {
+  help: true;
+}
+
 /**
- * Parse the bin's argv. Throws with a usage line on a missing `--from`, an unknown flag, a
- *  flag with no value, or a `--header` that is not `Name: value`. A later `--header` for the
- *  same name overwrites an earlier one.
+ * Parse the bin's argv. `--help` short-circuits everything else, including the otherwise-required
+ *  `--from`. Absent that, throws with a usage line on a missing `--from`, an unknown flag, a flag
+ *  with no value, or a `--header` that is not `Name: value`. A later `--header` for the same name
+ *  overwrites an earlier one.
  */
-export function parseArgs(argv: string[]): MediaSeedArgs {
+export function parseArgs(argv: string[]): MediaSeedArgs | MediaSeedHelpArgs {
+  if (argv.includes('--help')) return { help: true };
+
   let from: string | undefined;
   let bucket: string | undefined;
   const headers: Record<string, string> = {};

@@ -29,8 +29,9 @@ import { githubApp } from './checks-github.js';
 import { skillFreshness } from './check-skill.js';
 import { postureEffective } from './check-posture.js';
 
-const USAGE =
-  'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]] [--fix]';
+/** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
+export const USAGE =
+  'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]] [--fix] [--help]';
 
 export interface DoctorArgs {
   from?: string;
@@ -46,6 +47,8 @@ export interface DoctorArgs {
    *  checks run. Bare flag; absent when --fix never appeared.
    */
   fix?: boolean;
+  /** `--help` printed `USAGE` and exited before any check ran. Bare flag. */
+  help?: boolean;
 }
 
 const FLAGS: Record<string, 'from' | 'repo' | 'sendTest'> = {
@@ -70,6 +73,12 @@ export function parseArgs(argv: string[]): DoctorArgs {
     // --fix is a bare boolean; it never takes a value.
     if (flag === '--fix') {
       args.fix = true;
+      i += 1;
+      continue;
+    }
+    // --help is a bare boolean too; the bin prints USAGE and exits before running anything.
+    if (flag === '--help') {
+      args.help = true;
       i += 1;
       continue;
     }

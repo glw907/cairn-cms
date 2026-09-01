@@ -15,8 +15,5 @@
   "audit-log-commit-failed",
   "audit-cli-chip-ground-collision-rendered-rule",
   "audit-cli-form-font-parity-rendered-rule",
-  "audit-cli-no-help-on-any-of-the-five-commands",
-  "audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles",
-  "audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm",
-  "audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior"
+  "audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm"
 ]

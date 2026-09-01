@@ -43,6 +43,7 @@ check needed an input the run genuinely couldn't find, which drives its own exit
 | `--send-test <address>` | none | Opt in to one real test email to this address. |
 | `--probe [url]` | none | Opt in to the live admin sign-in probe. Bare `--probe` probes the `PUBLIC_ORIGIN` input. |
 | `--fix` | none | Install or refresh the packaged `cairn-admin-screens` skill into `.claude/skills/cairn-admin-screens/`, before the checks run. |
+| `--help` | none | Print usage and exit 0, without running any check. |
 
 The credential variables are the same values `wrangler` and the Worker use:
 

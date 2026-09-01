@@ -4,5 +4,5 @@
 // free to combine those modules; it carries no logic of its own.
 export { runDoctor, exitCodeFor } from './run.js';
 export { formatReport } from './report.js';
-export { parseArgs, contextFromEnv, deriveMissingInputs, defaultChecks } from './assemble.js';
+export { parseArgs, contextFromEnv, deriveMissingInputs, defaultChecks, USAGE } from './assemble.js';
 export type { DoctorArgs, DerivationSources } from './assemble.js';

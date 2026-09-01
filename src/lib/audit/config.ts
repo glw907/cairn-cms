@@ -100,7 +100,11 @@ export interface AuditConfig {
    * would otherwise miss.
    */
   sheetPaths: string[];
-  /** The pages rendered mode visits. */
+  /**
+   * The pages rendered mode visits: `rendered.pages` (defaulting to the core admin routes) with
+   * `rendered.extraPages` appended. `extraPages` is additive on purpose, so naming a site's own
+   * screen does not silently drop the core routes it no longer restates.
+   */
   renderedPages: string[];
   renderedAllowlist: RenderedAllowlistEntry[];
 }
@@ -180,7 +184,10 @@ export function resolveConfig(
     sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ?? DEFAULT_SHEET_CANDIDATES[0],
     ]),
-    renderedPages: asPathList(renderedSection.pages, 'rendered.pages', DEFAULT_RENDERED_PAGES),
+    renderedPages: [
+      ...asPathList(renderedSection.pages, 'rendered.pages', DEFAULT_RENDERED_PAGES),
+      ...asPathList(renderedSection.extraPages, 'rendered.extraPages', []),
+    ],
     renderedAllowlist: asAllowlist(renderedSection.allowlist, 'rendered.allowlist'),
   };
 }
@@ -208,6 +215,8 @@ export function loadConfig(root: string, configPath?: string): AuditConfig {
 interface AuditFlags {
   rendered: boolean;
   config?: string;
+  /** `--help` printed `USAGE` and exited before any run started. */
+  help?: boolean;
 }
 
 /**
@@ -218,8 +227,9 @@ export type AuditArgs =
   | ({ command: 'audit' } & AuditFlags)
   | ({ command: 'norms'; term: string } & AuditFlags);
 
-const USAGE = [
-  'Usage: cairn-audit [--rendered] [--config <path>]',
+/** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
+export const USAGE = [
+  'Usage: cairn-audit [--rendered] [--config <path>] [--help]',
   '       cairn-audit norms <selector-or-role>',
 ].join('\n');
 
@@ -253,6 +263,11 @@ export function parseArgs(argv: string[]): AuditArgs {
       }
       flags.config = value;
       i += 2;
+      continue;
+    }
+    if (flag === '--help') {
+      flags.help = true;
+      i += 1;
       continue;
     }
     throw new Error(`unknown argument ${flag}\n${USAGE}`);

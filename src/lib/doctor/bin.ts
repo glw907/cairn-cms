@@ -19,6 +19,7 @@ import {
   formatReport,
   parseArgs,
   runDoctor,
+  USAGE,
 } from './index.js';
 
 async function main(): Promise<void> {
@@ -28,6 +29,11 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 2;
+    return;
+  }
+
+  if (args.help) {
+    console.log(USAGE);
     return;
   }
 

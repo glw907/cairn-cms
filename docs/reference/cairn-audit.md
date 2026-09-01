@@ -7,6 +7,7 @@ puts it on the project's path.
 npx cairn-audit                          # run the static rules over the admin surfaces
 npx cairn-audit --rendered               # run the rendered rules against a running admin
 npx cairn-audit norms <selector-or-role> # look up a measured norm
+npx cairn-audit --help                   # print usage and exit
 ```
 
 The static audit reads the working directory. The `norms` subcommand reads only the manifest inside
@@ -43,7 +44,7 @@ component can answer differently on purpose.
 |---|---|
 | 0 | No unsuppressed error-tier finding survived |
 | 1 | At least one did |
-| 2 | The run couldn't start or couldn't finish: a bad flag, a malformed config, no server, no browser |
+| 2 | The run couldn't start or couldn't finish: a bad flag, a malformed config, no server, no browser, or the [redirect-trap refusal](#the-redirect-trap-refusal) |
 
 Exit code 2 is never a design verdict. The audit reports it rather than printing a clean report it
 can't stand behind.
@@ -128,7 +129,8 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
 | `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css"]` |
-| `rendered.pages` | the core admin routes | The pages rendered mode visits. **Replaces the defaults, never extends them**: a config naming one page of your own audits that page alone, and the six core routes go unmeasured while the run still reports a clean pass. Restate the defaults beside your own page |
+| `rendered.pages` | the core admin routes | The pages rendered mode visits. Naming this key replaces the default list |
+| `rendered.extraPages` | none | Pages rendered mode visits IN ADDITION to `rendered.pages` (or, absent that key, the core admin routes). Name your own screen here rather than restating the six core routes beside it |
 | `rendered.allowlist` | none | Rendered-mode exemptions. See [The allowlist](#the-allowlist) |
 
 A default scan path your tree doesn't have is skipped, since the defaults span a library and a
@@ -198,6 +200,20 @@ than degrading the run silently: an entry with no `=`, or an empty name, since a
 produce a quietly narrower audit; and an entry named `cairn-admin-theme`, since the run owns that
 cookie itself, one per browser context, and a caller override would invalidate the per-theme
 measurement.
+
+### The redirect-trap refusal
+
+Without a session cookie, every authenticated admin route server-redirects to the sign-in card
+before a rule ever runs, and the redirect happens before hydration. The preceding post-hydration
+page-identity guard compares the server-rendered and the hydrated capture, finds them in
+agreement, since both are the login card, and never fires. Left unchecked, the run would measure
+the same sign-in card once per configured page and report zero errors, a silent green.
+
+The harness refuses instead. Suppose `/admin/login` is itself one of the configured pages, and
+every other configured page's server response also carries the login page's own title and
+landmark. The run then throws and exits 2 rather than reporting clean, naming
+`CAIRN_AUDIT_COOKIES` in the message. Set the cookie, per
+[Auditing an authenticated admin](#auditing-an-authenticated-admin), and re-run.
 
 ### The rules
 

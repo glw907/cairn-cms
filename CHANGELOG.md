@@ -121,6 +121,34 @@
   heading still glides. Consumers must: nothing; a site that already copied `site.css` and the
   (site) layout during scaffolding can pull the same rules and the toggle.
 
+- The conventions pass (Task 11) closes three ranked CLI-evenness and config-contract items.
+  **Bin evenness (`audit-cli-no-help-on-any-of-the-five-commands`,
+  `audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior`):** all four engine bins
+  (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`, `cairn-manifest`) now answer `--help` by
+  printing their existing `USAGE` constant at exit 0. `cairn-manifest` (`vite/bin.ts`) gains argv
+  parsing for the first time, through a new `vite/assemble.ts` mirroring the doctor split: it
+  accepts only `--help` and rejects everything else at exit 2, where it previously ignored argv
+  entirely. `vite/bin.ts` also moves from `process.exit(1)` to `process.exitCode`, the stdout-flush
+  rule its three siblings already stated verbatim, so a piped CI job's error message can no longer
+  truncate before the process ends. **Config contract
+  (`audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles`):**
+  `cairn-audit.config.json`'s `rendered.extraPages` is a new, additive key: it appends to
+  `rendered.pages` (or, absent that key, the six core admin routes) instead of requiring a
+  consumer to restate the defaults beside its own screen, so the "replaces, never extends"
+  documented trap dissolves. The rendered harness also gains a redirect-trap refusal: run without
+  `CAIRN_AUDIT_COOKIES`, every authenticated admin route server-redirects to the sign-in card
+  before hydration, which the post-hydration page-identity guard cannot catch (both sides already
+  agree, since both are the login page); when `/admin/login` is itself configured and every other
+  configured page's response also resolves to the login route's own title and landmark, the run
+  now throws and exits 2, naming `CAIRN_AUDIT_COOKIES`, instead of silently reporting a clean run
+  that measured the sign-in card once per page. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-redirect-trap-refusal),
+  [`cairn-manifest`](docs/reference/cli-cairn-manifest.md#exit-behavior), and
+  [`cairn-media-seed`](docs/reference/cli-cairn-media-seed.md#flags). Consumers must: a script
+  that passed `cairn-manifest` an unrecognized argument, previously silently ignored, now exits 2
+  naming it; a CI job piping `cairn-manifest`'s output no longer risks a truncated error message.
+  Nothing else changes for a caller already passing no arguments or valid flags.
+
 ### Changed
 
 - `/auth-channel` folds onto the engine's one auth grammar. Five changes, all breaking for a site

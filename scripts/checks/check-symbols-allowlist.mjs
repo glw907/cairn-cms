@@ -20,6 +20,7 @@ export const ALLOWLIST = new Set([
   'cli-flag:--from', // cairn-doctor's and cairn-media-seed's own flag, not create-cairn-site's
   'cli-flag:--repo', // cairn-doctor's own flag, not create-cairn-site's
   'cli-flag:--header', // cairn-media-seed's own flag, not create-cairn-site's
+  'cli-flag:--help', // cairn-audit's, cairn-doctor's, cairn-media-seed's, and cairn-manifest's own flag, not create-cairn-site's
   'cli-flag:--template', // sv create's own flag, not create-cairn-site's
   'cli-flag:--types', // sv create's own flag, not create-cairn-site's
   'cli-flag:--no-add-ons', // sv create's own flag, not create-cairn-site's

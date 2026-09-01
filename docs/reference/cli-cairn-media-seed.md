@@ -39,6 +39,7 @@ npx cairn-media-seed --from https://staging.your-site.com \
 | `--from <base-url>` | Yes | The deployed site to download from. Each manifest entry's public delivery URL, `<base-url>/media/<slug>.<hash>.<ext>`, is derived from this. A trailing slash is tolerated. |
 | `--header 'Name: value'` | No, repeatable | Forwarded on every download request. Repeat the flag for multiple headers; a later `--header` for the same name overwrites an earlier one. |
 | `--bucket <name>` | No | The R2 bucket name to write into. Overrides the wrangler-config resolution below. |
+| `--help` | No | Prints usage and exits 0, without requiring `--from` or touching any bucket. |
 
 A missing `--from`, an unknown flag, a flag with no value, or a `--header` that isn't
 `Name: value` all print the usage line to stderr and exit 2 before any network request runs.
@@ -67,7 +68,7 @@ applies the same tolerance elsewhere.
 
 | Code | Meaning |
 |---|---|
-| 0 | Every manifest entry synced (or the manifest holds none). |
+| 0 | `--help` printed usage, or every manifest entry synced (or the manifest holds none). |
 | 1 | At least one entry failed to download or write. Each failure prints `FAILED <slug>: <message>` to stderr before the summary line. |
 | 2 | Bad flags, or the R2 bucket name could not be resolved. The message names the fix. |
 

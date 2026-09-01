@@ -42,11 +42,17 @@ Wire it as a package script and run it from the project root. The showcase wires
 npm run cairn:manifest
 ```
 
-The command takes no arguments. It uses the current working directory as the project root, so run it
-from the directory that holds your `vite.config.ts`.
+The command takes one optional flag, `--help`, which prints usage and exits without touching the
+manifest. It otherwise reads no arguments and uses the current working directory as the project
+root, so run it from the directory that holds your `vite.config.ts`.
 
 ## Exit behavior
 
-On success the command writes the manifest and exits zero. On failure it prints the error message to
-stderr and exits non-zero. Two common failures carry a clear message: no Vite config found in the
-working directory, and a Vite config with no `cairnManifest()` plugin to read the build options from.
+| Code | Meaning |
+|---|---|
+| 0 | `--help` printed usage, or the command wrote the manifest. |
+| 1 | The write failed. The message goes to stderr. Two common failures carry a clear one: no Vite config found in the working directory, and a Vite config with no `cairnManifest()` plugin to read the build options from. |
+| 2 | An unrecognized argument. The usage line goes to stderr. |
+
+The codes go through `process.exitCode`, never `process.exit`, so a piped stdout flushes the whole
+message before the process ends.

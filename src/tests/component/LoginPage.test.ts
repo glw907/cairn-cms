@@ -96,6 +96,25 @@ describe('LoginPage', () => {
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
 
+  it('makes every message panel a focus target, not only the link-error pair', async () => {
+    // The component's own comment claims the attribute is on every panel without exception, so
+    // the action-result panels are pinned here alongside the load-time ones the landing-signal
+    // case covers. A partial application is what this replaced.
+    for (const form of [
+      { status: 'send_error' as const, sent: false },
+      { status: 'throttled' as const, sent: false },
+      { error: 'Something went wrong.' },
+    ]) {
+      const screen = await render(LoginPage, {
+        data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
+        form,
+      });
+      const panel = screen.container.querySelector('[role="alert"], [role="status"]');
+      expect(panel, JSON.stringify(form)).toHaveAttribute('tabindex', '-1');
+      screen.unmount();
+    }
+  });
+
   it('shows a throttled hint and keeps the form available', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'throttled', sent: false } });
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();

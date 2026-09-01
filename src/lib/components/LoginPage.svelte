@@ -107,20 +107,21 @@ the allowlist, so the page never leaks membership (spec §7.1).
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {data.siteName}</h1>
       <p class="mt-1 mb-5 text-center type-body text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
+      <!-- tabindex="-1" on every message panel below, without exception, so an assistive
+           technology reaching this page can move to whichever message it carries rather than
+           reading down to it. The page is JS-free, so nothing focuses one on load; the title
+           above is what announces the state a redirect landed in. -->
       {#if form?.status === 'send_error'}
-        <div role="alert" class="alert alert-warning mb-3 type-body">
+        <div role="alert" tabindex="-1" class="alert alert-warning mb-3 type-body">
           We’re having trouble sending sign-in links right now. Please contact the site owner.
         </div>
       {:else if form?.status === 'throttled'}
-        <div role="status" class="alert mb-3 type-body">
+        <div role="status" tabindex="-1" class="alert mb-3 type-body">
           You requested a link recently. Check your inbox, or wait a minute and try again.
         </div>
       {:else if form?.error}
-        <div role="alert" class="alert alert-error mb-3 type-body">{form.error}</div>
+        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">{form.error}</div>
       {/if}
-      <!-- tabindex="-1" makes each alert a programmatic focus target, so an assistive technology
-           reaching the landing page can move to the refusal directly rather than reading down to
-           it. The page is JS-free, so nothing focuses it on load; the title above carries that. -->
       {#if linkError === NO_PENDING_REQUEST_ERROR}
         <!-- This browser holds no pending sign-in, which is all the engine knows: it cannot tell a
              second device from a cleared cookie jar. The instruction is the one that works in

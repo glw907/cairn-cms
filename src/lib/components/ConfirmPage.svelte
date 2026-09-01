@@ -42,9 +42,13 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
       <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
     </div>
 
+    <!-- tabindex="-1" on every alert below, without exception, so an assistive technology can move
+         to whichever refusal this page carries rather than reading down to it. The page is
+         JS-free, so nothing focuses one on load; the h1 swaps per state to announce which is
+         showing. -->
     {#if form?.error}
       <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This didn’t work</h1>
-      <div role="alert" class="alert alert-error type-body">{form.error}</div>
+      <div role="alert" tabindex="-1" class="alert alert-error type-body">{form.error}</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Back to sign in</a>
     {:else if data.error === NO_PENDING_REQUEST_ERROR}
       <!-- The confirm refused because this browser carries no pending sign-in, so the fix is to
@@ -58,7 +62,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Back to sign in</a>
     {:else if data.error || !data.token}
       <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This link didn’t work</h1>
-      <div role="alert" class="alert alert-error type-body">This sign-in link is invalid or expired.</div>
+      <div role="alert" tabindex="-1" class="alert alert-error type-body">This sign-in link is invalid or expired.</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>
     {:else}
       <h1 class="type-heading font-bold font-[family-name:var(--font-display)]">Almost there</h1>

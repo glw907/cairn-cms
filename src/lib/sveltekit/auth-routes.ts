@@ -275,9 +275,17 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * to /admin. An invalid, replayed, or expired token redirects to the login page.
    *
    * The same-browser check lives inside the consuming `DELETE`'s own predicate, so a link opened
-   * in another browser (a forwarded message, a mail scanner following the link, an attacker
-   * putting their own link in front of a victim) refuses without burning the token the requesting
-   * browser can still use: the row is not deleted unless its `nonce_hash` matches.
+   * in another browser (a mail scanner following the link, an attacker putting their own link in
+   * front of a victim) refuses without burning the token the requesting browser can still use:
+   * the row is not deleted unless its `nonce_hash` matches.
+   *
+   * One residual the rebind leaves, stated narrowly rather than claimed away: someone who holds a
+   * FORWARDED token can still make it work, by posting the request form for that address inside
+   * the send cooldown, which rebinds the row to their own browser (`rebindToken`). It takes both
+   * the token and the form, and only inside the window; outside it, their request mints a new
+   * token and destroys the forwarded one instead. Forwarding a link therefore remains a real way
+   * to hand over an account, which is the thing to tell an editor, and the binding is what stops
+   * the passive cases above.
    *
    * A browser carrying no pending cookie is NOT short-circuited before the consume. It passes
    * `null`, which is exactly what an unbound row (`nonce_hash IS NULL`, written before

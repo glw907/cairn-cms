@@ -11,9 +11,11 @@ describe('ConfirmPage', () => {
     expect(screen.container.querySelector('form input[name="csrf"]')).toHaveValue('csrf-tok');
   });
 
-  it('shows an error when the link was invalid', async () => {
+  it('shows an error when the link was invalid, in a focusable alert', async () => {
     const screen = await render(ConfirmPage, { data: { token: '', siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' } });
     await expect.element(screen.getByText(/expired|invalid/i)).toBeInTheDocument();
+    // Every alert on this page carries tabindex="-1", not only the no-pending one.
+    expect(screen.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
   });
 
   it('names the same-browser requirement instead of the expired copy when no sign-in is pending here', async () => {
@@ -36,6 +38,7 @@ describe('ConfirmPage', () => {
       form: { error: 'Something went wrong and your changes were not saved. Try again.' },
     });
     await expect.element(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+    expect(screen.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
     expect(screen.container.querySelector('[role="alert"]')?.textContent ?? '').not.toMatch(/invalid or expired/i);
   });
 

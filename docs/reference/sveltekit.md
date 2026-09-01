@@ -915,6 +915,14 @@ Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-i
 named `?/logout` action on the current URL. The `config.branding` sets the site name and sender
 shown in the email; pass a custom `config.send` to override the default Cloudflare sender.
 
+The sign-in view's two handlers share the pending-login nonce, the cookie that binds a magic link
+to the browser that asked for it. `loginLoad` sets it on the GET, so a browser holds one before it
+posts anything, and `requestAction` reuses that value rather than rotating it. On the throttled
+branch, where the send cooldown suppresses a second email, `requestAction` also rebinds the live
+token to the requesting browser when the two disagree, which is what keeps repeated requests from
+locking an editor out of their own link. See [the security
+model](../extend/security-model.md#sign-in-binds-to-the-browser-that-asked) for the full behavior.
+
 `requestAction` awaits the send, so its `RequestResult` (exported since 0.38.0) reflects the
 outcome. The `sent` status covers both a successful send and a non-allow-listed address (the two
 return identical results, so the response never reveals membership). A `send_error` means the email

@@ -287,8 +287,10 @@ open edits, not part of the shape itself.
   read back on confirm, so a confirm without the matching cookie fails. Ruled (Geoff,
   2026-08-27): file, not fix, in this slice.
 - **Reopens on:** closed. Executed by Task 7 of the conventions pass, value-bound rather than
-  presence-only: `requestAction` mints or reuses a `cairn_login_pending` nonce cookie and stores
-  its hash on the token row (`migrations/0004_login_nonce.sql`), and `consumeToken` compares the
+  presence-only: `loginLoad` and `requestAction` both mint or reuse a `cairn_login_pending` nonce
+  cookie, so a browser holds one from the moment the sign-in form renders rather than only after
+  it POSTs; `requestAction` stores that nonce's hash on the token row
+  (`migrations/0004_login_nonce.sql`), and `consumeToken` compares the
   two inside its own atomic `DELETE`, so no `===` runs against a secret and a browser holding its
   own pending login still cannot confirm another's token. Three properties the execution pins,
   each with its own test: the mint is unconditional and byte-identical on all four `requestAction`

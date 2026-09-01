@@ -14,9 +14,9 @@ from your end. Let your site owner know.
 You asked for a second link too soon after the first. Use the one already in your inbox,
 or wait a minute before trying again.
 
-**"That link expired. Request a new one below."**, or **"This link didn't work"** on the
-confirm page: the link you opened is more than 10 minutes old, or has already been used.
-Request a fresh one and open it right away.
+**"That link expired. Request a new link below and open it in this browser."** on the sign-in
+page, or **"This link didn't work"** on the confirm page: the link you opened is more than 10
+minutes old, or has already been used. Request a fresh one and open it right away.
 
 **"This didn't work"** on the confirm page, with an error message: something unexpected
 happened while confirming. Go back and sign in again.

@@ -97,11 +97,19 @@ for an editor's address once a minute keeps the live token bound to their own br
 per-address cooldown they just started throttles the editor's own recovery request, so the editor
 can neither confirm the link in their inbox nor earn a new one.
 
-Last-requester-wins is safe because asking grants nothing. The link only ever reaches the editor's
-own inbox, so an attacker who posts the form learns no token. The worst they achieve is making the
-editor's current link stop working, which they could already do before the binding existed, since a
-fresh request replaces the previous token. The editor recovers by asking again, and the rebind is
-symmetric, so the last person to ask is the one it works for.
+Last-requester-wins is safe because asking, on its own, grants nothing. The link only ever reaches
+the editor's own inbox, so someone who posts the form learns no token. The worst they achieve is
+making the editor's current link stop working, which they could already do before the binding
+existed, since a fresh request replaces the previous token. The editor recovers by asking again,
+and the rebind is symmetric, so the last person to ask is the one it works for.
+
+The one residual, stated plainly: someone who *already holds* a token, because an editor forwarded
+the mail, can make it work by posting the request form for that address inside the one-minute
+cooldown, which rebinds the row to their browser. It takes both the token and the form, and only
+inside that window. Outside it, their request mints a new token and destroys the forwarded one. So
+forwarding a sign-in link is still a way to hand someone your account, and that's what to tell your
+editors. What the binding stops is the passive cases: a link-following mail scanner, and an attacker
+putting their own link in front of an editor's browser.
 
 Two rows the rebind deliberately skips: an expired one, which stays dead however it's touched, and
 an unbound one, for the reason in the next section. It's a single `UPDATE`, so a rebind racing the

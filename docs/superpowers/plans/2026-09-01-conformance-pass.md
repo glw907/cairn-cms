@@ -138,7 +138,9 @@ Carried from the 4a plan (same initiative, same window); every task inherits the
   (not expected)
 - Modify: `src/tests/unit/sveltekit-barrel-prune.test.ts` — its `KEPT` list names six of
   this task's retires (`MediaDeleteRefusal`, `MediaUpdateFailure`, `MediaReplaceFailure`,
-  `MediaAltPropagateFailure`, `MediaBulkFailure`, `UploadResult` at `:43-49`) and the suite
+  `MediaAltPropagateFailure`, `MediaBulkFailure`, `UploadResult` at `:43-49` — follow the
+  SIX NAMES, not the line range: `ContentFormFailure` at `:48` sits inside it and is a KEEP,
+  the carrier of the `UsageEntry` recovery expression; fold R2-N-3) and the suite
   asserts they still resolve from `/sveltekit`; the list must shrink in the same commit as
   the rows or the gate fails (fold ET-F-1)
 - Modify: `docs/internal/api-surface.md` (regenerated), the reference pages that list the 26
@@ -203,9 +205,16 @@ reconciles (the docket's tiers).
   `AuthBranding` comment and row), `src/lib/delivery/data.ts:53-56` (the parked
   `PublishActionsConfig` re-export row on `/delivery/data` — its own comment and
   `scripts/checks/check-surface-reexports.json:250-256` both say its removal belongs to this
-  reshape; fold ET-F-3), `src/lib/sveltekit/publish-actions.ts:23,29` (both aliases;
-  `normalizePublishActions` at `:47-48` takes `PublishActionsConfig`, `resolvePublishActions`
-  at `:75-76` takes `ResolvedPublishAction[]` — retype both to `PublishActionEntry[]`),
+  reshape — **and the SIBLING row at `:245-250`, `PublishActionEntry` on `/delivery/data`,
+  whose recorded reason says "Both leave this subpath when that reshape lands": this task
+  drops that re-export too, a second breaking change with its own `Consumers must:` line
+  (import `PublishActionEntry` from its canonical home instead); no gate catches the row's
+  reason going stale if the export survives, so the drop is the recorded intent executed,
+  not optional** (fold R2-F-1), `src/lib/sveltekit/publish-actions.ts:23,29` (both aliases;
+  `normalizePublishActions` at `:47-48` takes `PublishActionsConfig` and returns
+  `ResolvedPublishAction[]` at `:50`, `resolvePublishActions` at `:75-76` takes
+  `ResolvedPublishAction[]` — retype all three positions to `PublishActionEntry[]`;
+  fold R2-N-2),
   `src/lib/content/types.ts:427` (`CairnRuntime.publishActions`), the `/sveltekit` barrel
   row re-exporting `MediaEntry`, and `scripts/checks/check-surface-reexports.json` (the
   `AuthBranding` and `PublishActionsConfig` rows)
@@ -239,7 +248,8 @@ reconciles (the docket's tiers).
 - [ ] **Step 4:** Drift-hunt the retired/moved names full-scope; surface regen; reference
   pages; CHANGELOG (breaking, `Consumers must:` per PUBLIC name — `AuthBranding` moves its
   import to `@glw907/cairn-cms/sveltekit`; `PublishActionsConfig`'s recovery is
-  `PublishActionEntry[]`); ledger closes (the `AuthBranding` entry notes the ASC comment
+  `PublishActionEntry[]`; `PublishActionEntry` on `/delivery/data` moves its import to the
+  canonical home); ledger closes (the `AuthBranding` entry notes the ASC comment
   mention is decorative, per verify).
 - [ ] **Step 5:** Full gate; commit.
 
@@ -254,7 +264,7 @@ stale rows; `check:consumers` and `check:dev-package` green (the dev package imp
 
 **Files:**
 - Modify: `src/lib/sveltekit/types.ts` — BOTH shapes: `HistoryData.draft.startedAt`
-  (field at `:136`) and `RevertFailure`'s `draft_exists` member `draftStartedAt` (field at
+  (field at `:138`; fold R2-F-4) and `RevertFailure`'s `draft_exists` member `draftStartedAt` (field at
   `:176`), plus both adjacent "the field keeps its name for API stability" compensating
   comments (fold ET-B-3: these are two different types; the docket's phrasing collapsed
   them)
@@ -356,9 +366,12 @@ documented fields match the emitted record.
   ordering assertion below
 
 **Interfaces:**
-- Produces: **`previewMint(event, { concept, entryId })`** (renamed from `mintPreviewToken`
-  in the same breaking window — it joins `previewLoad` as the `/sveltekit` preview pair, and
-  the noun-first form matches the route-factory family; fold BR-F-8). The contract:
+- Produces: **`previewMint(runtime, config, event, { concept, entryId })`** (renamed from
+  `mintPreviewToken` in the same breaking window — it joins `previewLoad` as the
+  `/sveltekit` preview pair, resolving against `previewLoad(runtime, config, event)`'s
+  existing parameter shape plus the explicit target, with `db` reached the way
+  `previewLoad` reaches it; the noun-first form matches the route-factory family; folds
+  BR-F-8, R2-B-1). The contract:
   - The editor derives from the event via `requireEditor` (the guard-resolved session), so
     it cannot be synthesized by a caller (fold SEC-F-1); the caller passes NO editor.
   - **Attribution and revocation key from that same resolved editor**: the stored row's
@@ -367,19 +380,24 @@ documented fields match the emitted record.
     (`DELETE FROM preview_tokens WHERE editor = ?`) always matches; `record` drops its
     free-string `editor` member entirely (folds SEC-B-2, BR-F-8).
   - **Authorization runs FIRST and short-circuits**: the concept-scoped access check plus id
-    shape-validation, the SAME sequence the engine's own `previewMintAction` runs
-    (`requireEntryFromParams` → `requireEngineAccess`), extracted or called rather than
-    re-implemented. The no-draft outcome is only ever computed for an authorized editor, so
-    the refusal never becomes an entry-existence oracle (fold SEC-F-2). "Concept-scoped plus
-    id-validated" is the accurate phrasing — the engine has no per-entry grant
-    (fold SEC-N-7).
+    shape-validation, the SAME sequence the engine's own `previewMintAction` runs —
+    **EXTRACTED, never called as `requireEntryFromParams`** (that helper derives its target
+    from ROUTE PARAMS, so calling it would authorize the route's params while minting for
+    the argument's entry, and 404 on any non-`/admin/[concept]/[id]` route — the ledger's
+    own any-site caller; fold R2-B-1). The extracted form, explicitly:
+    `requireEditor(event)` → `findConcept(runtime.concepts, concept)` →
+    `requireEngineAccess(runtime.access, editor, concept)` → `isValidId(entryId)` → the
+    backend draft check. The access map comes from `runtime.access` (what
+    `previewMintAction` uses — the parity the SEC-B-3 disposition rests on), not
+    `locals.cairnAccess`. The no-draft outcome is only ever computed for an authorized
+    editor, so the refusal never becomes an entry-existence oracle (fold SEC-F-2).
+    "Concept-scoped plus id-validated" is the accurate phrasing — the engine has no
+    per-entry grant (fold SEC-N-7).
   - **Draft existence is checked** via the backend (`branchHead(pendingBranch(...))`, the
     check `previewMintAction` performs), closing BOTH halves of the header obligation the
     task deletes; a mint on an entry with no pending branch refuses rather than minting a
     token that `previewLoad` would resolve down the ended-page path into a token-gated read
-    of a default-branch entry (fold SEC-F-3). The parameters thread whatever the sequence
-    needs (db, config, backend/runtime), resolved by the implementer against
-    `previewLoad`'s existing shape.
+    of a default-branch entry (fold SEC-F-3).
   - The refusal is a discriminated result on the 4a `outcome` grammar, no
     throw-for-control-flow; the happy arm carries `{ token, expiresAt }` as today.
   - **Token hygiene is UNCHANGED and stated**: CSPRNG 256-bit generation, hash-at-rest
@@ -401,18 +419,23 @@ documented fields match the emitted record.
 - [ ] **Step 2:** Implement the contract above; delete the header obligation and the
   matching wording in the reference page and the ledger quote; rename the export and
   repoint `previewMintAction` if it shares the helper.
-- [ ] **Step 3:** Docs, surface regen, CHANGELOG (breaking: rename AND return-shape change —
-  the old signature returned a bare `{ token, expiresAt }` promise and threw on config
-  errors; `Consumers must:` names the rename, the dropped `record.editor` member, and the
-  `outcome` discriminant the caller now narrows on; fold ET-F-7, SEC-N-6), ledger closes.
+- [ ] **Step 3:** Docs, surface regen, CHANGELOG (breaking: rename, full call-form change,
+  AND return-shape change — the old signature was `mintPreviewToken(db, config, record)`
+  returning a bare `{ token, expiresAt }` promise that threw on config errors;
+  `Consumers must:` names the rename, the new `(runtime, config, event, target)` form with
+  the dropped `db` parameter and dropped `record.editor` member, the precondition that the
+  caller runs where the admin guard has resolved `locals.cairnEditor` (the sole editor
+  source now), and the `outcome` discriminant the caller narrows on; folds ET-F-7,
+  SEC-N-6, R2-F-5), ledger closes.
 - [ ] **Step 4:** Full gate; commit.
 
 **Acceptance criteria:** no call path mints a preview token without the concept-scoped
 check and the draft-existence check; the stored `editor` value always equals the resolved
 session editor's email (assert in a test that a mint under editor A never stores any other
 attribution); authorization-before-existence ordering asserted; generation, hashing, TTL
-clamp, and scope byte-identical to `main`; grep for `mintPreviewToken` returns only
-CHANGELOG/history hits.
+clamp, and scope byte-identical to `main`; the exported parameter list is exactly
+`(runtime, config, event, { concept, entryId })` (fold R2-B-1: Produces and contract must
+not ship disagreeing); grep for `mintPreviewToken` returns only CHANGELOG/history hits.
 
 ---
 
@@ -468,8 +491,12 @@ the CSRF context line is untouched in the diff.
   this subpath", which this retire invalidates. **The row is KEPT with its justification
   REWRITTEN** (four consumer repos import `ComponentContext` from `/render`, and the method
   migration makes the type MORE necessary there, since sites type their builder parameters
-  with it): new reason cites the consumer-builder parameter typing. Deleting the row or
-  leaving the stale reason both fail `check:surface` (fold ET-B-2).
+  with it): new reason cites the consumer-builder parameter typing. Deleting the row fails
+  `check:surface` (the publication becomes an unrecorded duplicate); a stale REASON fails
+  no gate — the checker never inspects that field — so the rewrite is held by this task's
+  acceptance criteria and the diff review, not a gate (folds ET-B-2, R2-F-2). The stale
+  in-source twin of the same justification, the comment at `authoring.ts:9-10` ("because
+  `strAttr`'s own parameter names it"), rewrites in the same edit (fold R2-N-1).
 - Modify: `examples/showcase/src/theme/cairn.config.ts` (its `strAttr` calls), regenerated
   `templates/waymark` via `npm run emit-template`, every `skills/` and `docs/` page teaching
   the standalone form, regenerated surface, `docs/reference/` render page, `CHANGELOG.md`,
@@ -698,11 +725,18 @@ and tuning are byte-identical to `main`; the ledger entry is closed, not progres
   - **Third call site (fold SEC-F-5):** the verify-refused revocation at `factory.ts:1005`
     — a roster hook actively revoking a live session, silent today — GAINS the
     `auth.channel.session.destroyed` emit with the correlationId derived from
-    `resolved.subject`. The orphan-cleanup site at `:923` OMITS the identity field on its
-    emit (the destroyed row belongs to the incoming cookie's session, which need not be the
-    subject just confirmed; pairing the old session's identity with the new flow's
-    correlationId would silently link two identities in one record). The reference row
-    documents all three emit conditions.
+    `resolved.subject`. The orphan-cleanup site at `:923` **keeps its EXISTING
+    `correlationId` field exactly as documented today** (`log-events.md:89`) and merely
+    declines to ADD a second, subject-derived identity from the returned row — the
+    destroyed row belongs to the incoming cookie's session, which need not be the subject
+    just confirmed, and pairing the old session's identity with the new flow's
+    correlationId would silently link two identities in one record. No documented field is
+    removed anywhere in this step (fold R2-B-2). The reference row documents all three emit
+    conditions.
+  - **Salt-fault branch (fold R2-N-5):** logout must never fail on a salt fault —
+    `resolveSalt` caches only success, and the request path fails closed by design, but
+    logout is not a place to strand a user. If the salt read throws at the logout emit,
+    skip the record (the same shape as the no-row branch) and let the logout complete.
 - [ ] **Step 2 (rank 5):** `dictionary.added` (and `dictionary.add_conflict`, which
   inherits) stops shipping the flagged tokens verbatim: the record carries a word count.
   This is contract-consistency, not confidentiality (the same words go into the public
@@ -776,11 +810,16 @@ two old event names returns only CHANGELOG/history hits.
 
 - [ ] **Step 1 (`chip-ground-collision`, primary path):** land the filed chroma-aware
   repair (ROADMAP: "a distance formula that can see hue, plus a recalibrated floor" — the
-  formula today has no chroma term and produced 24 false errors of 40 on its first real
-  consumer, a measured 60% false-positive rate). Encode the ASC false-positive cases as
-  fixtures that must pass under the repaired formula. **Fallback** (only if the
-  recalibration cannot be validated inside this task): hold the rule out of the registry
-  until the repair lands, per the docket shape. **The measured-error-rate discriminator
+  formula has no chroma term and produced 24 false errors of 40 on its first real consumer,
+  a measured 60% false-positive rate). **Current tier, stated (fold R2-F-3): the rule is
+  ALREADY advisory** — demoted out of the error tier in design-infrastructure Pass 3
+  (`rules/rendered/index.ts:8-11`), so the error-tier harm the docket cites is already
+  remedied and the docket's hold-out-of-the-registry fallback is now strictly worse than
+  the shipping state (it would trade an advisory signal for none — the same staleness
+  class as Task 10's docket entry). Encode the ASC false-positive cases as fixtures that
+  must pass under the repaired formula. **Fallback** (only if the recalibration cannot be
+  validated inside this task): NO change — the rule stays advisory as shipped and the
+  ROADMAP repair line stays filed. **The measured-error-rate discriminator
   (what separates this rule from the two kept geometry heuristics) is stated in the LEDGER
   entry, not on the reference page** — a reference reader needs the rule's behavior, tier,
   and known false-positive classes, not verdict provenance that reads as an exception
@@ -797,8 +836,9 @@ two old event names returns only CHANGELOG/history hits.
 - [ ] **Step 4:** Full gate; commit.
 
 **Acceptance criteria:** the ASC false-positive corpus passes under the repaired formula (or
-the rule is demonstrably absent from the registry with the discriminator recorded in the
-ledger); the three exemption classes have fixtures; no rule was promoted to error tier in
+the fallback took NO change — the rule still advisory as shipped, the ROADMAP line still
+filed, the discriminator recorded in the ledger either way); the three exemption classes
+have fixtures; no rule was promoted to error tier in
 this pass; the reference page carries behavior and tier only.
 
 ---
@@ -859,7 +899,9 @@ grammar-convention ledger entry carries the five-id amendment.
   `~/Projects/xcathletes-org`, `~/Projects/cairn-pub` — plus
   `examples/showcase/src/theme/cairn.config.ts`, `templates/waymark`, and `docs/`
 - Modify (branch-dependent): `src/lib/media/config.ts` (the `AssetConfig.variants` member,
-  its LIVE merge loop at `:116` — the field is unused, not inert; `presetUrl` looks up from
+  its per-variant validation loop at `:116` and the merge at `:127`
+  (`{ ...BUILT_IN_PRESETS, ...(assets.variants ?? {}) }`; fold R2-N-4) — the field is
+  unused, not inert; `presetUrl` looks up from
   the merged map — and, riding only on retire, the `VariantSpec` export), regenerated
   surface (**`ResolvedAssetConfig.variants` prints inline in `CairnRuntime` on the public
   surface**, `api-surface.md:19,466`, so the snapshot changes beyond the media page; fold
@@ -992,4 +1034,26 @@ Task 13's ledger close; N-3 → `tokens: { input, output }`; N-4 → "unused, no
 the `transformUrl` recourse; N-5 → the `UsageEntry` shape picked in-plan (module-internal)
 with the provisional-rendering ledger note.
 
-**Round 2** (engine-triage, focused verification of this folded revision): pending.
+**Round 2** (engine-triage, focused verification of the folded revision at `759a6bba`):
+verified EVERY round-1 disposition clean — including Task 10's badge-tier re-authoring
+against the ledger's progress note, the channel `correlationId` reconstruction (the
+`deriveIdentity` `s:` branch makes `deriveIdentity(salt, subject, '')` byte-identical to
+the request flow's derivation), Task 5's authorization-first ordering against the real
+`previewMintAction`, the SEC-B-3 parity reasoning (ruled sound: a stricter exported helper
+protects nothing while the engine's own `?/previewMint` keeps the permissive reading), and
+Task 9's supersession (the 2026-08-26 ratified verdict postdates the 2026-07-20 ROADMAP
+parking — supersession by later authority, not conductor override). It returned two
+blockers and five fixes, all folded in this final revision: R2-B-1 → Task 5's sequence
+stated in extracted form with the pinned `(runtime, config, event, target)` signature
+(calling `requireEntryFromParams` would authorize route params, not the argument's entry);
+R2-B-2 → the orphan-cleanup emit keeps its existing documented `correlationId` and merely
+declines a second identity; R2-F-1 → the sibling `PublishActionEntry` `/delivery/data` row
+drops per its own recorded intent, with its `Consumers must:`; R2-F-2 → the stale-reason
+enforcement claim corrected (review holds it, no gate does); R2-F-3 → Task 12 re-derived
+against the rule's ACTUAL advisory tier (the docket's hold-out fallback was the Task 10
+staleness class again; the fallback is now no-change); R2-F-4 → the `types.ts:138` anchor;
+R2-F-5 → Task 5's `Consumers must:` completed (call-form, dropped `db`, guard
+precondition). Notes: R2-N-1 → the `authoring.ts:9-10` comment named; R2-N-2 →
+`normalizePublishActions`' return type; R2-N-3 → follow-the-names on the barrel-prune
+range; R2-N-4 → validation loop `:116`, merge `:127`; R2-N-5 → the logout salt-fault
+branch (skip the record, never fail logout).

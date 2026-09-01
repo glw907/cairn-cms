@@ -151,6 +151,16 @@
 
 ### Changed
 
+- `ReproContext` (`/reproductions`) gains an optional `mediaBase` prop, defaulting to
+  `/repro-assets`, threaded to both places a mounted story reaches its media base: the
+  `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's own
+  `mediaBase` field feeding `CairnAdminShell`'s identical, shadowing context for a `'shell'`
+  story. The `fixtureMediaBase` export on `/reproductions/manifest` retires; it never mitigated
+  the hardcode it named (a mounting site's asset route spells its own path segment regardless), so
+  the fix is a settable base, not a documented constant. Consumers must: pass `mediaBase` to
+  `ReproContext` instead of importing `fixtureMediaBase`; a site deployed under a SvelteKit
+  `paths.base` now composes fixture image URLs inside its own namespace by passing that prefix.
+
 - `/auth-channel` folds onto the engine's one auth grammar. Five changes, all breaking for a site
   that already runs `createAuthChannel`.
 

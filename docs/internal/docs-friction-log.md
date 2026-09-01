@@ -22,6 +22,17 @@ clearings.
 
 ## Live findings
 
+- **`fixtureCsrf` is a fixed constant with the same shape `fixtureMediaBase` had** (`contributor`,
+  2026-09-01, conformance pass Task 6, SEC-N-11). `ReproContext.svelte` sets
+  `setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf)` unconditionally from
+  `src/lib/reproductions/fixtures.ts`'s fixed string, with no override prop, the same class of
+  hardcode `fixtureMediaBase` was before this task reshaped it into a `mediaBase` prop. Fixture
+  scope only (no live token, no auth surface reachable from a reproduction), and predates this
+  pass, so it is filed rather than acted on. Candidate fix, if a consuming site ever needs to vary
+  it: the same shape, a `csrf?: string` prop on `ReproContext` defaulting to the current fixture
+  value. Trigger: a consumer reports needing a non-default CSRF fixture value, or a future audit
+  round reaches this constant.
+
 - **The showcase e2e visual suite is blind to chip-bearing surfaces** (`extender`, 2026-08-27).
   The admin visual specs passed unchanged through the StatusChip regrammar (dot removed, register
   renamed, grounds retuned) because no captured screen renders a chip within the 120px diff

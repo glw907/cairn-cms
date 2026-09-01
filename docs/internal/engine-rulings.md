@@ -3870,9 +3870,16 @@ when the remediation pass lands.
 ## audit-repro-fixturemediabase: `fixtureMediaBase`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A docs site under a SvelteKit paths.base cannot comply: ReproContext hardcodes the root-absolute /repro-assets with no override, so every fixture image 404s.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conformance pass, Task 6: `ReproContext` gains an
+  optional `mediaBase` prop defaulting internally to `/repro-assets`, threaded to both the
+  `MEDIA_BASE_CONTEXT_KEY` setContext and the shell-hosted path's own `shellData.mediaBase`
+  (`CairnAdminShell`'s shadowing context); the exported constant retires with no export-map entry
+  to drop (the `/reproductions/manifest` subpath survives on its other exports). Seam fit: the
+  reshape holds cleanly, matching verify's mechanical-viability finding, since fixture URLs
+  compose at render time from context plus asset slug/hash/ext rather than being baked into
+  fixture data.
 - **Shape:** Make the media base a ReproContext prop defaulting to /repro-assets; the site owns its URL space and the constant export can go.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 2.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 2; executed by [2026-09-01-conformance-pass.md](../superpowers/plans/2026-09-01-conformance-pass.md), Task 6.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-reproinstance: `ReproInstance`  (retire, 2026-08-26, any-site audit)

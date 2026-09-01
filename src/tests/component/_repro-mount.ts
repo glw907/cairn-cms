@@ -21,13 +21,16 @@ type ReproInstance = Parameters<NonNullable<ReproStory['pose']>>[1];
  *
  * Pin the viewport before calling: a story pinned to a width renders a different screen at the
  * ambient one, and a pose that clicks a `sm:`-gated control would fail for that reason alone.
+ * @param story - the registered story to mount
+ * @param mediaBase - `ReproContext`'s own `mediaBase` prop; omitted mounts at the engine default
  * @returns the render result, mounted and posed
  */
-export async function renderStory(story: ReproStory) {
+export async function renderStory(story: ReproStory, mediaBase?: string) {
   let instance: ReproInstance | undefined;
   const screen = await render(ReproContext, {
     props: {
       story,
+      mediaBase,
       oninstance: (value: ReproInstance) => {
         instance = value;
       },

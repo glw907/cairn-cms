@@ -56,9 +56,15 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   import { CSRF_CONTEXT_KEY } from '../components/csrf-context.js';
   import type { AdminShellData } from '../sveltekit/content-routes-core.js';
   import { fixtureConcept, fixtureCsrf, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
-  import { fixtureMediaBase, manifest } from './manifest.js';
+  import { manifest } from './manifest.js';
   import type { ReproStory } from './index.js';
   import '../components/cairn-admin.css';
+
+  // The media base every mounted story gets when its mounting page passes none: cairn-pub's own
+  // asset route, `/repro-assets`. Module-internal rather than exported (the conformance pass,
+  // audit-repro-fixturemediabase): a docs site deployed under a SvelteKit `paths.base` cannot
+  // override a hardcode, and the `mediaBase` prop below is the fix, not a second name for it.
+  const DEFAULT_MEDIA_BASE = '/repro-assets';
 
   // `ReproInstance` unexported (the retires pass, Task 2, a sanctioned NavIcon-class leak); the
   // mounted component's own exports, read structurally off `ReproStory.pose`'s own signature
@@ -86,9 +92,18 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
      * `ReproStory.pose`). A host that only renders a resting story needs none of it.
      */
     oninstance?: (instance: ReproInstance) => void;
+    /**
+     * The path segment every fixture media URL mounts under, so a docs site deployed under a
+     * SvelteKit `paths.base` composes URLs inside its own namespace instead of the engine's fixed
+     * default. Threaded to both places a mounted story reaches its media base: the
+     * `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's own
+     * `mediaBase` field, which feeds `CairnAdminShell`'s own shadowing `setContext` for a `'shell'`
+     * story. Defaults to `'/repro-assets'`.
+     */
+    mediaBase?: string;
   }
 
-  let { story, theme, oninstance }: Props = $props();
+  let { story, theme, oninstance, mediaBase }: Props = $props();
 
   // The mounted component's exports, handed out through a property setter rather than assigned to
   // a plain variable. `bind:this` writes to any assignable target and a member expression is one,
@@ -207,11 +222,15 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
         }
       }
 
+      // Resolved once, the same way theme is: a `mediaBase` prop change mid-lifetime is not a
+      // thing this component supports (see the one-story-per-instance invariant below).
+      const resolvedMediaBase = untrack(() => mediaBase) ?? DEFAULT_MEDIA_BASE;
+
       // Unconditional: every mounted story's media surfaces resolve their base through this context
       // rather than the real admin's hardcoded default, and every mounted story's CSRF-reading form
       // gets a getter. A shell-hosted story's own CairnAdminShell instance sets a more specific CSRF
       // getter for its own descendants (from its fixture `data.csrf`), which simply shadows this one.
-      setContext(MEDIA_BASE_CONTEXT_KEY, fixtureMediaBase);
+      setContext(MEDIA_BASE_CONTEXT_KEY, resolvedMediaBase);
       setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf);
 
       // The id of the story this instance was created to mount, read once and never again:
@@ -254,11 +273,11 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
         csrf: fixtureCsrf,
         pendingEntries: Promise.resolve(null),
         attention: {},
-        // The same fixture value the setContext call above already hands every mounted story
+        // The same resolved value the setContext call above already hands every mounted story
         // directly: CairnAdminShell now sets its own MEDIA_BASE_CONTEXT_KEY from this field too
         // (shadowing the one above for its own descendants, the way its CSRF getter already does),
         // so this keeps that shadow carrying the identical value rather than reverting to /media.
-        mediaBase: fixtureMediaBase,
+        mediaBase: resolvedMediaBase,
         ...definedOnly(shellOverride),
       };
 

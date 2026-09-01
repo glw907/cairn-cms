@@ -8,7 +8,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import type { Component } from 'svelte';
-import { fixtureMediaBase, manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
+import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 import { getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
 import { waitFor } from '../../lib/reproductions/stories/support.js';
 import { authStories } from '../../lib/reproductions/stories/auth.js';
@@ -69,16 +69,23 @@ function mediaImageSrcs(container: HTMLElement): string[] {
     .filter((src) => !src.startsWith('blob:'));
 }
 
+// ReproContext's own internal default (audit-repro-fixturemediabase's reshape retired this as an
+// export: the value is no longer a name anything outside ReproContext.svelte holds, so a test
+// proving the default renders correctly states the literal, not an import).
+const DEFAULT_MEDIA_BASE = '/repro-assets';
+
 /**
- * Assert that every image the mounted story rendered composes from `fixtureMediaBase`, the docs
- * origin's own asset route, never the real admin's hardcoded `/media` default.
+ * Assert that every image the mounted story rendered composes from `base` (the engine default
+ * unless the caller mounted with a custom `mediaBase`), the docs origin's own asset route, never
+ * the real admin's hardcoded `/media` default.
  * @param container - the mounted story's root
+ * @param base - the media base the story was mounted against; defaults to the engine default
  * @returns the srcs checked, so a story that guarantees a rendered image can assert on the count
  */
-function expectMediaBaseSrcs(container: HTMLElement): string[] {
+function expectMediaBaseSrcs(container: HTMLElement, base: string = DEFAULT_MEDIA_BASE): string[] {
   const srcs = mediaImageSrcs(container);
   for (const src of srcs) {
-    expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+    expect(src.startsWith(base), `"${src}" does not compose from "${base}"`).toBe(true);
   }
   return srcs;
 }
@@ -245,8 +252,53 @@ describe('ReproContext: the context and fixture obligations every story relies o
   it('applies the story context, the fixture media base, and the CSRF getter', async () => {
     const screen = await render(ReproContext, { props: { story: probeStory } });
     await expect.element(screen.getByTestId('story-context')).toHaveTextContent('story-supplied-value');
-    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/repro-assets');
+    await expect.element(screen.getByTestId('media-base')).toHaveTextContent(DEFAULT_MEDIA_BASE);
     await expect.element(screen.getByTestId('csrf')).toHaveTextContent('repro-fixture-csrf');
+  });
+});
+
+// audit-repro-fixturemediabase (docs/internal/engine-rulings.md): a docs site deployed under a
+// SvelteKit `paths.base` cannot comply with a hardcoded media base, so `mediaBase` is now a prop a
+// mounting page passes, threaded to both places a mounted story reaches it: the context every
+// story reads directly, and, for a `'shell'` story, the shell payload CairnAdminShell's own
+// shadowing `setContext` reads from (ReproContext.svelte:277-280).
+const shellProbeStory: ReproStory = {
+  id: 'test/probe-shell-media-base',
+  component: ProbeComponent as Component<Record<string, unknown>>,
+  host: 'shell',
+  props: {},
+};
+
+describe('ReproContext: mediaBase prop, plain and shell-hosted', () => {
+  it('composes the context from a custom mediaBase on a bare (plain) story', async () => {
+    const screen = await render(ReproContext, {
+      props: { story: probeStory, mediaBase: '/docs/repro-assets' },
+    });
+    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/docs/repro-assets');
+  });
+
+  it("composes the context from a custom mediaBase through CairnAdminShell's own shadow, on a shell-hosted story", async () => {
+    const screen = await render(ReproContext, {
+      props: { story: shellProbeStory, mediaBase: '/docs/repro-assets' },
+    });
+    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/docs/repro-assets');
+  });
+
+  it('composes every rendered fixture image URL from a custom mediaBase on a bare, posed story', async () => {
+    const screen = await renderStory(getStory('media/insert-panel'), '/docs/repro-assets');
+    const srcs = expectMediaBaseSrcs(screen.container, '/docs/repro-assets');
+    expect(srcs.length).toBeGreaterThan(0);
+  });
+
+  it('composes every rendered fixture image URL from a custom mediaBase on a shell-hosted story', async () => {
+    const screen = await renderStory(getStory('media/library'), '/docs/repro-assets');
+    const srcs = expectMediaBaseSrcs(screen.container, '/docs/repro-assets');
+    expect(srcs.length).toBeGreaterThan(0);
+  });
+
+  it('falls back to the engine default when the mounting page passes no mediaBase', async () => {
+    const screen = await render(ReproContext, { props: { story: probeStory } });
+    await expect.element(screen.getByTestId('media-base')).toHaveTextContent(DEFAULT_MEDIA_BASE);
   });
 });
 
@@ -696,8 +748,8 @@ describe('publish/refusal-banner', () => {
 // The seven media stories (Task A6a). As with the editor and publish stories above, the universal
 // loop below already binds every marker anchor, settle, and pose; these add the one thing each page
 // contract names specifically, plus the media-base assertion the task calls out by name: every
-// image these stories render composes from `fixtureMediaBase`, the docs origin's own asset route,
-// never the real admin's hardcoded `/media` default.
+// image these stories render composes from the engine's default media base, the docs origin's own
+// asset route, never the real admin's hardcoded `/media` default.
 
 describe('media/insert-panel', () => {
   it('poses the insert panel open with the upload-first chooser and the reuse picker', async () => {
@@ -740,7 +792,7 @@ describe('media/upload-form', () => {
     await expect.element(screen.getByRole('button', { name: 'Insert image' })).toBeInTheDocument();
 
     // The card previews the file through a local object URL, never a media-base path; the real
-    // /media default never shows through even though there is no fixtureMediaBase image here.
+    // /media default never shows through even though this story renders no fixture media image.
     const srcs = mediaImageSrcs(screen.container);
     expect(srcs.every((src) => !src.startsWith('/media/'))).toBe(true);
   });

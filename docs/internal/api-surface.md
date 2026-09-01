@@ -416,7 +416,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/reproductions/manifest`
 
-- `fixtureMediaBase`: "/repro-assets"
 - `fixtureMediaFiles`: string[]
 - `manifest`: ReproManifestEntry[]
 - `ReproHeights`: { column?: number; wide?: number; desktop?: number; narrow?: number }

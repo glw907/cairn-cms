@@ -871,6 +871,12 @@ the named human gates only):**
   it; the `RateLimitLike` seam and `resolveRateLimit` are the mechanism already in the engine, so
   this is wiring a limiter the auth routes never got, not a new subsystem.
 
+- **Test-harness fidelity (filed 2026-09-01, conventions-pass close).** The integration
+  cookie jar has no expiry semantics, the old double-mint test shared one jar in-process, and
+  the e2e reuses stale preview servers off CI; each hid a real bug this pass's fresh-context
+  reviewers had to catch instead. Make the doubles model the browser and D1 contracts
+  honestly (cookie maxAge, per-request jars, no server reuse) so the cheap layer sees what
+  the expensive layer currently compensates for.
 - **Fold the auth-channel's cookie-secure derivation and `checkChannelRateLimit` onto `csrfSecure`
   and `resolveRateLimit` (filed 2026-08-31, the conventions pass's own recorded divergences).** The
   channel derives `secure` from a bare `event.url.protocol` and reimplements the rate-limit branch

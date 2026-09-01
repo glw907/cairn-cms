@@ -158,6 +158,13 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **contributor:** the bolded copy quotes in `docs/editors/when-something-goes-wrong.md`
+  duplicate component strings with no gate comparing them: `check:prose` scans components,
+  `check:docs` scans links, and neither notices when a copy edit in `LoginPage.svelte` strands
+  the quote (the conventions-pass close caught one only via an Opus diff-review). A cheap
+  tripwire: extract the page's bolded quoted sentences and grep them against the shipped
+  component strings. Candidate for the internals slice's gate additions.
+
 - **extender:** after Task 3 dropped `createMediaResolver`'s preset parameter, the media config's
   `variants` field has zero reachable runtime consumers: `config.ts` validates it, `presetUrl` is
   its only reader, and `presetUrl` is demoted off every public subpath with no non-test caller. So

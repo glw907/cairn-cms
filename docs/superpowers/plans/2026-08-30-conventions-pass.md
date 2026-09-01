@@ -896,3 +896,58 @@ CHANGELOG states both observable paths. Notes N-1 through N-6 landed as the `pac
 drift scope, `authorizeAdminTarget`'s `outcome`-grammar return, "four call sites",
 csrfSecure-already-parameterized wording, the media-arms current-state correction, and the
 `resolve-media` preset-assertion deletion.
+
+## Post-mortem (2026-09-01)
+
+**What was built.** All eleven tasks plus two doc residuals, accepted through the
+implementer/diff-reviewer/gate chain in workflow mode, three sequential chunks. Headline
+commits: ledger rulings `5728b882`; bags and contracts `52fd9cba`; verb renames `51f02f3f`;
+outcome idiom `0bb03e51`; flatten `bfdaf0df`; cookie posture `fb4fb9a5`; nonce and
+adminAction `d48ba0dd`/`796199d4`; channel fold `c7db6e4f`; coupled pairs `36bdfe31`; doctor
+`f1915406`; bins `b2de3a34`; simplifier `a43986bf`; the four-commit review fold
+`ab344888`..`38db050a`.
+
+**What was verified, with evidence.** Per-task Opus diff-review caught real defects in five
+of eleven tasks (doc staleness twice, the dev-double SQL dispatch, a tautological register
+test, an unrunnable CI example plus an incomplete exit matrix). The pass-end fresh-context
+fan-out (security, Svelte, Workers/D1, a11y) caught four findings no earlier layer saw: the
+absent-cookie short-circuit voiding the `nonce_hash IS NULL` compat path (a shipping
+blocker: scaffold bootstrap, in-flight upgrade links, and recovery rows all refused); the
+rethrow-guard narrowing (a site limiter throwing redirect/error degraded to open); the
+throttle/nonce login lockout (attacker rebinding plus cooldown denies the only sign-in
+channel); and the pending-cookie TTL coincidence (ordinary timeout misdiagnosed as
+wrong-browser, invisible to the Map-jar harness). All fixed and re-reviewed; final state is
+`npm run check` 0/0, `npm test` 6017/6017 exit 0, every CI-only gate green by name, and the
+from-scratch consumer proof (fresh showcase install, build, 155 Playwright e2e under CI=1)
+green.
+
+**Decisions locked in.** Ceiling raised 5.5M to 7M (Geoff, on the chunk-1 numbers: the
+overrun is review rigor). Tasks 7/8 upshifted to Opus implementers. The lockout resolved as
+rebind-no-email (Geoff): last-requester-wins binding, cooldown and email cap untouched,
+unbound rows skipped so the hand-seeded recovery escape hatch survives; `auth.token.rebound`
+records the rebind. The migration-adoption instruction flipped to plain `wrangler d1
+migrations apply` (idempotent DDL makes re-apply the safe path). An unbound token row is
+scanner-confirmable by design (its pre-migration semantics; the scaffold depends on it).
+`Outcome`-suffixed result-union names accepted (results, not failure shapes).
+
+**What a later pass would be wrong to rediscover.** The workflow suspend recovery: journal
+cache makes stop-plus-resume near-free, and a stall guard must watch the whole transcript
+dir, not `journal.jsonl` (the journal writes only at agent boundaries). The integration
+cookie jar has no expiry semantics, so real-cookie timing interactions ship green (ROADMAP:
+test-harness fidelity). `resolveRateLimit` is kit-agnostic by design: redirect/HttpError
+rethrow lives at call sites. The editors-page copy quotes have no drift gate (friction log).
+`check:vale` reports 18 errors in three docs main's CI passes; reconcile before trusting
+local vale as a gate.
+
+**Budgets.** Tokens: ~6.9M of the ratified 7M (originally 5.5M); chunks 2.40 + ~1.8 + 1.72,
+ritual ~2.2 (simplifier 0.22, four reviewers 0.64, four fold rounds 1.16, fix-range review
+0.12), suspend-stall waste ~0.15. The 4b pre-work (docket + usage sweep, ~0.61M) was
+Geoff-granted frontload outside the pass ledger. Attended time: two scope grants, three
+ratifications (ceiling, lockout shape, brainstorm bundle), zero corrections of landed work;
+every question was batched and none re-litigated a landed decision.
+
+**Handed forward.** 4b: the docket and usage map (scratchpad artifacts; Tier 1 has zero
+consumer usage anywhere), the sitting's four brainstorm rulings plus two stated defaults,
+and the mandated two-round adversarial plan review. Internals: the quote-drift tripwire,
+the vale reconciliation. The channel `csrfSecure`/`checkChannelRateLimit` folds and per-IP
+rate limiting are ROADMAP-filed.

@@ -3355,8 +3355,12 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the conformance pass, Task 8: the showcase config hoists one
   `const media = { bucketBinding: 'MEDIA_BUCKET' }` fed to both `normalizeAssets(media)` and the
   adapter's `media:` member, and `templates/waymark` is regenerated from it, so the scaffold no
-  longer hands a fresh site the split-brain pair. `normalizeAssets`'s exported signature and return
-  type are byte-identical to `main`; no engine code changed.
+  longer hands a fresh site the split-brain pair. `docs/reference/media.md`'s worked example hoists
+  the same `media` object rather than typing the literal a second time, and the `normalizeAssets`
+  section now states that the engine already normalizes `adapter.media` once at compose
+  (`CairnRuntime.resolvedAssets`), so a site's own render resolver should pass the same object
+  rather than re-typing it. `normalizeAssets`'s exported signature and return type are
+  byte-identical to `main`; no engine code changed.
 - **Shape:** A single hoisted media block used by both `normalizeAssets(...)` and the adapter's
   `media:` member, per verify-media.md's viable form. The verify record's other candidate,
   reading `runtime.resolvedAssets` back into `cairn.config.ts`, is NOT viable and was not

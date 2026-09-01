@@ -822,9 +822,13 @@
   split-brain form let the two copies diverge silently (a site setting `transformations`,
   `publicBase`, or `urlForm` on one copy alone got correct admin/upload behavior and wrong public
   URLs), so the hoisted form is the recommended de-duplication for any existing site carrying the
-  duplicated pair. `normalizeAssets`'s exported signature and return type are unchanged; this is a
-  scaffold and doc change only. Consumers must: nothing; sites already on the duplicated form may
-  hoist one shared `media` object of their own, at their convenience.
+  duplicated pair. `docs/reference/media.md`'s own worked example is rewritten to the same hoisted
+  form, and its `normalizeAssets` section now states that the engine already normalizes
+  `adapter.media` once at compose and serves its own upload, delivery, and admin paths from
+  `CairnRuntime.resolvedAssets`, so a site's own render resolver should reuse that object.
+  `normalizeAssets`'s exported signature and return type are unchanged; this is a scaffold and doc
+  change only. Consumers must: nothing; sites already on the duplicated form may hoist one shared
+  `media` object of their own, at their convenience.
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
   truncated 54 of the ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought,

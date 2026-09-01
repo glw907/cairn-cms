@@ -26,7 +26,11 @@ export-coverage gate checks every name here against them.
 import { normalizeAssets, createMediaResolver } from '@glw907/cairn-cms/media';
 import mediaManifest from '../content/.cairn/media.json';
 
-const resolveMedia = createMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
+// Hoist the media block once and pass the same object to normalizeAssets here and to the
+// adapter's media: member in cairn.config.ts, so the binding name lives in exactly one place.
+const media = { bucketBinding: 'MEDIA_BUCKET' };
+
+const resolveMedia = createMediaResolver(mediaManifest, normalizeAssets(media));
 ```
 
 ---
@@ -46,6 +50,11 @@ upload, storage, delivery, and render paths read. An absent block leaves media o
 `{ enabled: false }` rather than throwing. A declared block must name its R2 bucket binding and carry
 a known `urlForm` and valid variant fit, gravity, and upscale values; each failure throws a
 `cairn:`-prefixed error. The named variants merge over the built-in presets.
+
+The engine normalizes the adapter's `media` block once at compose time and exposes the result as
+`CairnRuntime.resolvedAssets`, which backs the engine's own upload, delivery, and admin paths. A
+site building its own public render resolver should pass `normalizeAssets` the same object it
+hands the adapter's `media:` member, not a re-typed literal, so the two normalizations agree.
 
 ---
 

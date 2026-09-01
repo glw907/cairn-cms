@@ -9,7 +9,7 @@
 // nav visibility. targetFromRouteId is the shared default-target derivation both authorization call
 // sites use, requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and
 // action halves of one route's authorization story never disagree on what they are checking.
-import type { RolesDeclaration } from './roles.js';
+import { DEFAULT_ROLES, type RolesDeclaration } from './roles.js';
 import type { Editor } from './types.js';
 
 /**
@@ -61,15 +61,18 @@ function validateKeyShape(key: string): void {
  * list (owner-only must be written explicitly as `['owner']`), and a key that is neither a
  * plausible screen id (non-empty, no `/`) nor a well-formed `/admin`-prefixed path (no query, hash,
  * trailing slash, or the bare `/admin` root) all throw an actionable `defineAccess:`-prefixed
- * error. Concept-id existence and engine-route collision are validated later, at composition, once
- * the real concept list and engine-route table are available.
+ * error. `roles` may be `undefined`, resolving the map's role names against the same implicit
+ * owner/editor vocabulary `resolveCapability`, `roleHome`, and `resolveOwnerLevelRoles` fall back
+ * to for a site that declares none of its own. Concept-id existence and engine-route collision are
+ * validated later, at composition, once the real concept list and engine-route table are
+ * available.
  */
-export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration, map: A): A {
+export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A): A {
   const keys = Object.keys(map);
   if (keys.length === 0) {
     throw new Error('defineAccess: the map must declare at least one entry');
   }
-  const vocabulary = new Set(Object.keys(roles));
+  const vocabulary = new Set(Object.keys(roles ?? DEFAULT_ROLES));
   for (const key of keys) {
     validateKeyShape(key);
     const admitted = map[key];

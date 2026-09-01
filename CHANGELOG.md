@@ -544,6 +544,40 @@
   every one of those fields (optionally) before this change; no other consumer action is needed,
   since every field a site could have read is still present under the same key.
 
+- The conventions pass (Task 9) executes the two coupled reshape/retire pairs
+  `audit-repro-validatereprofence`/`audit-repro-reprofencevalidation` and
+  `audit-adapter-defineaccess`/`audit-adapter-default-roles`.
+
+  `validateReproFence` (`@glw907/cairn-cms/reproductions/manifest`) gains a third parameter,
+  `options?: ValidateReproFenceOptions` (`altPrefix?: RegExp; maxAltLength?: number; extraKeys?:
+  string[]`). The manifest-dependent half (the required `story`/`alt`/`caption` keys, `story`
+  resolving against the installed manifest, `width` matching a declared height) stays
+  engine-owned and unconditional. The register half, a hardcoded English `"Reproduction"` alt
+  prefix, a 150-character ceiling, and a closed key set, moves behind `options` with no baked-in
+  default: omitting an option skips the check it backs entirely, so a localized or differently
+  keyed site's valid fence no longer fails against an engine opinion it never asked for. The
+  return type inlines to `{ issues: string[] }`, and `ReproFenceValidation` retires (leak-free,
+  its only carrier). This engine's own `check:visuals` gate (gate 1) now supplies its published
+  register explicitly rather than relying on it being baked in.
+
+  `defineAccess`'s first parameter widens to `roles: RolesDeclaration | undefined`; `undefined`
+  validates the map's role names against the same implicit owner/editor vocabulary
+  `resolveCapability`, `roleHome`, and `resolveOwnerLevelRoles` already fall back to. The const
+  generic and return type (`defineAccess<const A extends AccessMap>(roles, map): A`) are
+  unchanged, so an existing call passing a concrete vocabulary keeps its exact inferred type.
+  `DEFAULT_ROLES` retires from the root barrel and the `.` surface (leak-free: it survives only
+  as a module-internal constant several engine modules already import directly for the same
+  fallback); `docs/extend/restrict-admin-access.md`'s instructed import is rewritten to pass
+  `undefined` to `defineAccess` instead.
+
+  **Consumers must:** a caller of `validateReproFence` that relied on the previous baked-in
+  register (an alt prefix, a length ceiling, an unknown-key refusal) now supplies `options`
+  explicitly to keep that behavior; a caller that imported `ReproFenceValidation` to annotate the
+  return value annotates the inline `{ issues: string[] }` shape instead. A site that imported
+  `DEFAULT_ROLES` from `@glw907/cairn-cms` to satisfy `defineAccess`'s first parameter now passes
+  `undefined` there directly; nothing else changes for a site already passing a declared
+  `RolesDeclaration`.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

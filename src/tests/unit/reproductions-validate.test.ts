@@ -1,8 +1,16 @@
 // cairn-cms: the repro fence validator's rule coverage, one violating fixture per rule (spec's
 // gate 1), proved red before the implementation existed.
 import { describe, it, expect } from 'vitest';
-import { validateReproFence } from '../../lib/reproductions/validate.js';
+import { validateReproFence, type ValidateReproFenceOptions } from '../../lib/reproductions/validate.js';
 import type { ReproManifestEntry } from '../../lib/reproductions/manifest.js';
+
+// cairn-pub's own register, passed explicitly by any caller that wants those checks: the
+// engine bakes in no register default (audit-repro-validatereprofence).
+const CAIRN_PUB_REGISTER: ValidateReproFenceOptions = {
+  altPrefix: /^reproduction\b/i,
+  maxAltLength: 150,
+  extraKeys: [],
+};
 
 const MANIFEST: ReproManifestEntry[] = [
   {
@@ -59,36 +67,67 @@ describe('validateReproFence', () => {
     expect(issues).toContain('missing required key "caption"');
   });
 
-  it('flags an unknown key', () => {
+  it('flags an unknown key when the caller supplies a register (extraKeys)', () => {
     const body = [
       VALID_BODY,
       'extra: not a real key',
     ].join('\n');
-    const { issues } = validateReproFence(body, MANIFEST);
+    const { issues } = validateReproFence(body, MANIFEST, CAIRN_PUB_REGISTER);
     expect(issues).toContain('unknown key "extra"');
   });
 
-  it('flags alt text that does not name the kind', () => {
+  it('flags alt text that does not match the caller-supplied prefix', () => {
     const body = [
       'story: media/library',
       'alt: Screenshot of the media library in grid view.',
       'caption: The library shows five images in a grid.',
     ].join('\n');
-    const { issues } = validateReproFence(body, MANIFEST);
-    expect(issues).toContain('alt text must name the kind, starting with "Reproduction"');
+    const { issues } = validateReproFence(body, MANIFEST, CAIRN_PUB_REGISTER);
+    expect(issues).toContain(
+      `alt text does not match the required prefix (${CAIRN_PUB_REGISTER.altPrefix})`,
+    );
   });
 
-  it('flags alt text over the 150-character limit', () => {
+  it('flags alt text over a caller-supplied length ceiling', () => {
     const longAlt = `Reproduction of ${'a'.repeat(150)}`;
     const body = [
       'story: media/library',
       `alt: ${longAlt}`,
       'caption: The library shows five images in a grid.',
     ].join('\n');
-    const { issues } = validateReproFence(body, MANIFEST);
+    const { issues } = validateReproFence(body, MANIFEST, CAIRN_PUB_REGISTER);
     expect(issues).toContain(
       `alt text is ${longAlt.length} characters, over the 150-character limit`,
     );
+  });
+
+  it('accepts a localized alt prefix passing under caller options, the English-only cairn-pub register would refuse', () => {
+    const body = [
+      'story: media/library',
+      'alt: Abbildung der Medienbibliothek in der Rasteransicht.',
+      'caption: The library shows five images in a grid.',
+    ].join('\n');
+    const { issues } = validateReproFence(body, MANIFEST, {
+      altPrefix: /^abbildung\b/i,
+      maxAltLength: 200,
+    });
+    expect(issues).toEqual([]);
+
+    const { issues: underCairnPubRegister } = validateReproFence(body, MANIFEST, CAIRN_PUB_REGISTER);
+    expect(underCairnPubRegister).toContain(
+      `alt text does not match the required prefix (${CAIRN_PUB_REGISTER.altPrefix})`,
+    );
+  });
+
+  it('skips every register check when no options are given: an unknown key, an unprefixed alt, and a long alt all pass', () => {
+    const body = [
+      'story: media/library',
+      `alt: ${'x'.repeat(200)}`,
+      'caption: The library shows five images in a grid.',
+      'extra: not a real key',
+    ].join('\n');
+    const { issues } = validateReproFence(body, MANIFEST);
+    expect(issues).toEqual([]);
   });
 
   it('flags a story id the manifest does not carry', () => {

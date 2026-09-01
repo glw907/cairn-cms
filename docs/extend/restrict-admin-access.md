@@ -10,10 +10,10 @@ permits.
 
 **Precondition:** a role vocabulary to validate the map's role names against. If your adapter
 already declares one with [`defineRoles`](../reference/core.md#defineroles) (see [Add a second
-audience](./add-a-second-audience.md) for a worked example), import that same value. If it
-doesn't, import [`DEFAULT_ROLES`](../reference/core.md#defineroles) from `@glw907/cairn-cms`
-instead: the implicit `{ owner: 'owner', editor: 'editor' }` pair a site with no declared
-vocabulary already resolves against.
+audience](./add-a-second-audience.md) for a worked example), pass that same value. If it doesn't,
+pass `undefined`: [`defineAccess`](../reference/core.md#defineaccess) then validates the map's
+role names against the implicit `{ owner: 'owner', editor: 'editor' }` pair a site with no
+declared vocabulary already resolves against.
 
 ## Declare the map
 
@@ -21,9 +21,9 @@ vocabulary already resolves against.
 // src/lib/cairn.access.ts
 import { defineAccess, type RolesDeclaration } from '@glw907/cairn-cms';
 
-// Your own declared vocabulary, whatever module you keep it in. Import `DEFAULT_ROLES` from
-// `@glw907/cairn-cms` instead if you have not declared one; see the precondition above.
-declare const roles: RolesDeclaration;
+// Your own declared vocabulary, whatever module you keep it in. Pass `undefined` instead if you
+// have not declared one; see the precondition above.
+declare const roles: RolesDeclaration | undefined;
 
 export const access = defineAccess(roles, {
   pages: ['webmaster'],

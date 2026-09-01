@@ -9,10 +9,23 @@
 import { parse } from 'yaml';
 import type { ReproManifestEntry } from './manifest.js';
 
-/** The result of checking one `repro` fence body against the installed manifest. */
-export interface ReproFenceValidation {
-  /** One line per rule violated, empty when the fence is well-formed. */
-  issues: string[];
+/**
+ * The caller-supplied register a fence body is checked against, on top of the engine-owned rules
+ * (required keys, story resolves, width declared). Each member is independently optional, and
+ * omitting one skips the check it backs entirely: none of the three carries a baked-in default,
+ * since a "Reproduction"-prefixed English alt, a 150-character ceiling, and a closed key set are
+ * cairn-pub's own register, not a rule the engine imposes on every consumer.
+ */
+export interface ValidateReproFenceOptions {
+  /** When given, `alt` must match this pattern; omit to skip the alt-prefix check. */
+  altPrefix?: RegExp;
+  /** When given, `alt` may not exceed this length; omit to skip the alt-length check. */
+  maxAltLength?: number;
+  /**
+   * Key names admitted beyond the engine-owned `story`/`alt`/`caption`/`width`; when given, any
+   * other key is flagged. Omit to skip the unknown-key check entirely.
+   */
+  extraKeys?: string[];
 }
 
 /**
@@ -27,25 +40,27 @@ export interface ReproFenceValidation {
 const RESPONSIVE_WIDTH = 'column';
 
 const REQUIRED_KEYS = ['story', 'alt', 'caption'] as const;
-const ALLOWED_KEYS = new Set<string>([...REQUIRED_KEYS, 'width']);
-const MAX_ALT_LENGTH = 150;
 
 /**
  * Check a `repro` fence body against the spec's fence schema (gate 1): the YAML parses, the
- * required keys are present, no unknown key rides along, `alt` names the kind and stays under the
- * length ceiling, the story id resolves against the installed manifest, and `width`, if given,
- * names a width that story's manifest entry actually declares a height for.
+ * required keys are present, the story id resolves against the installed manifest, and `width`,
+ * if given, names a width that story's manifest entry actually declares a height for. Those rules
+ * are engine-owned and always run. `options` layers a caller's own register on top: an unknown
+ * key, an alt-text prefix, and an alt-text length ceiling, each checked only when the caller
+ * supplies the option that backs it.
  *
- * `ReproHeights` is the schema for that last rule: nothing here enumerates width names, so a story
+ * `ReproHeights` is the schema for the width rule: nothing here enumerates width names, so a story
  * that later declares a new pinned width needs no matching edit here, and a story that declares
  * only some widths refuses a fence pinned to one it cannot show.
  * @param body - the fence's raw YAML body
  * @param manifest - the installed engine's story manifest
+ * @param options - the caller's own register, layered on top of the engine-owned rules
  */
 export function validateReproFence(
   body: string,
   manifest: ReproManifestEntry[],
-): ReproFenceValidation {
+  options: ValidateReproFenceOptions = {},
+): { issues: string[] } {
   const issues: string[] = [];
 
   let parsed: unknown;
@@ -71,17 +86,22 @@ export function validateReproFence(
     }
   }
 
-  for (const key of Object.keys(data)) {
-    if (!ALLOWED_KEYS.has(key)) issues.push(`unknown key "${key}"`);
+  if (options.extraKeys !== undefined) {
+    const allowedKeys = new Set<string>([...REQUIRED_KEYS, 'width', ...options.extraKeys]);
+    for (const key of Object.keys(data)) {
+      if (!allowedKeys.has(key)) issues.push(`unknown key "${key}"`);
+    }
   }
 
   const alt = data.alt;
   if (typeof alt === 'string') {
-    if (alt.length > MAX_ALT_LENGTH) {
-      issues.push(`alt text is ${alt.length} characters, over the ${MAX_ALT_LENGTH}-character limit`);
+    if (options.maxAltLength !== undefined && alt.length > options.maxAltLength) {
+      issues.push(
+        `alt text is ${alt.length} characters, over the ${options.maxAltLength}-character limit`,
+      );
     }
-    if (!/^reproduction\b/i.test(alt.trim())) {
-      issues.push('alt text must name the kind, starting with "Reproduction"');
+    if (options.altPrefix !== undefined && !options.altPrefix.test(alt.trim())) {
+      issues.push(`alt text does not match the required prefix (${options.altPrefix})`);
     }
   }
 

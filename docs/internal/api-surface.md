@@ -32,8 +32,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `DEFAULT_ROLES`: { owner: "owner"; editor: "editor" }
-- `defineAccess`: <const A extends AccessMap>(roles: RolesDeclaration, map: A) => A
+- `defineAccess`: <const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A) => A
 - `defineAdapter`: <const A extends CairnAdapter>(adapter: A) => A
 - `defineComponent`: <const D extends ComponentDef>(def: D) => D & { attributeSchema: Fieldset<Record<string, FieldDescriptor>> }
 - `defineConcept`: <const C extends ConceptConfig>(concept: C) => C
@@ -426,10 +425,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `fixtureMediaBase`: "/repro-assets"
 - `fixtureMediaFiles`: string[]
 - `manifest`: ReproManifestEntry[]
-- `ReproFenceValidation`: { issues: string[] }
 - `ReproHeights`: { column?: number; wide?: number; desktop?: number; narrow?: number }
 - `ReproManifestEntry`: { id: string; heights: ReproHeights; markerKeys: string[]; pose: boolean; host: "shell" | "bare"; ownThemeRoot: boolean }
-- `validateReproFence`: (body: string, manifest: ReproManifestEntry[]) => ReproFenceValidation
+- `validateReproFence`: (body: string, manifest: ReproManifestEntry[], options?: ValidateReproFenceOptions) => { issues: string[] }
+- `ValidateReproFenceOptions`: { altPrefix?: RegExp; maxAltLength?: number; extraKeys?: string[] }
 
 ## `/sveltekit`
 

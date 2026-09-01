@@ -897,7 +897,6 @@ Stability tier: Extension API.
 
 ```ts
 declare function defineRoles<const R extends RolesDeclaration>(roles: R): R;
-declare const DEFAULT_ROLES: { owner: 'owner'; editor: 'editor' };
 ```
 
 Declare a site's role vocabulary on the adapter's `roles` member, the const-generic companion to
@@ -941,8 +940,9 @@ declare function resolveOwnerLevelRoles(roles: RolesDeclaration | undefined): st
 The engine calls these to resolve `locals.cairnEditor.capability` at the guard and the routes; a
 custom admin route reads `resolveCapability` to gate itself against a vocabulary without
 re-deriving the mapping. It returns the mapped capability, treating an `undefined` vocabulary as
-`DEFAULT_ROLES`, and returns `'none'` for a role name absent from the vocabulary, so a pruned
-config or a hand-edited row fails closed rather than locking the person out of sign-in.
+the implicit `{ owner: 'owner', editor: 'editor' }` pair `defineRoles` falls back to, and returns
+`'none'` for a role name absent from the vocabulary, so a pruned config or a hand-edited row fails
+closed rather than locking the person out of sign-in.
 `resolveOwnerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
 across instead of the literal `'owner'` string. (`roleHome`, which used to resolve a role's
 declared `/admin` landing `home`, retired from this subpath in the retires pass, batch 1a: zero
@@ -963,7 +963,7 @@ See [Restrict admin access by role](../extend/restrict-admin-access.md) for the 
 Stability tier: Extension API.
 
 ```ts
-declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration, map: A): A;
+declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A): A;
 ```
 
 Declare a site's access map: a target, either an engine screen id (a declared concept, or one of
@@ -972,7 +972,9 @@ to it. Validates at construction, `defineRoles`-style: throws an actionable
 `defineAccess:`-prefixed error on an empty map, a role name outside the given vocabulary, an
 empty role list (owner-only must be written explicitly as `['owner']`), or a key that is neither a
 plausible screen id (non-empty, no `/`) nor a well-formed `/admin`-prefixed path (no query, hash,
-trailing slash, or the bare `/admin` root). A screen-id key's existence against the site's real
+trailing slash, or the bare `/admin` root). `roles` may be `undefined`: the map's role names then
+validate against the same implicit owner/editor vocabulary `resolveCapability` falls back to for a
+site that declares no vocabulary of its own. A screen-id key's existence against the site's real
 concepts, and an href key's collision with a built-in admin route, validate later, at composition,
 once the runtime knows the real concept list.
 

@@ -490,11 +490,27 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
-## audit-adapter-default-roles: `DEFAULT_ROLES`  (keep, 2026-08-26, any-site audit)
+## audit-adapter-default-roles: `DEFAULT_ROLES`  (retire, 2026-08-26, any-site audit)
 
-- **Verdict:** keep. restored pass-1 overturn: defineAccess requires a concrete vocabulary and docs/extend/restrict-admin-access.md:14 instructs the import; retire becomes correct only with a defineAccess reshape to accept undefined (filed in remediation)
-- **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
-- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 2; conductor adjudication over recorded dissent, see the audit record.
+- **Verdict:** retire. Originally kept because `defineAccess` required a concrete vocabulary and
+  `docs/extend/restrict-admin-access.md:14` instructed importing the constant to satisfy it; the
+  keep verdict named its own reopening condition verbatim, "retire becomes correct only with a
+  defineAccess reshape to accept undefined." Task 9 of the conventions pass executes exactly that
+  condition, pre-authorized by the keep verdict itself: `defineAccess`'s first parameter widens to
+  `RolesDeclaration | undefined`, defaulting to the same implicit vocabulary `resolveCapability`
+  already falls back to, so a site with no declared roles no longer needs the constant to satisfy
+  `defineAccess`.
+- **Reopens on:** closed. Executed by the conventions pass, Task 9: `DEFAULT_ROLES` drops from the
+  root barrel (`src/lib/index.ts`) and the `.` surface (verified: zero hits in the regenerated
+  `api-surface.md`); it survives as a module-internal constant in `src/lib/auth/roles.ts`, since
+  `resolveCapability`, `roleHome`, `resolveOwnerLevelRoles`, `defineAccess`, and several other
+  in-tree engine modules (the doctor checks, the editors/guard/content-routes-context server
+  modules) still import it directly for their own `undefined`-vocabulary fallback. Leak-free:
+  rendered as a literal value, named inside no surviving public shape.
+  `docs/extend/restrict-admin-access.md`'s instructed import is rewritten to pass `undefined` to
+  `defineAccess` instead of importing the constant.
+- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 2; conductor adjudication over recorded dissent, see the audit record; executed by
+  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 9.
 - **Any-site case:** None demonstrated. core.md:940: resolveCapability already treats 'an undefined vocabulary as DEFAULT_ROLES', so a site gets the behavior without the constant; the literal is two keys.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
@@ -1168,6 +1184,14 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 94.
 - **Any-site case:** Construction-time validation of a declaration that would otherwise fail in production as a wrong grant, including the rule that stops an empty list reading as everyone: owner-only must be written ['owner'].
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Annotation (conventions pass, Task 9):** the keep stands; the first parameter widens to
+  `roles: RolesDeclaration | undefined`, defaulting to the same implicit vocabulary
+  `resolveCapability`/`roleHome`/`resolveOwnerLevelRoles` already fall back to, which is what let
+  `audit-adapter-default-roles` execute its own pre-authorized retire in the same task. The const
+  generic and return type are unchanged (round-2 F-5: dropping the generic would widen every
+  consumer's inferred literal to `AccessMap`, a type regression). Every other validated rule,
+  including the owner-only-must-be-written-`['owner']` empty-list check this entry names, is
+  unchanged.
 
 ## audit-adapter-defineroles: `defineRoles`  (keep, 2026-08-26, any-site audit)
 
@@ -3781,13 +3805,13 @@ when the remediation pass lands.
 ## audit-repro-reprofencevalidation: `ReproFenceValidation`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Named at zero call sites worldwide: only its declaration, its own return annotation, the manifest.ts:331 re-export, and the reference page. Eleven in-repo sites and check-visuals.mjs:194-200 destructure inline. Retiring is one clause off line 331.
-- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling moved
-  this name to list (c) Tier 2 (reshape-blocked): it is named in the return of `validateReproFence`
-  (`api-surface.md:467`), an open reshape (`audit-repro-validatereprofence`), so retiring it now
-  would manufacture an unrecorded closure leak the F-1 test missed by construction (that test
-  scanned keep-verdicted shapes only, and `validateReproFence` is not yet a keep). It retires with,
-  or after, that reshape, in the conventions pass, which owns both.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 4; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
+- **Reopens on:** closed. Executed by the conventions pass, Task 9, alongside the
+  `validateReproFence` reshape it was blocked on: the return type inlines to `{ issues: string[] }`
+  (contract-first, since the inlined return removes its only carrier), so `ReproFenceValidation`
+  loses its declaration, its `manifest.ts:331` re-export, and the reference-page entry. Retiring
+  leak-free: verified with the regenerated `api-surface.md` carrying zero hits for the name.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 4; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS); executed
+  by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 9.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md) (verdict overturned there).
 
 ## audit-repro-reproheights: `ReproHeights`  (keep, 2026-08-26, any-site audit)
@@ -3801,9 +3825,17 @@ when the remediation pass lands.
 ## audit-repro-validatereprofence: `validateReproFence`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Half is engine-only (story resolves, width declared). Half is cairn-pub's register: a hardcoded English "Reproduction" alt prefix and a 150-char cap refuse a localized site's valid page.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 9: `validateReproFence` gains a
+  third parameter, `options?: ValidateReproFenceOptions` (`altPrefix?: RegExp; maxAltLength?:
+  number; extraKeys?: string[]`), with no register default baked into the engine; omitting an
+  option skips the check it backs entirely. The manifest-dependent half (required keys, `story`
+  resolves, `width` declared) stays engine-owned and unconditional. `check-visuals.mjs`, this
+  engine's own build of gate 1, now supplies cairn-pub's register explicitly (`REPRO_REGISTER`,
+  the same `"Reproduction"`-prefixed English alt, 150-character ceiling, and closed key set the
+  hardcoded version enforced) rather than the engine baking it in.
 - **Shape:** Keep and export only the manifest-dependent half; move the alt prefix, 150-char ceiling, and closed key set behind caller options or back to the site.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 6.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 6; executed by
+  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 9.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-repromanifestentry: `ReproManifestEntry`  (keep, 2026-08-26, any-site audit)

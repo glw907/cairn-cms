@@ -38,6 +38,12 @@ const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);
 // The register's alt-text ceiling: "At most 150 characters."
 const MAX_ALT_LENGTH = 150;
 
+// The published register `validateReproFence` checks a repro fence body against: no register
+// default is baked into the engine (audit-repro-validatereprofence), so a caller wanting these
+// checks supplies them explicitly. `extraKeys` stays empty: the fence schema's four keys
+// (`story`/`alt`/`caption`/`width`) are the whole vocabulary this register admits.
+const REPRO_REGISTER = { altPrefix: /^reproduction\b/i, maxAltLength: MAX_ALT_LENGTH, extraKeys: [] };
+
 // A fenced code block's language tag and body. `$` (multiline) anchors the closing fence to its
 // own line, so this never matches a fence nested inside a blockquote or list indent; none of the
 // scanned trees currently indent a fence, and an indented one is a shape this gate does not claim
@@ -343,7 +349,15 @@ async function main() {
   const { manifest, validateReproFence } = await import(
     `file://${resolve(ROOT, 'dist/reproductions/manifest.js')}`
   );
-  const { filesScanned, diagrams, repros, images, violations } = scanTree(ROOT, manifest, validateReproFence);
+  // Binds this gate's own register onto the two-argument shape `scanTree`/`scanDocument` call
+  // `validateFence` with, so the caller-register half of `validateReproFence` is supplied here
+  // rather than threaded through every intermediate function.
+  /**
+   * @param {string} body
+   * @param {import('../../src/lib/reproductions/manifest.js').ReproManifestEntry[]} storyManifest
+   */
+  const validateFence = (body, storyManifest) => validateReproFence(body, storyManifest, REPRO_REGISTER);
+  const { filesScanned, diagrams, repros, images, violations } = scanTree(ROOT, manifest, validateFence);
   // Printed unconditionally, clean run or not, so a scan that finds zero visuals in a tree
   // expected to carry them is visible in the log rather than silently indistinguishable from OK.
   console.log(

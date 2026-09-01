@@ -257,44 +257,60 @@ Stability tier: Unstable API.
 declare function validateReproFence(
   body: string,
   manifest: ReproManifestEntry[],
-): ReproFenceValidation;
+  options?: ValidateReproFenceOptions,
+): { issues: string[] };
 ```
 
-Check a `repro` fence body's raw YAML against an installed manifest: the YAML parses, the required
-keys are present, no unknown key rides along, `alt` names the kind and stays under the length
-ceiling, `story` resolves against the installed manifest, and `width`, if given, names a width that
-story's manifest entry actually declares a height for. See [The fence schema](#the-fence-schema)
-below for the full rule set. One implementation backs both this engine's `check:visuals` gate and a
-consuming site's build-time fence validation, so the two cannot drift apart.
+Check a `repro` fence body's raw YAML against an installed manifest. Two rule sets apply.
+Engine-owned, always checked: the YAML parses, the required keys (`story`/`alt`/`caption`) are
+present, `story` resolves against the installed manifest, and `width`, if given, names a width
+that story's manifest entry actually declares a height for. Caller-owned, checked only when
+`options` supplies the matching member: an alt-text prefix, an alt-text length ceiling, and a
+closed key set. See [The fence schema](#the-fence-schema) below for the full rule set and
+[`ValidateReproFenceOptions`](#validatereprofenceoptions) for the caller-owned half. One
+implementation backs both this engine's `check:visuals` gate and a consuming site's build-time
+fence validation, so the two cannot drift apart; `check:visuals` supplies this engine's own
+published-docs register (`"Reproduction"`-prefixed English alt, 150 characters, no key beyond the
+four the schema names), and a consuming site supplies its own.
 
-### `ReproFenceValidation`
+### `ValidateReproFenceOptions`
 
 Stability tier: Unstable API.
 
 ```ts
-interface ReproFenceValidation {
-  issues: string[];
+interface ValidateReproFenceOptions {
+  altPrefix?: RegExp;
+  maxAltLength?: number;
+  extraKeys?: string[];
 }
 ```
 
-The result of checking one fence body: one line per rule violated, empty when the fence is
-well-formed.
+The caller's own register, layered on top of `validateReproFence`'s engine-owned rules. None of
+the three carries a baked-in default: omitting a member skips the check it backs entirely, so a
+site with no alt-text convention, no length ceiling, or an open key set simply doesn't supply
+that member. `altPrefix` tests against `alt.trim()`; `maxAltLength` bounds `alt.length`;
+`extraKeys` names the keys admitted beyond the engine-owned `story`/`alt`/`caption`/`width`, and
+any key outside that combined set is flagged.
 
 ---
 
 ## The fence schema
 
-A `repro` fence's body is YAML with four keys:
+A `repro` fence's body is YAML with four keys. `story`, `caption`, and `width` are engine-owned,
+checked unconditionally by `validateReproFence`; `alt`'s prefix and length ceiling, and the closed
+key set, are this engine's own [`ValidateReproFenceOptions`](#validatereprofenceoptions) register,
+which `check:visuals` supplies for the pages below and a consuming site supplies for its own:
 
 | Key | Required | Meaning |
 | --- | --- | --- |
 | `story` | yes | A registry id, `<group>/<name>`, exactly one slash. Must exist in the installed manifest. |
-| `alt` | yes | The accessible name. Names the kind ("Reproduction of ...") and stays at or under 150 characters. Becomes the iframe's `title` attribute. |
+| `alt` | yes | The accessible name. Names the kind ("Reproduction of ...") and stays at or under 150 characters, this engine's own register. Becomes the iframe's `title` attribute. |
 | `caption` | yes | Rendered as the figure's caption. States what the render cannot show on its own. |
 | `width` | no | `narrow` (390px), `desktop` (860px), or `wide` (1280px). Absent means the responsive default, filling the docs content column. |
 
-A malformed body, an unknown key, a missing required key, an unlisted `width` value, or a `story`
-the installed manifest does not carry fails validation, one issue per violated rule.
+A malformed body, a missing required key, an unlisted `width` value, or a `story` the installed
+manifest does not carry fails validation unconditionally; an unknown key or a non-conforming `alt`
+fails validation whenever the caller's own register checks for it. One issue per violated rule.
 
 ### The width rule
 

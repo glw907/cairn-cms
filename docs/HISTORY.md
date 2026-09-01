@@ -7,6 +7,45 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-09-01: conventions pass merged (audit-remediation slice 4a), PR #43, CI green
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-30-conventions-pass.md` (worktree
+`conventions`, merged at `bc960fec`). All eleven tasks plus two doc residuals landed through
+the implementer/diff-reviewer/gate chain in workflow mode, three sequential chunks: the
+sitting's rulings written into the ledger, bags and contracts, verb renames, the outcome
+idiom, the `ContentFormFailure` flatten, cookie posture, the login nonce and adminAction
+authorization (both Opus-implemented), the channel fold, coupled pairs, doctor, and bins.
+Final state: `npm run check` 0/0, 6017 tests exit 0, every CI-only gate green by name, and
+the from-scratch consumer proof (fresh showcase install, build, 155 Playwright e2e under
+CI=1) green. Budget: ~6.9M against the 7M ceiling Geoff raised from 5.5M mid-pass (the
+overrun ruled review rigor, not waste); two scope grants, three ratifications, zero
+corrections of landed work.
+
+What the reviews caught: per-task Opus diff review found real defects in five of eleven
+tasks (doc staleness twice, the dev-double SQL dispatch, a tautological register test, an
+unrunnable CI example plus an incomplete exit matrix). The pass-end fresh-context fan-out
+caught four findings no earlier layer saw: the absent-cookie short-circuit voiding the
+`nonce_hash IS NULL` compat path (a shipping blocker refusing scaffold bootstrap, in-flight
+upgrade links, and recovery rows); the rethrow-guard narrowing (a site limiter throwing
+redirect/error degraded to open); the throttle/nonce login lockout (attacker rebinding plus
+cooldown denies the only sign-in channel), resolved by Geoff as rebind-no-email
+(last-requester-wins binding, unbound rows skipped so the hand-seeded recovery escape hatch
+survives, `auth.token.rebound` records the rebind); and the pending-cookie TTL coincidence
+(ordinary timeout misdiagnosed as wrong-browser, invisible to the Map-jar harness).
+
+What a later pass would be wrong to rediscover: workflow suspend recovery is
+verify-not-redo (journal cache makes stop-plus-resume near-free), and a stall guard must
+watch the whole transcript dir, not `journal.jsonl` (the journal writes only at agent
+boundaries). The integration cookie jar has no expiry semantics, so real-cookie timing
+interactions ship green (ROADMAP: test-harness fidelity). `resolveRateLimit` is
+kit-agnostic by design: redirect/HttpError rethrow lives at call sites. The
+migration-adoption instruction is plain `wrangler d1 migrations apply` (idempotent DDL
+makes re-apply the safe path), and an unbound token row is scanner-confirmable by design
+(its pre-migration semantics; the scaffold depends on it). Local `check:vale` reports 18
+errors in three docs main's CI passes; reconcile before trusting local vale as a gate.
+`Outcome`-suffixed result-union names are accepted (results, not failure shapes; the
+`Failure`-suffix ruling is not implicated).
+
 ## 2026-08-30: retires pass merged (audit-remediation slice 3), PR #42, CI green
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-30-retires-pass.md` (worktree

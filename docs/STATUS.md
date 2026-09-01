@@ -10,43 +10,23 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries SIX
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries SEVEN
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
-(remediation slice 1), foundations A (slice 2a), foundations B (slice 2b), and retires
-(slice 3, merged 2026-08-30 at `d2c434ea`, PR #42, all CI green); the window holds until the
-chassis slice per the initiative design. CI on `main` is fully green.
+(remediation slice 1), foundations A (slice 2a), foundations B (slice 2b), retires (slice 3),
+and conventions (slice 4a, merged 2026-09-01 at `bc960fec`, PR #43, all CI green); the window
+holds until the chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**The conventions pass (slice 4a) is COMPLETE on branch `conventions`; PR #43 awaits CI.**
-Every task accepted, all four review folds landed (final fix commit `38db050a`, close-out
-docs `ced43ca3`), full local gate green (check 0/0, 6017 tests exit 0, every CI-only check
-by name, from-scratch consumer proof with 155 e2e). Post-mortem is in the plan file. On CI
-green: merge PR #43 (Geoff pre-authorized merge and push), delete the worktree, move this
-STATUS section's pass detail to `docs/HISTORY.md` as the 4a entry (source: the plan's
-post-mortem), and point this file at 4b. The two machine-local `allowScripts` hunks in the
-worktree's `package.json` files are npm install approvals; discard them with the worktree.
-If CI is red, the failure is new information: fix on the branch through the implementer
-chain, never merge red.
-
-**Then author the 4b plan** (this or a fresh session): inputs are BANKED at
+**Author the 4b plan** (the cross-surface conformance sweep). Inputs are BANKED at
 `docs/internal/record/2026-09-01-4b-planning-inputs/` (the docket with the sitting's four
 brainstorm rulings and two conductor defaults appended, and the consumer usage map — Tier 1
 has zero consumer usage anywhere). Geoff requires a FULL adversarial review of the plan on
-the 4a model (engine-triage round 1 plus security reviewer if auth surface appears, fold,
-engine-triage round 2 verification) before he sees it for approval. Resume prompt for a
-fresh session:
-
-In ~/Projects/cairn-cms, close out the conventions pass and start 4b: invoke cairn-pass, read docs/STATUS.md; if PR #43 is unmerged check its CI and merge on green, then write the HISTORY entry from the plan's post-mortem and trim STATUS; then author the 4b plan from docs/internal/record/2026-09-01-4b-planning-inputs/ via writing-plans, run its two-round adversarial review, and present it to Geoff. Spend: ~4.2M (transcript-measured) after eight of eleven tasks;
-the ceiling is RAISED to 7M (Geoff, 2026-08-31, on the chunk-1 numbers: the overrun is
-review rigor, not waste), so the pass runs to completion without a budget stop. Tasks 7
-and 8 upshifted to Opus implementers (security-critical interactions). Decisions taken: the overnight
-suspend stall was recovered by verify-not-redo (Task 1's pre-stall commit accepted as-is);
-Task 4's `Outcome`-suffixed result-union type names accepted (they are results, not
-failure shapes, so the `Failure`-suffix ruling is not implicated). Resume prompt for a
-fresh session:
-
-In ~/Projects/cairn-cms, resume the conventions pass (slice 4a) mid-execution: invoke cairn-pass, read docs/STATUS.md and the plan, verify worktree `conventions` state against the checkpoint above, then continue with chunk 2 (Task 3's two doc fixes, then Tasks 5-8) through the implementer chain in workflow mode.
+the 4a model (engine-triage round 1 plus web-auth-security-reviewer if auth surface appears,
+fold with dispositions recorded in the plan, engine-triage round 2 verification of the folded
+revision) before approval; Geoff has authorized executing the twice-reviewed plan in workflow
+mode. Execution runs on a fresh worktree off `main` (4a is merged, so `main` carries the
+ruled conventions 4b builds against).
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -55,10 +35,8 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3 MERGED. Next: conventions 4a
-  (immediate next action, above), then 4b, internals, chassis; ONE release cut after
-  chassis. The 4a plan's ratified-rulings header is the carrier of the sitting's rulings
-  until Task 1 lands them in the ledger.
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a MERGED. Next: 4b (immediate
+  next action, above), then internals, chassis; ONE release cut after chassis.
   Routed to internals: the F-1 leak-class `check:surface` rider (its brief is the move
   record, `docs/internal/record/2026-08-30-retires-move-record.md`, which states the
   predicate's limits and the expansion-class questions), the `staleNames` per-subpath

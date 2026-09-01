@@ -18,21 +18,26 @@ chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**The conventions pass (slice 4a) is in its PASS-END RITUAL** on worktree
-`.claude/worktrees/conventions`. All eleven tasks plus both doc residuals ACCEPTED;
-code-simplifier landed (`a43986bf`, gates green). The four-reviewer fan-out returned three
-real findings, and a consolidated Opus fix round is executing: the SECURITY BLOCKER
-(absent-cookie short-circuit before `consumeToken` voids the `nonce_hash IS NULL` compat
-path — scaffold bootstrap sign-in, in-flight upgrade links, and hand-seeded recovery rows
-all refused; fix = attempt consume with null nonce), the rethrow-guard narrowing (a
-site-supplied `limit()` throwing redirect/error now degrades to open in sectionAction),
-and the pending-cookie TTL coincidence (ordinary same-browser timeout misdiagnosed as
-wrong-browser). One design question is with Geoff: the throttle/nonce login-lockout
-regression (an attacker POSTing request/minute keeps the live token bound to their nonce
-while the cooldown blocks the editor's own re-request). Remaining ritual after the fold:
-CI-derived gate list + from-scratch consumer build, HISTORY/ROADMAP/post-mortem, budgets.
-4b pre-work is banked in scratchpad (4b-docket.md, 4b-usage-map.md; Tier 1 has zero
-consumer usage anywhere). Spend: ~4.2M (transcript-measured) after eight of eleven tasks;
+**The conventions pass (slice 4a) is COMPLETE on branch `conventions`; PR #43 awaits CI.**
+Every task accepted, all four review folds landed (final fix commit `38db050a`, close-out
+docs `ced43ca3`), full local gate green (check 0/0, 6017 tests exit 0, every CI-only check
+by name, from-scratch consumer proof with 155 e2e). Post-mortem is in the plan file. On CI
+green: merge PR #43 (Geoff pre-authorized merge and push), delete the worktree, move this
+STATUS section's pass detail to `docs/HISTORY.md` as the 4a entry (source: the plan's
+post-mortem), and point this file at 4b. The two machine-local `allowScripts` hunks in the
+worktree's `package.json` files are npm install approvals; discard them with the worktree.
+If CI is red, the failure is new information: fix on the branch through the implementer
+chain, never merge red.
+
+**Then author the 4b plan** (this or a fresh session): inputs are BANKED at
+`docs/internal/record/2026-09-01-4b-planning-inputs/` (the docket with the sitting's four
+brainstorm rulings and two conductor defaults appended, and the consumer usage map — Tier 1
+has zero consumer usage anywhere). Geoff requires a FULL adversarial review of the plan on
+the 4a model (engine-triage round 1 plus security reviewer if auth surface appears, fold,
+engine-triage round 2 verification) before he sees it for approval. Resume prompt for a
+fresh session:
+
+In ~/Projects/cairn-cms, close out the conventions pass and start 4b: invoke cairn-pass, read docs/STATUS.md; if PR #43 is unmerged check its CI and merge on green, then write the HISTORY entry from the plan's post-mortem and trim STATUS; then author the 4b plan from docs/internal/record/2026-09-01-4b-planning-inputs/ via writing-plans, run its two-round adversarial review, and present it to Geoff. Spend: ~4.2M (transcript-measured) after eight of eleven tasks;
 the ceiling is RAISED to 7M (Geoff, 2026-08-31, on the chunk-1 numbers: the overrun is
 review rigor, not waste), so the pass runs to completion without a budget stop. Tasks 7
 and 8 upshifted to Opus implementers (security-critical interactions). Decisions taken: the overnight

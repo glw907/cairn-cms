@@ -9,16 +9,19 @@ import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import { mediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
+import type { MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
+// `MediaUsageInfo` retired from the public barrel (the retires pass, Task 2, a sanctioned
+// NavIcon-class leak); `MediaReplacePreviewPlan`, `MediaReplaceFailure`, `MediaAltPreviewPlan`,
+// and `MediaAltPropagateFailure` retired from the public barrel (4b, Task 1, the Tier 1
+// media-janitorial retires). All four still exported at their declaring module for this
+// fixture's own typing.
 import type {
-  MediaLibraryData,
+  MediaUsageInfo,
   MediaReplacePreviewPlan,
   MediaReplaceFailure,
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
-} from '../../lib/sveltekit/content-routes.js';
-// `MediaUsageInfo` retired from the public barrel (the retires pass, Task 2, a sanctioned
-// NavIcon-class leak); still exported at its declaring module for this fixture's own typing.
-import type { MediaUsageInfo } from '../../lib/sveltekit/content-routes-media.js';
+} from '../../lib/sveltekit/content-routes-media.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import * as ingest from '../../lib/components/client-ingest.js';
 import { gotoCalls, gotoOptsCalls } from './_app-navigation.js';

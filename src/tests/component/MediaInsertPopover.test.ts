@@ -4,7 +4,9 @@ import { tick } from 'svelte';
 import MediaInsertPopover from '../../lib/components/MediaInsertPopover.svelte';
 import type { ImagePlaceholderApi } from '../../lib/components/editor-placeholder.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
-import type { UploadResult } from '../../lib/sveltekit/content-routes.js';
+// `UploadResult` retired from the public barrel (4b, Task 1); still exported at its declaring
+// module, which this test imports directly.
+import type { UploadResult } from '../../lib/sveltekit/content-routes-media.js';
 import * as ingest from '../../lib/components/client-ingest.js';
 import { stringify as devalueStringify } from 'devalue';
 

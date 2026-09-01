@@ -8,7 +8,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/sveltekit/content-routes.js';
+// `DictionaryAddResult` retired from the public barrel (4b, Task 1); still exported at its
+// declaring module, which this test imports directly.
+import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/sveltekit/content-routes-dictionary.js';
 import { parseDictionary, serializeDictionary } from '../../lib/content/site-dictionary.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';

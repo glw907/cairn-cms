@@ -37,35 +37,12 @@ export type {
 
 export type {
   MediaLibraryData,
-  MediaDeleteRefusal,
-  MediaUpdateFailure,
-  MediaReplaceFailure,
-  MediaAltPropagateFailure,
-  MediaBulkFailure,
-  MediaUploadFailure,
-  MediaBulkDeleteResult,
-  MediaOrphanPurgeResult,
-  MediaReplacePreviewEntry,
-  MediaReplacePreviewPlan,
-  MediaAltPreviewPlan,
-  MediaAltPreviewEntry,
-  UploadResult,
   MediaLibraryEntry,
-  UsageEntry,
-  MediaOrphanScanResult,
-  OrphanByteRow,
-  BrokenRefRow,
-  RepointPlacement,
-  AltPlacement,
-  BranchRef,
-  BulkDeleteSkip,
 } from './content-routes-media.js';
 
-export type { TidyResult } from './content-routes-tidy.js';
+export type { SettingsData, VocabularyLoadData } from './content-routes-settings.js';
 
-export type { SettingsData, VocabularyLoadData, SettingsSaveFailure, VocabularySaveFailure } from './content-routes-settings.js';
-
-export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes-dictionary.js';
+export type { DictionaryAddFailure } from './content-routes-dictionary.js';
 
 /**
  * Build every admin content route the engine's own screens need, closed over the composed runtime.

@@ -26,39 +26,14 @@ export type {
   MediaLibraryData,
   ContentRoutesConfig,
   AttentionItem,
-  MediaDeleteRefusal,
-  MediaUpdateFailure,
-  MediaReplaceFailure,
-  MediaAltPropagateFailure,
-  MediaBulkFailure,
   ContentFormFailure,
-  UploadResult,
-  MediaUploadFailure,
-  SettingsSaveFailure,
-  VocabularySaveFailure,
   // The export-rule sweep (C2 breaking-window pass, R4 ruling): every type a route factory's
   // return type names, down to its own nested shapes, becomes importable from this subpath.
   TidyClient,
-  TidyResult,
-  DictionaryAddResult,
-  MediaBulkDeleteResult,
-  MediaOrphanPurgeResult,
-  MediaReplacePreviewEntry,
-  MediaReplacePreviewPlan,
-  MediaAltPreviewPlan,
-  MediaAltPreviewEntry,
   MediaLibraryEntry,
-  UsageEntry,
-  MediaOrphanScanResult,
-  OrphanByteRow,
-  BrokenRefRow,
-  RepointPlacement,
-  AltPlacement,
-  BranchRef,
-  BulkDeleteSkip,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes } from './nav-routes.js';
-export type { NavLoadData, NavSaveFailure } from './nav-routes.js';
+export type { NavLoadData } from './nav-routes.js';
 export type {
   NavIcon,
   ResolvedNavEntry,

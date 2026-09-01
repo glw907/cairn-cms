@@ -9,6 +9,8 @@
 // half of `DeleteRefusal`'s siblings) retired from every barrel and subpath in this same task, so
 // this file states each shape structurally rather than importing a retired name; that is itself
 // part of the leak-free proof (a public-facing file cannot reach for the retired names anymore).
+// Extended by the 4b conformance pass, Task 1, with a compile-only proof of `UsageEntry`'s
+// reference recovery expression, `NonNullable<ContentFormFailure['usage']>[number]`.
 import { describe, it, expect } from 'vitest';
 import type { ContentFormFailure, ContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
@@ -87,3 +89,16 @@ function typeOnlyCoreActionContracts(routes: ContentRoutes): void {
   void [create, save, publish, del, listDelete, rename, previewMint, previewRevoke];
 }
 void typeOnlyCoreActionContracts;
+
+// 4b, Task 1: `UsageEntry` retired from every barrel and subpath (the module-level export stays
+// in `media/usage.js` for its eight-plus in-engine namers). The reference page's stated recovery
+// for a public caller that needs the element type is indexing off the surviving carrier:
+// `NonNullable<ContentFormFailure['usage']>[number]`. This proves that expression is exactly
+// `UsageEntry`, mutually assignable with no cast.
+function typeOnlyUsageEntryRecovery(): void {
+  type RecoveredUsageEntry = NonNullable<ContentFormFailure['usage']>[number];
+  const fromRecovery: UsageEntry = { concept: 'posts', id: 'a', title: 'A', origin: { kind: 'published' } };
+  const toRecovery: RecoveredUsageEntry = fromRecovery;
+  void toRecovery;
+}
+void typeOnlyUsageEntryRecovery;

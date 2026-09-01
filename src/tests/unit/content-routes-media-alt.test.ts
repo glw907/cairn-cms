@@ -12,10 +12,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
+// Both retired from the public barrel (4b, Task 1); still exported at their declaring module,
+// which this test imports directly.
 import type {
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
-} from '../../lib/sveltekit/content-routes.js';
+} from '../../lib/sveltekit/content-routes-media.js';
 import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';

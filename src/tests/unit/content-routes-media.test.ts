@@ -8,7 +8,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
-import type { ContentFormFailure, MediaBulkFailure } from '../../lib/sveltekit/content-routes.js';
+import type { ContentFormFailure } from '../../lib/sveltekit/content-routes.js';
+// `MediaBulkFailure` retired from the public barrel (4b, Task 1); still exported at its declaring
+// module, which this test imports directly.
+import type { MediaBulkFailure } from '../../lib/sveltekit/content-routes-media.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { parseMediaToken } from '../../lib/media/reference.js';

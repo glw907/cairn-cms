@@ -15,7 +15,9 @@ import type { CairnEvent } from './types.js';
 /**
  * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
  * token usage. The diff is computed on the client (Task 12), so the server returns the plain text and
- * commits nothing.
+ * commits nothing. Retired from the public surface (4b, Task 1); the module-level export stays,
+ * since `tidyAction`'s return type composes into `createContentRoutesInternal`
+ * (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
  */
 export interface TidyResult {
   corrected: string;

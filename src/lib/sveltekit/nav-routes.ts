@@ -30,9 +30,10 @@ export interface NavLoadData {
 
 /**
  * A refused nav save: `fail(400)` on an invalid posted tree, `fail(409)` when the config's head
- *  moved since the editor opened the page.
+ *  moved since the editor opened the page. Retired from the public surface (4b, Task 1); survives
+ *  structurally inside `NavRoutes.navSaveAction`'s return type, the sanctioned leak.
  */
-export interface NavSaveFailure {
+interface NavSaveFailure {
   error: string;
 }
 

@@ -38,13 +38,12 @@ import type { R2Bucket } from '@cloudflare/workers-types';
 
 // Re-exported here so every type this module's own action results name down to their nested
 // shapes is importable from the one file `content-routes.ts` already re-exports (export-rule
-// sweep, C2 breaking-window pass, R4 ruling).
+// sweep, C2 breaking-window pass, R4 ruling). The Tier 1 media-janitorial retire (4b, Task 1)
+// dropped the republication of `UsageEntry`, `MediaOrphanScanResult`, `OrphanByteRow`,
+// `BrokenRefRow`, `RepointPlacement`, `AltPlacement`, `BranchRef`, and `BulkDeleteSkip`: each
+// stays a module-level export at its own declaring module for this file's in-process use, per
+// the retires-pass precedent (`docs/internal/engine-rulings.md`).
 export type { MediaLibraryEntry } from '../media/library-entry.js';
-export type { UsageEntry } from '../media/usage.js';
-export type { MediaOrphanScanResult, OrphanByteRow, BrokenRefRow } from '../media/orphan-scan.js';
-export type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
-export type { BranchRef } from '../media/rewrite-plan.js';
-export type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
 
 /**
  * One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
@@ -80,7 +79,10 @@ export interface MediaLibraryData {
 /**
  * A refused media delete: `fail(404)` for an asset not committed on the default branch, or
  *  `fail(409)` when a fresh usage read finds the asset still in use and the typed-slug override
- *  was not given. `fail(503)` covers media-off or a missing bucket binding.
+ *  was not given. `fail(503)` covers media-off or a missing bucket binding. Retired from the
+ *  public surface (4b, Task 1); the module-level export stays, since `mediaDeleteAction`'s return
+ *  type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module),
+ *  which the `.d.ts` emitter must be able to name.
  */
 export interface MediaDeleteRefusal {
   /** The one-line human summary every action failure carries. */
@@ -97,7 +99,10 @@ export interface MediaDeleteRefusal {
  * A refused media metadata edit: `fail(404)` for an asset not committed on the default branch, or
  *  `fail(400)` for an invalid slug, or `fail(409)` when the manifest changed since the editor
  *  opened it. `hash` carries the posted asset's hash on every branch, so the Library can re-open
- *  the right slide-over and render `error` against it.
+ *  the right slide-over and render `error` against it. Retired from the public surface (4b,
+ *  Task 1); the module-level export stays, since `mediaUpdateAction`'s return type composes
+ *  into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the
+ *  `.d.ts` emitter must be able to name.
  */
 export interface MediaUpdateFailure {
   /** The one-line human summary every action failure carries. */
@@ -110,6 +115,8 @@ export interface MediaUpdateFailure {
  * A refused media replace: `fail(409)` when a fresh usage read finds the asset still in use and the
  *  typed-slug override was not given, or `fail(503)` when usage cannot be verified (fail closed) or the
  *  bucket is unbound. Mirrors MediaDeleteRefusal: the asset hash, the where-used rows, and the count.
+ *  Retired from the public surface (4b, Task 1); the module-level export stays, since
+ *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaReplaceFailure {
   error: string;
@@ -122,7 +129,9 @@ export interface MediaReplaceFailure {
  * A refused media alt-propagation: `fail(503)` when usage cannot be verified across main and every
  *  open branch (fail closed), or the bucket is unbound, or `fail(409)` on a commit conflict. Alt
  *  fill has no typed-slug gate, so this carries just the summary and the asset hash (so the
- *  Library can re-open the right slide-over).
+ *  Library can re-open the right slide-over). Retired from the public surface (4b, Task 1); the
+ *  module-level export stays, since `CairnMediaLibrary.svelte` imports it directly for its own
+ *  typing.
  */
 export interface MediaAltPropagateFailure {
   error: string;
@@ -136,7 +145,8 @@ export interface MediaAltPropagateFailure {
 /**
  * A refused media bulk delete or orphan purge: `fail(503)` for the fail-closed strict-usage refusal
  *  (the whole batch refuses) or media-off / a missing bucket binding. The per-item outcomes ride the
- *  returned summary, not a fail.
+ *  returned summary, not a fail. Retired from the public surface (4b, Task 1); the module-level
+ *  export stays, since `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaBulkFailure {
   error: string;
@@ -145,7 +155,10 @@ export interface MediaBulkFailure {
 /**
  * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
  *  disallowed content) and the mediaLibraryUploadAction commit's own `fail(409)` on a conflict.
- *  Just the one-line summary; a refusal here never stores bytes or commits a row.
+ *  Just the one-line summary; a refusal here never stores bytes or commits a row. Retired from
+ *  the public surface (4b, Task 1); the module-level export stays, since `uploadAction`'s and
+ *  `mediaLibraryUploadAction`'s return type composes into `createContentRoutesInternal`
+ *  (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
  */
 export interface MediaUploadFailure {
   error: string;
@@ -153,7 +166,9 @@ export interface MediaUploadFailure {
 
 /**
  * The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
- *  partition (with their reason and where-used), and any per-object R2 delete failure.
+ *  partition (with their reason and where-used), and any per-object R2 delete failure. Retired
+ *  from the public surface (4b, Task 1); the module-level export stays, since
+ *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaBulkDeleteResult {
   deleted: string[];
@@ -163,7 +178,9 @@ export interface MediaBulkDeleteResult {
 
 /**
  * The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed by a
- *  manifest row since the scan, and any per-object delete failure.
+ *  manifest row since the scan, and any per-object delete failure. Retired from the public
+ *  surface (4b, Task 1); the module-level export stays, since `CairnMediaLibrary.svelte` imports
+ *  it directly for its own typing.
  */
 export interface MediaOrphanPurgeResult {
   purged: string[];
@@ -175,7 +192,8 @@ export interface MediaOrphanPurgeResult {
  * One entry the replace preview will rewrite, enriched with its display title and permalink from the
  *  content manifest (the planner's PlannedEntry carries neither). The screen lists these as the
  *  confirm dialog's where-touched preview, and the apply re-derives its own plan rather than trusting
- *  this.
+ *  this. Retired from the public surface (4b, Task 1); the module-level export stays, since
+ *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaReplacePreviewEntry {
   /** The concept id, e.g. "posts". */
@@ -194,6 +212,8 @@ export interface MediaReplacePreviewEntry {
  * The replace preview plan: the affected main entries (enriched), the distinct affected count, and
  *  the report-only cross-branch delta (open cairn/* branches that reference the same bytes; an apply
  *  rewrites main only). Display-only: the apply re-derives a fresh plan and never trusts this.
+ *  Retired from the public surface (4b, Task 1); the module-level export stays, since
+ *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaReplacePreviewPlan {
   affectedCount: number;
@@ -205,9 +225,10 @@ export interface MediaReplacePreviewPlan {
  * One entry the alt-propagation preview reports, enriched with its display title and permalink from
  *  the content manifest. Its placements carry every reference of the asset on this entry, each tagged
  *  with the bucket it falls in (a will-fill, a customized alt left as-is, or a decorative hero), so
- *  the screen can show what would change.
+ *  the screen can show what would change. Retired from the public surface (4b, Task 1); survives
+ *  structurally inside `MediaAltPreviewPlan.entries`, the sanctioned leak.
  */
-export interface MediaAltPreviewEntry {
+interface MediaAltPreviewEntry {
   /** The concept id, e.g. "posts". */
   concept: string;
   /** The entry id (its filename stem). */
@@ -225,7 +246,9 @@ export interface MediaAltPreviewEntry {
  *  cross-branch delta, and the bucket counts aggregated across every placement. Display-only: the
  *  apply re-derives a fresh plan and never trusts this. The preview reports an entry even when its
  *  only placements are reported-but-unchanged (a kept custom alt, a decorative hero), so the screen
- *  can show every bucket; the apply commits only the entries it actually changes.
+ *  can show every bucket; the apply commits only the entries it actually changes. Retired from
+ *  the public surface (4b, Task 1); the module-level export stays, since
+ *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaAltPreviewPlan {
   entries: MediaAltPreviewEntry[];
@@ -238,7 +261,10 @@ export interface MediaAltPreviewPlan {
  * The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
  *  optimistic client state and commits with the entry at Save (the upload itself commits nothing).
  *  `reused` is true when identical bytes were already stored, so the second upload did no second put;
- *  `mismatch` flags an existing object whose stored content type differs from this sniff.
+ *  `mismatch` flags an existing object whose stored content type differs from this sniff. Retired
+ *  from the public surface (4b, Task 1; the verify-wins resolution of the rank/verify divergence
+ *  on `audit-sveltekit-uploadresult`, a flat retire rather than the ranked relocate to `/media`).
+ *  The module-level export stays, since `media-upload-outcome.ts` imports it directly.
  */
 export interface UploadResult {
   reference: string;

@@ -361,11 +361,16 @@ const mediaManifest = readCommittedManifest(
   import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
 );
 
+// The media R2 binding, hoisted once and fed to both normalizeAssets below and the adapter's
+// media: member, so the binding name lives in exactly one place rather than two literals that
+// could drift apart.
+const media = { bucketBinding: 'MEDIA_BUCKET' };
+
 // The default public media resolver, backing the public build over the committed manifest. The
 // preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
 // published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
 // public route can inject the same resolver for the frontmatter hero, one source of truth.
-const resolvedAssets = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
+const resolvedAssets = normalizeAssets(media);
 export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets);
 
 // Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
@@ -452,9 +457,10 @@ export const cairn = defineAdapter({
   },
   backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
-  // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
-  // wrangler.jsonc and mounts the /media delivery route.
-  media: { bucketBinding: 'MEDIA_BUCKET' },
+  // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
+  // R2 double rides platform.env in dev; a real site binds it in wrangler.jsonc and mounts the
+  // /media delivery route.
+  media,
   // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
   // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to
   // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.

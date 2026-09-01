@@ -815,6 +815,17 @@
 
 ### Documentation
 
+- The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
+  `templates/waymark` scaffold now hoist one `const media = { bucketBinding: 'MEDIA_BUCKET' }`,
+  fed to both `normalizeAssets(media)` and the adapter's `media:` member, in place of the two
+  separately typed literals a fresh `npm create @glw907/cairn-site` used to hand every site. The
+  split-brain form let the two copies diverge silently (a site setting `transformations`,
+  `publicBase`, or `urlForm` on one copy alone got correct admin/upload behavior and wrong public
+  URLs), so the hoisted form is the recommended de-duplication for any existing site carrying the
+  duplicated pair. `normalizeAssets`'s exported signature and return type are unchanged; this is a
+  scaffold and doc change only. Consumers must: nothing; sites already on the duplicated form may
+  hoist one shared `media` object of their own, at their convenience.
+
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
   truncated 54 of the ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought,
   and the sanctioned fix moves a repaired entry's shape to its own `- **Shape:** ` line instead of a

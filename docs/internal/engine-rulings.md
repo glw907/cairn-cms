@@ -3352,9 +3352,24 @@ when the remediation pass lands.
 ## audit-media-normalizeassets: `normalizeAssets`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site building its own public render resolver must obtain a resolved config, and buildMediaResolver cannot take the runtime without pulling kit types into node-safe /media.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: composeRuntime already computes resolvedAssets and CairnRuntime exposes it publicly, yet the reference example (media.md:29) and all six sites re-normalize a re).
+- **Reopens on:** closed. Executed by the conformance pass, Task 8: the showcase config hoists one
+  `const media = { bucketBinding: 'MEDIA_BUCKET' }` fed to both `normalizeAssets(media)` and the
+  adapter's `media:` member, and `templates/waymark` is regenerated from it, so the scaffold no
+  longer hands a fresh site the split-brain pair. `normalizeAssets`'s exported signature and return
+  type are byte-identical to `main`; no engine code changed.
+- **Shape:** A single hoisted media block used by both `normalizeAssets(...)` and the adapter's
+  `media:` member, per verify-media.md's viable form. The verify record's other candidate,
+  reading `runtime.resolvedAssets` back into `cairn.config.ts`, is NOT viable and was not
+  attempted: the runtime composer imports `cairn.config.ts`, so the reverse import is circular in
+  the documented topology (every family repo shares this shape).
 - **Record:** [rank-media.md](record/2026-08-26-any-site-audit/rank-media.md), rank 4.
-- **Verified:** [verify-media.md](record/2026-08-26-any-site-audit/verify-media.md).
+- **Verified:** [verify-media.md](record/2026-08-26-any-site-audit/verify-media.md); two
+  corrections recorded there: the propagation vector is the scaffold
+  (`packages/create-cairn-site/template/src/theme/cairn.config.ts:368`/`:457` in the verify
+  record's own citation), and the `runtime.resolvedAssets` alternative does not work (above). The
+  cited path does not exist in this tree; `packages/create-cairn-site` bakes `templates/waymark`
+  from the showcase at prepack (`scripts/emit-template-dir.mjs`), and that showcase-then-emit route
+  supersedes the verify record's path, which predates it.
 
 ## audit-media-readcommittedmanifest: `readCommittedManifest`  (keep, 2026-08-26, any-site audit)
 

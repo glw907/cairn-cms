@@ -1,6 +1,4 @@
 [
-  "audit-adapter-authbranding",
-  "audit-adapter-publishactionsconfig",
   "audit-media-normalizeassets",
   "audit-render-strattr",
   "audit-log-auth-session-destroyed",

@@ -48,13 +48,7 @@
       "name": "PublishActionEntry",
       "subpath": ".",
       "home": "/sveltekit",
-      "reason": "R4 closure: `PublishActionsConfig` names it on this subpath."
-    },
-    {
-      "name": "PublishActionsConfig",
-      "subpath": ".",
-      "home": "/sveltekit",
-      "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it on this subpath. Reshape audit-adapter-publishactionsconfig is open, so its home is provisional."
+      "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it directly as `PublishActionEntry[]` on this subpath."
     },
     {
       "name": "VariantSpec",
@@ -243,18 +237,6 @@
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
-      "name": "PublishActionEntry",
-      "subpath": "/delivery/data",
-      "home": "/sveltekit",
-      "reason": "No R4 closure justifies it here either: it rides the held `PublishActionsConfig` below, which is itself held rather than closure-justified. Both leave this subpath when that reshape lands."
-    },
-    {
-      "name": "PublishActionsConfig",
-      "subpath": "/delivery/data",
-      "home": "/sveltekit",
-      "reason": "NOT closure-justified: nothing this subpath publishes names it, so R4 does not require it here. The one entry in this record that survives on the move rule instead, which holds a reshape in place: audit-adapter-publishactionsconfig is open, and moving it now would touch it twice. Its removal belongs to that reshape."
-    },
-    {
       "name": "ReferenceEdge",
       "subpath": "/delivery/data",
       "home": ".",
@@ -367,12 +349,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `CairnRuntime` names it on this subpath."
-    },
-    {
-      "name": "AuthBranding",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `AuthRoutesConfig` names it on this subpath. Reshape audit-adapter-authbranding is open, so its home is provisional."
     },
     {
       "name": "Backend",
@@ -553,12 +529,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `SendMagicLink`, `EmailSender` name it on this subpath."
-    },
-    {
-      "name": "MediaEntry",
-      "subpath": "/sveltekit",
-      "home": "/media",
-      "reason": "R4 closure: `UploadResult` names it on this subpath. Reshape audit-sveltekit-mediaentry is open, so its home is provisional."
     },
     {
       "name": "MediaLibraryEntry",

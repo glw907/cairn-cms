@@ -708,6 +708,32 @@
   surviving public carrier. **Consumers must:** index the element type off the carrier —
   `NonNullable<ContentFormFailure['usage']>[number]` — instead of importing `UsageEntry` by name.
 
+- `AuthBranding` publishes from `@glw907/cairn-cms/sveltekit` only (slice 4b, Task 2): the root
+  barrel's re-export drops, settling the reshape verdict `audit-adapter-authbranding`
+  (`AuthRoutesConfig.branding` is the one public signature naming it; nothing at root ever did).
+  **Consumers must:** import `AuthBranding` from `@glw907/cairn-cms/sveltekit` instead of the
+  root package.
+
+- `MediaEntry` publishes from `@glw907/cairn-cms/media` only (slice 4b, Task 2): the `/sveltekit`
+  re-export drops, settling `audit-sveltekit-mediaentry` (its closure justification,
+  `UploadResult`, already retired in Task 1). **Consumers must:** import `MediaEntry` from
+  `@glw907/cairn-cms/media` instead of `/sveltekit`.
+
+- `PublishActionsConfig` and `ResolvedPublishAction` retire (slice 4b, Task 2, the sitting's
+  ruling 2; settles `audit-adapter-publishactionsconfig`): both were bare aliases over
+  `PublishActionEntry[]`/`PublishActionEntry`, the shape the seam already exports by name.
+  `CairnAdapter.editor.publishActions`, `CairnRuntime.publishActions`, and
+  `normalizePublishActions`/`resolvePublishActions`'s own signatures all retype to
+  `PublishActionEntry[]` directly. `ResolvedPublishAction` was never published from any barrel
+  (only the module-local `ContentRoutesContext` named it), so its retire is a source-level
+  rename with no separate public break. **Consumers must:** replace `PublishActionsConfig` with
+  `PublishActionEntry[]` wherever it annotated `editor.publishActions` or a runtime read.
+
+- `PublishActionEntry`'s `/delivery/data` re-export drops (slice 4b, Task 2), per the row's own
+  recorded intent in `check-surface-reexports.json` ("Both leave this subpath when that reshape
+  lands"); its canonical home `/sveltekit` is unaffected. **Consumers must:** import
+  `PublishActionEntry` from `@glw907/cairn-cms/sveltekit` instead of `/delivery/data`.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

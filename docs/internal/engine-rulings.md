@@ -533,14 +533,28 @@ when the remediation pass lands.
 ## audit-adapter-authbranding: `AuthBranding`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Real on /sveltekit (AuthRoutesConfig.branding types a hand-mounted route's argument). None on '.': nothing root-public names it, and buildMagicLinkMessage was itself demoted in 2026-07-01.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Export from /sveltekit only; drop the root re-export, following the ResolvedReference precedent ('the root re-export is a straight duplicate ... keep it exporte).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 2: the root barrel's
+  re-export drops, `/sveltekit` is now the sole publication, and the settled-home comment at
+  `sveltekit/index.ts` states the flip explicitly.
+- **Shape:** Export from /sveltekit only; drop the root re-export, following the ResolvedReference
+  precedent (the root re-export is a straight duplicate with no closure justification of its own).
+  Executed as ruled.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 3.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
 ## audit-adapter-publishactionsconfig: `PublishActionsConfig`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. The seam has one; the alias does not. A site declaring editor.publishActions writes an array literal, and one annotating it writes PublishActionEntry[] just as clearly.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Retire the X[] alias; keep PublishActionEntry and type editor.publishActions as PublishActionEntry[]. Contrast NavLayout, whose alias compresses a real three-ar).
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 2, per the sitting's ruling 2:
+  `PublishActionsConfig`'s rows drop everywhere (root, `/delivery/data`) and
+  `CairnAdapter.editor.publishActions`, `CairnRuntime.publishActions`,
+  `normalizePublishActions`, and `resolvePublishActions` all retype to `PublishActionEntry[]`
+  directly. `ResolvedPublishAction`, the sibling alias the sitting rode onto this verdict, also
+  retires: it was never published from any barrel (only the module-local
+  `ContentRoutesContext` named it), so its drop is a source-level rename with no surface row.
+- **Shape:** Retire the `X[]` alias; keep `PublishActionEntry` and type `editor.publishActions`
+  as `PublishActionEntry[]`. Contrast `NavLayout`, whose alias compresses a real three-arm
+  union rather than a bare array. Executed as ruled.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 4.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
@@ -2199,7 +2213,10 @@ when the remediation pass lands.
 ## audit-sveltekit-mediaentry: `MediaEntry`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Real at /media, where the manifest record is the media vocabulary's core noun; none at /sveltekit once UploadResult moves.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 2, riding Task 1's
+  `UploadResult` retire (the closure justification the `/sveltekit` row named): the row drops
+  from `sveltekit/index.ts` and its `check-surface-reexports.json` record, and `/media` is now
+  `MediaEntry`'s sole publication.
 - **Shape:** Keep it in the engine at /media and drop the /sveltekit re-export. Its substantive audit belongs to the media bucket.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 100.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).

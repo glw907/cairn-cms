@@ -50,10 +50,6 @@ export type { CairnRef, LinkResolve } from '../content/links.js';
 export type { FragmentResolve } from '../render/resolve-include.js';
 export type { ReferenceEdge } from '../content/references.js';
 export type { SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from '../nav/site-config.js';
-// `PublishActionsConfig` carries an open reshape verdict (`audit-adapter-publishactionsconfig`), so
-// its home stays unsettled and it is left where it is until that reshape lands; `PublishActionEntry`
-// rides its declaration. Canonical home for both is `/sveltekit`.
-export type { PublishActionsConfig, PublishActionEntry } from '../sveltekit/publish-actions.js';
 export { createLinkResolver, createFragmentResolver, resolveReferences } from './site-resolver.js';
 export type { SiteResolver, ResolvedReference } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';

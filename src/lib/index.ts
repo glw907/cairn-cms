@@ -24,7 +24,7 @@ export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles
 // reads, so route gating and sidebar visibility cannot drift apart.
 export { defineAccess, canReach, hasAccessRule } from './auth/access.js';
 export type { AccessMap } from './auth/access.js';
-export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from './email.js';
+export type { MagicLinkMessage, SendMagicLink, EmailSender } from './email.js';
 
 // Content model and adapter contract (Plan 02).
 export type {
@@ -140,9 +140,9 @@ export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions 
 // no `/sveltekit` module ever executes here (export-rule sweep, C2 breaking-window pass, R4 ruling).
 export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because
-// `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name `PublishActionsConfig`,
-// whose own array element names `PublishActionEntry`.
-export type { PublishActionsConfig, PublishActionEntry } from './sveltekit/publish-actions.js';
+// `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name it directly as
+// `PublishActionEntry[]`.
+export type { PublishActionEntry } from './sveltekit/publish-actions.js';
 // Canonical home `/islands`; a recorded R4 re-export here because `CairnAdapter.rendering.islands`
 // names it.
 export type { IslandRegistry } from './islands/types.js';

@@ -619,5 +619,3 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. |
 | `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config. See [`TidyConfig`](./core.md#types). |
 | `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes. |
-| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config. |
-| `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link. |

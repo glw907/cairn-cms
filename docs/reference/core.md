@@ -1081,7 +1081,6 @@ function signatures above reference these.
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it with no cast. |
-| `AuthBranding` | Extension API | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries: the five required fields, plus optional `cc`, `bcc`, `replyTo`, and `attachments` widening the Email Sending API surface, live-verified 2026-07-07. `replyTo` takes a single address only; the platform rejects an array there. |
 | `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements: `(env, message) => Promise<void>`; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
@@ -1116,7 +1115,6 @@ function signatures above reference these.
 | `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree; see [`NavLayoutEntry`](./sveltekit.md#navlayoutentry) for its members. |
 | `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
 | `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree; see [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
-| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config: next-step links rendered on the publish-success moment. |
 | `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link; `href` is a template string substituted with the published entry's identity at resolve time. |
 | `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. See the preceding [`media` adapter member](#media-adapter-member). |
 | `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s; `hydrateIslands` mounts over the matching `hydrate` directive's static fallback. |

@@ -6,17 +6,16 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
-- `AuthBranding`: { siteName: string; from: string; replyTo?: string }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; listCommits: (path: string, ref: string, limit: number) => Promise<BackendCommit[]>; createBranch: (name: string, fromBranch: string) => Promise<string>; deleteBranch: (name: string) => Promise<void> }
 - `BackendCommit`: { ref: string; author: { name: string; email: string }; date: string }
 - `BackendProvider`: { kind: string; branch: string; connect: (env: CairnEnv) => Backend }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BranchExistsError`: typeof BranchExistsError
-- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionsConfig } }
+- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[] } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
-- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
+- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `canReach`: (access: AccessMap | undefined, editor: Editor, target: string) => boolean
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
@@ -81,7 +80,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseSiteConfig`: (raw: string) => SiteConfig
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
-- `PublishActionsConfig`: PublishActionEntry[]
 - `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `ReferenceEdge`: { field: string; concept: string; id: string }
@@ -270,8 +268,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseManifest`: (raw: string) => Manifest
 - `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
 - `PublicRoutesConfig`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
-- `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
-- `PublishActionsConfig`: PublishActionEntry[]
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -351,8 +347,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `parseManifest`: (raw: string) => Manifest
-- `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
-- `PublishActionsConfig`: PublishActionEntry[]
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -459,7 +453,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
 - `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
 - `CairnRef`: { concept: string; id: string }
-- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
+- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
 - `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; node: Element }
@@ -508,7 +502,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; routable: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
 - `MagicLinkMessage`: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }
-- `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
 - `MediaLibraryData`: { assets: MediaLibraryEntry[]; usage: { [x: string]: MediaUsageInfo }; error: string | null; flash: "deleted" | "updated" | "replaced" | "altPropagated" | "bulkDeleted" | "orphansPurged" | "uploaded" | null }
 - `MediaLibraryEntry`: { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number | null; height: number | null; bytes: number; createdAt: string }
 - `MediaRef`: { slug: string | null; hash: string }
@@ -534,7 +527,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `previewLoad`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
 - `PreviewTokenConfig`: { ttlMs?: number }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
-- `PublishActionsConfig`: PublishActionEntry[]
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `RepoFile`: { id: string; name: string; path: string }

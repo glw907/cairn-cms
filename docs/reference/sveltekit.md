@@ -1850,16 +1850,8 @@ One developer-declared publish-success link. `href` is a template string. Resolv
 link to those concept ids. A name outside the site's real concepts throws when the runtime
 composes.
 
-### `PublishActionsConfig`
-
-Stability tier: Extension API.
-
-```ts
-type PublishActionsConfig = PublishActionEntry[];
-```
-
-A site's raw `publishActions` config, in declaration order. The adapter's `editor.publishActions`
-field takes this shape.
+A site's raw `publishActions` config is `PublishActionEntry[]`, in declaration order. The
+adapter's `editor.publishActions` field takes this shape.
 
 ---
 
@@ -1926,7 +1918,6 @@ imports the matching `*Data` type to type its `data` prop.
 | `Capability` | Extension API | `type Capability = 'owner' \| 'editor' \| 'none'` | The three levels the engine understands. See [`Capability`](./core.md#capability). |
 | `RolesDeclaration` | Extension API | `type RolesDeclaration = Record<string, RoleDeclaration>` | A site's whole role vocabulary. See [`RolesDeclaration`](./core.md#roles). |
 | `RoleDeclaration` | Extension API | `type RoleDeclaration = Capability \| { capability: Capability; home?: string }` | One role's mapping in a `defineRoles` vocabulary. See [`RoleDeclaration`](./core.md#roles). |
-| `MediaEntry` | Extension API | `interface MediaEntry` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. See [`MediaEntry`](./media.md#types). |
 | `InboundLink` | Unstable API | `interface InboundLink` | One inbound linker: enough to name it and link to its edit page in the delete guard. |
 | `NavNode` | Extension API | `interface NavNode { label: string; url?: string; children?: NavNode[] }` | One navigation node: label, optional url, optional children. See [`NavNode`](./core.md#stable-api). |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. See [`VocabularyEntry`](./core.md#stable-api). |

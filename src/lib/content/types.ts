@@ -23,7 +23,7 @@ import type { AccessMap } from '../auth/access.js';
 import type { NavLayout } from '../sveltekit/admin-nav.js';
 // Also type-only, for the same layering reason: publishActions validates against the site's
 // concepts in the sveltekit layer, not here.
-import type { PublishActionsConfig } from '../sveltekit/publish-actions.js';
+import type { PublishActionEntry } from '../sveltekit/publish-actions.js';
 
 /**
  * The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
@@ -308,7 +308,7 @@ export interface CairnAdapter {
      *  engine validates each entry when it composes, so a blank field or an unknown concept fails at
      *  server start. Absent renders the publish-success moment exactly as it renders today.
      */
-    publishActions?: PublishActionsConfig;
+    publishActions?: PublishActionEntry[];
   };
 }
 
@@ -424,7 +424,7 @@ export interface CairnRuntime {
    *  at admin construction, the same as `navLayout`, since it checks each entry's `concepts` filter
    *  against the site's real concepts). Optional.
    */
-  publishActions?: PublishActionsConfig;
+  publishActions?: PublishActionEntry[];
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
   assets?: AssetConfig;

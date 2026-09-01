@@ -11,7 +11,7 @@ import { emptyManifest, parseManifest, type Manifest } from '../content/manifest
 import type { CairnRuntime } from '../content/types.js';
 import { validateNavLayout, validateAccessComposition, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
-import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
+import { normalizePublishActions, type PublishActionEntry } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
@@ -221,7 +221,7 @@ export interface ContentRoutesContext {
   runtime: CairnRuntime;
   deps: ContentRoutesConfig;
   /** The developer's publish-actions config, validated once at construction (server start). */
-  publishActions: ResolvedPublishAction[];
+  publishActions: PublishActionEntry[];
   /**
    * Build the Anthropic client for the tidy action from the resolved API key. The real SDK client,
    *  or a test's injected fake (`deps.tidy.client`).

@@ -4,7 +4,7 @@ import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
 import type { SiteGlobs } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
@@ -13,14 +13,14 @@ const adapter = defineAdapter({
     posts: {
       dir: 'src/content/posts',
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
       }),
     },
     pages: {
       dir: 'src/content/pages',
-      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -78,7 +78,7 @@ describe('createSiteIndexes build-time guards', () => {
       content: {
         site: {
           dir: 'src/content/site',
-          fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+          fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
         },
       } as CairnAdapter['content'],
       backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),

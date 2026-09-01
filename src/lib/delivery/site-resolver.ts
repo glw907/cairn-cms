@@ -2,7 +2,7 @@
 // per-concept index into one resolver: a single byPermalink map a catch-all route matches a
 // request path against, one entries() list the prerenderer walks, and the per-concept indexes
 // for concept-scoped feed loaders. A duplicate permalink throws at build.
-// buildLinkResolver lives here too, since it closes over the resolver.
+// createLinkResolver lives here too, since it closes over the resolver.
 import type { ConceptDescriptor } from '../content/types.js';
 import type { ContentEntry, ContentIndex, ContentSummary } from './content-index.js';
 import type { LinkResolve } from '../content/links.js';
@@ -188,7 +188,7 @@ export function resolveReferences(
  *  ref whose target concept is non-routable (a fragment) is treated as a miss too: a fragment is
  *  included, never linked, and its gated permalink would 404.
  */
-export function buildLinkResolver(site: SiteResolver): LinkResolve {
+export function createLinkResolver(site: SiteResolver): LinkResolve {
   return (ref) => {
     const url = site.routable(ref.concept) ? site.concept(ref.concept)?.byId(ref.id)?.permalink : undefined;
     if (!url) throw new Error(`cairn: link target "cairn:${ref.concept}/${ref.id}" not found`);
@@ -202,7 +202,7 @@ export function buildLinkResolver(site: SiteResolver): LinkResolve {
  *  dangling `cairn:` link does. The preview uses a manifest-backed resolver built from the edit
  *  screen's fragment targets instead.
  */
-export function buildFragmentResolver(site: SiteResolver): FragmentResolve {
+export function createFragmentResolver(site: SiteResolver): FragmentResolve {
   return (id) => {
     const body = site.concept(FRAGMENTS_CONCEPT_ID)?.byId(id)?.body;
     if (body == null) throw new Error(`cairn: fragment "${id}" not found`);

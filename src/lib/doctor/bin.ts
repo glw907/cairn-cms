@@ -2,9 +2,9 @@
 // cairn-doctor: the environment preflight. A thin shell over index.ts (where the unit tests
 // reach the logic): parse the flags, assemble the context with the real fetch and filesystem,
 // run the default registry plus the opt-in live send, print the report. Bad flags go to
-// stderr with exit 2; a failed check exits 1; a clean or all-skip run exits 0. The codes go
-// through process.exitCode, never process.exit, so a piped stdout flushes the whole report
-// before the process ends.
+// stderr with exit 2; a failed check exits 1; an unchecked check with no failure exits 3; a
+// clean run (pass, skip, and info only) exits 0. The codes go through process.exitCode, never
+// process.exit, so a piped stdout flushes the whole report before the process ends.
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { liveProbeCheck } from './check-probe.js';
@@ -15,9 +15,11 @@ import {
   contextFromEnv,
   defaultChecks,
   deriveMissingInputs,
+  exitCodeFor,
   formatReport,
   parseArgs,
   runDoctor,
+  USAGE,
 } from './index.js';
 
 async function main(): Promise<void> {
@@ -27,6 +29,11 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 2;
+    return;
+  }
+
+  if (args.help) {
+    console.log(USAGE);
     return;
   }
 
@@ -80,9 +87,9 @@ async function main(): Promise<void> {
     checks.push(liveProbeCheck(args.probe === true ? undefined : args.probe));
   }
 
-  const { results, failed } = await runDoctor(checks, ctx);
+  const { results, failed, unchecked } = await runDoctor(checks, ctx);
   console.log(formatReport(results));
-  process.exitCode = failed > 0 ? 1 : 0;
+  process.exitCode = exitCodeFor({ failed, unchecked });
 }
 
 await main();

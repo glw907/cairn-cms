@@ -4,7 +4,7 @@
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import { DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import { log } from '../log/index.js';
-import { requireEditor, requireEngineAccess } from './guard.js';
+import { requireEditor, requireEngineAccess, requireCookieJar } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 import { tidyClientErrorStatus, TidySdkMissingError } from './content-routes-context.js';
@@ -107,8 +107,10 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    */
   async function tidyAction(event: CairnEvent): Promise<ActionFailure<TidyFailure> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
-    // before the session read and before any model call.
-    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies, platform: event.platform })) {
+    // before the session read and before any model call. An untyped caller with no cookie jar at
+    // all throws loudly instead (convention-auth-loud-postures).
+    const cookies = requireCookieJar(event);
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
       return fail(403, { error: 'csrf' } satisfies TidyFailure);
     }
     const editor = requireEditor(event);

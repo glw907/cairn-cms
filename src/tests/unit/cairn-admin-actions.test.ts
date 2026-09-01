@@ -2,11 +2,11 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
-import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
+import { createCairnAdmin, createCairnAdminInternal } from '../../lib/sveltekit/cairn-admin.js';
 import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
 import { log } from '../../lib/log/index.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -16,8 +16,8 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Test Site',
     concepts: [
-      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
-      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
+      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
+      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],
     backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
@@ -179,7 +179,14 @@ describe('auth actions', () => {
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
     const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
     const admin = createCairnAdmin(runtime(), deps);
-    const event = actionEvent('/admin/auth/confirm', { editor: null, form: { token: 'tok' }, env: { AUTH_DB: db } });
+    const event = actionEvent('/admin/auth/confirm', {
+      editor: null,
+      form: { token: 'tok' },
+      env: { AUTH_DB: db },
+      // The confirm refuses outright without the pending-login nonce the request action left in
+      // this browser (auth-confirm.test.ts owns that binding's own cases).
+      cookies: { '__Host-cairn_login_pending': 'a-pending-login-nonce' },
+    });
     await expectRedirect(admin.actions.confirm(event as never), '/admin');
     // The second set is the CSRF rotation a successful login performs; see auth-confirm.test.ts.
     expect(event._cookieSets).toEqual([
@@ -198,8 +205,16 @@ describe('auth actions', () => {
     await expectRedirect(admin.actions.logout(event as never), '/admin/login');
     expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === 'sid')).toBe(true);
     // The CSRF cookie is deleted alongside the session cookie, so a persistent double-submit
-    // token cannot survive sign-out.
-    expect(event._cookieDeletes).toEqual(['__Host-cairn_session', '__Host-cairn_csrf']);
+    // token cannot survive sign-out. Both cookie-name forms delete for both cookies (Task 6,
+    // belt-and-braces N1), so a PUBLIC_ORIGIN change between login and logout cannot strand a
+    // browser cookie under the name the current derivation no longer produces.
+    expect(event._cookieDeletes).toEqual([
+      '__Host-cairn_session',
+      'cairn_session',
+      '__Host-cairn_csrf',
+      'cairn_csrf',
+      '__Host-cairn_login_pending',
+    ]);
   });
 });
 
@@ -398,39 +413,44 @@ describe('media view load', () => {
   });
 });
 
+// CairnAdminRoutes (Task 2, contract-first returns) narrows admin.actions to drop the ten
+// media-janitorial actions, mirroring ContentRoutes' own narrowing; these five reach the media
+// view only, so the block reaches them through createCairnAdminInternal, the wide internal shape
+// the single-mount composer itself drives (the same repoint the foundations-B ContentRoutes
+// narrowing used for its own media-only suites, e.g. content-routes-media-bulk.test.ts).
 describe('media replace and alt actions (composer wiring)', () => {
   const mediaActions = ['mediaUpload', 'mediaReplacePreview', 'mediaReplace', 'mediaAltPreview', 'mediaAltPropagate'] as const;
 
   for (const name of mediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
-      const admin = createCairnAdmin(runtime(), deps);
+      const admin = createCairnAdminInternal(runtime(), deps);
       await expect(admin.actions[name](actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
     });
   }
 
   it('mediaUpload on the media view reaches uploadAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaUpload(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaReplace on the media view reaches the apply (400 on a missing hash)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     await expect(admin.actions.mediaReplace(actionEvent('/admin/media') as never)).rejects.toMatchObject({ status: 400 });
   });
 
   it('mediaReplacePreview on the media view reaches the preview (403 without the CSRF header)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaReplacePreview(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 403 });
   });
 
   it('mediaAltPropagate on the media view reaches the apply (400 on a missing hash)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     await expect(admin.actions.mediaAltPropagate(actionEvent('/admin/media') as never)).rejects.toMatchObject({ status: 400 });
   });
 });
@@ -456,28 +476,28 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
 
   for (const name of newMediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
-      const admin = createCairnAdmin(runtime(), deps);
+      const admin = createCairnAdminInternal(runtime(), deps);
       await expect(admin.actions[name](actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
     });
   }
 
   it('mediaBulkDelete on the media view reaches the content action (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaBulkDelete(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaOrphanScan on the media view reaches the content action (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaOrphanScan(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaOrphanPurge on the media view reaches mediaOrphanPurgeAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaOrphanPurge(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });

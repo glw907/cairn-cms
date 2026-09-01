@@ -16,7 +16,7 @@ import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, expectRedirect, expectHttpError } from '../unit/_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { PreviewMintFailure } from '../../lib/sveltekit/content-routes.js';
+import type { ContentFormFailure } from '../../lib/sveltekit/content-routes.js';
 import type { D1Database } from '@cloudflare/workers-types';
 
 /** A minimal D1Database double whose every prepared statement's `run()` throws `message`, for
@@ -127,10 +127,13 @@ describe('previewMintAction', () => {
     const routes = createContentRoutes(runtime());
     const result = (await routes.previewMintAction(actionEvent(ID) as never)) as unknown as {
       status: number;
-      data: PreviewMintFailure;
+      data: ContentFormFailure;
     };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/no unpublished draft/i);
+    // conventions pass, Task 5: previewMintAction now declares ActionFailure<ContentFormFailure>
+    // (the flattened, all-optional type); this holds the key set a PreviewMintFailure carried.
+    expect(Object.keys(result.data)).toEqual(['error']);
   });
 
   it('mints against the pending branch and returns the configured origin, never the request host', async () => {
@@ -208,7 +211,7 @@ describe('previewMintAction', () => {
     try {
       const result = (await routes.previewMintAction(actionEvent(ID) as never)) as unknown as {
         status: number;
-        data: PreviewMintFailure;
+        data: ContentFormFailure;
       };
       expect(result.status).toBe(500);
       expect(result.data.error).toContain('migrations/0003_preview.sql');
@@ -253,10 +256,13 @@ describe('previewRevokeAction', () => {
     try {
       const result = (await routes.previewRevokeAction(actionEvent(ID) as never)) as unknown as {
         status: number;
-        data: PreviewMintFailure;
+        data: ContentFormFailure;
       };
       expect(result.status).toBe(500);
       expect(result.data.error).toContain('migrations/0003_preview.sql');
+      // conventions pass, Task 5: previewRevokeAction now declares ActionFailure<ContentFormFailure>
+      // (the flattened, all-optional type); this holds the key set a PreviewMintFailure carried.
+      expect(Object.keys(result.data)).toEqual(['error']);
     } finally {
       await db.exec(
         'CREATE TABLE preview_tokens (token_hash TEXT PRIMARY KEY, concept TEXT NOT NULL, entry_id TEXT NOT NULL, editor TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)',

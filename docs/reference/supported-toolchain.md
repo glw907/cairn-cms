@@ -51,7 +51,7 @@ it. The showcase builds on Vite 8. That is a fact about the engine's own toolcha
 not track it.
 
 **TypeScript is held at `^6`.** The floor a consumer's own `tsc` needs comes from `const` type
-parameters on the public surface. `defineAdapter`, `defineConcept`, `fieldset`, and every
+parameters on the public surface. `defineAdapter`, `defineConcept`, `defineFieldset`, and every
 `fields.*` constructor capture their argument with a `const` type parameter, so the call site's
 literal types (`required: true`, a `select` option union) survive into the inferred descriptor.
 That floor is TypeScript `5.0`; cairn's own code and its shipped `.d.ts` files are already

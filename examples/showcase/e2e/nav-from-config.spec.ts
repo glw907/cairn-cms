@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { parseSiteConfig, extractMenu } from '@glw907/cairn-cms';
+import { parseSiteConfig, readMenu } from '@glw907/cairn-cms';
 
 // Proves the public header renders from site.config.yaml's menus.primary rather than a hardcoded
 // array in SiteHeader.svelte: read the same YAML file the site parses, extract the same menu the
-// engine's own extractMenu resolves, and assert the header shows exactly those entries, in order.
+// engine's own readMenu resolves, and assert the header shows exactly those entries, in order.
 // A hardcoded header can only pass this test by coincidence of matching content; a menu entry
 // added to the YAML with nothing else changed proves the wiring (see the plan's red-state note).
 
@@ -14,7 +14,7 @@ const configPath = fileURLToPath(new URL('../src/theme/site.config.yaml', import
 test('the public header renders every top-level entry declared in menus.primary, in order', async ({ page }) => {
   const raw = readFileSync(configPath, 'utf-8');
   const config = parseSiteConfig(raw);
-  const primaryNav = extractMenu(config, 'primary', 2);
+  const primaryNav = readMenu(config, 'primary', 2);
   const topLevel = primaryNav.filter((item) => item.url !== undefined);
   expect(topLevel.length).toBeGreaterThan(0);
 
@@ -36,7 +36,7 @@ test('the public header renders every top-level entry declared in menus.primary,
 test('the error page renders the same config-declared header nav', async ({ page }) => {
   const raw = readFileSync(configPath, 'utf-8');
   const config = parseSiteConfig(raw);
-  const topLevel = extractMenu(config, 'primary', 2).filter((item) => item.url !== undefined);
+  const topLevel = readMenu(config, 'primary', 2).filter((item) => item.url !== undefined);
 
   const response = await page.goto('/no-such-page-e2e-probe');
   expect(response?.status()).toBe(404);

@@ -14,6 +14,13 @@ const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesD
 // is `docs/internal/record/2026-08-30-retires-move-record.md`.
 const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'AdvisoryAction', 'MediaUsageInfo', 'NavPageOption'];
 
+// The five core arm shapes ContentFormFailure's Partial<> intersection once carried, retired from
+// every barrel and subpath by the conventions pass, Task 5 (`audit-sveltekit-contentformfailure`'s
+// prescribed flatten): every field folded into the flat, all-optional ContentFormFailure, which
+// stays in KEPT below. DeleteRefusal survives structurally as ContentFormFailure's inboundLinks/
+// inboundKind/id fields, the same F-1-class leak the six names above already establish.
+const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteRefusal', 'RenameFailure', 'CreateFailure', 'PreviewMintFailure'];
+
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
 // four demotions above and the six retired leaks above.
@@ -32,10 +39,7 @@ const KEPT = [
   'EditData',
   'HelpData',
   'MediaLibraryData',
-  'ContentRoutesOptions',
-  'SaveFailure',
-  'DeleteRefusal',
-  'RenameFailure',
+  'ContentRoutesConfig',
   'MediaDeleteRefusal',
   'MediaUpdateFailure',
   'MediaReplaceFailure',
@@ -48,7 +52,7 @@ const KEPT = [
   'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',
-  'CairnAdminOptions',
+  'CairnAdminConfig',
   'AdminData',
   'healthLoad',
   'HealthData',
@@ -81,18 +85,24 @@ describe('sveltekit barrel prune', () => {
     expect(stillPresent).toEqual([]);
   });
 
+  it('no longer resolves the retired core-arm names from the /sveltekit subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = RETIRED_CORE_ARMS.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
   it('still resolves every keep-list name from the /sveltekit subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const missing = KEPT.filter((name) => !names.has(name));
     expect(missing).toEqual([]);
   });
 
-  it('ContentRoutesOptions carries no backend member on the packaged type', () => {
+  it('ContentRoutesConfig carries no backend member on the packaged type', () => {
     const { checker, symbols } = moduleExports(DTS);
-    const symbol = symbols.find((s) => s.name === 'ContentRoutesOptions');
-    expect(symbol, 'ContentRoutesOptions must still be exported').toBeDefined();
+    const symbol = symbols.find((s) => s.name === 'ContentRoutesConfig');
+    expect(symbol, 'ContentRoutesConfig must still be exported').toBeDefined();
     const declared = symbol!.declarations?.[0];
-    expect(declared, 'ContentRoutesOptions must have a declaration').toBeDefined();
+    expect(declared, 'ContentRoutesConfig must have a declaration').toBeDefined();
     const type = checker.getTypeAtLocation(declared!);
     const memberNames = type.getProperties().map((p) => p.name);
     expect(memberNames).not.toContain('backend');

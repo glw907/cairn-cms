@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { githubApp } from '../../lib/index.js';
-import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
+import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = {
   content: {
-    posts: { dir: 'src/content/posts', fields: fieldset({}) },
-    pages: { dir: 'src/content/pages', fields: fieldset({}) },
+    posts: { dir: 'src/content/posts', fields: defineFieldset({}) },
+    pages: { dir: 'src/content/pages', fields: defineFieldset({}) },
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.test' },
@@ -18,8 +18,8 @@ const adapter = {
 
 const config = parseSiteConfig('siteName: Test\n');
 
-describe('siteDescriptors', () => {
+describe('buildSiteDescriptors', () => {
   it('equals normalizeConcepts over the adapter content (URL policy now declared per concept)', () => {
-    expect(siteDescriptors(adapter, config)).toEqual(normalizeConcepts(adapter.content));
+    expect(buildSiteDescriptors(adapter, config)).toEqual(normalizeConcepts(adapter.content));
   });
 });

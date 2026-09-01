@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeConcepts, findConcept } from '../../lib/content/concepts.js';
 import { composeRuntime } from '../../lib/content/compose.js';
-import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
+import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import type { ConceptConfig } from '../../lib/content/types.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
 
 describe('normalizeConcepts', () => {
@@ -33,9 +33,9 @@ describe('normalizeConcepts', () => {
     });
   });
 
-  it('produces byte-identical routing through composeRuntime and siteDescriptors for one shorthand', () => {
+  it('produces byte-identical routing through composeRuntime and buildSiteDescriptors for one shorthand', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
-    const delivery = siteDescriptors(testAdapter, testSiteConfig);
+    const delivery = buildSiteDescriptors(testAdapter, testSiteConfig);
     const fromRuntime = runtime.concepts.find((c) => c.id === 'posts')?.routing;
     const fromDelivery = delivery.find((c) => c.id === 'posts')?.routing;
     expect(fromRuntime).toEqual({ routable: true, dated: true, inFeeds: true });
@@ -65,7 +65,7 @@ describe('normalizeConcepts', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
       routing: 'embedded',
-      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
     };
     const descriptors = normalizeConcepts({ ...testAdapter.content, fragments });
 
@@ -87,7 +87,7 @@ describe('normalizeConcepts', () => {
       normalizeConcepts({
         fragments: {
           dir: 'src/content/fragments',
-          fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+          fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
           ...extra,
         },
       }),
@@ -104,13 +104,13 @@ describe('normalizeConcepts', () => {
       dir: 'src/content/fragments',
       // @ts-expect-error routing accepts only the 'feed' | 'page' | 'embedded' shorthand now
       routing: { routable: false, dated: false, inFeeds: false },
-      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
     };
     expect(objectRouting.dir).toBe('src/content/fragments');
   });
 });
 
-const cfg = { dir: 'd', fields: fieldset({}) };
+const cfg = { dir: 'd', fields: defineFieldset({}) };
 
 describe('normalizeConcepts URL policy', () => {
   it('defaults permalink and datePrefix when the concept declares no policy', () => {
@@ -129,7 +129,7 @@ describe('normalizeConcepts URL policy', () => {
         routing: 'feed',
         permalink: '/:year/:month/:slug',
         datePrefix: 'month',
-        fields: fieldset({ date: fields.date({ label: 'Date' }) }),
+        fields: defineFieldset({ date: fields.date({ label: 'Date' }) }),
       },
     });
     expect(posts.permalink).toBe('/:year/:month/:slug');
@@ -144,7 +144,7 @@ describe('normalizeConcepts URL policy', () => {
           routing: 'feed',
           permalink: '/:year/:month/:slug',
           datePrefix: 'month',
-          fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+          fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
         },
       }),
     ).toThrow(
@@ -160,7 +160,7 @@ describe('normalizeConcepts URL policy', () => {
           routing: 'feed',
           permalink: '/:year/:month/:slug',
           datePrefix: 'month',
-          fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.text({ label: 'Date' }) }),
+          fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.text({ label: 'Date' }) }),
         },
       }),
     ).toThrow(
@@ -175,7 +175,7 @@ describe('normalizeConcepts URL policy', () => {
         routing: 'feed',
         permalink: '/:year/:month/:slug',
         datePrefix: 'month',
-        fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+        fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
       },
     });
     const dateField = posts.fields.find((f) => f.name === 'date');
@@ -189,7 +189,7 @@ describe('normalizeConcepts URL policy', () => {
       posts: {
         dir: 'p',
         routing: 'feed', // dated, default permalink /posts/:slug carries no date token
-        fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+        fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
       },
     });
     const dateField = posts.fields.find((f) => f.name === 'date');
@@ -209,7 +209,7 @@ describe('normalizeConcepts URL policy', () => {
     const [withFields] = normalizeConcepts({
       posts: {
         dir: 'p',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           description: fields.textarea({ label: 'Description' }),
           heroImage: fields.text({ label: 'Hero image' }),
@@ -220,7 +220,7 @@ describe('normalizeConcepts URL policy', () => {
     expect(withFields.summaryFields).toEqual(['description', 'heroImage']);
 
     const [withoutFields] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
     expect(withoutFields.summaryFields).toEqual([]);
   });
@@ -230,7 +230,7 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+          fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
           summaryFields: ['description'],
         },
       }),
@@ -241,7 +241,7 @@ describe('normalizeConcepts URL policy', () => {
     const [descriptor] = normalizeConcepts({
       posts: {
         dir: 'p',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           description: fields.textarea({ label: 'Description' }),
         }),
@@ -256,7 +256,7 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: fieldset({
+          fields: defineFieldset({
             title: fields.text({ label: 'Title' }),
             author: fields.reference({ concept: 'nope', label: 'Author' }),
           }),
@@ -270,7 +270,7 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: fieldset({
+          fields: defineFieldset({
             title: fields.text({ label: 'Title' }),
             related: fields.array(fields.reference({ concept: 'nope', label: 'Post' }), { label: 'Related' }),
           }),
@@ -284,12 +284,12 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: fieldset({
+          fields: defineFieldset({
             title: fields.text({ label: 'Title' }),
             author: fields.reference({ concept: 'pages', label: 'Author' }),
           }),
         },
-        pages: { dir: 'g', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+        pages: { dir: 'g', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
       }),
     ).not.toThrow();
   });

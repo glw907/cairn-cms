@@ -18,14 +18,14 @@ a name and a short bio, reused across every post the same person wrote. Declare 
 own concept:
 
 ```ts
-import { defineConcept, fieldset, fields } from '@glw907/cairn-cms';
+import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
 
 const authors = defineConcept({
   dir: 'src/content/authors',
   label: 'Authors',
   singular: 'author',
   routing: 'page',
-  fields: fieldset({
+  fields: defineFieldset({
     name: fields.text({ label: 'Name', required: true }),
     bio: fields.textarea({ label: 'Bio' }),
   }),
@@ -103,12 +103,12 @@ A concept on its own is just more content. Connect `authors` to `posts` with a `
 field, so a post names which author entry it belongs to:
 
 ```ts
-import { defineConcept, fieldset, fields } from '@glw907/cairn-cms';
+import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
 
 const posts = defineConcept({
   dir: 'src/content/posts',
   routing: 'feed',
-  fields: fieldset({
+  fields: defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     date: fields.date({ label: 'Date' }),
     author: fields.reference({ label: 'Author', concept: 'authors', required: true }),

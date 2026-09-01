@@ -61,7 +61,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import type { UsageEntry } from '../media/usage.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { publicPath } from '../media/naming.js';
-  import { mediaToken } from '../media/reference.js';
+  import { formatMediaToken } from '../media/reference.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
   import {
@@ -1759,7 +1759,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
 {#if selected && !deleteOnly}
   {@const asset = selected}
-  {@const reference = mediaToken({ slug: asset.slug, hash: asset.hash })}
+  {@const reference = formatMediaToken({ slug: asset.slug, hash: asset.hash })}
   <!-- The NON-MODAL detail slide-over: no scrim, the library stays live behind it. It is a labelled
        region, not a dialog, so the list stays in the a11y tree and the tab order. Escape closes it
        and focus returns to the originating tile or row (the region-with-focus-management recipe).

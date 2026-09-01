@@ -9,7 +9,7 @@ helpers a site's own routes call directly; a SvelteKit route factory lives on
 even though a site's adapter config also feeds both.
 
 ```ts
-import { defineAdapter, defineConcept, fieldset, fields, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineFieldset, fields, createRenderer } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
@@ -46,7 +46,7 @@ optional.
 
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
-import { defineAdapter, defineConcept, fieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineFieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
 import { registry, icons } from './components.js';
 
 const { renderMarkdown } = createRenderer(registry);
@@ -58,7 +58,7 @@ export const cairn = defineAdapter({
       label: 'Posts',
       summaryFields: ['description'],
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         description: fields.textarea({ label: 'Description' }),
@@ -132,7 +132,7 @@ posts: defineConcept({
   routing: 'feed',
   permalink: '/:year/:month/:slug',
   datePrefix: 'month',
-  fields: fieldset({
+  fields: defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     date: fields.date({ label: 'Date' }),
   }),
@@ -292,9 +292,13 @@ upload. `variants` are named Cloudflare Images presets, merged over the built-in
 
 `transformations` (default `false`) declares whether Cloudflare Image Transformations are enabled
 for the zone. This is a per-zone setting that the dashboard or API turns on, not something a Worker
-can flip. While it is off, the media resolver serves the bare full-size delivery path and ignores
-any preset, so a fresh zone gets correct full-size thumbnails rather than dead `/cdn-cgi/image`
-URLs. Flip it to `true` only after enabling Transformations on the zone.
+can flip. The media resolver always returns the bare full-size delivery path; `transformations`
+governs only the responsive `srcset` a rendered image gets alongside it. While it is off, a rendered
+image carries no `srcset`, only its full-size src, so a fresh zone serves correct images rather than
+dead `/cdn-cgi/image` URLs. Once it is on, the asset's width is known, and more than one ladder
+width fits under the asset's own width, the resolver also attaches a `srcset` built from that
+fixed width ladder; a narrower asset gets no `srcset`. Flip it to `true` only after enabling
+Transformations on the zone.
 
 Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
@@ -382,7 +386,7 @@ const callout = defineComponent({
 ### Fields
 
 The field vocabulary. A concept declares its fields with the `fields` constructor namespace, then
-bundles them into a `fieldset`. The fieldset is the single source of truth for the editor form, the
+bundles them into a `defineFieldset` schema. That schema is the single source of truth for the editor form, the
 validator, and the inferred frontmatter type, and the descriptors it carries are plain data.
 
 Every `FieldDescriptor` arm renders one editor widget and carries its own validation. The table
@@ -423,7 +427,7 @@ name string.
 
 A concept's tag field, the top-level multiselect it marks `taxonomy: true`, becomes a closed
 vocabulary-sourced picker once the site configures a tag vocabulary (the `vocabulary` key in
-`site.config.yaml`, read onto `CairnRuntime.vocabulary` through `extractVocabulary`). On save and on
+`site.config.yaml`, read onto `CairnRuntime.vocabulary` through `readVocabulary`). On save and on
 edit, the engine sources the field's options from the vocabulary, so the editor picks from the
 configured tags rather than typing free-form values, and a save of a value that is neither in the
 vocabulary nor already on the entry is rejected. A value already on an entry that the vocabulary does
@@ -444,9 +448,9 @@ other item renders the repeatable-row editor with add, remove, and reorder. The 
 `itemLabel` names a row from one leaf field key.
 
 ```ts
-import { fieldset, fields } from '@glw907/cairn-cms';
+import { defineFieldset, fields } from '@glw907/cairn-cms';
 
-const set = fieldset({
+const set = defineFieldset({
   // a repeatable group of flat rows; the array labels the group, the object carries no label
   faq: fields.array(
     fields.object({ fields: { question: fields.text({ label: 'Question', required: true }), answer: fields.textarea({ label: 'Answer' }) } }),
@@ -462,7 +466,7 @@ const set = fieldset({
 Containers nest one level only. An `object` holds leaves, never another container. An `array` holds a
 leaf or a flat `object`, never another `array` and never an `object` of objects. A `reference` inside
 an `object` and an `seo` image inside any container are not supported yet, and a deeper nesting, a
-nested reference, or a nested `seo` image throws at the `fieldset()` call. No field key may contain a
+nested reference, or a nested `seo` image throws at the `defineFieldset()` call. No field key may contain a
 dot, top-level or nested, because the editor addresses a nested value by a dotted path. There is
 no escape hatch for a deeper shape today: flatten the fields instead of nesting them. See
 [the concept model](../extend/content-model.md) for the fuller picture of how fields, frontmatter,
@@ -475,20 +479,20 @@ so the date never reads as if it schedules publishing; a field `help` replaces t
 date hint cannot be suppressed entirely.
 
 ```ts
-import { fieldset, fields } from '@glw907/cairn-cms';
+import { defineFieldset, fields } from '@glw907/cairn-cms';
 
-const set = fieldset({
+const set = defineFieldset({
   title: fields.text({ label: 'Title', required: true }),
   status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
 });
 ```
 
-#### `fieldset`
+#### `defineFieldset`
 
 Stability tier: Extension API.
 
 ```ts
-declare function fieldset<const R extends Record<string, FieldDescriptor>>(
+declare function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
   options?: FieldsetOptions,
 ): Fieldset<R>;
@@ -499,7 +503,7 @@ plain data for the editor form, a server-derived validator that coerces each val
 returns field-keyed errors or normalized data, and a Standard Schema conformance property whose
 issues map each error to a single-segment path. The validator enforces each descriptor's declared
 constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
-`pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `fieldset()`
+`pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `defineFieldset()`
 call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric
 `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
 `options.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
@@ -520,7 +524,7 @@ multi-segment path (a row index, a leaf sub-key) so the form routes a nested err
 Stability tier: Extension API.
 
 - `FieldDescriptor` is the plain-data descriptor union the form, validator, and inference all read.
-- `Fieldset` is the schema a `fieldset` call returns, carrying the descriptors, the behavior table,
+- `Fieldset` is the schema a `defineFieldset` call returns, carrying the descriptors, the behavior table,
   the validator, and the Standard Schema property.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
   declared `required: true` is a required key.
@@ -689,22 +693,22 @@ const { frontmatter, body } = parseMarkdown(fileText);
 
 Stability tier: Extension API.
 
-`glyph` builds an inline SVG glyph from the site's icon set, and lives on this root barrel.
+`renderGlyph` builds an inline SVG glyph from the site's icon set, and lives on this root barrel.
 
 ```ts
-declare function glyph(name: string, icons: IconSet): Element;
+declare function renderGlyph(name: string, icons: IconSet): Element;
 ```
 
 The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
 `cardShell`, `headRow`, and `strAttr`, lives on the [`/render`](./render.md) subpath, not here. The
-showcase `alert` component composes `glyph` with those helpers:
+showcase `alert` component composes `renderGlyph` with those helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 
-const makeIcon = (name, role) => iconSpan(glyph(name, icons), role);
+const makeIcon = (name, role) => iconSpan(renderGlyph(name, icons), role);
 build: (ctx) =>
   cardShell(['alert'], [
     headRow(ctx.slot('title'), makeIcon('leaf')),
@@ -760,29 +764,29 @@ import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);
 ```
 
-#### `extractMenu`
+#### `readMenu`
 
 Stability tier: Extension API.
 
 ```ts
-declare function extractMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[];
+declare function readMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[];
 ```
 
-Extract one named menu from a parsed config and validate it. Returns `[]` when the menu is absent.
+Read one named menu from a parsed config and validate it. Returns `[]` when the menu is absent.
 
 ```ts
-import { extractMenu } from '@glw907/cairn-cms';
+import { readMenu } from '@glw907/cairn-cms';
 import { siteConfig } from './cairn.config.js';
 
-const primary = extractMenu(siteConfig, 'primary', 2);
+const primary = readMenu(siteConfig, 'primary', 2);
 ```
 
-#### `extractVocabulary`
+#### `readVocabulary`
 
 Stability tier: Extension API.
 
 ```ts
-declare function extractVocabulary(config: SiteConfig): VocabularyEntry[];
+declare function readVocabulary(config: SiteConfig): VocabularyEntry[];
 ```
 
 Read the editor-owned tag vocabulary from a parsed config and validate it. Returns `[]` when the
@@ -791,10 +795,10 @@ taxonomy field. `composeRuntime` calls this to set `CairnRuntime.vocabulary`, th
 and edit paths read.
 
 ```ts
-import { extractVocabulary } from '@glw907/cairn-cms';
+import { readVocabulary } from '@glw907/cairn-cms';
 import { siteConfig } from './cairn.config.js';
 
-const vocabulary = extractVocabulary(siteConfig);
+const vocabulary = readVocabulary(siteConfig);
 ```
 
 ### Content and manifest
@@ -893,7 +897,6 @@ Stability tier: Extension API.
 
 ```ts
 declare function defineRoles<const R extends RolesDeclaration>(roles: R): R;
-declare const DEFAULT_ROLES: { owner: 'owner'; editor: 'editor' };
 ```
 
 Declare a site's role vocabulary on the adapter's `roles` member, the const-generic companion to
@@ -925,21 +928,22 @@ export const cairn = defineAdapter({
 });
 ```
 
-#### `resolveCapability`, `ownerLevelRoles`
+#### `resolveCapability`, `resolveOwnerLevelRoles`
 
 Stability tier: Extension API.
 
 ```ts
 declare function resolveCapability(roles: RolesDeclaration | undefined, role: string): Capability;
-declare function ownerLevelRoles(roles: RolesDeclaration | undefined): string[];
+declare function resolveOwnerLevelRoles(roles: RolesDeclaration | undefined): string[];
 ```
 
 The engine calls these to resolve `locals.cairnEditor.capability` at the guard and the routes; a
 custom admin route reads `resolveCapability` to gate itself against a vocabulary without
 re-deriving the mapping. It returns the mapped capability, treating an `undefined` vocabulary as
-`DEFAULT_ROLES`, and returns `'none'` for a role name absent from the vocabulary, so a pruned
-config or a hand-edited row fails closed rather than locking the person out of sign-in.
-`ownerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
+the implicit `{ owner: 'owner', editor: 'editor' }` pair `defineRoles` falls back to, and returns
+`'none'` for a role name absent from the vocabulary, so a pruned config or a hand-edited row fails
+closed rather than locking the person out of sign-in.
+`resolveOwnerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
 across instead of the literal `'owner'` string. (`roleHome`, which used to resolve a role's
 declared `/admin` landing `home`, retired from this subpath in the retires pass, batch 1a: zero
 consumers, and its own logic was only the first of three branches in the engine's landing policy,
@@ -959,7 +963,7 @@ See [Restrict admin access by role](../extend/restrict-admin-access.md) for the 
 Stability tier: Extension API.
 
 ```ts
-declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration, map: A): A;
+declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A): A;
 ```
 
 Declare a site's access map: a target, either an engine screen id (a declared concept, or one of
@@ -968,7 +972,9 @@ to it. Validates at construction, `defineRoles`-style: throws an actionable
 `defineAccess:`-prefixed error on an empty map, a role name outside the given vocabulary, an
 empty role list (owner-only must be written explicitly as `['owner']`), or a key that is neither a
 plausible screen id (non-empty, no `/`) nor a well-formed `/admin`-prefixed path (no query, hash,
-trailing slash, or the bare `/admin` root). A screen-id key's existence against the site's real
+trailing slash, or the bare `/admin` root). `roles` may be `undefined`: the map's role names then
+validate against the same implicit owner/editor vocabulary `resolveCapability` falls back to for a
+site that declares no vocabulary of its own. A screen-id key's existence against the site's real
 concepts, and an href key's collision with a built-in admin route, validate later, at composition,
 once the runtime knows the real concept list.
 

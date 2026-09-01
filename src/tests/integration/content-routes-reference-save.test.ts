@@ -10,7 +10,7 @@ import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -20,7 +20,7 @@ const POST_PATH = 'src/content/posts/my-post.md';
 /** A runtime with a posts concept carrying an `author` reference to the pages concept, so a save
  *  posts an author id the warning loop classifies against the committed manifest. */
 function runtime(): CairnRuntime {
-  const schema = fieldset({
+  const schema = defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     author: fields.reference({ concept: 'pages', label: 'Author' }),
   });
@@ -46,7 +46,7 @@ function runtime(): CairnRuntime {
         permalink: '/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+        schema: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
         summaryFields: [],
         validate: () => ({ ok: true, data: {} }),
       },

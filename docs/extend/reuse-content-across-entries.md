@@ -15,14 +15,14 @@ at once, and should update everywhere the moment it changes, is a fragment.
 `fragments` is a reserved concept key. Declaring it turns on the `::include` directive:
 
 ```ts
-import { defineConcept, fieldset } from '@glw907/cairn-cms';
+import { defineConcept, defineFieldset } from '@glw907/cairn-cms';
 
 const fragments = defineConcept({
   dir: 'src/content/fragments',
   label: 'Fragments',
   singular: 'fragment',
   routing: 'embedded',
-  fields: fieldset({}),
+  fields: defineFieldset({}),
 });
 ```
 
@@ -100,7 +100,7 @@ the directive, and flows through the exact same downstream pipeline a native ent
 does: a registered component, a `cairn:` link, or a `media:` reference inside the fragment
 resolves and renders exactly as if it had been typed directly into the including entry. The
 resolver is `FragmentResolve`, the type `SiteRender`'s `resolveFragment` option takes; a build
-supplies one backed by [`buildFragmentResolver`](../reference/delivery-data.md#buildfragmentresolver),
+supplies one backed by [`createFragmentResolver`](../reference/delivery-data.md#createfragmentresolver),
 and a dangling `::include` (an id naming no real fragment) fails the build the same way a
 dangling `cairn:` link does.
 

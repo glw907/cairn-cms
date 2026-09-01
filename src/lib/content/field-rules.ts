@@ -1,4 +1,4 @@
-// cairn-cms: the shared field constraint rules the `fieldset` validator calls. They live apart from
+// cairn-cms: the shared field constraint rules the `defineFieldset` validator calls. They live apart from
 // the validator as pure helpers, so the constraint wording and the first-failing-rule-wins order are
 // stated once. No I/O and no clock reads, so the rules stay deterministic on Workers.
 

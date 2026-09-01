@@ -121,7 +121,154 @@
   heading still glides. Consumers must: nothing; a site that already copied `site.css` and the
   (site) layout during scaffolding can pull the same rules and the toggle.
 
+- The conventions pass (Task 11) closes three ranked CLI-evenness and config-contract items.
+  **Bin evenness (`audit-cli-no-help-on-any-of-the-five-commands`,
+  `audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior`):** all four engine bins
+  (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`, `cairn-manifest`) now answer `--help` by
+  printing their existing `USAGE` constant at exit 0. `cairn-manifest` (`vite/bin.ts`) gains argv
+  parsing for the first time, through a new `vite/assemble.ts` mirroring the doctor split: it
+  accepts only `--help` and rejects everything else at exit 2, where it previously ignored argv
+  entirely. `vite/bin.ts` also moves from `process.exit(1)` to `process.exitCode`, the stdout-flush
+  rule its three siblings already stated verbatim, so a piped CI job's error message can no longer
+  truncate before the process ends. **Config contract
+  (`audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles`):**
+  `cairn-audit.config.json`'s `rendered.extraPages` is a new, additive key: it appends to
+  `rendered.pages` (or, absent that key, the six core admin routes) instead of requiring a
+  consumer to restate the defaults beside its own screen, so the "replaces, never extends"
+  documented trap dissolves. The rendered harness also gains a redirect-trap refusal: run without
+  `CAIRN_AUDIT_COOKIES`, every authenticated admin route server-redirects to the sign-in card
+  before hydration, which the post-hydration page-identity guard cannot catch (both sides already
+  agree, since both are the login page); when `/admin/login` is itself configured and every other
+  configured page's response also resolves to the login route's own title and landmark, the run
+  now throws and exits 2, naming `CAIRN_AUDIT_COOKIES`, instead of silently reporting a clean run
+  that measured the sign-in card once per page. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-redirect-trap-refusal),
+  [`cairn-manifest`](docs/reference/cli-cairn-manifest.md#exit-behavior), and
+  [`cairn-media-seed`](docs/reference/cli-cairn-media-seed.md#flags). Consumers must: a script
+  that passed `cairn-manifest` an unrecognized argument, previously silently ignored, now exits 2
+  naming it; a CI job piping `cairn-manifest`'s output no longer risks a truncated error message.
+  Nothing else changes for a caller already passing no arguments or valid flags.
+
 ### Changed
+
+- `/auth-channel` folds onto the engine's one auth grammar. Five changes, all breaking for a site
+  that already runs `createAuthChannel`.
+
+  `AuthChannelEvent` retires. `challenge` and `rateLimit.key` now take `CairnEvent<Env>`, which the
+  subpath re-exports (its canonical home stays `/sveltekit`); `request` and `confirm` take
+  `CairnEvent<Env> & { getClientAddress(): string }`, since only they derive a requester bucket from
+  the client address; `logout` and `resolveSubject` take the bare `CairnEvent<Env>`, so a site's own
+  session helper can declare `(event: CairnEvent<Env>)`. Every real SvelteKit `RequestEvent` still
+  satisfies all three shapes with no cast, but a named import of `AuthChannelEvent` does not
+  survive, so this is a rename a consumer must make, not a structural coincidence.
+
+  `CHANNEL_SCHEMA_SQL` retires as an export. The channel's DDL now ships as a packaged migration
+  file, `migrations-channel/0000_channel.sql`, a sibling of cairn's own `migrations/` and never a
+  member of it: `migrations/` is `AUTH_DB`'s `migrations_dir`, and a shared directory applies each
+  database's schema to the other. Every statement is idempotent (`CREATE TABLE IF NOT EXISTS`,
+  `CREATE INDEX IF NOT EXISTS`, and `INSERT OR IGNORE` for the version row), so an already-migrated
+  channel database can adopt the file without the apply aborting. The schema itself did not change,
+  and `verifySchema`'s semantics are unchanged.
+
+  `config.ttl` becomes `config.limits`, regrouped by what a site tunes together: `code`
+  (`length`, `ttlMs`, `attemptCap`), `throttle` (`cooldownMs`, `requesterCap`, `identityCeiling`,
+  `escalationThreshold`, `liveRowCap`), and `session` (`ttlMs`). Every group and every field stays
+  optional, so tuning one knob still names one knob; the defaults and clamps are unchanged, and a
+  rejection message now names the group and the field.
+
+  `lookup` and `verify` gain a second parameter, a narrow `{ env }` context mirroring
+  `DeliverContext`, so a roster read reaches its own binding without the channel holding one.
+  Neither may read request-shaped data, which is why neither receives the event: `lookup` decides
+  subject-versus-decoy, and a `false` from `verify` destroys the session row.
+
+  `revokeSessions(db, subject)` is unchanged, deliberately: it is the one member callable outside a
+  request, and its event-free signature is now a recorded exception with its reason stated at the
+  member.
+
+  Consumers must: (1) replace every `AuthChannelEvent` import with `CairnEvent`, from
+  `@glw907/cairn-cms/auth-channel` or `@glw907/cairn-cms/sveltekit`; (2) rewrite `ttl: { X }` as
+  `limits: { <group>: { X } }` per the grouping above (`ttl: { sessionTtlMs }` becomes
+  `limits: { session: { ttlMs } }`); (3) add the `ctx` parameter to `lookup` and to `verify`, and
+  read the binding off `ctx.env` rather than from a captured closure; (4) copy
+  `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql` into the channel binding's
+  own `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`, then run
+  `wrangler d1 migrations apply <channel-db>`. Run it on an already-provisioned channel database
+  too: every statement in the file is idempotent, so the apply is a no-op against the existing
+  schema and records its own `d1_migrations` marker, which is safer than hand-inserting that
+  marker. Hand-inserting it stays available for an operator who must not run the migration runner
+  at all. Nothing changes for `revokeSessions`.
+
+- `adminAction` gains an OPT-IN `access?: { target: string; ownerOnly?: boolean }` member on its
+  options bag, the authorization sequence `createSectionAction` already ran. Absent, which is
+  every existing caller, behavior is exactly what it was: the wrapper authenticates and verifies
+  the CSRF pair and authorizes nothing. Present, the site's access map must carry a rule for
+  `target` and admit the session's role, with `ownerOnly` stacking on the map check, and a refusal
+  audits through `ctx.audit` and then throws `error(403, ...)`, `adminAction`'s own refusal
+  channel, so its return type stays the handler's `T` and never widens to `T | ActionFailure`.
+  Opt-in rather than default-on because the guard attaches an EMPTY access map on a zero-config
+  site and an empty map admits no target, so enforcing by default would 403 every consumer of the
+  documented database-less default rather than harden anything. Both wrappers now run one shared
+  internal implementation returning `{ outcome: 'allowed' | 'no-rule' | 'not-admitted' |
+  'not-owner' }`, with each wrapper mapping the outcomes onto its own refusal channel and its own
+  audited emission; `createSectionAction`'s check order, audit `detail` strings, 403 copy, and log
+  events are byte-identical to before. Consumers must: nothing to keep today's behavior. A site
+  that opts an action in starts receiving denial records through its `cairnAuditSink`, one per
+  refused request, alongside the existing `auth.access.denied` log record.
+
+- The conventions pass (Task 2) applies two of the 2026-08-30 sitting's ratified rulings across the
+  factory population: **parameter bags** (`*Config` is the primary bag, `config` its primary
+  parameter identifier) and **contract-first factory returns** (every public factory's signature
+  declares a named, deliberately authored return type; `ReturnType<typeof f>` leaves the public
+  surface). Renamed bags, with no deprecated alias (churn is free; the window batches):
+  `CairnAdminOptions` → `CairnAdminConfig`, `ContentRoutesOptions` → `ContentRoutesConfig`,
+  `EditorRoutesOptions` → `EditorRoutesConfig`; the `deps` parameter renames to `config` on every
+  touched factory (`createCairnAdmin`, `createContentRoutesInternal`, `createContentRoutes`,
+  `createContentRoutesContext`, `createPublicRoutes`), and `opts` renames to `config` on
+  `createEditorRoutes` only. `createAuthGuard`'s `AuthGuardOptions`/`opts` are UNCHANGED
+  deliberately: the audit's own C2 table ruled it a correct secondary bag, and this pass honors
+  that annotation. Declared return contracts replace every `ReturnType`-derived or unnamed return
+  in the touched population: `AuthRoutes`, `EditorRoutes`, and `NavRoutes` convert from
+  `ReturnType<typeof f>` aliases to hand-declared interfaces the factory signatures now return;
+  `PublicRoutes` (the Task 1 reopen of `audit-delivery-publicroutes`) is a newly AUTHORED interface
+  under the name the retires pass previously removed, and `createPublicRoutes(config:
+  PublicRoutesConfig): PublicRoutes` names it in its own signature; `SectionAction<Env, Db>` names
+  `createSectionAction`'s curried wrapper return, previously unnamed; `createAuthGuard` is
+  annotated `: Handle`, kit's own ambient type, under the interop carve-out
+  (`convention-interop-carve-out`: a host ecosystem's convention wins over cairn's grammar on an
+  interop surface), and `createMediaRoute`'s existing `: RequestHandler` is recorded as conforming
+  to the same clause. `cairnManifest`'s `CairnManifestOptions` (`/vite`) keeps its `*Options` name
+  for the same interop reason: Vite's own plugin-factory convention names every options bag
+  `*Options`, and the barrel now carries a comment saying so. **Consumers must:** replace
+  `CairnAdminOptions` with `CairnAdminConfig`, `ContentRoutesOptions` with `ContentRoutesConfig`,
+  and `EditorRoutesOptions` with `EditorRoutesConfig` in any import from `@glw907/cairn-cms/sveltekit`;
+  a site annotating `createPublicRoutes`'s return imports the newly declared `PublicRoutes` type
+  from `@glw907/cairn-cms/delivery` instead of deriving it with
+  `ReturnType<typeof createPublicRoutes>` (see the amended retires-pass line below); `AuthRoutes`,
+  `EditorRoutes`, `NavRoutes`, and `SectionAction` keep their existing names and shapes, so no
+  action is needed for those beyond the type now being hand-declared rather than derived. One
+  test-only consequence of the `createAuthGuard: Handle` annotation: a guard test that drives the
+  returned handle with a structural fake event no longer satisfies kit's own `Handle` parameter
+  types, so it needs an `as unknown as`-style shim on the handle before the call. The engine's own
+  suite does this once per file (`src/tests/integration/auth-guard.test.ts`'s `asHandle`) rather
+  than casting at every call site.
+
+- `createCairnAdmin` now returns a narrowed `CairnAdminRoutes`, the same Pick-composed pattern
+  `ContentRoutes` (foundations-B) already established: `Pick`-composed over a new internal wide
+  factory, `createCairnAdminInternal` (reachable through no package subpath), which the single-mount
+  composer keeps driving in full. Ten of the `actions` record's media-janitorial actions withdraw
+  from the declared contract, mirroring `ContentRoutes`'s own ten exactly: `mediaDelete`,
+  `mediaUpdate`, `mediaLibraryUpload`, `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`,
+  `mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`. `mediaUpload`
+  stays on the contract: it wraps the same `uploadAction` the kept `upload` action wraps, gated to
+  the media view instead of the edit view. **Consumers must:** nothing at runtime. This is a
+  type-level capability withdrawal, not a runtime boundary: `createCairnAdmin` returns the same
+  object `createCairnAdminInternal` builds, so every action is still present and still runs the
+  session, CSRF, and view gates it always ran; a site that annotated a hand-held reference to one of
+  the ten (uncommon, since the documented mount is `export const actions = admin.actions;`) keeps
+  them dispatchable at runtime with a spread (`{ ...admin.actions }`), which copies the properties
+  the object still carries, and recovers them in TYPES with a cast, since a spread reproduces the
+  narrowed type rather than widening it. That is the same recovery `ContentRoutes`'s own narrowing
+  documented.
 
 - The engine ratifies a **canonical-home rule**: every exported name has exactly one declaring
   subpath, and any other barrel that publishes it does so as a recorded re-export naming that home
@@ -235,9 +382,11 @@
   `generateCsrfToken` and `generateSessionId` (`audit-auth`) unexport from `/auth-crypto` but stay
   reachable at `auth/crypto.ts` for the engine's own internal use (`sveltekit/csrf.ts`,
   `sveltekit/auth-routes.ts`), both bodies were byte-identical to `generateToken` under a second
-  name; `CHANNEL_SCHEMA_VERSION` drops its `export` keyword in `auth-channel/store.ts` and its
-  barrel line in `auth-channel/index.ts`, staying a module-internal const `verifySchema` and the
-  seeding `INSERT` still read; `devDelivery` deletes outright from `/auth-channel`
+  name; `CHANNEL_SCHEMA_VERSION` drops its
+  barrel line in `auth-channel/index.ts`, leaving the package's public surface (amended by the
+  `/auth-channel` fold in this same window: the const keeps a module-level `export` in
+  `auth-channel/store.ts`, which publishes nothing, so the fold's drift test can compare it against
+  the schema_version the packaged migration seeds); `devDelivery` deletes outright from `/auth-channel`
   (`auth-channel/dev.ts` removed, zero remaining consumers anywhere in `src/lib`), its stated
   purpose, guarding a dev transport reaching production, is a discoverability problem an export
   does not fix; a factory-side refusal is a design question for a later pass (`createAuthChannel`
@@ -303,13 +452,21 @@
   the deleted `devDelivery`'s own design was built to make unnecessary); stop importing
   `insertOwnerIfEmpty` from `@glw907/cairn-cms/auth-store` (pass `bootstrapOwner` to
   `createCairnAdmin` instead). Stop
-  importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`, `feedView`, `PublicRoutes`, or
-  `unlistedRoutes` from `@glw907/cairn-cms/delivery` or `@glw907/cairn-cms/delivery/data`
-  (`audit-delivery`); none has a replacement export. A site wanting the AI-crawler posture keeps
-  using `buildRobots`'s `posture` option, which applies the table internally. A site wanting a
-  full-content feed hand-writes its own mapping off `siteDescriptors`, filtering `routing.inFeeds`
-  itself, the same one-line derivation all six family sites already wrote by hand. A site
-  annotating `createPublicRoutes`'s return writes `ReturnType<typeof createPublicRoutes>` itself.
+  importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`, or `feedView` from
+  `@glw907/cairn-cms/delivery` or `@glw907/cairn-cms/delivery/data`, and stop importing
+  `unlistedRoutes` from either subpath (`audit-delivery`); none has a replacement export. A site
+  wanting the AI-crawler posture keeps using `buildRobots`'s `posture` option, which applies the
+  table internally. A site wanting a full-content feed hand-writes its own mapping off
+  `siteDescriptors`, filtering `routing.inFeeds` itself, the same one-line derivation all six
+  family sites already wrote by hand.
+  (**Amended by the conventions pass, Task 2:** `PublicRoutes` is reopened as a declared contract,
+  not deleted; drop it from this stop-importing list. A site annotating `createPublicRoutes`'s
+  return imports the declared `PublicRoutes` type from `@glw907/cairn-cms/delivery` instead of
+  writing `ReturnType<typeof createPublicRoutes>` itself, the exact idiom the contract-first-returns
+  ruling now bans on the public surface; see the conventions-pass entry above.)
+  (**Amended by the conventions pass, Task 3:** `siteDescriptors` renames to `buildSiteDescriptors`
+  (the verb-rule and bare-noun conventions; see the conventions-pass entry below); a site hand-writing
+  a full-content feed off it names the new function, `buildSiteDescriptors`, not `siteDescriptors`.)
   Stop importing `isElement` from `@glw907/cairn-cms/render` (`audit-render`; reach for
   `hast-util-is-element`, or the inline `!!node && node.type === 'element'` check, over hast types
   the site already imports). Stop importing `stories` from `@glw907/cairn-cms/reproductions`
@@ -340,6 +497,162 @@
   `Exclude<SettingsData['keyStatus'], 'missing'>` for `TidyKeyProbeResult`, and
   `Parameters<NonNullable<ReproStory['pose']>>[1]` for `ReproInstance`.
 
+- The conventions pass (Task 3) applies the 2026-08-30 sitting's ratified **verb-rule** and
+  **bare-noun** conventions to the factory population: `verify*` stays reserved for an engine-owned
+  integrity check that throws, `validate*` for a check returning issues, `build*` for pure-data
+  derivation, and `create*` for a function factory; `read*` reads a committed artifact or
+  declaration into typed shape, retiring `extract*`; every exported function's name now begins with
+  a verb. Renamed, names only, no deprecated alias: the resolver trio `createMediaResolver`
+  (`/media`), `createLinkResolver`, `createFragmentResolver` (`/delivery`,
+  `/delivery/data`) — function factories, so `build*` moves to `create*`; `readMenu`, `readVocabulary`
+  (`.`) — `extract*` retires; `buildSiteDescriptors`, `diffNewlyPublished`, `buildSitemapView`,
+  `renderJsonLdScript` (`/delivery`, `/delivery/data`); `formatMediaToken` (`/media`), paired with
+  the unchanged `parseMediaToken` as the codec; `defineFieldset` (`.`), joining
+  `defineAdapter`/`defineConcept`/`defineComponent`/`defineRegistry`'s established prefix for a
+  declaration-time constructor; `resolveOwnerLevelRoles` (`.`), beside `resolveCapability`. One
+  deliberate signature change rides the rename so the signature moves once: `createMediaResolver`
+  drops its dead `opts?: { preset?: string }` parameter (`(manifest, resolved)` only), closing
+  `audit-media-buildmediaresolver` — `opts.preset` had zero non-test callers anywhere and silently
+  contradicted the `imageDetail` side channel's own srcset/dimensions. Everything else in this
+  entry is a name-only rename; behavior, parameter order, and every other signature are unchanged.
+  **Consumers must**, one rename table: `buildMediaResolver` → `createMediaResolver`;
+  `buildLinkResolver` → `createLinkResolver`; `buildFragmentResolver` → `createFragmentResolver`;
+  `extractMenu` → `readMenu`; `extractVocabulary` → `readVocabulary`; `siteDescriptors` →
+  `buildSiteDescriptors`; `newlyPublishedEntries` → `diffNewlyPublished`; `sitemapView` →
+  `buildSitemapView`; `jsonLdScript` → `renderJsonLdScript`; `mediaToken` → `formatMediaToken`;
+  `glyph` → `renderGlyph`; `fieldset` → `defineFieldset`; `ownerLevelRoles` →
+  `resolveOwnerLevelRoles`. A site calling `buildMediaResolver` with a third `{ preset }` argument
+  drops it; the rendered `src` was already ignoring it in every real deployment (the ruled shape
+  above), so this is a type-level tightening, not a behavior change for any working caller.
+
+- The conventions pass (Task 4) applies the 2026-08-30 sitting's ratified **outcome-idiom**
+  convention (discriminated `outcome` results replace conflating booleans) to the rate-limit
+  wrapper and the auth-store's owner-guard family; `verifyTurnstile`'s fail-closed `boolean` return
+  is recorded in its own doc comment as the ruling's stated exception. `/cloudflare`:
+  `checkRateLimit` and `checkRateLimitKeys` retire in favor of one export,
+  `resolveRateLimit(binding, keys: string | string[])`, returning a four-arm result —
+  `{ outcome: 'allowed' }`, `{ outcome: 'limited'; key }` (naming the first key over budget),
+  `{ outcome: 'no-binding' }`, or `{ outcome: 'failed'; error }` (a throwing `limit()` no longer
+  propagates; it is captured into this arm, with degrade-to-open on either `no-binding` or `failed`
+  staying each caller's own decision, exactly as the retired functions' contract already stated).
+  `createSectionAction`'s inline rate-limit reimplementation now calls `resolveRateLimit`. Its
+  `redirect()`/`error()` rethrow guard still covers both throw sites, in two places rather than
+  one: the `key()` try/catch rethrows those two shapes as before, and the `failed` arm rethrows
+  `result.error` when it is one of them, since `resolveRateLimit` now captures a throwing
+  `limit()` instead of letting it propagate. `resolveRateLimit` itself stays kit-agnostic (it
+  imports no `@sveltejs/kit` symbol), so the carve-out lives at the call site. The three log events
+  (`admin.action.rate_limited`, `admin.action.rate_limit_absent`, `admin.action.rate_limit_failed`)
+  are unchanged. `/auth-store`: `deleteEditor` and `setEditorRole` both gain an `ownerRoles`
+  parameter and fold the anti-lockout guard into their own atomic write, becoming the one call a
+  site needs for "remove this editor" / "change this editor's role" regardless of the target's
+  current role, with no more caller-side pre-fetch-and-dispatch between a guarded and an unguarded
+  function; each returns a three-arm outcome distinguishing `'not-found'` from `'last-owner'`.
+  `removeOwnerIfNotLast` and `demoteOwnerIfNotLast` survive as the narrower, owner-only guards,
+  their `boolean` return becoming a three-arm outcome (`'ok'` / `'last-owner'` / `'not-eligible'`,
+  never `'not-found'`, since their own `WHERE` matches only owner-capability rows and cannot tell
+  an absent row from a present, non-owner one apart). The refusal predicate stays inside the same
+  atomic statement as the write in every case; a concurrency test (two simultaneous demotes of a
+  two-owner roster) asserts exactly one succeeds. **Consumers must:** replace
+  `checkRateLimit(binding, key)` and `checkRateLimitKeys(binding, keys)` with
+  `resolveRateLimit(binding, keys)`, branching on `result.outcome` instead of a `boolean` (a
+  `true` reader becomes `result.outcome === 'allowed'`, degrade-to-open becomes
+  `result.outcome === 'allowed' || result.outcome === 'no-binding' || result.outcome === 'failed'`
+  read explicitly); pass `deleteEditor(db, email, ownerRoles)` and
+  `setEditorRole(db, email, role, ownerRoles)` their site's owner-capability role names (an
+  existing call site with no owner concern passes `[]` to keep today's unconditional-write
+  behavior) and read the returned `outcome` instead of relying on a resolved `Promise<void>`;
+  replace a `removeOwnerIfNotLast`/`demoteOwnerIfNotLast` boolean check with `result.outcome ===
+  'ok'`.
+
+- The conventions pass (Task 5) flattens `ContentFormFailure` and retires the five core arm
+  types it used to compose, per `audit-sveltekit-contentformfailure`'s ruled shape.
+  `ContentFormFailure` is now one flat interface with every field optional (`error`,
+  `brokenLinks`, `body`, `inboundLinks`, `inboundKind`, `id`, `hash`, `usage`, `foundIn`), each
+  documented against the action that sets it, replacing the earlier `Partial<>` intersection over
+  eleven arm types. `SaveFailure`, `DeleteRefusal`, `RenameFailure`, `CreateFailure`, and
+  `PreviewMintFailure` retire from `@glw907/cairn-cms/sveltekit`: every carrying action
+  (`createAction`, `saveAction`, `publishAction`, `deleteAction`, `listDeleteAction`,
+  `renameAction`, `previewMintAction`, `previewRevokeAction`) is re-typed to
+  `ActionFailure<ContentFormFailure>` before the retire, so `check:surface`'s regenerated
+  `api-surface.md` carries zero references to any of the five names (leak-free). The five media
+  arms (`MediaDeleteRefusal`, `MediaUpdateFailure`, `MediaReplaceFailure`,
+  `MediaAltPropagateFailure`, `MediaBulkFailure`) and `TidyFailure` are untouched. `UsageEntry`
+  does NOT retire in this pass: `ContentFormFailure` itself carries `usage?: UsageEntry[]`, so it
+  stays exported; the retire decision for the whole `UsageEntry` family routes to slice 4b.
+  **Consumers must:** a site importing `SaveFailure`, `DeleteRefusal`, `RenameFailure`,
+  `CreateFailure`, or `PreviewMintFailure` from `@glw907/cairn-cms/sveltekit` to annotate a
+  specific action's `form` prop replaces it with `ContentFormFailure`, which already carried
+  every one of those fields (optionally) before this change; no other consumer action is needed,
+  since every field a site could have read is still present under the same key.
+
+- The conventions pass (Task 9) executes the two coupled reshape/retire pairs
+  `audit-repro-validatereprofence`/`audit-repro-reprofencevalidation` and
+  `audit-adapter-defineaccess`/`audit-adapter-default-roles`.
+
+  `validateReproFence` (`@glw907/cairn-cms/reproductions/manifest`) gains a third parameter,
+  `options?: ValidateReproFenceOptions` (`altPrefix?: RegExp; maxAltLength?: number; extraKeys?:
+  string[]`). The manifest-dependent half (the required `story`/`alt`/`caption` keys, `story`
+  resolving against the installed manifest, `width` matching a declared height) stays
+  engine-owned and unconditional. The register half, a hardcoded English `"Reproduction"` alt
+  prefix, a 150-character ceiling, and a closed key set, moves behind `options` with no baked-in
+  default: omitting an option skips the check it backs entirely, so a localized or differently
+  keyed site's valid fence no longer fails against an engine opinion it never asked for. The
+  return type inlines to `{ issues: string[] }`, and `ReproFenceValidation` retires (leak-free,
+  its only carrier). This engine's own `check:visuals` gate (gate 1) now supplies its published
+  register explicitly rather than relying on it being baked in.
+
+  `defineAccess`'s first parameter widens to `roles: RolesDeclaration | undefined`; `undefined`
+  validates the map's role names against the same implicit owner/editor vocabulary
+  `resolveCapability`, `roleHome`, and `resolveOwnerLevelRoles` already fall back to. The const
+  generic and return type (`defineAccess<const A extends AccessMap>(roles, map): A`) are
+  unchanged, so an existing call passing a concrete vocabulary keeps its exact inferred type.
+  `DEFAULT_ROLES` retires from the root barrel and the `.` surface (leak-free: it survives only
+  as a module-internal constant several engine modules already import directly for the same
+  fallback); `docs/extend/restrict-admin-access.md`'s instructed import is rewritten to pass
+  `undefined` to `defineAccess` instead.
+
+  **Consumers must:** a caller of `validateReproFence` that relied on the previous baked-in
+  register (an alt prefix, a length ceiling, an unknown-key refusal) now supplies `options`
+  explicitly to keep that behavior; a caller that imported `ReproFenceValidation` to annotate the
+  return value annotates the inline `{ issues: string[] }` shape instead. A site that imported
+  `DEFAULT_ROLES` from `@glw907/cairn-cms` to satisfy `defineAccess`'s first parameter now passes
+  `undefined` there directly; nothing else changes for a site already passing a declared
+  `RolesDeclaration`.
+
+- `cairn-doctor` gains a four-status vocabulary and a third exit code, closing the doctor's
+  anti-silent-green gaps the any-site audit found (the conventions pass, Task 10). Every check now
+  resolves to PASS, FAIL, SKIP, INFO, or UNCHECKED. SKIP keeps its old meaning, not applicable at
+  all, and never gates. INFO is new: a heuristic that couldn't see enough to answer, or an advisory
+  finding; never gates. UNCHECKED is new: a deterministic check's required input was absent or
+  unreadable, distinct from SKIP because the check IS applicable and would have an answer if it
+  could look; it drives a new exit code, **3**, when no check failed (exit 1 still wins over exit 3
+  when a run carries both). `admin.mount-shape` and `auth.role-wiring`'s could-not-see branches move
+  from SKIP to INFO; `auth.role-wiring`'s no-custom-roles branch stays SKIP. `edge.hsts` retires
+  outright (its own condition was severity `warning` yet the check returned a gating `fail()`, and
+  the doctor has no advisory tier to demote into); `edge.https-forced` is unchanged and stays
+  gating, since it names a cairn-owned failure (the JS-free admin sign-in form POST hits an opaque
+  403 over http). `config.csrf-disable` now reads `vite.config.ts` as well as `svelte.config.js` (a
+  bare `sv create` scaffold wires the adapter, and any CSRF disable, inside `vite.config.ts`
+  instead), returns UNCHECKED only when neither file exists, and fails rather than passing or
+  skipping when a readable file carries no disable. `config.site-config` adds
+  `src/theme/site.config.yaml` to its candidate paths (where `create-cairn-site` and the showcase
+  bake it) and returns UNCHECKED rather than SKIP when none matches. `config.dependency-floors` now
+  reads `pnpm-lock.yaml` and `yarn.lock` alongside `package-lock.json`, judging whichever it finds
+  first, and returns UNCHECKED only when none of the three exists; a pnpm or yarn consumer gets a
+  real pass/fail verdict instead of a silent skip. `config.tidy-key` carries its own condition id,
+  `config.tidy-key-missing`, rather than borrowing `config.bindings-missing` (a tidy-key failure no
+  longer prints the wrangler-bindings remediation). See
+  [`cairn-doctor`](docs/reference/doctor.md#status-vocabulary) and
+  [Is it working?](docs/admin/is-it-working.md).
+
+  **Consumers must:** a CI job that gates on `cairn-doctor`'s exit code alone still works
+  unmodified (both 1 and 3 are nonzero), but a pnpm or yarn site that previously read a silent SKIP
+  on `config.dependency-floors` now gets a real verdict, which may surface a below-floor dependency
+  that was invisible before. A job that wants to distinguish a real failure (exit 1) from an
+  unchecked environment gap (exit 3), to warn on the latter without blocking on it, captures the
+  exit code and branches on it; see the CI wiring example in the reference page. Nothing else in the
+  report's shape changed: every prior PASS/FAIL/SKIP line still prints exactly as before.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
@@ -363,6 +676,13 @@
   pass does not attempt a deletion that breaks the R4 closure). Internal only; no consumer action.
 
 ### Fixed
+
+- `createAuthChannel`'s three cookie deletes now pass their setter's own `secure` flag: `confirm`'s
+  clear of the pending nonce cookie, and both of `logout`'s. A cookie jar's `delete` defaults the
+  flag ON for every host but `localhost` itself, and a browser discards a Secure `Set-Cookie`
+  arriving over `http`, so a delete that left the flag to the jar could answer with a clear the
+  browser drops. This is the same rule `logoutAction` on the admin side already follows. Consumers
+  must: nothing.
 
 - The CSRF cookie's `Secure` derivation is now monotonic: an `https` request always resolves
   Secure, whatever `PUBLIC_ORIGIN` says, and only a non-`https` request consults the local-host
@@ -442,6 +762,112 @@
   instead of reporting a false positive for it. A string `sheet` still works unchanged as a
   one-element list; a listed source that does not exist is a config error, never a silent skip.
   Consumers must: nothing.
+
+- The conventions pass (Task 6) closes the session cookie's own deferred `secure` derivation
+  (`session-cookie-derivation-out-of-csrf-slice`): `guard.ts`'s two session-cookie reads and
+  `auth-routes.ts`'s `confirmAction`/`logoutAction` now derive `secure` through `csrfSecure({ url,
+  platform })`, the exact call the CSRF cookie pair already used, instead of the bare
+  `event.url.protocol` check. An `https` request always resolves Secure either way; a configured
+  `PUBLIC_ORIGIN` can only raise a non-`https` request's answer, never lower it. On a guarded
+  `/admin` path this is a coherence change, not a security fix: the guard already refuses an
+  `http`, non-local admin request before any route runs, so the one row the two derivations used
+  to disagree on was unreachable there. Belt-and-braces (security round N1): `logoutAction` now
+  deletes BOTH cookie-name forms for both cookies (`cairn_session`/`__Host-cairn_session`,
+  `cairn_csrf`/`__Host-cairn_csrf`), each with its own matching `secure`, so a `PUBLIC_ORIGIN`
+  change between login and logout cannot strand a browser cookie under the name the current
+  derivation no longer produces. One residual: an auth route a site mounts OUTSIDE `/admin` over
+  `http` on a non-local host still mints a discarded `__Host-` cookie; `security-model.md`'s
+  mount-under-`/admin` instruction is the guard against it. Consumers must: nothing for a site
+  following the documented single mount under `/admin/**`.
+
+- `cairn-doctor`'s live probe (`--probe`) keeps deriving its expected CSRF cookie name from the
+  PROBED origin's own scheme, deliberately: it is a cross-check on what a deployed runtime
+  actually presents, immune to a `--url` override diverging from the wrangler config's own
+  `PUBLIC_ORIGIN`. The probe now calls `csrfSecure({ url: origin, platform: undefined })`
+  directly, `csrfSecure`'s own body, instead of a hand-duplicated `origin.protocol === 'https:'`
+  copy, provably the same answer on every branch since feeding no `platform` means the CSRF
+  side's own `PUBLIC_ORIGIN` consultation never fires. Consumers must: nothing.
+
+- Five content-route actions that read the CSRF cookie jar directly (`dictionaryAddAction`,
+  `uploadAction`'s underlying upload handler, `mediaReplacePreviewAction`,
+  `mediaAltPreviewAction`, `tidyAction`) now throw when an untyped caller passes no cookie jar at
+  all, instead of returning a soft `fail(403)` (`convention-auth-loud-postures`).
+  `CairnEvent.cookies` is already typed non-nullable, so this only changes behavior for a caller
+  outside the type system. Two observable paths: through the composer, `viewAction`'s catch turns
+  the throw into `fail(500)` plus an `admin.action.failed` record; on a directly-mounted
+  `ContentRoutes` member reached without the composer (`dictionaryAddAction`, `tidyAction`, and
+  `uploadAction` are all public and unwrapped), the throw surfaces as a plain SvelteKit 500 with
+  no record. The thrown message names only the missing jar, never a cookie value. A sweep of the
+  CSRF/auth helper family for a remaining optional `platform` parameter found none outside
+  `CairnEvent`'s own `platform?` field, which mirrors SvelteKit's own optional shape and is not a
+  helper parameter; every exported CSRF helper already took `platform` required-but-nullable.
+  Consumers must: nothing for a typed TypeScript caller; a hand-rolled JavaScript caller omitting
+  `event.cookies` on one of the five actions above now sees a 500 instead of a 403 response body.
+
+- A magic link now only signs in the browser that requested it, closing the login-CSRF
+  `login-csrf-no-same-browser-binding` filed (`loginLoad`/`requestAction`/`confirmAction`). The
+  login load and the request action both leave a random nonce in a `cairn_login_pending` cookie
+  (`HttpOnly`, `SameSite=Lax`, `__Host-` prefixed and `Secure` through the same `csrfSecure`
+  derivation every cairn cookie now uses, and living six times the token's own ten-minute TTL) and
+  the request action stores that nonce's SHA-256 hash on the token row; `consumeToken` compares
+  the two inside its one atomic `DELETE` (`AND (nonce_hash IS NULL OR nonce_hash = ?)`), so the
+  compare never runs against a secret in TypeScript. The binding is value-bound, not
+  presence-only: a browser with a pending login of its own still cannot confirm another browser's
+  token. The cookie is set unconditionally and identically on all four `requestAction` exits
+  (send-ok, the non-editor neutral answer, throttled, send-failed), before anything branches on
+  allowlist membership, so the response headers carry no membership oracle; it is reused while
+  unexpired rather than rotated, so a throttled resend leaves the link already in the inbox
+  confirmable; and it is deleted on a successful confirm and at logout only, never on a failed
+  confirm, which would turn one stumble into a lockout. Minting it in `loginLoad` too means a
+  browser holds a nonce before it POSTs anything, so two concurrent cookie-less requests cannot
+  each mint one and strand the surviving token against the losing cookie; the cookie outliving
+  its token grants nothing, since the nonce is opaque and its only meaning is the `nonce_hash` on
+  a live row, and it buys the ordinary case where a late click arrives carrying the cookie and
+  reads "that link expired" rather than a false different-browser message.
+
+  The binding is **last-requester-wins**, through a rebind on the throttled branch (Geoff,
+  2026-08-31): when a throttled request's own nonce differs from the live row's `nonce_hash`, one
+  conditional `UPDATE` (`rebindToken`) points the row at the requester's nonce. No new token, no
+  second email, and the cooldown window is untouched, so every response stays byte-identical and
+  the rebind is a server-side write only. Without it the binding is a lockout: an attacker posting
+  the request form once a minute keeps the live token bound to their own browser while the
+  per-address cooldown they started throttles the editor's recovery request. Asking grants
+  nothing, since the link only ever reaches the editor's own inbox, so the worst an attacker
+  achieves is making a link stop working, which a plain re-request could already do. The
+  `UPDATE`'s own `WHERE` skips an expired row (a rebind must not resurrect one), skips an UNBOUND
+  row (that is the hand-seeded recovery escape hatch, and binding it to whoever posts the form
+  would hand that hatch to an attacker), and skips an equal hash, so a genuine double-submit is a
+  no-op. One statement, so a rebind racing the consuming `DELETE` loses cleanly under D1's
+  serialization, and its `RebindTokenOutcome` names only what that statement knows (`'rebound'` or
+  `'not-eligible'`, the same reasoning `OwnerGuardOutcome` already carries, since a no-op could be
+  any of those four cases and the write cannot tell them apart). A rebind emits the new
+  `auth.token.rebound` event (`info`, `email`, never the nonce or its hash), which is what makes a
+  lockout attempt visible: one record is the ordinary second-browser recovery, a run of them for
+  one address is someone else requesting that address's links.
+
+  The binding check IS the consuming `DELETE`'s own predicate, never a short-circuit ahead of it,
+  so a click from the wrong browser refuses without burning the token: the row is not deleted
+  unless its `nonce_hash` matches. A confirm carrying no pending cookie passes `null` rather than
+  refusing outright, which is what keeps an UNBOUND row (`nonce_hash IS NULL`: written before this
+  migration, by `create-cairn-site`'s bootstrap `INSERT`, or hand-seeded as a lockout recovery)
+  confirmable on its pre-migration terms. Only a bound row redirects to
+  `/admin/login?error=no-pending-request`, its own code distinct from `expired`, with page copy on
+  `LoginPage`/`ConfirmPage` naming this browser's missing pending sign-in, and logs the new
+  `auth.link.refused` event (`reason: 'no_pending_cookie'`). That error code is now exported as
+  `NO_PENDING_REQUEST_ERROR` from `@glw907/cairn-cms/sveltekit`, so both pages and a site's own
+  login page branch on the constant rather than a duplicated string literal; the wire value is
+  unchanged. The deliberate cost: a link requested on one device and opened on another (or in a
+  mail app's own WebView cookie jar) is refused, with re-requesting from the clicking browser as
+  the escape hatch. Consumers must: apply migration 0004 before deploying
+  (`cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/` then
+  `npx wrangler d1 migrations apply <auth-db> --remote`). An un-migrated `AUTH_DB` is a total login
+  outage with no second channel, since every confirm names the `nonce_hash` column;
+  `npx cairn doctor`'s `auth.store` check now fails when the column is absent, so run it before the
+  deploy, and if a deploy slips through anyway the store maps D1's `no such column: nonce_hash`
+  onto the new `auth.store-unmigrated` condition, whose message names the migration to apply,
+  rather than leaving a bare 500 on the login POST. The column is nullable and a row without a
+  binding still confirms, whatever the confirming browser carries, so applying the migration
+  cannot strand a link already in an inbox.
 
 ## 0.96.0
 
@@ -2049,7 +2475,8 @@ removal, nothing this list needs to carry.
   `parseManifest`, so a consumer can name and validate the manifest it fetches to build
   `newlyPublishedEntries`'s `before`/`after` pair without hand-casting JSON. See [Announce on
   publish](docs/guides/announce-on-publish.md) and [Delivery
-  data](docs/reference/delivery-data.md#newlypublishedentries). Consumers must: nothing; the
+  data](docs/reference/delivery-data.md#diffnewlypublished) (renamed `diffNewlyPublished` by the
+  conventions pass, Task 3). Consumers must: nothing; the
   field is additive and optional, and the stamp only ever appears on a publish that happens
   after the upgrade.
 

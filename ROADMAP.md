@@ -591,34 +591,6 @@ The original decision framing, for the record:
      revalidate a saved one, with no prompt and no browser trip. Both belong to this entry's root
      rather than as unrelated copy bugs.
 
-- **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
-  filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
-  (`configCsrfDisable`, condition `config.csrf-disable-missing`) reads
-  `const text = await ctx.readFile('svelte.config.js'); if (text === null) return
-  skip('svelte.config.js not found');`. Verified live: `npx sv@latest create --template
-  minimal --types ts --no-add-ons` (sv 0.17.0, run 2026-08-14) emits **no
-  `svelte.config.js` at all**, wiring the adapter inside `vite.config.ts`'s plugin call
-  instead (`sveltekit({ compilerOptions: {...}, adapter: adapter() })`, `adapter` from
-  `@sveltejs/adapter-auto` by default). So this check fires its skip path on every site built
-  from a current `sv create` scaffold, not an edge case; it has already fired, not merely a
-  condition that could. A skip is not visually distinct from a pass in the doctor's own report, so
-  the run looks clean while the CSRF-handoff check never executed: a silent green, the worse
-  failure mode for a readiness check to have. **Narrowed 2026-08-17 by the capture run, which
-  bounds the blast radius without dissolving the defect.** The recorded credentialed report
-  (`packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt`) shows
-  `PASS  Framework CSRF handoff` on a site `create-cairn-site` had just built, because that tool
-  bakes its template from `examples/showcase`, which carries `svelte.config.js`. So the silent
-  skip reaches a hand-built or bare `sv create` site, never a cairn scaffold. That is the harder
-  case to notice, not the easier one, since nobody is watching those sites for it.
-  `docs/reference/doctor.md` had generalized the skip to every scaffold and was corrected in the
-  same pass. Candidate fix: read the adapter and CSRF
-  configuration from `vite.config.ts` as well as `svelte.config.js` (a site may carry either,
-  depending on when it was scaffolded), and make "could not find a file to check" a result
-  distinct from "checked and passed" wherever the doctor reports it, so a consumer reading the
-  report can tell the two apart. Full evidence:
-  `docs/internal/record/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
-  filed rather than fixed").
-
 - **The DMARC instruction in `own-your-domain.md` was a faithful mirror of a bug in the CLI's own
   closing copy, filed off Pass D's Task 13 production gate (2026-08-14).**
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs:801-804` prints "add it to that
@@ -648,17 +620,6 @@ The original decision framing, for the record:
   extend track that the server allow-list exceeds what the editor UI can submit. Full evidence:
   `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`, "The refutations" section,
   `docs/editors/manage-the-media-library.md` (claims:editors rank 9).
-
-- **The doctor's `config.site-config` check skips on every `create-cairn-site` site, filed off Pass
-  D's Task 13 production gate (2026-08-14).** `src/lib/doctor/checks-local.ts:138`
-  (`SITE_CONFIG_PATHS`) looks for `site.config.yaml`, `src/lib/site.config.yaml`, or
-  `src/site.config.yaml`; the baked template ships it at `src/theme/site.config.yaml`, which is in
-  none of the three, so the check reports a skip rather than a pass on every scaffolded site.
-  `docs/reference/doctor.md:21` tells an admin to run the doctor from the directory holding a file
-  that, per the candidate list, is never actually where the tool looks for it on their site.
-  Pass D's `docs/admin/is-it-working.md` documents this as a known exception rather than fixing
-  the code. Full evidence: `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`,
-  persona walk, `docs/admin`, rank 6 (NARROWED, second-round verify).
 
 - **A fold-coverage gap, found and closed inside Pass D (2026-08-14).** Two fold agents scoped
   to `docs/editors/` and `docs/extend/` reported completion for nine CONFIRMED/NARROWED gate
@@ -903,6 +864,24 @@ the named human gates only):**
   prop instead of the raw record. Pre-existing, not newest-toolchain's.
 
 ## Next
+
+- **Per-IP rate limiting on the auth request and confirm actions (filed 2026-08-31, conventions-pass
+  security review).** The per-email send cooldown is the only pressure control on either action
+  today, and the throttled status plus the send-failure status are membership oracles that lean on
+  it; the `RateLimitLike` seam and `resolveRateLimit` are the mechanism already in the engine, so
+  this is wiring a limiter the auth routes never got, not a new subsystem.
+
+- **Test-harness fidelity (filed 2026-09-01, conventions-pass close).** The integration
+  cookie jar has no expiry semantics, the old double-mint test shared one jar in-process, and
+  the e2e reuses stale preview servers off CI; each hid a real bug this pass's fresh-context
+  reviewers had to catch instead. Make the doubles model the browser and D1 contracts
+  honestly (cookie maxAge, per-request jars, no server reuse) so the cheap layer sees what
+  the expensive layer currently compensates for.
+- **Fold the auth-channel's cookie-secure derivation and `checkChannelRateLimit` onto `csrfSecure`
+  and `resolveRateLimit` (filed 2026-08-31, the conventions pass's own recorded divergences).** The
+  channel derives `secure` from a bare `event.url.protocol` and reimplements the rate-limit branch
+  inline; both are recorded at their sites as deliberate and safe today (`assertOriginAndScheme`
+  fails http closed off localhost), and both are one convergence away from the engine's grammar.
 
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
   logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`, and stacked
@@ -1370,7 +1349,8 @@ the named human gates only):**
     zone setting reads, misleading an operator into changing a correct setting (severity raised
     from DX/low, docs friction log, triaged 2026-08-14: reproduced on two live migrations, not
     one).** `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts:67-76`, called by
-    `edgeHttpsForced` and `edgeHsts`) still fails with a bare `` `${settingId} read returned
+    `edgeHttpsForced`, its one remaining caller since `edgeHsts` retired with the `edge.hsts-off`
+    condition) still fails with a bare `` `${settingId} read returned
     ${res.status}` `` and prints a fix that assumes the setting is off, while `emailSenderOnboarded`
     and the D1 checks in the same file already route the identical status through
     `permissionFail` (`:42-46`), which names the missing token scope instead. First found on the
@@ -1962,23 +1942,11 @@ the named human gates only):**
   **Trigger:** the gate passing roughly 60 seconds, or the published corpus growing past about
   120 files.
 
-- **Nothing pins `CHANNEL_SCHEMA_SQL`'s literal text any more (filed at Pass D Task 10,
-  2026-08-14).** `src/tests/unit/auth-channel-guide-ddl.test.ts` asserted the exported constant
-  byte-for-byte against the DDL block reproduced in the old auth-channel guide, so a drift
-  between the two went red. The docs rebuild stopped reproducing the DDL in prose at all (both
-  `docs/extend/add-a-second-audience.md` and `docs/reference/auth-channel.md` tell a reader to
-  copy the exported constant instead), which removes the drift risk the test guarded and also
-  removes the test's subject, so the cutover deleted it. The constant's body is now unpinned by
-  anything. That is defensible, since the duplicate it guarded against no longer exists, but a
-  change to that SQL now reaches a consumer with no gate in the way. **Trigger:** the next
-  change to the auth-channel schema, which should arrive with a migration test rather than a
-  restored text pin.
-
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**
-  `ContentFormFailure` (`content-routes.ts:93-95`, still `Partial<SaveFailure & DeleteRefusal &
-  ... & TidyFailure>`) is an intersection of only the content actions' `fail()` payloads;
-  SvelteKit's generated `ActionData` unions every action's awaited return regardless of arm,
+  `ContentFormFailure` (`content-routes-core.ts:393-412`, a flat interface with every field
+  optional) models only the content actions' `fail()` payloads; SvelteKit's generated
+  `ActionData` unions every action's awaited return regardless of arm,
   and the assignment type-checks today only because every failure-payload field name happens to
   differ from every success-payload field name. C2b's refusal-channel pass hit this directly:
   sharpening every `fail()` from `ActionFailure<unknown>` to a precise `ActionFailure<T>` turned
@@ -2230,19 +2198,19 @@ the named human gates only):**
   finding, 2026-07-14 nav-layout pass.
 - **A refused save preserves the body but discards frontmatter field edits (updated with a
   code-verified finding, docs friction log, triaged 2026-08-14; supersedes the 2026-07-03
-  framing below).** `SaveFailure` (`content-routes-core.ts:299-306`) carries only `error`,
-  `brokenLinks`, and `body`, no frontmatter; `EditPage` reseeds the body through `form?.body ??
-  data.body` (`EditPage.svelte:147`), but every frontmatter field reloads from the stored
-  record. Converting the save refusal from a `?error=` redirect to `fail(400, SaveFailure)` was
-  meant to stop discarding an editor's work, and it half succeeds: the prose survives, the
-  frontmatter does not. Observed directly: clearing Title and saving re-renders with the alert
-  and the body intact, and the Title reverted to its committed value. The realistic cost is
-  larger than that single case: an editor who retitles an entry, adds a tag that fails taxonomy
-  validation, and saves loses the retitle while keeping the prose. This is strictly better than
-  the pre-C2b behavior, where the redirect discarded everything, so it is an incomplete
-  improvement rather than a regression. Candidate fix: carry the submitted frontmatter on
-  `SaveFailure` alongside `body` and reseed the fields from it, which also makes the failure
-  shape honest about what it holds. The refused-action editor cluster above (Next tier) shares
+  framing below).** `ContentFormFailure` (`content-routes-core.ts:393-412`) carries only
+  `error`, `brokenLinks`, and `body` on a refused save, no frontmatter; `EditPage` reseeds the
+  body through `form?.body ?? data.body` (`EditPage.svelte:147`), but every frontmatter field
+  reloads from the stored record. Converting the save refusal from a `?error=` redirect to
+  `fail(400, ...)` was meant to stop discarding an editor's work, and it half succeeds: the
+  prose survives, the frontmatter does not. Observed directly: clearing Title and saving
+  re-renders with the alert and the body intact, and the Title reverted to its committed value.
+  The realistic cost is larger than that single case: an editor who retitles an entry, adds a
+  tag that fails taxonomy validation, and saves loses the retitle while keeping the prose. This
+  is strictly better than the pre-C2b behavior, where the redirect discarded everything, so it
+  is an incomplete improvement rather than a regression. Candidate fix: add a frontmatter field
+  to `ContentFormFailure` and reseed the fields from it, which also makes the failure shape
+  honest about what it holds. The refused-action editor cluster above (Next tier) shares
   this same "no `use:enhance`, so a refusal loses state" shape one screen further along;
   consider folding the two into one pass. Original framing, 2026-07-03 friction log, triaged at
   the 2026-07-16 clearing: the conflict refusal itself is right (never merge by guesswork), but
@@ -2343,6 +2311,12 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   enable vitest's typecheck project so these assertions run under the test command they visually
   sit inside, or to leave the current split and document what they are, so a reader isn't misled by
   where the assertion lives. No trigger yet; take this up only if the split causes a real miss.
+- **A request-time verifier code as the cross-device-preserving alternative to the login nonce
+  (filed 2026-08-31, conventions-pass security review).** The nonce binds a link to one browser and
+  charges for it: a link requested on a desktop and opened on a phone refuses. A short verifier the
+  request page shows and the confirm page asks for would bind the same way while letting the click
+  land anywhere, at the cost of one thing the editor has to carry across. The promote trigger is a
+  real report of the cross-device refusal biting a site's editors, not the theory.
 - **Migrate the engine's own editor default from magic-link to codes.** The auth-channel factory
   design (`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`, decision 6) named
   this out of scope on purpose: `magic_token` and the editor magic-link flow are untouched by
@@ -2378,7 +2352,7 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   includes it. No production case has asked for it, and inventing the semantics without one is how a
   lean concept grows a second meaning. The trigger is a site that declares the field and expects it to
   bite; the answer is then either filtering drafts out of `fragmentTargets` and refusing them in
-  `buildFragmentResolver`, or rejecting the field on the concept at declaration. Surfaced by two
+  `createFragmentResolver`, or rejecting the field on the concept at declaration. Surfaced by two
   reviewers on the fragments pass, 2026-07-16.
 - **Fragment bodies on the manifest row.** `editLoad` reads every published fragment's body on every
   edit-page open, one `readFile` per fragment, so the picker can list them and the preview can resolve

@@ -17,7 +17,7 @@ processor's webhook check, a chat platform's notifier, never belongs here, whate
 these exports appear to set; that stays the site's own code.
 
 ```ts
-import { verifyTurnstile, checkRateLimit, checkRateLimitKeys } from '@glw907/cairn-cms/cloudflare';
+import { verifyTurnstile, resolveRateLimit } from '@glw907/cairn-cms/cloudflare';
 ```
 
 ## Verifying a token
@@ -40,7 +40,10 @@ the length Cloudflare's documented token format can reach), a fetch that throws 
 5-second deadline, a non-200 response, a body that fails to parse as JSON or fails validation of
 every field this function reads, a `success: false` response, and a `hostname` or `action`
 mismatch, returns `false` by contract, never throws: this function is fail-closed, so a future
-refactor can't flip it open by accident.
+refactor can't flip it open by accident. The `boolean` return is a deliberate exception to the
+engine's discriminated-result convention: naming each failure reason in the return type would
+tempt a caller into treating one refusal as more admissible than another, which this function's
+fail-closed contract forbids.
 
 `opts.ip` must come from `CF-Connecting-IP`, never a client-forwardable header such as
 `X-Forwarded-For`: a request can set that header to anything, so passing it through would let a
@@ -106,7 +109,7 @@ async function verifySubmission(token: string, secret: string | undefined): Prom
 
 ## Checking a rate limit
 
-Both helpers read a Workers
+`resolveRateLimit` reads a Workers
 [`RateLimit`](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 binding, declared in `wrangler.jsonc`:
 
@@ -122,69 +125,64 @@ binding, declared in `wrangler.jsonc`:
 
 `period` accepts only `10` or `60` (seconds); there's no third option.
 
-### `checkRateLimit`
+### `resolveRateLimit`
 
 Stability tier: Extension API.
 
 ```ts
-declare function checkRateLimit(binding: RateLimitLike | undefined, key: string): Promise<boolean>;
+declare function resolveRateLimit(
+  binding: RateLimitLike | undefined,
+  keys: string | string[],
+): Promise<RateLimitOutcome>;
 ```
 
-Check one key against a Workers `RateLimit` binding. The Workers limiter is per-location and
-eventually consistent, so this is best-effort back pressure, never an authoritative security
-control. Reach for the engine's own D1-backed send cooldown (the pattern `createAuthGuard` uses
-for the magic-link request rate) for anything that must actually hold. An absent `binding`
-degrades to open and returns `true` without a call, the convention for local dev, vitest, and a
-not-yet-provisioned deploy. A throwing `limit()` propagates to the caller rather than being
-swallowed here: a caller decides its own degrade-to-open-on-throw policy, the same way
-[`createSectionAction`](./sveltekit.md#createsectionaction)'s wrapper does for its own rate-limit
-branch.
+Resolve one or several keys against a Workers `RateLimit` binding, in order, short-circuiting at
+the first key over budget: a later key's counter is never incremented once an earlier one has
+already failed. The Workers limiter is per-location and eventually consistent, so this is
+best-effort back pressure, never an authoritative security control. Reach for the engine's own
+D1-backed send cooldown (the pattern `createAuthGuard` uses for the magic-link request rate) for
+anything that must actually hold.
 
-`key` is the caller's to build, and its construction decides what the limit actually protects.
-Normalize an identity before keying on it (lowercase an email, and strip a plus tag where the
-site's own semantics already treat `user+tag@example.com` as `user@example.com`), or an attacker
-gets a fresh budget for every case or tag variant of the same address. Derive any IP component
-from `CF-Connecting-IP` only, the same rule [`verifyTurnstile`](#verifyturnstile) enforces for its
-own `opts.ip`, never a client-forwardable header such as `X-Forwarded-For`. One binding carries one
-configured limit and period (the preceding `simple: { limit, period }` example), applied
-independently to each distinct key: two different keys draw from two separate counters, never a
-shared one. That's exactly why an unnormalized identity hands an attacker a fresh budget per case
-or tag variant. A `key` built by concatenating unbounded caller input can exceed the binding's own
-key-length limit; bound the key yourself rather than relying on the binding's own handling of an
-oversized one.
+Returns a four-arm [`RateLimitOutcome`](#ratelimitoutcome): `{ outcome: 'allowed' }` when every
+key cleared, `{ outcome: 'limited'; key }` naming the first key over budget, `{ outcome:
+'no-binding' }` when `binding` is `undefined` (no call is made), and `{ outcome: 'failed'; error
+}` when the underlying `limit()` call itself threw (the thrown value is carried, never rethrown).
+Degrading to open on `no-binding` or `failed` is each caller's own decision to read off the
+result, the same policy its predecessor `checkRateLimit` exported as an unconditional `true`; a
+caller that must fail closed instead branches on the outcome explicitly.
 
-Both helpers degrade to open with no log line of their own, by design: neither has the call-site
-context to say what a misspelled binding name or a not-yet-provisioned limiter should mean for the
-caller. A site that needs to know reaches for that context itself.
-[`createSectionAction`](./sveltekit.md#createsectionaction) is the worked example: its own
-`rateLimit` option logs `admin.action.rate_limit_absent` when the configured binding resolves to
-nothing (see [log events](./log-events.md)).
+A single string `key` behaves exactly as a one-element array. `key` is the caller's to build, and
+its construction decides what the limit actually protects. Normalize an identity before keying on
+it (lowercase an email, and strip a plus tag where the site's own semantics already treat
+`user+tag@example.com` as `user@example.com`), or an attacker gets a fresh budget for every case
+or tag variant of the same address. Derive any IP component from `CF-Connecting-IP` only, the same
+rule [`verifyTurnstile`](#verifyturnstile) enforces for its own `opts.ip`, never a
+client-forwardable header such as `X-Forwarded-For`. One binding carries one configured limit and
+period (the preceding `simple: { limit, period }` example), applied independently to each distinct
+key: two different keys draw from two separate counters, never a shared one. That's exactly why an
+unnormalized identity hands an attacker a fresh budget per case or tag variant. A `key` built by
+concatenating unbounded caller input can exceed the binding's own key-length limit; bound the key
+yourself rather than relying on the binding's own handling of an oversized one.
 
-### `checkRateLimitKeys`
-
-Stability tier: Extension API.
-
-```ts
-declare function checkRateLimitKeys(binding: RateLimitLike | undefined, keys: string[]): Promise<boolean>;
-```
-
-Check several keys against a Workers `RateLimit` binding, in order, short-circuiting at the
-first failing key: a later key's counter is never incremented once an earlier one has already
-failed. An absent `binding` degrades to open and returns `true` with no call, even with several
-keys.
-
-Order the keys broadest first: the budget that most needs to hold goes at index 0. With the
+Order several keys broadest first: the budget that most needs to hold goes at index 0. With the
 narrower key checked first, say an email ahead of an IP, an attacker who saturates that one
 email's budget then fails the check at index 0 on every later attempt, so the broader key behind
 it never runs and its counter never sees the flood.
 
-`createSectionAction`'s own `rateLimit` option is the in-engine consumer of `RateLimitLike`; see
-[SvelteKit](./sveltekit.md#createsectionaction) for the wrapper that resolves a section's own
-binding and key against it.
+`resolveRateLimit` writes no log line of its own, by design: it has no call-site context to say
+what a misspelled binding name or a not-yet-provisioned limiter should mean for the caller. A site
+that needs to know reaches for that context itself.
+[`createSectionAction`](./sveltekit.md#createsectionaction) is the worked example: its own
+`rateLimit` option logs `admin.action.rate_limit_absent` when the configured binding resolves to
+nothing, and `admin.action.rate_limit_failed` on the `failed` outcome (see
+[log events](./log-events.md)). `createSectionAction`'s own `rateLimit` option is the in-engine
+consumer of `RateLimitLike`; see [SvelteKit](./sveltekit.md#createsectionaction) for the wrapper
+that resolves a section's own binding and key against it.
 
 ## Types
 
 | Export | Stability | Signature | Notes |
 | --- | --- | --- | --- |
 | <a id="verifyturnstileoptions"></a>`VerifyTurnstileOptions` | Extension API | `interface VerifyTurnstileOptions { ip?: string; hostname?: string; action?: string }` | The narrowing [`verifyTurnstile`](#verifyturnstile) accepts as its third argument; see its own description under `verifyTurnstile` for each field. |
-| <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`checkRateLimit`](#checkratelimit) and [`checkRateLimitKeys`](#checkratelimitkeys) call; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. The same declaration [`createSectionAction`](./sveltekit.md#createsectionaction) re-exports from `./sveltekit`. |
+| <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`resolveRateLimit`](#resolveratelimit) calls; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. The same declaration [`createSectionAction`](./sveltekit.md#createsectionaction) re-exports from `./sveltekit`. |
+| <a id="ratelimitoutcome"></a>`RateLimitOutcome` | Extension API | `type RateLimitOutcome = { outcome: 'allowed' } \| { outcome: 'limited'; key: string } \| { outcome: 'no-binding' } \| { outcome: 'failed'; error: unknown }` | What [`resolveRateLimit`](#resolveratelimit) returns; see its own description for each arm. |

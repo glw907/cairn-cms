@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 
 // The v1 validator is gone, so this is now a v2-only check of the overlapping scalar types: text
 // max, textarea min, date min, and a present boolean. It pins the verdicts the cutover preserved
 // from the old defineFields parity matrix.
-const v2 = fieldset({
+const v2 = defineFieldset({
   title: fields.text({ label: 'Title', required: true, max: 5 }),
   body: fields.textarea({ label: 'Body', min: 2 }),
   date: fields.date({ label: 'Date', min: '2020-01-01' }),

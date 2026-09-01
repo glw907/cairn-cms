@@ -9,7 +9,7 @@ describe('nav exports', () => {
 
   it('the package entry exports the read-side nav helpers', () => {
     expect(typeof pkg.parseSiteConfig).toBe('function');
-    expect(typeof pkg.extractMenu).toBe('function');
+    expect(typeof pkg.readMenu).toBe('function');
   });
 
   it('omits the nav-editor write helpers from the root barrel', async () => {

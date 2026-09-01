@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   checkPackageFiles,
+  checkChannelMigrationPacked,
   checkDocsPacked,
   checkSkillPacked,
   checkWorkerCondition,
@@ -33,6 +34,35 @@ describe('checkPackageFiles', () => {
 
   it('does not count a non-sql file under migrations', () => {
     expect(checkPackageFiles(['migrations/README.md']).ok).toBe(false);
+  });
+});
+
+// The channel schema ships from its own directory, and that separation is the assertion: a shared
+// migrations_dir applies AUTH_DB's migrations to a channel database and the channel's schema to the
+// auth store, the first time either is applied.
+describe('checkChannelMigrationPacked', () => {
+  it('passes when the channel migration is packed in its own directory', () => {
+    const files = ['dist/index.js', 'migrations/0000_auth.sql', 'migrations-channel/0000_channel.sql'];
+    expect(checkChannelMigrationPacked(files)).toEqual({ ok: true });
+  });
+
+  it('fails naming the fix when the channel migration is absent', () => {
+    const result = checkChannelMigrationPacked(['dist/index.js', 'migrations/0000_auth.sql']);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('migrations-channel');
+    expect(result.error).toContain('files');
+  });
+
+  it("fails when the channel schema is packed under AUTH_DB's own migrations directory", () => {
+    const result = checkChannelMigrationPacked([
+      'migrations/0000_auth.sql',
+      'migrations/0005_channel.sql',
+      'migrations-channel/0000_channel.sql',
+    ]);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('migrations_dir');
   });
 });
 

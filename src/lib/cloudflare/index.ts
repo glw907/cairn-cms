@@ -4,4 +4,4 @@
 // third-party service verifier (a payment processor's webhook check, a chat platform's notifier)
 // belongs to the site, whatever precedent Turnstile appears to set.
 export { verifyTurnstile, type VerifyTurnstileOptions } from './turnstile.js';
-export { checkRateLimit, checkRateLimitKeys, type RateLimitLike } from './rate-limit.js';
+export { resolveRateLimit, type RateLimitLike, type RateLimitOutcome } from './rate-limit.js';

@@ -77,13 +77,13 @@ never `AUTH_DB`:
 ```ts
 // src/lib/members/channel.ts
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
-import type { AuthChannelEvent, DeliverContext } from '@glw907/cairn-cms/auth-channel';
+import type { CairnEvent, DeliverContext } from '@glw907/cairn-cms/auth-channel';
 import type { Env } from '../env.js';
 
 declare function sendCode(contact: string, code: string, ctx: DeliverContext<Env>): Promise<void>;
-declare function contactToMemberId(contact: string): Promise<string | null>;
+declare function contactToMemberId(contact: string, ctx: { env: Env | undefined }): Promise<string | null>;
 declare function normalizeContact(raw: string): string;
-declare function verifyChallenge(event: AuthChannelEvent<Env>, form: FormData): Promise<boolean>;
+declare function verifyChallenge(event: CairnEvent<Env>, form: FormData): Promise<boolean>;
 
 export const memberChannel = createAuthChannel<Env>({
   resolveDb: (env) => env?.MEMBER_DB,
@@ -95,14 +95,19 @@ export const memberChannel = createAuthChannel<Env>({
 });
 ```
 
+`lookup` and the optional `verify` each take a `{ env }` context alongside their subject, so a
+roster read reaches its own binding without the channel holding one. Neither may read
+request-shaped data: `lookup` decides whether a contact is a member, and a `false` from `verify`
+destroys the session row.
+
 `normalize`, `lookup`, and `challenge` each carry a correctness obligation the factory can't
 verify on its own: a lossy `normalize` maps two people onto one identity's rate budget, and
 `challenge` is the whole economic bound on guessing a code. See [the auth channel
 reference](../reference/auth-channel.md#config-obligations) for what each one owes, and [the
 security model](./auth-channel-security-model.md) for the threat catalogue this design answers.
 
-Mount the channel's actions on your own route, migrate `CHANNEL_SCHEMA_SQL` once against your
-own binding (never `AUTH_DB`), and build the member-facing area itself as ordinary SvelteKit
+Mount the channel's actions on your own route, apply the packaged channel migration once against
+your own binding (never `AUTH_DB`), and build the member-facing area itself as ordinary SvelteKit
 routes outside `/admin`, gated by `channel.resolveSubject(event)` rather than by anything cairn's
 own guard resolves. Nothing about this area needs to look like cairn's admin; it's your own
 surface end to end. Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md)
@@ -120,16 +125,20 @@ from the one your site's `AUTH_DB` uses:
     {
       "binding": "MEMBER_DB",
       "database_name": "my-site-members",
-      "migrations_dir": "migrations/members"
+      "migrations_dir": "migrations-members"
     }
   ]
 }
 ```
 
 A shared `migrations_dir` runs cairn's own auth migrations against the channel database, and the
-channel's schema against the site's auth store, the first time you apply either. Copy
-[`CHANNEL_SCHEMA_SQL`](../reference/auth-channel.md#channel_schema_sql) verbatim into the first
-migration in that separate directory.
+channel's schema against the site's auth store, the first time you apply either. Copy the engine's
+packaged migration, `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql`, into that
+separate directory and apply it with `wrangler d1 migrations apply MEMBER_DB`. Run that same command
+on a database you provisioned by hand before the file shipped: every statement is idempotent, so the
+apply changes nothing and records the `d1_migrations` marker for you. Insert that marker by hand only
+if you can't run the migration runner. See [the auth channel
+reference](../reference/auth-channel.md#the-packaged-migration) for what the schema holds.
 
 Test the channel against a real D1-shaped double with `@glw907/cairn-cms-dev`'s
 `createChannelDb`, which needs `node:sqlite`. That package's `engines.node` field enforces the

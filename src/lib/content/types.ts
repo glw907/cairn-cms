@@ -65,7 +65,7 @@ export type NamedField = FieldDescriptor & { name: string };
 
 /**
  * Per-site configuration for one content concept (spec §8). One `fields` fieldset, built with
- * `fieldset`, is the single source of truth for the editor form, the validator, and the
+ * `defineFieldset`, is the single source of truth for the editor form, the validator, and the
  * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
  * typed reads. A concept also declares its own routing and URL policy here (`routing`, `permalink`,
  * `datePrefix`), resolved by `normalizeConcepts`.

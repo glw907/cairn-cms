@@ -7,8 +7,8 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { parseSiteConfig, extractVocabulary } from '../../lib/nav/site-config.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { parseSiteConfig, readVocabulary } from '../../lib/nav/site-config.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { runtime as baseRuntime, contentEvent, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 
@@ -30,7 +30,7 @@ const POSTS: ConceptDescriptor = {
     { type: 'text', name: 'title', label: 'Title', required: true },
     { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true },
   ],
-  schema: fieldset({}),
+  schema: defineFieldset({}),
   summaryFields: [],
   validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
 };
@@ -165,7 +165,7 @@ describe('vocabularySaveAction', () => {
     expect((commitPost.body as { author: unknown }).author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
     const committed = gh.read('main', CONFIG_PATH)!;
     expect(committed).toContain('# the site config');
-    const reparsed = extractVocabulary(parseSiteConfig(committed));
+    const reparsed = readVocabulary(parseSiteConfig(committed));
     expect(reparsed).toEqual([
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
@@ -182,7 +182,7 @@ describe('vocabularySaveAction', () => {
     ]);
     const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(location).toBe('/admin/vocabulary?saved=1');
-    const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
+    const reparsed = readVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte', 'rust', 'extra']);
   });
 
@@ -198,7 +198,7 @@ describe('vocabularySaveAction', () => {
     expect(result.data.error).toContain('svelte');
     // No commit landed: the committed vocabulary still carries both entries.
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
-    const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
+    const reparsed = readVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte', 'rust']);
   });
 
@@ -209,7 +209,7 @@ describe('vocabularySaveAction', () => {
     const posted = JSON.stringify([{ value: 'svelte', label: 'Svelte' }]);
     const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(location).toBe('/admin/vocabulary?saved=1');
-    const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
+    const reparsed = readVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte']);
   });
 

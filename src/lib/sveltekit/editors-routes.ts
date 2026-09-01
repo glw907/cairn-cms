@@ -2,21 +2,13 @@
 // insert and delete. The anti-lockout rule is the last remaining owner: the system refuses to
 // drop below one owner (spec 7.1), enforced in the store by an atomic guarded write rather
 // than a separate count, so concurrent removals cannot strand the allowlist at zero owners.
-import { fail } from '@sveltejs/kit';
+import { fail, type ActionFailure } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { requireOwner } from './guard.js';
 import { requireDb } from '../env.js';
 import { log } from '../log/index.js';
-import {
-  listEditors,
-  findEditor,
-  insertEditor,
-  deleteEditor,
-  setEditorRole,
-  removeOwnerIfNotLast,
-  demoteOwnerIfNotLast,
-} from '../auth/store.js';
-import { resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
+import { listEditors, findEditor, insertEditor, deleteEditor, setEditorRole } from '../auth/store.js';
+import { resolveCapability, resolveOwnerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
@@ -25,10 +17,12 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
  * A refused editor-management action: a bad input, a duplicate, or the anti-lockout rule.
- *  Module-internal: ManageEditors.svelte reads the envelope's `error` string loosely, so no
- *  other module names this type.
+ *  Module-exported (never barrel-published; see the internal-sibling comment on `EditorRoutes`
+ *  below) only because the declared `EditorRoutes` contract names it in three return positions
+ *  and TypeScript's declaration emit needs an exported name to reference: ManageEditors.svelte
+ *  itself still reads the envelope's `error` string loosely, so no other module names this type.
  */
-interface EditorActionFailure {
+export interface EditorActionFailure {
   error: string;
 }
 
@@ -44,7 +38,7 @@ export interface EditorsData {
 }
 
 /** Configuration for `createEditorRoutes`: the site's declared role vocabulary. */
-export interface EditorRoutesOptions {
+export interface EditorRoutesConfig {
   /**
    * The site's declared role vocabulary (see `defineRoles`); omitted, the routes validate and
    *  resolve against the implicit owner/editor pair, so a zero-config site sees no behavior change.
@@ -53,9 +47,9 @@ export interface EditorRoutesOptions {
 }
 
 /** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
-export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
-  const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
-  const ownerRoles = ownerLevelRoles(vocabulary);
+export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoutes {
+  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
+  const ownerRoles = resolveOwnerLevelRoles(vocabulary);
 
   /** A posted role, trimmed and checked against the vocabulary; null when blank or unknown. */
   function parseRole(value: FormDataEntryValue | null): string | null {
@@ -118,14 +112,12 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
   /** POST remove an editor. Owner-only. Refuses the last owner-capability row, atomically. */
   async function editorRemoveAction(event: CairnEvent) {
     const { db, email, owner } = await ownerAction(event);
-    const target = await findEditor(db, email);
-    if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
-    if (resolveCapability(vocabulary, target.role) === 'owner') {
-      if (!(await removeOwnerIfNotLast(db, email, ownerRoles))) {
-        return fail(400, { error: 'You cannot remove the last owner' } satisfies EditorActionFailure);
-      }
-    } else {
-      await deleteEditor(db, email);
+    const result = await deleteEditor(db, email, ownerRoles);
+    if (result.outcome === 'not-found') {
+      return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
+    }
+    if (result.outcome === 'last-owner') {
+      return fail(400, { error: 'You cannot remove the last owner' } satisfies EditorActionFailure);
     }
     log.info('editor.removed', { owner, target: email });
     return { ok: true as const };
@@ -139,17 +131,13 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
     const { db, form, email, owner } = await ownerAction(event);
     const role = parseRole(form.get('role'));
     if (!role) return fail(400, { error: 'Choose a valid role' } satisfies EditorActionFailure);
-    const target = await findEditor(db, email);
-    if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
-    const wasOwner = resolveCapability(vocabulary, target.role) === 'owner';
-    const willBeOwner = resolveCapability(vocabulary, role) === 'owner';
-    if (wasOwner && !willBeOwner) {
-      if (!(await demoteOwnerIfNotLast(db, email, ownerRoles, role))) {
-        return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
-      }
-    } else {
-      // Validated against the vocabulary above; see the same open-role note in editorAddAction.
-      await setEditorRole(db, email, role);
+    // Validated against the vocabulary above; see the same open-role note in editorAddAction.
+    const result = await setEditorRole(db, email, role, ownerRoles);
+    if (result.outcome === 'not-found') {
+      return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
+    }
+    if (result.outcome === 'last-owner') {
+      return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
     }
     log.info('editor.role_changed', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };
@@ -158,5 +146,16 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
   return { editorsLoad, editorAddAction, editorRemoveAction, editorSetRoleAction };
 }
 
-/** What `createEditorRoutes` returns: the owner-gated editor-management load and actions. */
-export type EditorRoutes = ReturnType<typeof createEditorRoutes>;
+/**
+ * What `createEditorRoutes` returns: the owner-gated editor-management load and actions. Names
+ *  `EditorActionFailure` in three return positions; that type is exported from this module (for
+ *  the declaration emit this contract requires) but never re-exported from the `/sveltekit`
+ *  barrel, since `ManageEditors.svelte` reads its `error` field loosely and no other module has a
+ *  reason to import the name directly (`convention-internal-sibling-comment`).
+ */
+export interface EditorRoutes {
+  editorsLoad: (event: CairnEvent) => Promise<EditorsData>;
+  editorAddAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>;
+  editorRemoveAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>;
+  editorSetRoleAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>;
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
@@ -11,7 +11,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
       {
         id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
         routing: { routable: true, dated: false, inFeeds: false },
-        permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],

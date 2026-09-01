@@ -3,7 +3,7 @@
 import type { CairnAdapter, CairnRuntime } from './types.js';
 import { normalizeConcepts } from './concepts.js';
 import { normalizeAssets } from '../media/config.js';
-import { dictionaryFileForDialect, extractVocabulary, type SiteConfig } from '../nav/site-config.js';
+import { dictionaryFileForDialect, readVocabulary, type SiteConfig } from '../nav/site-config.js';
 
 // The internal artifact paths the adapter does not carry. They share the `.cairn/` content root the
 // manifests use, so `composeRuntime` defaults them by convention rather than reading them off config.
@@ -64,6 +64,6 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     // The tag vocabulary is validated and threaded once here from the site config, so the taxonomy
     // enforcement seam reads it from the deployed runtime snapshot. A malformed vocabulary throws and
     // fails the build; an absent key resolves to an empty list (enforcement stays opt-in).
-    vocabulary: extractVocabulary(siteConfig),
+    vocabulary: readVocabulary(siteConfig),
   };
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest } from '../../lib/content/manifest.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, json, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 
@@ -20,7 +20,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         permalink: '/:slug',
         datePrefix: 'day',
         fields,
-        schema: fieldset({}),
+        schema: defineFieldset({}),
         summaryFields: [],
         validate,
       },
@@ -181,6 +181,9 @@ describe('renameAction', () => {
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/already exists/i);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+    // conventions pass, Task 5: renameAction now declares ActionFailure<ContentFormFailure> (the
+    // flattened, all-optional type); this holds the key set a RenameFailure carried.
+    expect(Object.keys(result.data)).toEqual(['error']);
   });
 
   it('rejects a no-op slug with no commit', async () => {

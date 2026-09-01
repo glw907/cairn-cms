@@ -1,8 +1,8 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineComponent, defineFieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
 import { cardShell, headRow, strAttr } from '@glw907/cairn-cms/render';
-import { normalizeAssets, buildMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
+import { normalizeAssets, createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
@@ -366,7 +366,7 @@ const mediaManifest = readCommittedManifest(
 // published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
 // public route can inject the same resolver for the frontmatter hero, one source of truth.
 const resolvedAssets = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
-export const publicMediaResolver = buildMediaResolver(mediaManifest, resolvedAssets);
+export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets);
 
 // Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
 // `media.resolver_absent` if a future edit drops the resolveMedia wiring while media stays on.
@@ -383,7 +383,7 @@ export const cairn = defineAdapter({
       singular: 'post',
       summaryFields: ['description'],
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         // The post files carry a description the SEO head reads; declare it so it survives the
@@ -429,7 +429,7 @@ export const cairn = defineAdapter({
       // back to `label` and read "New Pages" instead (the same fallback `posts` names above).
       singular: 'page',
       routing: 'page',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         robots: fields.text({ label: 'Robots' }),
       }),
@@ -445,7 +445,7 @@ export const cairn = defineAdapter({
       label: 'Fragments',
       singular: 'fragment',
       routing: 'embedded',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
       }),
     }),

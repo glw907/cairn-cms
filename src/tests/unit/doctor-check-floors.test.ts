@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   configDependencyFloors,
   dependencyFloorsResult,
+  pnpmDependencyFloorsResult,
+  pnpmLockedVersion,
   readEnginePeers,
+  yarnDependencyFloorsResult,
+  yarnLockedVersion,
 } from '../../lib/doctor/check-floors.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
 
@@ -150,6 +154,142 @@ describe('readEnginePeers', () => {
   });
 });
 
+// A pnpm-lock.yaml v9 fixture: the root importer resolves each dep, the shape the check reads
+// first. Keys are quoted, since a scoped package name (@sveltejs/kit) is not a bare YAML plain
+// scalar.
+function pnpmLockV9(versions: Record<string, string>): string {
+  return [
+    "lockfileVersion: '9.0'",
+    'importers:',
+    '  .:',
+    '    devDependencies:',
+    ...Object.entries(versions).flatMap(([dep, version]) => [
+      `      '${dep}':`,
+      `        specifier: ^${version}`,
+      `        version: ${version}`,
+    ]),
+  ].join('\n');
+}
+
+// A legacy pnpm-lock.yaml (lockfileVersion 5/6): dependencies map dep name straight to a bare
+// version string, with no importers section at all.
+function pnpmLockLegacy(versions: Record<string, string>): string {
+  return [
+    'lockfileVersion: 5.4',
+    'devDependencies:',
+    ...Object.entries(versions).map(([dep, version]) => `  '${dep}': ${version}`),
+  ].join('\n');
+}
+
+// A yarn.lock classic (v1) fixture.
+function yarnLockClassic(versions: Record<string, string>): string {
+  return Object.entries(versions)
+    .map(([dep, version]) => `"${dep}@^${version}":\n  version "${version}"\n  resolved "https://example.invalid/${dep}"\n`)
+    .join('\n');
+}
+
+// A yarn.lock Berry fixture.
+function yarnLockBerry(versions: Record<string, string>): string {
+  return Object.entries(versions)
+    .map(([dep, version]) => `"${dep}@npm:^${version}":\n  version: ${version}\n  resolution: "${dep}@npm:${version}"\n`)
+    .join('\n');
+}
+
+describe('pnpmLockedVersion', () => {
+  it('reads a dep from the root importer of a v9 lockfile', () => {
+    expect(pnpmLockedVersion(pnpmLockV9({ svelte: '5.56.10' }), 'svelte')).toBe('5.56.10');
+  });
+
+  it('reads a scoped dep from the root importer', () => {
+    expect(pnpmLockedVersion(pnpmLockV9({ '@sveltejs/kit': '2.70.2' }), '@sveltejs/kit')).toBe('2.70.2');
+  });
+
+  it('falls back to the legacy top-level devDependencies map', () => {
+    expect(pnpmLockedVersion(pnpmLockLegacy({ svelte: '5.56.10' }), 'svelte')).toBe('5.56.10');
+  });
+
+  it('returns undefined for a dep with no entry', () => {
+    expect(pnpmLockedVersion(pnpmLockV9({ svelte: '5.56.10' }), '@sveltejs/kit')).toBeUndefined();
+  });
+
+  it('strips a peer-dependency suffix in parentheses', () => {
+    const lock = [
+      "lockfileVersion: '9.0'",
+      'importers:',
+      '  .:',
+      '    devDependencies:',
+      '      svelte:',
+      '        specifier: ^5.56.10',
+      '        version: 5.56.10(vite@6.0.0)',
+    ].join('\n');
+    expect(pnpmLockedVersion(lock, 'svelte')).toBe('5.56.10');
+  });
+});
+
+describe('pnpmDependencyFloorsResult', () => {
+  it('passes a v9 lockfile whose resolved versions satisfy the peers', () => {
+    const result = pnpmDependencyFloorsResult(
+      pnpmLockV9({ svelte: '5.56.10', '@sveltejs/kit': '2.70.0' }),
+      PEERS
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('fails a v9 lockfile with a below-floor svelte', () => {
+    const result = pnpmDependencyFloorsResult(
+      pnpmLockV9({ svelte: '5.56.0', '@sveltejs/kit': '2.70.0' }),
+      PEERS
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('svelte resolves to 5.56.0');
+  });
+
+  it('fails with a clean message on text that does not parse as YAML', () => {
+    const result = pnpmDependencyFloorsResult('{ not: yaml: [', PEERS);
+    expect(result.status).toBe('fail');
+    expect(result.detail).toBe('pnpm-lock.yaml did not parse');
+  });
+});
+
+describe('yarnLockedVersion', () => {
+  it('reads a dep from a classic yarn.lock block', () => {
+    expect(yarnLockedVersion(yarnLockClassic({ svelte: '5.56.10' }), 'svelte')).toBe('5.56.10');
+  });
+
+  it('reads a scoped dep from a classic yarn.lock block', () => {
+    expect(yarnLockedVersion(yarnLockClassic({ '@sveltejs/kit': '2.70.2' }), '@sveltejs/kit')).toBe(
+      '2.70.2'
+    );
+  });
+
+  it('reads a dep from a Berry yarn.lock block', () => {
+    expect(yarnLockedVersion(yarnLockBerry({ svelte: '5.56.10' }), 'svelte')).toBe('5.56.10');
+  });
+
+  it('returns undefined for a dep with no matching block', () => {
+    expect(yarnLockedVersion(yarnLockClassic({ svelte: '5.56.10' }), '@sveltejs/kit')).toBeUndefined();
+  });
+});
+
+describe('yarnDependencyFloorsResult', () => {
+  it('passes a classic yarn.lock whose resolved versions satisfy the peers', () => {
+    const result = yarnDependencyFloorsResult(
+      yarnLockClassic({ svelte: '5.56.10', '@sveltejs/kit': '2.70.0' }),
+      PEERS
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('fails a yarn.lock with a below-floor kit', () => {
+    const result = yarnDependencyFloorsResult(
+      yarnLockClassic({ svelte: '5.56.10', '@sveltejs/kit': '2.11.9' }),
+      PEERS
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('@sveltejs/kit resolves to 2.11.9');
+  });
+});
+
 describe('config.dependency-floors', () => {
   function ctx(files: Record<string, string>): DoctorContext {
     return {
@@ -176,8 +316,41 @@ describe('config.dependency-floors', () => {
     expect(result.status).toBe('pass');
   });
 
-  it('skips on a site with no package-lock.json', async () => {
+  it('reports unchecked when none of package-lock.json, pnpm-lock.yaml, or yarn.lock exists', async () => {
     const result = await configDependencyFloors.run(ctx({}));
-    expect(result.status).toBe('skip');
+    expect(result.status).toBe('unchecked');
+    expect(result.detail).toContain('pnpm-lock.yaml');
+    expect(result.detail).toContain('yarn.lock');
+  });
+
+  const REAL_PEER_VERSIONS = {
+    svelte: '5.56.10',
+    '@sveltejs/kit': '2.70.0',
+    '@cloudflare/workers-types': '5.20260821.1',
+  };
+
+  it('falls back to pnpm-lock.yaml when package-lock.json is absent', async () => {
+    const result = await configDependencyFloors.run(
+      ctx({ 'pnpm-lock.yaml': pnpmLockV9(REAL_PEER_VERSIONS) })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('falls back to yarn.lock when neither package-lock.json nor pnpm-lock.yaml exists', async () => {
+    const result = await configDependencyFloors.run(
+      ctx({ 'yarn.lock': yarnLockClassic(REAL_PEER_VERSIONS) })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('prefers package-lock.json when more than one lockfile exists', async () => {
+    const result = await configDependencyFloors.run(
+      ctx({
+        'package-lock.json': lockV3({ svelte: '5.56.0', '@sveltejs/kit': '2.70.0' }),
+        'pnpm-lock.yaml': pnpmLockV9({ svelte: '5.56.10', '@sveltejs/kit': '2.70.0' }),
+      })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('svelte resolves to 5.56.0');
   });
 });

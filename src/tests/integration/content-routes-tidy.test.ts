@@ -168,6 +168,15 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
+    const create = vi.fn(async () => cannedMessage('x'));
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    const event = tidyEvent() as unknown as { cookies: unknown };
+    event.cookies = undefined;
+    await expect(routes.tidyAction(event as never)).rejects.toThrow(/cookie jar/i);
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it('surfaces a missing session as the guard redirect (no model call)', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });

@@ -4,14 +4,14 @@ import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.j
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
     routing: 'feed',
     permalink: '/:year/:month/:day/:slug',
-    fields: fieldset({
+    fields: defineFieldset({
       title: fields.text({ label: 'Title', required: true }),
       date: fields.date({ label: 'Date' }),
       robots: fields.text({ label: 'Robots' }),
@@ -21,7 +21,7 @@ const [posts] = normalizeConcepts({
 const [pages] = normalizeConcepts({
   pages: {
     dir: 'src/content/pages',
-    fields: fieldset({
+    fields: defineFieldset({
       title: fields.text({ label: 'Title', required: true }),
       robots: fields.text({ label: 'Robots' }),
     }),

@@ -2,7 +2,7 @@
 // svelte.config CSRF handoff, the site-config validation, the public origin, and the blanket
 // no-referrer trap. Every read goes through the injected ctx.readFile, so the tests pass
 // fixtures and the bin passes node:fs.
-import { fail, pass, skip } from './types.js';
+import { fail, info, pass, skip, unchecked } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import { requireOrigin } from '../env.js';
@@ -88,10 +88,20 @@ export const configCsrfDisable: DoctorCheck = {
   conditionId: 'config.csrf-disable-missing',
   title: 'Framework CSRF handoff',
   async run(ctx: DoctorContext): Promise<CheckResult> {
-    const text = await ctx.readFile('svelte.config.js');
-    if (text === null) return skip('svelte.config.js not found');
-    if (!hasUncommentedDisable(text)) {
-      return fail('no checkOrigin: false found (heuristic text read)');
+    // A bare `sv create` scaffold writes no svelte.config.js at all, wiring the adapter (and any
+    // csrf: { checkOrigin: false }) inside vite.config.ts's plugin call instead, so both files
+    // are read. Neither existing means the check has nothing to look at, which is unchecked, not
+    // a silent skip; at least one existing but carrying no disable is a real fail, never a pass.
+    const svelteConfig = await ctx.readFile('svelte.config.js');
+    const viteConfig = await ctx.readFile('vite.config.ts');
+    if (svelteConfig === null && viteConfig === null) {
+      return unchecked(
+        'neither svelte.config.js nor vite.config.ts was found, so the CSRF handoff could not be checked'
+      );
+    }
+    const combined = [svelteConfig, viteConfig].filter((text): text is string => text !== null).join('\n');
+    if (!hasUncommentedDisable(combined)) {
+      return fail('no checkOrigin: false found in svelte.config.js or vite.config.ts (heuristic text read)');
     }
     // The disable alone proves nothing: with the framework check off and no cairn guard in
     // the hooks, the admin form POSTs have no CSRF protection at all. The pair is the check.
@@ -103,7 +113,7 @@ export const configCsrfDisable: DoctorCheck = {
       );
     }
     return pass(
-      'checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)'
+      'checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)'
     );
   },
 };
@@ -134,9 +144,18 @@ export const configPublicOrigin: DoctorCheck = {
 };
 
 // Where sites keep site.config.yaml. The adapter's configPath is TypeScript the CLI cannot
-// evaluate, so the check probes the conventional spots instead (the repo root and the two
-// src locations the production sites use).
-const SITE_CONFIG_PATHS = ['site.config.yaml', 'src/lib/site.config.yaml', 'src/site.config.yaml'];
+// evaluate, so the check probes the conventional spots instead (the repo root, the two src
+// locations older production sites use, and src/theme, where both create-cairn-site's template
+// and the showcase bake it).
+// WATCH: derive this list from the same constant the template bake uses, so the scaffolder and
+// the checker cannot diverge again; routed to the internals pass's one-source dogfood work
+// (docs/internal/engine-rulings.md, audit-cli-config-site-config-check).
+const SITE_CONFIG_PATHS = [
+  'site.config.yaml',
+  'src/lib/site.config.yaml',
+  'src/site.config.yaml',
+  'src/theme/site.config.yaml',
+];
 
 // Read the first site.config.yaml that exists in a conventional spot, or null when none does.
 async function readSiteConfigText(ctx: DoctorContext): Promise<string | null> {
@@ -153,7 +172,9 @@ export const configSiteConfig: DoctorCheck = {
   title: 'Site config',
   async run(ctx: DoctorContext): Promise<CheckResult> {
     const text = await readSiteConfigText(ctx);
-    if (text === null) return skip(`no site.config.yaml found (looked in ${SITE_CONFIG_PATHS.join(', ')})`);
+    if (text === null) {
+      return unchecked(`no site.config.yaml found (looked in ${SITE_CONFIG_PATHS.join(', ')})`);
+    }
     try {
       // Parse-only. parseSiteConfig validates the root shape and, since Contract v2, hard-errors on a
       // stale per-concept `content:` block (URL policy moved onto defineConcept). The per-concept URL
@@ -214,16 +235,18 @@ async function probeAnthropicKey(fetchImpl: typeof fetch, apiKey: string): Promi
   }
 }
 
-// The tidy secret check. It reuses the config.bindings-missing condition rather than registering a
-// new one, so the readiness count holds (the same pattern configMediaBucket uses). Presence alone
-// stopped being the bar (save-500-honest-errors, Task 5): when a literal value is readable locally
-// (the common `.dev.vars` case, or an unusual literal wrangler var), the doctor actively verifies it
-// against Anthropic and reports valid/invalid distinctly, the same live-network posture as the
-// GitHub App check; when only the NAME is referenced (a real deployed Worker secret, invisible to
-// this CLI), it still passes but says so honestly rather than claiming verification it cannot do.
+// The tidy secret check. It carries its own condition id (config.tidy-key-missing), rather than
+// borrowing config.bindings-missing the way configMediaBucket does: a shared id meant one check's
+// failure could print another's remediation (a tidy-key failure printing the missing-EMAIL/AUTH_DB
+// fix), so this check gets its own readiness-checklist entry instead. Presence alone stopped being
+// the bar (save-500-honest-errors, Task 5): when a literal value is readable locally (the common
+// `.dev.vars` case, or an unusual literal wrangler var), the doctor actively verifies it against
+// Anthropic and reports valid/invalid distinctly, the same live-network posture as the GitHub App
+// check; when only the NAME is referenced (a real deployed Worker secret, invisible to this CLI),
+// it still passes but says so honestly rather than claiming verification it cannot do.
 export const configTidyKey: DoctorCheck = {
   id: 'config.tidy-key',
-  conditionId: 'config.bindings-missing',
+  conditionId: 'config.tidy-key-missing',
   title: 'Tidy API key',
   async run(ctx: DoctorContext): Promise<CheckResult> {
     const text = await readSiteConfigText(ctx);
@@ -296,19 +319,21 @@ async function readAdminMountText(ctx: DoctorContext): Promise<string | null> {
 
 // A best-effort, non-blocking nudge: it never returns fail. A fail is a hard exit-1 deploy gate
 // (runDoctor exits 1 on any fail regardless of severity), so a warning-severity heuristic that
-// could not see an unconventionally-wired site must skip-with-guidance, never go falsely red. A
-// pass needs both the shellLoad call and the CairnAdminShell render across the mount files.
+// could not see an unconventionally-wired site reports info-with-guidance, never goes falsely
+// red. 'Could not find a file to check' is distinct from 'checked and passed' (both info here,
+// since neither is a deploy blocker on its own): a pass needs both the shellLoad call and the
+// CairnAdminShell render across the mount files.
 export const adminMountShape: DoctorCheck = {
   id: 'admin.mount-shape',
   conditionId: 'admin.mount-incomplete',
   title: 'Custom /admin mount',
   async run(ctx: DoctorContext): Promise<CheckResult> {
     const text = await readAdminMountText(ctx);
-    if (text === null) return skip(ADMIN_MOUNT_GUIDANCE);
+    if (text === null) return info(ADMIN_MOUNT_GUIDANCE);
     if (callsShellLoad(text) && wiresAdminShell(text)) {
       return pass('the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)');
     }
-    return skip(ADMIN_MOUNT_GUIDANCE);
+    return info(ADMIN_MOUNT_GUIDANCE);
   },
 };
 
@@ -326,8 +351,8 @@ export const adminMountShape: DoctorCheck = {
 // the same heuristic-text stance configCsrfDisable takes. The residual gap: a site that wraps the
 // guard in another module, builds the roles argument dynamically, or passes a bare options
 // identifier the doctor cannot read into (createAuthGuard(guardOpts)) reads as 'absent' or
-// 'indirect' and skips rather than failing, so a positive fail is high-confidence and a miss is a
-// skip, never a false red.
+// 'indirect' and reports info rather than failing, so a positive fail is high-confidence and a
+// miss is never a false red.
 
 // The role names a site declares beyond the implicit owner/editor pair. These are exactly the roles
 // a guard on the default fallback would resolve to `none`, so they are what makes the wiring matter.
@@ -364,16 +389,16 @@ export const roleWiring: DoctorCheck = {
     const hooks =
       (await ctx.readFile('src/hooks.server.ts')) ?? (await ctx.readFile('src/hooks.server.js'));
     if (hooks === null) {
-      return skip('src/hooks.server.ts not found, so the guard role wiring cannot be checked');
+      return info('src/hooks.server.ts not found, so the guard role wiring cannot be checked');
     }
     const wiring = guardRoleWiring(hooks);
     if (wiring === 'absent') {
-      return skip(
+      return info(
         'no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module'
       );
     }
     if (wiring === 'indirect') {
-      return skip(
+      return info(
         'createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles'
       );
     }

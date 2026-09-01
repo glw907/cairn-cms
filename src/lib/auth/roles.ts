@@ -105,7 +105,7 @@ export function roleHome(roles: RolesDeclaration | undefined, role: string): str
  * The names in the vocabulary that carry owner capability. The last-owner guard counts rows across
  * this set rather than the literal `owner` string, so a site with two owner-level names is safe.
  */
-export function ownerLevelRoles(roles: RolesDeclaration | undefined): string[] {
+export function resolveOwnerLevelRoles(roles: RolesDeclaration | undefined): string[] {
   const vocabulary: RolesDeclaration = roles ?? DEFAULT_ROLES;
   return Object.keys(vocabulary).filter((name) => declaredCapability(vocabulary[name]) === 'owner');
 }

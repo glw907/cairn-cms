@@ -42,10 +42,10 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   let { data, form = null }: Props = $props();
 
   // The entry a `?/delete` refused, its inbound links, and which gate refused it, keyed by the
-  // posted id. Null when the last submit succeeded, refused nothing, or none ran. `inboundKind`
-  // defaults to `'link'`, mirroring the shared `DeleteRefusal` type's own default, so a fragment
-  // the fragments gate blocked renders the include copy family and a fragment the links gate
-  // blocked (a fragment can itself be a link target) still renders the link family.
+  // posted id. Null when the last submit succeeded, refused nothing, or none ran. `form.inboundKind`
+  // defaults to `'link'` when absent, so a fragment the fragments gate blocked renders the include
+  // copy family and a fragment the links gate blocked (a fragment can itself be a link target)
+  // still renders the link family.
   const deleteRefused = $derived(
     form?.inboundLinks?.length
       ? { id: form.id, inboundLinks: form.inboundLinks, inboundKind: form.inboundKind ?? 'link' }

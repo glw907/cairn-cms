@@ -13,7 +13,7 @@ import { defineAccess } from '../../lib/auth/access.js';
 import { githubApp } from '../../lib/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -60,7 +60,7 @@ function runtime(): CairnRuntime {
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
         routing: { routable: true, dated: false, inFeeds: true },
-        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
@@ -161,13 +161,13 @@ function accessRuntime(): CairnRuntime {
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
         routing: { routable: true, dated: false, inFeeds: true },
-        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },
       {
         id: 'pages', label: 'Pages', singular: 'Page', dir: 'src/content/pages',
         routing: { routable: true, dated: false, inFeeds: false },
-        permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],

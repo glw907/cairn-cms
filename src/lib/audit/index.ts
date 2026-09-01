@@ -12,6 +12,7 @@ export {
   loadConfig,
   parseArgs,
   resolveConfig,
+  USAGE,
 } from './config.js';
 export {
   buildManifest,

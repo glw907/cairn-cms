@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   emailSenderOnboarded,
   edgeHttpsForced,
-  edgeHsts,
   authStore,
   roleVocabulary,
   emailNormalization,
@@ -216,60 +215,25 @@ describe('edge.https-forced', () => {
   });
 });
 
-describe('edge.hsts', () => {
-  function hstsFetch(sts: unknown) {
-    return scripted(
-      withZone(() => ({ result: { id: 'security_header', value: { strict_transport_security: sts } } }))
-    );
-  }
-
-  it('skips without the token', async () => {
-    const result = await edgeHsts.run(ctx({ from: 'a@ecxc.ski' }));
-    expect(result.status).toBe('skip');
-  });
-
-  it('passes when HSTS is enabled with a serious max-age, reading security_header', async () => {
-    const { fetch, calls } = hstsFetch({ enabled: true, max_age: 63072000 });
-    const result = await edgeHsts.run(ctx({ ...CREDS, fetch }));
-    expect(result.status).toBe('pass');
-    expect(calls[1].url).toBe(`${API}/zones/zone-1/settings/security_header`);
-  });
-
-  it('fails when HSTS is disabled, without implying the admin surface is unprotected', async () => {
-    const { fetch } = hstsFetch({ enabled: false, max_age: 63072000 });
-    const result = await edgeHsts.run(ctx({ ...CREDS, fetch }));
-    expect(result.status).toBe('fail');
-    // Reconciled with the engine's own behavior: applySecurityHeaders sends its own
-    // Strict-Transport-Security max-age on every admin response regardless of this zone
-    // setting, so a failing zone check must say so rather than implying nothing is protected.
-    expect(result.detail).toContain('admin');
-    expect(result.detail).toContain('Strict-Transport-Security');
-    expect(result.detail).toContain('regardless of this setting');
-  });
-
-  it('fails when the max-age is under thirty days, still naming the admin surface', async () => {
-    const { fetch } = hstsFetch({ enabled: true, max_age: 86400 });
-    const result = await edgeHsts.run(ctx({ ...CREDS, fetch }));
-    expect(result.status).toBe('fail');
-    expect(result.detail).toContain('max-age');
-    expect(result.detail).toContain('admin');
-    expect(result.detail).toContain('regardless of this setting');
-  });
-
-  it('ties to the edge.hsts-off condition', () => {
-    expect(edgeHsts.conditionId).toBe('edge.hsts-off');
-  });
-});
-
 describe('auth.store', () => {
   const SCHEMA_ROWS = [{ name: 'editor' }, { name: 'magic_token' }, { name: 'session' }];
+  // magic_token as migration 0004 leaves it; the probe reads the column list to catch a site
+  // deploying the nonce-binding engine against an un-migrated AUTH_DB.
+  const MAGIC_TOKEN_COLUMNS = [
+    { name: 'token_hash' },
+    { name: 'email' },
+    { name: 'expires_at' },
+    { name: 'created_at' },
+    { name: 'nonce_hash' },
+  ];
 
-  function d1Fetch(routes: { tables?: unknown; owners?: unknown; response?: Response }) {
+  function d1Fetch(routes: { tables?: unknown; columns?: unknown; owners?: unknown; response?: Response }) {
     return scripted((url, init) => {
       expect(url).toBe(`${API}/accounts/acct/d1/database/abc-123/query`);
       if (routes.response) return routes.response;
       const body = JSON.parse(String(init?.body)) as { sql: string };
       if (body.sql.includes('sqlite_master')) return { result: [{ results: routes.tables }] };
+      if (body.sql.includes('table_info')) return { result: [{ results: routes.columns ?? MAGIC_TOKEN_COLUMNS }] };
       return { result: [{ results: routes.owners }] };
     });
   }
@@ -301,12 +265,28 @@ describe('auth.store', () => {
     const { fetch, calls } = d1Fetch({ tables: SCHEMA_ROWS, owners: [{ n: 1 }] });
     const result = await authStore.run(d1Ctx(fetch));
     expect(result.status).toBe('pass');
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     const bodies = calls.map((c) => JSON.parse(String(c.init?.body)) as { sql: string; params?: unknown[] });
     expect(bodies[0].sql).toContain("type='table'");
-    expect(bodies[1].sql).toContain('role IN (?)');
-    expect(bodies[1].params).toEqual(['owner']);
+    // The table-valued pragma read as a plain SELECT, the shape the D1 REST /query endpoint takes.
+    expect(bodies[1].sql).toBe("SELECT name FROM pragma_table_info('magic_token')");
+    expect(bodies[2].sql).toContain('role IN (?)');
+    expect(bodies[2].params).toEqual(['owner']);
     expect(calls.every((c) => bearer(c) === 'Bearer tok')).toBe(true);
+  });
+
+  it('fails naming migration 0004 when magic_token carries no nonce_hash column', async () => {
+    // The un-migrated failure mode is a total login outage with no second channel, so the
+    // pre-deploy doctor run has to be the thing that catches it.
+    const { fetch } = d1Fetch({
+      tables: SCHEMA_ROWS,
+      columns: MAGIC_TOKEN_COLUMNS.filter((c) => c.name !== 'nonce_hash'),
+      owners: [{ n: 1 }],
+    });
+    const result = await authStore.run(d1Ctx(fetch));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('nonce_hash');
+    expect(result.detail).toContain('0004');
   });
 
   it('counts every owner-capability role name under a custom vocabulary', async () => {
@@ -318,7 +298,7 @@ describe('auth.store', () => {
     const { fetch, calls } = d1Fetch({ tables: SCHEMA_ROWS, owners: [{ n: 2 }] });
     const result = await authStore.run(d1Ctx(fetch, roles));
     expect(result.status).toBe('pass');
-    const body = JSON.parse(String(calls[1].init?.body)) as { sql: string; params?: unknown[] };
+    const body = JSON.parse(String(calls[2].init?.body)) as { sql: string; params?: unknown[] };
     expect(body.sql).toContain('role IN (?, ?)');
     expect(body.params).toEqual(['owner', 'admin']);
   });
@@ -375,6 +355,7 @@ describe('auth.store', () => {
     const { fetch, calls } = scripted((url, init) => {
       const body = JSON.parse(String(init?.body)) as { sql: string };
       if (body.sql.includes('sqlite_master')) return { result: [{ results: SCHEMA_ROWS }] };
+      if (body.sql.includes('table_info')) return { result: [{ results: MAGIC_TOKEN_COLUMNS }] };
       return { result: [{ results: [{ n: 1 }] }] };
     });
     const result = await authStore.run(

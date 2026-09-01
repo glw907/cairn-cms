@@ -16,23 +16,14 @@
 // `ContentRoutes` itself; `check:surface` pins the narrow shape as the public contract.
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
-import type { ContentRoutesOptions } from './content-routes-context.js';
+import type { ContentRoutesConfig } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
-import type { SaveFailure, DeleteRefusal, RenameFailure, CreateFailure, PreviewMintFailure } from './content-routes-core.js';
 import { createMediaActions } from './content-routes-media.js';
-import type {
-  MediaDeleteRefusal,
-  MediaUpdateFailure,
-  MediaReplaceFailure,
-  MediaAltPropagateFailure,
-  MediaBulkFailure,
-} from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
-import type { TidyFailure } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
 import { createDictionaryActions } from './content-routes-dictionary.js';
 
-export type { ContentRoutesOptions, TidyClient, AttentionItem } from './content-routes-context.js';
+export type { ContentRoutesConfig, TidyClient, AttentionItem } from './content-routes-context.js';
 
 export type {
   AdminShellData,
@@ -41,11 +32,7 @@ export type {
   EditData,
   HelpData,
   WelcomeData,
-  SaveFailure,
-  DeleteRefusal,
-  RenameFailure,
-  CreateFailure,
-  PreviewMintFailure,
+  ContentFormFailure,
 } from './content-routes-core.js';
 
 export type {
@@ -81,25 +68,14 @@ export type { SettingsData, VocabularyLoadData, SettingsSaveFailure, VocabularyS
 export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes-dictionary.js';
 
 /**
- * What a route's single `form` export presents to a view component: whichever content action
- *  last failed, merged with every field optional. `error` is always set on a failure; the richer
- *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
- *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
- *  refusal without a second type.
- */
-export type ContentFormFailure = Partial<
-  SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & PreviewMintFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure & TidyFailure
->;
-
-/**
  * Build every admin content route the engine's own screens need, closed over the composed runtime.
  *  This is the WIDE shape, and `cairn-admin.ts` is its only caller: the single-mount composer drives
  *  all of it, including the ten media-janitorial actions that reach no further than the engine's own
  *  Media Library screen. The public `createContentRoutes` below presents the narrow view of the same
  *  object. Reachable from no package subpath, so its shape is free to grow with the admin.
  */
-export function createContentRoutesInternal(runtime: CairnRuntime, deps: ContentRoutesOptions = {}) {
-  const ctx = createContentRoutesContext(runtime, deps);
+export function createContentRoutesInternal(runtime: CairnRuntime, config: ContentRoutesConfig = {}) {
+  const ctx = createContentRoutesContext(runtime, config);
   const core = createCoreActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -202,6 +178,6 @@ export type ContentRoutes = Pick<
  * Build the admin content routes a site mounts by hand, closed over the composed runtime. The
  *  returned object is the internal one, presented through the narrow `ContentRoutes` view.
  */
-export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutes {
-  return createContentRoutesInternal(runtime, deps);
+export function createContentRoutes(runtime: CairnRuntime, config: ContentRoutesConfig = {}): ContentRoutes {
+  return createContentRoutesInternal(runtime, config);
 }

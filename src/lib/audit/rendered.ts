@@ -32,6 +32,13 @@ export type Theme = 'light' | 'dark';
  */
 export type InteractionState = 'rest' | 'menu-open' | 'focus-visible' | 'row-expanded';
 
+/**
+ * The login route every admin path redirects to when no session cookie is present. The
+ * redirect-trap refusal (see {@link runRendered}) uses this to tell "genuinely audited a page"
+ * from "silently measured the sign-in card instead."
+ */
+const LOGIN_PAGE_PATH = '/admin/login';
+
 /** The cookie cairn's own admin reads to pick its SSR theme (`content-routes-core.ts`). */
 const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
   light: 'cairn-admin',
@@ -909,6 +916,26 @@ export async function ensurePageHelpers(page: RenderedPage): Promise<void> {
 }
 
 /**
+ * The refusal `runRendered` throws when every configured page besides {@link LOGIN_PAGE_PATH}
+ * settled on the login page's own identity (rank-32(c): "a silent green the run should exit 2
+ * on"). Without a session cookie, every authenticated admin route server-redirects to the sign-in
+ * card, and the redirect happens before hydration, so the post-hydration page-identity guard sees
+ * agreement (the SSR and hydrated captures both ARE the login page) and never fires: the run would
+ * otherwise measure the same card once per configured page and report it clean.
+ */
+function redirectTrapRefusal(loginIdentity: PageIdentity): Error {
+  const landmark = loginIdentity.landmark ? `, landmark ${loginIdentity.landmark}` : '';
+  return new Error(
+    `every configured page besides ${LOGIN_PAGE_PATH} settled on the login page's own identity ` +
+      `(title "${loginIdentity.title}"${landmark}). Without a session cookie every admin route ` +
+      `redirects to the sign-in card before the rules ever see it, so this run would have measured ` +
+      `that card once per page while reporting zero errors: a silent green the run refuses instead ` +
+      `of reporting. Set CAIRN_AUDIT_COOKIES to a valid session cookie (see the rendered-mode docs) ` +
+      `and re-run.`
+  );
+}
+
+/**
  * Run the rendered audit: every configured page, both themes, every interaction state the
  * registered rules declare. `rules` defaults to the shipped registry and is injectable the same way
  * `runStatic` injects its rule set; `deps` substitutes the BASE_URL and Playwright checks for a test.
@@ -946,6 +973,11 @@ export async function runRendered(
   }));
   const raw: ResolvedRenderedFinding[] = [];
   const identityFindings: Finding[] = [];
+  // What each configured page's SSR response actually served, by theme, feeding the
+  // redirect-trap refusal below. Populated regardless of whether the page-identity guard later
+  // refuses the page, since that guard compares SSR against hydrated and stays content when a
+  // redirect lands both sides on the same (wrong) page.
+  const settledIdentities = new Map<string, PageIdentity[]>();
 
   const browser = await chromium.launch();
   try {
@@ -958,6 +990,9 @@ export async function runRendered(
           ...extraCookies.map((cookie) => ({ ...cookie, url: baseUrl })),
         ];
         const ssrIdentity = await captureSsrIdentity(browser, theme, baseUrl, pagePath, cookies);
+        const perPageIdentities = settledIdentities.get(pagePath) ?? [];
+        perPageIdentities.push(ssrIdentity);
+        settledIdentities.set(pagePath, perPageIdentities);
         const context = await browser.newContext({ colorScheme: theme });
         await context.addCookies(cookies);
         // The settled identity that disagreed with `ssrIdentity`, null while the guard is content.
@@ -1052,6 +1087,22 @@ export async function runRendered(
     }
   } finally {
     await browser.close();
+  }
+
+  // The redirect-trap refusal (rank-32(c)): only meaningful when the login page is itself one of
+  // the configured pages, since that is the only way this run has a ground-truth login identity
+  // to compare the rest against, and only when at least one OTHER page is configured, since a run
+  // auditing the login page alone trivially "settles on login" without being a trap at all.
+  const loginIdentities = settledIdentities.get(LOGIN_PAGE_PATH);
+  if (loginIdentities && loginIdentities.length > 0) {
+    const [loginIdentity] = loginIdentities;
+    const otherPages = pages.filter((page) => page !== LOGIN_PAGE_PATH);
+    const allSettledOnLogin =
+      otherPages.length > 0 &&
+      otherPages.every((page) =>
+        (settledIdentities.get(page) ?? []).every((identity) => identitiesMatch(identity, loginIdentity))
+      );
+    if (allSettledOnLogin) throw redirectTrapRefusal(loginIdentity);
   }
 
   const { findings, suppressed } = resolveRenderedFindings(

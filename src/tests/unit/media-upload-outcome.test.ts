@@ -5,7 +5,7 @@ import {
 } from '../../lib/components/media-upload-outcome.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import type { UploadResult } from '../../lib/sveltekit/content-routes.js';
-import { mediaToken } from '../../lib/media/reference.js';
+import { formatMediaToken } from '../../lib/media/reference.js';
 
 function record(overrides: Partial<MediaEntry> = {}): MediaEntry {
   return {
@@ -63,7 +63,7 @@ describe('uploadOutcome from a success envelope', () => {
     });
     expect(out.kind).toBe('inserted');
     if (out.kind !== 'inserted') throw new Error('expected inserted');
-    expect(out.reference).toBe(mediaToken({ slug: 'blue-shoes', hash: '0123456789abcdef' }));
+    expect(out.reference).toBe(formatMediaToken({ slug: 'blue-shoes', hash: '0123456789abcdef' }));
     expect(out.reference).toBe('media:blue-shoes.0123456789abcdef');
   });
 

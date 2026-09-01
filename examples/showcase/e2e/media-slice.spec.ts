@@ -7,7 +7,7 @@ import { parse as devalueParse } from 'devalue';
 //
 //   1. Ingest: the upload action stores a PNG under the fake R2 bucket and returns a `media:`
 //      reference and a server-owned record, committing nothing to git.
-//   2. Render: overlaying that record into a buildMediaResolver and rendering the inserted `media:`
+//   2. Render: overlaying that record into a createMediaResolver and rendering the inserted `media:`
 //      reference through the site's own adapter render rewrites it to its delivery `/media/...`
 //      path (the leg the /test/render-media fixture exercises).
 //   3. Save: saving the entry with the body and the optimistic record commits the body and a

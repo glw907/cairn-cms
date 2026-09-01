@@ -1,5 +1,5 @@
 import { parseComponentWithRawKeys } from './component-grammar.js';
-import { fieldset } from '../content/fieldset.js';
+import { defineFieldset } from '../content/fieldset.js';
 import type { ComponentDef } from './registry.js';
 
 /** A validation verdict: ok, or field-keyed error messages. */
@@ -7,15 +7,15 @@ export type ComponentValidation = { ok: true } | { ok: false; errors: Record<str
 
 /**
  * Validate a serialized component directive against its definition: the attributes through the same
- *  `fieldset` validator a concept field uses (coercion, constraints, required, select domain, pattern,
- *  and any per-attribute `behavior.validate`), then the two component-only checks, an unknown attribute
- *  key and an unfilled required slot.
+ *  `defineFieldset` validator a concept field uses (coercion, constraints, required, select domain,
+ *  pattern, and any per-attribute `behavior.validate`), then the two component-only checks, an
+ *  unknown attribute key and an unfilled required slot.
  */
 export async function validateComponent(markdown: string, def: ComponentDef): Promise<ComponentValidation> {
   const { values, rawKeys } = await parseComponentWithRawKeys(markdown, def);
   const errors: Record<string, string> = {};
 
-  const schema = def.attributeSchema ?? fieldset(def.attributes ?? {}, { behavior: def.behavior });
+  const schema = def.attributeSchema ?? defineFieldset(def.attributes ?? {}, { behavior: def.behavior });
   const result = schema.validate(values.attributes, '');
   if (!result.ok) Object.assign(errors, result.errors);
 

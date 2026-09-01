@@ -1,7 +1,19 @@
 import { expect, test } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { D1DatabaseSession } from '@cloudflare/workers-types';
 import { createChannelDb } from './channel-db.js';
-import { CHANNEL_SCHEMA_SQL, mintCode } from '../../../src/lib/auth-channel/store.js';
+import { mintCode } from '../../../src/lib/auth-channel/store.js';
+
+// The engine's packaged channel migration, the canonical schema text since the conventions pass
+// retired CHANNEL_SCHEMA_SQL as an export. Read from disk rather than imported: this spec runs in
+// the node project and is type-checked by plain `tsc` under check:dev-package, which has no Vite
+// `?raw` module declaration.
+const CHANNEL_SCHEMA_SQL = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), '../../../migrations-channel/0000_channel.sql'),
+  'utf-8',
+);
 
 const WIDGETS_SCHEMA = `
 CREATE TABLE widgets (
@@ -88,7 +100,7 @@ test('batch() applies its statements in the order given', async () => {
   expect(row?.value).toBe(11);
 });
 
-test('applying CHANNEL_SCHEMA_SQL succeeds', async () => {
+test('applying the packaged channel migration succeeds', async () => {
   const db = await createChannelDb(CHANNEL_SCHEMA_SQL);
 
   const versionRow = await db

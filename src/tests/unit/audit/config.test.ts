@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import {
   DEFAULT_PALETTE_CSS_FILES,
   DEFAULT_RENDERED_PAGES,
@@ -120,6 +124,22 @@ describe('resolveConfig', () => {
     );
   });
 
+  // rank-32(a): rendered.extraPages appends rather than replaces, so naming a site's own screen
+  // does not silently drop the six core routes it no longer has to restate by hand.
+  it('appends rendered.extraPages to the default page list', () => {
+    const config = resolveConfig('/site', { rendered: { extraPages: ['/admin/my-screen'] } }, sheetHere);
+    expect(config.renderedPages).toEqual([...DEFAULT_RENDERED_PAGES, '/admin/my-screen']);
+  });
+
+  it('appends rendered.extraPages to an explicit rendered.pages, not just the default', () => {
+    const config = resolveConfig(
+      '/site',
+      { rendered: { pages: ['/admin/posts'], extraPages: ['/admin/my-screen'] } },
+      sheetHere
+    );
+    expect(config.renderedPages).toEqual(['/admin/posts', '/admin/my-screen']);
+  });
+
   it('rejects an allowlist entry missing its reason', () => {
     const raw = { rendered: { allowlist: [{ page: '/admin', selector: '.legacy' }] } };
     expect(() => resolveConfig('/site', raw, sheetHere)).toThrow(/reason/);
@@ -176,5 +196,36 @@ describe('parseArgs', () => {
   it('rejects the norms subcommand with no term', () => {
     expect(() => parseArgs(['norms'])).toThrow(/norms needs a selector or role/);
     expect(() => parseArgs(['norms', '--rendered'])).toThrow(/norms needs a selector or role/);
+  });
+
+  it('reads --help as a flag rather than rejecting it', () => {
+    expect(parseArgs(['--help'])).toEqual({ command: 'audit', rendered: false, help: true });
+  });
+});
+
+// The Plan 07 packaging lesson (proven in doctor-bin.test.ts): prove the emitted bin runs under
+// plain Node from dist. Spawns only when the built bin exists and skips otherwise.
+const BIN = resolve(process.cwd(), 'dist/audit/bin.js');
+const built = existsSync(BIN);
+
+describe('packaged bin (needs dist/audit/bin.js; run npm run package to unskip)', () => {
+  it.skipIf(!built)('prints usage and exits 0 on --help, without running the audit', () => {
+    const out = spawnSync(process.execPath, [BIN, '--help'], {
+      cwd: tmpdir(),
+      env: { PATH: process.env.PATH },
+      encoding: 'utf8',
+    });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('Usage: cairn-audit');
+  });
+
+  it.skipIf(!built)('prints usage to stderr and exits 2 on an unknown flag', () => {
+    const out = spawnSync(process.execPath, [BIN, '--bogus'], {
+      cwd: tmpdir(),
+      env: { PATH: process.env.PATH },
+      encoding: 'utf8',
+    });
+    expect(out.status).toBe(2);
+    expect(out.stderr).toContain('Usage: cairn-audit');
   });
 });

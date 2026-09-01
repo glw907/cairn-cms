@@ -106,14 +106,16 @@ reverse proxy or a platform edge, `url.protocol` is not that scheme; derive `sec
 externally visible one instead, such as a trusted `CF-Visitor` or `X-Forwarded-Proto` header the
 platform sets.
 
-The engine's own two cookies derive `secure` differently. The CSRF cookie reads the site's
-configured `PUBLIC_ORIGIN` rather than a header: a site already declares that value, and a
-configured origin can't be spoofed by an intermediate hop the way a forwarded-proto header can. It
-never downgrades an `https` request, whatever that value says. The session cookie still derives
-`secure` from `url.protocol` alone, a deliberately deferred divergence rather than a second
-supported pattern; see [The session cookie](../extend/security-model.md#the-session-cookie). A
-site building its own second-audience cookie without an equivalent configured origin reaches for
-the preceding header-based derivation instead.
+The engine's own two cookies derive `secure` the same way now: an `https` request always resolves
+`Secure` outright, and only a non-`https` request falls back further, to a local-host check and
+then the site's configured `PUBLIC_ORIGIN` rather than a header, since a site already declares
+that value and a configured origin can't be spoofed by an intermediate hop the way a
+forwarded-proto header can. It never downgrades an `https` request, whatever that value says. Both
+cookies route through this one derivation (`csrfSecure`, internal to `/sveltekit`), so they can no
+longer resolve different `secure` values on the same request; see [The session
+cookie](../extend/security-model.md#the-session-cookie). A site building its own second-audience
+cookie without an equivalent configured origin reaches for the preceding header-based derivation
+instead.
 
 `base` must not already carry a `__Host-` or `__Secure-` prefix (double-prefixing produces a
 cookie the browser silently rejects, so this throws instead of shipping a cookie that never
@@ -143,8 +145,16 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
   consume is the pattern to copy:
 
   ```sql
-  DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email
+  DELETE FROM magic_token
+  WHERE token_hash = ? AND expires_at > ? AND (nonce_hash IS NULL OR nonce_hash = ?)
+  RETURNING email
   ```
+
+  The third predicate is the same-browser binding: the third parameter is the hash of the nonce
+  the confirming browser carries in its pending-login cookie, so a link opened anywhere else
+  matches no row and the requesting browser's own link survives. `nonce_hash IS NULL` keeps a row
+  written before that column existed confirmable. Comparing in SQL rather than in TypeScript is
+  deliberate: no `===` runs against a secret.
 
 - Send a token in a POST body, never in a URL: a URL lands in server access logs, browser
   history, and the `Referer` header of any outbound link the landing page renders.

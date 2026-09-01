@@ -7,7 +7,7 @@
 import type { CairnAdapter, ConceptConfig } from '../content/types.js';
 import type { InferFieldset } from '../content/fieldset.js';
 import type { SiteConfig } from '../nav/site-config.js';
-import { siteDescriptors } from './site-descriptors.js';
+import { buildSiteDescriptors } from './site-descriptors.js';
 import { createContentIndex, fromGlob } from './content-index.js';
 import { createSiteResolver } from './site-resolver.js';
 import type { ContentIndex } from './content-index.js';
@@ -40,7 +40,7 @@ export function createSiteIndexes<const A extends CairnAdapter>(
   globs: SiteGlobs<A>,
   opts: { validate?: boolean } = {},
 ): SiteIndexes<A> {
-  const descriptors = siteDescriptors(adapter, config);
+  const descriptors = buildSiteDescriptors(adapter, config);
   const globRecord = globs as Record<string, Record<string, string> | undefined>;
   const byConcept: Record<string, ContentIndex> = {};
   const conceptIndexes: ConceptIndex[] = [];

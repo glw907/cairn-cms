@@ -13,6 +13,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
   import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import { warnIfChromeWrapped } from './chrome-guard.js';
+  import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-error-codes.js';
 
   interface Props {
     /** The login load's data: the site name, an optional error, the CSRF token, and the SSR-resolved
@@ -35,10 +36,24 @@ the allowlist, so the page never leaks membership (spec §7.1).
   onMount(() => {
     if (rootEl) warnIfChromeWrapped(rootEl);
   });
+
+  // A fresh action result supersedes the GET-time error, so a resubmit into a throttle, a send
+  // failure, or an unexpected failure never shows the stale link alert alongside the new state.
+  const linkError = $derived(!form?.status && !form?.error ? data.error : null);
+  // The page title is the one landing signal a JS-free arrival gets before reading anything: the
+  // redirect that lands here carries its reason only in a query string, and a screen reader
+  // announces the title first. Each refusal names itself, the way ConfirmPage swaps its h1.
+  const title = $derived(
+    linkError === NO_PENDING_REQUEST_ERROR
+      ? 'No pending sign-in · Cairn'
+      : linkError
+        ? 'Sign-in link expired · Cairn'
+        : 'Sign in · Cairn',
+  );
 </script>
 
 <svelte:head>
-  <title>Sign in · Cairn</title>
+  <title>{title}</title>
   <link rel="icon" href={cairnFaviconHref} />
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
@@ -92,22 +107,33 @@ the allowlist, so the page never leaks membership (spec §7.1).
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {data.siteName}</h1>
       <p class="mt-1 mb-5 text-center type-body text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
+      <!-- tabindex="-1" on every message panel below, without exception, so an assistive
+           technology reaching this page can move to whichever message it carries rather than
+           reading down to it. The page is JS-free, so nothing focuses one on load; the title
+           above is what announces the state a redirect landed in. -->
       {#if form?.status === 'send_error'}
-        <div role="alert" class="alert alert-warning mb-3 type-body">
+        <div role="alert" tabindex="-1" class="alert alert-warning mb-3 type-body">
           We’re having trouble sending sign-in links right now. Please contact the site owner.
         </div>
       {:else if form?.status === 'throttled'}
-        <div role="status" class="alert mb-3 type-body">
+        <div role="status" tabindex="-1" class="alert mb-3 type-body">
           You requested a link recently. Check your inbox, or wait a minute and try again.
         </div>
       {:else if form?.error}
-        <div role="alert" class="alert alert-error mb-3 type-body">{form.error}</div>
+        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">{form.error}</div>
       {/if}
-      <!-- A fresh action result supersedes the GET-time error, so a resubmit into a throttle, a
-           send failure, or an unexpected failure never shows the stale expired-link alert
-           alongside the new state. -->
-      {#if data.error && !form?.status && !form?.error}
-        <div role="alert" class="alert alert-error mb-3 type-body">That link expired. Request a new one below.</div>
+      {#if linkError === NO_PENDING_REQUEST_ERROR}
+        <!-- This browser holds no pending sign-in, which is all the engine knows: it cannot tell a
+             second device from a cleared cookie jar. The instruction is the one that works in
+             every case, and it names this browser, since "request a new one" alone reproduces the
+             refusal for someone who asks on a desktop and clicks on a phone. -->
+        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">
+          This browser has no pending sign-in. Request a new link below and open it in this browser.
+        </div>
+      {:else if linkError}
+        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">
+          That link expired. Request a new link below and open it in this browser.
+        </div>
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
         <CsrfField token={data.csrf} />

@@ -69,6 +69,12 @@
       "reason": "R4 closure: `AuthChannelConfig` names it on this subpath."
     },
     {
+      "name": "CairnEvent",
+      "subpath": "/auth-channel",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `AuthChannelConfig`'s `challenge` and `rateLimit.key` name it on this subpath, and `AuthChannel`'s five members do too since the retired `AuthChannelEvent` folded onto it."
+    },
+    {
       "name": "MediaRef",
       "subpath": "/delivery",
       "home": "/media",

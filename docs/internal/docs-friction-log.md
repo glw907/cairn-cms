@@ -158,6 +158,18 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **contributor:** the bolded copy quotes in `docs/editors/when-something-goes-wrong.md`
+  duplicate component strings with no gate comparing them: `check:prose` scans components,
+  `check:docs` scans links, and neither notices when a copy edit in `LoginPage.svelte` strands
+  the quote (the conventions-pass close caught one only via an Opus diff-review). A cheap
+  tripwire: extract the page's bolded quoted sentences and grep them against the shipped
+  component strings. Candidate for the internals slice's gate additions.
+
+- **extender:** after Task 3 dropped `createMediaResolver`'s preset parameter, the media config's
+  `variants` field has zero reachable runtime consumers: `config.ts` validates it, `presetUrl` is
+  its only reader, and `presetUrl` is demoted off every public subpath with no non-test caller. So
+  `core.md:290-291`/`:304-305` present an inert config field as a live capability. The
+  retire-or-re-expose decision belongs to 4b/internals, not the conventions pass.
 - **contributor:** `ROADMAP.md`'s "Platform watch: Cloudflare" heading text is a machine key, not
   just a title: the `cairn Cloudflare capability review (monthly)` cloud routine (created
   2026-08-22) reads the list by that exact heading, so renaming the heading requires updating the
@@ -234,12 +246,3 @@ is plain JS by design and its own suite is the real gate, and no pass has report
 through), the `paid-plan-missing` mapping keyed on entitlement wording (the call site's docstring and
 its test name both already state the risk and the reason), and the root `CLAUDE.md` context-headroom
 note (housekeeping, outside this log's charter). STATUS shed all three at the B0 close.
-
-- **(developer, 2026-08-29, csrf-hardening close)** The engine argues both postures on an
-  untyped caller's missing cookie jar: `content-routes-core.ts` now fails loudly (the
-  empty-token fallback is removed), while five sibling call sites
-  (`content-routes-dictionary.ts:95`, `content-routes-media.ts:494`/`:1065`/`:1265`,
-  `content-routes-tidy.ts:111`) still guard with `if (!event.cookies || ...)` and return a
-  soft `fail(403)`. Not a defect (typed callers cannot hit either branch); one posture
-  should win. Candidate for the conventions pass's auth family alongside the
-  platform-required carry-forward.

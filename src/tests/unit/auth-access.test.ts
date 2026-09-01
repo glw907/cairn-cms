@@ -37,6 +37,16 @@ describe('defineAccess validation', () => {
     expect(access.pages).toEqual(['owner']);
   });
 
+  it('validates against the default owner/editor vocabulary when roles is undefined', () => {
+    const access = defineAccess(undefined, { pages: ['editor'] });
+    expect(access.pages).toEqual(['editor']);
+    expect(() => defineAccess(undefined, { pages: ['ghost'] })).toThrow(/defineAccess/);
+  });
+
+  it('still throws on an empty role list under the default vocabulary (owner-only stays explicit)', () => {
+    expect(() => defineAccess(undefined, { pages: [] })).toThrow(/defineAccess/);
+  });
+
   it('throws on a key that is neither a plausible screen id nor an /admin path', () => {
     expect(() => defineAccess(roles, { 'foo/bar': ['owner'] })).toThrow(/defineAccess/);
   });

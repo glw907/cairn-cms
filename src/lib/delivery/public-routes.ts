@@ -10,7 +10,7 @@ import type { SiteResolver } from './site-resolver.js';
 import { buildSeoMeta } from './seo.js';
 import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
-import { buildLinkResolver, buildFragmentResolver } from './site-resolver.js';
+import { createLinkResolver, createFragmentResolver } from './site-resolver.js';
 import type { SiteRender } from '../content/types.js';
 import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve } from '../render/resolve-include.js';
@@ -36,7 +36,7 @@ export interface PublicRoutesConfig {
   defaultImage?: string;
   /**
    * Resolve a frontmatter `media:` hero reference to its delivery path. The site builds this from its
-   *  committed `media.json` exactly as it builds the body resolver (`buildMediaResolver`). When absent,
+   *  committed `media.json` exactly as it builds the body resolver (`createMediaResolver`). When absent,
    *  media is off and no `heroImage` projection is derived.
    */
   resolveMedia?: MediaResolve;
@@ -114,9 +114,9 @@ function deriveHeroImage(
  *  `media.json`. The hero derivation consumes `resolveMedia` from here too, not only the body render.
  */
 export interface EntryDataOverrides {
-  /** Substitutes `buildLinkResolver(config.site)`. */
+  /** Substitutes `createLinkResolver(config.site)`. */
   resolveLink?: LinkResolve;
-  /** Substitutes `buildFragmentResolver(config.site)`. */
+  /** Substitutes `createFragmentResolver(config.site)`. */
   resolveFragment?: FragmentResolve;
   /** Substitutes `config.resolveMedia`, consumed by both the hero derivation and the body render. */
   resolveMedia?: MediaResolve;
@@ -168,8 +168,8 @@ export async function composeEntryData(
       body: entry.body,
       concept: entry.concept,
       frontmatter: entry.frontmatter,
-      resolve: overrides?.resolveLink ?? buildLinkResolver(site),
-      resolveFragment: overrides?.resolveFragment ?? buildFragmentResolver(site),
+      resolve: overrides?.resolveLink ?? createLinkResolver(site),
+      resolveFragment: overrides?.resolveFragment ?? createFragmentResolver(site),
       resolveMedia,
     }),
     canonicalUrl,
@@ -181,8 +181,8 @@ export async function composeEntryData(
 }
 
 /** Build the public route resolver for a site's unified index. */
-export function createPublicRoutes(deps: PublicRoutesConfig) {
-  const { site, resolveMedia, assetsEnabled } = deps;
+export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
+  const { site, resolveMedia, assetsEnabled } = config;
 
   // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
   // every public hero and body `media:` token renders bare (the ecxc 0.57.0 finding). The condition
@@ -197,7 +197,7 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
   async function entryLoad(event: { url: URL }): Promise<EntryData> {
     const entry = site.byPermalink(event.url.pathname);
     if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
-    return composeEntryData(deps, entry);
+    return composeEntryData(config, entry);
   }
 
   /** Prerender enumeration: one `{ path }` per entry across every concept. */
@@ -244,4 +244,15 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
   }
 
   return { entryLoad, entries, markdownEntries, markdownLoad };
+}
+
+/**
+ * What `createPublicRoutes` returns: one entry's public data by request path, the prerender
+ *  enumerations, and the raw-markdown twin's own load.
+ */
+export interface PublicRoutes {
+  entryLoad: (event: { url: URL }) => Promise<EntryData>;
+  entries: () => { path: string }[];
+  markdownEntries: () => { path: string }[];
+  markdownLoad: (event: { url: URL }) => Promise<{ body: string }>;
 }

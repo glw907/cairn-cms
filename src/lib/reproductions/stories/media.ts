@@ -16,7 +16,7 @@ import MediaCaptureCard from '../../components/MediaCaptureCard.svelte';
 import MediaHeroField from '../../components/MediaHeroField.svelte';
 import MediaInsertPopover from '../../components/MediaInsertPopover.svelte';
 import type { MediaLibrary, MediaLibraryEntry } from '../../media/library-entry.js';
-import { mediaToken } from '../../media/reference.js';
+import { formatMediaToken } from '../../media/reference.js';
 import type { MediaLibraryData } from '../../sveltekit/content-routes-media.js';
 import { fixtureCaptureFile, fixtureConcept, fixtureMediaLibrary } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
@@ -128,7 +128,7 @@ const uploadForm: ReproStory = {
 
 /** The committed lead picture `media/lead-picture-dialog` opens to placement. */
 const leadPictureValue = {
-  src: mediaToken({ slug: TRAILHEAD_VIEW.slug, hash: TRAILHEAD_VIEW.hash }),
+  src: formatMediaToken({ slug: TRAILHEAD_VIEW.slug, hash: TRAILHEAD_VIEW.hash }),
   alt: TRAILHEAD_VIEW.alt,
   caption: 'The trailhead parking area at sunrise.',
   decorative: false,

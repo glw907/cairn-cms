@@ -8,7 +8,7 @@ import type { VFile } from 'vfile';
 import { parseMediaToken, type MediaRef } from '../media/reference.js';
 import { findByHash, type MediaManifest } from '../media/manifest.js';
 import { publicPath } from '../media/naming.js';
-import { presetUrl, variantUrl } from '../media/transform-url.js';
+import { variantUrl } from '../media/transform-url.js';
 import type { ResolvedAssetConfig } from '../media/config.js';
 import { log } from '../log/index.js';
 import { markNodeBroken, type ResolvableNode } from './resolve-shared.js';
@@ -57,7 +57,7 @@ export interface MediaImageDetail {
 }
 
 /**
- * A `MediaResolve` enriched with the optional per-image detail side channel `buildMediaResolver`
+ * A `MediaResolve` enriched with the optional per-image detail side channel `createMediaResolver`
  *  attaches to its returned function. `remarkResolveMedia` reads it when present to emit
  *  width/height/srcset/sizes on the rendered `<img>`; a hand-rolled `resolveMedia` carries no such
  *  property and the image keeps resolving to its bare src exactly as before this detail existed. The
@@ -81,15 +81,14 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
  * Build the per-call media resolver, closing over the manifest and the resolved config. The
  *  returned resolver looks a ref's content hash up in the manifest and builds the canonical delivery
  *  path from the manifest entry's slug and ext, not the token's, so a rename never breaks the
- *  reference. With a preset and zone transformations on it returns the variant URL; without a preset,
- *  or when transformations are off, it returns the bare full-size path so a fresh zone with Image
- *  Transformations disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns
- *  undefined when media is off or no entry carries the hash (the preview-miss backstop).
+ *  reference. It returns the bare full-size path (transformed variants are the imageDetail side
+ *  channel's job, keyed off the asset's known width) so a fresh zone with Image Transformations
+ *  disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns undefined when
+ *  media is off or no entry carries the hash (the preview-miss backstop).
  */
-export function buildMediaResolver(
+export function createMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
-  opts?: { preset?: string },
 ): MediaResolve {
   const resolve: MediaResolveWithDetail = (ref: MediaRef): string | undefined => {
     if (!resolved.enabled) return undefined;
@@ -100,11 +99,7 @@ export function buildMediaResolver(
       log.warn('media.resolve_missing', { hash: ref.hash });
       return undefined;
     }
-    const path = publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm, resolved.publicBase);
-    if (opts?.preset && resolved.transformations) {
-      return presetUrl(path, opts.preset, resolved.variants);
-    }
-    return path;
+    return publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm, resolved.publicBase);
   };
   // The side channel remarkResolveMedia reads for the rendered <img>'s width/height/srcset. Kept
   // separate from the resolve function's own return so the MediaResolve contract stays exactly
@@ -181,7 +176,7 @@ function applyImageDetail(node: ResolvableNode, detail: MediaImageDetail | undef
  * Resolve media: image nodes against the VFile's resolver. A non-media src and a malformed token
  *  pass through. A missing target is marked with the cairn-broken-media class (the resolver returns
  *  undefined) or, when the resolver throws, the error propagates and fails the build. When the
- *  resolver carries the imageDetail side channel (built-in buildMediaResolver), the resolved image
+ *  resolver carries the imageDetail side channel (built-in createMediaResolver), the resolved image
  *  also gains intrinsic width/height and, with zone transformations on and the asset's width known,
  *  a responsive srcset with a sizes hint derived from the enclosing figure's placement role.
  */

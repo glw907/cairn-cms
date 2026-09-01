@@ -3,6 +3,7 @@ import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { adminAction, UnauditedActionError, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
+import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 const editor: Editor = { email: 'owner@example.com', displayName: 'Owner', role: 'owner', capability: 'owner' };
@@ -23,6 +24,7 @@ function makeEvent(opts: {
   editor?: Editor | null;
   extra?: Record<string, string>;
   auditSink?: (record: AdminActionAuditRecord) => void;
+  access?: AccessMap;
 }): CairnEvent {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
@@ -40,7 +42,11 @@ function makeEvent(opts: {
     params: {},
     route: { id: '/admin/club/events' },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
-    locals: { cairnEditor: opts.editor === undefined ? editor : opts.editor, cairnAuditSink: opts.auditSink },
+    locals: {
+      cairnEditor: opts.editor === undefined ? editor : opts.editor,
+      cairnAuditSink: opts.auditSink,
+      cairnAccess: opts.access,
+    },
     setHeaders: () => {},
   };
 }
@@ -256,6 +262,97 @@ describe('adminAction: the handler runs with a verified editor and a bound audit
     });
     const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', extra: { note: 'hello' } });
     expect(await action(event)).toEqual({ note: 'hello' });
+  });
+});
+
+describe('adminAction: opt-in authorization', () => {
+  const staff: Editor = { email: 'staff@example.com', displayName: 'Staff', role: 'editor', capability: 'editor' };
+  const target = '/admin/club/events';
+  const csrf = { cookie: 'MATCH', csrfField: 'MATCH' } as const;
+
+  /** A wrapped handler that records its calls and audits, opted into the access check. */
+  function guarded(access?: { target: string; ownerOnly?: boolean }) {
+    const handler = vi.fn(async ({ ctx }: { ctx: { audit: (r: { action: string; entity: string }) => void } }) => {
+      ctx.audit({ action: 'approve', entity: 'event' });
+      return { ok: true } as const;
+    });
+    return { handler, action: adminAction(handler, access ? { access } : {}) };
+  }
+
+  it('leaves an omitted access option at today’s behavior: no map, no rule, handler still runs', async () => {
+    // The zero-config default attaches an empty access map, so default-on enforcement would 403
+    // every consumer that never declared one. Absent means absent.
+    const { handler, action } = guarded();
+    expect(await action(makeEvent({ ...csrf, editor: staff, access: {} }))).toEqual({ ok: true });
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('runs the handler when the map admits the session for the declared target', async () => {
+    const { handler, action } = guarded({ target });
+    expect(await action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['editor'] } }))).toEqual({ ok: true });
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('audits and throws 403 when the map carries no rule for the target, owner included', async () => {
+    const sink = vi.fn();
+    const { handler, action } = guarded({ target });
+    const event = makeEvent({ ...csrf, access: { '/admin/other': ['editor'] }, auditSink: sink });
+    expect(await httpErrorStatusOf(action(event))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: no access rule', actor: editor.email }));
+  });
+
+  it('audits and throws 403 when no access map is attached at all', async () => {
+    // Fail-closed: an opted-in action on a route the guard never ran is refused, not admitted.
+    const sink = vi.fn();
+    const { handler, action } = guarded({ target });
+    expect(await httpErrorStatusOf(action(makeEvent({ ...csrf, auditSink: sink })))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: no access rule' }));
+  });
+
+  it('audits and throws 403 when the rule exists but the role is not admitted', async () => {
+    const sink = vi.fn();
+    const { handler, action } = guarded({ target });
+    const event = makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] }, auditSink: sink });
+    expect(await httpErrorStatusOf(action(event))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: role not admitted' }));
+  });
+
+  it('audits and throws 403 for ownerOnly against an admitted non-owner session', async () => {
+    const sink = vi.fn();
+    const { handler, action } = guarded({ target, ownerOnly: true });
+    const event = makeEvent({ ...csrf, editor: staff, access: { [target]: ['editor'] }, auditSink: sink });
+    expect(await httpErrorStatusOf(action(event))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: not owner' }));
+  });
+
+  it('logs auth.access.denied with the session and the target on a refusal', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const { action } = guarded({ target });
+    await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] } })));
+    expect(warnSpy).toHaveBeenCalledWith('auth.access.denied', { email: staff.email, role: staff.role, target });
+    warnSpy.mockRestore();
+  });
+
+  it('refuses before the handler and before the unaudited check, so no unaudited record follows', async () => {
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const { action } = guarded({ target });
+    await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] } })));
+    expect(errorSpy).not.toHaveBeenCalledWith('admin.action.unaudited', expect.anything());
+    errorSpy.mockRestore();
+  });
+
+  it('keeps the wrapped return type at T, never widening it to an ActionFailure union', async () => {
+    // A compile-time assertion: authorization refusals throw here, so the handler's own success
+    // type is still the whole of what a caller awaits. Widening would break every call site.
+    const typed: (event: CairnEvent) => Promise<{ ok: true }> = adminAction(
+      async () => ({ ok: true }) as const,
+      { access: { target } },
+    );
+    expect(typeof typed).toBe('function');
   });
 });
 

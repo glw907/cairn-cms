@@ -3,7 +3,7 @@
 // unit-testable against a fetch double riding the event's locals.cairnBackend seam.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
-import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
+import { parseSiteConfig, readMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { commitFailure } from './commit-log.js';
 import type { CairnRuntime } from '../content/types.js';
@@ -37,7 +37,7 @@ export interface NavSaveFailure {
 }
 
 /** Build the nav editor's load and save functions, closed over the composed runtime. */
-export function createNavRoutes(runtime: CairnRuntime) {
+export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
   /**
    * Resolve the live content backend for one request: the dev double's `event.locals.cairnBackend`,
    *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.cairnBackend`
@@ -84,7 +84,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
     }
     if (raw !== null) {
       try {
-        tree = extractMenu(parseSiteConfig(raw), config.menuName, maxDepth);
+        tree = readMenu(parseSiteConfig(raw), config.menuName, maxDepth);
       } catch (err) {
         // A malformed config keeps the same degrade (the nav page failing closed would be worse
         // for the editor), but the swallow names the operator fault in the log.
@@ -161,4 +161,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
 }
 
 /** What `createNavRoutes` returns: the nav editor's load and save functions. */
-export type NavRoutes = ReturnType<typeof createNavRoutes>;
+export interface NavRoutes {
+  navLoad: (event: CairnEvent) => Promise<NavLoadData>;
+  navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;
+}

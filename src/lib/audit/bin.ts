@@ -16,6 +16,7 @@ import {
   runRendered,
   runStatic,
   unknownTermMessage,
+  USAGE,
 } from './index.js';
 
 // The norms query answers from the shipped manifest, so it reads no consumer tree and needs no
@@ -39,6 +40,11 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 2;
+    return;
+  }
+
+  if (args.help) {
+    console.log(USAGE);
     return;
   }
 

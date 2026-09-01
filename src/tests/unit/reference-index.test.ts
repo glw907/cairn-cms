@@ -8,7 +8,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { buildReferenceIndex } from '../../lib/content/reference-index.js';
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
 
@@ -37,7 +37,7 @@ function postsConcept(): ConceptDescriptor {
         label: 'Related',
       },
     ],
-    schema: fieldset({}),
+    schema: defineFieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
   };
@@ -54,7 +54,7 @@ function pagesConcept(): ConceptDescriptor {
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-    schema: fieldset({}),
+    schema: defineFieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
   };

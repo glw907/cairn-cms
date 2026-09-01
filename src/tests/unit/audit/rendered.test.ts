@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { resolveConfig } from '../../../lib/audit/config.js';
-import { resolveBaseUrl, resolveExtraCookies, resolveRenderedFindings, runRendered } from '../../../lib/audit/rendered.js';
+import {
+  DEFAULT_BASE_URL,
+  resolveBaseUrl,
+  resolveExtraCookies,
+  resolveRenderedFindings,
+  runRendered,
+} from '../../../lib/audit/rendered.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import type {
   PageIdentity,
@@ -667,6 +673,100 @@ describe('runRendered against a fake browser', () => {
       const withheld = report.findings.find((f) => f.ruleId === 'rendered-allowlist-dead');
       expect(withheld?.tier).toBe('advisory');
       expect(withheld?.message).toContain('guard refused');
+    });
+  });
+
+  // rank-32(c): without a session cookie, every authenticated admin route server-redirects to
+  // the sign-in card before hydration, so the post-hydration guard above sees agreement (both
+  // sides ARE the login page) and never fires. The redirect trap is a harness-level refusal, not
+  // a rule finding.
+  describe('the redirect-trap refusal (rank-32c)', () => {
+    const LOGIN_IDENTITY = { title: 'Sign in · Cairn', landmark: null };
+
+    /** A browser whose every navigated page resolves identity by URL path rather than uniformly. */
+    function fakeRedirectingBrowser(identityFor: (pagePath: string) => PageIdentity): {
+      chromium: { launch: () => Promise<RenderedBrowser> };
+    } {
+      function makePage(): RenderedPage {
+        let currentPath = '';
+        return {
+          async goto(url: string) {
+            currentPath = url.replace(DEFAULT_BASE_URL, '');
+            return { status: () => 200 };
+          },
+          async evaluate(fn: unknown, arg?: unknown) {
+            if (Array.isArray(arg)) return (arg as string[]).map(() => 'absent');
+            if (typeof fn === 'function' && fn.name === 'capturePageIdentity') return identityFor(currentPath);
+            if (typeof fn === 'function' && fn.name === 'waitForHydrationSettle') return undefined;
+            return false;
+          },
+          keyboard: { press: async () => {} },
+          async close() {},
+        } as unknown as RenderedPage;
+      }
+      function makeContext(): RenderedContext {
+        return {
+          async addCookies() {},
+          async newPage() {
+            return makePage();
+          },
+          async close() {},
+        } as unknown as RenderedContext;
+      }
+      const browser = {
+        async newContext() {
+          return makeContext();
+        },
+        async close() {},
+      } as unknown as RenderedBrowser;
+      return { chromium: { launch: async () => browser } };
+    }
+
+    it('refuses when every configured page besides login settles on the login identity', async () => {
+      const config = configWith({ pages: ['/admin/login', '/admin/posts', '/admin/pages'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      await expect(
+        runRendered(config, [rule], {
+          isReachable: async () => true,
+          loadPlaywright: async () => fakeBrowser({ ssrIdentity: LOGIN_IDENTITY, hydratedIdentity: LOGIN_IDENTITY }),
+        })
+      ).rejects.toThrow(/CAIRN_AUDIT_COOKIES/);
+    });
+
+    it('does not refuse when a non-login page settles on its own identity', async () => {
+      const config = configWith({ pages: ['/admin/login', '/admin/posts'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+      const identityFor = (path: string) =>
+        path === '/admin/login' ? LOGIN_IDENTITY : { title: 'Posts · Cairn', landmark: 'main::Posts' };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => fakeRedirectingBrowser(identityFor),
+      });
+      expect(report).toBeDefined();
+    });
+
+    it('does not refuse when the login page is not among the configured pages', async () => {
+      const config = configWith({ pages: ['/admin/posts', '/admin/pages'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => fakeBrowser({ ssrIdentity: LOGIN_IDENTITY, hydratedIdentity: LOGIN_IDENTITY }),
+      });
+      expect(report).toBeDefined();
+    });
+
+    it('does not refuse when the login page is the only configured page', async () => {
+      const config = configWith({ pages: ['/admin/login'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => fakeBrowser({ ssrIdentity: LOGIN_IDENTITY, hydratedIdentity: LOGIN_IDENTITY }),
+      });
+      expect(report).toBeDefined();
     });
   });
 });

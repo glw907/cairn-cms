@@ -12,7 +12,7 @@ import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -21,7 +21,7 @@ const MANIFEST_PATH = 'src/content/.cairn/index.json';
 /** A runtime with a posts concept carrying an `author` reference (to pages) and a `related`
  *  array(reference) (to posts), plus a pages concept. A linker can reference a post via either field. */
 function runtime(): CairnRuntime {
-  const postSchema = fieldset({
+  const postSchema = defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     author: fields.reference({ concept: 'pages', label: 'Author' }),
     related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
@@ -46,7 +46,7 @@ function runtime(): CairnRuntime {
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-    schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+    schema: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
     summaryFields: [],
     validate: () => ({ ok: true, data: {} }),
   };

@@ -6,12 +6,12 @@
 // The TidyClient contract (src/lib/sveltekit/content-routes.ts) is structural: messages.create takes
 // the prompt and returns a Message-shaped object. The action reads the user message's text, so the
 // stub keys its reply off that text rather than the prompt.
-import type { ContentRoutesOptions } from '@glw907/cairn-cms/sveltekit';
+import type { ContentRoutesConfig } from '@glw907/cairn-cms/sveltekit';
 import { SEED_EDITOR } from './fake-github.js';
 
-// NonNullable<ContentRoutesOptions['tidy']>['client'] is the optional client factory; unwrap it once
+// NonNullable<ContentRoutesConfig['tidy']>['client'] is the optional client factory; unwrap it once
 // more so its return type (the structural TidyClient) is reachable for the messages.create body.
-type TidyClientFactory = NonNullable<NonNullable<ContentRoutesOptions['tidy']>['client']>;
+type TidyClientFactory = NonNullable<NonNullable<ContentRoutesConfig['tidy']>['client']>;
 
 // The body the engine's tidy action sends to messages.create, derived from the client contract so
 // the stub stays in lockstep with it.
@@ -21,7 +21,7 @@ type TidyCreateBody = Parameters<ReturnType<TidyClientFactory>['messages']['crea
  * Build the fake client factory the showcase passes to createCairnAdmin's `tidy.client` option. The
  * factory ignores the key (it never calls the network) and returns one client per tidy request.
  */
-export function createFakeAnthropic(): NonNullable<ContentRoutesOptions['tidy']>['client'] {
+export function createFakeAnthropic(): NonNullable<ContentRoutesConfig['tidy']>['client'] {
   return () => ({
     messages: {
       async create(params: TidyCreateBody) {

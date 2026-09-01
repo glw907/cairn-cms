@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { sitemapView } from '../../lib/delivery/views.js';
+import { buildSitemapView } from '../../lib/delivery/views.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { ConceptIndex } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 
 const ORIGIN = 'https://example.com';
@@ -14,7 +14,7 @@ const descriptors = normalizeConcepts({
   posts: {
     dir: 'posts',
     routing: 'feed',
-    fields: fieldset({
+    fields: defineFieldset({
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),
       topics: fields.multiselect({ label: 'Topics', taxonomy: true }),
@@ -23,14 +23,14 @@ const descriptors = normalizeConcepts({
   pages: {
     dir: 'pages',
     routing: 'page',
-    fields: fieldset({
+    fields: defineFieldset({
       title: fields.text({ label: 'Title' }),
     }),
   },
   fragments: {
     dir: 'fragments',
     routing: 'embedded',
-    fields: fieldset({
+    fields: defineFieldset({
       title: fields.text({ label: 'Title' }),
     }),
   },
@@ -55,9 +55,9 @@ function site() {
   return createSiteResolver(concepts);
 }
 
-describe('sitemapView', () => {
+describe('buildSitemapView', () => {
   it('returns the routable concept URLs (feed and page) but not the embedded concept', () => {
-    const urls = sitemapView(site(), descriptors, ORIGIN);
+    const urls = buildSitemapView(site(), descriptors, ORIGIN);
     expect(urls.map((u) => u.loc).sort()).toEqual([
       'https://example.com/about',
       'https://example.com/posts/hello',
@@ -66,13 +66,13 @@ describe('sitemapView', () => {
   });
 
   it('sets lastmod from the entry date', () => {
-    const urls = sitemapView(site(), descriptors, ORIGIN);
+    const urls = buildSitemapView(site(), descriptors, ORIGIN);
     const post = urls.find((u) => u.loc.endsWith('/posts/hello'));
     expect(post?.lastmod).toBe('2026-05-09');
   });
 
   it('prepends the origin-anchored extraRoutes, with no lastmod, ahead of the concept urls', () => {
-    const urls = sitemapView(site(), descriptors, ORIGIN, ['/', '/archives']);
+    const urls = buildSitemapView(site(), descriptors, ORIGIN, ['/', '/archives']);
     expect(urls.slice(0, 2)).toEqual([
       { loc: 'https://example.com/' },
       { loc: 'https://example.com/archives' },
@@ -83,7 +83,7 @@ describe('sitemapView', () => {
   });
 
   it('defaults extraRoutes to none', () => {
-    const urls = sitemapView(site(), descriptors, ORIGIN);
+    const urls = buildSitemapView(site(), descriptors, ORIGIN);
     expect(urls.map((u) => u.loc).sort()).toEqual([
       'https://example.com/about',
       'https://example.com/posts/hello',

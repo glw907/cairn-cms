@@ -32,7 +32,7 @@ export interface FieldBehavior {
 export type BehaviorTable = Record<string, FieldBehavior>;
 
 /**
- * Options for `fieldset`. `refine` runs after the per-field coercion and constraints pass, for
+ * Options for `defineFieldset`. `refine` runs after the per-field coercion and constraints pass, for
  *  cross-field and body-dependent checks. It is validation-only: it returns field-keyed errors to
  *  merge, or nothing, and never transforms the data. Server-only, since it may carry closures.
  */
@@ -404,7 +404,7 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
  *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
  */
-export function fieldset<const R extends Record<string, FieldDescriptor>>(
+export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
   options: FieldsetOptions = {},
 ): Fieldset<R> {

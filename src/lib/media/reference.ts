@@ -41,6 +41,6 @@ export function parseMediaToken(href: string): MediaRef | null {
  * Write the canonical media: token for a ref. The inverse of parseMediaToken, so a parse then
  *  write round trip is stable: `media:<slug>.<hash>` when the slug is present, else `media:<hash>`.
  */
-export function mediaToken(ref: MediaRef): string {
+export function formatMediaToken(ref: MediaRef): string {
   return ref.slug === null ? `media:${ref.hash}` : `media:${ref.slug}.${ref.hash}`;
 }

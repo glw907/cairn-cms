@@ -10,7 +10,7 @@ export type IconSet = Record<string, string>;
  *  a stray empty (or undefined) path. Callers always wrap the returned element, so the shell
  *  keeps them safe.
  */
-export function glyph(name: string, icons: IconSet): Element {
+export function renderGlyph(name: string, icons: IconSet): Element {
   const d = icons[name];
   return s(
     'svg',

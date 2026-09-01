@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { createSiteResolver, resolveReferences, buildFragmentResolver } from '../../lib/delivery/site-resolver.js';
+import { createSiteResolver, resolveReferences, createFragmentResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 
 const [posts] = normalizeConcepts({
@@ -11,10 +11,10 @@ const [posts] = normalizeConcepts({
     routing: 'feed',
     permalink: '/:year/:month/:day/:slug',
     datePrefix: 'day',
-    fields: fieldset({ date: fields.date({ label: 'Date' }) }),
+    fields: defineFieldset({ date: fields.date({ label: 'Date' }) }),
   },
 });
-const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({}) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: defineFieldset({}) } });
 
 function site() {
   return createSiteResolver([
@@ -62,12 +62,12 @@ describe('createSiteResolver', () => {
         routing: 'feed',
         permalink: '/:slug',
         datePrefix: 'day',
-        fields: fieldset({
+        fields: defineFieldset({
           author: fields.reference({ concept: 'pages', label: 'Author' }),
           related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
         }),
       },
-      pages: { dir: 'g', fields: fieldset({}) },
+      pages: { dir: 'g', fields: defineFieldset({}) },
     });
     const s = createSiteResolver([
       {
@@ -107,12 +107,12 @@ describe('createSiteResolver', () => {
         routing: 'feed',
         permalink: '/:slug',
         datePrefix: 'day',
-        fields: fieldset({
+        fields: defineFieldset({
           author: fields.reference({ concept: 'pages', label: 'Author' }),
           related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
         }),
       },
-      pages: { dir: 'g', fields: fieldset({}) },
+      pages: { dir: 'g', fields: defineFieldset({}) },
     });
     const s = createSiteResolver([
       {
@@ -145,7 +145,7 @@ describe('createSiteResolver', () => {
       fragments: {
         dir: 'f',
         routing: 'embedded',
-        fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+        fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
       },
     });
     const s = createSiteResolver([
@@ -165,9 +165,9 @@ describe('createSiteResolver', () => {
   });
 
   it('throws on a permalink collision across concepts, naming both ids', () => {
-    const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: fieldset({}) } });
+    const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: defineFieldset({}) } });
     const [q2] = normalizeConcepts({
-      posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: fieldset({}) },
+      posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: defineFieldset({}) },
     });
     expect(() =>
       createSiteResolver([
@@ -178,12 +178,12 @@ describe('createSiteResolver', () => {
   });
 });
 
-describe('buildFragmentResolver', () => {
+describe('createFragmentResolver', () => {
   const [fragments] = normalizeConcepts({
     fragments: {
       dir: 'f',
       routing: 'embedded',
-      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
     },
   });
 
@@ -191,7 +191,7 @@ describe('buildFragmentResolver', () => {
     const s = createSiteResolver([
       { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
     ]);
-    const resolve = buildFragmentResolver(s);
+    const resolve = createFragmentResolver(s);
     expect(resolve('address')?.trim()).toBe('Fragment body.');
   });
 
@@ -199,7 +199,7 @@ describe('buildFragmentResolver', () => {
     const s = createSiteResolver([
       { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
     ]);
-    const resolve = buildFragmentResolver(s);
+    const resolve = createFragmentResolver(s);
     expect(() => resolve('missing')).toThrow(/missing/);
   });
 
@@ -207,7 +207,7 @@ describe('buildFragmentResolver', () => {
     const s = createSiteResolver([
       { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
     ]);
-    const resolve = buildFragmentResolver(s);
+    const resolve = createFragmentResolver(s);
     expect(() => resolve('address')).toThrow(/address/);
   });
 });

@@ -17,7 +17,12 @@ export function sessionCookieName(secure: boolean): string {
 /** The CSRF double-submit cookie base name, __Host- prefixed when the cookie is Secure. */
 const CSRF_COOKIE_BASE = 'cairn_csrf';
 
-/** The CSRF cookie name, mirroring sessionCookieName: __Host- on https, bare on local http. */
+/**
+ * The CSRF cookie name, mirroring sessionCookieName's prefix shape (__Host- on https, bare on
+ * local http). Both names now also share their `secure` INPUT: `csrf.ts`'s `csrfSecure` is the
+ * one derivation every session- and CSRF-cookie call site feeds, so the two cookies cannot
+ * resolve different `secure` values on the same request.
+ */
 export function csrfCookieName(secure: boolean): string {
   return cookieName(CSRF_COOKIE_BASE, secure);
 }

@@ -11,7 +11,6 @@ const PASS_3_IDS = [
   'config.observability-off',
   'config.csrf-disable-missing',
   'config.site-config-invalid',
-  'edge.hsts-off',
   'auth.store-unreachable',
   'github.app-unreachable',
 ] as const;
@@ -54,7 +53,6 @@ describe('condition registry', () => {
     expect(condition('config.observability-off').severity).toBe('warning');
     expect(condition('config.csrf-disable-missing').severity).toBe('warning');
     expect(condition('config.site-config-invalid').severity).toBe('blocker');
-    expect(condition('edge.hsts-off').severity).toBe('warning');
     expect(condition('auth.store-unreachable').severity).toBe('blocker');
     expect(condition('github.app-unreachable').severity).toBe('blocker');
   });
@@ -97,14 +95,34 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-one entries', () => {
+  it('resolves the un-migrated auth-store condition (the login POST no longer 500s bare)', () => {
+    const c = condition('auth.store-unmigrated');
+    expect(c.severity).toBe('blocker');
+    expect(c.why).toMatch(/nonce_hash/);
+    expect(c.remediation).toMatch(/0004_login_nonce\.sql/);
+    expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+    expect(c.logEvent).toBeUndefined();
+  });
+
+  it('pins the registry at twenty-three entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
     // skill.admin-screens-stale for the packaged skill's doctor delivery, plus
-    // config.no-referrer-blanket for the blanket no-referrer doctor check. Grow this count only
-    // with a registry change.
-    expect(allConditions()).toHaveLength(22);
+    // config.no-referrer-blanket for the blanket no-referrer doctor check, minus the retired
+    // edge.hsts-off, plus config.tidy-key-missing (its own condition id, no longer borrowing
+    // config.bindings-missing), plus auth.store-unmigrated for the missing-0004 login fault the
+    // store now names. Grow this count only with a registry change.
+    expect(allConditions()).toHaveLength(23);
+  });
+
+  it('resolves the tidy-key condition (its own id, no longer borrowing config.bindings-missing)', () => {
+    const c = condition('config.tidy-key-missing');
+    expect(c.severity).toBe('warning');
+    expect(c.why).toMatch(/ANTHROPIC_API_KEY/);
+    expect(c.remediation).toMatch(/wrangler secret put ANTHROPIC_API_KEY/);
+    expect(c.docsAnchor).toBe('is-it-working.md#configure-the-tidy-api-key');
+    expect(c.logEvent).toBeUndefined();
   });
 
   it('resolves the skill-freshness condition (the packaged admin-screens skill delivery)', () => {
@@ -151,7 +169,7 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('carries no logEvent on the config and hsts entries', () => {
+  it('carries no logEvent on the config entries', () => {
     // These conditions surface at deploy or doctor time, not through a runtime log record.
     for (const id of [
       'config.bindings-missing',
@@ -161,7 +179,7 @@ describe('condition registry', () => {
       'config.public-origin-invalid',
       'config.dependency-floors-unmet',
       'config.no-referrer-blanket',
-      'edge.hsts-off',
+      'config.tidy-key-missing',
     ]) {
       expect(condition(id).logEvent, id).toBeUndefined();
     }

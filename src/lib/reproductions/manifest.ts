@@ -328,4 +328,4 @@ export const fixtureMediaFiles: string[] = [
 // Re-exported from ./validate.ts so a consumer of the node-safe manifest subpath (this gate,
 // cairn-pub's fence plugin) gets the validator from the same specifier as the data it checks
 // against, with no second import path to keep in sync.
-export { validateReproFence, type ReproFenceValidation } from './validate.js';
+export { validateReproFence, type ValidateReproFenceOptions } from './validate.js';

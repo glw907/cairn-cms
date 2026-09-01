@@ -13,7 +13,9 @@ import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@svel
 import { DEV } from 'esm-env';
 import { csrfCookieName } from '../auth/crypto.js';
 import { csrfHeaderVerdict, csrfFieldVerdict, csrfSecure } from './csrf.js';
+import { canReach, hasAccessRule } from '../auth/access.js';
 import { log } from '../log/index.js';
+import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
 
@@ -71,6 +73,59 @@ export class UnauditedActionError extends Error {
 export interface AdminActionOptions {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
+  /**
+   * Opt in to the access-map authorization `createSectionAction` performs, checked against
+   * `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on top of
+   * the map check rather than standing in for it. Omitted, `adminAction` authorizes nothing, its
+   * behavior for every existing caller. Present, a refused session is audited through
+   * `ctx.audit` and then thrown as `error(403, ...)`.
+   */
+  access?: { target: string; ownerOnly?: boolean };
+}
+
+/**
+ * What {@link authorizeAdminTarget} answers: admitted, or which of the three gates refused. The
+ * caller owns the refusal channel, so the grammar names only the finding.
+ */
+export type AdminTargetAuthorization =
+  | { outcome: 'allowed' }
+  | { outcome: 'no-rule' }
+  | { outcome: 'not-admitted' }
+  | { outcome: 'not-owner' };
+
+/**
+ * The audit `detail` each refusal records, one string per refusing gate. Shared so `adminAction`
+ * and `createSectionAction` record a denial identically, whatever channel each refuses through.
+ */
+export const ADMIN_DENIAL_DETAIL: Record<Exclude<AdminTargetAuthorization['outcome'], 'allowed'>, string> = {
+  'no-rule': 'rejected: no access rule',
+  'not-admitted': 'rejected: role not admitted',
+  'not-owner': 'rejected: not owner',
+};
+
+/** The 403 copy every authorization refusal carries; a refusal must name no gate to the browser. */
+export const DENIED_MESSAGE = 'You do not have access to this action.';
+
+/**
+ * Decide whether `editor` may act on `target`, the one authorization sequence both admin action
+ * wrappers run. All three checks, in this order: `hasAccessRule` never collapses into `canReach`,
+ * whose permissive reading of an unmapped target is nav semantics rather than an authorization
+ * floor a POST can rely on, and `ownerOnly` stacks on the map check rather than replacing it. An
+ * absent map (the guard never ran on this route) has no rule for any target, so it refuses.
+ *
+ * Internal to the engine, and deliberately not exported from `/sveltekit`: the two wrappers are
+ * the supported surface, and a site reaching for the predicate directly wants
+ * [`requireAccess`](./guard.js) instead, which owns its own refusal channel.
+ */
+export function authorizeAdminTarget(
+  access: AccessMap | undefined,
+  editor: Editor,
+  opts: { target: string; ownerOnly?: boolean },
+): AdminTargetAuthorization {
+  if (!hasAccessRule(access, opts.target)) return { outcome: 'no-rule' };
+  if (!canReach(access, editor, opts.target)) return { outcome: 'not-admitted' };
+  if (opts.ownerOnly && editor.capability !== 'owner') return { outcome: 'not-owner' };
+  return { outcome: 'allowed' };
 }
 
 /**
@@ -102,7 +157,11 @@ function serializeThrownError(error: unknown): string {
  *    was sent. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
  *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's own
  *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
- * 3. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
+ * 3. With `deps.access` set, and only then, the site's access map must admit the session for the
+ *    declared target (see {@link authorizeAdminTarget}); a refusal audits through `ctx.audit`,
+ *    logs `auth.access.denied`, and throws `error(403, ...)`. Omitted, this step does not run at
+ *    all, which is the behavior every caller had before the option existed.
+ * 4. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
  *    handler that returns normally (its request succeeded) and emitted zero records throws a 500
  *    in dev (a loud signal an author fixes before shipping) and logs `admin.action.unaudited` in
  *    production (an unaudited state change is a defect here, but should not 500 a live site). A
@@ -111,7 +170,7 @@ function serializeThrownError(error: unknown): string {
  *    to emit a spurious record on every validation reject. The exemption assumes the handler
  *    rejects BEFORE mutating; a handler that mutates and then returns `fail()` must still emit,
  *    since nothing rolls its writes back and the wrapper cannot see them.
- * 4. `event.request.formData()` is read exactly once, here, and handed to the handler, so the
+ * 5. `event.request.formData()` is read exactly once, here, and handed to the handler, so the
  *    handler never re-reads an already-consumed body.
  *
  * ```ts
@@ -232,6 +291,22 @@ export function adminAction<T>(
         }
       },
     };
+
+    // Opt-in authorization, after the CSRF gate and before the handler. Absent `deps.access`,
+    // nothing runs here, which is every existing caller's behavior: the zero-config guard
+    // attaches an EMPTY access map rather than none, and an empty map has no rule for any target,
+    // so enforcing by default would 403 every consumer of the documented DB-less default instead
+    // of hardening anything. A refusal audits first, through the same sink a site already reads,
+    // and then throws error(403): authorization refusals are adminAction's own channel, so the
+    // wrapper's return type stays the handler's own T.
+    if (deps.access) {
+      const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);
+      if (authorization.outcome !== 'allowed') {
+        ctx.audit({ action: 'deny', entity: 'admin-action', detail: ADMIN_DENIAL_DETAIL[authorization.outcome] });
+        log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: deps.access.target });
+        throw error(403, DENIED_MESSAGE);
+      }
+    }
 
     const result = await handler({ event, form, ctx });
     // `isActionFailure` is SvelteKit's own runtime-safe check for a `fail()` result (an

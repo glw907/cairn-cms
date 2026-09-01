@@ -43,7 +43,7 @@ while a site stores images only.
 
 <script lang="ts">
   import { getContext } from 'svelte';
-  import { mediaToken } from '../media/reference.js';
+  import { formatMediaToken } from '../media/reference.js';
   // The bare delivery path under transformations: false (the same path the Task 3 source chip uses).
   // SEAM: when transformations are on, the row thumbnail should request the `thumb` preset URL
   // instead of the bare path; that is a later transformations-on refinement.
@@ -134,7 +134,7 @@ while a site stores images only.
 
   /** Build a selection from a library entry: its media: token and its manifest alt. */
   function select(entry: MediaLibraryEntry) {
-    onselect({ entry, ref: mediaToken({ slug: entry.slug, hash: entry.hash }), alt: entry.alt });
+    onselect({ entry, ref: formatMediaToken({ slug: entry.slug, hash: entry.hash }), alt: entry.alt });
   }
 
   function onKeydown(e: KeyboardEvent) {

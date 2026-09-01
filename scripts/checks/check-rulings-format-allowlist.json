@@ -1,13 +1,6 @@
 [
   "audit-adapter-authbranding",
   "audit-adapter-publishactionsconfig",
-  "audit-auth-authchannelevent",
-  "audit-auth-authchannel",
-  "audit-auth-channel-schema-sql",
-  "audit-auth-authchannelconfig",
-  "audit-auth-createauthchannel",
-  "audit-cloudflare-checkratelimitkeys",
-  "audit-cloudflare-checkratelimit",
   "audit-media-normalizeassets",
   "audit-render-strattr",
   "audit-log-auth-session-destroyed",
@@ -20,16 +13,7 @@
   "audit-log-media-resolver-absent",
   "audit-log-preview-cleanup-failed",
   "audit-log-commit-failed",
-  "audit-cli-edge-https-forced-and-edge-hsts",
   "audit-cli-chip-ground-collision-rendered-rule",
   "audit-cli-form-font-parity-rendered-rule",
-  "audit-cli-admin-mount-shape-check",
-  "audit-cli-config-tidy-key-check-and-its-active-anthropic-probe",
-  "audit-cli-no-help-on-any-of-the-five-commands",
-  "audit-cli-config-csrf-disable-check",
-  "audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles",
-  "audit-cli-config-site-config-check",
-  "audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm",
-  "audit-cli-config-dependency-floors-check",
-  "audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior"
+  "audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm"
 ]

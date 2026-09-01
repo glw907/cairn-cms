@@ -21,9 +21,10 @@
 // local `deny` and `misconfigured` helpers below are what make that uniformity structural, rather
 // than a convention five separate branches each have to keep.
 import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
-import { adminAction } from './admin-action.js';
-import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
+import { adminAction, authorizeAdminTarget, ADMIN_DENIAL_DETAIL, DENIED_MESSAGE } from './admin-action.js';
+import { targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
+import { resolveRateLimit } from '../cloudflare/rate-limit.js';
 import type { AdminActionContext } from './admin-action.js';
 import type { CairnEvent } from './types.js';
 import type { AccessMap } from '../auth/access.js';
@@ -91,8 +92,21 @@ export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
   db: NonNullable<Db>;
 };
 
-const DENIED_MESSAGE = 'You do not have access to this action.';
 const UNAVAILABLE_MESSAGE = 'This section is not available.';
+
+/**
+ * What `createSectionAction` returns: the per-call-site wrapper, curried over the handler's own
+ *  success type `T` (declared as a generic function type rather than named per call site, since
+ *  each `wrap(handler, opts)` call fixes a different `T`).
+ */
+export type SectionAction<Env, Db> = <T>(
+  handler: (args: {
+    event: CairnEvent<Env>;
+    form: FormData;
+    ctx: SectionActionContext<Db>;
+  }) => Promise<T>,
+  opts: SectionActionOptions,
+) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
 
 /**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
@@ -118,7 +132,8 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  *    leaks nothing per-editor, since it is identical for every session.
  * 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
  *    `requireAccess` exactly, owner included: a POST must never be admitted where the load fails
- *    closed.
+ *    closed. Steps 4 and 5 run through `authorizeAdminTarget` (`./admin-action.js`), the one
+ *    sequence `adminAction`'s opt-in `access` option also runs; only the refusal channel differs.
  * 5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
  *    `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
  * 6. `resolveDb` returning null or undefined audits `'rejected: database not bound'`, logs
@@ -148,7 +163,7 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  * };
  * ```
  */
-export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>) {
+export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db> {
   return function wrap<T>(
     handler: (args: {
       event: CairnEvent<Env>;
@@ -212,22 +227,18 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         if (!limiter) {
           log.warn('admin.action.rate_limit_absent', { path, action: opts.action, entity: opts.entity });
         } else {
-          let blocked = false;
+          // The site-supplied key() runs in its own try/catch, separate from resolveRateLimit's
+          // own limit() call: SvelteKit's own redirect()/error(), thrown from key(), are plain
+          // classes, not Error instances, and a site relying on either as control flow (a
+          // hand-rolled auth check inside key(), say) must not be swallowed into a degrade-to-open
+          // pass, mirroring adminAction's own audit-sink guard (./admin-action.js) exactly:
+          // rethrow both untouched before logging. resolveRateLimit captures a throwing limit()
+          // into its own 'failed' arm, so this catch only ever fires for a throwing key(); the
+          // same rethrow for a throwing limit() rides that arm below.
+          let key: string | undefined;
           try {
-            const result = await limiter.limit({ key: config.rateLimit.key(ctx) });
-            // Mirrors checkRateLimit's own `result?.success === true` test (rate-limit.ts):
-            // RateLimitLike is structural and publicly exported, so a site-supplied limiter
-            // returning a truthy non-boolean success must read as blocked, not as a pass.
-            blocked = result?.success !== true;
+            key = config.rateLimit.key(ctx);
           } catch (err) {
-            // Both a throwing key() and a throwing limit() land here (key() is evaluated as an
-            // argument to limit(), inside this same try); either way the limit was never
-            // actually checked, which is distinct from rate_limit_absent's "no binding at all".
-            // SvelteKit's own redirect()/error(), thrown from a site-supplied key() or limit()
-            // callback, are plain classes, not Error instances, and a site relying on either as
-            // control flow (a hand-rolled auth check inside key(), say) must not be swallowed
-            // into a degrade-to-open pass, mirroring adminAction's own audit-sink guard
-            // (./admin-action.js) exactly: rethrow both untouched before logging.
             if (isRedirect(err) || isHttpError(err)) throw err;
             log.warn('admin.action.rate_limit_failed', {
               path,
@@ -236,16 +247,34 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
               error: err instanceof Error ? err.message : String(err),
             });
           }
-          if (blocked) {
-            log.warn('admin.action.rate_limited', {
-              path,
-              action: opts.action,
-              entity: opts.entity,
-              editor: ctx.editor.email,
-            });
-            return fail(429, {
-              error: config.rateLimit.message ?? 'Too many requests. Wait a moment and try again.',
-            });
+          if (key !== undefined) {
+            const result = await resolveRateLimit(limiter, key);
+            if (result.outcome === 'failed') {
+              // The same control-flow carve-out the key() catch above applies, on the arm
+              // resolveRateLimit captures a throwing limit() into. resolveRateLimit stays
+              // kit-agnostic by design (it lives under ../cloudflare and imports no kit
+              // symbol), so the rethrow has to happen here, at the one call site that knows
+              // about kit: a limiter that throws redirect() or error() is a site's own hard
+              // stop, and degrading it to open would run the handler the site meant to refuse.
+              if (isRedirect(result.error) || isHttpError(result.error)) throw result.error;
+              log.warn('admin.action.rate_limit_failed', {
+                path,
+                action: opts.action,
+                entity: opts.entity,
+                error: result.error instanceof Error ? result.error.message : String(result.error),
+              });
+            } else if (result.outcome === 'limited') {
+              log.warn('admin.action.rate_limited', {
+                path,
+                action: opts.action,
+                entity: opts.entity,
+                editor: ctx.editor.email,
+              });
+              return fail(429, {
+                error: config.rateLimit.message ?? 'Too many requests. Wait a moment and try again.',
+              });
+            }
+            // 'allowed' falls through to the authorization checks below.
           }
         }
       }
@@ -257,12 +286,12 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         return misconfigured('rejected: access map not attached', 'access_map_not_attached');
       }
 
-      // All three, in this order. hasAccessRule never collapses into canReach: canReach reads an
-      // unmapped target permissively, which is nav semantics, not an authorization floor. ownerOnly
-      // stacks on the map check rather than standing in for it.
-      if (!hasAccessRule(access, target)) return deny('rejected: no access rule');
-      if (!canReach(access, ctx.editor, target)) return deny('rejected: role not admitted');
-      if (opts.ownerOnly && ctx.editor.capability !== 'owner') return deny('rejected: not owner');
+      // All three checks, in order, through the shared sequence adminAction's opt-in access
+      // option also runs (authorizeAdminTarget, ./admin-action.js). This wrapper keeps its own
+      // refusal channel: each refusing outcome audits and returns fail(403), where adminAction
+      // audits and throws.
+      const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly });
+      if (authorization.outcome !== 'allowed') return deny(ADMIN_DENIAL_DETAIL[authorization.outcome]);
 
       // resolveDb runs last, after every authorization check, so a session the access map
       // refuses learns nothing about whether the section's binding is deployed: its refusal

@@ -125,13 +125,13 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		remediation: "Raise the devDependency range in the site's package.json to the engine peer range and reinstall so the lockfile re-resolves, for example `npm install --save-dev svelte@^5.56.10`.",
 		docsAnchor: 'is-it-working.md#meet-the-dependency-floors',
 	},
-	'edge.hsts-off': {
-		id: 'edge.hsts-off',
+	'config.tidy-key-missing': {
+		id: 'config.tidy-key-missing',
 		severity: 'warning',
-		title: 'HSTS is off',
-		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so nothing pins https for the site at large and a later http visit reaches the origin over plain transport. The admin host is covered either way, since cairn\'s own admin responses carry their own max-age, so this is about every other route.',
-		remediation: "Turn on HSTS for the zone, with a max-age of six months or more. The check's own floor is 30 days.",
-		docsAnchor: 'is-it-working.md#turn-on-hsts',
+		title: 'The Tidy Anthropic key is missing or invalid',
+		why: "Tidy is enabled in site.config.yaml, but no ANTHROPIC_API_KEY is set anywhere the doctor can read (neither the wrangler vars nor .dev.vars), or Anthropic rejected a literal key value the doctor could read locally. Tidy's suggestions are unavailable until this is fixed; nothing else on the site is affected, since tidy is an opt-in feature.",
+		remediation: 'Set ANTHROPIC_API_KEY with `wrangler secret put ANTHROPIC_API_KEY` for a deployed site (or in .dev.vars for local development), and confirm the key is current.',
+		docsAnchor: 'is-it-working.md#configure-the-tidy-api-key',
 	},
 	'ai.posture-not-effective': {
 		id: 'ai.posture-not-effective',
@@ -147,6 +147,15 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Auth store is unreachable',
 		why: 'The AUTH_DB D1 database is missing, lacks the auth schema, or holds no owner row, so no magic-link token can be minted and nobody can sign in.',
 		remediation: 'Create the database, apply the auth schema with `wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and check the AUTH_DB binding id in wrangler.jsonc.',
+		docsAnchor: 'is-it-working.md#provision-the-auth-store',
+	},
+	'auth.store-unmigrated': {
+		id: 'auth.store-unmigrated',
+		severity: 'blocker',
+		title: 'Auth store is missing a login migration',
+		why: 'Every sign-in writes and reads magic_token.nonce_hash, the column that binds a magic link to the browser that asked for it, so an AUTH_DB without migrations/0004_login_nonce.sql answers each login with a bare D1 "no such column" fault and nobody can sign in.',
+		remediation:
+			'Copy migrations/0004_login_nonce.sql from the package into the site\'s own migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`.',
 		docsAnchor: 'is-it-working.md#provision-the-auth-store',
 	},
 	'auth.unknown-role': {

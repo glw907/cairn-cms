@@ -53,6 +53,17 @@ describe('runDoctor', () => {
     const { failed } = await runDoctor(checks, ctx());
     expect(failed).toBe(2);
   });
+
+  it('counts only unchecked results in unchecked', async () => {
+    const checks: DoctorCheck[] = [
+      stub('a', { status: 'pass', detail: 'ok' }),
+      stub('b', { status: 'unchecked', detail: 'could not look' }),
+      stub('c', { status: 'unchecked', detail: 'also could not look' }),
+      stub('d', { status: 'fail', detail: 'nope' }),
+    ];
+    const { unchecked } = await runDoctor(checks, ctx());
+    expect(unchecked).toBe(2);
+  });
 });
 
 describe('formatReport', () => {
@@ -82,6 +93,26 @@ describe('formatReport', () => {
     expect(report).toContain('set CLOUDFLARE_API_TOKEN');
   });
 
+  it('prints INFO with the info detail', async () => {
+    const { results } = await runDoctor(
+      [stub('advisory', { status: 'info', detail: 'could not see the mount' })],
+      ctx()
+    );
+    const report = formatReport(results);
+    expect(report).toContain('INFO');
+    expect(report).toContain('could not see the mount');
+  });
+
+  it('prints UNCHECKED with the unchecked detail', async () => {
+    const { results } = await runDoctor(
+      [stub('cannot-look', { status: 'unchecked', detail: 'no lockfile found' })],
+      ctx()
+    );
+    const report = formatReport(results);
+    expect(report).toContain('UNCHECKED');
+    expect(report).toContain('no lockfile found');
+  });
+
   it('ends with a summary line counting each status', async () => {
     const { results } = await runDoctor(
       [
@@ -91,11 +122,15 @@ describe('formatReport', () => {
         stub('f1', { status: 'fail', detail: 'bad' }),
         stub('s1', { status: 'skip', detail: 'absent' }),
         stub('s2', { status: 'skip', detail: 'absent' }),
+        stub('i1', { status: 'info', detail: 'advisory' }),
+        stub('u1', { status: 'unchecked', detail: 'could not look' }),
       ],
       ctx()
     );
     const report = formatReport(results);
-    expect(report.trimEnd().split('\n').at(-1)).toBe('3 passed, 1 failed, 2 skipped');
+    expect(report.trimEnd().split('\n').at(-1)).toBe(
+      '3 passed, 1 failed, 2 skipped, 1 info, 1 unchecked'
+    );
   });
 
   it('contains no ANSI escape sequences', async () => {

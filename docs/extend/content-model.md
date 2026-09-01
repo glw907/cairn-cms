@@ -7,7 +7,7 @@ is the dry contract for every function and type named here; this page is the men
 
 A site declares a small, named set of content concepts, typically Posts and Pages, through the
 adapter's `content` map. Each concept is a directory of markdown files plus a `fieldset`: a typed
-declaration of every frontmatter field the concept carries, built with `fieldset` and the fifteen
+declaration of every frontmatter field the concept carries, built with `defineFieldset` and the fifteen
 field builders `fields` exposes (text, textarea, number, select, multiselect, url, email, date,
 datetime, boolean, icon, image, object, reference, array). The fieldset is the single source of
 truth for three things at once: the editor's form, the server-side validator, and the inferred

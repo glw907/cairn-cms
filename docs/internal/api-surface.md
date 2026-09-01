@@ -32,11 +32,11 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `DEFAULT_ROLES`: { owner: "owner"; editor: "editor" }
-- `defineAccess`: <const A extends AccessMap>(roles: RolesDeclaration, map: A) => A
+- `defineAccess`: <const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A) => A
 - `defineAdapter`: <const A extends CairnAdapter>(adapter: A) => A
 - `defineComponent`: <const D extends ComponentDef>(def: D) => D & { attributeSchema: Fieldset<Record<string, FieldDescriptor>> }
 - `defineConcept`: <const C extends ConceptConfig>(concept: C) => C
+- `defineFieldset`: <const R extends Record<string, FieldDescriptor>>(record: R, options?: FieldsetOptions) => Fieldset<R>
 - `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
 - `defineRoles`: <const R extends RolesDeclaration>(roles: R) => R
 - `DocHeading`: { id: string; text: string; depth: number }
@@ -45,19 +45,15 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `EmailRecipient`: string | { email: string; name?: string }
 - `EmailSender`: { send: (message: MagicLinkMessage) => Promise<unknown> }
-- `extractMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
-- `extractVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `FieldBehavior`: { validate?: ((value: unknown, siblings: Record<string, unknown>) => string | null); itemLabel?: ((item: Record<string, unknown>, index: number) => string | undefined) }
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
 - `fields`: { text: <const O extends Omit<TextField, "type">>(o: O) => TextField & O; textarea: <const O extends Omit<TextareaField, "type">>(o: O) => TextareaField & O; number: <const O extends Omit<NumberField, "type">>(o: O) => NumberField & O; select: <const O extends Omit<SelectField, "type">>(o: O) => SelectField & O; multiselect: <const O extends Omit<MultiselectField, "type">>(o: O) => MultiselectField & O; url: <const O extends Omit<UrlField, "type">>(o: O) => UrlField & O; email: <const O extends Omit<EmailField, "type">>(o: O) => EmailField & O; date: <const O extends Omit<DateField, "type">>(o: O) => DateField & O; datetime: <const O extends Omit<DatetimeField, "type">>(o: O) => DatetimeField & O; boolean: <const O extends Omit<BooleanField, "type">>(o: O) => BooleanField & O; icon: <const O extends Omit<IconField, "type">>(o: O) => IconField & O; image: <const O extends Omit<ImageField, "type">>(o: O) => ImageField & O; object: <const F extends Record<string, FieldDescriptor>, const O extends Omit<ObjectField, "type" | "fields">>(o: { fields: F } & O) => ObjectField & { fields: F } & O; reference: <const O extends Omit<ReferenceField, "type">>(o: O) => ReferenceField & O; array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, "type" | "item">>(item: I, o?: O) => ArrayField & { item: I } & O }
-- `fieldset`: <const R extends Record<string, FieldDescriptor>>(record: R, options?: FieldsetOptions) => Fieldset<R>
 - `Fieldset`: { fields: R; behavior: { [x: string]: FieldBehavior }; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult; ~standard: { readonly version: 1; readonly vendor: string; readonly validate: (value: unknown) => StandardResult<Record<string, unknown>>; readonly types?: { readonly input: StandardInput; readonly output: Record<string, unknown> } } }
 - `FieldsetOptions`: { refine?: ((data: Record<string, unknown>, body: string) => Record<string, string> | undefined); behavior?: BehaviorTable }
 - `FileChange`: { path: string; content: string | null }
 - `FragmentResolve`: (id: string) => string | undefined
 - `githubApp`: (config: { owner: string; repo: string; branch: string; appId: string; installationId: string }) => GithubAppProvider
 - `GithubAppProvider`: { kind: "github-app"; owner: string; repo: string; appId: string; installationId: string; branch: string; connect: (env: CairnEnv) => Backend }
-- `glyph`: (name: string, icons: IconSet) => Element
 - `hasAccessRule`: (access: AccessMap | undefined, target: string) => boolean
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `IconSet`: { [x: string]: string }
@@ -81,19 +77,22 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavNode`: { label: string; url?: string; children?: NavNode[] }
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
-- `ownerLevelRoles`: (roles: RolesDeclaration | undefined) => string[]
 - `parseMarkdown`: (source: string) => { frontmatter: Record<string, unknown>; body: string }
 - `parseSiteConfig`: (raw: string) => SiteConfig
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionsConfig`: PublishActionEntry[]
+- `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
+- `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `Renderer`: { remarkPlugins: PluggableList; rehypePlugins: PluggableList; renderMarkdown: (content: string, opts?: ResolveOptions) => Promise<string>; renderDocument: (content: string, opts?: ResolveOptions) => Promise<{ html: string; headings: DocHeading[] }> }
 - `RendererOptions`: { sanitizeSchema?: ((defaults: Schema) => Schema); unsafeDisableSanitize?: boolean; anchorRel?: string | false; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
+- `renderGlyph`: (name: string, icons: IconSet) => Element
 - `RepoFile`: { id: string; name: string; path: string }
 - `resolveCapability`: (roles: RolesDeclaration | undefined, role: string) => Capability
 - `ResolveOptions`: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }
+- `resolveOwnerLevelRoles`: (roles: RolesDeclaration | undefined) => string[]
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
@@ -155,10 +154,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/auth-channel`
 
-- `AuthChannel`: { actions: { request: (event: AuthChannelEvent<Env>) => Promise<ChannelRequestResult>; confirm: (event: AuthChannelEvent<Env>) => Promise<ChannelConfirmResult>; logout: (event: AuthChannelEvent<Env>) => Promise<{ ok: true }> }; resolveSubject: (event: AuthChannelEvent<Env>) => Promise<string | null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }
-- `AuthChannelConfig`: { resolveDb: (env: Env | undefined) => D1Database | undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string) => Promise<string | null>; normalize: (raw: string) => string; challenge: (event: AuthChannelEvent<Env>, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: ((subject: string) => Promise<boolean>); kind?: "code"; ttl?: { codeLength?: number; codeTtlMs?: number; attemptCap?: number; cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number; sessionTtlMs?: number }; rateLimit?: { resolve: (env: Env | undefined) => RateLimitLike | undefined; key?: ((event: AuthChannelEvent<Env>) => string) } }
-- `AuthChannelEvent`: { url: URL; request: Request; cookies: CookieJar; platform?: { env?: Env; ctx?: { waitUntil?: ((promise: Promise<unknown>) => void) }; context?: { waitUntil?: ((promise: Promise<unknown>) => void) } }; getClientAddress: () => string }
-- `CHANNEL_SCHEMA_SQL`: "\nCREATE TABLE cairn_channel_meta (\n key TEXT PRIMARY KEY,\n value TEXT NOT NULL\n);\n\nCREATE TABLE cairn_channel_code (\n nonce_hash TEXT PRIMARY KEY,\n identity TEXT NOT NULL,\n code_hash TEXT NOT NULL,\n subject TEXT,\n kind TEXT NOT NULL DEFAULT 'code',\n attempts INTEGER NOT NULL DEFAULT 0,\n expires_at INTEGER NOT NULL,\n created_at INTEGER NOT NULL,\n requester_bucket TEXT NOT NULL\n);\n\nCREATE TABLE cairn_channel_session (\n token_hash TEXT PRIMARY KEY,\n subject TEXT NOT NULL,\n expires_at INTEGER NOT NULL,\n created_at INTEGER NOT NULL\n);\n\nCREATE TABLE cairn_channel_budget (\n bucket TEXT PRIMARY KEY,\n scope TEXT NOT NULL,\n count INTEGER NOT NULL DEFAULT 0,\n window_start INTEGER NOT NULL,\n prev_count INTEGER NOT NULL DEFAULT 0\n);\n\nCREATE INDEX idx_cairn_channel_code_identity ON cairn_channel_code (identity);\nCREATE INDEX idx_cairn_channel_code_expires ON cairn_channel_code (expires_at);\nCREATE INDEX idx_cairn_channel_code_requester_bucket ON cairn_channel_code (requester_bucket);\nCREATE INDEX idx_cairn_channel_session_subject ON cairn_channel_session (subject);\nCREATE INDEX idx_cairn_channel_session_expires ON cairn_channel_session (expires_at);\nCREATE INDEX idx_cairn_channel_budget_window ON cairn_channel_budget (window_start);\n\nINSERT INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1');\n"
+- `AuthChannel`: { actions: { request: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelRequestResult>; confirm: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelConfirmResult>; logout: (event: CairnEvent<Env>) => Promise<{ ok: true }> }; resolveSubject: (event: CairnEvent<Env>) => Promise<string | null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }
+- `AuthChannelConfig`: { resolveDb: (env: Env | undefined) => D1Database | undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string, ctx: { env: Env | undefined }) => Promise<string | null>; normalize: (raw: string) => string; challenge: (event: CairnEvent<Env>, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: ((subject: string, ctx: { env: Env | undefined }) => Promise<boolean>); kind?: "code"; limits?: { code?: { length?: number; ttlMs?: number; attemptCap?: number }; throttle?: { cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number }; session?: { ttlMs?: number } }; rateLimit?: { resolve: (env: Env | undefined) => RateLimitLike | undefined; key?: ((event: CairnEvent<Env>) => string) } }
+- `CairnEvent`: { url: URL; request: Request; params: { [x: string]: string }; route: { id: string | null }; cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; locals: { cairnEditor?: Editor | null; cairnBackend?: Backend; cairnAuditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; platform?: PlatformContext<Env> }
 - `ChannelConfirmResult`: { ok: true } | { error: "throttled" | "challenge-required" | "unavailable" | "bad-code" | "expired" | "locked" | "no-pending-request" }
 - `ChannelRequestResult`: { sent: true } | { error: "invalid" | "throttled" | "challenge-required" | "unavailable" }
 - `createAuthChannel`: <Env>(config: AuthChannelConfig<Env>) => AuthChannel<Env>
@@ -174,19 +172,22 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/auth-store`
 
-- `deleteEditor`: (db: D1Database, email: string) => Promise<void>
-- `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<boolean>
+- `deleteEditor`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<DeleteEditorOutcome>
+- `DeleteEditorOutcome`: { outcome: "removed" } | { outcome: "last-owner" } | { outcome: "not-found" }
+- `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<OwnerGuardOutcome>
 - `EditorRow`: { email: string; displayName: string; role: string }
 - `insertEditor`: (db: D1Database, email: string, displayName: string, role: string, now: number) => Promise<void>
 - `listEditors`: (db: D1Database) => Promise<EditorRow[]>
-- `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<boolean>
-- `setEditorRole`: (db: D1Database, email: string, role: string) => Promise<void>
+- `OwnerGuardOutcome`: { outcome: "ok" } | { outcome: "last-owner" } | { outcome: "not-eligible" }
+- `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<OwnerGuardOutcome>
+- `setEditorRole`: (db: D1Database, email: string, role: string, ownerRoles: string[]) => Promise<SetEditorRoleOutcome>
+- `SetEditorRoleOutcome`: { outcome: "ok" } | { outcome: "last-owner" } | { outcome: "not-found" }
 
 ## `/cloudflare`
 
-- `checkRateLimit`: (binding: RateLimitLike | undefined, key: string) => Promise<boolean>
-- `checkRateLimitKeys`: (binding: RateLimitLike | undefined, keys: string[]) => Promise<boolean>
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
+- `RateLimitOutcome`: { outcome: "allowed" } | { outcome: "limited"; key: string } | { outcome: "no-binding" } | { outcome: "failed"; error: unknown }
+- `resolveRateLimit`: (binding: RateLimitLike | undefined, keys: string | string[]) => Promise<RateLimitOutcome>
 - `verifyTurnstile`: (token: string, secret: string, opts?: VerifyTurnstileOptions) => Promise<boolean>
 - `VerifyTurnstileOptions`: { ip?: string; hostname?: string; action?: string }
 
@@ -218,14 +219,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
-- `buildLinkResolver`: (site: SiteResolver) => LinkResolve
 - `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => string
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
+- `buildSiteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
 - `buildSitemap`: (urls: SitemapUrl[]) => string
+- `buildSitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `CairnRef`: { concept: string; id: string }
 - `composeEntryData`: (config: PublicRoutesConfig, entry: ContentEntry<Record<string, unknown>>, overrides?: EntryDataOverrides) => Promise<EntryData>
 - `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
@@ -234,12 +235,15 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F> | undefined; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
-- `createPublicRoutes`: (deps: PublicRoutesConfig) => { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
+- `createFragmentResolver`: (site: SiteResolver) => FragmentResolve
+- `createLinkResolver`: (site: SiteResolver) => LinkResolve
+- `createPublicRoutes`: (config: PublicRoutesConfig) => PublicRoutes
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
+- `diffNewlyPublished`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `EntryData`: { concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
 - `EntryDataOverrides`: { resolveLink?: LinkResolve; resolveFragment?: FragmentResolve; resolveMedia?: MediaResolve }
@@ -253,7 +257,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ImageField`: { type: "image"; seo?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `InferFieldset`: S extends Fieldset<infer R extends Record<string, FieldDescriptor>> ? { [K in keyof ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })]: ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })[K] } : never
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
-- `jsonLdScript`: (data: Record<string, unknown>) => string
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
@@ -262,16 +265,17 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MediaResolve`: (ref: MediaRef) => string | undefined
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
-- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `parseManifest`: (raw: string) => Manifest
+- `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
 - `PublicRoutesConfig`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionsConfig`: PublishActionEntry[]
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
+- `renderJsonLdScript`: (data: Record<string, unknown>) => string
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
@@ -283,12 +287,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
-- `siteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `SiteGlobs`: { [K in keyof A["content"]]?: Record<string, string> }
 - `SiteIndexes`: { [K in keyof A["content"]]: ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Fieldset<Record<string, FieldDescriptor>>> ? InferFieldset<S> : Record<string, unknown>> } & { readonly site: SiteResolver }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
-- `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `SiteRender`: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>> | undefined; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>> | undefined; all: () => ContentSummary[]; routable: (id: string) => boolean }
 - `TextareaField`: { type: "textarea"; rows?: number; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -306,14 +308,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
-- `buildLinkResolver`: (site: SiteResolver) => LinkResolve
 - `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => string
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
+- `buildSiteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
 - `buildSitemap`: (urls: SitemapUrl[]) => string
+- `buildSitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `CairnRef`: { concept: string; id: string }
 - `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
@@ -321,11 +323,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F> | undefined; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
+- `createFragmentResolver`: (site: SiteResolver) => FragmentResolve
+- `createLinkResolver`: (site: SiteResolver) => LinkResolve
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
+- `diffNewlyPublished`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
@@ -337,14 +342,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ImageField`: { type: "image"; seo?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `InferFieldset`: S extends Fieldset<infer R extends Record<string, FieldDescriptor>> ? { [K in keyof ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })]: ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })[K] } : never
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
-- `jsonLdScript`: (data: Record<string, unknown>) => string
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
 - `markdownResponse`: (opts: { body: string }) => Response
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
-- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `parseManifest`: (raw: string) => Manifest
@@ -353,6 +356,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
+- `renderJsonLdScript`: (data: Record<string, unknown>) => string
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
@@ -364,12 +368,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
-- `siteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `SiteGlobs`: { [K in keyof A["content"]]?: Record<string, string> }
 - `SiteIndexes`: { [K in keyof A["content"]]: ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Fieldset<Record<string, FieldDescriptor>>> ? InferFieldset<S> : Record<string, unknown>> } & { readonly site: SiteResolver }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
-- `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>> | undefined; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>> | undefined; all: () => ContentSummary[]; routable: (id: string) => boolean }
 - `TextareaField`: { type: "textarea"; rows?: number; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `TextField`: { type: "text"; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -392,12 +394,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/media`
 
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
-- `buildMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig, opts?: { preset?: string }) => MediaResolve
+- `createMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig) => MediaResolve
+- `formatMediaToken`: (ref: MediaRef) => string
 - `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
 - `MediaManifest`: { [x: string]: MediaEntry }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
-- `mediaToken`: (ref: MediaRef) => string
 - `normalizeAssets`: (assets: AssetConfig | undefined) => ResolvedAssetConfig
 - `parseMediaToken`: (href: string) => MediaRef | null
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest
@@ -423,10 +425,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `fixtureMediaBase`: "/repro-assets"
 - `fixtureMediaFiles`: string[]
 - `manifest`: ReproManifestEntry[]
-- `ReproFenceValidation`: { issues: string[] }
 - `ReproHeights`: { column?: number; wide?: number; desktop?: number; narrow?: number }
 - `ReproManifestEntry`: { id: string; heights: ReproHeights; markerKeys: string[]; pose: boolean; host: "shell" | "bare"; ownThemeRoot: boolean }
-- `validateReproFence`: (body: string, manifest: ReproManifestEntry[]) => ReproFenceValidation
+- `validateReproFence`: (body: string, manifest: ReproManifestEntry[], options?: ValidateReproFenceOptions) => { issues: string[] }
+- `ValidateReproFenceOptions`: { altPrefix?: RegExp; maxAltLength?: number; extraKeys?: string[] }
 
 ## `/sveltekit`
 
@@ -436,7 +438,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdminActionAuditRecord`: AdminActionAudit & { actor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
 - `AdminActionContext`: { editor: Editor; audit: (record: AdminActionAudit) => void }
-- `AdminActionOptions`: { isDev?: boolean }
+- `AdminActionOptions`: { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }
 - `AdminData`: { view: "login"; page: LoginData } | { view: "confirm"; page: ConfirmData } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "history"; page: HistoryData } | { view: "editors"; page: EditorsData } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData } | { view: "welcome"; page: WelcomeData }
 - `AdminShellData`: { public: true; siteName: string; theme: "cairn-admin" | "cairn-admin-dark" } | { public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }
 - `AltPlacement`: { kind: "body" | "figure" | "hero"; bucket: "will-fill" | "customized" | "decorative-skipped"; before: string; after: string }
@@ -454,8 +456,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `BranchRef`: { branch: string; entries: { concept: string; id: string }[] }
 - `BrokenRefRow`: { hash: string; slug: string; usage: UsageEntry[] }
 - `BulkDeleteSkip`: { hash: string; reason: "still-referenced" | "uncommitted"; usage: UsageEntry[] }
-- `CairnAdminOptions`: { auth?: Partial<AuthRoutesConfig>; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => AttentionItem[] | Promise<AttentionItem[]>); preview?: PreviewTokenConfig }
-- `CairnAdminRoutes`: { load: (event: CairnEvent<CairnEnv>) => Promise<AdminData>; actions: { request: (event: CairnEvent<CairnEnv>) => Promise<RequestResult | ActionFailure<{ error: string }>>; confirm: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; logout: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; create: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<CreateFailure> | ActionFailure<{ error: string }>>; save: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure> | ActionFailure<{ error: string }>>; settingsSave: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure> | ActionFailure<{ error: string }>>; vocabularySave: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure> | ActionFailure<{ error: string }>>; upload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; publish: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure> | ActionFailure<{ error: string }>>; discard: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; rename: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure> | ActionFailure<{ error: string }>>; previewMint: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number } | ActionFailure<{ error: string }>>; previewRevoke: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { count: number } | ActionFailure<{ error: string }>>; revert: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure> | ActionFailure<{ error: string }>>; dictionaryAdd: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult | ActionFailure<{ error: string }>>; tidy: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult | ActionFailure<{ error: string }>>; delete: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal> | ActionFailure<{ error: string }>>; mediaDelete: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaDeleteRefusal> | ActionFailure<{ error: string }>>; mediaUpdate: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUpdateFailure> | ActionFailure<{ error: string }>>; mediaUpload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; mediaLibraryUpload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; mediaReplacePreview: (event: CairnEvent<CairnEnv>) => Promise<MediaReplacePreviewPlan | ActionFailure<MediaReplaceFailure> | ActionFailure<{ error: string }>>; mediaReplace: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaReplaceFailure> | ActionFailure<{ error: string }>>; mediaAltPreview: (event: CairnEvent<CairnEnv>) => Promise<MediaAltPreviewPlan | ActionFailure<MediaAltPropagateFailure> | ActionFailure<{ error: string }>>; mediaAltPropagate: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaAltPropagateFailure> | ActionFailure<{ error: string }>>; mediaBulkDelete: (event: CairnEvent<CairnEnv>) => Promise<MediaBulkDeleteResult | ActionFailure<MediaBulkFailure> | ActionFailure<{ error: string }>>; mediaOrphanScan: (event: CairnEvent<CairnEnv>) => Promise<MediaOrphanScanResult | ActionFailure<MediaBulkFailure> | ActionFailure<{ error: string }>>; mediaOrphanPurge: (event: CairnEvent<CairnEnv>) => Promise<MediaOrphanPurgeResult | ActionFailure<MediaBulkFailure> | ActionFailure<{ error: string }>>; publishAll: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; editorAdd: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true } | ActionFailure<{ error: string }>>; editorRemove: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true } | ActionFailure<{ error: string }>>; editorSetRole: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true } | ActionFailure<{ error: string }>> }; shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }> }
+- `CairnAdminConfig`: { auth?: Partial<AuthRoutesConfig>; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => AttentionItem[] | Promise<AttentionItem[]>); preview?: PreviewTokenConfig }
+- `CairnAdminRoutes`: { load: (event: CairnEvent<CairnEnv>) => Promise<AdminData>; shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>; actions: { tidy: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult | ActionFailure<{ error: string }>>; request: (event: CairnEvent<CairnEnv>) => Promise<RequestResult | ActionFailure<{ error: string }>>; confirm: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; logout: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; create: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; save: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; settingsSave: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure> | ActionFailure<{ error: string }>>; vocabularySave: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure> | ActionFailure<{ error: string }>>; upload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; publish: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; discard: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; rename: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; previewMint: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number } | ActionFailure<{ error: string }>>; previewRevoke: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { count: number } | ActionFailure<{ error: string }>>; revert: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure> | ActionFailure<{ error: string }>>; dictionaryAdd: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult | ActionFailure<{ error: string }>>; delete: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; mediaUpload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; publishAll: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; editorAdd: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<EditorActionFailure> | { ok: true } | ActionFailure<{ error: string }>>; editorRemove: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<EditorActionFailure> | { ok: true } | ActionFailure<{ error: string }>>; editorSetRole: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<EditorActionFailure> | { ok: true } | ActionFailure<{ error: string }>> } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnEvent`: { url: URL; request: Request; params: { [x: string]: string }; route: { id: string | null }; cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; locals: { cairnEditor?: Editor | null; cairnBackend?: Backend; cairnAuditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; platform?: PlatformContext<Env> }
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
@@ -469,28 +471,26 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ComponentRegistry`: { defs: ComponentDef[]; names: string[]; get: (name: string) => ComponentDef | undefined; defaultIcon: (name: string, role?: string) => string | undefined; iconField: (name: string) => string | undefined }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
 - `ContentFormFailure`: { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: "link" | "include"; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }
-- `ContentRoutes`: { shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>; helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>; indexLoad: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData }; listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>; mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>; settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>; settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure>>; vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>; vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>; createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<CreateFailure>>; editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>; historyLoad: (event: CairnEvent<CairnEnv>) => Promise<HistoryData>; saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>; publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>; publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>; discardAction: (event: CairnEvent<CairnEnv>) => Promise<never>; deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>; listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>; renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure>>; previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number }>; previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { count: number }>; revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>; uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>; dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>; tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult> }
-- `ContentRoutesOptions`: { tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => AttentionItem[] | Promise<AttentionItem[]>); preview?: PreviewTokenConfig }
+- `ContentRoutes`: { shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>; helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>; indexLoad: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData }; listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>; mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>; settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>; settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure>>; vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>; vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>; createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>; editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>; historyLoad: (event: CairnEvent<CairnEnv>) => Promise<HistoryData>; saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>; publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>; publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>; discardAction: (event: CairnEvent<CairnEnv>) => Promise<never>; deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>; listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>; renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>; previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }>; previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { count: number }>; revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>; uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>; dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>; tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult> }
+- `ContentRoutesConfig`: { tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => AttentionItem[] | Promise<AttentionItem[]>); preview?: PreviewTokenConfig }
 - `CookieJar`: { get: (name: string) => string | undefined; set: (name: string, value: string, opts: CookieSetOptions) => void; delete: (name: string, opts: { path: string; secure?: boolean }) => void }
 - `CookieSetOptions`: { path: string; httpOnly?: boolean; secure?: boolean; sameSite?: "none" | "lax" | "strict"; maxAge?: number }
-- `createAuthGuard`: (opts?: AuthGuardOptions) => ({ event, resolve }: HandleInput) => Promise<Response>
-- `createAuthRoutes`: (config: AuthRoutesConfig) => { loginLoad: (event: CairnEvent<CairnEnv>) => LoginData; requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestResult>; confirmLoad: (event: CairnEvent<CairnEnv>) => ConfirmData; confirmAction: (event: CairnEvent<CairnEnv>) => Promise<never>; logoutAction: (event: CairnEvent<CairnEnv>) => Promise<never> }
-- `createCairnAdmin`: (runtime: CairnRuntime, deps?: CairnAdminOptions) => { load: (event: CairnEvent<CairnEnv>) => Promise<AdminData>; actions: { request: (event: CairnEvent<CairnEnv>) => Promise<RequestResult | ActionFailure<{ error: string }>>; confirm: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; logout: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; create: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<CreateFailure> | ActionFailure<{ error: string }>>; save: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure> | ActionFailure<{ error: string }>>; settingsSave: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure> | ActionFailure<{ error: string }>>; vocabularySave: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure> | ActionFailure<{ error: string }>>; upload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; publish: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure> | ActionFailure<{ error: string }>>; discard: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; rename: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure> | ActionFailure<{ error: string }>>; previewMint: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number } | ActionFailure<{ error: string }>>; previewRevoke: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { count: number } | ActionFailure<{ error: string }>>; revert: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure> | ActionFailure<{ error: string }>>; dictionaryAdd: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult | ActionFailure<{ error: string }>>; tidy: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult | ActionFailure<{ error: string }>>; delete: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal> | ActionFailure<{ error: string }>>; mediaDelete: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaDeleteRefusal> | ActionFailure<{ error: string }>>; mediaUpdate: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUpdateFailure> | ActionFailure<{ error: string }>>; mediaUpload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; mediaLibraryUpload: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult | ActionFailure<{ error: string }>>; mediaReplacePreview: (event: CairnEvent<CairnEnv>) => Promise<MediaReplacePreviewPlan | ActionFailure<MediaReplaceFailure> | ActionFailure<{ error: string }>>; mediaReplace: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaReplaceFailure> | ActionFailure<{ error: string }>>; mediaAltPreview: (event: CairnEvent<CairnEnv>) => Promise<MediaAltPreviewPlan | ActionFailure<MediaAltPropagateFailure> | ActionFailure<{ error: string }>>; mediaAltPropagate: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaAltPropagateFailure> | ActionFailure<{ error: string }>>; mediaBulkDelete: (event: CairnEvent<CairnEnv>) => Promise<MediaBulkDeleteResult | ActionFailure<MediaBulkFailure> | ActionFailure<{ error: string }>>; mediaOrphanScan: (event: CairnEvent<CairnEnv>) => Promise<MediaOrphanScanResult | ActionFailure<MediaBulkFailure> | ActionFailure<{ error: string }>>; mediaOrphanPurge: (event: CairnEvent<CairnEnv>) => Promise<MediaOrphanPurgeResult | ActionFailure<MediaBulkFailure> | ActionFailure<{ error: string }>>; publishAll: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }>>; editorAdd: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true } | ActionFailure<{ error: string }>>; editorRemove: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true } | ActionFailure<{ error: string }>>; editorSetRole: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true } | ActionFailure<{ error: string }>> }; shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }> }
-- `createContentRoutes`: (runtime: CairnRuntime, deps?: ContentRoutesOptions) => ContentRoutes
+- `createAuthGuard`: (opts?: AuthGuardOptions) => Handle
+- `createAuthRoutes`: (config: AuthRoutesConfig) => AuthRoutes
+- `createCairnAdmin`: (runtime: CairnRuntime, config?: CairnAdminConfig) => CairnAdminRoutes
+- `createContentRoutes`: (runtime: CairnRuntime, config?: ContentRoutesConfig) => ContentRoutes
 - `createD1AuditSink`: (db: D1Database, waitUntil: ((promise: Promise<unknown>) => void) | undefined) => AdminActionAuditSink
-- `createEditorRoutes`: (opts?: EditorRoutesOptions) => { editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<EditorsData>; editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>; editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>; editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }> }
-- `CreateFailure`: { error: string }
+- `createEditorRoutes`: (config?: EditorRoutesConfig) => EditorRoutes
 - `createMediaRoute`: (runtime: CairnRuntime) => RequestHandler
-- `createNavRoutes`: (runtime: CairnRuntime) => { navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>; navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>> }
-- `createSectionAction`: <Env, Db>(config: SectionActionConfig<Env, Db>) => <T>(handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>
+- `createNavRoutes`: (runtime: CairnRuntime) => NavRoutes
+- `createSectionAction`: <Env, Db>(config: SectionActionConfig<Env, Db>) => SectionAction<Env, Db>
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `DeleteRefusal`: { error: string; inboundLinks: InboundLink[]; inboundKind?: "link" | "include"; id: string }
 - `DictionaryAddResult`: { words: string[] }
 - `EditData`: { conceptId: string; id: string; label: string; singular: string; fields: NamedField[]; frontmatter: { [x: string]: unknown }; body: string; title: string; isNew: boolean; saved: boolean; renamed: boolean; slug: string; linkTargets: LinkTarget[]; fragmentTargets: FragmentTarget[] | null; routable: boolean; mediaTargets: { [x: string]: { slug: string; ext: string; contentType: string } }; mediaLibrary: { [x: string]: MediaLibraryEntry }; inboundLinks: InboundLink[]; pending: boolean; published: boolean; publishedFlash: boolean; publishActions: PublishActionLink[]; discardedFlash: boolean; preview: ResolvedPreview | null; spellcheckDictionary: string; siteDictionary: string[]; tidy: { enabled: boolean; model: string; conventions: TidyConventions }; advisories: AdvisoryNotice[]; orphanTags: string[] }
 - `Editor`: { email: string; displayName: string; role: string; capability: "owner" | "editor" | "none" }
-- `EditorRoutes`: { editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<EditorsData>; editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>; editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>; editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }> }
-- `EditorRoutesOptions`: { roles?: RolesDeclaration }
+- `EditorRoutes`: { editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<EditorsData>; editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>; editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<EditorActionFailure> | { ok: true }>; editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<EditorActionFailure> | { ok: true }> }
+- `EditorRoutesConfig`: { roles?: RolesDeclaration }
 - `EmailAttachment`: { content: string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>; filename: string; type: string; disposition: "inline" | "attachment" }
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `EmailRecipient`: string | { email: string; name?: string }
@@ -544,6 +544,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavNode`: { label: string; url?: string; children?: NavNode[] }
 - `NavRoutes`: { navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>; navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>> }
 - `NavSaveFailure`: { error: string }
+- `NO_PENDING_REQUEST_ERROR`: "no-pending-request"
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `OrphanByteRow`: { key: string; hash: string }
@@ -551,13 +552,11 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
 - `PreviewData`: { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null }; concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
 - `previewLoad`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
-- `PreviewMintFailure`: { error: string }
 - `PreviewTokenConfig`: { ttlMs?: number }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionsConfig`: PublishActionEntry[]
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `RenameFailure`: { error: string }
 - `RepoFile`: { id: string; name: string; path: string }
 - `RepointPlacement`: { kind: "body" | "figure" | "hero"; before: string; after: string }
 - `RequestResult`: { status: "sent"; sent: true } | { status: "send_error"; sent: false } | { status: "throttled"; sent: false }
@@ -575,7 +574,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
-- `SaveFailure`: { error: string; brokenLinks: string[]; body: string }
+- `SectionAction`: <T>(handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>
 - `SectionActionAudit`: { action?: string; entity?: string; entityId?: string | number; detail?: string }
 - `SectionActionConfig`: { resolveDb: (env: Env | undefined) => Db | undefined; rateLimit?: { resolve: (env: Env | undefined) => RateLimitLike | undefined; key: (ctx: AdminActionContext) => string; message?: string } }
 - `SectionActionContext`: Omit<AdminActionContext, "audit"> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }

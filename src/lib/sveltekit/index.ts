@@ -6,11 +6,12 @@
 export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess, type AuthGuardOptions } from './guard.js';
 export {
   createAuthRoutes,
+  NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
   type RequestResult,
   type AuthRoutes,
 } from './auth-routes.js';
-export { createEditorRoutes, type EditorRoutesOptions, type EditorRoutes } from './editors-routes.js';
+export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
 export { mintPreviewToken, previewLoad, type PreviewTokenConfig, type PreviewData } from './preview.js';
 export { createMediaRoute } from './media-route.js';
@@ -23,13 +24,8 @@ export type {
   SettingsData,
   VocabularyLoadData,
   MediaLibraryData,
-  ContentRoutesOptions,
+  ContentRoutesConfig,
   AttentionItem,
-  SaveFailure,
-  DeleteRefusal,
-  RenameFailure,
-  CreateFailure,
-  PreviewMintFailure,
   MediaDeleteRefusal,
   MediaUpdateFailure,
   MediaReplaceFailure,
@@ -93,12 +89,13 @@ export { createD1AuditSink } from './audit-sink.js';
 export {
   createSectionAction,
   type RateLimitLike,
+  type SectionAction,
   type SectionActionConfig,
   type SectionActionOptions,
   type SectionActionAudit,
   type SectionActionContext,
 } from './section-action.js';
-export { createCairnAdmin, type CairnAdminOptions, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';
+export { createCairnAdmin, type CairnAdminConfig, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type {
   CairnEvent,
@@ -129,9 +126,11 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // full set with its per-name reason is `scripts/checks/check-surface-reexports.json`, and
 // `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
 // Foundations B narrowed `ContentRoutes` and re-derived this closure without shrinking the list:
-// the narrowing is necessary for the media-janitorial retires, not sufficient, since
-// `createCairnAdmin` still names every one of those types. The retires pass is what shrinks this,
-// off the re-derivation at `docs/internal/record/2026-08-30-r4-rederivation.md`.
+// the narrowing was necessary for the media-janitorial retires, not sufficient, since
+// `createCairnAdmin` still named every one of those types. The conventions pass (Task 2) narrows
+// `CairnAdminRoutes` the same way, which is the remaining precondition; the retire itself (the
+// list actually shrinking) is 4b's job, off the re-derivation at
+// `docs/internal/record/2026-08-30-r4-rederivation.md`.
 export type { AccessMap } from '../auth/access.js';
 export type { Backend, BackendProvider } from '../github/backend.js';
 export type {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { extractReferenceEdges } from '../../lib/content/references.js';
 import { parseMarkdown } from '../../lib/content/frontmatter.js';
 
@@ -15,7 +15,7 @@ const posts: ConceptDescriptor = {
   permalink: '/:year/:month/:slug',
   datePrefix: 'day',
   fields: [],
-  schema: fieldset({}),
+  schema: defineFieldset({}),
   summaryFields: [],
   validate: () => ({ ok: true, data: {} }),
 };
@@ -142,7 +142,7 @@ describe('manifestEntryFromFile', () => {
       permalink: '/:slug',
       datePrefix: 'day',
       fields: [],
-      schema: fieldset({}),
+      schema: defineFieldset({}),
       summaryFields: [],
       validate: () => ({ ok: true, data: {} }),
     };

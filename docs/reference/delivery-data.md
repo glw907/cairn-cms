@@ -106,12 +106,12 @@ function buildSitemap(urls: SitemapUrl[]): string;
 Build a sitemap XML document from a list of `SitemapUrl` entries, each a `loc` and an optional
 `lastmod` date.
 
-### `sitemapView`
+### `buildSitemapView`
 
 Stability tier: Extension API.
 
 ```ts
-function sitemapView(
+function buildSitemapView(
   site: SiteResolver,
   descriptors: ConceptDescriptor[],
   origin: string,
@@ -169,7 +169,7 @@ then hands them to the responder.
 
 ```ts
 import type { RequestHandler } from './$types';
-import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
+import { rssResponse, createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
 import { cairn, siteConfig } from '$lib/cairn.config';
 
@@ -177,7 +177,7 @@ export const prerender = true;
 
 export const GET: RequestHandler = async () => {
   const posts = site.concept('posts');
-  const toPermalink = buildLinkResolver(site);
+  const toPermalink = createLinkResolver(site);
   const resolve = (ref: Parameters<typeof toPermalink>[0]) => ORIGIN + toPermalink(ref);
   const items: FeedItem[] = await Promise.all(
     (posts?.all() ?? []).map(async (p) => ({
@@ -342,24 +342,24 @@ import { postsRaw, pagesRaw } from './content-globs.js';
 const manifest = buildSiteManifest(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
 ```
 
-### `buildLinkResolver`
+### `createLinkResolver`
 
 Stability tier: Extension API.
 
 ```ts
-function buildLinkResolver(site: SiteResolver): LinkResolve;
+function createLinkResolver(site: SiteResolver): LinkResolve;
 ```
 
 Build a `cairn:` link resolver backed by the site resolver, for the build. A miss throws, so a
 dangling `cairn:` token fails the prerender. The feed routes above use it to turn an internal link
 into an absolute URL.
 
-### `buildFragmentResolver`
+### `createFragmentResolver`
 
 Stability tier: Extension API.
 
 ```ts
-function buildFragmentResolver(site: SiteResolver): FragmentResolve;
+function createFragmentResolver(site: SiteResolver): FragmentResolve;
 ```
 
 Build a fragment-body resolver backed by the site resolver, for the build. A miss (an unknown
@@ -442,23 +442,23 @@ Read the known SEO head fields off an entry's normalized frontmatter, keeping a 
 trimmed and omitting an absent, empty, or non-string value. A field must be declared in the concept's
 schema to survive the validate-once read.
 
-### `jsonLdScript`
+### `renderJsonLdScript`
 
 Stability tier: Extension API.
 
 ```ts
-function jsonLdScript(data: Record<string, unknown>): string;
+function renderJsonLdScript(data: Record<string, unknown>): string;
 ```
 
 Serialize a JSON-LD object into the inner text of a `<script type="application/ld+json">` tag, with
 the characters that would break out of a script element escaped.
 
-### `siteDescriptors`
+### `buildSiteDescriptors`
 
 Stability tier: Extension API.
 
 ```ts
-function siteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): ConceptDescriptor[];
+function buildSiteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): ConceptDescriptor[];
 ```
 
 Build the per-concept descriptors for a site from its adapter content and its parsed site config.
@@ -476,7 +476,7 @@ function parseManifest(raw: string): Manifest;
 Parse a committed manifest file's raw text. Throws on malformed JSON, a wrong version, or a
 malformed entry, so a caller sees a well-formed graph or a clear error rather than a broken shape
 fed silently into the diff. Use it to validate a manifest your own code fetches, such as the
-`before`/`after` pair [`newlyPublishedEntries`](#newlypublishedentries) takes, instead of casting
+`before`/`after` pair [`diffNewlyPublished`](#diffnewlypublished) takes, instead of casting
 the fetched JSON yourself.
 
 ```ts
@@ -489,12 +489,12 @@ async function readDeployedManifest(): Promise<Manifest> {
 }
 ```
 
-### `newlyPublishedEntries`
+### `diffNewlyPublished`
 
 Stability tier: Extension API.
 
 ```ts
-function newlyPublishedEntries(before: Manifest | null, after: Manifest): ManifestEntry[];
+function diffNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[];
 ```
 
 Diff two manifests down to the entries a deploy just carried across the first-publish transition:
@@ -517,12 +517,12 @@ new key's stamped row has no stamped counterpart in `before`. A consumer that re
 entries should expect the rename to read as a new publish here.
 
 ```ts
-import { newlyPublishedEntries, type Manifest } from '@glw907/cairn-cms/delivery/data';
+import { diffNewlyPublished, type Manifest } from '@glw907/cairn-cms/delivery/data';
 
 declare const priorManifest: Manifest | null;
 declare const deployedManifest: Manifest;
 
-for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
+for (const entry of diffNewlyPublished(priorManifest, deployedManifest)) {
   // Fan out from the consumer's own endpoint; the engine sends nothing.
 }
 ```
@@ -548,8 +548,8 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `SeoMeta` | Extension API | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
 | `ResolvedReference` | Extension API | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |
-| `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `newlyPublishedEntries`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
-| `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `newlyPublishedEntries`'s `before`/`after` parameters carry this type. |
+| `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `diffNewlyPublished`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
+| `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `diffNewlyPublished`'s `before`/`after` parameters carry this type. |
 
 The remaining rows are the export-rule closure `buildSiteManifest` and `createSiteIndexes`'s
 `CairnAdapter` generic bound names (CHANGELOG `0.94.0`): the content-model member types
@@ -608,7 +608,7 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. |
 | `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
 | `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its item's values. |
-| `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `fieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
+| `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `defineFieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
 | `InferFieldset` | Extension API | `type InferFieldset<S>` | Extracts the normalized frontmatter type from a `Fieldset`. |
 | `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. |
 | `FieldBehavior` | Extension API | `interface FieldBehavior` | Function-valued behavior a field descriptor cannot carry as plain data. |

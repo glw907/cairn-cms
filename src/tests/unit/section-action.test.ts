@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { isActionFailure, isRedirect, redirect } from '@sveltejs/kit';
+import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import {
   createSectionAction,
   type RateLimitLike,
@@ -214,7 +214,7 @@ describe('createSectionAction: rate limit enforcement', () => {
     const sink = vi.fn();
     // RateLimitLike is structural: a site-supplied limiter can resolve anything shaped like
     // { success: boolean } without actually being one. A truthy non-boolean must read as blocked,
-    // the same as checkRateLimit's own `result?.success === true` test.
+    // the same as resolveRateLimit's own `result?.success === true` test.
     const limiter = { limit: async () => ({ success: 1 as unknown as boolean }) } as RateLimitLike;
     const { handler, action } = approveAction({
       ...boundDb,
@@ -338,6 +338,49 @@ describe('createSectionAction: rate limit catch rethrows control-flow shapes', (
     }
     expect(isRedirect(thrown)).toBe(true);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('propagates an error() thrown from the limiter itself, rather than degrading to open', async () => {
+    // resolveRateLimit captures a throwing limit() into its own 'failed' arm rather than letting
+    // it propagate, so the rethrow for kit's own control-flow shapes has to happen here, at the
+    // call site that knows about kit. A site whose limiter throws error(429) means a hard stop.
+    const limiter: RateLimitLike = {
+      limit: async () => {
+        error(429, 'slow down');
+      },
+    };
+    const { handler, action } = approveAction({
+      ...boundDb,
+      rateLimit: { resolve: () => limiter, key: () => 'k' },
+    });
+    let thrown: unknown;
+    try {
+      await action(readyEvent());
+    } catch (err) {
+      thrown = err;
+    }
+    expect(isHttpError(thrown)).toBe(true);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('still degrades to open, with the rate_limit_failed log, when the limiter throws a plain Error', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const limiter: RateLimitLike = {
+      limit: async () => {
+        throw new Error('binding unreachable');
+      },
+    };
+    const { handler, action } = approveAction({
+      ...boundDb,
+      rateLimit: { resolve: () => limiter, key: () => 'k' },
+    });
+    const result = await action(readyEvent());
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.rate_limit_failed',
+      expect.objectContaining({ error: 'binding unreachable' }),
+    );
   });
 });
 

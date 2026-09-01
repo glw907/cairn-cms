@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { checkRateLimit, checkRateLimitKeys } from '../../lib/cloudflare/rate-limit.js';
+import { resolveRateLimit } from '../../lib/cloudflare/rate-limit.js';
 import type { RateLimitLike } from '../../lib/cloudflare/rate-limit.js';
 
 function fakeBinding(results: boolean[]): { binding: RateLimitLike; calls: string[] } {
@@ -16,67 +16,70 @@ function fakeBinding(results: boolean[]): { binding: RateLimitLike; calls: strin
   return { binding, calls };
 }
 
-describe('checkRateLimit', () => {
-  it('returns true and calls nothing for an undefined binding', async () => {
-    expect(await checkRateLimit(undefined, 'k')).toBe(true);
+describe('resolveRateLimit', () => {
+  it('returns no-binding and calls nothing for an undefined binding', async () => {
+    expect(await resolveRateLimit(undefined, 'k')).toEqual({ outcome: 'no-binding' });
   });
 
-  it('returns true when the binding answers success: true', async () => {
+  it('returns no-binding for an undefined binding even with several keys', async () => {
+    const { calls } = fakeBinding([]);
+    expect(await resolveRateLimit(undefined, ['a', 'b', 'c'])).toEqual({ outcome: 'no-binding' });
+    expect(calls).toEqual([]);
+  });
+
+  it('returns allowed when the binding answers success: true', async () => {
     const { binding } = fakeBinding([true]);
-    expect(await checkRateLimit(binding, 'k')).toBe(true);
+    expect(await resolveRateLimit(binding, 'k')).toEqual({ outcome: 'allowed' });
   });
 
-  it('returns false when the binding answers success: false', async () => {
+  it('returns limited with the failing key when the binding answers success: false', async () => {
     const { binding } = fakeBinding([false]);
-    expect(await checkRateLimit(binding, 'k')).toBe(false);
+    expect(await resolveRateLimit(binding, 'k')).toEqual({ outcome: 'limited', key: 'k' });
   });
 
   it('calls the binding with exactly { key }', async () => {
     const { binding } = fakeBinding([true]);
-    await checkRateLimit(binding, 'the-key');
+    await resolveRateLimit(binding, 'the-key');
     expect(binding.limit).toHaveBeenCalledWith({ key: 'the-key' });
     expect(binding.limit).toHaveBeenCalledTimes(1);
   });
 
-  it('propagates a throwing limit() rather than swallowing it', async () => {
+  it('captures a throwing limit() into the failed arm rather than throwing', async () => {
+    const error = new Error('boom');
     const binding: RateLimitLike = {
       limit: vi.fn(async () => {
-        throw new Error('boom');
+        throw error;
       }),
     };
-    await expect(checkRateLimit(binding, 'k')).rejects.toThrow('boom');
+    expect(await resolveRateLimit(binding, 'k')).toEqual({ outcome: 'failed', error });
   });
 
-  it('returns false when a malformed limiter response has no boolean success field', async () => {
+  it('returns limited when a malformed limiter response has no boolean success field', async () => {
     const binding: RateLimitLike = {
       limit: vi.fn(async () => ({}) as any),
     };
-    expect(await checkRateLimit(binding, 'k')).toBe(false);
+    expect(await resolveRateLimit(binding, 'k')).toEqual({ outcome: 'limited', key: 'k' });
   });
-});
 
-describe('checkRateLimitKeys', () => {
-  it('returns true with no call for an empty keys array', async () => {
+  it('allows a single string key with no call for an undefined binding', async () => {
+    expect(await resolveRateLimit(undefined, 'solo')).toEqual({ outcome: 'no-binding' });
+  });
+
+  it('allows an empty keys array, returning allowed with no call', async () => {
     const { binding, calls } = fakeBinding([]);
-    expect(await checkRateLimitKeys(binding, [])).toBe(true);
+    expect(await resolveRateLimit(binding, [])).toEqual({ outcome: 'allowed' });
     expect(calls).toEqual([]);
   });
 
-  it('returns true and calls the binding once per key, in order, when every key passes', async () => {
+  it('calls the binding once per key, in order, when every key passes', async () => {
     const { binding, calls } = fakeBinding([true, true, true]);
-    expect(await checkRateLimitKeys(binding, ['a', 'b', 'c'])).toBe(true);
+    expect(await resolveRateLimit(binding, ['a', 'b', 'c'])).toEqual({ outcome: 'allowed' });
     expect(calls).toEqual(['a', 'b', 'c']);
   });
 
   it('short-circuits at the first failing key: later keys are never called', async () => {
     const { binding, calls } = fakeBinding([true, false, true]);
-    expect(await checkRateLimitKeys(binding, ['a', 'b', 'c'])).toBe(false);
+    expect(await resolveRateLimit(binding, ['a', 'b', 'c'])).toEqual({ outcome: 'limited', key: 'b' });
     expect(calls).toEqual(['a', 'b']);
-  });
-
-  it('returns true with no call for an undefined binding, even with several keys', async () => {
-    const { calls } = fakeBinding([]);
-    expect(await checkRateLimitKeys(undefined, ['a', 'b', 'c'])).toBe(true);
-    expect(calls).toEqual([]);
   });
 });

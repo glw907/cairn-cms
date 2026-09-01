@@ -58,6 +58,29 @@ describe('origin and scheme checks', () => {
   });
 });
 
+describe('lookup reads the binding, never the request', () => {
+  it('receives the normalized contact and a context carrying only the resolved env', async () => {
+    // The narrow context is the security property, not an ergonomic one: lookup decides
+    // subject-versus-decoy, and the factory swallows its throw as a miss, so a lookup that could
+    // read request-shaped data would make roster membership request-controlled.
+    const seen: { contact: string; ctx: { env: ChannelTestEnv | undefined } }[] = [];
+    const { config } = makeConfig({
+      lookup: async (contact, ctx) => {
+        seen.push({ contact, ctx });
+        return 'sub-ctx';
+      },
+    });
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+
+    await channel.actions.request(makeEvent({ contact: '  Mixed@X.test  ' }));
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0].contact).toBe('mixed@x.test');
+    expect(Object.keys(seen[0].ctx)).toEqual(['env']);
+    expect(seen[0].ctx.env?.CHANNEL_DB).toBe(db);
+  });
+});
+
 describe('housekeeping rides the mint', () => {
   it('a successful request sweeps expired code rows, expired sessions, and stale budget rows', async () => {
     const past = Date.now() - 60 * 60 * 1000;
@@ -383,7 +406,7 @@ describe('the lockout regression test', () => {
         challengeCalls += 1;
         return true;
       },
-      ttl: { identityCeiling: 10 }, // the clamp floor, so the test exceeds it quickly
+      limits: { throttle: { identityCeiling: 10 } }, // the clamp floor, so the test exceeds it quickly
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
 

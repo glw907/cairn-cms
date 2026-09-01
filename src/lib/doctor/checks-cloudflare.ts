@@ -8,8 +8,7 @@
 //   https://developers.cloudflare.com/api/resources/email_sending/
 // - Zone lookup, `{ result: [{ id }] }`: GET /zones?name=<domain>
 //   https://developers.cloudflare.com/api/resources/zones/
-// - Zone settings, `{ result: { value } }` where always_use_https carries 'on' | 'off' and
-//   security_header nests `value.strict_transport_security.{enabled,max_age}`:
+// - Zone settings, `{ result: { value } }` where always_use_https carries 'on' | 'off':
 //   GET /zones/{zone_id}/settings/{setting_id}
 //   https://developers.cloudflare.com/api/resources/zones/subresources/settings/
 // - D1 query, `{ sql }` in, `{ result: [{ results: [...] }] }` out:
@@ -19,10 +18,7 @@ import { fail, pass, skip } from './types.js';
 import type { CheckOutcome, CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { cfGet, cfPost, NO_ACCOUNT, NO_FROM, NO_TOKEN } from './cloudflare-api.js';
 import { readWranglerConfig } from './wrangler-config.js';
-import { DEFAULT_ROLES, ownerLevelRoles } from '../auth/roles.js';
-
-// 30 days. The production zones run two years; anything under a month is a trivial pin.
-const MIN_HSTS_MAX_AGE = 2592000;
+import { DEFAULT_ROLES, resolveOwnerLevelRoles } from '../auth/roles.js';
 
 function fromDomain(from: string): string {
   return from.slice(from.indexOf('@') + 1);
@@ -132,56 +128,6 @@ export const edgeHttpsForced: DoctorCheck = {
   },
 };
 
-interface SecurityHeaderValue {
-  strict_transport_security?: { enabled?: boolean; max_age?: number };
-}
-
-// This check reads the ZONE's own HSTS setting, which is a separate thing from the
-// Strict-Transport-Security header cairn's own admin responses already send: `applySecurityHeaders`
-// (`sveltekit/admin-response.ts`) sets `max-age` on every `/admin` response regardless of this
-// zone setting, so an editor's browser is already pinned to https for the admin host either way.
-// A zone with this setting off still leaves the REST of the site (every non-admin route, static
-// assets) with no HSTS at all, which is the real gap this check reports; its wording says so
-// explicitly rather than implying the zone is the only thing protecting anything.
-export const edgeHsts: DoctorCheck = {
-  id: 'edge.hsts',
-  conditionId: 'edge.hsts-off',
-  title: 'Zone HSTS',
-  async run(ctx: DoctorContext): Promise<CheckResult> {
-    if (!ctx.cfToken) return NO_TOKEN;
-    if (!ctx.from) return NO_FROM;
-    try {
-      const setting = await readZoneSetting<SecurityHeaderValue>(
-        ctx,
-        fromDomain(ctx.from),
-        'security_header'
-      );
-      if ('fail' in setting) return setting.fail;
-      const sts = setting.value?.strict_transport_security;
-      if (sts?.enabled !== true) {
-        return fail(
-          "the zone's HSTS setting is off, so nothing at the zone level adds " +
-            "Strict-Transport-Security to a non-/admin route. cairn's admin responses carry their " +
-            'own max-age regardless of this setting. This reads the zone setting only, so if the ' +
-            'site adds the header another way, check a live response before acting on this'
-        );
-      }
-      const maxAge = sts.max_age ?? 0;
-      if (maxAge < MIN_HSTS_MAX_AGE) {
-        return fail(
-          `the zone's HSTS max-age ${maxAge} is under the ${MIN_HSTS_MAX_AGE} (30 day) floor, ` +
-            'so the zone under-protects any route it is the only source of HSTS for. ' +
-            "cairn's admin responses set their own Strict-Transport-Security max-age " +
-            'regardless of this setting'
-        );
-      }
-      return pass(`the zone sends HSTS with max-age ${maxAge}`);
-    } catch (err) {
-      return fail(err instanceof Error ? err.message : String(err));
-    }
-  },
-};
-
 const AUTH_TABLES = ['editor', 'magic_token', 'session'];
 
 async function d1Query(
@@ -224,7 +170,19 @@ export const authStore: DoctorCheck = {
       if (missing.length) {
         return fail(`auth schema is missing: ${missing.join(', ')}`);
       }
-      const ownerRoles = ownerLevelRoles(ctx.roles);
+      // Per-column, not per-table: an AUTH_DB created before migration 0004 has every table and
+      // still cannot serve a login, because the engine's confirm binds each token to the
+      // requesting browser through magic_token.nonce_hash. The failure mode is a total login
+      // outage with no second channel, so this probe is the pre-deploy catch for it.
+      // The table-valued form, never a bare `PRAGMA table_info(...)`: the D1 REST /query endpoint
+      // is documented for SQL statements, and a plain SELECT over the pragma function is the one
+      // shape that is certainly accepted there. Both return the same `name` column.
+      const columns = await d1Query(ctx, facts.authDbId, "SELECT name FROM pragma_table_info('magic_token')");
+      if ('fail' in columns) return columns.fail;
+      if (!columns.value.some((row) => row.name === 'nonce_hash')) {
+        return fail('magic_token has no nonce_hash column; apply migrations/0004_login_nonce.sql');
+      }
+      const ownerRoles = resolveOwnerLevelRoles(ctx.roles);
       const roles = ownerRoles.length > 0 ? ownerRoles : ['owner'];
       const placeholders = roles.map(() => '?').join(', ');
       const owners = await d1Query(

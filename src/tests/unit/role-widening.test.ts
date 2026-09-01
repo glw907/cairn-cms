@@ -42,6 +42,6 @@ void customRoleNavEntry;
 /** Calls insertEditor and setEditorRole with the custom role name, no cast. */
 async function customRoleStoreCalls(db: D1Database): Promise<void> {
   await insertEditor(db, 'w@x.test', 'W', 'webmaster', Date.now());
-  await setEditorRole(db, 'w@x.test', 'webmaster');
+  await setEditorRole(db, 'w@x.test', 'webmaster', ['owner']);
 }
 void customRoleStoreCalls;

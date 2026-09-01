@@ -6,7 +6,7 @@
 import type { Element, ElementContent } from 'hast';
 import type { FieldDescriptor } from '../content/fields.js';
 import type { BehaviorTable, Fieldset } from '../content/fieldset.js';
-import { fieldset } from '../content/fieldset.js';
+import { defineFieldset } from '../content/fieldset.js';
 
 type SlotKind = 'markdown' | 'inline' | 'repeatable';
 
@@ -252,5 +252,5 @@ function checkComponentAttributes(name: string, attributes: Record<string, Field
 export function defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset } {
   const attributes = def.attributes ?? {};
   checkComponentAttributes(def.name, attributes);
-  return { ...def, attributeSchema: fieldset(attributes, { behavior: def.behavior }) };
+  return { ...def, attributeSchema: defineFieldset(attributes, { behavior: def.behavior }) };
 }

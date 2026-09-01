@@ -127,7 +127,7 @@ export function tidyClientErrorStatus(err: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
-export interface ContentRoutesOptions {
+export interface ContentRoutesConfig {
   /** The tidy action's injectable dependencies, grouped since both members shape one call. */
   tidy?: {
     /**
@@ -219,7 +219,7 @@ const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
  */
 export interface ContentRoutesContext {
   runtime: CairnRuntime;
-  deps: ContentRoutesOptions;
+  deps: ContentRoutesConfig;
   /** The developer's publish-actions config, validated once at construction (server start). */
   publishActions: ResolvedPublishAction[];
   /**
@@ -274,7 +274,7 @@ export interface ContentRoutesContext {
  *  backend/manifest/media-json/dictionary/commit-failure helpers over `runtime`. Every per-domain
  *  sibling factory takes the returned object as its one argument.
  */
-export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutesContext {
+export function createContentRoutesContext(runtime: CairnRuntime, config: ContentRoutesConfig = {}): ContentRoutesContext {
   // Validate a declared navLayout the fail-loud-at-startup way, so a bad screen reference or an
   // unresolvable role throws here rather than at request time. Undeclared (the common case) skips
   // validation entirely; the resolver synthesizes the default arrangement for that case.
@@ -310,10 +310,10 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   }
 
   // Tests (and the packaged dev backend's deterministic stub) inject a fake through
-  // deps.tidy.client, so messages.create is stubbed and no network call or real key is ever needed.
+  // config.tidy.client, so messages.create is stubbed and no network call or real key is ever needed.
   // Absent one, the default above resolves the SDK lazily, on the first call rather than at import.
-  const anthropicClient = deps.tidy?.client ?? lazyAnthropicClient;
-  const tidyTimeoutMs = deps.tidy?.timeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
+  const anthropicClient = config.tidy?.client ?? lazyAnthropicClient;
+  const tidyTimeoutMs = config.tidy?.timeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
 
   /**
    * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
@@ -348,7 +348,7 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
 
   return {
     runtime,
-    deps,
+    deps: config,
     publishActions,
     anthropicClient,
     tidyTimeoutMs,

@@ -1,10 +1,10 @@
 // The /admin guard, plus the per-load owner/session gates. A site's hooks.server.ts sets
 // `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, type Handle } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
-import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict } from './csrf.js';
+import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
@@ -13,7 +13,7 @@ import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
-import type { CairnEvent, HandleInput } from './types.js';
+import type { CairnEvent, CookieJar, HandleInput } from './types.js';
 
 /** The login page and the auth endpoints are public; everything else under /admin is gated. */
 export function isPublicAdminPath(pathname: string): boolean {
@@ -74,8 +74,13 @@ export interface AuthGuardOptions {
 
 /**
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
+ *
+ * Annotated `: Handle`, kit's own type, under the interop carve-out
+ * (`convention-interop-carve-out`): a host-ecosystem return type satisfies the engine's
+ * contract-first-returns rule on its own, since the host ecosystem's convention wins over
+ * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
-export function createAuthGuard(opts: AuthGuardOptions = {}) {
+export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
   const includeSubDomains = opts.includeSubDomains;
@@ -153,8 +158,12 @@ export function createAuthGuard(opts: AuthGuardOptions = {}) {
       if (!verdict.ok) {
         // Presence-only: whether the session cookie was sent, never its value or a resolved
         // identity. This check runs before session resolution (below), so no editor is known yet.
+        // The name derives through csrfSecure, the same call the CSRF pair uses (Task 6): a
+        // coherence change here, since an http, non-local admin request never reaches this
+        // point at all (the https-help-page check above already refused it).
         const hasSession =
-          event.cookies.get(sessionCookieName(event.url.protocol === 'https:')) !== undefined;
+          event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform }))) !==
+          undefined;
         log.warn('guard.rejected', {
           reason: 'csrf',
           path: pathname,
@@ -167,7 +176,10 @@ export function createAuthGuard(opts: AuthGuardOptions = {}) {
     }
 
     if (!isPublicAdminPath(pathname)) {
-      const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
+      // Same csrfSecure derivation as the hasSession read above (Task 6): unreachable to differ
+      // from the bare protocol check on a guarded admin path, since the https-help-page check
+      // above already refused every http, non-local request before this line runs.
+      const id = event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform })));
       const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');
       // Resolve capability once per request, here, so every downstream load/action reads it off
@@ -188,6 +200,26 @@ export function createAuthGuard(opts: AuthGuardOptions = {}) {
     applySecurityHeaders(response.headers, { includeSubDomains });
     return response;
   };
+}
+
+/**
+ * Fail loudly (throw) rather than fall back to a soft `fail(403)` when an untyped caller passes
+ * no cookie jar at all. `CairnEvent.cookies` is already typed `CookieJar` (non-nullable), so this
+ * only fires for a caller outside the type system; narrows the return to a definite `CookieJar`
+ * so the caller's own CSRF check needs no further guard (`convention-auth-loud-postures`). The
+ * exported CSRF helpers keep their strict, non-nullable `cookies: CookieJar` parameter type
+ * deliberately: widening it to accept `undefined` would trade this compile-time contract for a
+ * runtime throw, the inverse of the platform convention. The thrown message names only the jar,
+ * never a cookie value.
+ */
+export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
+  // WATCH: this branch is unreachable from any well-typed caller, since `cookies` is declared
+  // non-nullable, so it is untested by construction. It goes live the moment CookieJar (or this
+  // parameter) widens to admit null or undefined, and the consequence is worth remembering
+  // before that happens: a hand-mounted route calling the CSRF helpers directly gets a raw 500
+  // here rather than the 403 the guard's own path produces.
+  if (!event.cookies) throw new Error('cairn: no cookie jar on this event');
+  return event.cookies;
 }
 
 /**

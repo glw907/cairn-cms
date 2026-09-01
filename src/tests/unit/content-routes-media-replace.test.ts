@@ -15,7 +15,7 @@ import type {
 } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, parseMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
-import { mediaToken } from '../../lib/media/reference.js';
+import { formatMediaToken } from '../../lib/media/reference.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
@@ -146,7 +146,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('mediaReplacePreview', () => {
   it('returns the plan with the affected entries, titles, placements, and the branch delta', async () => {
-    const newToken = mediaToken({ slug: 'old-photo', hash: NEW_HASH });
+    const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const gh = new GithubDouble({
       main: {
         [MEDIA_PATH]: mediaManifest(mediaEntry(OLD_HASH, 'old-photo')),
@@ -202,6 +202,23 @@ describe('mediaReplacePreview', () => {
     expect(result).toMatchObject({ status: 403 });
     const data = (result as { data: MediaReplaceFailure }).data;
     expect(data.error).toBe('csrf');
+    expect(commitCount(gh)).toBe(0);
+  });
+
+  it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(OLD_HASH, 'old-photo')),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutesInternal(runtime());
+    const event = previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }) as unknown as {
+      cookies: unknown;
+    };
+    event.cookies = undefined;
+    await expect(routes.mediaReplacePreviewAction(event as never)).rejects.toThrow(/cookie jar/i);
     expect(commitCount(gh)).toBe(0);
   });
 
@@ -287,7 +304,7 @@ describe('mediaReplaceApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = freshRepo();
     gh.install();
-    const newToken = mediaToken({ slug: 'old-photo', hash: NEW_HASH });
+    const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const record = mediaEntry(NEW_HASH, 'new-photo');
     const routes = createContentRoutesInternal(runtime());
     await expect(
@@ -453,7 +470,7 @@ describe('mediaReplaceApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = freshRepo();
     gh.install();
-    const newToken = mediaToken({ slug: 'old-photo', hash: NEW_HASH });
+    const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const record = mediaEntry(NEW_HASH, 'new-photo');
     const routes = createContentRoutesInternal(runtime());
 

@@ -10,7 +10,7 @@ import { log } from '../log/index.js';
 import { createAuthRoutes, type LoginData, type ConfirmData } from './auth-routes.js';
 import {
   createContentRoutesInternal,
-  type ContentRoutesOptions,
+  type ContentRoutesConfig,
   type ListData,
   type EditData,
   type MediaLibraryData,
@@ -31,7 +31,7 @@ import type { CairnEvent, HistoryData } from './types.js';
  *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
  *  is not a dep here.
  */
-export interface CairnAdminOptions {
+export interface CairnAdminConfig {
   /**
    * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here since
    *  `branding` defaults from the runtime. See `AuthRoutesConfig`.
@@ -41,24 +41,24 @@ export interface CairnAdminOptions {
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
    *  to avoid a real network call.
    */
-  tidy?: ContentRoutesOptions['tidy'];
+  tidy?: ContentRoutesConfig['tidy'];
   /**
    * Forwarded to the content routes verbatim; a site whose own gating lives outside cairn (a role
    *  stored in its own D1, say) injects this to hide a section or an item from the arranged
-   *  sidebar for an editor who fails that check. See `ContentRoutesOptions['navFilter']`.
+   *  sidebar for an editor who fails that check. See `ContentRoutesConfig['navFilter']`.
    */
-  navFilter?: ContentRoutesOptions['navFilter'];
+  navFilter?: ContentRoutesConfig['navFilter'];
   /**
    * Forwarded to the content routes verbatim; a site injects this to surface per-session
    *  pending-work counts as nav badges (a queue of unread asset requests, say). See
-   *  `ContentRoutesOptions['attention']`.
+   *  `ContentRoutesConfig['attention']`.
    */
-  attention?: ContentRoutesOptions['attention'];
+  attention?: ContentRoutesConfig['attention'];
   /**
    * Forwarded to the content routes verbatim: the preview-link lifetime `previewMint` mints
-   *  against. See `ContentRoutesOptions['preview']`.
+   *  against. See `ContentRoutesConfig['preview']`.
    */
-  preview?: ContentRoutesOptions['preview'];
+  preview?: ContentRoutesConfig['preview'];
 }
 
 /**
@@ -85,24 +85,31 @@ export type AdminData =
  * catch-all `/admin/[...path]` route: one `load` that dispatches on the parsed path to the
  * matching view's own data, the full `actions` record (every named admin action, each parsing
  * and validating its own view before delegating), and a separate `shellLoad` for
- * `/admin/+layout.server.ts`'s shared chrome. `deps` overrides only the seams a site actually
+ * `/admin/+layout.server.ts`'s shared chrome. `config` overrides only the seams a site actually
  * needs (auth send/bootstrap, tidy, `navFilter`, `attention`); everything else derives from
  * `runtime`.
+ *
+ * This is the WIDE shape, mirroring the foundations-B `createContentRoutesInternal` precedent:
+ *  reachable from no package subpath, so its `actions` record is free to carry every one of the
+ *  ten media-janitorial actions the engine's own Media Library screen needs, which the public
+ *  {@link createCairnAdmin}'s declared {@link CairnAdminRoutes} narrows away. Module-internal
+ *  callers (this module's own single caller, `createCairnAdmin`, and a test proving the wide
+ *  shape directly) import it by relative path; no barrel re-exports it.
  */
-export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions = {}) {
+export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdminConfig = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
   // branding needs no second copy of either unless a site overrides it.
-  const branding: AuthBranding = deps.auth?.branding ?? {
+  const branding: AuthBranding = config.auth?.branding ?? {
     siteName: runtime.siteName,
     from: runtime.sender.from,
     replyTo: runtime.sender.replyTo,
   };
-  const auth = createAuthRoutes({ branding, send: deps.auth?.send, bootstrapOwner: deps.auth?.bootstrapOwner });
+  const auth = createAuthRoutes({ branding, send: config.auth?.send, bootstrapOwner: config.auth?.bootstrapOwner });
   const content = createContentRoutesInternal(runtime, {
-    tidy: deps.tidy,
-    navFilter: deps.navFilter,
-    attention: deps.attention,
-    preview: deps.preview,
+    tidy: config.tidy,
+    navFilter: config.navFilter,
+    attention: config.attention,
+    preview: config.preview,
   });
   const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
@@ -342,5 +349,66 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
   return { load, actions, shellLoad };
 }
 
-/** What `createCairnAdmin` returns: the one load, the full action vocabulary, and the shell load. */
-export type CairnAdminRoutes = ReturnType<typeof createCairnAdmin>;
+/**
+ * The wide shape `createCairnAdminInternal` returns. Named so the public view below is DERIVED
+ *  from it rather than hand-mirrored, mirroring the foundations-B `InternalContentRoutes`
+ *  precedent (`content-routes.ts`).
+ */
+type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
+
+/**
+ * What `createCairnAdmin` returns: the one load, the shared shell load, and the deliberately
+ *  narrowed action vocabulary a site wiring the single-mount admin actually dispatches to.
+ *
+ *  Ten media-janitorial actions are absent on purpose, mirroring `ContentRoutes`'s own
+ *  narrowing exactly (`content-routes.ts`): `mediaDelete`, `mediaUpdate`, `mediaLibraryUpload`,
+ *  `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`, `mediaAltPropagate`,
+ *  `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`. Each wraps one of `ContentRoutes`'s
+ *  own ten excluded internal actions, reachable only from the engine's own Media Library screen.
+ *  `mediaUpload` stays: it wraps the SAME `uploadAction` the kept `upload` action wraps (the one
+ *  `ContentRoutes` itself exposes), just gated to the media view instead of the edit view.
+ *
+ *  The narrowing is TYPE-LEVEL, not a runtime boundary, exactly as `ContentRoutes`'s own doc
+ *  comment states: `createCairnAdmin` returns the internal object itself, so every action is
+ *  still present at runtime, and a spread (`export const actions = { ...admin.actions }`) or a
+ *  cast recovers the ten. Each of them still runs the session, CSRF, and view gates it always
+ *  ran; the narrowing withdraws the SUPPORTED seam, not the reachability.
+ */
+export interface CairnAdminRoutes {
+  load: InternalCairnAdminRoutes['load'];
+  shellLoad: InternalCairnAdminRoutes['shellLoad'];
+  actions: Pick<
+    InternalCairnAdminRoutes['actions'],
+    | 'request'
+    | 'confirm'
+    | 'logout'
+    | 'create'
+    | 'save'
+    | 'settingsSave'
+    | 'vocabularySave'
+    | 'upload'
+    | 'publish'
+    | 'discard'
+    | 'rename'
+    | 'previewMint'
+    | 'previewRevoke'
+    | 'revert'
+    | 'dictionaryAdd'
+    | 'tidy'
+    | 'delete'
+    | 'mediaUpload'
+    | 'publishAll'
+    | 'editorAdd'
+    | 'editorRemove'
+    | 'editorSetRole'
+  >;
+}
+
+/**
+ * Build the single-mount admin bundle a site's catch-all `/admin/[...path]` route exports: the
+ *  narrow, declared {@link CairnAdminRoutes} view over {@link createCairnAdminInternal}'s wide
+ *  return.
+ */
+export function createCairnAdmin(runtime: CairnRuntime, config: CairnAdminConfig = {}): CairnAdminRoutes {
+  return createCairnAdminInternal(runtime, config);
+}

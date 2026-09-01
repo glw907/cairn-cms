@@ -5,10 +5,10 @@
 // rather than a real Turnstile verifier, since CI cannot reach challenges.cloudflare.com (see
 // that function's own header comment). `deliver` is the capture transport
 // (./capture-transport.js), the guide's own harness pattern. Every default clamp in
-// AuthChannelConfig.ttl stays untouched, so this exemplar never becomes a set of loosened
+// AuthChannelConfig.limits stays untouched, so this exemplar never becomes a set of loosened
 // numbers a consumer copies.
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
-import type { AuthChannelEvent } from '@glw907/cairn-cms/auth-channel';
+import type { CairnEvent } from '@glw907/cairn-cms/auth-channel';
 import { captureDeliver } from './capture-transport.js';
 import { INSECURE_TEST_CHALLENGE_FIELD, INSECURE_TEST_CHALLENGE_TOKEN } from './challenge-token.js';
 
@@ -35,7 +35,7 @@ export const MEMBER_ROSTER: ReadonlyMap<string, string> = new Map([
  * so the fixture satisfies the required `challenge` config field.
  */
 export async function insecureTestChallenge<Env>(
-  _event: AuthChannelEvent<Env>,
+  _event: CairnEvent<Env>,
   form: FormData,
 ): Promise<boolean> {
   return form.get(INSECURE_TEST_CHALLENGE_FIELD) === INSECURE_TEST_CHALLENGE_TOKEN;
@@ -46,7 +46,7 @@ function normalizeContact(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
-/** `lookup`: resolve a normalized contact against the static demo roster. */
+/** `lookup`: resolve a normalized contact against the static demo roster, which needs no binding. */
 async function lookupContact(contact: string): Promise<string | null> {
   return MEMBER_ROSTER.get(contact) ?? null;
 }

@@ -30,7 +30,7 @@ import { composeEntryData, type PublicRoutesConfig, type EntryData } from '../de
 import type { SeoMeta } from '../delivery/seo.js';
 import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve } from '../render/resolve-include.js';
-import { buildMediaResolver, type MediaResolve } from '../render/resolve-media.js';
+import { createMediaResolver, type MediaResolve } from '../render/resolve-media.js';
 import { parseMediaManifest } from '../media/manifest.js';
 import type { Backend } from '../github/backend.js';
 import type { CairnEvent } from './types.js';
@@ -233,7 +233,7 @@ async function buildPreviewResolvers(
     if (fragmentResolver) resolveFragment = (id) => fragmentResolver(id);
   }
 
-  // Media: buildMediaResolver, never manifestMediaResolver (whose hardcoded url form ignores a
+  // Media: createMediaResolver, never manifestMediaResolver (whose hardcoded url form ignores a
   // site's publicBase, presets, and imageDetail, breaking twin-render equivalence). Branch-first
   // then default-branch fallback, so an upload newer than the site's last build still resolves;
   // branch-first is skipped for the ended page (mediaBranch null), whose branch is already gone.
@@ -243,7 +243,7 @@ async function buildPreviewResolvers(
       ? await backend.readFile(runtime.mediaManifestPath, mediaBranch).catch(() => null)
       : null;
     const raw = branchRaw ?? (await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch).catch(() => null));
-    resolveMedia = buildMediaResolver(parseMediaManifest(safeParseJson(raw)), runtime.resolvedAssets);
+    resolveMedia = createMediaResolver(parseMediaManifest(safeParseJson(raw)), runtime.resolvedAssets);
   }
 
   return { resolveLink, resolveFragment, resolveMedia };

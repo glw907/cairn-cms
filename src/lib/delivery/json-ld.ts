@@ -8,7 +8,7 @@
 /**
  * Build the `application/ld+json` script element for `data`, escaping `<` so the JSON cannot terminate the script tag early.
  */
-export function jsonLdScript(data: Record<string, unknown>): string {
+export function renderJsonLdScript(data: Record<string, unknown>): string {
   const json = JSON.stringify(data)
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')

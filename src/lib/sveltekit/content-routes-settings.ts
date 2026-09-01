@@ -10,7 +10,7 @@ import {
   setTidy,
   validateTidyConventions,
   TidyConventionsError,
-  extractVocabulary,
+  readVocabulary,
   setVocabulary,
   validateVocabulary,
   SiteConfigError,
@@ -333,7 +333,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     }
     if (raw !== null) {
       try {
-        vocabulary = extractVocabulary(parseSiteConfig(raw));
+        vocabulary = readVocabulary(parseSiteConfig(raw));
       } catch (err) {
         // A malformed config keeps the same degrade rather than failing the screen closed; the
         // swallow names the operator fault in the log, as navLoad does.
@@ -413,7 +413,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
     const parsedConfig = parseSiteConfigOrFail(raw, 'vocabulary');
     if (!parsedConfig.ok) return parsedConfig.failure;
-    const current = extractVocabulary(parsedConfig.config);
+    const current = readVocabulary(parsedConfig.config);
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {

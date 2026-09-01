@@ -94,11 +94,11 @@ export const admin = createCairnAdmin(runtime);
 
 `createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
 so most sites pass no deps at all. A site that does override something passes the grouped
-`CairnAdminOptions` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
+`CairnAdminConfig` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
 reads markdown through a fake GitHub backend in development, which rides `event.locals.cairnBackend`
 from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
 mints installation tokens on demand, so it passes no backend dep. See
-[`CairnAdminOptions`](./sveltekit.md#cairnadminoptions) for the full shape.
+[`CairnAdminConfig`](./sveltekit.md#cairnadminconfig) for the full shape.
 
 Keep the `prerender = false` line. The admin is session-gated, and a site that prerenders by
 default would otherwise try to bake a build-time snapshot of it; the explicit opt-out keeps the
@@ -167,6 +167,15 @@ so a `save` posted to a list URL refuses rather than misfiring:
 The engine's components post these names, so an action-adding release reaches a site through the
 version bump alone; there is no per-site action table to keep in sync.
 
+The ten media-janitorial actions (`mediaDelete`, `mediaUpdate`, `mediaUpload`,
+`mediaLibraryUpload`, `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`,
+`mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`) all run at
+runtime on the object `createCairnAdmin` returns, but are absent from the declared
+[`CairnAdminRoutes`](./sveltekit.md#types) type. The narrowing is type-level, not a runtime
+boundary: `export const actions = admin.actions` still wires every one of them, since it reads
+the actual object rather than the declared type; a caller that needs the narrowed members typed
+recovers them with a spread (`{ ...admin.actions }`) or a cast.
+
 ## The guard and the ambient type
 
 The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
@@ -212,6 +221,12 @@ export const handle = sequence(theme, createAuthGuard());
 ```
 
 The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.
+
+The guard gates who reaches the subtree, not what a custom form action inside it may do. An
+[`adminAction`](./sveltekit.md#adminaction)-wrapped action authorizes against the site's access
+map only when it sets the `access` option. Omitted, the wrapper only authenticates and verifies
+the CSRF token, its behavior for every action written before the option existed.
+[`createSectionAction`](./sveltekit.md#createsectionaction) runs that same sequence always.
 
 ## The root layout must be chrome-free
 
@@ -284,6 +299,9 @@ view components' named-action contracts, and worked per-route examples live in
 edit actions the Media Library posts to (per-asset delete and update, the Library-direct upload,
 replace-in-place, alt propagation, and bulk delete/orphan scan/purge). A site that hand-mounts
 [`CairnMediaLibrary`](./components.md#cairnmedialibrary) per-route has no public factory that
-supplies those actions; only `createCairnAdmin` mounts them. Mounting the media view outside the
-single mount means composing your own actions record around `createCairnAdmin`'s, not wiring
-`createContentRoutes` alone.
+supplies those actions; only `createCairnAdmin` mounts them at runtime. The declared
+[`CairnAdminRoutes`](./sveltekit.md#types) contract withdraws the same ten actions at the type
+level (see the note after [the actions vocabulary](#the-actions-vocabulary)), recovered with a
+spread or a cast; mounting the media view outside the single mount means composing your own
+actions record around `createCairnAdmin`'s runtime object, not wiring `createContentRoutes`
+alone.

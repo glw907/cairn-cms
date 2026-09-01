@@ -1,10 +1,14 @@
 // The dependency-floors check. The engine's peer ranges have teeth only when something reads
 // the consumer's lockfile, where a transitively pinned svelte can sit below the floor while
 // package.json looks fine (the ecxc retrofit shipped svelte 5.56.0 that way). The check compares
-// the resolved svelte and @sveltejs/kit versions in package-lock.json against the peer ranges
-// the installed @glw907/cairn-cms declares, read at runtime so the floors live in one place.
+// the resolved svelte and @sveltejs/kit versions against the peer ranges the installed
+// @glw907/cairn-cms declares, read at runtime so the floors live in one place. It reads
+// package-lock.json, pnpm-lock.yaml, and yarn.lock, in that order, so an npm, pnpm, or yarn
+// consumer all get a real verdict rather than a silent skip on the one check that would catch a
+// miscompiling framework version.
 import { createRequire } from 'node:module';
-import { fail, pass, skip } from './types.js';
+import { parse as parseYaml } from 'yaml';
+import { fail, pass, skip, unchecked } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 
 interface Version {
@@ -45,28 +49,17 @@ function lockedVersion(lock: LockPackages, dep: string): string | undefined {
 }
 
 /**
- * Judge a lockfile's resolved framework versions against the engine's peer ranges. Pure, so the
- * tests drive it table-style; the check object wires in the real lockfile and the real peers.
- * A below-range version fails; a lockfile or entry the check cannot read skips, since a pnpm or
- * yarn consumer carries no package-lock.json at all.
+ * Judge a dependency's resolved versions against the engine's peer ranges, shared by every
+ * lockfile format the check reads. `resolve` looks up one dependency's version in whichever
+ * lockfile is in play; `missingEntry` names the per-dependency message for a lockfile that
+ * carries no entry for it, since each format's message names its own file. A below-range version
+ * fails; an entry the format cannot resolve skips, since the answer genuinely is not there.
  */
-export function dependencyFloorsResult(
-  lockText: string | null,
-  peers: Record<string, string>
+function judgePeers(
+  resolve: (dep: string) => string | undefined,
+  peers: Record<string, string>,
+  missingEntry: (dep: string) => string
 ): CheckResult {
-  if (lockText === null) {
-    return skip('no package-lock.json found (a pnpm or yarn lockfile is not read)');
-  }
-  let lock: LockPackages;
-  try {
-    lock = JSON.parse(lockText) as LockPackages;
-  } catch {
-    // Like the wrangler reader: never echo file content into the report.
-    return fail('package-lock.json did not parse');
-  }
-  if (lock.packages === undefined) {
-    return skip('package-lock.json carries no packages map (lockfile v1; reinstall with a current npm)');
-  }
   const failures: string[] = [];
   const skips: string[] = [];
   const passes: string[] = [];
@@ -76,9 +69,9 @@ export function dependencyFloorsResult(
       skips.push(`${dep}: the engine range ${range} is not a simple caret range`);
       continue;
     }
-    const resolved = lockedVersion(lock, dep);
+    const resolved = resolve(dep);
     if (resolved === undefined) {
-      skips.push(`${dep}: no node_modules/${dep} entry in package-lock.json`);
+      skips.push(missingEntry(dep));
       continue;
     }
     const version = parseVersion(resolved);
@@ -99,6 +92,139 @@ export function dependencyFloorsResult(
   if (failures.length > 0) return fail(failures.join('; '));
   if (skips.length > 0) return skip(skips.join('; '));
   return pass(`${passes.join(' and ')} satisfy the engine peer ranges`);
+}
+
+/**
+ * Judge a package-lock.json's resolved framework versions against the engine's peer ranges. Pure,
+ * so the tests drive it table-style; the check object wires in the real lockfile and the real
+ * peers. `lockText === null` is a caller stating no package-lock.json was read (the check itself
+ * tries pnpm-lock.yaml and yarn.lock before ever reaching that case).
+ */
+export function dependencyFloorsResult(
+  lockText: string | null,
+  peers: Record<string, string>
+): CheckResult {
+  if (lockText === null) {
+    return skip('no package-lock.json found (a pnpm or yarn lockfile is not read)');
+  }
+  let lock: LockPackages;
+  try {
+    lock = JSON.parse(lockText) as LockPackages;
+  } catch {
+    // Like the wrangler reader: never echo file content into the report.
+    return fail('package-lock.json did not parse');
+  }
+  if (lock.packages === undefined) {
+    return skip('package-lock.json carries no packages map (lockfile v1; reinstall with a current npm)');
+  }
+  return judgePeers(
+    (dep) => lockedVersion(lock, dep),
+    peers,
+    (dep) => `${dep}: no node_modules/${dep} entry in package-lock.json`
+  );
+}
+
+/** One dependency entry as either pnpm's legacy bare-string version or its `{ version }` object. */
+type PnpmDepEntry = string | { version?: unknown } | undefined;
+
+function pnpmDepVersion(entry: PnpmDepEntry): string | undefined {
+  let raw: string | undefined;
+  if (typeof entry === 'string') {
+    raw = entry;
+  } else if (typeof entry?.version === 'string') {
+    raw = entry.version;
+  }
+  // Both shapes can carry a peer-dependency suffix in parentheses, e.g. "5.56.10(vite@6.0.0)";
+  // the plain semver is everything before it.
+  return raw?.split('(')[0];
+}
+
+interface PnpmLock {
+  importers?: Record<string, { dependencies?: Record<string, PnpmDepEntry>; devDependencies?: Record<string, PnpmDepEntry> }>;
+  dependencies?: Record<string, PnpmDepEntry>;
+  devDependencies?: Record<string, PnpmDepEntry>;
+}
+
+function pnpmResolve(lock: PnpmLock, dep: string): string | undefined {
+  const root = lock.importers?.['.'];
+  return (
+    pnpmDepVersion(root?.dependencies?.[dep]) ??
+    pnpmDepVersion(root?.devDependencies?.[dep]) ??
+    pnpmDepVersion(lock.dependencies?.[dep]) ??
+    pnpmDepVersion(lock.devDependencies?.[dep])
+  );
+}
+
+/**
+ * Read a dependency's resolved version out of pnpm-lock.yaml text, or undefined when the file
+ * carries no entry for it. Checks the root importer first (lockfileVersion 9's
+ * `importers['.'].{dependencies,devDependencies}[dep].version`), falling back to the legacy
+ * top-level `dependencies`/`devDependencies` maps (lockfileVersion 5 and 6, where the value is the
+ * bare version string), so both current and older pnpm lockfiles resolve.
+ */
+export function pnpmLockedVersion(lockText: string, dep: string): string | undefined {
+  return pnpmResolve(parseYaml(lockText) as PnpmLock, dep);
+}
+
+/**
+ * Judge a pnpm-lock.yaml's resolved framework versions against the engine's peer ranges, the
+ * pnpm sibling of {@link dependencyFloorsResult}.
+ */
+export function pnpmDependencyFloorsResult(lockText: string, peers: Record<string, string>): CheckResult {
+  let lock: PnpmLock;
+  try {
+    lock = parseYaml(lockText) as PnpmLock;
+  } catch {
+    return fail('pnpm-lock.yaml did not parse');
+  }
+  return judgePeers(
+    (dep) => pnpmResolve(lock, dep),
+    peers,
+    (dep) => `${dep}: no entry for it in pnpm-lock.yaml`
+  );
+}
+
+/**
+ * Read a dependency's resolved version out of yarn.lock text, classic (v1) or Berry. A classic
+ * block opens with one or more comma-separated specifiers (`"dep@range"`, ...) ending the header
+ * line in `:`, and carries an indented `version "x.y.z"` line; Berry uses a `dep@npm:range:`
+ * header and an indented `version: x.y.z` line. This is a heuristic text read, the same stance
+ * every other doctor lockfile and config reader takes, rather than a full grammar: it returns
+ * undefined when no block's specifier list names `dep`.
+ */
+export function yarnLockedVersion(lockText: string, dep: string): string | undefined {
+  const lines = lockText.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === '' || line.startsWith('#') || /^\s/.test(line)) continue;
+    const header = line.trimEnd();
+    if (!header.endsWith(':')) continue;
+    const specifiers = header.slice(0, -1).split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
+    const namesThisDep = specifiers.some((spec) => {
+      const at = spec.lastIndexOf('@');
+      const name = at > 0 ? spec.slice(0, at) : spec;
+      return name === dep;
+    });
+    if (!namesThisDep) continue;
+    for (let j = i + 1; j < lines.length && /^\s/.test(lines[j]); j++) {
+      const m = /^\s+version:?\s+"?([^"\s]+)"?/.exec(lines[j]);
+      if (m) return m[1];
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Judge a yarn.lock's resolved framework versions against the engine's peer ranges, the yarn
+ * sibling of {@link dependencyFloorsResult}. yarn.lock is not JSON or YAML, so there is no parse
+ * failure branch; a heuristic miss just resolves nothing for that dependency.
+ */
+export function yarnDependencyFloorsResult(lockText: string, peers: Record<string, string>): CheckResult {
+  return judgePeers(
+    (dep) => yarnLockedVersion(lockText, dep),
+    peers,
+    (dep) => `${dep}: no entry for it in yarn.lock`
+  );
 }
 
 /**
@@ -126,6 +252,16 @@ export const configDependencyFloors: DoctorCheck = {
   conditionId: 'config.dependency-floors-unmet',
   title: 'Dependency floors',
   async run(ctx: DoctorContext): Promise<CheckResult> {
-    return dependencyFloorsResult(await ctx.readFile('package-lock.json'), readEnginePeers());
+    const peers = readEnginePeers();
+    // In npm/pnpm/yarn order, since that is the order the three package managers were added in;
+    // the first recognized lockfile that exists is the one judged. Only when none of the three
+    // exists does the check have nothing to look at at all.
+    const npmLock = await ctx.readFile('package-lock.json');
+    if (npmLock !== null) return dependencyFloorsResult(npmLock, peers);
+    const pnpmLock = await ctx.readFile('pnpm-lock.yaml');
+    if (pnpmLock !== null) return pnpmDependencyFloorsResult(pnpmLock, peers);
+    const yarnLock = await ctx.readFile('yarn.lock');
+    if (yarnLock !== null) return yarnDependencyFloorsResult(yarnLock, peers);
+    return unchecked('none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found');
   },
 };

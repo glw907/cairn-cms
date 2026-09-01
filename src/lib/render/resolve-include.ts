@@ -44,7 +44,7 @@ const MISSING_CLASS = 'cairn-include-missing';
 /**
  * A `FragmentResolve` that also carries the preview-only boundary cue's title lookup (the
  *  invisible-craft design's ratified 4B). EditPage's client-side resolver is the only caller that
- *  ever sets `previewTitle`; the build-time resolver (`buildFragmentResolver`, the public delivery
+ *  ever sets `previewTitle`; the build-time resolver (`createFragmentResolver`, the public delivery
  *  path) is a plain `FragmentResolve` with no such property, so `remarkResolveIncludes` below wraps
  *  a splice only when the resolver it was handed carries this marker. A site's own render forwards
  *  whichever resolver it received unchanged, so the property survives the passthrough by reference.
@@ -136,7 +136,7 @@ export function remarkResolveIncludes() {
       }
       const spliced = parseFragmentBody(body).children as RootContent[];
       // resolve.previewTitle only exists on EditPage's client-side resolver, never on the
-      // build-time buildFragmentResolver, so this wrap is provably preview-only.
+      // build-time createFragmentResolver, so this wrap is provably preview-only.
       const previewTitle = resolve.previewTitle;
       const wrapped = previewTitle
         ? [fragmentBoundaryNode(previewTitle(id) || id, spliced)]

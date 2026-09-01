@@ -238,6 +238,21 @@ describe('mediaAltPreview', () => {
     expect(commitCount(gh)).toBe(0);
   });
 
+  it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH, 'sunset', { alt: DEFAULT_ALT })),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutesInternal(runtime());
+    const event = previewEvent({ hash: HASH }) as unknown as { cookies: unknown };
+    event.cookies = undefined;
+    await expect(routes.mediaAltPreviewAction(event as never)).rejects.toThrow(/cookie jar/i);
+    expect(commitCount(gh)).toBe(0);
+  });
+
   it('refuses a malformed hash with fail(400)', async () => {
     const gh = new GithubDouble({
       main: {

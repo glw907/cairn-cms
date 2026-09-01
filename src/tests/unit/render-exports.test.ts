@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { createRenderer, defineRegistry, glyph } from '../../lib/index.js';
+import { createRenderer, defineRegistry, renderGlyph } from '../../lib/index.js';
 import * as engine from '../../lib/index.js';
 import * as authoring from '../../lib/render/authoring.js';
 
 describe('engine entry render surface', () => {
   it('keeps the core render entry points on the root barrel', () => {
-    for (const fn of [createRenderer, defineRegistry, glyph]) {
+    for (const fn of [createRenderer, defineRegistry, renderGlyph]) {
       expect(typeof fn).toBe('function');
     }
   });

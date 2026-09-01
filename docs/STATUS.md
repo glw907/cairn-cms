@@ -28,7 +28,10 @@ authorized the full arc: execute, pass-end ritual, merge to `main`, push. 14 tas
 sequential, `pass-execute.js` chain; Tasks 5 and 11 upshifted to Opus implementers
 (security-critical). Ceiling 6M, checkpoint every four tasks. Checkpoint (11:19): Tasks
 1-4 accepted through the chain (Task 2 took one fix round); Task 5 (previewMint, Opus)
-in flight; guard healthy throughout. The internals pass plan is DRAFTED at
+in flight; guard healthy throughout. Checkpoint (12:37): Tasks 1-8 through the chain
+(previewMint and ctx.attr both clean; the normalizeAssets hoist committed); next are the
+two visual tasks (9-10), then the Opus log-evenness task (11), then 12-14. The internals
+pass plan is DRAFTED at
 `docs/superpowers/plans/2026-09-01-internals-pass.md` (docket banked beside it; six open
 decisions await Geoff; its adversarial review runs after 4b merges). Resume prompt for a fresh
 session: "In ~/Projects/cairn-cms, resume the conformance pass (4b) mid-execution: invoke

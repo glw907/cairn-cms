@@ -330,7 +330,7 @@
       "name": "ComponentContext",
       "subpath": "/render",
       "home": ".",
-      "reason": "R4 closure: `strAttr` names it on this subpath."
+      "reason": "R4 closure: a site's `build(ctx)` on this subpath types its own parameter with it."
     },
     {
       "name": "AccessMap",

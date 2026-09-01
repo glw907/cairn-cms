@@ -700,13 +700,14 @@ declare function renderGlyph(name: string, icons: IconSet): Element;
 ```
 
 The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
-`cardShell`, `headRow`, and `strAttr`, lives on the [`/render`](./render.md) subpath, not here. The
-showcase `alert` component composes `renderGlyph` with those helpers:
+`cardShell`, and `headRow`, lives on the [`/render`](./render.md) subpath, not here; `ctx.attr(key)`
+reads a declared string attribute off the `ComponentContext` `build` receives. The showcase `alert`
+component composes `renderGlyph` with those helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
-import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
+import { cardShell, headRow, iconSpan } from '@glw907/cairn-cms/render';
 
 const makeIcon = (name, role) => iconSpan(renderGlyph(name, icons), role);
 build: (ctx) =>
@@ -1105,7 +1106,7 @@ function signatures above reference these.
 | `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
 | `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
 | `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |
-| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)` readers, and the stamped `node`. |
+| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)`/`attr(key)` readers, and the stamped `node`. |
 | `ManifestEntry` | Extension API | `interface ManifestEntry` | One committed manifest entry's projection: its identity, routing, draft flag, and outbound `cairn:` edges. `Manifest.entries` carries these. |
 | `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry, recorded per manifest entry and reverse-mapped by the cross-branch index. |
 | `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. `MediaResolve`'s own parameter. |

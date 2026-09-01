@@ -161,6 +161,12 @@
   `ReproContext` instead of importing `fixtureMediaBase`; a site deployed under a SvelteKit
   `paths.base` now composes fixture image URLs inside its own namespace by passing that prefix.
 
+- `ComponentContext` (`/render`) gains an `attr(key)` method: `attr('title')` reads a declared
+  string attribute off the context, same semantics as the retired standalone `strAttr(ctx, key)`
+  (`undefined` for a boolean or absent value), and now sits beside `slot(name)` and `items(name)`
+  rather than as a separate import. `strAttr` retires from `/render`. Consumers must: replace
+  `strAttr(ctx, key)` with `ctx.attr(key)`.
+
 - `/auth-channel` folds onto the engine's one auth grammar. Five changes, all breaking for a site
   that already runs `createAuthChannel`.
 

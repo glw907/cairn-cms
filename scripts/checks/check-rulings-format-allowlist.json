@@ -1,6 +1,5 @@
 [
   "audit-media-normalizeassets",
-  "audit-render-strattr",
   "audit-log-auth-session-destroyed",
   "audit-log-dictionary-added",
   "audit-log-commit-succeeded",

@@ -3831,7 +3831,8 @@ when the remediation pass lands.
 ## audit-render-strattr: `strAttr`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Real and design-agnostic: the engine types attributes as string|boolean, so every string read must narrow. 10-17 call sites per family site, 15 in the shipped scaffold.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Move the reader onto ComponentContext as ctx.str(key), beside ctx.slot and ctx.items, and drop the standalone export: it removes an import and a public export r).
+- **Reopens on:** closed. Executed by the conformance pass (Task 7): `strAttr(ctx, key)` moved onto `ComponentContext` as `attr(key)`, not `str(key)` (the verify record's proposed name) — `attr` matches its siblings `slot(name)`/`items(name)`, which name what they return rather than restate the signature. The standalone `/render` export retires; the `ComponentContext` re-export record's reason rewrites from "`strAttr` names it on this subpath" to the consumer-builder parameter typing that now motivates it. Four consumer repos migrated their call sites (`strAttr(ctx, key)` to `ctx.attr(key)`), the showcase and regenerated `templates/waymark` included. The deeper `FieldDescriptor`-typed fix the verify record flagged (typing `attributes` itself from a component's own field declarations, so a `text` attribute reads as `string` with no accessor) stays blocked by `build` living inside the same object literal it would infer from, and is not attempted here.
+- **Shape:** Move the reader onto `ComponentContext` as `attr(key)`, beside `slot(name)` and `items(name)`; drop the standalone `/render` export.
 - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 5.
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 

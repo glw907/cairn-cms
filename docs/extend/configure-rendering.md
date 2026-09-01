@@ -82,9 +82,9 @@ component's directive can carry: `title` and `body` are conventional names the e
 component-insert dialog treats specially, but any name works.
 
 `cardShell` and `headRow`, imported from [`/render`](../reference/render.md), are hast-building
-helpers for the common "bordered box with a heading" shape; `iconSpan` and `strAttr` round out the
-toolkit for a component that reads an icon attribute or builds its own glyph. Reach for them
-instead of hand-walking hast yourself.
+helpers for the common "bordered box with a heading" shape; `iconSpan` rounds out the toolkit for
+a component that builds its own glyph, and `ctx.attr(key)` reads a declared string attribute off
+the context `build` receives. Reach for them instead of hand-walking hast yourself.
 
 Register it on the same registry your renderer builds from:
 

@@ -20,7 +20,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
 - `CommitConflictError`: typeof CommitConflictError
-- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; node: Element }
+- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
 - `ComponentDef`: { name: string; label: string; description: string; insertTemplate?: string; build: (ctx: ComponentContext) => Element; hydrate?: boolean | "visible"; defaultIconByRole?: Record<string, string>; use?: string; attributes?: Record<string, FieldDescriptor>; behavior?: BehaviorTable; attributeSchema?: Fieldset<Record<string, FieldDescriptor>>; slots?: SlotDef[]; icon?: string; group?: string; hidden?: boolean; preview?: { attributes?: Record<string, string | boolean>; slots?: Record<string, string | string[]> } }
 - `ComponentRegistry`: { defs: ComponentDef[]; names: string[]; get: (name: string) => ComponentDef | undefined; defaultIcon: (name: string, role?: string) => string | undefined; iconField: (name: string) => string | undefined }
 - `ComposeInput`: { adapter: CairnAdapter; siteConfig: SiteConfig }
@@ -403,10 +403,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/render`
 
 - `cardShell`: (classes: string[], body: ElementContent[]) => Element
-- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; node: Element }
+- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
 - `headRow`: (title: ElementContent[], icon?: Element, level?: number) => Element
 - `iconSpan`: (glyphEl: Element, role?: string) => Element
-- `strAttr`: (ctx: ComponentContext, key: string) => string | undefined
 
 ## `/reproductions`
 
@@ -455,7 +454,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
-- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; node: Element }
+- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
 - `ComponentDef`: { name: string; label: string; description: string; insertTemplate?: string; build: (ctx: ComponentContext) => Element; hydrate?: boolean | "visible"; defaultIconByRole?: Record<string, string>; use?: string; attributes?: Record<string, FieldDescriptor>; behavior?: BehaviorTable; attributeSchema?: Fieldset<Record<string, FieldDescriptor>>; slots?: SlotDef[]; icon?: string; group?: string; hidden?: boolean; preview?: { attributes?: Record<string, string | boolean>; slots?: Record<string, string | string[]> } }
 - `ComponentRegistry`: { defs: ComponentDef[]; names: string[]; get: (name: string) => ComponentDef | undefined; defaultIcon: (name: string, role?: string) => string | undefined; iconField: (name: string) => string | undefined }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }

@@ -1363,24 +1363,44 @@ export const load: PageServerLoad = (event) => previewLoad(runtime, publicRoutes
 <ArticleView {data} preview />
 ```
 
-### `mintPreviewToken`
+### `previewMint`
 
 Stability tier: Unstable API.
 
 ```ts
-declare function mintPreviewToken(db: D1Database, config: PreviewTokenConfig, record: { concept: string; entryId: string; editor: string }): Promise<{ token: string; expiresAt: number }>;
+declare function previewMint(runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }): Promise<PreviewMintOutcome>;
 ```
 
-Mint a preview token: generate a fresh 256-bit token, store only its hash (`hashToken`,
-`/auth-crypto`) in `AUTH_DB` alongside the entry it shares and the minting editor, and return the
-plaintext once, since it's never stored and can't be recovered later. The documented path to this
-function is [`previewMintAction`](#createcontentroutes), which carries the entry-scoped
-authorization a preview mint needs (converting one editor's read into an unauthenticated public
-read is an authority-delegation act); `mintPreviewToken` itself performs no authorization or
-draft-existence check, so a caller that reaches it directly, to build a custom mint action, owns
-both. `config.ttlMs` defaults to seven days and must be finite, positive, and between one minute
-and thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error before any
-token is generated.
+Mint a preview token for one entry's pending draft: generate a fresh 256-bit token, store only its
+hash (`hashToken`, `/auth-crypto`) in `AUTH_DB` alongside the entry it shares and the minting
+editor, and return the plaintext once, since it's never stored and can't be recovered later. Call
+it from a site's own mint workflow, such as an editorial queue that emails a reviewer on submit;
+[`previewMintAction`](#createcontentroutes) is the engine's own route over the same function.
+
+Converting one editor's read into an unauthenticated public read is an authority-delegation act,
+so `previewMint` carries the authorization itself and runs it first: the signed-in editor from
+`event.locals.cairnEditor`, the concept lookup, the concept-scoped access check against
+`runtime.access`, the entry-id shape rule, and only then the pending-draft check. A session
+without editor capability, or one the site's access map denies the concept, gets a 403 before the
+mint looks for the draft, so a refusal never reports whether an entry exists. Call it where the
+admin guard has already run: `event.locals.cairnEditor` is the only editor source, and the stored
+row carries the address it names, which is what lets removing an editor revoke every link they
+minted.
+
+The `target` is the argument's, never the route's, so the call works from any route. A refusal
+comes back as a value on the `outcome` discriminant, not a throw:
+
+```ts
+type PreviewMintOutcome =
+  | { outcome: 'minted'; token: string; expiresAt: number }
+  | { outcome: 'unknown-concept' }
+  | { outcome: 'invalid-id' }
+  | { outcome: 'no-draft' };
+```
+
+`config.ttlMs` defaults to seven days and must be finite, positive, and between one minute and
+thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error before any token
+is generated.
 
 ## Navigation routes
 
@@ -1887,7 +1907,8 @@ imports the matching `*Data` type to type its `data` prop.
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
 | <a id="contentroutesconfig"></a>`ContentRoutesConfig` | Unstable API | `interface ContentRoutesConfig { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]>; preview?: PreviewTokenConfig }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. `preview` is the TTL [`previewMintAction`](#createcontentroutes) mints against, absent resolving to [`PreviewTokenConfig`](#types)'s own seven-day default. |
 | `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the load and action vocabulary a site can mount by hand, shown expanded in [`createContentRoutes`](#createcontentroutes). The engine's Media Library janitorial actions (bulk delete, orphan scan and purge, replace, alt propagation, per-asset delete and update, and the Library-direct upload) are not members: they reach the browser only through [`createCairnAdmin`](#createcairnadmin). |
-| <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`mintPreviewToken`](#mintpreviewtoken): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
+| <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`previewMint`](#previewmint): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
+| <a id="previewmintoutcome"></a>`PreviewMintOutcome` | Unstable API | `type PreviewMintOutcome = { outcome: 'minted'; token: string; expiresAt: number } \| { outcome: 'unknown-concept' } \| { outcome: 'invalid-id' } \| { outcome: 'no-draft' }` | What [`previewMint`](#previewmint) returns, on the `outcome` discriminant: the minted link's plaintext token and its expiry (epoch milliseconds), or the one refusal the target didn't clear. `unknown-concept` names a concept the runtime doesn't declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending draft, so there's nothing to share. A session the access check refuses never reaches any of these: it gets a 403 instead, the way every other engine content surface refuses. |
 | <a id="previewdata"></a>`PreviewData` | Extension API | `interface PreviewData extends EntryData { preview: { state: 'draft' \| 'published'; expiresAt: string; published: { permalink: string } \| null } }` | [`previewLoad`](#previewload)'s data: a public entry page's own [`EntryData`](./delivery.md#entrydata), the exact shape `entryLoad` returns, plus `preview`, the metadata [`PreviewBanner`](./components.md#previewbanner) (or a site's own banner) reads. `preview.state` is `'draft'` while the shared branch is still open and `'published'` once it's gone; `preview.published` names the live permalink only in the `'published'` state, when the entry's file exists on the default branch, and is `null` otherwise (a discarded, never-published entry's branch-gone case never reaches this shape at all, since it answers a 404 instead). A compile-time assertion in the engine's own test suite proves this type adds no key beyond `preview`, so a future `EntryData` field breaks the engine's own build rather than a consuming site's. |
 | `RevertFailure` | Unstable API | `type RevertFailure = { reason: 'draft_exists'; draftEditor: string; draftLastSavedAt: string } \| { reason: 'ref_unknown' } \| { reason: 'history_stale' }` | A refused revert (`ActionFailure<RevertFailure>`), fail-closed with no force path: `draft_exists` (`fail(409, ...)`, the blocking draft's own editor and last-saved moment) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref_unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history_stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth reason for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
 | `ContentFormFailure` | Unstable API | `interface ContentFormFailure { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: 'link' \| 'include'; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. `brokenLinks`/`body` come from a blocked save or publish; `inboundLinks`/`inboundKind`/`id` from a refused delete; `hash`/`usage`/`foundIn` from a refused media delete or replace, and `hash` alone from a refused media update or alt-propagation. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |

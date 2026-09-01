@@ -110,7 +110,7 @@ export default defineConfig({
             // envelope; the real module exists only inside a kit app, so the component project
             // resolves it to a stub that runs the same JSON-then-devalue parse.
             '$app/forms': path.resolve('./src/tests/component/_app-forms.ts'),
-            // content-routes-core.ts value-imports mintPreviewToken from preview.ts, so any
+            // content-routes-core.ts value-imports previewMint from preview.ts, so any
             // component test that wires createCairnAdmin/createContentRoutes (most of them) pulls
             // preview.ts's own $app/environment import into this project's browser graph too, not
             // just the unit and integration projects.

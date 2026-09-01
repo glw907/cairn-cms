@@ -1,21 +1,29 @@
 // cairn-cms: Task 2a (preview pass, spec part 3, "Public preview for a non-editor"):
-// mintPreviewToken, the previewMint/previewRevoke actions, and the lifecycle cleanup wired into
+// previewMint, the previewMint/previewRevoke actions, and the lifecycle cleanup wired into
 // rename/discard/delete/list-delete. Publish deliberately leaves rows intact (the ended page needs
 // them). Driven against the real GithubDouble the way content-routes-revert.test.ts and
 // content-routes-publish.test.ts are, plus the real D1 AUTH_DB the workerd integration project
-// provides, since mintPreviewToken and the actions under test write real rows.
+// provides, since previewMint and the actions under test write real rows.
 import { env } from 'cloudflare:test';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { mintPreviewToken } from '../../lib/sveltekit/preview.js';
+import { previewMint } from '../../lib/sveltekit/preview.js';
 import { findPreviewToken, insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { hashToken } from '../../lib/auth/crypto.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
-import { runtime as baseRuntime, postsConcept, contentEvent, expectRedirect, expectHttpError } from '../unit/_content-harness.js';
+import {
+  runtime as baseRuntime,
+  postsConcept,
+  contentEvent,
+  backend,
+  expectRedirect,
+  expectHttpError,
+} from '../unit/_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import type { ContentFormFailure } from '../../lib/sveltekit/content-routes.js';
 import type { D1Database } from '@cloudflare/workers-types';
 
@@ -88,22 +96,68 @@ async function records(run: () => Promise<unknown>): Promise<Record<string, unkn
   return captured;
 }
 
-describe('mintPreviewToken', () => {
-  const RECORD = { concept: 'posts', entryId: ID, editor: 'ed@t' };
+describe('previewMint', () => {
+  const TARGET = { concept: 'posts', entryId: ID };
+  const ROLES = defineRoles({ owner: 'owner', 'other-editor': 'editor', publisher: 'editor' });
+  const DENY_POSTS = defineAccess(ROLES, { posts: ['publisher'] });
 
-  it('defaults to a seven-day TTL', async () => {
+  /** A backend whose branchHead answers `head` and records every branch it was asked about, for
+   *  proving the draft check never runs for a session the authorization sequence already refused. */
+  function recordingBackend(reads: string[], head: string | null): Backend {
+    return { ...backend, branchHead: async (branch: string) => (reads.push(branch), head) };
+  }
+
+  /** An event for a direct previewMint call. Deliberately OFF `/admin/[concept]/[id]` and carrying
+   *  no route params at all: a target read from params rather than from the argument fails here,
+   *  which is what keeps previewMint usable from a site's own workflow route. */
+  function mintEvent(
+    opts: { role?: string; capability?: 'owner' | 'editor' | 'none'; email?: string; eventBackend?: Backend } = {},
+  ) {
+    const { role = 'editor', capability = 'editor', email = `${role}@t`, eventBackend = backend } = opts;
+    const url = 'https://site.example/queue/share';
+    return {
+      url: new URL(url),
+      params: {},
+      route: { id: '/queue/share' },
+      request: new Request(url, { method: 'POST' }),
+      locals: { cairnEditor: { email, displayName: role, role, capability }, cairnBackend: eventBackend },
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: ORIGIN } },
+      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+      setHeaders: () => {},
+    };
+  }
+
+  /** A GithubDouble carrying the entry's pending branch, the draft a mint shares. */
+  function ghWithDraft(): GithubDouble {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.createBranch(BRANCH, 'main');
+    return gh;
+  }
+
+  it('mints for an authorized editor with a pending draft, defaulting to a seven-day TTL', async () => {
+    ghWithDraft().install();
     const before = Date.now();
-    const { expiresAt } = await mintPreviewToken(db, {}, RECORD);
+    const result = await previewMint(runtime(), {}, mintEvent() as never, TARGET);
+    expect(result.outcome).toBe('minted');
+    if (result.outcome !== 'minted') return;
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    expect(expiresAt).toBeGreaterThanOrEqual(before + sevenDays);
-    expect(expiresAt).toBeLessThan(before + sevenDays + 5_000);
+    expect(result.expiresAt).toBeGreaterThanOrEqual(before + sevenDays);
+    expect(result.expiresAt).toBeLessThan(before + sevenDays + 5_000);
+    expect(await findPreviewToken(db, await hashToken(result.token))).toEqual({
+      concept: 'posts',
+      entryId: ID,
+      editor: 'editor@t',
+      expiresAt: result.expiresAt,
+    });
   });
 
   it('honors a configured ttlMs', async () => {
+    ghWithDraft().install();
     const before = Date.now();
-    const { expiresAt } = await mintPreviewToken(db, { ttlMs: 60_000 }, RECORD);
-    expect(expiresAt).toBeGreaterThanOrEqual(before + 60_000);
-    expect(expiresAt).toBeLessThan(before + 60_000 + 5_000);
+    const result = await previewMint(runtime(), { ttlMs: 60_000 }, mintEvent() as never, TARGET);
+    if (result.outcome !== 'minted') throw new Error(`expected a mint, got ${result.outcome}`);
+    expect(result.expiresAt).toBeGreaterThanOrEqual(before + 60_000);
+    expect(result.expiresAt).toBeLessThan(before + 60_000 + 5_000);
   });
 
   it.each([
@@ -113,7 +167,77 @@ describe('mintPreviewToken', () => {
     ['under one minute', 30_000],
     ['over thirty days', 31 * 24 * 60 * 60 * 1000],
   ])('rejects a %s ttlMs with a PreviewTokenConfig-prefixed error', async (_label, ttlMs) => {
-    await expect(mintPreviewToken(db, { ttlMs }, RECORD)).rejects.toThrow(/^PreviewTokenConfig:/);
+    ghWithDraft().install();
+    await expect(previewMint(runtime(), { ttlMs }, mintEvent() as never, TARGET)).rejects.toThrow(
+      /^PreviewTokenConfig:/,
+    );
+  });
+
+  it('stores the resolved session editor as the attribution, so the removal cascade always matches', async () => {
+    ghWithDraft().install();
+    const first = await previewMint(runtime(), {}, mintEvent({ email: 'alice@t' }) as never, TARGET);
+    const second = await previewMint(runtime(), {}, mintEvent({ email: 'bob@t' }) as never, TARGET);
+    if (first.outcome !== 'minted' || second.outcome !== 'minted') throw new Error('expected two mints');
+    expect((await findPreviewToken(db, await hashToken(first.token)))?.editor).toBe('alice@t');
+    expect((await findPreviewToken(db, await hashToken(second.token)))?.editor).toBe('bob@t');
+  });
+
+  it('refuses no-draft when the entry carries no pending branch', async () => {
+    new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } }).install();
+    const result = await previewMint(runtime(), {}, mintEvent() as never, TARGET);
+    expect(result).toEqual({ outcome: 'no-draft' });
+  });
+
+  it('refuses an undeclared concept, and a malformed entry id, without minting', async () => {
+    ghWithDraft().install();
+    expect(await previewMint(runtime(), {}, mintEvent() as never, { concept: 'ghosts', entryId: ID })).toEqual({
+      outcome: 'unknown-concept',
+    });
+    expect(await previewMint(runtime(), {}, mintEvent() as never, { concept: 'posts', entryId: '../etc' })).toEqual({
+      outcome: 'invalid-id',
+    });
+  });
+
+  it('refuses a none-capability session the same way the engine’s own actions do', async () => {
+    ghWithDraft().install();
+    const refusal = await expectHttpError(() =>
+      previewMint(runtime(), {}, mintEvent({ role: 'reader', capability: 'none' }) as never, TARGET),
+    );
+    expect(refusal.status).toBe(403);
+  });
+
+  it('refuses an editor the access map denies', async () => {
+    ghWithDraft().install();
+    const refusal = await expectHttpError(() =>
+      previewMint(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }) as never, TARGET),
+    );
+    expect(refusal.status).toBe(403);
+  });
+
+  it('authorizes before it looks for the draft, so a refusal is never an entry-existence oracle', async () => {
+    const withDraft: string[] = [];
+    const withoutDraft: string[] = [];
+    const denied = runtime({ access: DENY_POSTS });
+    const refusals = [];
+    for (const [reads, head] of [
+      [withDraft, 'sha'],
+      [withoutDraft, null],
+    ] as const) {
+      refusals.push(
+        await expectHttpError(() =>
+          previewMint(
+            denied,
+            {},
+            mintEvent({ role: 'other-editor', eventBackend: recordingBackend(reads, head) }) as never,
+            TARGET,
+          ),
+        ),
+      );
+    }
+    expect(refusals[0]).toEqual(refusals[1]);
+    // The draft check never ran for either, so the refusal cannot report whether a draft exists.
+    expect(withDraft).toEqual([]);
+    expect(withoutDraft).toEqual([]);
   });
 });
 

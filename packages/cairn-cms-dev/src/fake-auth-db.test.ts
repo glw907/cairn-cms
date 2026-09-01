@@ -240,7 +240,7 @@ test('the plain setEditorRole and deleteEditor matchers still work alongside the
 });
 
 // The preview_tokens dispatch (src/lib/auth/preview-store.ts's exact SQL), the preview pass's
-// addition to this fixture: mintPreviewToken's insert (and its expiry sweep), previewLoad's two
+// addition to this fixture: previewMint's insert (and its expiry sweep), previewLoad's two
 // lookups, and the revoke/lifecycle-cleanup deletes by entry or by editor.
 
 const INSERT_PREVIEW_TOKEN =

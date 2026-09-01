@@ -67,7 +67,7 @@ export function createFakeAuthDb(): FakeAuthDb {
   const ownerCount = (ownerRoles: string[]) =>
     [...editors.values()].filter((e) => ownerRoles.includes(e.role)).length;
 
-  // Preview tokens, keyed by their hash (the store never sees the plaintext): mintPreviewToken's
+  // Preview tokens, keyed by their hash (the store never sees the plaintext): previewMint's
   // insert, previewLoad's two lookups (with and without the expiry predicate), and the
   // revoke/lifecycle-cleanup deletes by entry or by editor.
   const previewTokens = new Map<string, PreviewTokenRow>();

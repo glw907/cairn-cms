@@ -1,15 +1,15 @@
-// cairn-cms: mintPreviewToken, the public entry point for issuing a preview link, and
-// previewLoad, the public entry point for serving one (spec part 3, "Public preview for a
-// non-editor"). The documented path to mintPreviewToken is the previewMint admin action
-// (content-routes-core.ts), which carries the entry-scoped authorization; this function itself
-// performs no authorization or draft-existence check of its own, so a caller that reaches it
-// directly owns both. previewLoad is the mint's counterpart: it needs no authorization at all,
-// since the token itself is the credential, and it never reads locals.cairnEditor or
-// locals.cairnAccess.
+// cairn-cms: previewMint, the public entry point for issuing a preview link, and previewLoad, the
+// public entry point for serving one (spec part 3, "Public preview for a non-editor"). previewMint
+// carries the engine's own entry-scoped authorization itself, so every path to a minted token runs
+// the same check the previewMint admin action (content-routes-core.ts) runs, and a caller reaching
+// it from its own workflow route owns nothing beyond signing the editor in. previewLoad is the
+// mint's counterpart: it needs no authorization at all, since the token itself is the credential,
+// and it never reads locals.cairnEditor or locals.cairnAccess.
 import { error } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { generateToken, hashToken } from '../auth/crypto.js';
 import { insertPreviewToken, findPreviewToken, findPreviewTokenAnyExpiry, type PreviewTokenRow } from '../auth/preview-store.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
 import { requireDb } from '../env.js';
 import { CairnError } from '../diagnostics/index.js';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
@@ -44,7 +44,7 @@ import { log } from '../log/index.js';
 export interface PreviewTokenConfig {
   /**
    * The minted link's lifetime in milliseconds. Defaults to seven days. Must be finite, positive,
-   * and between one minute and thirty days inclusive; `mintPreviewToken` throws an actionable,
+   * and between one minute and thirty days inclusive; `previewMint` throws an actionable,
    * `PreviewTokenConfig:`-prefixed error otherwise.
    */
   ttlMs?: number;
@@ -79,23 +79,79 @@ function resolveTtlMs(config: PreviewTokenConfig): number {
 }
 
 /**
- * Mint a preview token for one entry's pending draft: generate a fresh 256-bit token, store only
- * its hash (`hashToken`) in `AUTH_DB` alongside the entry it shares and the minting editor, and
- * return the plaintext once, since it is never stored and cannot be recovered later. The row
- * carries a numeric `expiresAt` (epoch milliseconds), matching `magic_token` and `session`.
- * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
+ * What {@link previewMint} returns: the minted link's plaintext token and expiry, or the one
+ * refusal the target could not clear. `unknown-concept` names a concept the runtime does not
+ * declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending
+ * branch, so there is nothing to share. A session the engine's own access check refuses never
+ * reaches any of these: it throws, the way every other engine content surface refuses.
  */
-export async function mintPreviewToken(
-  db: D1Database,
+export type PreviewMintOutcome =
+  | { outcome: 'minted'; token: string; expiresAt: number }
+  | { outcome: 'unknown-concept' }
+  | { outcome: 'invalid-id' }
+  | { outcome: 'no-draft' };
+
+/**
+ * Mint a preview token for one entry's pending draft: authorize the signed-in editor for the
+ * target concept, confirm the draft exists, then generate a fresh 256-bit token, store only its
+ * hash (`hashToken`) in `AUTH_DB` alongside the entry it shares and the minting editor, and return
+ * the plaintext once, since it is never stored and cannot be recovered later. The row carries a
+ * numeric `expiresAt` (epoch milliseconds), matching `magic_token` and `session`.
+ *
+ * Minting converts one editor's read on a concept into an unauthenticated public read for anyone
+ * holding the URL, so authorization runs FIRST and short-circuits, in the engine's own order:
+ * `requireEditor` (the session the admin guard resolved), the concept lookup,
+ * `requireEngineAccess` against `runtime.access`, the id shape rule, and only then the draft
+ * check. A refusal therefore never reports whether an entry or its draft exists to a session that
+ * was not allowed to ask. The `target` is the argument's, never the route's: this reads no route
+ * param, so a site's own workflow route (an editorial queue emailing a reviewer on submit) mints
+ * from anywhere the guard has run.
+ *
+ * The editor is the guard-resolved session's and cannot be supplied by the caller. The stored
+ * `editor` column is that session's `email`, already normalized by the `editor`-table select, so
+ * the editor-removal revocation cascade (`DELETE FROM preview_tokens WHERE editor = ?`,
+ * `auth/store.ts`) always matches the rows a departing editor minted.
+ * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
+ * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
+ *  the concept, and Redirect 303 to the login page when there is no session at all.
+ */
+export async function previewMint(
+  runtime: CairnRuntime,
   config: PreviewTokenConfig,
-  record: { concept: string; entryId: string; editor: string },
-): Promise<{ token: string; expiresAt: number }> {
+  event: CairnEvent,
+  target: { concept: string; entryId: string },
+): Promise<PreviewMintOutcome> {
+  const editor = requireEditor(event);
+  const concept = findConcept(runtime.concepts, target.concept);
+  if (!concept) return { outcome: 'unknown-concept' };
+  requireEngineAccess(runtime.access, editor, concept.id);
+  if (!isValidId(target.entryId)) return { outcome: 'invalid-id' };
+
+  // Both config faults answer before any network read: a misconfigured TTL and a missing AUTH_DB
+  // are site setup, not entry state, so neither waits on GitHub.
   const ttlMs = resolveTtlMs(config);
+  const env = event.platform?.env ?? {};
+  const db = requireDb(env);
+
+  // A preview shares a draft; without one there is nothing to share. Reached through the same
+  // `locals.cairnBackend ?? runtime.backend.connect(env)` seam previewLoad and every other engine
+  // load ride, so a test needs no real GitHub token.
+  const backend = event.locals.cairnBackend ?? runtime.backend.connect(env);
+  if ((await backend.branchHead(pendingBranch(concept.id, target.entryId))) === null) {
+    return { outcome: 'no-draft' };
+  }
+
   const token = generateToken();
   const tokenHash = await hashToken(token);
   const expiresAt = Date.now() + ttlMs;
-  await insertPreviewToken(db, { ...record, tokenHash, expiresAt });
-  return { token, expiresAt };
+  await insertPreviewToken(db, {
+    concept: concept.id,
+    entryId: target.entryId,
+    editor: editor.email,
+    tokenHash,
+    expiresAt,
+  });
+  return { outcome: 'minted', token, expiresAt };
 }
 
 /**

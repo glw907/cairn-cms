@@ -8,7 +8,6 @@ import { isHttpError } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { GithubDouble } from '../unit/_github-double.js';
 import { previewLoad, type PreviewData } from '../../lib/sveltekit/preview.js';
-import { mintPreviewToken } from '../../lib/sveltekit/preview.js';
 import { insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { generateToken, hashToken } from '../../lib/auth/crypto.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
@@ -156,13 +155,17 @@ function loadEvent(token: string, opts: { env?: Record<string, unknown> } = {}) 
   return { event, headers };
 }
 
-/** Mint a real, valid token (default TTL) and return its plaintext for the request param. */
+/** Seed a real, valid token row (the default seven-day TTL) and return its plaintext for the
+ *  request param. Written through the store rather than previewMint, whose authorization sequence
+ *  wants the admin session this public load deliberately never has. */
 async function mintValidToken(concept = 'posts', entryId = ID, editor = 'ed@t'): Promise<string> {
-  const { token } = await mintPreviewToken(db, {}, { concept, entryId, editor });
+  const token = generateToken();
+  const tokenHash = await hashToken(token);
+  await insertPreviewToken(db, { concept, entryId, editor, tokenHash, expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 });
   return token;
 }
 
-/** Seed a token row directly, bypassing mintPreviewToken's TTL floor, for an already-expired row. */
+/** Seed a token row directly, bypassing previewMint's TTL floor, for an already-expired row. */
 async function seedExpiredToken(concept = 'posts', entryId = ID): Promise<string> {
   const token = generateToken();
   const tokenHash = await hashToken(token);

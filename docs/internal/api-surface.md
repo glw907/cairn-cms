@@ -506,7 +506,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MediaLibraryEntry`: { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number | null; height: number | null; bytes: number; createdAt: string }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
-- `mintPreviewToken`: (db: D1Database, config: PreviewTokenConfig, record: { concept: string; entryId: string; editor: string }) => Promise<{ token: string; expiresAt: number }>
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
 - `NavIcon`: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"
@@ -525,6 +524,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
 - `PreviewData`: { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null }; concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
 - `previewLoad`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
+- `previewMint`: (runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewMintOutcome>
+- `PreviewMintOutcome`: { outcome: "minted"; token: string; expiresAt: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" } | { outcome: "no-draft" }
 - `PreviewTokenConfig`: { ttlMs?: number }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }

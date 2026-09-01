@@ -2199,7 +2199,27 @@ when the remediation pass lands.
 ## audit-sveltekit-mintpreviewtoken: `mintPreviewToken`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site minting a share link from its own workflow — an editorial queue emailing a reviewer on submit — rather than from the editor's Share button.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 5, on the signature branch of
+  the shape's either/or: `mintPreviewToken(db, config, record)` becomes
+  `previewMint(runtime, config, event, { concept, entryId })`, which performs the entry-scoped
+  check the admin action performs rather than naming the obligation. The header comment admitting
+  the obligation is gone, along with the reference page's copy of it. The sequence is the engine's
+  own, extracted rather than duplicated: `requireEditor(event)`, `findConcept`,
+  `requireEngineAccess(runtime.access, ...)`, `isValidId`, then the `branchHead(pendingBranch(...))`
+  draft check, with `previewMintAction` reduced to naming the target from its route params and
+  dressing each `outcome` arm in the refusal that screen speaks. `requireEntryFromParams` is
+  deliberately NOT the extracted helper: it derives its target from route params, so a helper
+  calling it would authorize the route's entry while minting the argument's, and would 404 on any
+  route outside `/admin/[concept]/[id]`, which is the any-site caller this verdict exists for.
+  Seam fit: the rename pairs the mint with `previewLoad` on one parameter shape, the editor stops
+  being a caller-supplied string (so the editor-removal revocation cascade always matches), and the
+  refusals ride the 4a `outcome` grammar (`PreviewMintOutcome`) rather than a throw. Token hygiene
+  is byte-identical to `main`. Design note, recorded per the plan's round-2 disposition (fold
+  SEC-B-3): the security round proposed `authorizeAdminTarget`'s fail-closed no-rule posture in
+  place of `canReach`'s nav semantics; this pass deliberately reused the engine's own mint
+  sequence, since a helper stricter than the engine route it mirrors protects nothing while that
+  route keeps the permissive reading. A stricter floor is an engine-wide access-semantics question,
+  filed to the internals pass rather than decided asymmetrically here.
 - **Shape:** Its header admits it 'performs no authorization or draft-existence check of its own, so a caller that reaches it directly owns both'. Either perform the entry-scoped check the admin action performs, or make the caller's obligation part of the name and the signature rather than a header comment.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 97.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).

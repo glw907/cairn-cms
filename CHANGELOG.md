@@ -773,6 +773,30 @@
   `models?.list` is unchanged for a client that already implements it. A site reading
   `tidy.succeeded` log records renames its `usage` field read to `tokens`.
 
+- `mintPreviewToken` (`/sveltekit`, slice 4b, Task 5; settles `audit-sveltekit-mintpreviewtoken`)
+  becomes `previewMint(runtime, config, event, { concept, entryId })`, a mint that is safe by
+  construction instead of one carrying a silent authorization obligation in its header comment. It
+  joins `previewLoad` as the `/sveltekit` preview pair, resolving against that function's own
+  parameter shape plus the explicit target, and reaching `AUTH_DB` the same way it does. The editor
+  is no longer a caller-supplied string: it derives from the event through the same `requireEditor`
+  every engine content action calls, and the stored row's attribution is that resolved session's
+  email, so removing an editor still revokes every link that editor minted. Authorization runs
+  first and short-circuits, running the engine's own `previewMintAction` sequence (extracted, not
+  duplicated): the resolved editor, the concept lookup, the concept-scoped access check against
+  `runtime.access`, the entry-id shape rule, and only then the pending-draft check, so a refusal is
+  never an entry-existence oracle. An entry with no pending draft now refuses rather than minting a
+  token that `previewLoad` would resolve down its ended-page path into a token-gated read of a
+  published entry. Refusals come back as a discriminated result on the `outcome` grammar
+  (`PreviewMintOutcome`, with the `minted`, `unknown-concept`, `invalid-id`, and `no-draft` arms),
+  and the token hygiene is unchanged: CSPRNG 256-bit generation, hash-at-rest, the
+  one-minute-to-thirty-day TTL clamp, and the entry scope. **Consumers must:** rename the import to
+  `previewMint` and call it as `previewMint(runtime, config, event, { concept, entryId })`. The
+  `db` parameter is gone (the function reads `AUTH_DB` off `event.platform.env` itself) and so is
+  `record.editor` (the guard-resolved session is now the only editor source), so call it from a
+  route where the admin guard has already resolved `locals.cairnEditor`. Narrow the returned value
+  on `result.outcome === 'minted'` before reading `token` and `expiresAt`, where the old call
+  returned that pair directly.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

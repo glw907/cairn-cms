@@ -108,13 +108,19 @@ export const ADMIN_CSS_SAFELIST = [
   // naming them in prose (Tailwind's scanner is a naive text match, blind to comment-versus-code
   // context), then stayed blessed here as an incidental side effect of preserving the de facto
   // public sheet once that prose left with the tone/dot retirement. The badge-tier ruling made the
-  // blessing deliberate: each tone's fill and its dedicated -content ink clear the register set's
-  // own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged themes (measured light error 4.848,
-  // light success 4.915, dark error 6.298, dark success 7.036; badge-tier-legibility.test.ts is the
-  // standing proof), so both stay blessed as a documented, measured badge-tier recipe, the raw
-  // daisyUI alternative to `StatusChip` (docs/internal/admin-design-system.md names the when-to-use
-  // line). `badge-soft`/`badge-outline`/`badge-dash` carry no color of their own and so carry no
-  // legibility measurement of their own; they stay blessed above as shape-only modifiers.
+  // blessing deliberate and covered every blessed badge class, not just these two: each one's ink
+  // clears the register set's own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged themes, so all
+  // five stay blessed as a documented, measured badge-tier recipe, the raw daisyUI alternative to
+  // `StatusChip` (docs/internal/admin-design-system.md names the when-to-use line).
+  // `badge-error`/`badge-success`/`badge-soft` each paint their own fill and their own
+  // base-content-derived ink (daisyUI 5.7.20's `badge-soft` recipe carries a fill and an ink of its
+  // own even with no tone class set); measured against that own fill: light error 4.848, light
+  // success 4.915, light soft 12.736, dark error 6.298, dark success 7.036, dark soft 11.244.
+  // `badge-outline`/`badge-dash` paint no fill of their own and inherit their ink and currentColor
+  // border from the surrounding row; measured against the row ground, plus the border against the
+  // unrelated >= 3:1 non-text floor (WCAG 1.4.11): light 15.087, dark 13.322 (ink and border share
+  // the value since the border is currentColor). badge-tier-legibility.test.ts is the standing
+  // proof for all five.
   'badge-error',
   'badge-success',
 ] as const;

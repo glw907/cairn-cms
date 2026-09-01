@@ -254,10 +254,13 @@ same element, so a hand-composed chip should carry no weight utility of its own.
 <StatusChip label="Overdue" register="warning" legend="Full benefits continue for 30 days." />
 ```
 
-**Badge tier, the raw daisyUI alternative.** `badge-error` and `badge-success` also compile into
-the packaged admin sheet, tuned and measured on both admin themes: each tone's fill and its
-dedicated `-content` ink clear a >= 4.5:1 text contrast floor (WCAG 1.4.3). Reach for one directly
-only for a stock daisyUI-flavored surface outside the chip vocabulary; reach for `StatusChip` for
+**Badge tier, the raw daisyUI alternative.** `badge-error`, `badge-success`, `badge-soft`,
+`badge-outline`, and `badge-dash` all compile into the packaged admin sheet, tuned and measured on
+both admin themes: `badge-error`/`badge-success`/`badge-soft` each paint their own fill and ink,
+clearing a >= 4.5:1 text contrast floor (WCAG 1.4.3) against that fill; `badge-outline`/`badge-dash`
+paint no fill of their own and inherit their ink and border, clearing the same text floor against
+the row ground and a >= 3:1 non-text floor (WCAG 1.4.11) on the border. Reach for one directly only
+for a stock daisyUI-flavored surface outside the chip vocabulary; reach for `StatusChip` for
 anything in the register grammar above, since only `StatusChip` carries the ground-tuned band, the
 `size` vocabulary, and the `legend` accessible-name pattern.
 

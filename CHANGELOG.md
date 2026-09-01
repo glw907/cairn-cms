@@ -844,15 +844,20 @@
   change only. Consumers must: nothing; sites already on the duplicated form may hoist one shared
   `media` object of their own, at their convenience.
 
-- The admin CSS safelist's `badge-error`/`badge-success` blessing (`audit-admin-statuschip`'s
-  badge-tier half) is now deliberate, not incidental: each tone's fill and its dedicated
-  `-content` ink are measured against `StatusChip`'s own register-set text floor (>= 4.5:1, WCAG
-  1.4.3) on both packaged admin themes (light error 4.848, light success 4.915, dark error 6.298,
-  dark success 7.036; `badge-tier-legibility.test.ts`), both clearing it with no retune. Both
-  tones stay blessed as a documented badge tier, the raw daisyUI alternative to `StatusChip`, with
-  a when-to-use line in `docs/internal/admin-design-system.md` and
-  `docs/reference/admin-toolkit.md`. No class left the safelist and no token was retuned; this is
-  a measurement and documentation change only. Consumers must: nothing.
+- The admin CSS safelist's badge-tier blessing (`audit-admin-statuschip`'s badge-tier half) is now
+  deliberate, not incidental, and covers every safelisted `badge-*` class, not just
+  `badge-error`/`badge-success`: `badge-error`, `badge-success`, and `badge-soft` each paint their
+  own fill and ink, measured against `StatusChip`'s own register-set text floor (>= 4.5:1, WCAG
+  1.4.3) on both packaged admin themes (light error 4.848, light success 4.915, light soft 12.736,
+  dark error 6.298, dark success 7.036, dark soft 11.244); `badge-outline` and `badge-dash` paint
+  no fill of their own and inherit their ink and currentColor border from the row, measured
+  against the row ground and the unrelated >= 3:1 non-text floor (WCAG 1.4.11) on the border
+  (light 15.087, dark 13.322; `badge-tier-legibility.test.ts` is the standing proof for all five).
+  Every class clears its floor with no retune. All five stay blessed as a documented badge tier,
+  the raw daisyUI alternative to `StatusChip`, with a when-to-use line in
+  `docs/internal/admin-design-system.md` and `docs/reference/admin-toolkit.md`. No class left the
+  safelist and no token was retuned; this is a measurement and documentation change only.
+  Consumers must: nothing.
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
   truncated 54 of the ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought,

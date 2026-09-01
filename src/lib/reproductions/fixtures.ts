@@ -132,7 +132,7 @@ export const fixtureEntries: FixtureEntry[] = [
         { ref: '5ad9324471b6068be6320f6cad9528d7b314019d', editor: 'Robin Lake', date: '2026-05-20T14:32:00Z' },
         { ref: '2ee5c349b5c9ba9b911bceb9b2eb46effc2485df', editor: 'Jamie Torres', date: '2026-04-02T09:15:00Z' },
       ],
-      draft: { editor: 'Jamie Torres', startedAt: '2026-06-24T16:45:00Z' },
+      draft: { editor: 'Jamie Torres', lastSavedAt: '2026-06-24T16:45:00Z' },
       truncated: false,
       head: '5ad9324471b6068be6320f6cad9528d7b314019d',
     },

@@ -1656,7 +1656,7 @@ when the remediation pass lands.
 ## audit-sveltekit-revertfailure: `RevertFailure`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site rendering its own history screen branches on the reason discriminant to distinguish a blocking draft from a stale head.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 3, with one correction the docket's phrasing collapsed: `HistoryData.draft.startedAt` and `RevertFailure`'s `draft_exists.draftStartedAt` are two different types, not one field renamed twice, so each takes its own name rather than a shared `lastSavedAt` — `HistoryData.draft.startedAt` becomes the bare `lastSavedAt` (the container already says "draft"), and `draftStartedAt` becomes the qualified `draftLastSavedAt`, matching its sibling `draftEditor` (an unqualified `lastSavedAt` beside `draftEditor` would unbalance the pair). Both compensating "keeps its name for API stability" doc comments are deleted.
 - **Shape:** Rename draftStartedAt and HistoryData's startedAt to lastSavedAt, dropping the compensating doc-comment prose. The comment admits both are wrong and keeps them 'for API stability', but churn is free until beta, so the stability plea does not license the wrong name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 32.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
@@ -2574,7 +2574,7 @@ when the remediation pass lands.
 ## audit-admin-formattimestamp: `formatTimestamp`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Pinning a zone so a Worker's SSR and a browser's hydration cannot render two different strings is an any-site trap. The shipped signature misses it by taking a SQLite-shaped string.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the 4b conformance pass, Task 3: `formatTimestamp` now accepts any Date-parseable timestamp, including an ISO string with an offset, WIDENING rather than swapping the input domain, since D1 rows still hand it the SQLite `'YYYY-MM-DD HH:MM:SS'` shape and that acceptance stays load-bearing. `CairnHistory`'s `formatVersionDate` is deleted; the component routes every date it renders through `formatTimestamp`, proving the widened shape on cairn's own screen. The `timeZone` zone-pin behavior is asserted by test for both the SQLite shape and the ISO shape, not merely preserved.
 - **Shape:** Take any Date-parseable timestamp (ISO with offset included), not a SQLite 'YYYY-MM-DD HH:MM:SS' string; then delete CairnHistory's formatVersionDate and route it through this formatter instead, proving the shape on cairn's own screen.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 18.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).

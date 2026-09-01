@@ -735,6 +735,26 @@
   `PublishActionEntry` from `@glw907/cairn-cms/sveltekit` instead of `/delivery` or
   `/delivery/data`.
 
+- `HistoryData.draft`'s `startedAt` field (slice 4b, Task 3) renames to `lastSavedAt`: the
+  container already says "draft", so the bare name reads right there without repeating it.
+  `RevertFailure`'s `draft_exists` member's `draftStartedAt` field renames to `draftLastSavedAt`,
+  qualified to match its sibling `draftEditor` rather than leaving an unbalanced pair. Both fields'
+  doc comments dropped the compensating "the field keeps its name for API stability" prose: 0.x
+  churn stays free until beta, so the stability plea never licensed keeping the wrong name.
+  **Consumers must:** rename `HistoryData.draft.startedAt` to `draft.lastSavedAt`, and
+  `RevertFailure`'s `draft_exists.draftStartedAt` to `draftLastSavedAt`.
+
+- `formatTimestamp` (`/admin-toolkit`, slice 4b, Task 3) widens its input domain: it now accepts
+  any Date-parseable timestamp, a SQLite `datetime('now')`-shaped string (unchanged) or a full ISO
+  8601 string carrying its own `Z` suffix or an explicit offset, rather than only the SQLite shape.
+  The `timeZone` zone-pin behavior, the mechanic that keeps a Worker's SSR and a browser's
+  hydration rendering the same text for the same moment, is unchanged and now covers the widened
+  domain too. `CairnHistory`'s hand-rolled `formatVersionDate` is gone; the component now routes
+  every date it renders through this formatter, proving the widened domain on cairn's own screen.
+  `FormatTimestampOptions` is unchanged. **Consumers must:** nothing; a SQLite-shaped string a
+  caller already passes keeps parsing exactly as before, and a caller may now also pass a raw ISO
+  timestamp.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

@@ -59,17 +59,26 @@ export interface FormatTimestampOptions {
   fallback?: string;
 }
 
+// A SQLite `datetime('now')`-shaped UTC string, `"YYYY-MM-DD HH:MM:SS"`, carries no `T` and no
+// offset. Every other Date-parseable shape (an ISO string with a `Z` suffix or an explicit
+// offset) is left for `Date` itself to read, since it already knows its own zone.
+const SQLITE_DATETIME = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
 /**
- * Format a SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no offset) as a
- * date and time in `timeZone`. Swapping the space for `T` and appending `Z` keeps `Date` reading
- * the input as UTC rather than the runtime's own zone, the same reasoning {@link formatCivilDate}
- * applies to a bare calendar day. A nullish `sqliteDatetime` reads `options.fallback`.
+ * Format any Date-parseable timestamp, a SQLite `datetime('now')`-shaped UTC string with no
+ * offset, or a full ISO 8601 string carrying its own `Z` suffix or explicit offset, as a date and
+ * time in `timeZone`. The SQLite shape has no zone of its own, so it is read as UTC by swapping
+ * the space for `T` and appending `Z` before parsing, the same reasoning {@link formatCivilDate}
+ * applies to a bare calendar day; an ISO string already names its own offset and parses as-is.
+ * Either way, `timeZone` governs only the RENDERED zone, never how the input's own moment is
+ * read, so a Worker's SSR and a browser's hydration render the same text for the same moment. A
+ * nullish `input` reads `options.fallback`.
  */
-export function formatTimestamp(sqliteDatetime: string | null | undefined, options: FormatTimestampOptions = {}): string {
+export function formatTimestamp(input: string | null | undefined, options: FormatTimestampOptions = {}): string {
   const { timeZone = 'UTC', locale = 'en-US', fallback = '' } = options;
-  if (sqliteDatetime == null) return fallback;
-  const parsed = new Date(`${sqliteDatetime.replace(' ', 'T')}Z`);
-  if (Number.isNaN(parsed.getTime())) return sqliteDatetime;
+  if (input == null) return fallback;
+  const parsed = new Date(SQLITE_DATETIME.test(input) ? `${input.replace(' ', 'T')}Z` : input);
+  if (Number.isNaN(parsed.getTime())) return input;
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(parsed);
 }
 

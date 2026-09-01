@@ -19,7 +19,7 @@ what moved, and an unexpected failure falls back to its own bare message.
 <script lang="ts">
   import type { HistoryData, RevertFailure } from '../sveltekit/types.js';
   import CsrfField from './CsrfField.svelte';
-  import { PageHeader, AdminTable, StatusChip, EmptyState } from '../admin-toolkit/index.js';
+  import { PageHeader, AdminTable, StatusChip, EmptyState, formatTimestamp } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The history load's data: the bounded publish list, the open draft (if any), the
@@ -35,24 +35,6 @@ what moved, and an unexpected failure falls back to its own bare message.
 
   let { data, form = null }: Props = $props();
 
-  /**
-   * Format a publish's ISO timestamp for a history row: a version is a moment an editor might
-   * recall by time of day ("published just before lunch"), not only a calendar day, so this
-   * keeps the time rather than routing through the admin toolkit's civil-date-only formatter.
-   * Pins `timeZone: 'UTC'`, matching the admin toolkit's own `formatTimestamp` default (its
-   * `timeZone` option defaults to `'UTC'` precisely so a shared formatter never assumes one
-   * consumer's zone): a Worker SSRs in UTC and a browser hydrates in its own local zone, so
-   * leaving the zone unpinned would render one text at SSR and a different one at hydration.
-   * Falls back to the raw string when the value fails to parse.
-   */
-  function formatVersionDate(iso: string): string {
-    const parsed = new Date(iso);
-    if (Number.isNaN(parsed.getTime())) return iso;
-    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(
-      parsed,
-    );
-  }
-
   const rowCount = $derived(data.entries.length + (data.draft ? 1 : 0));
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
 
@@ -67,7 +49,7 @@ what moved, and an unexpected failure falls back to its own bare message.
   const revertRefusal = $derived.by(() => {
     if (!form || !('reason' in form)) return null;
     if (form.reason === 'draft_exists') {
-      const lastSaved = form.draftStartedAt ? `, last saved ${formatVersionDate(form.draftStartedAt)}` : '';
+      const lastSaved = form.draftLastSavedAt ? `, last saved ${formatTimestamp(form.draftLastSavedAt)}` : '';
       return `${form.draftEditor} has a draft in progress${lastSaved}. Publish or discard it before reverting.`;
     }
     if (form.reason === 'history_stale') {
@@ -122,11 +104,11 @@ what moved, and an unexpected failure falls back to its own bare message.
               <td class="py-2 type-subtitle">
                 {data.draft.editor}
                 <span class="block type-meta text-muted sm:hidden">
-                  Last saved {formatVersionDate(data.draft.startedAt)}
+                  Last saved {formatTimestamp(data.draft.lastSavedAt)}
                 </span>
               </td>
               <td class="hidden py-2 type-subtitle text-muted sm:table-cell">
-                Last saved {formatVersionDate(data.draft.startedAt)}
+                Last saved {formatTimestamp(data.draft.lastSavedAt)}
               </td>
               <td class="px-2 py-2 text-right"></td>
             </tr>
@@ -143,9 +125,9 @@ what moved, and an unexpected failure falls back to its own bare message.
               </td>
               <td class="py-2 type-subtitle">
                 {entry.editor}
-                <span class="block type-meta text-muted sm:hidden">{formatVersionDate(entry.date)}</span>
+                <span class="block type-meta text-muted sm:hidden">{formatTimestamp(entry.date)}</span>
               </td>
-              <td class="hidden py-2 type-subtitle text-muted sm:table-cell">{formatVersionDate(entry.date)}</td>
+              <td class="hidden py-2 type-subtitle text-muted sm:table-cell">{formatTimestamp(entry.date)}</td>
               <td class="px-2 py-2 text-right">
                 <form method="POST" action="?/revert">
                   <CsrfField />
@@ -154,7 +136,7 @@ what moved, and an unexpected failure falls back to its own bare message.
                   <button
                     type="submit"
                     class="btn btn-ghost btn-xs"
-                    aria-label={`Revert to the version from ${formatVersionDate(entry.date)} by ${entry.editor}`}
+                    aria-label={`Revert to the version from ${formatTimestamp(entry.date)} by ${entry.editor}`}
                   >
                     Revert
                   </button>

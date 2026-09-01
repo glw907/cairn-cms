@@ -125,7 +125,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FieldLabel`: Component<Props, {}, "">
 - `formatCivilDate`: (iso: string | null | undefined, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
-- `formatTimestamp`: (sqliteDatetime: string | null | undefined, options?: FormatTimestampOptions) => string
+- `formatTimestamp`: (input: string | null | undefined, options?: FormatTimestampOptions) => string
 - `FormatTimestampOptions`: { timeZone?: string; locale?: string; fallback?: string }
 - `ItemLabel`: { one: string; many: string }
 - `ListToolbar`: Component<Props, {}, "">
@@ -494,7 +494,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `HealthData`: { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?: string } } }
 - `healthLoad`: (event: CairnEvent<CairnEnv>, runtime: CairnRuntime) => Promise<HealthData>
 - `HelpData`: { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact?: string }
-- `HistoryData`: { entries: HistoryEntry[]; draft: { editor: string; startedAt: string } | null; truncated: boolean; head: string | null }
+- `HistoryData`: { entries: HistoryEntry[]; draft: { editor: string; lastSavedAt: string } | null; truncated: boolean; head: string | null }
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `IconSet`: { [x: string]: string }
 - `ImageField`: { type: "image"; seo?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -541,7 +541,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolvedLayoutSection`: { label: string; children: ResolvedLayoutChild[]; collapsed?: boolean }
 - `ResolvedNavEntry`: { label: string; iconName: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly: boolean }
 - `ResolvedNavLayout`: { items: ResolvedLayoutNode[]; fallback: ResolvedLayoutChild[] }
-- `RevertFailure`: { reason: "draft_exists"; draftEditor: string; draftStartedAt: string } | { reason: "ref_unknown" } | { reason: "history_stale" }
+- `RevertFailure`: { reason: "draft_exists"; draftEditor: string; draftLastSavedAt: string } | { reason: "ref_unknown" } | { reason: "history_stale" }
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }

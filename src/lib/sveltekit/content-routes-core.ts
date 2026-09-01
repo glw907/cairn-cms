@@ -1209,7 +1209,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (headSha === null) return null;
     const branchCommits = await backend.listCommits(path, branch, 1);
     const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
-    return head ? { editor: commitEditorName(head.author), startedAt: head.date } : null;
+    return head ? { editor: commitEditorName(head.author), lastSavedAt: head.date } : null;
   }
 
   /**
@@ -2136,7 +2136,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     return fail(409, {
       reason: 'draft_exists',
       draftEditor: draft?.editor ?? 'unknown',
-      draftStartedAt: draft?.startedAt ?? '',
+      draftLastSavedAt: draft?.lastSavedAt ?? '',
     } satisfies RevertFailure);
   }
 

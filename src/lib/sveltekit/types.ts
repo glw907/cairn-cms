@@ -130,12 +130,11 @@ export interface HistoryData {
   /**
    * The pending branch's head commit, rendered as a synthetic top row, or null when the entry
    * carries no open draft. Never derived from a save; a draft's save-by-save history is
-   * ephemeral by design and this field surfaces only its current head. `startedAt` names the
-   * head commit's own date, which moves on every save, so it reads as the draft's LAST SAVE,
-   * not when editing began; the field keeps its name for API stability, and the view renders it
-   * under a "last saved" label rather than "started".
+   * ephemeral by design and this field surfaces only its current head. `lastSavedAt` names the
+   * head commit's own date, which moves on every save, so the view renders it under a "last
+   * saved" label rather than "started".
    */
-  draft: { editor: string; startedAt: string } | null;
+  draft: { editor: string; lastSavedAt: string } | null;
   /**
    * True when the backend's `limit + 1` probe found more publishes than the bound holds, so the
    * view can say "showing the most recent N" rather than paginating. An entry with exactly the
@@ -170,10 +169,9 @@ export type RevertFailure =
       draftEditor: string;
       /**
        * ISO 8601: when the blocking draft's branch head last landed, its most recent save, not
-       * when the draft began. The field keeps its name for API stability; the refusal message
-       * renders it under a "last saved" label.
+       * when the draft began. The refusal message renders it under a "last saved" label.
        */
-      draftStartedAt: string;
+      draftLastSavedAt: string;
     }
   | {
       /**

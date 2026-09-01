@@ -1,7 +1,8 @@
 // Test-only helpers for the auth-channel factory's integration suites. The channel schema is not
-// applied through the wrangler migrations directory (that machinery is AUTH_DB's own, engine-owned
-// migration story): a site runs CHANNEL_SCHEMA_SQL itself, so the harness replays it directly
-// against the CHANNEL_DB test binding.
+// applied through the vitest pool's migrations machinery (that walks migrations/, which is
+// AUTH_DB's alone): the harness reads the packaged migrations-channel/0000_channel.sql and replays
+// it statement by statement against the CHANNEL_DB test binding, so the suites prove the same file
+// a consumer site applies.
 //
 // The event, cookie-jar, config, and seeding helpers live here rather than per suite so the four
 // suites cannot drift apart on the shape of the thing they claim to prove: a jar that records
@@ -9,7 +10,8 @@
 // suite tests without changing a single assertion.
 import { env } from 'cloudflare:test';
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
-import { CHANNEL_SCHEMA_SQL, mintCode, provisionSalt } from '../../lib/auth-channel/store.js';
+import channelMigration from '../../../migrations-channel/0000_channel.sql?raw';
+import { mintCode, provisionSalt } from '../../lib/auth-channel/store.js';
 import { deriveIdentity, generateCode } from '../../lib/auth-channel/identity.js';
 import type { AuthChannelConfig } from '../../lib/auth-channel/index.js';
 import { cookieName, hashToken } from '../../lib/auth/crypto.js';
@@ -29,9 +31,13 @@ export const PENDING_HTTP = cookieName(`${COOKIE_BASE}_pending`, false);
 export const SESSION_HTTPS = cookieName(COOKIE_BASE, true);
 export const SESSION_HTTP = cookieName(COOKIE_BASE, false);
 
-/** Apply the auth-channel factory's schema to the CHANNEL_DB binding, statement by statement. */
+/** Apply the packaged channel migration to the CHANNEL_DB binding, statement by statement. */
 export async function applyChannelSchema(): Promise<void> {
-  const statements = CHANNEL_SCHEMA_SQL.split(';')
+  const statements = channelMigration
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n')
+    .split(';')
     .map((statement) => statement.trim())
     .filter((statement) => statement.length > 0);
   for (const statement of statements) {
@@ -57,7 +63,7 @@ export function channelSession(): D1DatabaseSession {
 /** One recorded delete() call: the cookie name and the options it was cleared with. */
 export interface RecordedDelete {
   name: string;
-  opts: { path: string };
+  opts: { path: string; secure?: boolean };
 }
 
 /** An in-memory cookie jar that also records every set() and delete() call, for attribute assertions. */
@@ -104,6 +110,10 @@ export interface ChannelEventInput {
  * never trip the unconditional origin check; pass `origin: null` or a mismatched value to test it.
  * Only the form fields a test names are set, so an action's own absent-field handling stays
  * provable, and `platform.ctx` appears only when a test supplies a `waitUntil`.
+ *
+ * The shape is `CairnEvent` plus `getClientAddress`, the exact constraint the channel's actions
+ * declare, so `params`/`route`/`setHeaders`/`locals` are present here for the same reason a real
+ * SvelteKit `RequestEvent` carries them: no channel action reads any of the four.
  */
 export function makeEvent(input: ChannelEventInput = {}) {
   const url = new URL(input.url ?? 'https://member.example.test/login');
@@ -117,7 +127,11 @@ export function makeEvent(input: ChannelEventInput = {}) {
   return {
     url,
     request: new Request(url, { method: 'POST', body, headers }),
+    params: {},
+    route: { id: '/members/login' },
     cookies: input.cookies ?? makeCookies(),
+    setHeaders: () => {},
+    locals: {},
     getClientAddress: () => input.address ?? '203.0.113.1',
     platform: {
       env: { CHANNEL_DB: db },

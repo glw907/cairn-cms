@@ -1,10 +1,6 @@
 [
   "audit-adapter-authbranding",
   "audit-adapter-publishactionsconfig",
-  "audit-auth-authchannelevent",
-  "audit-auth-authchannel",
-  "audit-auth-channel-schema-sql",
-  "audit-auth-authchannelconfig",
   "audit-media-normalizeassets",
   "audit-render-strattr",
   "audit-log-auth-session-destroyed",

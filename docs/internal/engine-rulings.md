@@ -2861,7 +2861,10 @@ when the remediation pass lands.
 ## audit-auth-delivercontext: `DeliverContext`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site typing its own deliver implementation. Two fields, wholly entailed by createAuthChannel; no independent case.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by Task 8 of the conventions pass: the type keeps with the
+  factory, unchanged in shape, and its precedent grew rather than shrank. `lookup` and `verify` now
+  take a narrow `{ env }` context modelled on this one, so the "resolved binding, nothing else"
+  idiom this entry introduced is now the factory's rule for every callback that reads a roster.
 - **Shape:** Shape is fine on its own. Membership is exactly as strong as createAuthChannel's, so it shrinks or disappears with the factory reshape (item 15).
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar rather than
@@ -2874,7 +2877,9 @@ when the remediation pass lands.
 ## audit-auth-channelrequestresult: `ChannelRequestResult`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site's form action switching on the request result to pick a message. Entailed by createAuthChannel.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by Task 8 of the conventions pass: the type keeps with the
+  factory, unchanged, and the no-roster-leak encoding this entry credits it with (`sent` even for
+  an unknown contact) survives verbatim.
 - **Shape:** One of the better-shaped items here: it encodes the no-roster-leak ruling ('sent even for an unknown contact') in the type. Follows the factory's verdict.
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar, so this type
@@ -2886,7 +2891,9 @@ when the remediation pass lands.
 ## audit-auth-channelconfirmresult: `ChannelConfirmResult`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site rendering seven distinct confirm outcomes on its login form, each needing site copy. Entailed by createAuthChannel.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by Task 8 of the conventions pass: the type keeps with the
+  factory, unchanged, and the challenge-required-is-a-retry-invitation ruling survives verbatim in
+  the factory itself rather than in a replacement seam.
 - **Shape:** Follows the factory. The 'challenge-required is a retry invitation, never a hard failure' ruling should survive in whatever seam replaces it.
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar, not replaced by
@@ -2898,7 +2905,22 @@ when the remediation pass lands.
 ## audit-auth-authchannelevent: `AuthChannelEvent`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site typing the parameter of its own challenge callback or rateLimit.key function.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Carries its own objection: a third published request-event shape beside RequestEvent and CairnEvent, and its own comment concedes SvelteKit's satisfies it struc).
+- **Shape:** (re-authored 2026-08-30 from rank 10, whose text this entry had truncated) the type
+  carries an objection of its own beyond the factory's. The engine published a THIRD request-event
+  shape (kit's `RequestEvent`, `CairnEvent`, and this) for a consumer to hold in their head, and the
+  type's own comment conceded that kit's satisfies it structurally. Right form, per the rank source:
+  name the engine's own event in the callback signatures and stop exporting a parallel shape; where
+  the factory needs more than that shape carries, express the requirement as a STRUCTURAL CONSTRAINT
+  on `CairnEvent` rather than a fourth published interface.
+- **Reopens on:** closed. Executed by Task 8 of the conventions pass, in the structural-constraint
+  form above: `challenge` and `rateLimit.key` take `CairnEvent<Env>`; `request` and `confirm` take
+  `CairnEvent<Env> & { getClientAddress(): string }`, since only they derive a requester bucket;
+  `logout` and `resolveSubject` take the bare `CairnEvent<Env>`, which is what lets a consumer's own
+  session helper declare `(event: CairnEvent<Env>)`. `CairnEvent` is a recorded R4 re-export on
+  `/auth-channel`. This is a BREAKING rename for xcathletes, stated honestly rather than claimed
+  structurally compatible: it imports the NAME and uses it in a public signature, so the CHANGELOG
+  carries the rename in its `Consumers must:` line and a compile-only fixture
+  (`src/tests/unit/auth-channel-consumer-fixture.test.ts`) pins the post-migration shape.
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar: this type
   retires in favor of `CairnEvent`, a rename recorded as a breaking change for xcathletes (review
@@ -2909,7 +2931,21 @@ when the remediation pass lands.
 ## audit-auth-authchannel: `AuthChannel`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site holding the constructed channel in a module-scope const and typing it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Internal asymmetry beyond the factory's: revokeSessions takes a raw D1Database while every sibling takes an event and resolves through resolveDb. Give it the sa).
+- **Shape:** (re-authored 2026-08-30 from rank 11, whose text this entry had truncated) an internal
+  asymmetry beyond the factory's own: `revokeSessions: (db: D1Database, subject: string)` takes a
+  raw binding while every other member takes an event and resolves the binding through the config's
+  `resolveDb`. The rank source's proposed right form was uniformity, `revokeSessions` taking the
+  same `(event)` its siblings take, or an env, so a consumer never reaches past `resolveDb` for the
+  one call the engine itself describes as the roster-removal exemplar.
+- **Reopens on:** closed. Executed by Task 8 of the conventions pass, and the uniformity above is
+  deliberately NOT what shipped. `revokeSessions` keeps its event-free signature as a recorded,
+  doc-commented exception, per `convention-internal-sibling-comment`'s stated-split culture:
+  it is the one member callable OUTSIDE a request (xcathletes calls it from a roster-archive path
+  with a `db` and no event; a cron trigger and a queue consumer are the same class), so an
+  event-taking signature would put the exemplar out of reach of exactly the callers who need it.
+  Uniformity was weighed and lost to the out-of-request capability, and the reason is stated at the
+  member itself. The rest of the interface folded: the three actions and `resolveSubject` name
+  `CairnEvent` rather than the retired `AuthChannelEvent`.
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT; the `revokeSessions` asymmetry this entry names does NOT
   resolve by uniformity as originally proposed above ("give it the same" event-taking shape as its
@@ -2923,7 +2959,25 @@ when the remediation pass lands.
 ## audit-auth-channel-schema-sql: `CHANNEL_SCHEMA_SQL`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Unavoidable while the factory exists: a site must run this DDL once against its channel binding before any action works, from a migration in its own migrations_dir.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Wrong form, proved by the engine's own inconsistency: AUTH_DB gets packaged migrations/*.sql shipped in the tarball, the channel gets a template literal to past).
+- **Shape:** (re-authored 2026-08-30 from rank 12, whose text this entry had truncated) right
+  membership while the factory stays, wrong form, and provably so by the engine's own
+  inconsistency: `AUTH_DB` gets packaged `.sql` migration files shipped in the tarball, and the
+  channel got a template literal a site pastes into a file it writes itself. Right form, per the
+  rank source: ship the channel schema as a packaged migration directory BESIDE `migrations/`, the
+  shape the engine already proves, and drop the string constant. The per-deployment salt exclusion
+  the constant's own comment defends is unaffected by the change.
+- **Reopens on:** closed. Executed by Task 8 of the conventions pass, exactly as proposed above.
+  The DDL ships as `migrations-channel/0000_channel.sql`, a SIBLING directory never under
+  `migrations/` (that is `AUTH_DB`'s own `migrations_dir`, and a shared one applies each database's
+  schema to the other), packed by a `check:package` assertion that also fails a channel schema
+  found under `migrations/`. Every statement is idempotent (`CREATE TABLE IF NOT EXISTS`,
+  `CREATE INDEX IF NOT EXISTS`, `INSERT OR IGNORE` for the version row), so an already-provisioned
+  consumer that ran the DDL by hand can point a `migrations_dir` at it without the apply aborting;
+  the `Consumers must:` line carries the insert-the-marker step for exactly that case. The store's
+  `CHANNEL_SCHEMA_VERSION` is now parsed out of the packaged file by the repointed drift test, which
+  also pins the showcase fixture byte-equal to it, since a version constant cannot byte-equal a SQL
+  file and the two disagreeing is a fail-closed login outage. `verifySchema` semantics are
+  unchanged, and the schema itself did not change.
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar: the wrong-form
   objection above resolves exactly as originally proposed, packaged, never a shrink-to-recipe. The
@@ -2936,7 +2990,28 @@ when the remediation pass lands.
 ## audit-auth-authchannelconfig: `AuthChannelConfig`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. The surface a consumer actually reads and writes; nobody uses the factory without it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Two objections of its own. The ttl bag groups nine knobs because 'the design's own Defaults table' did, transplanted not re-derived, and its in-tree WATCH comme).
+- **Shape:** (re-authored 2026-08-30 from rank 13, whose text this entry had truncated) two
+  objections of its own, beyond following the factory. First, the `ttl` bag grouped nine knobs
+  because the design document's own Defaults table did, transplanted rather than re-derived for a
+  reader, and its in-tree `WATCH` comment already conceded the name: only three of the nine fields
+  are durations, so `ttl` reads narrower than its contents. Right form, per the rank source: name a
+  surviving knob bag for what it holds (limits, defaults), not for the three fields that happen to
+  be durations. Second, `kind?: 'code'` publishes a reserved extension point with exactly one legal
+  value, so an anonymous consumer can only ever write the default; the rank source's right form is
+  to drop it until a second authenticator exists.
+- **Reopens on:** closed for the fold; ONE residual named below. Executed by Task 8 of the
+  conventions pass: `ttl` becomes `limits`, regrouped by what a site actually tunes together
+  (`code`, `throttle`, `session`), with every group and every field optional so a single-knob
+  override stays a single knob (`limits: { session: { ttlMs } }`, the one override xcathletes
+  writes, has its own test). Construction messages name the group and the field. `lookup` and
+  `verify` gain a narrow `{ env }` context rather than the full event, mirroring `DeliverContext`:
+  the evidenced need is a BINDING, and handing over the event would put `request`/`cookies`/`url`
+  into the two most safety-critical callbacks, where `lookup` decides subject-versus-decoy (the
+  no-roster-leak property, and the factory swallows its throw as a miss) and a `false` from `verify`
+  destroys the session row on every authenticated request. The TSDoc on both states that neither may
+  read request-shaped data. The residual NOT closed here: `kind?: 'code'` stays. Dropping it is a
+  separate breaking surface change the fold list this pass batches does not carry, and it belongs
+  with whichever pass next opens this signature rather than to a second touch in the same window.
 - **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
   reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar: the `ttl` bag
   re-derives by what a site actually tunes together (rank 13's re-authored shape, not the
@@ -2991,9 +3066,14 @@ when the remediation pass lands.
   and session-integrity properties depend on neither callback reading request-shaped data);
   `DeliverContext`, `ChannelRequestResult`, `ChannelConfirmResult` keep with the factory, shapes
   per their own entries.
-- **Reopens on:** closed against this reopen; the 2026-08-30 sitting's adoption-evidence ruling
-  stands unless a later round shows the xcathletes usage itself retired. Execution of the fold
-  shape above is open until Task 8 lands it.
+- **Reopens on:** closed. The 2026-08-30 sitting's adoption-evidence ruling stands unless a later
+  round shows the xcathletes usage itself retired, and the fold shape above is executed by Task 8 of
+  the conventions pass, which closed all eight open `/auth-channel` family entries against it. Two
+  places the execution went beyond the shape as written, both recorded at their own entries:
+  `logout` and `resolveSubject` take the bare `CairnEvent` (no `getClientAddress`), since neither
+  derives a requester bucket and the narrower parameter is what lets a consumer's session helper
+  declare `(event: CairnEvent<Env>)`; and `AuthChannelConfig`'s `kind?: 'code'` sub-objection is
+  explicitly NOT executed, left as the one residual on `audit-auth-authchannelconfig`.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 15;
   [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md), item 15;
   [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), ratified

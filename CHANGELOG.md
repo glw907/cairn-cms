@@ -123,6 +123,51 @@
 
 ### Changed
 
+- `/auth-channel` folds onto the engine's one auth grammar. Five changes, all breaking for a site
+  that already runs `createAuthChannel`.
+
+  `AuthChannelEvent` retires. `challenge` and `rateLimit.key` now take `CairnEvent<Env>`, which the
+  subpath re-exports (its canonical home stays `/sveltekit`); `request` and `confirm` take
+  `CairnEvent<Env> & { getClientAddress(): string }`, since only they derive a requester bucket from
+  the client address; `logout` and `resolveSubject` take the bare `CairnEvent<Env>`, so a site's own
+  session helper can declare `(event: CairnEvent<Env>)`. Every real SvelteKit `RequestEvent` still
+  satisfies all three shapes with no cast, but a named import of `AuthChannelEvent` does not
+  survive, so this is a rename a consumer must make, not a structural coincidence.
+
+  `CHANNEL_SCHEMA_SQL` retires as an export. The channel's DDL now ships as a packaged migration
+  file, `migrations-channel/0000_channel.sql`, a sibling of cairn's own `migrations/` and never a
+  member of it: `migrations/` is `AUTH_DB`'s `migrations_dir`, and a shared directory applies each
+  database's schema to the other. Every statement is idempotent (`CREATE TABLE IF NOT EXISTS`,
+  `CREATE INDEX IF NOT EXISTS`, and `INSERT OR IGNORE` for the version row), so an already-migrated
+  channel database can adopt the file without the apply aborting. The schema itself did not change,
+  and `verifySchema`'s semantics are unchanged.
+
+  `config.ttl` becomes `config.limits`, regrouped by what a site tunes together: `code`
+  (`length`, `ttlMs`, `attemptCap`), `throttle` (`cooldownMs`, `requesterCap`, `identityCeiling`,
+  `escalationThreshold`, `liveRowCap`), and `session` (`ttlMs`). Every group and every field stays
+  optional, so tuning one knob still names one knob; the defaults and clamps are unchanged, and a
+  rejection message now names the group and the field.
+
+  `lookup` and `verify` gain a second parameter, a narrow `{ env }` context mirroring
+  `DeliverContext`, so a roster read reaches its own binding without the channel holding one.
+  Neither may read request-shaped data, which is why neither receives the event: `lookup` decides
+  subject-versus-decoy, and a `false` from `verify` destroys the session row.
+
+  `revokeSessions(db, subject)` is unchanged, deliberately: it is the one member callable outside a
+  request, and its event-free signature is now a recorded exception with its reason stated at the
+  member.
+
+  Consumers must: (1) replace every `AuthChannelEvent` import with `CairnEvent`, from
+  `@glw907/cairn-cms/auth-channel` or `@glw907/cairn-cms/sveltekit`; (2) rewrite `ttl: { X }` as
+  `limits: { <group>: { X } }` per the grouping above (`ttl: { sessionTtlMs }` becomes
+  `limits: { session: { ttlMs } }`); (3) add the `ctx` parameter to `lookup` and to `verify`, and
+  read the binding off `ctx.env` rather than from a captured closure; (4) copy
+  `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql` into the channel binding's
+  own `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`. If the channel
+  database is ALREADY provisioned (the schema was applied by running the DDL directly, so
+  `d1_migrations` holds no row for it), insert the `d1_migrations` marker for `0000_channel.sql`
+  rather than re-applying the migration. Nothing changes for `revokeSessions`.
+
 - `adminAction` gains an OPT-IN `access?: { target: string; ownerOnly?: boolean }` member on its
   options bag, the authorization sequence `createSectionAction` already ran. Absent, which is
   every existing caller, behavior is exactly what it was: the wrapper authenticates and verifies
@@ -300,9 +345,11 @@
   `generateCsrfToken` and `generateSessionId` (`audit-auth`) unexport from `/auth-crypto` but stay
   reachable at `auth/crypto.ts` for the engine's own internal use (`sveltekit/csrf.ts`,
   `sveltekit/auth-routes.ts`), both bodies were byte-identical to `generateToken` under a second
-  name; `CHANNEL_SCHEMA_VERSION` drops its `export` keyword in `auth-channel/store.ts` and its
-  barrel line in `auth-channel/index.ts`, staying a module-internal const `verifySchema` and the
-  seeding `INSERT` still read; `devDelivery` deletes outright from `/auth-channel`
+  name; `CHANNEL_SCHEMA_VERSION` drops its
+  barrel line in `auth-channel/index.ts`, leaving the package's public surface (amended by the
+  `/auth-channel` fold in this same window: the const keeps a module-level `export` in
+  `auth-channel/store.ts`, which publishes nothing, so the fold's drift test can compare it against
+  the schema_version the packaged migration seeds); `devDelivery` deletes outright from `/auth-channel`
   (`auth-channel/dev.ts` removed, zero remaining consumers anywhere in `src/lib`), its stated
   purpose, guarding a dev transport reaching production, is a discoverability problem an export
   does not fix; a factory-side refusal is a design question for a later pass (`createAuthChannel`
@@ -520,6 +567,13 @@
   pass does not attempt a deletion that breaks the R4 closure). Internal only; no consumer action.
 
 ### Fixed
+
+- `createAuthChannel`'s three cookie deletes now pass their setter's own `secure` flag: `confirm`'s
+  clear of the pending nonce cookie, and both of `logout`'s. A cookie jar's `delete` defaults the
+  flag ON for every host but `localhost` itself, and a browser discards a Secure `Set-Cookie`
+  arriving over `http`, so a delete that left the flag to the jar could answer with a clear the
+  browser drops. This is the same rule `logoutAction` on the admin side already follows. Consumers
+  must: nothing.
 
 - The CSRF cookie's `Secure` derivation is now monotonic: an `https` request always resolves
   Secure, whatever `PUBLIC_ORIGIN` says, and only a non-`https` request consults the local-host

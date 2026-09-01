@@ -52,8 +52,11 @@ describe('createAuthChannel construction', () => {
     expect(() => createAuthChannel(validConfig({ kind: 'code' }))).not.toThrow();
   });
 
+  type Limits = NonNullable<AuthChannelConfig<TestEnv>['limits']>;
+
   interface ClampCase {
-    field: keyof NonNullable<AuthChannelConfig<TestEnv>['ttl']>;
+    group: keyof Limits;
+    field: string;
     valid: number;
     low?: number;
     high?: number;
@@ -61,48 +64,66 @@ describe('createAuthChannel construction', () => {
 
   const DAY_MS = 24 * 60 * 60 * 1000;
 
-  // One row per line of the spec's Defaults table. `low`/`high` are present only when that row
-  // states the corresponding bound; a row with only one stated bound gets only one rejection test.
+  /** One override object naming exactly one knob, the shape a site tuning one thing writes. */
+  function oneLimit(group: keyof Limits, field: string, value: number): Limits {
+    return { [group]: { [field]: value } } as Limits;
+  }
+
+  // One row per line of the spec's Defaults table, under the group that now holds it. `low`/`high`
+  // are present only when that row states the corresponding bound; a row with only one stated bound
+  // gets only one rejection test.
   const clampCases: ClampCase[] = [
-    { field: 'codeLength', valid: 9, low: 7, high: 11 },
-    { field: 'codeTtlMs', valid: 900_000, high: 900_001 },
-    { field: 'attemptCap', valid: 10, high: 11 },
-    { field: 'cooldownMs', valid: 30_000, low: 29_999 },
-    { field: 'requesterCap', valid: 50, low: 4, high: 101 },
-    { field: 'identityCeiling', valid: 10, low: 9 },
-    { field: 'escalationThreshold', valid: 10, low: 9 },
-    { field: 'liveRowCap', valid: 20, high: 21 },
-    { field: 'sessionTtlMs', valid: 365 * DAY_MS, high: 365 * DAY_MS + 1 },
+    { group: 'code', field: 'length', valid: 9, low: 7, high: 11 },
+    { group: 'code', field: 'ttlMs', valid: 900_000, high: 900_001 },
+    { group: 'code', field: 'attemptCap', valid: 10, high: 11 },
+    { group: 'throttle', field: 'cooldownMs', valid: 30_000, low: 29_999 },
+    { group: 'throttle', field: 'requesterCap', valid: 50, low: 4, high: 101 },
+    { group: 'throttle', field: 'identityCeiling', valid: 10, low: 9 },
+    { group: 'throttle', field: 'escalationThreshold', valid: 10, low: 9 },
+    { group: 'throttle', field: 'liveRowCap', valid: 20, high: 21 },
+    { group: 'session', field: 'ttlMs', valid: 365 * DAY_MS, high: 365 * DAY_MS + 1 },
   ];
 
-  describe.each(clampCases)('config.ttl.$field', ({ field, valid, low, high }) => {
+  describe.each(clampCases)('config.limits.$group.$field', ({ group, field, valid, low, high }) => {
     it('accepts the boundary value the clamp permits', () => {
-      const ttl = { [field]: valid } as AuthChannelConfig<TestEnv>['ttl'];
-      expect(() => createAuthChannel(validConfig({ ttl }))).not.toThrow();
+      expect(() => createAuthChannel(validConfig({ limits: oneLimit(group, field, valid) }))).not.toThrow();
     });
 
     if (low !== undefined) {
       it('rejects a value below the floor', () => {
-        const ttl = { [field]: low } as AuthChannelConfig<TestEnv>['ttl'];
-        expect(() => createAuthChannel(validConfig({ ttl }))).toThrow();
+        expect(() => createAuthChannel(validConfig({ limits: oneLimit(group, field, low) }))).toThrow();
       });
     }
 
     if (high !== undefined) {
       it('rejects a value above the ceiling', () => {
-        const ttl = { [field]: high } as AuthChannelConfig<TestEnv>['ttl'];
-        expect(() => createAuthChannel(validConfig({ ttl }))).toThrow();
+        expect(() => createAuthChannel(validConfig({ limits: oneLimit(group, field, high) }))).toThrow();
       });
     }
 
+    it('names the group and the field in the rejection message', () => {
+      const outOfRange = high !== undefined ? high : (low as number);
+      expect(() => createAuthChannel(validConfig({ limits: oneLimit(group, field, outOfRange) }))).toThrow(
+        new RegExp(`config\\.limits\\.${group}\\.${field}`),
+      );
+    });
+
     it('rejects zero and a negative value regardless of stated bounds', () => {
       // The ceiling-only rows would otherwise admit these, and each is a live defect at runtime
-      // (a non-positive attemptCap locks every code unguessed; a non-positive codeTtlMs expires
+      // (a non-positive attemptCap locks every code unguessed; a non-positive code ttlMs expires
       // codes at mint), so construction rejects them universally.
       for (const bad of [0, -1]) {
-        const ttl = { [field]: bad } as AuthChannelConfig<TestEnv>['ttl'];
-        expect(() => createAuthChannel(validConfig({ ttl }))).toThrow(/positive|at least/);
+        expect(() => createAuthChannel(validConfig({ limits: oneLimit(group, field, bad) }))).toThrow(
+          /positive|at least/,
+        );
       }
     });
+  });
+
+  it('takes a single-knob override as one named knob, with no sibling group required', () => {
+    // The regrouped bag is only worth having if tuning one thing stays a one-liner. A site that
+    // wants a 90-day session names the session's own ttl and nothing else.
+    const ninetyDays = 90 * DAY_MS;
+    expect(() => createAuthChannel(validConfig({ limits: { session: { ttlMs: ninetyDays } } }))).not.toThrow();
   });
 });

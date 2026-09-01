@@ -141,6 +141,10 @@ describe('logout', () => {
       expect(sessionDelete?.opts.path).toBe('/');
       expect(pendingDelete).toBeDefined();
       expect(pendingDelete?.opts.path).toBe('/');
+      // Both deletes carry the `secure` their setters used: without it a logout over http on a
+      // non-localhost host answers with a Set-Cookie the browser discards, and the session stands.
+      expect(sessionDelete?.opts.secure).toBe(true);
+      expect(pendingDelete?.opts.secure).toBe(true);
       const destroyedRecords = infoSpy.mock.calls
         .map((c) => c[0] as { event?: string })
         .filter((r) => r.event === 'auth.channel.session.destroyed');
@@ -174,7 +178,7 @@ describe('resolveSubject', () => {
   });
 
   it('is null after the session has expired', async () => {
-    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-expiry', ttl: { sessionTtlMs: MINUTE } }));
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-expiry', limits: { session: { ttlMs: MINUTE } } }));
     const token = await signIn(channel, 'expiry@x.test', 'sub-expiry');
     // Force the row's expiry into the past directly, rather than waiting out the TTL.
     await db.prepare('UPDATE cairn_channel_session SET expires_at = ?1').bind(Date.now() - 1000).run();
@@ -191,12 +195,20 @@ describe('resolveSubject', () => {
   });
 
   it('is null and destroys the row when verify returns false', async () => {
-    const verify = vi.fn(async () => false);
+    const verify = vi.fn<NonNullable<AuthChannelConfig<ChannelTestEnv>['verify']>>(async () => false);
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-verify', verify }));
     const token = await signIn(channel, 'verify@x.test', 'sub-verify');
     const subject = await channel.resolveSubject(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }));
     expect(subject).toBeNull();
-    expect(verify).toHaveBeenCalledWith('sub-verify');
+    // verify receives the binding and nothing else: a narrow context, never the event, since a
+    // false here destroys the session row on every authenticated request. Asserted member by
+    // member rather than with one toHaveBeenCalledWith, since deep-equating the live D1 binding
+    // makes vitest serialize an RPC stub that answers no inspect().
+    expect(verify).toHaveBeenCalledTimes(1);
+    const [verifiedSubject, verifyCtx] = verify.mock.calls[0];
+    expect(verifiedSubject).toBe('sub-verify');
+    expect(Object.keys(verifyCtx)).toEqual(['env']);
+    expect(verifyCtx.env?.CHANNEL_DB).toBe(db);
     const row = await db
       .prepare('SELECT COUNT(*) AS n FROM cairn_channel_session WHERE token_hash = ?1')
       .bind(await hashToken(token))

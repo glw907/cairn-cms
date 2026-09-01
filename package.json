@@ -178,6 +178,7 @@
   "files": [
     "dist",
     "migrations",
+    "migrations-channel",
     "skills",
     "CHANGELOG.md",
     "docs/README.md",

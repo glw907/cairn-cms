@@ -12,66 +12,14 @@
 // concurrency, which is exactly the shape the design's threat model rules out.
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 
-// The schema version `CHANNEL_SCHEMA_SQL` installs; `verifySchema` compares against this.
-// Internal only (retires pass, batch 1b): publishing an internal version marker as semver
-// surface named no consumer action, since the value is already embedded in the seeding INSERT
-// below that a site running `CHANNEL_SCHEMA_SQL` already executes.
-const CHANNEL_SCHEMA_VERSION = '1';
-
 /**
- * The auth-channel factory's own D1 schema, run once against a site's channel binding as a
- * migration statement, never a request-path query (`verifySchema` only reads the version row
- * back). `identity_salt` is deliberately absent from this constant: it is a per-deployment
- * random value, and a static string published on npm and pinned byte-for-byte cannot carry one,
- * so `provisionSalt` writes it lazily on first use instead (spec, Storage).
- *
- * `requester_bucket` on `cairn_channel_code` is one addition beyond the design sketch's DDL
- * block: the live-row cap (`pruneRequesterRows`) has to find "this requester's own rows" without
- * ever keying on `identity`, the rule the whole design exists to enforce, so each row records the
- * bucket that minted it.
+ * The schema version the packaged `migrations-channel/0000_channel.sql` seeds, and the value
+ * `verifySchema` demands of a deployed channel database on every action. Not part of the package's
+ * public surface (no barrel re-export): a site reads the version out of the migration it applies,
+ * never out of an import. The engine's own drift test parses the migration's seeding row and
+ * compares it here, since the two disagreeing is a fail-closed login outage.
  */
-export const CHANNEL_SCHEMA_SQL = `
-CREATE TABLE cairn_channel_meta (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
-
-CREATE TABLE cairn_channel_code (
-  nonce_hash TEXT PRIMARY KEY,
-  identity TEXT NOT NULL,
-  code_hash TEXT NOT NULL,
-  subject TEXT,
-  kind TEXT NOT NULL DEFAULT 'code',
-  attempts INTEGER NOT NULL DEFAULT 0,
-  expires_at INTEGER NOT NULL,
-  created_at INTEGER NOT NULL,
-  requester_bucket TEXT NOT NULL
-);
-
-CREATE TABLE cairn_channel_session (
-  token_hash TEXT PRIMARY KEY,
-  subject TEXT NOT NULL,
-  expires_at INTEGER NOT NULL,
-  created_at INTEGER NOT NULL
-);
-
-CREATE TABLE cairn_channel_budget (
-  bucket TEXT PRIMARY KEY,
-  scope TEXT NOT NULL,
-  count INTEGER NOT NULL DEFAULT 0,
-  window_start INTEGER NOT NULL,
-  prev_count INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE INDEX idx_cairn_channel_code_identity ON cairn_channel_code (identity);
-CREATE INDEX idx_cairn_channel_code_expires ON cairn_channel_code (expires_at);
-CREATE INDEX idx_cairn_channel_code_requester_bucket ON cairn_channel_code (requester_bucket);
-CREATE INDEX idx_cairn_channel_session_subject ON cairn_channel_session (subject);
-CREATE INDEX idx_cairn_channel_session_expires ON cairn_channel_session (expires_at);
-CREATE INDEX idx_cairn_channel_budget_window ON cairn_channel_budget (window_start);
-
-INSERT INTO cairn_channel_meta (key, value) VALUES ('schema_version', '${CHANNEL_SCHEMA_VERSION}');
-`;
+export const CHANNEL_SCHEMA_VERSION = '1';
 
 /** Every budget in the Defaults table is per hour; the sliding window's fixed size. */
 export const CHANNEL_BUDGET_WINDOW_MS = 60 * 60 * 1000;
@@ -93,7 +41,7 @@ function budgetKey(bucket: string, scope: string): string {
 }
 
 /**
- * Confirm the deployed schema matches `CHANNEL_SCHEMA_VERSION`. Fails closed (returns false) on
+ * Confirm the deployed schema matches {@link CHANNEL_SCHEMA_VERSION}. Fails closed (returns false) on
  * any error, including a missing table from a database that was never migrated, and caches
  * nothing: a transient D1 error must not pin an isolate into refusing every login for its
  * lifetime, so every call re-queries.

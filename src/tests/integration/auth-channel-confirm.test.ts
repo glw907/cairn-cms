@@ -22,6 +22,7 @@ import {
   resetChannelDb,
   seedCode,
   sessionRowCount,
+  PENDING_HTTP,
   PENDING_HTTPS,
 } from './_channel-harness.js';
 import type { ChannelTestEnv } from './_channel-harness.js';
@@ -105,7 +106,7 @@ describe('no attempt spent, no row consumed', () => {
   it('a challenge-required response costs no attempt and consumes no row', async () => {
     const contact = 'gated@x.test';
     const subject = 'gated-subject';
-    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => subject, ttl: { escalationThreshold: 10 } }));
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => subject, limits: { throttle: { escalationThreshold: 10 } } }));
     const salt = await provisionSalt(channelSession());
     const identity = await deriveIdentity(salt, subject, contact);
     // Exhaust the identity's escalation gate directly, without needing ten separate wrong
@@ -334,7 +335,7 @@ describe('the confirm-side lockout regression test', () => {
     const contact = 'shared-member@x.test';
     const subject = 'shared-member-subject';
     const channel = createAuthChannel<ChannelTestEnv>(
-      makeConfig({ lookup: async () => subject, ttl: { escalationThreshold: 10 } }), // the clamp floor, so the test exceeds it quickly
+      makeConfig({ lookup: async () => subject, limits: { throttle: { escalationThreshold: 10 } } }), // the clamp floor, so the test exceeds it quickly
     );
 
     // The victim requests first, in their own cookie jar, and holds a valid code.
@@ -389,6 +390,22 @@ describe('nonce cookie cleared and no contact in any log record', () => {
     const pendingDelete = jar.deletes.find((d) => d.name === PENDING_HTTPS);
     expect(pendingDelete).toBeDefined();
     expect(pendingDelete?.opts.path).toBe('/');
+    // The delete carries the same `secure` its setter used. A browser discards a Secure
+    // Set-Cookie sent over http, so a delete that dropped the flag would leave the nonce standing.
+    expect(pendingDelete?.opts.secure).toBe(true);
+  });
+
+  it('clears the pending nonce cookie over http without the secure flag its https setter uses', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-1' }));
+    const { nonceToken, code } = await seedCode({ contact: 'clear-http@x.test', subject: 'sub-1' });
+    const jar = makeCookies({ [PENDING_HTTP]: nonceToken });
+    const result = await channel.actions.confirm(
+      makeEvent({ url: 'http://localhost:5173/login', code, cookies: jar }),
+    );
+    expect(result).toEqual({ ok: true });
+    const pendingDelete = jar.deletes.find((d) => d.name === PENDING_HTTP);
+    expect(pendingDelete).toBeDefined();
+    expect(pendingDelete?.opts.secure).toBe(false);
   });
 
   it('no confirm log record carries a contact', async () => {

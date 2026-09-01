@@ -34,6 +34,35 @@ export function checkPackageFiles(filePaths) {
   return { ok: true, count: migrations.length };
 }
 
+// The auth-channel factory's own schema, packed from its own directory. A SIBLING of migrations/,
+// never a member of it: migrations/ is AUTH_DB's `migrations_dir`, and a shared directory applies
+// each database's schema to the other the first time either is migrated. Both halves are asserted,
+// since the file's absence leaves a channel consumer with no schema to apply and its presence under
+// migrations/ is the cross-apply defect.
+const CHANNEL_MIGRATION_PATH = 'migrations-channel/0000_channel.sql';
+
+/**
+ * Check a packed file list for the channel migration, in its own directory.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+export function checkChannelMigrationPacked(filePaths) {
+  if (!filePaths.includes(CHANNEL_MIGRATION_PATH)) {
+    return {
+      ok: false,
+      error: `the packed tarball is missing ${CHANNEL_MIGRATION_PATH}; add "migrations-channel" to package.json "files" so a registry consumer can provision an auth channel's database`,
+    };
+  }
+  const misplaced = filePaths.filter((p) => /^migrations\/.*channel.*\.sql$/.test(p));
+  if (misplaced.length > 0) {
+    return {
+      ok: false,
+      error: `the packed tarball carries the channel schema under migrations/ (${misplaced.join(', ')}); migrations/ is AUTH_DB's migrations_dir, and sharing it applies the channel schema to the auth store`,
+    };
+  }
+  return { ok: true };
+}
+
 // The four published arm indexes plus the two front doors. `docs/why-cairn.md` is a front door
 // with no arm of its own, so it is named here as a file rather than covered by a prefix below.
 const DOCS_INDEX_PATHS = [
@@ -343,6 +372,12 @@ function main() {
     process.exit(1);
   }
 
+  const channelResult = checkChannelMigrationPacked(files);
+  if (!channelResult.ok) {
+    console.error(`check-package-files: ${channelResult.error}`);
+    process.exit(1);
+  }
+
   const docsResult = checkDocsPacked(files);
   if (!docsResult.ok) {
     console.error(`check-package-files: ${docsResult.error}`);
@@ -371,7 +406,7 @@ function main() {
   }
 
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), the channel migration packed in its own directory, ${docsResult.count} docs file(s), the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
   );
 }
 

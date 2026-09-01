@@ -1962,18 +1962,6 @@ the named human gates only):**
   **Trigger:** the gate passing roughly 60 seconds, or the published corpus growing past about
   120 files.
 
-- **Nothing pins `CHANNEL_SCHEMA_SQL`'s literal text any more (filed at Pass D Task 10,
-  2026-08-14).** `src/tests/unit/auth-channel-guide-ddl.test.ts` asserted the exported constant
-  byte-for-byte against the DDL block reproduced in the old auth-channel guide, so a drift
-  between the two went red. The docs rebuild stopped reproducing the DDL in prose at all (both
-  `docs/extend/add-a-second-audience.md` and `docs/reference/auth-channel.md` tell a reader to
-  copy the exported constant instead), which removes the drift risk the test guarded and also
-  removes the test's subject, so the cutover deleted it. The constant's body is now unpinned by
-  anything. That is defensible, since the duplicate it guarded against no longer exists, but a
-  change to that SQL now reaches a consumer with no gate in the way. **Trigger:** the next
-  change to the auth-channel schema, which should arrive with a migration test rather than a
-  restored text pin.
-
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**
   `ContentFormFailure` (`content-routes-core.ts:393-412`, a flat interface with every field

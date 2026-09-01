@@ -220,10 +220,13 @@ To distinguish a real failure from an unchecked environment gap, capture the exi
 letting the step fail on it directly, and branch on the value: 1 is a check that actually failed,
 3 is a check that could not find its input, and 2 is a bad flag in the command itself.
 
+GitHub Actions runs a `run:` step under `bash -e`, so a bare nonzero exit aborts the step before
+the capture line runs. Make the exit non-fatal with `|| code=$?` before branching on it:
+
 ```yaml
 - run: |
-    npx cairn-doctor --from editor@your-site.com --repo you/your-site
-    code=$?
+    code=0
+    npx cairn-doctor --from editor@your-site.com --repo you/your-site || code=$?
     if [ "$code" -eq 1 ]; then
       echo "::error::cairn-doctor found a real failure"
       exit 1

@@ -33,3 +33,13 @@ export async function runDoctor(
   }
   return { results, failed, unchecked };
 }
+
+/**
+ * Resolves the process exit code from a run's failure and unchecked counts. A failure always
+ * wins; short of that, an unchecked result (a deterministic check whose input the doctor could
+ * not read at all) drives exit 3, distinct from the clean exit 0 a run of only pass/skip/info
+ * results earns.
+ */
+export function exitCodeFor({ failed, unchecked }: { failed: number; unchecked: number }): 0 | 1 | 3 {
+  return failed > 0 ? 1 : unchecked > 0 ? 3 : 0;
+}

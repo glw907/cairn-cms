@@ -15,6 +15,7 @@ import {
   contextFromEnv,
   defaultChecks,
   deriveMissingInputs,
+  exitCodeFor,
   formatReport,
   parseArgs,
   runDoctor,
@@ -82,10 +83,7 @@ async function main(): Promise<void> {
 
   const { results, failed, unchecked } = await runDoctor(checks, ctx);
   console.log(formatReport(results));
-  // A failure always wins the exit code; short of that, an unchecked result (a deterministic
-  // check whose input the doctor could not read at all) drives exit 3, distinct from the clean
-  // exit 0 a run of only pass/skip/info results earns.
-  process.exitCode = failed > 0 ? 1 : unchecked > 0 ? 3 : 0;
+  process.exitCode = exitCodeFor({ failed, unchecked });
 }
 
 await main();

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { parseArgs, contextFromEnv, defaultChecks } from '../../lib/doctor/index.js';
+import { parseArgs, contextFromEnv, defaultChecks, exitCodeFor } from '../../lib/doctor/index.js';
 
 describe('parseArgs', () => {
   it('returns an empty object for no arguments', () => {
@@ -162,6 +162,24 @@ describe('defaultChecks', () => {
     const first = defaultChecks();
     first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
     expect(defaultChecks()).toHaveLength(19);
+  });
+});
+
+describe('exitCodeFor', () => {
+  it('exits 0 for a clean run with neither a failure nor an unchecked check', () => {
+    expect(exitCodeFor({ failed: 0, unchecked: 0 })).toBe(0);
+  });
+
+  it('exits 1 for a failure alone', () => {
+    expect(exitCodeFor({ failed: 1, unchecked: 0 })).toBe(1);
+  });
+
+  it('exits 3 for an unchecked check alone', () => {
+    expect(exitCodeFor({ failed: 0, unchecked: 1 })).toBe(3);
+  });
+
+  it('exits 1 when a run carries both a failure and an unchecked check, failure winning', () => {
+    expect(exitCodeFor({ failed: 1, unchecked: 1 })).toBe(1);
   });
 });
 

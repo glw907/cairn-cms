@@ -729,10 +729,11 @@
   rename with no separate public break. **Consumers must:** replace `PublishActionsConfig` with
   `PublishActionEntry[]` wherever it annotated `editor.publishActions` or a runtime read.
 
-- `PublishActionEntry`'s `/delivery/data` re-export drops (slice 4b, Task 2), per the row's own
-  recorded intent in `check-surface-reexports.json` ("Both leave this subpath when that reshape
-  lands"); its canonical home `/sveltekit` is unaffected. **Consumers must:** import
-  `PublishActionEntry` from `@glw907/cairn-cms/sveltekit` instead of `/delivery/data`.
+- `PublishActionEntry`'s `/delivery` and `/delivery/data` re-export drops (slice 4b, Task 2), per
+  the row's own recorded intent in `check-surface-reexports.json` ("Both leave this subpath when
+  that reshape lands"); its canonical home `/sveltekit` is unaffected. **Consumers must:** import
+  `PublishActionEntry` from `@glw907/cairn-cms/sveltekit` instead of `/delivery` or
+  `/delivery/data`.
 
 ### Documentation
 

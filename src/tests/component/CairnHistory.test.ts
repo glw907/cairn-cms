@@ -166,6 +166,7 @@ describe('CairnHistory', () => {
       expect(banner?.textContent ?? '').toContain('Blocking Editor');
       expect(banner?.textContent ?? '').toMatch(/publish or discard/i);
       expect(banner?.textContent ?? '').toMatch(/last saved/i);
+      expect(banner?.getAttribute('role')).toBe('alert');
     });
 
     it('says the history changed for history_stale', async () => {
@@ -189,6 +190,7 @@ describe('CairnHistory', () => {
       });
       const banner = screen.container.querySelector('.alert-error');
       expect(banner?.textContent ?? '').toContain('Something went wrong. Try again.');
+      expect(banner?.getAttribute('role')).toBe('alert');
     });
   });
 });

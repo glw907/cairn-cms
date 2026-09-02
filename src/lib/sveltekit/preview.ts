@@ -111,6 +111,9 @@ export type PreviewMintOutcome =
  * `editor` column is that session's `email`, already normalized by the `editor`-table select, so
  * the editor-removal revocation cascade (`DELETE FROM preview_tokens WHERE editor = ?`,
  * `auth/store.ts`) always matches the rows a departing editor minted.
+ *
+ * Logs `preview.token.minted` on success, so the engine's own route and a site's own workflow
+ * route both leave the identical record; never called on a refusal.
  * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
@@ -151,6 +154,7 @@ export async function previewMint(
     tokenHash,
     expiresAt,
   });
+  log.info('preview.token.minted', { concept: concept.id, id: target.entryId, editor: editor.email, expiresAt });
   return { outcome: 'minted', token, expiresAt };
 }
 

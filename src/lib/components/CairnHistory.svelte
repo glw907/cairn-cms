@@ -70,9 +70,9 @@ what moved, and an unexpected failure falls back to its own bare message.
   />
 
   {#if revertRefusal}
-    <div class="alert alert-error mb-4 type-body">{revertRefusal}</div>
+    <div role="alert" class="alert alert-error mb-4 type-body">{revertRefusal}</div>
   {:else if bareError}
-    <div class="alert alert-error mb-4 type-body">{bareError}</div>
+    <div role="alert" class="alert alert-error mb-4 type-body">{bareError}</div>
   {/if}
 
   {#if data.entries.length === 0 && !data.draft}

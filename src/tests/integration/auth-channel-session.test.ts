@@ -205,10 +205,17 @@ describe('logout', () => {
     const token = await signIn(channel, 'salt-fault@x.test', 'sub-salt-fault');
     const jar = makeCookies({ [SESSION_HTTPS]: token });
 
+    // signIn only exercises confirmAction, which never derives an identity and so never calls
+    // resolveSalt: the salt read this test forces to fault is genuinely the first one this channel
+    // instance attempts, not one resolveSalt's own cache would have already answered from memory.
+    const priorSalt = await db
+      .prepare("SELECT value FROM cairn_channel_meta WHERE key = 'identity_salt'")
+      .first<{ value: string }>();
+
     // Drop the meta table only after signIn already verified the schema on this channel instance
     // (schemaVerified caches to true): logout's resolveVerifiedSession then skips the recheck and
     // reaches destroyChannelSession normally, and only the salt read that follows faults, the same
-    // way correlationIdForSubject's own doc comment describes.
+    // way logSessionDestroyed's own doc comment describes.
     await db.exec('DROP TABLE cairn_channel_meta');
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
@@ -216,12 +223,28 @@ describe('logout', () => {
       expect(result).toEqual({ ok: true });
       const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
       expect(events).not.toContain('auth.channel.session.destroyed');
+
+      // The teardown itself must still have run: the salt fault only skips the log record, per
+      // logSessionDestroyed's contract, never the deletion that made a record true in the first
+      // place.
+      const tokenHash = await hashToken(token);
+      const sessionRow = await db
+        .prepare('SELECT 1 FROM cairn_channel_session WHERE token_hash = ?1')
+        .bind(tokenHash)
+        .first();
+      expect(sessionRow).toBeNull();
     } finally {
       vi.restoreAllMocks();
       await db.exec('CREATE TABLE IF NOT EXISTS cairn_channel_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
       await db
         .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1')")
         .run();
+      if (priorSalt) {
+        await db
+          .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('identity_salt', ?1)")
+          .bind(priorSalt.value)
+          .run();
+      }
     }
   });
 

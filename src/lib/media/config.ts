@@ -41,12 +41,12 @@ const DEFAULT_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/g
  *  cannot declare its own (ruling 4, 2026-09-01): a size beyond these four is built directly against
  *  Cloudflare's own `/cdn-cgi/image/<options>/` transform-URL format.
  */
-export const BUILT_IN_PRESETS: Record<string, VariantSpec> = {
+export const BUILT_IN_PRESETS: Record<string, VariantSpec> = Object.freeze({
   thumb: { width: 320, height: 320, fit: 'cover' },
   inline: { width: 800 },
   card: { width: 640, height: 400, fit: 'cover' },
   hero: { width: 1600, height: 900, fit: 'cover' },
-};
+});
 
 /**
  * Validate a site's AssetConfig and resolve it into a ResolvedAssetConfig. An undefined block leaves

@@ -64,7 +64,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   // asset route, `/repro-assets`. Module-internal rather than exported (the conformance pass,
   // audit-repro-fixturemediabase): a docs site deployed under a SvelteKit `paths.base` cannot
   // override a hardcode, and the `mediaBase` prop below is the fix, not a second name for it.
-  const DEFAULT_MEDIA_BASE = '/repro-assets';
+  const DEFAULT_REPRO_MEDIA_BASE = '/repro-assets';
 
   // `ReproInstance` unexported (the retires pass, Task 2, a sanctioned NavIcon-class leak); the
   // mounted component's own exports, read structurally off `ReproStory.pose`'s own signature
@@ -224,7 +224,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
 
       // Resolved once, the same way theme is: a `mediaBase` prop change mid-lifetime is not a
       // thing this component supports (see the one-story-per-instance invariant below).
-      const resolvedMediaBase = untrack(() => mediaBase) ?? DEFAULT_MEDIA_BASE;
+      const resolvedMediaBase = untrack(() => mediaBase) ?? DEFAULT_REPRO_MEDIA_BASE;
 
       // Unconditional: every mounted story's media surfaces resolve their base through this context
       // rather than the real admin's hardcoded default, and every mounted story's CSRF-reading form

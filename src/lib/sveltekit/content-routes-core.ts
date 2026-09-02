@@ -2052,9 +2052,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Mint a public preview link for an entry's pending draft (spec part 3, "Public preview for a
    *  non-editor"). This action is the route half of `previewMint` (preview.ts): it names the
    *  target from the route's own params and dresses each outcome in the refusal this screen
-   *  speaks, while the entry-scoped authorization, the draft check, and the token hygiene all
-   *  live in `previewMint` itself, so the engine's own route and a site's custom mint run the
-   *  identical sequence.
+   *  speaks, while the entry-scoped authorization, the draft check, the token hygiene, and the
+   *  `preview.token.minted` log all live in `previewMint` itself, so the engine's own route and a
+   *  site's custom mint run the identical sequence and log the identical event.
    *
    *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
    *  affordance can show and copy it in place. Refuses on the page when the entry carries no
@@ -2062,16 +2062,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  table, naming the migration to apply rather than surfacing a raw D1 error.
    */
   async function previewMintAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> {
-    // The session is resolved here too, for this action's own attribution log; `previewMint`
-    // resolves it again as the first step of the authorization sequence it owns.
-    const editor = requireEditor(event);
     const env = event.platform?.env ?? {};
-    // Behind the session gate and ahead of the mint: a site with no configured origin has nowhere
-    // to address a link, so it should fail before a row exists rather than after.
-    const origin = requireOrigin(env);
     const conceptId = event.params.concept ?? '';
     const id = event.params.id ?? '';
 
+    // previewMint runs its own authorization sequence first (requireEditor, then
+    // requireEngineAccess against the target concept), so a refused editor's outcome reaches them
+    // before requireOrigin's site-misconfiguration throw ever runs. requireOrigin only guards the
+    // URL this action addresses on success, so it waits until a mint actually succeeds.
     let result: PreviewMintOutcome;
     try {
       result = await previewMint(runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
@@ -2093,10 +2091,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         } satisfies PreviewMintFailure);
     }
 
+    const origin = requireOrigin(env);
+
     // The response body carries the bearer credential (the token, inside the URL); never let a
     // shared cache or intermediary retain it.
     event.setHeaders({ 'cache-control': 'no-store' });
-    log.info('preview.token.minted', { concept: conceptId, id, editor: editor.email, expiresAt: result.expiresAt });
     // Built from the configured origin, never event.url.origin (host-header-controlled on
     // Cloudflare): the token is never interpolated into anything but this return value, so it can
     // never reach an error message.

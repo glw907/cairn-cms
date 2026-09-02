@@ -277,11 +277,20 @@ describe('ReproContext: mediaBase prop, plain and shell-hosted', () => {
     await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/docs/repro-assets');
   });
 
-  it("composes the context from a custom mediaBase through CairnAdminShell's own shadow, on a shell-hosted story", async () => {
+  it("prefers CairnAdminShell's own shadow over ReproContext's own context on a shell-hosted story", async () => {
+    // Falsifiable: the two contexts are forced to DIFFER (a real value from `shellData.mediaBase`
+    // against a different real value from the `mediaBase` prop). If CairnAdminShell ever stopped
+    // shadowing MEDIA_BASE_CONTEXT_KEY, the probe would read ReproContext's own '/docs/repro-assets'
+    // instead, and this assertion would catch it; asserting on two forced-equal values (the prior
+    // shape of this test) could not tell the two contexts apart.
+    const divergentShellStory: ReproStory = {
+      ...shellProbeStory,
+      shellData: { mediaBase: '/shell-only-media-base' },
+    };
     const screen = await render(ReproContext, {
-      props: { story: shellProbeStory, mediaBase: '/docs/repro-assets' },
+      props: { story: divergentShellStory, mediaBase: '/docs/repro-assets' },
     });
-    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/docs/repro-assets');
+    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/shell-only-media-base');
   });
 
   it('composes every rendered fixture image URL from a custom mediaBase on a bare, posed story', async () => {

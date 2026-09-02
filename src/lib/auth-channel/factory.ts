@@ -15,6 +15,7 @@ import { originMatches } from '../sveltekit/csrf.js';
 import { log } from '../log/index.js';
 import {
   verifySchema,
+  readSalt,
   provisionSalt,
   mintCode,
   readCodeRow,
@@ -538,10 +539,17 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   // a transient failure must not pin an isolate into refusing every login for its lifetime.
   let cachedSalt: string | null = null;
 
-  /** Resolve the channel's identity salt, provisioning it on first use and caching only success. */
+  /**
+   * Resolve the channel's identity salt, reading the already-provisioned row first and
+   * provisioning only on a genuine first use. A fresh isolate's every teardown path
+   * (`logSessionDestroyed`) once called `provisionSalt` unconditionally, which writes even
+   * when the salt already exists (`INSERT OR IGNORE` still round-trips to D1); reading first
+   * makes the common, already-provisioned case a pure read.
+   */
   async function resolveSalt(session: D1DatabaseSession): Promise<string> {
     if (cachedSalt !== null) return cachedSalt;
-    const salt = await provisionSalt(session);
+    const existing = await readSalt(session);
+    const salt = existing ?? (await provisionSalt(session));
     cachedSalt = salt;
     return salt;
   }
@@ -1028,11 +1036,13 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       if (verified === null) return null;
       if (!verified) {
         // A roster hook actively revoking a live session, silent until now. It records the same
-        // way the member's own logout does, keyed to the subject the session resolved to rather
-        // than the one the delete returned, and only when a row was actually destroyed.
+        // way the member's own logout does, keyed to the subject the DELETE itself returned,
+        // never the earlier `resolved.subject` read: both name the same row (the DELETE matches
+        // on the identical tokenHash, the row's primary key), but the RETURNING value is the
+        // provable one, not an assumption that the read and the delete still agree.
         const revokeSession = database.withSession('first-primary');
         const destroyed = await destroyChannelSession(revokeSession, tokenHash);
-        if (destroyed !== null) await logSessionDestroyed(revokeSession, resolved.subject);
+        if (destroyed !== null) await logSessionDestroyed(revokeSession, destroyed);
         return null;
       }
     }

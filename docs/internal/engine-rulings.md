@@ -5160,18 +5160,25 @@ when the remediation pass lands.
   used only to keep a narrative-context allowlist entry honest: an allowlisted name must still be a
   real export SOMEWHERE in the package, so a later rename or removal of `cardShell`/`headRow`/
   `iconSpan` (below) still fails here rather than hiding behind a stale allowlist reason.
-- **Shape (the allowlist, fail-unless-recorded).** `NARRATIVE_CONTEXT_ALLOWLIST` records the one
-  legitimate exception the rescope surfaces: `core.md`'s "Component-author helpers" section shows
-  the `/render` hast-building trio (`cardShell`, `headRow`, `iconSpan`) beside the root-barrel
-  `renderGlyph` export, in the alert component's worked `build()` example, because re-homing them
-  onto `/render`'s own page is deferred to the chassis pass (this ledger's
+- **Shape (the allowlist, fail-unless-recorded).** Measured against the real `CONFIG`: the whole
+  reference tree, `core.md` included, runs clean with an EMPTY allowlist. `core.md`'s
+  "Component-author helpers" section mentions the `/render` hast-building trio (`cardShell`,
+  `headRow`, `iconSpan`) in prose and in a fenced example that carries a real `import`, so
+  `isSignatureOnlyBlock` rejects that block and none of the three candidate carriers
+  (Types-table row, bare heading, signature-only `declare` block) ever nominates the trio; the
+  rescope surfaces no live drift on this page. `NARRATIVE_CONTEXT_ALLOWLIST` still carries a
+  reasoned entry for the trio, recorded PREEMPTIVELY rather than in response to a firing check: if
+  a later edit moves the trio into a Types-table row or a signature-only block (re-homing onto
+  `/render`'s own page is deferred to the chassis pass; this ledger's
   `f1-return-position-leak-sanction` row carries the same trio as list (c) Tier 4,
-  chassis-coupled). `assertAllowlistReasoned()` fails any entry with an empty `reason`, the same
-  fail-unless-recorded idiom `check-surface-leaks`' registry uses above. Every other page in the
-  reference tree runs clean with an empty allowlist; no other live drift survived the rescope.
+  chassis-coupled), the move is carried by a reasoned entry rather than a silent pass.
+  `assertAllowlistReasoned()` fails any entry with an empty `reason`, the same fail-unless-recorded
+  idiom `check-surface-leaks`' registry uses above.
 - **Record:** `docs/internal/record/2026-08-29-foundations-a-move-set.md` (inheritance note 1),
   `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md` (item 2), and commit
   `b065ea51` (the manual fix the rescope now automates), all cited above.
 - **Verified:** `npm run check:reference` (CI, `.github/workflows/test.yml`) and
   `src/tests/unit/reference-coverage.test.ts`, including a failing-first proof reconstructing the
-  `delivery-data.md` drift shape against fixture subpaths.
+  `delivery-data.md` drift shape against fixture subpaths. The reference tree, including
+  `core.md`, passes with an empty allowlist; the recorded entry is inert against current page
+  text, confirmed by running `staleNames([], coreMdText)` directly.

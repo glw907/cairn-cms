@@ -185,10 +185,11 @@ export function untaggedNames(names, pageText) {
 // column read as a whole, not any backticked span anywhere on the page: an ordinary prose mention,
 // a non-export table (the admin action table's `request`/`confirm`/… rows), or a dependent,
 // non-exported type shown for context in a signature block must not false-positive. `names` is
-// the caller's known-real-export pool; the check is package-wide, not page-scoped, because a page
-// legitimately names a real export that lives on a different subpath (core's "Component-author
-// helpers" section shows `cardShell`/`headRow`/`iconSpan`, all `/render` exports, beside the root
-// export `glyph`), so this stays a lock against a genuinely dead name, not a page-boundary check.
+// the caller-supplied known-real-export pool, scoped per page via `knownNamesByPage` so a name
+// real only on some unrelated subpath no longer excuses a stale mention. `globalKnownNames` widens
+// that pool back out, but only as the realness check `isAllowlisted` applies to a recorded
+// narrative-context exception (see `NARRATIVE_CONTEXT_ALLOWLIST`), never as the pool this function
+// itself checks against.
 /**
  * @param {string[]} names
  * @param {string} pageText

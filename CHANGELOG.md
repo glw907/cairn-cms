@@ -985,12 +985,15 @@
   green, exactly how 14 dead rows once survived undetected in `delivery-data.md` until a manual
   sweep found them (`b065ea51`). The check now compares each page against the real exports THAT PAGE
   documents (`scripts/checks/reference-coverage.mjs`'s new `knownNamesByPage`), correctly pooling
-  the two pages that cover two subpaths each (`delivery.md`, `reproductions.md`). The one legitimate
-  exception the rescope surfaces, `core.md`'s narrative mention of the `/render` trio
-  (`cardShell`/`headRow`/`iconSpan`, re-homing deferred to the chassis pass), is recorded in a new
-  reasoned `NARRATIVE_CONTEXT_ALLOWLIST`, the same fail-unless-recorded idiom `check:surface`'s leak
-  registry uses. See `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope`
-  row. Internal tooling only; no consumer action.
+  the two pages that cover two subpaths each (`delivery.md`, `reproductions.md`). The rescope
+  surfaces no live drift; `core.md`'s narrative mention of the `/render` trio
+  (`cardShell`/`headRow`/`iconSpan`, re-homing deferred to the chassis pass) sits in prose and in an
+  example block carrying a real import, so none of the check's three candidate carriers ever
+  nominate it. A new reasoned `NARRATIVE_CONTEXT_ALLOWLIST` entry records the trio preemptively, the
+  same fail-unless-recorded idiom `check:surface`'s leak registry uses, so a future edit that moves
+  the trio into a live carrier is carried by a reasoned entry rather than a silent pass. See
+  `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope` row. Internal tooling
+  only; no consumer action.
 
 - `createAuthChannel`'s three cookie deletes now pass their setter's own `secure` flag: `confirm`'s
   clear of the pending nonce cookie, and both of `logout`'s. A cookie jar's `delete` defaults the

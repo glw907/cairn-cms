@@ -153,16 +153,16 @@ describe('staleNames', () => {
   it('does not flag a dependent, non-exported type shown bare (no `declare`) beside a real export', () => {
     const text = [
       '```ts',
-      'interface AssetConfig {',
-      '  variants?: Record<string, VariantSpec>;',
+      'interface ConceptDescriptor {',
+      '  routing: RoutingRule;',
       '}',
       '',
-      'interface VariantSpec {',
-      '  width?: number;',
+      'interface RoutingRule {',
+      '  routable: boolean;',
       '}',
       '```',
     ].join('\n');
-    expect(staleNames(['AssetConfig'], text)).toEqual([]);
+    expect(staleNames(['ConceptDescriptor'], text)).toEqual([]);
   });
 
   it('does not flag a real export mentioned only in ordinary prose', () => {

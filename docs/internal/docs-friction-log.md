@@ -176,11 +176,6 @@ New findings start below this line, one per finding, with its perspective and a 
   tripwire: extract the page's bolded quoted sentences and grep them against the shipped
   component strings. Candidate for the internals slice's gate additions.
 
-- **extender:** after Task 3 dropped `createMediaResolver`'s preset parameter, the media config's
-  `variants` field has zero reachable runtime consumers: `config.ts` validates it, `presetUrl` is
-  its only reader, and `presetUrl` is demoted off every public subpath with no non-test caller. So
-  `core.md:290-291`/`:304-305` present an inert config field as a live capability. The
-  retire-or-re-expose decision belongs to 4b/internals, not the conventions pass.
 - **contributor:** `ROADMAP.md`'s "Platform watch: Cloudflare" heading text is a machine key, not
   just a title: the `cairn Cloudflare capability review (monthly)` cloud routine (created
   2026-08-22) reads the list by that exact heading, so renaming the heading requires updating the

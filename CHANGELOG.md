@@ -1146,16 +1146,17 @@
   cannot strand a link already in an inbox.
 
 - `AssetConfig.variants` and the `VariantSpec` type are retired (ruling 4, 2026-09-01, the
-  `variants` evidence sweep). The field had zero reachable runtime consumers: none of the four
-  family sites (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org) or cairn-pub declared a
-  custom preset, `config.ts`'s per-variant fit/gravity/upscale validation existed only to guard
-  it, and `presetUrl`, its only reader, has no non-test caller since Task 3 of the conventions
-  pass dropped `createMediaResolver`'s own preset parameter. The built-in `thumb`, `inline`,
-  `card`, and `hero` presets are now the whole vocabulary; `BUILT_IN_PRESETS` (engine-internal)
-  is the fixed source of it. Consumers must: drop any `variants:` key from a `media` block, since
-  it's now an excess-property type error rather than a merged-and-ignored no-op; a site needing a
-  size beyond the four built-ins builds the Cloudflare Images transform URL directly against
-  Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's own URL builder
+  `variants` evidence sweep). The field had zero reachable runtime consumers: no family site sets
+  the key (the estate evidence is in `docs/internal/engine-rulings.md`'s
+  `audit-adapter-variantspec` entry), `config.ts`'s per-variant fit/gravity/upscale validation
+  existed only to guard it, and `presetUrl`, its only reader, has no non-test caller since Task 3
+  of the conventions pass dropped `createMediaResolver`'s own preset parameter. The built-in
+  `thumb`, `inline`, `card`, and `hero` presets are now the whole vocabulary; `BUILT_IN_PRESETS`
+  (engine-internal) is the fixed source of it. Consumers must: drop any `variants:` key from a
+  `media` block, since it's now an excess-property type error rather than a merged-and-ignored
+  no-op; a site needing a size beyond the four built-ins builds the Cloudflare Images transform
+  URL directly against Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's
+  own URL builder
   (`variantUrl`/`presetUrl`) was never exported from any public subpath.
 
 ## 0.96.0

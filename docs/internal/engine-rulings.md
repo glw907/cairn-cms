@@ -836,14 +836,21 @@ when the remediation pass lands.
 
 - **Verdict:** keep. A site defining named Images presets in a shared module annotates them; the fit and upscale unions are the vocabulary cairn accepts, and a typo otherwise becomes a dead /cdn-cgi/image URL at request time.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 14, per sitting ruling 4
-  (2026-09-01, the `variants` evidence sweep): the recorded any-site case never materialized. The
-  sweep found zero family sites (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub)
-  declaring a custom transform preset, and `presetUrl`, `VariantSpec`'s only reader, has no
-  non-test caller since the conventions pass (Task 3) dropped `createMediaResolver`'s own preset
-  parameter. `VariantSpec` drops from every barrel (root, `/sveltekit`, `/media`); it rode only on
-  `AssetConfig.variants` and `ResolvedAssetConfig.variants` naming it, both retired in the same
-  task (see `audit-adapter-assetconfig`, amended, and `audit-media-resolvedassetconfig`,
-  re-tested). Seam fit: none lost. No site held the seam this closes.
+  (2026-09-01, the `variants` evidence sweep): the recorded any-site case never materialized.
+  Sweep evidence, repo/file/hit-or-no-hit: `ecxc-ski/src/theme/cairn.config.ts`,
+  `907-life/src/theme/cairn.config.ts`, `aksailingclub-org/src/theme/cairn.config.ts`,
+  `xcathletes-org/src/theme/cairn.config.ts`, and `cairn-pub/src/theme/cairn.config.ts` each
+  declare `media: { bucketBinding: 'MEDIA_BUCKET' }` and nothing else, no-hit; a full-tree grep
+  of each of those five repos for `variants:`/`VariantSpec`/`variantUrl`/`presetUrl`, no-hit; and
+  the remaining Step 1 scope, `examples/showcase/src/theme/cairn.config.ts`, `templates/waymark`,
+  and `docs/` (grepped before this task's own doc edits), no-hit. `presetUrl`, `VariantSpec`'s
+  only reader, has no non-test caller either, since the conventions pass (Task 3) dropped
+  `createMediaResolver`'s own preset parameter. `VariantSpec` drops from every barrel (root,
+  `/sveltekit`, `/media`); it rode only on `AssetConfig.variants` and
+  `ResolvedAssetConfig.variants` naming it, both retired in the same task (see
+  `audit-adapter-assetconfig`, amended, and `audit-media-resolvedassetconfig`, re-tested, both of
+  which cross-reference this entry's sweep evidence rather than restate it). Seam fit: none lost.
+  No site held the seam this closes.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 41.
 - **Any-site case:** A site defining named Images presets in a shared module annotates them; the fit and upscale unions are the vocabulary cairn accepts, and a typo otherwise becomes a dead /cdn-cgi/image URL at request time.
 
@@ -1032,12 +1039,10 @@ when the remediation pass lands.
 - **Any-site case:** The switch that turns R2 media on at all, carrying zone facts a Worker cannot detect: transformations 'is a per-zone setting that the dashboard or API turns on, not something a Worker can flip'.
 - **Amendment (4b conformance pass, Task 14):** this ratified keep loses its `variants` member,
   per sitting ruling 4 (2026-09-01, the `variants` evidence sweep), not a silent overturn of the
-  keep verdict above. The sweep found zero reachable runtime consumers: no family site
-  (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) declared a custom transform
-  preset, and `presetUrl`, the field's only reader, has no non-test caller. `AssetConfig` itself
-  stays kept on the any-site case recorded above, which names `transformations`, not `variants`;
-  see `audit-adapter-variantspec` (closed) and `audit-media-resolvedassetconfig` (re-tested) for
-  the rest of this same amendment.
+  keep verdict above. Sweep evidence (repo, file, hit-or-no-hit) is recorded once, at
+  `audit-adapter-variantspec` (closed), and not restated here. `AssetConfig` itself stays kept on
+  the any-site case recorded above, which names `transformations`, not `variants`; see
+  `audit-media-resolvedassetconfig` (re-tested) for the rest of this same amendment.
 
 ## audit-adapter-senderconfig: `SenderConfig`  (keep, 2026-08-26, any-site audit)
 
@@ -3361,11 +3366,11 @@ when the remediation pass lands.
 - **Any-site case:** A site storing the value in an exported const or threading it through its own helper needs an importable name; it is normalizeAssets's return type and buildMediaResolver's parameter type.
 - **Verified:** [verify-media.md](record/2026-08-26-any-site-audit/verify-media.md).
 - **Re-tested (4b conformance pass, Task 14):** the type's shape narrows (its `variants` member
-  retires per sitting ruling 4, 2026-09-01, the `variants` evidence sweep) but the recorded
+  retires per sitting ruling 4, 2026-09-01, the `variants` evidence sweep; sweep evidence
+  recorded once, at `audit-adapter-variantspec` (closed), not restated here) but the recorded
   any-site case is unaffected: a site still needs `ResolvedAssetConfig` as `normalizeAssets`'s
   return type and `createMediaResolver`'s parameter type, `variants` or no. The keep holds. See
-  `audit-adapter-assetconfig` (amended) and `audit-adapter-variantspec` (closed) for the rest of
-  this same amendment.
+  `audit-adapter-assetconfig` (amended) for the rest of this same amendment.
 
 ## audit-media-mediatoken: `mediaToken`  (keep, 2026-08-26, any-site audit)
 

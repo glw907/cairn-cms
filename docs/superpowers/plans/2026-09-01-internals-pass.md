@@ -440,12 +440,19 @@ here; both budgets scored.
 
 ## What this pass hands forward
 
-- **internals-B (new slice, filed by Task 11):** the five monolith splits, the
-  exhaustiveness idiom, the coherence thirteen, the newcomer internals map, the
-  read-seam boundary decision.
+- **internals-B (new slice, filed by Task 11):** the five monolith splits (the `EditPage`
+  split absorbs ROADMAP's `FieldInput` `ownership_invalid_mutation` fix, so those lines
+  are touched once), the exhaustiveness idiom, the coherence thirteen, the newcomer
+  internals map, the read-seam boundary decision.
 - **Chassis:** unchanged (the render trio re-homing; the showcase hand-mount against
   generated `./$types`).
-- **Release:** the window still holds; ONE cut after chassis.
+- **Polish (new final slice; Geoff, 2026-09-01):** the full-surface
+  cleanliness-and-beauty sweep before the cut, reading the exports as a family, the docs
+  cover to cover, and the rendered admin against the design system. Per-pass beauty
+  reviews read only their own diff; this slice is the one read of the whole engine.
+  Candidate for workflow mode (adversarial find-and-verify).
+- **Release:** the window still holds; ONE cut after the polish slice (moved from
+  after-chassis at the same sitting).
 
 ## Review folds
 

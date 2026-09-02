@@ -46,7 +46,12 @@ behind and its sheet says to run it as a numbered site pass.
 ## Parallel tracks
 
 - **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a MERGED. Next: 4b (immediate
-  next action, above), then internals, chassis; ONE release cut after chassis.
+  next action, above), then internals, internals-B (monoliths and coherence; filed by the
+  internals plan's Task 11), chassis, then a NEW final **polish** slice (Geoff, 2026-09-01:
+  a full-surface cleanliness-and-beauty sweep, reading the exports as a family, the docs
+  cover to cover, and the rendered admin against the design system, because per-pass beauty
+  reviews read only their own diff); ONE release cut after polish, not after chassis. The `FieldInput`
+  `ownership_invalid_mutation` fix routes to internals-B's `EditPage` split (one touch).
   Routed to internals: the F-1 leak-class `check:surface` rider (its brief is the move
   record, `docs/internal/record/2026-08-30-retires-move-record.md`, which states the
   predicate's limits and the expansion-class questions), the `staleNames` per-subpath

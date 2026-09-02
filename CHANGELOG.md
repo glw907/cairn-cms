@@ -885,6 +885,18 @@
   rule's advisory findings as non-gating sees fewer of them; nothing that previously passed now
   fails.
 
+- `cairn-audit`'s five rendered-mode harness failure ids conform to the identifier-grammar rule
+  (`convention-identifier-grammar`): the area now sits in a dot-namespace rather than a bare
+  prefix. `rendered-allowlist-stale` becomes `rendered.allowlist-stale`,
+  `rendered-allowlist-unprobeable` becomes `rendered.allowlist-unprobeable`,
+  `rendered-allowlist-dead` becomes `rendered.allowlist-dead`,
+  `rendered-page-identity-mismatch` becomes `rendered.page-identity-mismatch`, and
+  `rendered-state-unreachable` becomes `rendered.state-unreachable`. This is a behavior change to
+  the ids the harness emits, not a rule reshape: every finding's tier, message, and trigger are
+  unchanged. Consumers must: update any `cairn-audit.config.json` allowlist `rule` values from
+  `rendered-*` to `rendered.*`; a build filtering or alerting on the old ids by name stops
+  matching once this ships.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

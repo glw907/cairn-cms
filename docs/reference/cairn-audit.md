@@ -171,7 +171,7 @@ landmark plus that landmark's first heading, captured from a dedicated no-JavaSc
 baseline is genuinely what the server sent. Take a page whose settled DOM no longer matches: the run
 navigated to `/admin/edit/some-post` and the DOM that settled belongs to an unrelated 404 or a
 different route entirely. The runner reports that page unmeasurable rather than auditing it under
-the wrong page's identity: a `rendered-page-identity-mismatch` finding names the route and both
+the wrong page's identity: a `rendered.page-identity-mismatch` finding names the route and both
 identities, and no rule runs against that page in that theme. This is a harness finding, not a rule
 finding, and it gates the exit code at error tier, the same way a stale allowlist entry does: a
 route that hydrates into the wrong chrome is a defect worth fixing, not a compositional judgment
@@ -331,9 +331,9 @@ reports under one of three rule ids of its own, rather than doing nothing silent
 
 | Rule id | What the entry did |
 |---|---|
-| `rendered-allowlist-stale` | The selector matched nothing the run visited |
-| `rendered-allowlist-unprobeable` | The browser refused to parse the selector. Always advisory, because unreadable is a different claim from stale |
-| `rendered-allowlist-dead` | The selector still matches an element, and the entry suppressed nothing |
+| `rendered.allowlist-stale` | The selector matched nothing the run visited |
+| `rendered.allowlist-unprobeable` | The browser refused to parse the selector. Always advisory, because unreadable is a different claim from stale |
+| `rendered.allowlist-dead` | The selector still matches an element, and the entry suppressed nothing |
 
 A stale or dead entry reports at the tier of the rule it names. Without `rule`, it's an error, which
 is right for a suppressed error-tier finding and would turn a suppressed advisory one into a gate
@@ -347,7 +347,7 @@ harness id:
 
 | Rule id | What it means |
 |---|---|
-| `rendered-state-unreachable` | A registered rule declared an interaction state (`row-expanded`, currently the only one surfaced this way) that a page never reached, so the rule ran on a subset of that page. Always advisory: a page with no `ExpandableRow` never reaching `row-expanded` is ordinary, not a defect |
+| `rendered.state-unreachable` | A registered rule declared an interaction state (`row-expanded`, currently the only one surfaced this way) that a page never reached, so the rule ran on a subset of that page. Always advisory: a page with no `ExpandableRow` never reaching `row-expanded` is ordinary, not a defect |
 
 ### Rule-declared exemptions
 

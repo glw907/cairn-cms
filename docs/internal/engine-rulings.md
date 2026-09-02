@@ -273,6 +273,21 @@ open edits, not part of the shape itself.
   "What this pass unblocks and hands to 4b" section).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1.
+- **Amendment (2026-09-01, conformance-pass Task 13):** the closure above names "the four
+  `rendered-*` harness failure ids," but `rendered.ts` defines five, a discrepancy the 4b
+  planning docket's §6 flagged as unresolved
+  (`docs/internal/record/2026-09-01-4b-planning-inputs/docket.md`, "The four `rendered-*`
+  harness failure ids"). Sitting ruling 3 of the 2026-09-01 sitting settled the real set at five
+  and named the renamed form for each: `rendered-allowlist-stale` to
+  `rendered.allowlist-stale`, `rendered-allowlist-unprobeable` to
+  `rendered.allowlist-unprobeable`, `rendered-allowlist-dead` to `rendered.allowlist-dead`,
+  `rendered-page-identity-mismatch` to `rendered.page-identity-mismatch`, and
+  `rendered-state-unreachable` to `rendered.state-unreachable`. All five renamed in Task 13,
+  closing the docket's §6 open item. Two refinements were considered and declined so a later
+  reader does not re-file them: the `page-identity-mismatch` noun leaf stays (the audit-id
+  vocabulary already carries defect nouns, `chip-ground-collision` among them, and C16 counsels
+  restraint beyond the namespace fix), and the `allowlist-` sub-prefix stays (`rendered` is the
+  area; the clause namespaces by area, not by sub-mechanism).
 
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 

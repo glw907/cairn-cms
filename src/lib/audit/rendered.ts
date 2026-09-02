@@ -185,11 +185,11 @@ export interface RenderedPageVisit {
   identityRefused?: boolean;
 }
 
-const STALE_ALLOWLIST_RULE_ID = 'rendered-allowlist-stale';
-const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered-allowlist-unprobeable';
-const DEAD_ALLOWLIST_RULE_ID = 'rendered-allowlist-dead';
-const PAGE_IDENTITY_RULE_ID = 'rendered-page-identity-mismatch';
-const STATE_UNREACHABLE_RULE_ID = 'rendered-state-unreachable';
+const STALE_ALLOWLIST_RULE_ID = 'rendered.allowlist-stale';
+const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered.allowlist-unprobeable';
+const DEAD_ALLOWLIST_RULE_ID = 'rendered.allowlist-dead';
+const PAGE_IDENTITY_RULE_ID = 'rendered.page-identity-mismatch';
+const STATE_UNREACHABLE_RULE_ID = 'rendered.state-unreachable';
 
 /**
  * States whose unreachability gets its own report line, on top of {@link RenderedPageVisit.statesUnreached}
@@ -355,7 +355,7 @@ function identityRefusedFinding(entry: RenderedAllowlistEntry): Finding {
     file: entry.page,
     message:
       `the rendered allowlist names ${entry.selector} on ${entry.page}, but the page-identity guard refused to ` +
-      `audit that route in this run (see the rendered-page-identity-mismatch finding), so whether the entry is ` +
+      `audit that route in this run (see the rendered.page-identity-mismatch finding), so whether the entry is ` +
       `stale or dead cannot be decided here. (reason on file: ${entry.reason})`,
   });
 }

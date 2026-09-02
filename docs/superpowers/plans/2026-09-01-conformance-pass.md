@@ -1057,3 +1057,47 @@ precondition). Notes: R2-N-1 → the `authoring.ts:9-10` comment named; R2-N-2 �
 `normalizePublishActions`' return type; R2-N-3 → follow-the-names on the barrel-prune
 range; R2-N-4 → validation loop `:116`, merge `:127`; R2-N-5 → the logout salt-fault
 branch (skip the record, never fail logout).
+
+## Post-mortem (2026-09-02)
+
+**Built and merged:** all fourteen tasks, PR #46, merge `12330d71`, CI fully green. The
+worktree chain ran tasks 1-10 in the original session's workflow; a laptop power loss
+killed it mid-Task 11, and the resumed session salvaged the warm tree (the Opus
+implementer audited every step of the partial attempt against the acceptance criteria and
+kept all of it, adding three proofs it lacked) and ran 11-14 through per-task Agent
+chains. Two fix rounds inside the chain (Task 2 in the crashed session, Task 12's
+conductor-ruled chroma scoping, Task 14's evidence-granularity round); the ritual added
+the punch-list round, the simplifier, the five-lens fan-out, a 25-item review fix round,
+and four verification micro-fixes.
+
+**Verified with evidence:** `npm run check` 0/0 (1781 files), `npm test` exit 0 (6075
+tests), every CI-only gate run by name locally and green on the PR, including the
+from-scratch consumer e2e. The Task 9/10 visual work carries banked renders
+(`docs/internal/record/2026-09-01-4b-task9-evidence/`) read by the a11y and beauty
+reviewers; the badge-tier numbers were independently re-measured by the a11y lens and
+reproduced exactly.
+
+**Decisions locked in-pass:** the ratified 1.5 contrast floor stays untouched (the plan's
+fallback logic; the floor-recalibration half re-filed with a measured-evidence requirement
+and a failing-test tripwire on the residual); the `outcome`-discriminant grammar is
+kebab-case at the type level (an implementer refused a conductor ruling to the contrary
+with evidence, upheld on review); the expired-row DELETEs stay predicate-free with the
+claims softened to "names no row" (the record-liveness fix routes to internals Task 13);
+`badge-soft` is a documented boundary-less exemption, label-carries-state.
+
+**Plan corrections for the next author:** the plan named a nonexistent `transformUrl` as
+Task 14's recourse (the accurate recourse is the raw `/cdn-cgi/image/` form; verified and
+substituted); the docket's StatusChip entry was stale against `main` (caught at
+plan-authoring, Task 10 re-authored); Task 12's ASC corpus lacked in-repo pixel data, so
+representative fixtures plus honest scoping was the executable shape.
+
+**Blockers:** none carried. Hand-forwards are recorded in STATUS's routing lists and the
+internals plan (folded pre-merge at Geoff's direction, twice-reviewed, awaiting the
+approval gate).
+
+**Budgets:** ceiling 6M. The crashed session's exact ledger is lost; its checkpoints show
+tasks 1-10 inside pace. The resumed session spent ~3.3M attributable to 4b (chains for
+11-14, the ritual, five reviews, fix rounds, close). Best estimate: at or slightly over
+ceiling, the overrun in crash recovery plus the five-lens ritual, not the chains.
+Interaction points: zero blocking questions; five Geoff-initiated mid-pass directives, all
+folded without rework.

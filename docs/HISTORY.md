@@ -7,6 +7,53 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-09-02: conformance pass merged (audit-remediation slice 4b), PR #46, CI green
+
+Plan and post-mortem: `docs/superpowers/plans/2026-09-01-conformance-pass.md` (worktree
+`conformance`, merged at `12330d71`). All fourteen tasks landed through the
+implementer/diff-reviewer/gate chain: the 26 Tier 1 retires, alias prunes, the CairnHistory
+reshapes, `TidyClient` narrowed, `previewMint` made safe (Opus), the `ReproContext`
+`mediaBase` prop, `ctx.attr()`, the `normalizeAssets` hoist, the OfficeList-onto-PageHeader
+collapse, the StatusChip badge tiers, the ten log-event evenness fixes (Opus), the two
+audit-rule repairs, the five `rendered.*` renames, and the `variants` retirement on
+five-repo sweep evidence. A mid-pass power loss killed the original workflow during Task
+11; the fresh session salvaged the warm uncommitted tree by dispatching the same task with
+take-over instructions, and the salvage held (the reviewer verified every step of the
+partial work). Final state: `npm run check` 0/0, 6075 tests exit 0, every CI-only gate
+green by name, PR CI fully green including the from-scratch consumer e2e.
+
+What the reviews caught: Task 12's chroma repair overclaimed (the corpus had two
+false-positive mechanisms and the chroma term closes only the hue class; the conductor
+ruled the ratified 1.5 floor untouched and every claim scoped to the truth, with the
+residual as a failing-test tripwire). The five-reviewer fan-out plus the Opus beauty lens
+produced a 25-item fix round: verdict provenance stripped from four reference pages (a new
+scar-tissue class this pass almost introduced), the one-chokepoint `preview.token.minted`
+emit moved into `previewMint`, auth-before-origin restored at the action, `resolveSalt`
+made read-first (no cold-isolate write on teardown), the "expired row leaves no record"
+overclaim softened (ruled: no expiry predicate on the DELETEs), and eight missing
+migration-notes entries landed. The a11y lens proved `badge-soft` sits under both of
+`chip-ground-collision`'s own floors (documented as a deliberate boundary-less exemption)
+and that the chroma term is CVD-blind (recorded; the CVD term rides the filed floor
+recalibration).
+
+What a later pass would be wrong to rediscover: the ratified `outcome`-discriminant
+grammar is KEBAB-case (snake_case governs log-record `reason`/`scope` fields only; a
+conductor ruling to the contrary was refused with evidence and the refusal upheld). A
+vitest helper imported from another `*.test.ts` re-executes that file's whole suite under
+the importer (extract to a plain module). Deleting archaeology from a component doc block
+can silently drop a class from the compiled admin sheet (`gap-0` compiled only via prose;
+the sheet-inventory test is the net). The whole-log friction triage (now a standing ritual
+step) found twelve queued entries already shipped and one genuinely stranded
+(toolkit-seams' `isUniqueViolation` defer was never ledgered). Local Vale 3.19.0 finds 16
+real `Google.EmDash` errors CI's 3.15.1 misses; the internals pass fixes the pages and
+records CI-as-arbiter. Budget: ceiling 6M; the crashed session's exact ledger is lost
+(checkpoints show tasks 1-10 within pace), and the resumed session spent ~3.3M on 4b
+chains, ritual, reviews, and fix rounds, so the pass ran at or slightly over ceiling with
+the overrun in the five-lens ritual plus crash recovery, not the chains. Interaction
+points: zero blocking questions to Geoff; five Geoff-initiated directives folded mid-pass
+(the polish slice, the chassis mandate and its two consequences, the pre-merge internals
+review, the friction-triage ritual step).
+
 ## 2026-09-01: conventions pass merged (audit-remediation slice 4a), PR #43, CI green
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-30-conventions-pass.md` (worktree

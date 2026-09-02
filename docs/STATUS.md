@@ -10,44 +10,28 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries SEVEN
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries EIGHT
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
-(remediation slice 1), foundations A (slice 2a), foundations B (slice 2b), retires (slice 3),
-and conventions (slice 4a, merged 2026-09-01 at `bc960fec`, PR #43, all CI green); the window
-holds until the chassis slice per the initiative design. CI on `main` is fully green.
+(slice 1), foundations A (2a), foundations B (2b), retires (3), conventions (4a, PR #43), and
+conformance (4b, merged 2026-09-02 at `12330d71`, PR #46, all CI green); the window holds
+until the polish slice per the amended initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**The conformance pass (4b) is EXECUTING in workflow mode** on worktree
-`.claude/worktrees/conformance` (branch `conformance` off `main` at `6621245f`). Plan:
-`docs/superpowers/plans/2026-09-01-conformance-pass.md` — twice-reviewed on the mandated
-model (round 1: engine-triage + web-auth-security-reviewer + an Opus cleanliness-and-beauty
-lens Geoff added mid-review, now a standing pass dimension; round 2: engine-triage
-verification; all findings folded, dispositions in the plan's review-folds section). Geoff
-authorized the full arc: execute, pass-end ritual, merge to `main`, push. 14 tasks,
-sequential; Tasks 5 and 11 ran upshifted to Opus implementers (security-critical).
-Ceiling 6M, checkpoint every four tasks. Checkpoint (evening, post-crash): a power loss
-killed the workflow mid-Task 11; a fresh session salvaged the warm tree, and Tasks 1-12
-are now through the chain via per-task Agent dispatches (Task 11 at `9ba75564` clean;
-Task 12 at `bc061a97`+`a0c36062` after one conductor-ruled fix round: the chroma term
-landed for the hue class, the ratified 1.5 floor untouched, the floor-recalibration half
-re-filed in ROADMAP with a measured-evidence requirement and a failing-test tripwire on
-the residual). Next: Task 13 (rendered.* renames), Task 14 (variants sweep), then the
-ritual. Pass-scoped punch list for the ritual's fix round: Task 11's salt-fault and
-third-no-row-site tests; Task 11's `Consumers must:` line gains the three omitted
-record-shape changes (`words` to `wordCount`, the dropped `resolver_absent` `enabled`,
-`cleanup_failed` `reason` to `error`); two stale "still allowlisted" annotation lines in
-the rulings ledger (`engine-rulings.md:4592,:4601`); sweep `.task9-evidence/`. The internals
-pass plan is DRAFTED at
-`docs/superpowers/plans/2026-09-01-internals-pass.md` (rulings RATIFIED at the 2026-09-01
-sitting; round-1 three-lens review ran pre-merge at Geoff's direction against worktree
-state `189bf2d7` and is FOLDED at `3dde82a7`: 13 tasks, ceiling 6.5M, one ratified-letter
-amendment on the CAIRN_DEV_BACKEND refusal awaiting Geoff's confirmation at plan approval;
-round 2 verified and its fixes applied at `a946e140`; the plan awaits Geoff's approval
-gate, with anchor reconciliation after 4b's merge the only remaining pre-dispatch step). Resume prompt for a fresh
-session: "In ~/Projects/cairn-cms, resume the conformance pass (4b) mid-execution: invoke
-cairn-pass, read docs/STATUS.md and the plan, verify worktree `conformance` state, then
-continue the pass-execute workflow chain from the last completed task."
+**The internals pass awaits Geoff's plan approval.** The plan at
+`docs/superpowers/plans/2026-09-01-internals-pass.md` is twice-reviewed (three-lens round 1
+folded, round-2 engine-triage verification passed, fixes applied): 13 tasks, ceiling 6.5M,
+checkpoints at 4/8/12, workflow mode. **One confirmation item rides the approval: the
+ratified CAIRN_DEV_BACKEND refusal's letter is amended** from "refuse when set" to "refuse
+when set AND non-local" (the flag's `='1'` value is the dev transport's own enable
+contract, so the ruled sense would break the showcase exemplar; both round-1 security and
+round-2 triage verified the amendment executes the ruling's intent). After approval, the
+one remaining pre-dispatch step is reconciling the plan's line anchors against merged
+`main`, then execution starts on a fresh worktree `.claude/worktrees/internals` off `main`
+(from-scratch showcase `npm ci` before trusting any e2e). Resume prompt for a fresh
+session: "In ~/Projects/cairn-cms, invoke cairn-pass and start the internals pass:
+read docs/STATUS.md and the plan, reconcile the plan's anchors against merged main,
+confirm the approval state, then execute per the plan's workflow mode."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -56,22 +40,18 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a MERGED. Next: 4b (immediate
-  next action, above), then internals, internals-B (monoliths and coherence; filed by the
-  internals plan's Task 11), chassis, then a NEW final **polish** slice (Geoff, 2026-09-01:
-  a full-surface cleanliness-and-beauty sweep, reading the exports as a family, the docs
-  cover to cover, and the rendered admin against the design system, because per-pass beauty
-  reviews read only their own diff); ONE release cut after polish, not after chassis. The `FieldInput`
-  `ownership_invalid_mutation` fix routes to internals-B's `EditPage` split (one touch).
-  Routed to internals: the F-1 leak-class `check:surface` rider (its brief is the move
-  record, `docs/internal/record/2026-08-30-retires-move-record.md`, which states the
-  predicate's limits and the expansion-class questions), the `staleNames` per-subpath
-  rescope, R-0's second direction, the six stale `content-routes-*` header wordings
-  (`content-routes-context.ts:272` foremost), the `list-role` descendant-selector
-  re-grounding, the `panel-width` closed-select painted-width follow-up, the
-  reference-page convention for naming the indexed-access form beside shapes printing
-  un-importable members (18 sites), and the factory per-call `CAIRN_DEV_BACKEND` refusal
-  design question. Routed to chassis: the render trio re-homing
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b MERGED. Next: internals
+  (immediate next action, above), then internals-B (four monoliths and coherence; filed by
+  the internals plan's Task 11; also carries `FieldInput`'s `ownership_invalid_mutation`
+  fix inside the `EditPage` split, the confirm destroy-then-create `batch()` question, and
+  the OfficeList/AdminTable scroll-container ownership), chassis, then the final **polish**
+  slice (Geoff, 2026-09-01: a full-surface cleanliness-and-beauty sweep, reading the
+  exports as a family, the docs cover to cover, and the rendered admin against the design
+  system, because per-pass beauty reviews read only their own diff; also carries the
+  OfficeList outright-retire question, ruling-first, and the items its hands-forward list
+  in the internals plan names); ONE release cut after polish. The internals plan's task
+  list is the canonical routing record now; this bullet stops restating it.
+  Routed to chassis: the render trio re-homing
   (`cardShell`/`headRow`/`iconSpan`), and the carried showcase hand-mounted
   `+page.server.ts` against generated `./$types`. Standing chassis mandate (Geoff,
   2026-09-01): the chassis is the most developer-visible part of cairn and the code

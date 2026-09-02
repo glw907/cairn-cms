@@ -25,12 +25,19 @@ model (round 1: engine-triage + web-auth-security-reviewer + an Opus cleanliness
 lens Geoff added mid-review, now a standing pass dimension; round 2: engine-triage
 verification; all findings folded, dispositions in the plan's review-folds section). Geoff
 authorized the full arc: execute, pass-end ritual, merge to `main`, push. 14 tasks,
-sequential, `pass-execute.js` chain; Tasks 5 and 11 upshifted to Opus implementers
-(security-critical). Ceiling 6M, checkpoint every four tasks. Checkpoint (11:19): Tasks
-1-4 accepted through the chain (Task 2 took one fix round); Task 5 (previewMint, Opus)
-in flight; guard healthy throughout. Checkpoint (12:37): Tasks 1-8 through the chain
-(previewMint and ctx.attr both clean; the normalizeAssets hoist committed); next are the
-two visual tasks (9-10), then the Opus log-evenness task (11), then 12-14. The internals
+sequential; Tasks 5 and 11 ran upshifted to Opus implementers (security-critical).
+Ceiling 6M, checkpoint every four tasks. Checkpoint (evening, post-crash): a power loss
+killed the workflow mid-Task 11; a fresh session salvaged the warm tree, and Tasks 1-12
+are now through the chain via per-task Agent dispatches (Task 11 at `9ba75564` clean;
+Task 12 at `bc061a97`+`a0c36062` after one conductor-ruled fix round: the chroma term
+landed for the hue class, the ratified 1.5 floor untouched, the floor-recalibration half
+re-filed in ROADMAP with a measured-evidence requirement and a failing-test tripwire on
+the residual). Next: Task 13 (rendered.* renames), Task 14 (variants sweep), then the
+ritual. Pass-scoped punch list for the ritual's fix round: Task 11's salt-fault and
+third-no-row-site tests; Task 11's `Consumers must:` line gains the three omitted
+record-shape changes (`words` to `wordCount`, the dropped `resolver_absent` `enabled`,
+`cleanup_failed` `reason` to `error`); two stale "still allowlisted" annotation lines in
+the rulings ledger (`engine-rulings.md:4592,:4601`); sweep `.task9-evidence/`. The internals
 pass plan is DRAFTED at
 `docs/superpowers/plans/2026-09-01-internals-pass.md` (docket banked beside it; six open
 decisions await Geoff; its adversarial review runs after 4b merges). Resume prompt for a fresh

@@ -13,7 +13,6 @@ export { normalizeAssets, type ResolvedAssetConfig } from './config.js';
 // own parameter names it, the raw adapter-declared shape it resolves.
 export type { AssetConfig } from '../content/types.js';
 export { readCommittedManifest, type MediaEntry, type MediaManifest } from './manifest.js';
-export type { VariantSpec } from './transform-url.js';
 export { parseMediaToken, formatMediaToken, type MediaRef } from './reference.js';
 // `MediaResolve`'s canonical home is `.`; a recorded R4 re-export here because
 // `createMediaResolver`'s return type names it.

@@ -421,6 +421,30 @@ alongside the component recipes above and below it.
   the same element, so a hand-composed chip carries no weight utility of its own. Values are
   measured, not invented (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract
   lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
+- **Badge tier: every safelisted `badge-*` class, the raw daisyUI alternative to `StatusChip`
+  (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01).** `badge-error`, `badge-success`,
+  `badge-soft`, `badge-outline`, and `badge-dash` are all blessed in the admin CSS safelist and
+  compile into the packaged sheet on both admin themes. Reach for one directly, without
+  `StatusChip`, only for a stock daisyUI-flavored surface outside the chip vocabulary (a raw
+  `badge` a site's own markup already builds on daisyUI's own semantic-color convention); reach
+  for `StatusChip` for anything in the chip register grammar above, since only `StatusChip`
+  carries the register set's ground-tuned band, the `size` vocabulary, and the `legend`
+  accessible-name pattern. Two shapes, two measurements, both against the register set's own
+  floors on both packaged themes, and both clearing with no retune needed: `badge-error`,
+  `badge-success`, and `badge-soft` each paint their own fill and their own base-content-derived
+  ink (daisyUI 5.7.20's `badge-soft` recipe carries a fill and an ink of its own even with no tone
+  class set), each clearing the >= 4.5:1 text floor (WCAG 1.4.3) against its own fill; `badge-outline`
+  and `badge-dash` paint no fill of their own and inherit their ink and currentColor border from the
+  surrounding row, clearing the same text floor against the row ground and the unrelated >= 3:1
+  non-text floor (WCAG 1.4.11) on the border. `badge-tier-legibility.test.ts` (the same
+  canvas-readback method `status-chip-register-tuning.test.ts` measures the chip registers with)
+  is the one canonical home for the measured numbers themselves.
+  `badge-soft`'s own fill measures 1.185:1 against its row ground on both themes, roughly 0.32
+  under `chip-ground-collision`'s 1.5:1 floor, and the gap is a deliberate exemption, not an
+  oversight: `badge-soft` is boundary-less by design, the same shape choice `badge-outline` and
+  `badge-dash` make, and carries no claim that its fill alone reads as distinct from the row. Its
+  label names the state in text (WCAG 1.4.1 Use of Color), so the badge never depends on a reader
+  distinguishing its fill from its ground to know what it means.
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
@@ -450,7 +474,10 @@ alongside the component recipes above and below it.
   - The page follows the F3 proximity-grouping scale (the named 4/8px steps documented as a comment
     beside the theme tokens in `cairn-admin.css`; design arc 2026-07-15): the header stands apart as
     the page's one loose element (`PageHeader`'s own `mb-10`), the toolbar belongs to the card below
-    it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`).
+    it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). `OfficeList` (a custom
+    `/admin/` screen's own header-plus-card scaffold) follows the same F3 header rhythm: it composes
+    `PageHeader` for its header band (`mb-10`, `gap-0.5`, the `meta` line at `type-meta`), then its
+    card hugs that offset directly with no toolbar tier between them.
   - `EntrySummary.summary` stays off the list (the density ruling; it still serves the edit page).
   - Chip register (ruling 9 of the 2026-07-20 admin-toolkit adoption map, re-expressed for the
     second-generation register grammar): New, Edited, and Published all take `StatusChip`'s

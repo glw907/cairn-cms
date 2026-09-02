@@ -29,7 +29,7 @@ describe('CairnHistory', () => {
     const screen = await render(CairnHistory, {
       data: data({
         entries: [entry(1)],
-        draft: { editor: 'Drafting Editor', startedAt: '2026-02-01T00:00:00Z' },
+        draft: { editor: 'Drafting Editor', lastSavedAt: '2026-02-01T00:00:00Z' },
       }),
     });
     await expect.element(page.getByText('Drafting Editor')).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('CairnHistory', () => {
     const screen = await render(CairnHistory, {
       data: data({
         entries: [entry(1)],
-        draft: { editor: 'Drafting Editor', startedAt: '2026-02-01T00:00:00Z' },
+        draft: { editor: 'Drafting Editor', lastSavedAt: '2026-02-01T00:00:00Z' },
       }),
     });
     const rows = screen.container.querySelectorAll('tbody tr');
@@ -76,7 +76,7 @@ describe('CairnHistory', () => {
 
   it('still renders the draft row, not the empty state, for a never-published entry with an open draft', async () => {
     const screen = await render(CairnHistory, {
-      data: data({ entries: [], draft: { editor: 'Ed Editor', startedAt: '2026-02-01T00:00:00Z' } }),
+      data: data({ entries: [], draft: { editor: 'Ed Editor', lastSavedAt: '2026-02-01T00:00:00Z' } }),
     });
     await expect.element(page.getByText('Ed Editor')).toBeInTheDocument();
     expect(screen.container.textContent).not.toContain('No versions yet');
@@ -106,7 +106,7 @@ describe('CairnHistory', () => {
     const screen = await render(CairnHistory, {
       data: data({
         entries: [entry(1), entry(2)],
-        draft: { editor: 'Drafting Editor', startedAt: '2026-02-01T00:00:00Z' },
+        draft: { editor: 'Drafting Editor', lastSavedAt: '2026-02-01T00:00:00Z' },
       }),
     });
     const rows = screen.container.querySelectorAll('tbody tr');
@@ -139,7 +139,7 @@ describe('CairnHistory', () => {
     const screen = await render(CairnHistory, {
       data: data({
         entries: [entry(1, { editor: 'Editor One', date: '2026-01-01T12:00:00Z' })],
-        draft: { editor: 'Drafting Editor', startedAt: '2026-02-01T00:00:00Z' },
+        draft: { editor: 'Drafting Editor', lastSavedAt: '2026-02-01T00:00:00Z' },
       }),
     });
     const rows = screen.container.querySelectorAll('tbody tr');
@@ -159,13 +159,14 @@ describe('CairnHistory', () => {
       const form: RevertFailure = {
         reason: 'draft_exists',
         draftEditor: 'Blocking Editor',
-        draftStartedAt: '2026-02-01T12:00:00Z',
+        draftLastSavedAt: '2026-02-01T12:00:00Z',
       };
       const screen = await render(CairnHistory, { data: data({ entries: [entry(1)] }), form });
       const banner = screen.container.querySelector('.alert-error');
       expect(banner?.textContent ?? '').toContain('Blocking Editor');
       expect(banner?.textContent ?? '').toMatch(/publish or discard/i);
       expect(banner?.textContent ?? '').toMatch(/last saved/i);
+      expect(banner?.getAttribute('role')).toBe('alert');
     });
 
     it('says the history changed for history_stale', async () => {
@@ -189,6 +190,7 @@ describe('CairnHistory', () => {
       });
       const banner = screen.container.querySelector('.alert-error');
       expect(banner?.textContent ?? '').toContain('Something went wrong. Try again.');
+      expect(banner?.getAttribute('role')).toBe('alert');
     });
   });
 });

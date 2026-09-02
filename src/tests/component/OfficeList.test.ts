@@ -3,21 +3,20 @@ import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import { page } from 'vitest/browser';
 import OfficeList from '../../lib/admin-toolkit/OfficeList.svelte';
-// The header-stack margin fix and the mobile action self-start fix are both Tailwind utility
-// classes; the compiled sheet carries the real cascade the tests below measure against (the
-// bare component render has no stylesheet at all, so an unstyled UA h1/p margin would silently
-// pass a DOM-structure-only test without proving the CSS fix).
+// The header band now composes PageHeader (Task 9 of the 2026-09-01 conformance pass), so the
+// compiled sheet proves the composed markup carries PageHeader's own rhythm classes, not a
+// second, drifted copy of them.
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 const rows = createRawSnippet(() => ({ render: () => '<table><tbody><tr><td>a row</td></tr></tbody></table>' }));
 const action = createRawSnippet(() => ({ render: () => '<button type="button">New event</button>' }));
 
 describe('OfficeList', () => {
-  it('renders the eyebrow, title, subtitle, action, and the card content', async () => {
+  it('renders the eyebrow, title, meta, action, and the card content', async () => {
     const screen = await render(OfficeList, {
       eyebrow: 'Club',
       title: 'Events',
-      subtitle: '12 upcoming',
+      meta: '12 upcoming',
       action,
       children: rows,
     });
@@ -28,14 +27,31 @@ describe('OfficeList', () => {
     await expect.element(screen.getByText('a row')).toBeInTheDocument();
   });
 
-  it('omits the eyebrow and subtitle entirely when neither is passed', async () => {
+  it('omits the eyebrow and meta line entirely when neither is passed', async () => {
     const screen = await render(OfficeList, { title: 'Events', children: rows });
     await expect.element(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument();
     expect(screen.container.querySelector('header p')).toBeNull();
     expect(screen.container.querySelector('header span')).toBeNull();
   });
 
-  describe('header stack gaps and the mobile action width (C1, compiled sheet)', () => {
+  it('renders its header band as PageHeader, one office-header implementation (Task 9 collapse)', async () => {
+    const screen = await render(OfficeList, { eyebrow: 'Club', title: 'Events', meta: '12 upcoming', children: rows });
+    const header = screen.container.querySelector('header')!;
+    const stack = header.querySelector(':scope > div')!;
+    const heading = screen.container.querySelector('header h1')!;
+    const meta = screen.container.querySelector('header p')!;
+    // PageHeader's own rhythm: mb-10 header offset, gap-0.5 inner stack, meta at type-meta, and
+    // the page-h1 class PageHeader's own scoped text-wrap: balance style targets. None of these
+    // classes exist on OfficeList's old, retired header markup, so their presence here is proof
+    // OfficeList composes PageHeader rather than a second copy of it.
+    expect(header.classList.contains('mb-10')).toBe(true);
+    expect(stack.classList.contains('gap-0.5')).toBe(true);
+    expect(meta.classList.contains('type-meta')).toBe(true);
+    expect(meta.classList.contains('type-body')).toBe(false);
+    expect(heading.classList.contains('page-h1')).toBe(true);
+  });
+
+  describe('the action alignment survives composition (C1, compiled sheet)', () => {
     let sheet: HTMLStyleElement;
 
     beforeAll(() => {
@@ -51,48 +67,6 @@ describe('OfficeList', () => {
       document.documentElement.removeAttribute('data-theme');
       sheet.remove();
       await page.viewport(1280, 720);
-    });
-
-    it('zeroes the leaked child prose margins so the subtitle sits ~4px under the h1 and the eyebrow sits tight above it', async () => {
-      await page.viewport(1440, 900);
-      const screen = await render(OfficeList, {
-        eyebrow: 'Club',
-        title: 'Events',
-        subtitle: '12 upcoming',
-        children: rows,
-      });
-      const eyebrow = screen.container.querySelector('header span')!;
-      const heading = screen.container.querySelector('header h1')!;
-      const subtitle = screen.container.querySelector('header p')!;
-      const eyebrowToHeadingGap = heading.getBoundingClientRect().top - eyebrow.getBoundingClientRect().bottom;
-      const headingToSubtitleGap = subtitle.getBoundingClientRect().top - heading.getBoundingClientRect().bottom;
-      // Flex does not collapse child margins, so a stray UA h1/p margin used to blow the rendered
-      // gap out to ~32px against the container's own gap-0.5 (2px) intent. The acceptance band is
-      // 0-6px at both 1440 and 390 (the inner eyebrow/h1/subtitle stack does not change orientation
-      // across that breakpoint, only the outer header row/column does).
-      expect(eyebrowToHeadingGap).toBeGreaterThanOrEqual(0);
-      expect(eyebrowToHeadingGap).toBeLessThanOrEqual(6);
-      expect(headingToSubtitleGap).toBeGreaterThanOrEqual(0);
-      expect(headingToSubtitleGap).toBeLessThanOrEqual(6);
-    });
-
-    it('zeroes the leaked child prose margins at the mobile width too', async () => {
-      await page.viewport(390, 700);
-      const screen = await render(OfficeList, {
-        eyebrow: 'Club',
-        title: 'Events',
-        subtitle: '12 upcoming',
-        children: rows,
-      });
-      const eyebrow = screen.container.querySelector('header span')!;
-      const heading = screen.container.querySelector('header h1')!;
-      const subtitle = screen.container.querySelector('header p')!;
-      const eyebrowToHeadingGap = heading.getBoundingClientRect().top - eyebrow.getBoundingClientRect().bottom;
-      const headingToSubtitleGap = subtitle.getBoundingClientRect().top - heading.getBoundingClientRect().bottom;
-      expect(eyebrowToHeadingGap).toBeGreaterThanOrEqual(0);
-      expect(eyebrowToHeadingGap).toBeLessThanOrEqual(6);
-      expect(headingToSubtitleGap).toBeGreaterThanOrEqual(0);
-      expect(headingToSubtitleGap).toBeLessThanOrEqual(6);
     });
 
     it('pins the header action to intrinsic width instead of stretching full-width below sm', async () => {

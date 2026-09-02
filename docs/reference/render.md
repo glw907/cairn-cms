@@ -8,7 +8,7 @@ pipeline entry itself lives on [Core](./core.md), not here, since a site calls i
 its renderer, never from inside a component.
 
 ```ts
-import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
+import { cardShell, headRow, iconSpan, type ComponentContext } from '@glw907/cairn-cms/render';
 ```
 
 ## Hast builders
@@ -19,15 +19,10 @@ Stability tier: Extension API.
 - `headRow(title, icon?, level?)` builds the icon-plus-heading head row; the heading level defaults to 2.
 - `iconSpan(glyphEl, role?)` wraps a built glyph element in an `ec-icon` span.
 
-## Context and tree helpers
-
-Stability tier: Extension API.
-
-- `strAttr(ctx, key)` reads a declared string attribute off the component context, returning
-  `undefined` for a boolean or absent value.
-
 ## Types
 
 Stability tier: Extension API.
 
-- `ComponentContext` is the structured input a `build` receives (attributes, slots, the stamped node).
+- `ComponentContext` is the structured input a `build` receives (attributes, slots, the stamped
+  node). Its `attr(key)` reads a declared string attribute, returning `undefined` for a boolean or
+  absent value.

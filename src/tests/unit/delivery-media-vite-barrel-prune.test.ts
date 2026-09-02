@@ -80,13 +80,14 @@ const MEDIA_DEMOTED = [
 ];
 
 // The /media keep list, from the audit verdicts doc, minus the fourteen demotions above.
+// `VariantSpec` retired outright by the conformance pass (Task 14, ruling 4): the `variants` field
+// it typed had no reachable runtime consumer, so it no longer publishes anywhere.
 const MEDIA_KEPT = [
   'normalizeAssets',
   'ResolvedAssetConfig',
   'readCommittedManifest',
   'MediaEntry',
   'MediaManifest',
-  'VariantSpec',
   'parseMediaToken',
   'formatMediaToken',
   'MediaRef',

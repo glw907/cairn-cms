@@ -1512,8 +1512,9 @@ persistent "?" carries Markdown help, design-arc D2).
   // notice. previewTitle rides alongside the same lookup: it is the marker resolve-include.ts reads
   // to know this is the preview's own resolver (never the build's), so the spliced blocks gain the
   // preview-only boundary cue (ratified 4B). A resolver-not-found title falls back to the id inside
-  // resolve-include.ts, not here, so both paths share the same fallback rule.
-  const resolveFragment = $derived(manifestFragmentResolver(data.fragmentTargets));
+  // resolve-include.ts, not here, so both paths share the same fallback rule. The entry key rides
+  // along too, so an include.missing raised from this preview names the entry being edited.
+  const resolveFragment = $derived(manifestFragmentResolver(data.fragmentTargets, entryKey));
 
   // The picker's library, the committed projection merged with this session's uploaded records,
   // keyed by content hash. An uploaded record overrides a committed entry on a hash match (the same

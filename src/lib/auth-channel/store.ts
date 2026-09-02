@@ -281,9 +281,22 @@ export async function resolveChannelSession(
   return row ? { subject: row.subject } : null;
 }
 
-/** Delete a single session by its token hash (logout, and confirm's orphan cleanup). */
-export async function destroyChannelSession(session: D1DatabaseSession, tokenHash: string): Promise<void> {
-  await session.prepare('DELETE FROM cairn_channel_session WHERE token_hash = ?1').bind(tokenHash).run();
+/**
+ * Delete a single session by its token hash (logout, confirm's orphan cleanup, and the
+ * verify-refused revocation), answering with the subject the deleted row carried, or null when
+ * the hash named no row. `RETURNING` keeps this one statement and one round trip. The subject is
+ * a roster identity, so a caller logging the deletion derives the channel's own pseudonymous
+ * correlation id from it rather than recording it.
+ */
+export async function destroyChannelSession(
+  session: D1DatabaseSession,
+  tokenHash: string,
+): Promise<string | null> {
+  const row = await session
+    .prepare('DELETE FROM cairn_channel_session WHERE token_hash = ?1 RETURNING subject')
+    .bind(tokenHash)
+    .first<{ subject: string }>();
+  return row?.subject ?? null;
 }
 
 /** Delete every session for a subject (roster removal, and `revokeSessions`). */

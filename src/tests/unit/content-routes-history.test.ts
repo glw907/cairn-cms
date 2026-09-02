@@ -127,7 +127,7 @@ describe('historyLoad', () => {
     });
     const routes = createContentRoutes(runtime());
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
-    expect(data.draft).toEqual({ editor: 'Ed Editor', startedAt: '2026-06-01T00:00:00Z' });
+    expect(data.draft).toEqual({ editor: 'Ed Editor', lastSavedAt: '2026-06-01T00:00:00Z' });
   });
 
   it('404s a deleted entry even though its commit log survives in git', async () => {
@@ -161,7 +161,7 @@ describe('historyLoad', () => {
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
     expect(data.entries).toEqual([]);
     expect(data.truncated).toBe(false);
-    expect(data.draft).toEqual({ editor: 'Ed Editor', startedAt: '2026-06-01T00:00:00Z' });
+    expect(data.draft).toEqual({ editor: 'Ed Editor', lastSavedAt: '2026-06-01T00:00:00Z' });
   });
 });
 

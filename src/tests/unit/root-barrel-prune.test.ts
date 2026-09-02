@@ -138,7 +138,6 @@ const KEPT = [
   'SiteConfigError',
   'Editor',
   'CairnEnv',
-  'AuthBranding',
   'MagicLinkMessage',
   'SendMagicLink',
   'EmailSender',

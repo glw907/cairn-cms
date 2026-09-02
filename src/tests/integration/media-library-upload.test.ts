@@ -45,7 +45,6 @@ function runtime(): CairnRuntime {
       urlForm: 'slug',
       maxUploadBytes: 25 * 1024 * 1024,
       allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
-      variants: {},
       transformations: false,
     },
   } as CairnRuntime;
@@ -130,6 +129,22 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const committed = parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!));
     expect(Object.keys(committed)).toEqual([hash]);
     expect(committed[hash].slug).toBe('first');
+  });
+
+  it('logs commit.succeeded under scope, never a concept a site could also declare', async () => {
+    const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
+    gh.install();
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const routes = createContentRoutesInternal(runtime());
+
+    await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }));
+
+    const committed = infoSpy.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((r) => r.event === 'commit.succeeded');
+    expect(committed).toHaveLength(1);
+    expect(committed[0].scope).toBe('media');
+    expect(committed[0]).not.toHaveProperty('concept');
   });
 
   it('commits nothing when the hash already exists (idempotent)', async () => {

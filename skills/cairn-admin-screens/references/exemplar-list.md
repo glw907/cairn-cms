@@ -34,9 +34,9 @@ rows that expand in place), one pagination footer. Five components, no bespoke l
   `.card-shell` region). A new build reaches for `PageHeader` first; `OfficeList` stays
   correct where it already ships.
 - The eyebrow ("Club") names the custom nav section this screen lives under. `title`
-  ("Members") is the page's one display-face `h1`. Neither takes a subtitle here: the
-  toolbar's own count line, not a header subtitle, states the list's scope (see below), so
-  `OfficeList`'s `subtitle` prop stays unused rather than duplicating that line.
+  ("Members") is the page's one display-face `h1`. Neither takes a meta line here: the
+  toolbar's own count line, not a header meta line, states the list's scope (see below), so
+  `OfficeList`'s `meta` prop stays unused rather than duplicating that line.
 - The header's `action` slot carries the screen's one accent-filled control,
   `btn btn-primary btn-sm`. This is the primary-action-in-the-header-slot half of
   `screen-anatomy` that no mechanical rule can enforce (it can't know whether a screen has
@@ -86,7 +86,7 @@ Five filters feed `filters`, four `'select'`-display and one `'menu'`-display:
   form by default rather than adding it after someone notices the grammar defect.
 - The count line always renders, even at zero applied filters, and always states the list's
   own scope (`computeCountLine`, an internal mechanism `ListToolbar` computes and renders
-  itself, not an importable export). This is why `OfficeList` above carries no `subtitle`: a
+  itself, not an importable export). This is why `OfficeList` above carries no `meta`: a
   second line stating a count would either duplicate or race the toolbar's own count line
   for whichever total is true.
 - `searchLabel` is the search box's accessible name, not visible chrome; it names what the

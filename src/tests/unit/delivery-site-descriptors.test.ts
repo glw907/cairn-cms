@@ -4,7 +4,7 @@ import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
-import type { CairnAdapter } from '../../lib/content/types.js';
+import type { CairnAdapter, ConceptDescriptor } from '../../lib/content/types.js';
 
 const adapter = {
   content: {
@@ -18,8 +18,15 @@ const adapter = {
 
 const config = parseSiteConfig('siteName: Test\n');
 
+/**
+ * Descriptors with `validate` nulled out. It is a fresh closure per normalize call (it binds the
+ * concept id as the field-behavior owner label), so the two paths agree in behavior under
+ * different function identities.
+ */
+const structural = (cs: ConceptDescriptor[]) => cs.map((c) => ({ ...c, validate: null }));
+
 describe('buildSiteDescriptors', () => {
   it('equals normalizeConcepts over the adapter content (URL policy now declared per concept)', () => {
-    expect(buildSiteDescriptors(adapter, config)).toEqual(normalizeConcepts(adapter.content));
+    expect(structural(buildSiteDescriptors(adapter, config))).toEqual(structural(normalizeConcepts(adapter.content)));
   });
 });

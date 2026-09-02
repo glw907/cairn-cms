@@ -24,7 +24,7 @@ export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles
 // reads, so route gating and sidebar visibility cannot drift apart.
 export { defineAccess, canReach, hasAccessRule } from './auth/access.js';
 export type { AccessMap } from './auth/access.js';
-export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from './email.js';
+export type { MagicLinkMessage, SendMagicLink, EmailSender } from './email.js';
 
 // Content model and adapter contract (Plan 02).
 export type {
@@ -103,7 +103,7 @@ export { defineRegistry, defineComponent } from './render/registry.js';
 export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
 export { renderGlyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
-// The component-authoring helpers (iconSpan, cardShell, headRow, strAttr) live on the
+// The component-authoring helpers (iconSpan, cardShell, headRow) live on the
 // @glw907/cairn-cms/render subpath, not the root barrel. rehypeDispatch is deliberately not public:
 // createRenderer is the one public render pipeline, so the safe plugin ordering is the only public
 // path. See docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md.
@@ -140,12 +140,9 @@ export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions 
 // no `/sveltekit` module ever executes here (export-rule sweep, C2 breaking-window pass, R4 ruling).
 export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because
-// `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name `PublishActionsConfig`,
-// whose own array element names `PublishActionEntry`.
-export type { PublishActionsConfig, PublishActionEntry } from './sveltekit/publish-actions.js';
+// `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name it directly as
+// `PublishActionEntry[]`.
+export type { PublishActionEntry } from './sveltekit/publish-actions.js';
 // Canonical home `/islands`; a recorded R4 re-export here because `CairnAdapter.rendering.islands`
 // names it.
 export type { IslandRegistry } from './islands/types.js';
-// Canonical home `/media`; a recorded R4 re-export here because `AssetConfig.variants` and
-// `CairnRuntime.resolvedAssets` name it.
-export type { VariantSpec } from './media/transform-url.js';

@@ -16,13 +16,11 @@ import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 
 /** A fake tidy client whose `models.list` resolves (a valid key), rejects with a status (invalid),
  *  or has no `models` at all (an unverifiable probe surface, degrading to 'unknown'). The settings
- *  load never calls `messages.create`, so that member is a stub that would fail loudly if reached. */
+ *  load never calls `tidy()`, so that member is a stub that would fail loudly if reached. */
 function fakeTidyClient(models: 'valid' | 'invalid' | 'absent'): () => TidyClient {
   return () => ({
-    messages: {
-      create: async () => {
-        throw new Error('settingsLoad must never call messages.create');
-      },
+    tidy: async () => {
+      throw new Error('settingsLoad must never call tidy()');
     },
     ...(models === 'absent'
       ? {}
@@ -264,10 +262,8 @@ describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
   function hangingTidyClient(): { factory: () => TidyClient; sawSignal: () => AbortSignal | undefined } {
     let sawSignal: AbortSignal | undefined;
     const factory = (): TidyClient => ({
-      messages: {
-        create: async () => {
-          throw new Error('settingsLoad must never call messages.create');
-        },
+      tidy: async () => {
+        throw new Error('settingsLoad must never call tidy()');
       },
       models: {
         list: (_params, options) => {
@@ -299,10 +295,8 @@ describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
   it('caches the probe result so a second load within the TTL performs no live call', async () => {
     const list = vi.fn(async () => ({ data: [] }));
     const client = (): TidyClient => ({
-      messages: {
-        create: async () => {
-          throw new Error('settingsLoad must never call messages.create');
-        },
+      tidy: async () => {
+        throw new Error('settingsLoad must never call tidy()');
       },
       models: { list },
     });
@@ -321,10 +315,8 @@ describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
     try {
       const list = vi.fn(async () => ({ data: [] }));
       const client = (): TidyClient => ({
-        messages: {
-          create: async () => {
-            throw new Error('settingsLoad must never call messages.create');
-          },
+        tidy: async () => {
+          throw new Error('settingsLoad must never call tidy()');
         },
         models: { list },
       });

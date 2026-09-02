@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 import { log } from '../../lib/log/index.js';
-import type { FragmentResolve, PreviewFragmentResolve } from '../../lib/render/resolve-include.js';
+import type { FragmentResolve, MarkedFragmentResolve } from '../../lib/render/resolve-include.js';
 
 describe('include fragment resolution', () => {
   it('(a) splices a resolved fragment body in place of the include directive', async () => {
@@ -56,7 +56,7 @@ describe('include fragment resolution', () => {
     expect(html).toContain('cairn-include-missing');
     expect(html).toContain('Missing fragment: gone');
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith('include.missing', { fragment: 'gone' });
+    expect(warn).toHaveBeenCalledWith('include.missing', { reason: 'not_found', fragment: 'gone' });
     warn.mockRestore();
   });
 
@@ -110,7 +110,7 @@ describe('include fragment resolution', () => {
     const emptyAttr = await renderMarkdown('::include{fragment=""}\n', { resolveFragment });
     expect(emptyAttr).toContain('cairn-include-missing');
     expect(emptyAttr).toContain("This include doesn't name a fragment.");
-    expect(warn).toHaveBeenCalledWith('include.missing', { fragment: '' });
+    expect(warn).toHaveBeenCalledWith('include.missing', { reason: 'empty_fragment', fragment: '' });
     warn.mockRestore();
   });
 
@@ -134,7 +134,7 @@ describe('include fragment resolution', () => {
   describe('the preview-only boundary cue (ratified 4B)', () => {
     it('wraps a splice in the boundary cue only when the resolver carries previewTitle', async () => {
       const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
-      const resolveFragment: PreviewFragmentResolve = (id) =>
+      const resolveFragment: MarkedFragmentResolve = (id) =>
         id === 'address' ? 'Our address is 12 Harbor Way.' : undefined;
       resolveFragment.previewTitle = (id) => (id === 'address' ? 'Contact us' : undefined);
       const html = await renderMarkdown('::include{fragment="address"}', { resolveFragment });
@@ -146,7 +146,7 @@ describe('include fragment resolution', () => {
 
     it('falls back to the fragment id when previewTitle resolves nothing for it', async () => {
       const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
-      const resolveFragment: PreviewFragmentResolve = () => 'Body text.';
+      const resolveFragment: MarkedFragmentResolve = () => 'Body text.';
       resolveFragment.previewTitle = () => undefined;
       const html = await renderMarkdown('::include{fragment="address"}', { resolveFragment });
       expect(html).toContain('From “address”');
@@ -158,6 +158,34 @@ describe('include fragment resolution', () => {
       const html = await renderMarkdown('::include{fragment="address"}', { resolveFragment });
       expect(html).not.toContain('cairn-fragment-boundary');
       expect(html).not.toContain('From “');
+    });
+  });
+
+  describe('the include.missing record', () => {
+    it('names the containing entry when the resolver carries the marker', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+      const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+      const resolveFragment: MarkedFragmentResolve = () => undefined;
+      resolveFragment.entry = 'pages/about';
+      await renderMarkdown('::include{fragment="gone"}', { resolveFragment });
+      expect(warn).toHaveBeenCalledWith('include.missing', {
+        reason: 'not_found',
+        fragment: 'gone',
+        entry: 'pages/about',
+      });
+      warn.mockRestore();
+    });
+
+    it('caps the fragment value, so an unbounded author-typed id cannot fill the record', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+      const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+      const longId = 'x'.repeat(400);
+      const resolveFragment: FragmentResolve = () => undefined;
+      await renderMarkdown(`::include{fragment="${longId}"}`, { resolveFragment });
+      const record = warn.mock.calls[0][1] as { fragment: string };
+      expect(record.fragment).toHaveLength(160);
+      expect(record.fragment).toBe('x'.repeat(160));
+      warn.mockRestore();
     });
   });
 });

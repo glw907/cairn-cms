@@ -191,7 +191,9 @@ export function normalizeConcepts(
       fields,
       schema: fs,
       summaryFields,
-      validate: fs.validate,
+      // The concept id is the owner label a field-behavior diagnostic needs; a fieldset is a
+      // standalone object a site may share across concepts, so it cannot supply one itself.
+      validate: (frontmatter, body) => fs.validate(frontmatter, body, id),
     });
   }
   return descriptors;

@@ -15,6 +15,7 @@ import { originMatches } from '../sveltekit/csrf.js';
 import { log } from '../log/index.js';
 import {
   verifySchema,
+  readSalt,
   provisionSalt,
   mintCode,
   readCodeRow,
@@ -538,12 +539,40 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   // a transient failure must not pin an isolate into refusing every login for its lifetime.
   let cachedSalt: string | null = null;
 
-  /** Resolve the channel's identity salt, provisioning it on first use and caching only success. */
+  /**
+   * Resolve the channel's identity salt, reading the already-provisioned row first and
+   * provisioning only on a genuine first use. A fresh isolate's every teardown path
+   * (`logSessionDestroyed`) once called `provisionSalt` unconditionally, which writes even
+   * when the salt already exists (`INSERT OR IGNORE` still round-trips to D1); reading first
+   * makes the common, already-provisioned case a pure read.
+   */
   async function resolveSalt(session: D1DatabaseSession): Promise<string> {
     if (cachedSalt !== null) return cachedSalt;
-    const salt = await provisionSalt(session);
+    const existing = await readSalt(session);
+    const salt = existing ?? (await provisionSalt(session));
     cachedSalt = salt;
     return salt;
+  }
+
+  /**
+   * Record a destroyed session row under the channel's own pseudonym, the one emit point for
+   * every teardown whose only identity is the deleted row's subject (the member's logout, the
+   * verify-refused revocation). Never the raw subject: no channel record carries a roster
+   * identity. `deriveIdentity` reads the contact only when the subject is null, so this
+   * reconstructs the exact value the request flow's own `s:` branch produced, and a teardown keys
+   * to the sign-in it ends. A salt read that faults skips the record and returns: `resolveSalt`
+   * caches only success and the request path fails closed by design, but a session teardown is
+   * not a place to strand a member. Call it only where a row was actually destroyed.
+   */
+  async function logSessionDestroyed(session: D1DatabaseSession, subject: string): Promise<void> {
+    let correlationId: string;
+    try {
+      const salt = await resolveSalt(session);
+      correlationId = (await deriveIdentity(salt, subject, '')).slice(0, 16);
+    } catch {
+      return;
+    }
+    log.info('auth.channel.session.destroyed', { correlationId });
   }
 
   /**
@@ -920,8 +949,12 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const sessionCookie = cookieName(cookieBase, secure);
     const existingSessionToken = event.cookies.get(sessionCookie);
     if (existingSessionToken) {
-      await destroyChannelSession(session, await hashToken(existingSessionToken));
-      log.info('auth.channel.session.destroyed', { correlationId });
+      // The record keys on THIS flow's correlation id, the one the confirm already derived, and
+      // takes nothing from the deleted row: that row belongs to the incoming cookie's session,
+      // which need not be the subject this confirm just proved, so pairing the two identities in
+      // one record would silently link them. It fires only when a row was actually destroyed.
+      const destroyed = await destroyChannelSession(session, await hashToken(existingSessionToken));
+      if (destroyed !== null) log.info('auth.channel.session.destroyed', { correlationId });
     }
 
     const sessionToken = generateToken();
@@ -958,11 +991,11 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     if (token) {
       const session = await resolveVerifiedSession(event.platform?.env);
       if (session) {
-        await destroyChannelSession(session, await hashToken(token));
-        // Logged only here, where a row was actually destroyed: a request with no session
-        // cookie, or one whose db is unavailable, destroys nothing and must not fire this record
-        // (log-events.md's logout row states this exact condition).
-        log.info('auth.channel.session.destroyed');
+        const subject = await destroyChannelSession(session, await hashToken(token));
+        // Logged only where a row was actually destroyed: a request with no session cookie, one
+        // whose db is unavailable, and one whose cookie names no row all destroy nothing and must
+        // not fire this record (log-events.md's logout row states this condition).
+        if (subject !== null) await logSessionDestroyed(session, subject);
       }
     }
 
@@ -1002,7 +1035,14 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       }
       if (verified === null) return null;
       if (!verified) {
-        await destroyChannelSession(database.withSession('first-primary'), tokenHash);
+        // A roster hook actively revoking a live session, silent until now. It records the same
+        // way the member's own logout does, keyed to the subject the DELETE itself returned,
+        // never the earlier `resolved.subject` read: both name the same row (the DELETE matches
+        // on the identical tokenHash, the row's primary key), but the RETURNING value is the
+        // provable one, not an assumption that the read and the delete still agree.
+        const revokeSession = database.withSession('first-primary');
+        const destroyed = await destroyChannelSession(revokeSession, tokenHash);
+        if (destroyed !== null) await logSessionDestroyed(revokeSession, destroyed);
         return null;
       }
     }

@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { normalizeConcepts, findConcept } from '../../lib/content/concepts.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import type { ConceptConfig } from '../../lib/content/types.js';
 import { fields } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
+import { log } from '../../lib/log/index.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
 
 describe('normalizeConcepts', () => {
@@ -300,5 +301,38 @@ describe('findConcept', () => {
     const descriptors = normalizeConcepts(testAdapter.content);
     expect(findConcept(descriptors, 'pages')?.dir).toBe('src/content/pages');
     expect(findConcept(descriptors, 'events')).toBeUndefined();
+  });
+});
+
+describe("a concept's validate names itself as the field-behavior owner", () => {
+  it('logs the concept id beside the field when a behavior.validate throws', () => {
+    const [posts] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        fields: defineFieldset(
+          { summary: fields.text({ label: 'Summary' }) },
+          {
+            behavior: {
+              summary: {
+                validate: () => {
+                  throw new Error('boom');
+                },
+              },
+            },
+          },
+        ),
+      },
+    });
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    try {
+      expect(posts.validate({ summary: 'x' }, '').ok).toBe(true);
+      expect(warn).toHaveBeenCalledWith('content.field_behavior_failed', {
+        field: 'summary',
+        owner: 'posts',
+        error: 'boom',
+      });
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

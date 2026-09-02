@@ -45,7 +45,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
           ok?: boolean;
           reason?: RevertFailure['reason'];
           draftEditor?: string;
-          draftStartedAt?: string;
+          draftLastSavedAt?: string;
         })
       | null;
     /** The site's design-accurate render pipeline, for the edit view's preview pane. */

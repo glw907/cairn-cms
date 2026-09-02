@@ -42,6 +42,8 @@ export interface ComponentContext {
   slot(name: string): ElementContent[];
   /** A repeatable slot's items, each item its own list of rendered children. `[]` when absent. */
   items(name: string): ElementContent[][];
+  /** A declared attribute's string value. `undefined` for a boolean or absent value. */
+  attr(key: string): string | undefined;
   /** The stamped component element, for an escape hatch. Most builds never need it. */
   node: Element;
 }

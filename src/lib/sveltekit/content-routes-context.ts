@@ -11,8 +11,8 @@ import { emptyManifest, parseManifest, type Manifest } from '../content/manifest
 import type { CairnRuntime } from '../content/types.js';
 import { validateNavLayout, validateAccessComposition, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
-import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
-import { logCommitFailed, commitFailure } from './commit-log.js';
+import { normalizePublishActions, type PublishActionEntry } from './publish-actions.js';
+import { logCommitFailed, commitFailure, type CommitLogFields } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 import type { PreviewTokenConfig } from './preview.js';
@@ -23,13 +23,56 @@ import type { PreviewTokenConfig } from './preview.js';
 // below, and the server-only-deps test guards both halves of that boundary.
 
 /**
- * The minimal Anthropic client surface the tidy action uses, typed structurally so the SDK's deep
- *  generics never reach a public signature and so the integration test can inject a fake whose
- *  `messages.create` it stubs. The real factory builds `new Anthropic({ apiKey })`, which satisfies
- *  this shape. The success path reads only the text blocks, the model, the stop reason, and the usage
- *  counts.
+ * The effort tier for a model that runs adaptive thinking by default (Sonnet 5 and later), so a
+ *  short proofread does not reason at length. Sent only for a model with effort tiers
+ *  (content-routes-tidy.ts's `supportsEffort`), never for one without.
+ */
+export type TidyEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
+/**
+ * The narrow, engine-owned client contract the tidy action calls: correct a text under a system
+ *  prompt, and probe a key's health. No `@anthropic-ai/sdk` type reaches this interface (a vendor
+ *  field rename stops being a cairn break), and a test injects a fake implementing this shape
+ *  directly, with no SDK-mimicking wire body to construct. The real factory
+ *  ({@link lazyAnthropicClient}) adapts this contract onto the actual SDK client internally.
  */
 export interface TidyClient {
+  /**
+   * Correct `text` under `system` for `model`, returning the corrected text and a coarse
+   *  engine-owned token record. `effort` rides the request only when the resolved model supports
+   *  it. The abort signal rides the second argument, mirroring `models.list`'s options shape, so
+   *  the request actually cancels when the deadline fires.
+   */
+  tidy(
+    request: { model: string; system: string; text: string; effort?: TidyEffort },
+    options?: { signal?: AbortSignal },
+  ): Promise<{
+    /** The corrected text. Empty when the model returned no text. */
+    corrected: string;
+    /** Whether the model declined to edit the text (the streaming-classifier intervention). */
+    refused: boolean;
+    /** The coarse token counts the call spent. */
+    tokens: { input: number; output: number };
+  }>;
+  /**
+   * The zero-token key-health probe (save-500-honest-errors, Task 5): list available models to
+   *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
+   *  only `tidy` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades to
+   *  'unknown' when a client omits it rather than throwing. The signal rides the second argument,
+   *  mirroring `tidy`'s options shape (save-500-hardening), so the probe is bounded by the same
+   *  deadline as a tidy call instead of the SDK's own multi-minute default.
+   */
+  models?: {
+    list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown>;
+  };
+}
+
+/**
+ * The Anthropic SDK's own wire shape for a Messages create call, kept internal to
+ *  {@link lazyAnthropicClient} so a vendor field rename or a parameter reshape stays contained to
+ *  this adapter rather than becoming a cairn break. Never exported.
+ */
+interface AnthropicWireClient {
   messages: {
     create(
       body: {
@@ -37,14 +80,8 @@ export interface TidyClient {
         max_tokens: number;
         system: string;
         messages: { role: 'user'; content: string }[];
-        // The effort tier for a model that runs adaptive thinking by default (Sonnet 5 and later),
-        // so a short proofread does not reason at length. This exported type is a consumer
-        // contract, and the field is optional because the engine sends it only for a model with
-        // effort tiers (content-routes-tidy.ts's supportsEffort), never for one without.
-        output_config?: { effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' };
+        output_config?: { effort?: TidyEffort };
       },
-      // The SDK signature is create(body, options). The abort signal belongs in the second argument
-      // (RequestOptions), not the body, so the request actually cancels when the deadline fires.
       options?: { signal?: AbortSignal },
     ): Promise<{
       content: { type: string; text?: string }[];
@@ -53,18 +90,20 @@ export interface TidyClient {
       usage: { input_tokens: number; output_tokens: number };
     }>;
   };
-  /**
-   * The zero-token key-health probe (save-500-honest-errors, Task 5): list available models to
-   *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
-   *  only `messages.create` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades
-   *  to 'unknown' when a client omits it rather than throwing. The signal rides the second
-   *  argument, mirroring `messages.create`'s options shape (save-500-hardening), so the probe is
-   *  bounded by the same deadline as a tidy call instead of the SDK's own multi-minute default.
-   */
-  models?: {
+  models: {
     list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown>;
   };
 }
+
+/**
+ * The `max_tokens` ceiling the adapter sends on every tidy call: comfortably exceeds the input
+ *  token count so a proofread is never capped mid-response. A proofread runs at roughly input
+ *  length, and the tidy action's own request cap (content-routes-tidy.ts's `MAX_TIDY_CHARS`,
+ *  24,000 characters) is at most about 8,000 input tokens even at Sonnet 5's higher-density
+ *  tokenizer, so this ceiling stays generous. Internal: the public {@link TidyClient} contract
+ *  carries no vendor-shaped `max_tokens` field.
+ */
+const MAX_OUTPUT_TOKENS = 16_000;
 
 /**
  * Thrown by the default tidy client when `@anthropic-ai/sdk` cannot be imported, which on a real
@@ -93,20 +132,40 @@ export class TidySdkMissingError extends Error {
  *  `probeTidyKey` degrades to an 'unknown' key verdict.
  */
 function lazyAnthropicClient(opts: { apiKey: string }): TidyClient {
-  async function connect(): Promise<Required<TidyClient>> {
+  async function connect(): Promise<AnthropicWireClient> {
     // The rejection handler wraps the import expression alone, never the construction below, so it
     // cannot be widened by accident: a constructor failure from a real, installed SDK is not a
     // missing install and must keep its own error for tidyClientErrorStatus to classify.
     const { default: Anthropic } = await import('@anthropic-ai/sdk').catch((err: unknown) => {
       throw new TidySdkMissingError(err);
     });
-    // The SDK client satisfies TidyClient structurally; the cast names that to the compiler, and
-    // Required marks the `models` probe surface the real client always carries.
-    return new Anthropic({ apiKey: opts.apiKey }) as unknown as Required<TidyClient>;
+    // The SDK client satisfies AnthropicWireClient structurally; the cast names that to the compiler.
+    return new Anthropic({ apiKey: opts.apiKey }) as unknown as AnthropicWireClient;
   }
   return {
-    messages: {
-      create: async (body, options) => (await connect()).messages.create(body, options),
+    // The adapter: translate the narrow engine-owned request into the SDK's wire body, and its wire
+    // response back into the narrow engine-owned result. Every vendor-shaped field (max_tokens,
+    // output_config, stop_reason, usage.*) stays contained to this function.
+    tidy: async (request, options) => {
+      const message = await (await connect()).messages.create(
+        {
+          model: request.model,
+          max_tokens: MAX_OUTPUT_TOKENS,
+          system: request.system,
+          messages: [{ role: 'user', content: request.text }],
+          ...(request.effort ? { output_config: { effort: request.effort } } : {}),
+        },
+        options,
+      );
+      const corrected = message.content
+        .filter((block) => block.type === 'text' && typeof block.text === 'string')
+        .map((block) => block.text ?? '')
+        .join('');
+      return {
+        corrected,
+        refused: message.stop_reason === 'refusal',
+        tokens: { input: message.usage.input_tokens, output: message.usage.output_tokens },
+      };
     },
     models: {
       list: async (params, options) => (await connect()).models.list(params, options),
@@ -221,7 +280,7 @@ export interface ContentRoutesContext {
   runtime: CairnRuntime;
   deps: ContentRoutesConfig;
   /** The developer's publish-actions config, validated once at construction (server start). */
-  publishActions: ResolvedPublishAction[];
+  publishActions: PublishActionEntry[];
   /**
    * Build the Anthropic client for the tidy action from the resolved API key. The real SDK client,
    *  or a test's injected fake (`deps.tidy.client`).
@@ -251,7 +310,7 @@ export interface ContentRoutesContext {
    *  reason; any other error is unexpected and logs at error with the stringified cause.
    */
   logCommitFailed(
-    fields: { concept: string; id: string; editor: string },
+    fields: CommitLogFields,
     err: unknown,
     event?: 'commit.failed' | 'publish.failed',
   ): void;
@@ -261,7 +320,7 @@ export interface ContentRoutesContext {
    *  and rethrow anything else.
    */
   commitFailure<T>(
-    fields: { concept: string; id: string; editor: string },
+    fields: CommitLogFields,
     err: unknown,
     payload: T,
     opts?: { event?: 'commit.failed' | 'publish.failed' },

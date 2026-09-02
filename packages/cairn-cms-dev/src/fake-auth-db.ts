@@ -67,7 +67,7 @@ export function createFakeAuthDb(): FakeAuthDb {
   const ownerCount = (ownerRoles: string[]) =>
     [...editors.values()].filter((e) => ownerRoles.includes(e.role)).length;
 
-  // Preview tokens, keyed by their hash (the store never sees the plaintext): mintPreviewToken's
+  // Preview tokens, keyed by their hash (the store never sees the plaintext): previewMint's
   // insert, previewLoad's two lookups (with and without the expiry predicate), and the
   // revoke/lifecycle-cleanup deletes by entry or by editor.
   const previewTokens = new Map<string, PreviewTokenRow>();
@@ -213,6 +213,11 @@ export function createFakeAuthDb(): FakeAuthDb {
       target.role = args[0] as Role;
       return { ...none, changes: 1 };
     }
+
+    // deleteSession (logout): the fixture hook injects locals.cairnEditor directly, so no session
+    // row ever exists here. The RETURNING read answers with no row, which is exactly the signal
+    // logout reads to skip its auth.session.destroyed record.
+    if (sql.includes('DELETE FROM session WHERE id = ? RETURNING email')) return none;
 
     // deleteEditor / removeOwnerIfNotLast batch cleanup: no sessions or tokens exist in dev.
     if (sql.includes('DELETE FROM session WHERE email = ?')) return none;

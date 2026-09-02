@@ -240,7 +240,7 @@ test('the plain setEditorRole and deleteEditor matchers still work alongside the
 });
 
 // The preview_tokens dispatch (src/lib/auth/preview-store.ts's exact SQL), the preview pass's
-// addition to this fixture: mintPreviewToken's insert (and its expiry sweep), previewLoad's two
+// addition to this fixture: previewMint's insert (and its expiry sweep), previewLoad's two
 // lookups, and the revoke/lifecycle-cleanup deletes by entry or by editor.
 
 const INSERT_PREVIEW_TOKEN =
@@ -336,4 +336,17 @@ test("the editor-removal cascade's own delete clears every row that editor minte
 
   expect(res.meta.changes).toBe(2);
   expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-c').first()).not.toBeNull();
+});
+
+// Mirrors the exact SQL src/lib/auth/store.ts's deleteSession builds. The dispatch table throws on
+// an unhandled statement, so logout would break the dev site outright without this handler.
+const DELETE_SESSION = 'DELETE FROM session WHERE id = ? RETURNING email';
+
+test("logout's session delete answers no row, the signal that skips the destroyed record", async () => {
+  const db = createFakeAuthDb();
+
+  // The fixture hook injects locals.cairnEditor directly, so no session row ever exists in dev.
+  const row = await db.prepare(DELETE_SESSION).bind('any-session-id').first<{ email: string }>();
+
+  expect(row).toBeNull();
 });

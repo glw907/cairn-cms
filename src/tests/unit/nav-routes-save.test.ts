@@ -34,6 +34,20 @@ describe('navSaveAction', () => {
     expect(commitPost.body).not.toHaveProperty('committer');
   });
 
+  it('logs commit.succeeded under scope, never a concept a site could also declare', async () => {
+    const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
+    gh.install();
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const routes = createNavRoutes(runtime());
+    await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
+    const committed = infoSpy.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((r) => r.event === 'commit.succeeded');
+    expect(committed).toHaveLength(1);
+    expect(committed[0].scope).toBe('nav');
+    expect(committed[0]).not.toHaveProperty('concept');
+  });
+
   it('refuses an invalid tree in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);

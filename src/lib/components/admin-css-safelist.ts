@@ -103,11 +103,16 @@ export const ADMIN_CSS_SAFELIST = [
   'badge-soft',
   'badge-outline',
   'badge-dash',
-  // `badge-error`/`badge-success` (chip register second generation, 2026-08-26): these compiled
-  // only as a side effect of StatusChip's own first-generation doc comment naming them in prose
-  // (Tailwind's scanner is a naive text match, blind to comment-versus-code context), not from any
-  // real usage; that prose is gone with the tone/dot retirement, so they are blessed here
-  // deliberately instead of being silently dropped from the de facto public shipped sheet.
+  // `badge-error`/`badge-success`: these first compiled only as a side effect of StatusChip's own
+  // first-generation doc comment naming them in prose (Tailwind's scanner is a naive text match,
+  // blind to comment-versus-code context), then stayed blessed here as an incidental side effect
+  // of preserving the de facto public sheet once that prose left with the tone/dot retirement. The
+  // blessing is now deliberate and covers every blessed badge class, not just these two: each
+  // class is measured against the register set's own floors on both packaged themes, the raw
+  // daisyUI alternative to `StatusChip` (docs/internal/admin-design-system.md names the
+  // when-to-use line). `badge-tier-legibility.test.ts` carries the measured numbers and is the one
+  // place they're allowed to live; a comment repeating them here would just be a second copy to
+  // fall out of date the next time daisyUI's recipe moves.
   'badge-error',
   'badge-success',
 ] as const;

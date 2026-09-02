@@ -18,7 +18,7 @@ import {
   fixtureTidyReview,
   fixtureDeskPathname,
 } from '../../lib/reproductions/fixtures.js';
-import { fixtureMediaBase, fixtureMediaFiles } from '../../lib/reproductions/manifest.js';
+import { fixtureMediaFiles } from '../../lib/reproductions/manifest.js';
 import { publicPath } from '../../lib/media/naming.js';
 import { categorize, isObjective } from '../../lib/components/tidy-categorize.js';
 
@@ -59,12 +59,18 @@ describe('reproduction fixtures', () => {
     }
   });
 
-  it('every fixtureMediaLibrary asset composes a URL from fixtureMediaBase, matching a real file', () => {
+  it('every fixtureMediaLibrary asset composes a URL from a given media base, matching a real file', () => {
+    // `fixtureMediaBase` (the string '/repro-assets', ReproContext.svelte's own internal default
+    // since the conformance pass's audit-repro-fixturemediabase reshape retired it as an export)
+    // is not this test's subject: the base a `publicPath` caller supplies is arbitrary, and what
+    // this asserts is that every fixture asset's composed filename matches a real fixture file
+    // regardless of the base it is mounted under.
+    const base = '/repro-assets';
     const onDisk = new Set(fixtureMediaFiles);
     for (const asset of fixtureMediaLibrary.assets) {
-      const url = publicPath(asset.slug, asset.hash, asset.ext, 'slug', fixtureMediaBase);
-      expect(url.startsWith(`${fixtureMediaBase}/`), url).toBe(true);
-      const filename = url.slice(fixtureMediaBase.length + 1);
+      const url = publicPath(asset.slug, asset.hash, asset.ext, 'slug', base);
+      expect(url.startsWith(`${base}/`), url).toBe(true);
+      const filename = url.slice(base.length + 1);
       expect(onDisk.has(filename), `${filename} is a served fixture file`).toBe(true);
     }
   });

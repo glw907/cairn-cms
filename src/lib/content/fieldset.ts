@@ -51,8 +51,13 @@ export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<str
   readonly fields: R;
   /** Function-valued behavior keyed by field name; empty for a scalar-only fieldset. */
   readonly behavior: BehaviorTable;
-  /** Validate raw frontmatter, returning field-keyed errors or the normalized data. */
-  validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+  /**
+   * Validate raw frontmatter, returning field-keyed errors or the normalized data. `owner` names
+   *  the schema this call validates against (a concept id, a component's directive name) and only
+   *  reaches the diagnostic log: a field name repeats across schemas by design, so
+   *  `content.field_behavior_failed` cannot say which one threw without it. Never a value.
+   */
+  validate(frontmatter: Record<string, unknown>, body: string, owner?: string): ValidationResult;
   /** Standard Schema v1 conformance, for ecosystem interop. A thin adapter over `validate`. */
   readonly '~standard': StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'];
 }
@@ -433,7 +438,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
     }
   };
   compilePatternsIn(record, []);
-  const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
+  const validate = (frontmatter: Record<string, unknown>, body: string, owner?: string): ValidationResult => {
     const data: Record<string, unknown> = {};
     const issues: ValidationIssue[] = [];
     for (const [key, field] of Object.entries(record)) {
@@ -449,6 +454,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
           // as valid rather than breaking the save (E7: server code speaks through the log chokepoint).
           log.warn('content.field_behavior_failed', {
             field: key,
+            ...(owner !== undefined ? { owner } : {}),
             error: err instanceof Error ? err.message : String(err),
           });
         }

@@ -9,12 +9,29 @@ import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 
 /**
+ * The four non-entry surfaces a commit can target, the axis `config.invalid` already reports on.
+ *  A site may legally declare a concept named `media` or `nav`, so these values ride their own
+ *  field rather than overloading `concept`.
+ */
+export type CommitScope = 'nav' | 'settings' | 'vocabulary' | 'media';
+
+/**
+ * What a commit record names: the entry it saved, or the non-entry surface it committed. `concept`
+ *  is always a declared concept id; a commit that has no entry carries `scope` instead, so a
+ *  site's log filter reads one field and never has to tell a real concept from a stand-in name.
+ */
+export type CommitLogFields = { id: string; editor: string; branch?: string } & (
+  | { concept: string; scope?: never }
+  | { scope: CommitScope; concept?: never }
+);
+
+/**
  * Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
  *  reason; any other error is unexpected and logs at error with the stringified cause. Publish
  *  failures carry the same shape under their own event name.
  */
 export function logCommitFailed(
-  fields: { concept: string; id: string; editor: string },
+  fields: CommitLogFields,
   err: unknown,
   event: 'commit.failed' | 'publish.failed' = 'commit.failed',
 ): void {
@@ -34,7 +51,7 @@ export function logCommitFailed(
  *  the caller's own unexpected-failure handling.
  */
 export function commitFailure<T>(
-  fields: { concept: string; id: string; editor: string },
+  fields: CommitLogFields,
   err: unknown,
   payload: T,
   opts: { event?: 'commit.failed' | 'publish.failed' } = {},

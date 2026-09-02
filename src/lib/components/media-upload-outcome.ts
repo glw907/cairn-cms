@@ -7,7 +7,9 @@
 // Node-safe (no @codemirror, no DOM): it imports only the MediaEntry and UploadResult types, which
 // are erased at build time.
 import type { MediaEntry } from '../media/manifest.js';
-import type { UploadResult } from '../sveltekit/content-routes.js';
+// `UploadResult` retired from the public barrel (4b, Task 1, the verify-wins resolution over the
+// ranked relocate to `/media`); still exported at its declaring module for this file's own typing.
+import type { UploadResult } from '../sveltekit/content-routes-media.js';
 import type { IngestFailureKind } from './client-ingest.js';
 import { formatMediaToken } from '../media/reference.js';
 

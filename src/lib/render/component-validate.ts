@@ -16,7 +16,9 @@ export async function validateComponent(markdown: string, def: ComponentDef): Pr
   const errors: Record<string, string> = {};
 
   const schema = def.attributeSchema ?? defineFieldset(def.attributes ?? {}, { behavior: def.behavior });
-  const result = schema.validate(values.attributes, '');
+  // The directive name is this path's owner label: a component's attribute schema has no concept,
+  // so it is the only thing that can name the schema in a field-behavior diagnostic.
+  const result = schema.validate(values.attributes, '', def.name);
   if (!result.ok) Object.assign(errors, result.errors);
 
   const declared = new Set(Object.keys(def.attributes ?? {}));

@@ -60,6 +60,20 @@ describe('formatTimestamp', () => {
   it('honors a caller-supplied fallback for a nullish timestamp', () => {
     expect(formatTimestamp(null, { fallback: 'n/a' })).toBe('n/a');
   });
+
+  it('accepts an ISO string with a UTC offset, matching the equivalent SQLite-shaped moment', () => {
+    expect(formatTimestamp('2026-06-01T14:00:00+02:00')).toBe(formatTimestamp('2026-06-01 12:00:00'));
+  });
+
+  it('accepts an ISO string with a Z suffix, matching the equivalent SQLite-shaped moment', () => {
+    expect(formatTimestamp('2026-06-01T12:00:00Z')).toBe(formatTimestamp('2026-06-01 12:00:00'));
+  });
+
+  it('pins the caller-supplied time zone for an ISO-shaped input too, not only the SQLite shape', () => {
+    expect(formatTimestamp('2026-03-08T09:00:00Z', { timeZone: 'America/Anchorage' })).toBe(
+      formatTimestamp('2026-03-08 09:00:00', { timeZone: 'America/Anchorage' }),
+    );
+  });
 });
 
 describe('itemNoun', () => {

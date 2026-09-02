@@ -108,4 +108,52 @@ describe('form-font-parity against a real browser', () => {
     );
     expect(findings).toEqual([]);
   });
+
+  // The exemption net closed (conformance pass, 2026-09-01, any-site audit rank 6): a variant
+  // prefix on an otherwise-exempt utility (`md:font-mono`, `dark:font-mono`) used to slip past the
+  // bare `font-mono` string test and false-positive as a mismatch.
+  it('exempts a variant-prefixed font utility, however many prefixes stack', async () => {
+    const findings = await findingsFor(
+      `<style>
+        [data-theme='cairn-admin'] { font-family: "Figtree", system-ui, sans-serif; }
+      </style>
+      <body><div data-theme="cairn-admin">
+        <input id="md-mono-input" class="input md:font-mono" style="font-family: monospace;">
+        <input id="dark-md-mono-input" class="input dark:md:font-mono" style="font-family: monospace;">
+      </div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // The `font-serif`/`font-sans` families were never in the net at all.
+  it('exempts font-serif and font-sans, not only font-mono', async () => {
+    const findings = await findingsFor(
+      `<style>
+        [data-theme='cairn-admin'] { font-family: "Figtree", system-ui, sans-serif; }
+      </style>
+      <body><div data-theme="cairn-admin">
+        <input id="serif-input" class="input font-serif" style="font-family: serif;">
+        <input id="sans-input" class="input font-sans" style="font-family: sans-serif;">
+      </div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // Tailwind 4's `font-(family-name:--x)` shorthand is a different syntax from the v3
+  // `font-[family-name:...]` arbitrary-value form the net already matched, and stacks with a
+  // variant prefix the same way `font-mono` does.
+  it('exempts the Tailwind 4 font-(family-name:--x) shorthand, with or without a variant prefix', async () => {
+    const findings = await findingsFor(
+      `<style>
+        [data-theme='cairn-admin'] { font-family: "Figtree", system-ui, sans-serif; }
+      </style>
+      <body><div data-theme="cairn-admin">
+        <textarea id="shorthand-textarea" class="textarea font-(family-name:--font-editor)"
+          style="font-family: monospace;"></textarea>
+        <textarea id="dark-shorthand-textarea" class="textarea dark:font-(family-name:--font-editor)"
+          style="font-family: monospace;"></textarea>
+      </div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
 });

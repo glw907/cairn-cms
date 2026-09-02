@@ -52,6 +52,14 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   if (spec.upscale !== undefined) options.push(`upscale=${spec.upscale}`);
   options.push(`format=${spec.format ?? 'auto'}`);
   options.push(`gravity=${spec.gravity ?? 'auto'}`);
+  // WATCH: gravity and format interpolate a VariantSpec's own string fields with no escaping or
+  // allowlist check. Safe today because every VariantSpec is engine-owned (BUILT_IN_PRESETS,
+  // media/config.ts, whose map is now Object.frozen, though the freeze is shallow and does not
+  // reach into each nested VariantSpec value) and validateVariant was retired alongside the
+  // site-declared `variants` field (ruling 4, 2026-09-01). Reintroducing a caller-supplied
+  // VariantSpec (a site declaring its own preset again) reopens comma/slash injection into the
+  // transform URL's options segment; re-add a value check on gravity and format before that seam
+  // returns.
   // The source must be its own path segment after the options, so it needs a leading slash;
   // Cloudflare reads a slashless join as a malformed options list. publicPath carries one, but this
   // guards a caller that passes a relative path from fusing the options and the source.

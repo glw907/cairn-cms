@@ -151,6 +151,66 @@
 
 ### Changed
 
+- The log vocabulary's remaining ten evenness defects close, across every emit site and the
+  reference table. Two events rename, four records change shape, one field is dropped, and two
+  session-teardown records now fire only when a row was actually destroyed.
+
+  `taxonomy.unmarked_field` becomes `taxonomy.field_unmarked` and `publish.address_collision`
+  becomes `publish.address_collided`, so both names read as the state adjective and past-tense
+  verb phrase the vocabulary's own grammar rules.
+
+  `auth.session.destroyed` and `auth.channel.session.destroyed` now name their subject.
+  `deleteSession` and `destroyChannelSession` both delete with `RETURNING`, one statement and one
+  round trip as before, and answer with the row's own email or subject. The magic-link record
+  carries that email; the channel record never carries the roster subject, only the same
+  pseudonymous `correlationId` the request flow derives from it, and the channel's third teardown
+  path, a session `resolveSubject` revokes when the site's `verify` hook refuses it, now emits the
+  record too instead of revoking silently. Both events fire only when a row was actually
+  destroyed, so a stale cookie naming no row leaves no record.
+
+  `commit.succeeded` and `commit.failed` stop overloading `concept` with the four non-entry
+  surfaces. An entry commit still carries `concept`; a nav, settings, vocabulary, or media commit
+  carries `scope` instead, the same axis `config.invalid` already reports on, so a site that
+  declares a concept named `media` or `nav` can no longer collide with one.
+
+  `dictionary.added` and `dictionary.add_conflict` carry `wordCount` in place of `words`,
+  conforming the records to the documented `dictionary.*` content contract; the editor's own
+  screen still holds the pending words, so a recurring conflict stays traceable.
+  `content.field_behavior_failed` gains `owner`, the schema identifier (a concept id, or a
+  component's directive name for the attribute path) that says which schema the named field
+  belongs to; `Fieldset.validate` takes it as an optional third argument. `include.missing` gains
+  `reason` (`empty_fragment` or `not_found`), separating the two authoring faults it used to
+  report under one name, plus `entry`, the containing entry; its `fragment` value is capped at 160
+  characters. `preview.cleanup_failed` moves its stringified throw from `reason` to `error`,
+  matching its five siblings and leaving `reason` to the snake_case enums.
+  `media.resolver_absent` drops `enabled`, a field with one possible value.
+
+  Consumers must: rename `taxonomy.unmarked_field` to `taxonomy.field_unmarked` and
+  `publish.address_collision` to `publish.address_collided` in any log filter or alert; read
+  `scope` rather than `concept` on a `commit.succeeded`/`commit.failed` for a nav, settings,
+  vocabulary, or media commit; expect no `auth.session.destroyed` or
+  `auth.channel.session.destroyed` record when a logout's session id or token names no row, so an
+  alert counting sign-outs now counts real ones only; read `wordCount` rather than `words` on
+  `dictionary.added` and `dictionary.add_conflict`; stop reading `enabled` on
+  `media.resolver_absent`, a field that carried one possible value; and read the stringified throw
+  off `error` rather than `reason` on `preview.cleanup_failed`.
+
+- `ReproContext` (`/reproductions`) gains an optional `mediaBase` prop, defaulting to
+  `/repro-assets`, threaded to both places a mounted story reaches its media base: the
+  `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's own
+  `mediaBase` field feeding `CairnAdminShell`'s identical, shadowing context for a `'shell'`
+  story. The `fixtureMediaBase` export on `/reproductions/manifest` retires; it never mitigated
+  the hardcode it named (a mounting site's asset route spells its own path segment regardless), so
+  the fix is a settable base, not a documented constant. Consumers must: pass `mediaBase` to
+  `ReproContext` instead of importing `fixtureMediaBase`; a site deployed under a SvelteKit
+  `paths.base` now composes fixture image URLs inside its own namespace by passing that prefix.
+
+- `ComponentContext` (`/render`) gains an `attr(key)` method: `attr('title')` reads a declared
+  string attribute off the context, same semantics as the retired standalone `strAttr(ctx, key)`
+  (`undefined` for a boolean or absent value), and now sits beside `slot(name)` and `items(name)`
+  rather than as a separate import. `strAttr` retires from `/render`. Consumers must: replace
+  `strAttr(ctx, key)` with `ctx.attr(key)`.
+
 - `/auth-channel` folds onto the engine's one auth grammar. Five changes, all breaking for a site
   that already runs `createAuthChannel`.
 
@@ -283,8 +343,9 @@
   four nav-layout types, `IslandRegistry`, `VariantSpec`, `MediaRef`, and `MediaResolve`, none of
   which any signature on that subpath names, since the barrel deliberately stops short of
   `CairnAdapter` itself. `/delivery` drops the same set apart from `MediaRef`, `MediaResolve`, and
-  `SiteRender`, which `PublicRoutesConfig` names and which it now exports directly. The 120
-  surviving non-home publications are recorded in
+  `SiteRender`, which `PublicRoutesConfig` names and which it now exports directly. The 114
+  surviving non-home publications (recounted at 4b close against `reexports.length` in the file
+  below) are recorded in
   `scripts/checks/check-surface-reexports.json` with their home and the signature that requires
   each, and `check:surface` now fails an unrecorded duplicate, a record entry the surface has
   outlived, and a record entry whose stated home the surface does not declare, so the set shrinks as
@@ -297,9 +358,11 @@
   `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`, `MediaResolve`. From
   `@glw907/cairn-cms/sveltekit`: `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
   `NavLayoutSection`. From `@glw907/cairn-cms/islands`: `IslandRegistry`. From
-  `@glw907/cairn-cms/media`: `MediaRef`, `VariantSpec`. All are type-only imports, so no runtime
+  `@glw907/cairn-cms/media`: `MediaRef`. All are type-only imports, so no runtime
   behavior changes;
   `@glw907/cairn-cms/delivery` still carries `MediaRef`, `MediaResolve`, and `SiteRender`.
+  `VariantSpec`'s canonical-home move to `/media` is superseded within this same window: it's
+  retired outright, below.
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
   2026-08-24 owner probe, Geoff's own ratification: illegible-dot evidence and the ratified
@@ -653,7 +716,227 @@
   exit code and branches on it; see the CI wiring example in the reference page. Nothing else in the
   report's shape changed: every prior PASS/FAIL/SKIP line still prints exactly as before.
 
+- The conformance pass (slice 4b, Task 1) executes the Tier 1 media-janitorial retire batch: 25
+  ratified any-site-audit verdicts (`docs/internal/engine-rulings.md`, `rank-route-factories.md`
+  ranks 1-25 plus rank 38) all leave `@glw907/cairn-cms/sveltekit`. Each stays an engine-internal
+  shape at its declaring module (`content-routes-media.ts`, `content-routes-settings.ts`,
+  `content-routes-tidy.ts`, `content-routes-dictionary.ts`, `nav-routes.ts`, `media/orphan-scan.ts`),
+  per the retires-pass precedent: a type still consumed in-process goes internal in the module
+  that needs it, either kept as a module-level export for a cross-module consumer
+  (`CairnMediaLibrary.svelte`, `media-upload-outcome.ts`, or the module composing it into
+  `createContentRoutesInternal`'s wide return shape) or dropped to a bare, non-exported
+  declaration where none remains. By family: the orphan-scan surface
+  (`MediaOrphanScanResult`, `OrphanByteRow`, `BrokenRefRow`) and the replace/alt-propagation
+  preview pairs (`MediaReplacePreviewEntry`, `MediaReplacePreviewPlan`, `MediaAltPreviewEntry`,
+  `MediaAltPreviewPlan`, `RepointPlacement`, `AltPlacement`, `BranchRef`) retire; the six
+  structurally-identical `{ error: string }`-shaped refusal types (`MediaAltPropagateFailure`,
+  `MediaBulkFailure`, `MediaUpdateFailure`, `MediaUploadFailure`, `SettingsSaveFailure`,
+  `NavSaveFailure`) and the two richer refusals mirroring each other (`MediaDeleteRefusal`,
+  `MediaReplaceFailure`) retire; the three settings/tidy/dictionary result bags
+  (`VocabularySaveFailure`, `TidyResult`, `DictionaryAddResult`) and the bulk-delete result pair
+  (`MediaBulkDeleteResult`, `BulkDeleteSkip`) and the orphan-purge result
+  (`MediaOrphanPurgeResult`) retire. `UploadResult` (rank 38) executes the verify-corrected flat
+  retire rather than the ranked relocate to `/media`: `verify-route-factories.md` overturns the
+  rank file's reshape-and-relocate, since `/media`'s own header restricts that subpath to
+  node-safe pure projection and explicitly excludes the manifest CRUD and ingest internals
+  `UploadResult` belongs to. **Consumers must:** a site importing `MediaDeleteRefusal`,
+  `MediaUpdateFailure`, `MediaReplaceFailure`, `MediaAltPropagateFailure`, `MediaBulkFailure`,
+  `MediaUploadFailure`, `VocabularySaveFailure`, `SettingsSaveFailure`, or `NavSaveFailure` from
+  `@glw907/cairn-cms/sveltekit` to annotate one of `CairnMediaLibrary`'s, the settings screen's,
+  or the nav editor's own action failures replaces it with `ContentFormFailure` where the action
+  already routes through the flattened union (every media-delete, media-replace, and
+  media-alt-propagation refusal), or reads the action's return type through inference instead of
+  a named import for the settings, nav, upload, and dictionary actions, none of which route
+  through `ContentFormFailure`. A site importing `UploadResult` to annotate `uploadAction`'s
+  success branch, `MediaBulkDeleteResult` to annotate `mediaBulkDeleteAction`'s return,
+  `MediaOrphanPurgeResult`/`MediaOrphanScanResult` to annotate the orphan scan/purge actions,
+  `MediaReplacePreviewPlan`/`MediaReplacePreviewEntry` to annotate the replace preview,
+  `MediaAltPreviewPlan`/`MediaAltPreviewEntry` to annotate the alt-propagation preview,
+  `TidyResult` to annotate `tidyAction`'s success branch, or `DictionaryAddResult` to annotate
+  `dictionaryAddAction`'s success branch, reads the action's return type through inference
+  instead; none of these ten media-janitorial and settings/tidy/dictionary actions are reachable
+  outside `createCairnAdmin`'s own composition (the media-janitorial ten) or already returned an
+  inferred shape a hand-mounting site read structurally. `RepointPlacement`, `AltPlacement`,
+  `BranchRef`, `BulkDeleteSkip`, `OrphanByteRow`, and `BrokenRefRow` had no supported import path
+  of their own (each was always reached as a nested field of an already-retired or already-inferred
+  parent shape); a site that named one directly reads the parent action's return type structurally
+  instead.
+
+- `UsageEntry` retires from `@glw907/cairn-cms/sveltekit` (slice 4b, Task 1), the sitting's
+  ruling on the carried decision the conventions pass (Task 5) routed here: the shape stays a
+  module-internal named type in `media/usage.ts` (the module-level export stays, since the type
+  has eight-plus in-engine namers across `content-routes-media.ts`, `media/orphan-scan.ts`,
+  `media/bulk-delete-plan.ts`, `content-routes-core.ts`, and `CairnMediaLibrary.svelte`, so
+  inlining it at one remaining use site is not viable). `ContentFormFailure.usage` is its
+  surviving public carrier. **Consumers must:** index the element type off the carrier —
+  `NonNullable<ContentFormFailure['usage']>[number]` — instead of importing `UsageEntry` by name.
+
+- `AuthBranding` publishes from `@glw907/cairn-cms/sveltekit` only (slice 4b, Task 2): the root
+  barrel's re-export drops, settling the reshape verdict `audit-adapter-authbranding`
+  (`AuthRoutesConfig.branding` is the one public signature naming it; nothing at root ever did).
+  **Consumers must:** import `AuthBranding` from `@glw907/cairn-cms/sveltekit` instead of the
+  root package.
+
+- `MediaEntry` publishes from `@glw907/cairn-cms/media` only (slice 4b, Task 2): the `/sveltekit`
+  re-export drops, settling `audit-sveltekit-mediaentry` (its closure justification,
+  `UploadResult`, already retired in Task 1). **Consumers must:** import `MediaEntry` from
+  `@glw907/cairn-cms/media` instead of `/sveltekit`.
+
+- `PublishActionsConfig` and `ResolvedPublishAction` retire (slice 4b, Task 2, the sitting's
+  ruling 2; settles `audit-adapter-publishactionsconfig`): both were bare aliases over
+  `PublishActionEntry[]`/`PublishActionEntry`, the shape the seam already exports by name.
+  `CairnAdapter.editor.publishActions`, `CairnRuntime.publishActions`, and
+  `normalizePublishActions`/`resolvePublishActions`'s own signatures all retype to
+  `PublishActionEntry[]` directly. `ResolvedPublishAction` was never published from any barrel
+  (only the module-local `ContentRoutesContext` named it), so its retire is a source-level
+  rename with no separate public break. **Consumers must:** replace `PublishActionsConfig` with
+  `PublishActionEntry[]` wherever it annotated `editor.publishActions` or a runtime read.
+
+- `PublishActionEntry`'s `/delivery` and `/delivery/data` re-export drops (slice 4b, Task 2), per
+  the row's own recorded intent in `check-surface-reexports.json` ("Both leave this subpath when
+  that reshape lands"); its canonical home `/sveltekit` is unaffected. **Consumers must:** import
+  `PublishActionEntry` from `@glw907/cairn-cms/sveltekit` instead of `/delivery` or
+  `/delivery/data`.
+
+- `HistoryData.draft`'s `startedAt` field (slice 4b, Task 3) renames to `lastSavedAt`: the
+  container already says "draft", so the bare name reads right there without repeating it.
+  `RevertFailure`'s `draft_exists` member's `draftStartedAt` field renames to `draftLastSavedAt`,
+  qualified to match its sibling `draftEditor` rather than leaving an unbalanced pair. Both fields'
+  doc comments dropped the compensating "the field keeps its name for API stability" prose: 0.x
+  churn stays free until beta, so the stability plea never licensed keeping the wrong name.
+  **Consumers must:** rename `HistoryData.draft.startedAt` to `draft.lastSavedAt`, and
+  `RevertFailure`'s `draft_exists.draftStartedAt` to `draftLastSavedAt`.
+
+- `formatTimestamp` (`/admin-toolkit`, slice 4b, Task 3) widens its input domain: it now accepts
+  any Date-parseable timestamp, a SQLite `datetime('now')`-shaped string (unchanged) or a full ISO
+  8601 string carrying its own `Z` suffix or an explicit offset, rather than only the SQLite shape.
+  The `timeZone` zone-pin behavior, the mechanic that keeps a Worker's SSR and a browser's
+  hydration rendering the same text for the same moment, is unchanged and now covers the widened
+  domain too. `CairnHistory`'s hand-rolled `formatVersionDate` is gone; the component now routes
+  every date it renders through this formatter, proving the widened domain on cairn's own screen.
+  `FormatTimestampOptions` is unchanged. **Consumers must:** nothing; a SQLite-shaped string a
+  caller already passes keeps parsing exactly as before, and a caller may now also pass a raw ISO
+  timestamp.
+
+- `TidyClient` (`/sveltekit`, slice 4b, Task 4; settles `audit-sveltekit-tidyclient` and
+  `audit-log-tidy-succeeded`) narrows from the transcribed Anthropic Messages wire shape to a
+  narrow, engine-owned contract: `tidy(request, options)` takes `{ model, system, text, effort? }`
+  and returns `{ corrected, refused, tokens: { input, output } }`; the optional model-listing
+  probe (`models?.list`, which `probeTidyKey`'s zero-token key-health check degrades to
+  `'unknown'` without) and the cancellation option (`options?: { signal }`, paired with
+  `tidyTimeoutMs` so a request still actually cancels when the deadline fires) both carry over,
+  re-expressed in engine-owned terms. `max_tokens`, `output_config.effort`, `stop_reason`, and
+  `usage.*` no longer reach the public contract, so a vendor field rename stops being a cairn
+  break; the real Anthropic SDK mapping moves into an internal adapter
+  (`lazyAnthropicClient`, `content-routes-context.ts`). `tidy.succeeded`'s log record carries the
+  same reshape: its `usage` field becomes `tokens: { input, output }`. `TidyResult.model`
+  (`tidyAction`'s own return, distinct from `TidyClient`'s narrower result) still names the
+  requested model, `tidy.model` or the engine default, never a value Anthropic resolved it to:
+  the client's own narrowed result carries no `model` field to read one from. **Consumers must:** a site
+  injecting a hand-rolled `TidyClient` fake (through `ContentRoutesConfig.tidy.client`, for a
+  gateway or proxy in front of Anthropic) implements `tidy(request, options)` returning
+  `{ corrected, refused, tokens: { input, output } }` in place of `messages.create`'s wire body;
+  `models?.list` is unchanged for a client that already implements it. A site reading
+  `tidy.succeeded` log records renames its `usage` field read to `tokens`.
+
+- `mintPreviewToken` (`/sveltekit`, slice 4b, Task 5; settles `audit-sveltekit-mintpreviewtoken`)
+  becomes `previewMint(runtime, config, event, { concept, entryId })`, a mint that is safe by
+  construction instead of one carrying a silent authorization obligation in its header comment. It
+  joins `previewLoad` as the `/sveltekit` preview pair, resolving against that function's own
+  parameter shape plus the explicit target, and reaching `AUTH_DB` the same way it does. The editor
+  is no longer a caller-supplied string: it derives from the event through the same `requireEditor`
+  every engine content action calls, and the stored row's attribution is that resolved session's
+  email, so removing an editor still revokes every link that editor minted. Authorization runs
+  first and short-circuits, running the engine's own `previewMintAction` sequence (extracted, not
+  duplicated): the resolved editor, the concept lookup, the concept-scoped access check against
+  `runtime.access`, the entry-id shape rule, and only then the pending-draft check, so a refusal is
+  never an entry-existence oracle. An entry with no pending draft now refuses rather than minting a
+  token that `previewLoad` would resolve down its ended-page path into a token-gated read of a
+  published entry. Refusals come back as a discriminated result on the `outcome` grammar
+  (`PreviewMintOutcome`, with the `minted`, `unknown-concept`, `invalid-id`, and `no-draft` arms),
+  and the token hygiene is unchanged: CSPRNG 256-bit generation, hash-at-rest, the
+  one-minute-to-thirty-day TTL clamp, and the entry scope. **Consumers must:** rename the import to
+  `previewMint` and call it as `previewMint(runtime, config, event, { concept, entryId })`. The
+  `db` parameter is gone (the function reads `AUTH_DB` off `event.platform.env` itself) and so is
+  `record.editor` (the guard-resolved session is now the only editor source), so call it from a
+  route where the admin guard has already resolved `locals.cairnEditor`. Narrow the returned value
+  on `result.outcome === 'minted'` before reading `token` and `expiresAt`, where the old call
+  returned that pair directly.
+
+- `OfficeList` (`/admin-toolkit`, slice 4b, Task 9; settles `audit-admin-officelist`) collapses to
+  a thin card-frame wrapper that composes `PageHeader` for its header band, retiring the second
+  eyebrow/title/subtitle/action implementation the two components had drifted into. `PageHeader`
+  itself gains a `self-start` wrap on its action slot, ported from `OfficeList` first so the
+  action-alignment fix survives the collapse. This is a visible rhythm and type-size change on
+  every screen built on `OfficeList`: the header band now renders at `PageHeader`'s own rhythm
+  (`mb-10` header offset, `gap-0.5` inner stack, the balanced `text-wrap` title) instead of
+  `OfficeList`'s former tighter `mb-6`/`gap-0`, and its meta line moves from `type-body` (14px) to
+  `type-meta` (13px); the card underneath keeps its own tighter proximity, sitting directly under
+  that offset with no separate margin of its own. **Consumers must:** rename `OfficeList`'s
+  `subtitle` prop to `meta` (no forwarding alias survives); expect the office header to adopt
+  `PageHeader`'s rhythm (`mb-10`, the meta line at `type-meta`) on every screen composing
+  `OfficeList`.
+
+- `cairn-audit`'s `chip-ground-collision` and `form-font-parity` rendered rules repair the two
+  registry entries the conformance pass's docket routed here. `chip-ground-collision`'s contrast
+  formula gains a chroma term: a collision now requires both a close luminance ratio and a close hue
+  (`color.ts`'s new `chromaDistance`), so a chip whose fill differs mainly in hue from its ground no
+  longer flags merely for measuring close in luminance, closing the hue-distinct false-positive
+  class (roughly 14 of the 24 measured false positives on the rule's first real consumer admin). A
+  second named false-positive class, a near-neutral pill in dark theme reading bounded despite a low
+  ratio (roughly the other 10), carries no hue for this term to see and still flags; closing it
+  needs a recalibrated luminance floor built from measured pixel data this repo does not carry, and
+  stays filed in ROADMAP. `form-font-parity`'s exemption net closes the three named gaps: a
+  variant-prefixed font utility (`md:font-mono`), `font-serif`/`font-sans`, and Tailwind 4's
+  `font-(family-name:--x)` shorthand are all now exempt from the parity check, with or without a
+  stacked variant prefix. Both rules stay advisory; this is a behavior change to audit output only,
+  and no rule was promoted to error tier. Consumers must: nothing. A build already treating either
+  rule's advisory findings as non-gating sees fewer of them; nothing that previously passed now
+  fails.
+
+- `cairn-audit`'s five rendered-mode harness failure ids conform to the identifier-grammar rule
+  (`convention-identifier-grammar`): the area now sits in a dot-namespace rather than a bare
+  prefix. `rendered-allowlist-stale` becomes `rendered.allowlist-stale`,
+  `rendered-allowlist-unprobeable` becomes `rendered.allowlist-unprobeable`,
+  `rendered-allowlist-dead` becomes `rendered.allowlist-dead`,
+  `rendered-page-identity-mismatch` becomes `rendered.page-identity-mismatch`, and
+  `rendered-state-unreachable` becomes `rendered.state-unreachable`. This is a behavior change to
+  the ids the harness emits, not a rule reshape: every finding's tier, message, and trigger are
+  unchanged. Consumers must: update any `cairn-audit.config.json` allowlist `rule` values from
+  `rendered-*` to `rendered.*`; a build filtering or alerting on the old ids by name stops
+  matching once this ships.
+
 ### Documentation
+
+- The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
+  `templates/waymark` scaffold now hoist one `const media = { bucketBinding: 'MEDIA_BUCKET' }`,
+  fed to both `normalizeAssets(media)` and the adapter's `media:` member, in place of the two
+  separately typed literals a fresh `npm create @glw907/cairn-site` used to hand every site. The
+  split-brain form let the two copies diverge silently (a site setting `transformations`,
+  `publicBase`, or `urlForm` on one copy alone got correct admin/upload behavior and wrong public
+  URLs), so the hoisted form is the recommended de-duplication for any existing site carrying the
+  duplicated pair. `docs/reference/media.md`'s own worked example is rewritten to the same hoisted
+  form, and its `normalizeAssets` section now states that the engine already normalizes
+  `adapter.media` once at compose and serves its own upload, delivery, and admin paths from
+  `CairnRuntime.resolvedAssets`, so a site's own render resolver should reuse that object.
+  `normalizeAssets`'s exported signature and return type are unchanged; this is a scaffold and doc
+  change only. Consumers must: nothing; sites already on the duplicated form may hoist one shared
+  `media` object of their own, at their convenience.
+
+- The admin CSS safelist's badge-tier blessing (`audit-admin-statuschip`'s badge-tier half) is now
+  deliberate, not incidental, and covers every safelisted `badge-*` class, not just
+  `badge-error`/`badge-success`: `badge-error`, `badge-success`, and `badge-soft` each paint their
+  own fill and ink, measured against `StatusChip`'s own register-set text floor (>= 4.5:1, WCAG
+  1.4.3) on both packaged admin themes (light error 4.848, light success 4.915, light soft 12.736,
+  dark error 6.298, dark success 7.036, dark soft 11.244); `badge-outline` and `badge-dash` paint
+  no fill of their own and inherit their ink and currentColor border from the row, measured
+  against the row ground and the unrelated >= 3:1 non-text floor (WCAG 1.4.11) on the border
+  (light 15.087, dark 13.322; `badge-tier-legibility.test.ts` is the standing proof for all five).
+  Every class clears its floor with no retune. All five stay blessed as a documented badge tier,
+  the raw daisyUI alternative to `StatusChip`, with a when-to-use line in
+  `docs/internal/admin-design-system.md` and `docs/reference/admin-toolkit.md`. No class left the
+  safelist and no token was retuned; this is a measurement and documentation change only.
+  Consumers must: nothing.
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
   truncated 54 of the ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought,
@@ -868,6 +1151,19 @@
   rather than leaving a bare 500 on the login POST. The column is nullable and a row without a
   binding still confirms, whatever the confirming browser carries, so applying the migration
   cannot strand a link already in an inbox.
+
+- `AssetConfig.variants` and the `VariantSpec` type are retired (ruling 4, 2026-09-01, the
+  `variants` evidence sweep). The field had zero reachable runtime consumers: no family site sets
+  the key (the estate evidence is in `docs/internal/engine-rulings.md`'s
+  `audit-adapter-variantspec` entry), `config.ts`'s per-variant fit/gravity/upscale validation
+  existed only to guard it, and `presetUrl`, its only reader, has no non-test caller since Task 3
+  of the conventions pass dropped `createMediaResolver`'s own preset parameter. The built-in
+  `thumb`, `inline`, `card`, and `hero` presets are now the whole vocabulary; `BUILT_IN_PRESETS`
+  (engine-internal) is the fixed source of it. Consumers must: drop any `variants:` key from a
+  `media` block, since it's now an excess-property type error rather than a merged-and-ignored
+  no-op; a site needing a size beyond the four built-ins builds the Cloudflare Images transform
+  URL directly against Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's own
+  URL builder (`variantUrl`/`presetUrl`) was never exported from any public subpath.
 
 ## 0.96.0
 

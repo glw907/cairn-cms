@@ -41,5 +41,15 @@ describe('fieldset behavior.validate', () => {
     const result = throwing.validate({ a: 'value' }, '');
     expect(result.ok).toBe(true);
     expect(warn).toHaveBeenCalledWith('content.field_behavior_failed', { field: 'a', error: 'boom' });
+
+    // The owner argument names the schema the field belongs to, so a field name that repeats
+    // across schemas (summary, tags, date) is still attributable.
+    warn.mockClear();
+    throwing.validate({ a: 'value' }, '', 'about-box');
+    expect(warn).toHaveBeenCalledWith('content.field_behavior_failed', {
+      field: 'a',
+      owner: 'about-box',
+      error: 'boom',
+    });
   });
 });

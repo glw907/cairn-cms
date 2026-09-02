@@ -228,7 +228,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
       unmarked,
     );
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith('taxonomy.unmarked_field', { concept: 'posts', field: 'tags' });
+    expect(warn).toHaveBeenCalledWith('taxonomy.field_unmarked', { concept: 'posts', field: 'tags' });
   });
 
   it('warns for a freetags or categories named multiselect too', () => {
@@ -246,7 +246,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
     const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
     createContentIndex(fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\n---\nBody.' }), unmarked);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith('taxonomy.unmarked_field', { concept: 'posts', field: 'categories' });
+    expect(warn).toHaveBeenCalledWith('taxonomy.field_unmarked', { concept: 'posts', field: 'categories' });
   });
 
   it('does not warn when the tags-named field is properly marked', () => {

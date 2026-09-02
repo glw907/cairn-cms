@@ -1,7 +1,7 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
 import { createRenderer, defineRegistry, defineComponent, defineFieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
-import { cardShell, headRow, strAttr } from '@glw907/cairn-cms/render';
+import { cardShell, headRow } from '@glw907/cairn-cms/render';
 import { normalizeAssets, createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
@@ -100,8 +100,8 @@ const alert = defineComponent({
   icon: 'alert',
   defaultIconByRole: { caution: 'leaf' },
   build: (ctx) => {
-    const name = strAttr(ctx, 'icon');
-    const role = strAttr(ctx, 'role');
+    const name = ctx.attr('icon');
+    const role = ctx.attr('role');
     const icon = name ? makeIcon(name, role) : undefined;
     return cardShell(['alert', `alert-${role ?? 'note'}`], [
       headRow(ctx.slot('title'), icon),
@@ -140,7 +140,7 @@ const icon = defineComponent({
     name: fields.icon({ label: 'Icon', required: true }),
   },
   build: (ctx) => {
-    const name = strAttr(ctx, 'name');
+    const name = ctx.attr('name');
     if (!name || !(name in icons)) {
       throw new Error(`cairn: icon component references "${name ?? ''}", which is not in the declared icon set`);
     }
@@ -170,8 +170,8 @@ const video = defineComponent({
     title: fields.text({ label: 'Title', required: true }),
   },
   build: (ctx) => {
-    const url = strAttr(ctx, 'url') ?? '';
-    const title = strAttr(ctx, 'title') ?? '';
+    const url = ctx.attr('url') ?? '';
+    const title = ctx.attr('title') ?? '';
     const { platform } = parseVideoUrl(url);
     return h('figure', { className: ['video-facade'] }, [
       h(
@@ -210,7 +210,7 @@ const pullQuote = defineComponent({
   },
   slots: [{ name: 'title', label: 'Quote', kind: 'inline', required: true }],
   build: (ctx) => {
-    const attribution = strAttr(ctx, 'attribution');
+    const attribution = ctx.attr('attribution');
     const children: ElementContent[] = [
       h('p', { className: ['pull-quote-text', 'pullquote'] }, ctx.slot('title')),
     ];
@@ -237,9 +237,9 @@ const cta = defineComponent({
     variant: fields.select({ label: 'Variant', options: ['primary', 'secondary'] }),
   },
   build: (ctx) => {
-    const label = strAttr(ctx, 'label') ?? '';
-    const url = strAttr(ctx, 'url') ?? '';
-    const variant = strAttr(ctx, 'variant') || 'primary';
+    const label = ctx.attr('label') ?? '';
+    const url = ctx.attr('url') ?? '';
+    const variant = ctx.attr('variant') || 'primary';
     return h('p', { className: ['cta'] }, [
       h('a', { className: ['cta-link', `cta-${variant}`], href: url }, [label, makeIcon('arrow-right')]),
     ]);
@@ -264,9 +264,9 @@ const microCta = defineComponent({
     note: fields.text({ label: 'Note' }),
   },
   build: (ctx) => {
-    const label = strAttr(ctx, 'label') ?? '';
-    const url = strAttr(ctx, 'url') ?? '';
-    const note = strAttr(ctx, 'note');
+    const label = ctx.attr('label') ?? '';
+    const url = ctx.attr('url') ?? '';
+    const note = ctx.attr('note');
     const children: ElementContent[] = [h('span', { className: ['micro-cta-label'] }, [label])];
     if (note) children.push(h('span', { className: ['micro-cta-note'] }, [note]));
     children.push(makeIcon('arrow-right'));
@@ -291,7 +291,7 @@ const faq = defineComponent({
   },
   slots: [{ name: 'body', label: 'Answer', kind: 'markdown', required: true }],
   build: (ctx) => {
-    const question = strAttr(ctx, 'question') ?? '';
+    const question = ctx.attr('question') ?? '';
     return h('details', { className: ['faq'] }, [
       h('summary', { className: ['faq-question'] }, [
         h('span', { className: ['faq-question-text'] }, [question]),
@@ -328,8 +328,8 @@ const banner = defineComponent({
     }),
   },
   build: (ctx) => {
-    const message = strAttr(ctx, 'message') ?? '';
-    const expires = strAttr(ctx, 'expires');
+    const message = ctx.attr('message') ?? '';
+    const expires = ctx.attr('expires');
     if (isBannerExpired(expires)) {
       // An expired banner never needs a live re-check: a past expires date stays past, so hydration
       // has nothing to catch that this build() has not already caught. The engine serializes
@@ -361,11 +361,16 @@ const mediaManifest = readCommittedManifest(
   import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
 );
 
+// The media R2 binding, hoisted once and fed to both normalizeAssets below and the adapter's
+// media: member, so the binding name lives in exactly one place rather than two literals that
+// could drift apart.
+const media = { bucketBinding: 'MEDIA_BUCKET' };
+
 // The default public media resolver, backing the public build over the committed manifest. The
 // preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
 // published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
 // public route can inject the same resolver for the frontmatter hero, one source of truth.
-const resolvedAssets = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
+const resolvedAssets = normalizeAssets(media);
 export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets);
 
 // Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
@@ -452,9 +457,10 @@ export const cairn = defineAdapter({
   },
   backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
-  // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
-  // wrangler.jsonc and mounts the /media delivery route.
-  media: { bucketBinding: 'MEDIA_BUCKET' },
+  // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
+  // R2 double rides platform.env in dev; a real site binds it in wrangler.jsonc and mounts the
+  // /media delivery route.
+  media,
   // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
   // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to
   // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.

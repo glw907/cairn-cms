@@ -117,10 +117,11 @@ never needs the Svelte half).
 Stability tier: Unstable API.
 
 ```ts
-let { story, theme, oninstance }: {
+let { story, theme, oninstance, mediaBase }: {
   story: ReproStory;
   theme?: 'cairn-admin' | 'cairn-admin-dark';
   oninstance?: (instance: ReproInstance) => void;
+  mediaBase?: string;
 };
 ```
 
@@ -133,6 +134,13 @@ falls back to the light admin theme. A `'bare'` story that resolves no theme roo
 row except the two auth pages) gets one from `ReproContext` itself, painted with the admin surface
 colors, so it renders correctly wherever it mounts rather than only inside a host that happens to
 supply a theme root.
+
+`mediaBase` is the path segment every fixture media URL mounts under, so a docs site deployed
+under a SvelteKit `paths.base` composes fixture image URLs inside its own namespace instead of a
+hardcoded default; absent, it falls back to `/repro-assets`, cairn-pub's own asset route. It
+threads to both places a mounted story reaches its media base: the reserved context key below, and,
+for a `'shell'` story, the shell payload's own `mediaBase` field, which feeds `CairnAdminShell`'s
+identical, shadowing context of the same key.
 
 `oninstance` fires once as the mount happens, with the mounted component's own exports, the same
 `ReproInstance` shape [`ReproStory`](#reprostory) describes. A host that runs poses passes it and
@@ -158,10 +166,10 @@ instead of silently keeping the previous story's context and shell data under th
 component. `ReproContext` itself throws if its `story` prop's `id` ever changes in place, so a
 missing `{#key}` fails loudly rather than rendering a mismatched story.
 
-The media-base and CSRF context keys `ReproContext` sets (see
-[`fixtureMediaBase`](#fixturemediabase) below) are reserved: `ReproContext` applies `story.context`
-first and then sets both unconditionally, so a story's own `context` entry under either key is
-shadowed by the value `ReproContext` supplies, never the other way around.
+The media-base and CSRF context keys `ReproContext` sets (the media base from the preceding
+`mediaBase` prop) are reserved: `ReproContext` applies `story.context` first and then sets both
+unconditionally, so a story's own `context` entry under either key is shadowed by the value
+`ReproContext` supplies, never the other way around.
 
 ---
 
@@ -224,19 +232,6 @@ The full registry's node-safe view, in the spec inventory's own order. Adding, r
 renaming an entry is a spec-level change: a consuming docs page cites these ids by name, and a
 `repro` fence naming an id the installed manifest does not carry fails the consumer's build.
 
-### `fixtureMediaBase`
-
-Stability tier: Unstable API.
-
-```ts
-declare const fixtureMediaBase = "/repro-assets";
-```
-
-The path segment every fixture media URL mounts under on a `/repro` page: `${fixtureMediaBase}/<file>`
-for a file named in [`fixtureMediaFiles`](#fixturemediafiles). Never `/media`, the real admin's
-default; a fixture image never surfaces through the same path a site's live media library serves
-from.
-
 ### `fixtureMediaFiles`
 
 Stability tier: Unstable API.
@@ -247,7 +242,8 @@ declare const fixtureMediaFiles: string[];
 
 The fixture media bytes' filenames, exactly as packaged under `dist/reproductions/fixtures/`. A
 consuming site's own asset route enumerates this list to serve the bytes without ever importing the
-Svelte-carrying `/reproductions` half of this module.
+Svelte-carrying `/reproductions` half of this module, at the path segment the mounting page passed
+[`ReproContext`](#reprocontext) as its `mediaBase` prop (`/repro-assets` when it passed none).
 
 ### `validateReproFence`
 

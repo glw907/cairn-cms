@@ -4,7 +4,9 @@ import {
   type UploadOutcome,
 } from '../../lib/components/media-upload-outcome.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
-import type { UploadResult } from '../../lib/sveltekit/content-routes.js';
+// `UploadResult` retired from the public barrel (4b, Task 1); still exported at its declaring
+// module, which this test imports directly.
+import type { UploadResult } from '../../lib/sveltekit/content-routes-media.js';
 import { formatMediaToken } from '../../lib/media/reference.js';
 
 function record(overrides: Partial<MediaEntry> = {}): MediaEntry {

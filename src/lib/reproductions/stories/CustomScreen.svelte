@@ -14,7 +14,7 @@ snippet rather than improving on it; a drift here is a drift a reader of that pa
   let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
 </script>
 
-<OfficeList eyebrow="Club" title="Events" subtitle={`${data.events.length} upcoming`}>
+<OfficeList eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`}>
   <AdminTable rowCount={data.events.length}>
     {#snippet header()}
       <th scope="col">Name</th>

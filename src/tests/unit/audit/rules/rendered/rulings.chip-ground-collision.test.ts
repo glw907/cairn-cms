@@ -13,10 +13,10 @@
 // exist.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
-import { resolveConfig } from '../../../../../lib/audit/config.js';
 import { exitCodeFor } from '../../../../../lib/audit/report.js';
 import { chipGroundCollision } from '../../../../../lib/audit/rules/rendered/chip-ground-collision.js';
-import type { RenderedFinding, RenderedPage, RenderedRule } from '../../../../../lib/audit/rendered.js';
+import { findingsFor } from './chip-ground-collision-harness.js';
+import type { RenderedFinding } from '../../../../../lib/audit/rendered.js';
 
 let browser: Browser;
 
@@ -27,25 +27,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
 });
-
-const config = resolveConfig('/audit-fixture', {}, () => true);
-
-/** Runs `rule` against `html` in a real page and returns what it found. */
-async function findingsFor(rule: RenderedRule, html: string): Promise<RenderedFinding[]> {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-  try {
-    await page.setContent(html, { waitUntil: 'load' });
-    return await rule.check({
-      page: page as unknown as RenderedPage,
-      pagePath: '/fixture',
-      theme: 'light',
-      state: rule.states?.[0] ?? 'rest',
-      config,
-    });
-  } finally {
-    await page.close();
-  }
-}
 
 /** The selectors a run reported, for the assertions that care about which element was named. */
 function selectors(findings: RenderedFinding[]): string[] {
@@ -67,7 +48,8 @@ describe('chip-ground-collision floor, ratified at 1.5 (Task 16b ruling 3)', () 
       chipGroundCollision,
       `<body><div style="${GROUND_STYLE}">
          <span class="badge" style="${CHIP_STYLE} background-color: rgb(242, 242, 242)">Draft</span>
-       </div></body>`
+       </div></body>`,
+      browser
     );
     expect(selectors(findings)).toEqual(['span.badge']);
     expect(findings[0]?.message).toContain('contrast 1.49');
@@ -78,7 +60,8 @@ describe('chip-ground-collision floor, ratified at 1.5 (Task 16b ruling 3)', () 
       chipGroundCollision,
       `<body><div style="${GROUND_STYLE}">
          <span class="badge" style="${CHIP_STYLE} background-color: rgb(243, 243, 243)">Draft</span>
-       </div></body>`
+       </div></body>`,
+      browser
     );
     expect(findings).toEqual([]);
   });
@@ -98,7 +81,8 @@ describe('chip-ground-collision floor, ratified at 1.5 (Task 16b ruling 3)', () 
            <span class="badge" style="${CHIP_STYLE}
                  background-color:oklab(0.26 0.00258819 0.00965926 / 0.55)">used 3</span>
          </div>
-       </body>`
+       </body>`,
+      browser
     );
     expect(selectors(findings)).toEqual(['span.badge']);
     expect(findings[0]?.message).toContain('contrast 1.0');
@@ -117,7 +101,8 @@ describe('chip-ground-collision floor, ratified at 1.5 (Task 16b ruling 3)', () 
          <div style="opacity:0.25;background-color:oklch(26% 0.014 75);padding:40px;width:600px">
            <span class="badge" style="${CHIP_STYLE} background-color:oklch(52% 0.014 75)">Draft</span>
          </div>
-       </body>`
+       </body>`,
+      browser
     );
     expect(selectors(findings)).toEqual(['span.badge']);
     expect(findings[0]?.message).toContain('contrast 1.1');
@@ -142,7 +127,8 @@ describe('chip-ground-collision: a ground the ancestor chain does not carry', ()
            <span class="cairn-usage-chip" style="position:absolute;right:8px;top:8px;${CHIP_STYLE}
                  background-color:color-mix(in oklab, oklch(99% 0.004 75) 90%, transparent)">used 3</span>
          </div>
-       </body>`
+       </body>`,
+      browser
     );
     expect(selectors(findings)).toEqual(['span.cairn-usage-chip']);
     expect(findings[0].tier).toBe('advisory');
@@ -159,7 +145,8 @@ describe('chip-ground-collision: a ground the ancestor chain does not carry', ()
            <span class="cairn-usage-chip" style="position:absolute;right:8px;top:8px;${CHIP_STYLE}
                  background-color:oklch(96% 0.006 75)">used 3</span>
          </div>
-       </body>`
+       </body>`,
+      browser
     );
     expect(selectors(findings)).toEqual(['span.cairn-usage-chip']);
     // Task 3 (ruling 3, corpus C, 2026-07-28): the rule itself demoted to advisory, so its own
@@ -182,7 +169,8 @@ describe('chip-ground-collision demoted to advisory (Task 3, ruling 3)', () => {
       chipGroundCollision,
       `<body style="margin:0;background-color:oklch(96.5% 0.006 75)">
          <span class="badge" style="${CHIP_STYLE} background-color:oklch(96.5% 0.006 75)">Draft</span>
-       </body>`
+       </body>`,
+      browser
     );
     expect(findings.length).toBeGreaterThan(0);
     expect(findings.every((finding) => finding.tier === 'advisory')).toBe(true);

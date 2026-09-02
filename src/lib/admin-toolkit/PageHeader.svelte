@@ -1,43 +1,33 @@
 <!--
 @component
-The admin toolkit's canonical page-header recipe (ruling 3 of the 2026-07-20 admin-toolkit
-organization pass's adoption map): the `OfficeList` shape, generalized. An optional eyebrow, the
-page's one display-face `h1`, an optional muted meta line, and an optional single action snippet
-top-right. This is the toolkit's one page-header idiom, replacing the finding-11 spread (five ad
-hoc header markups across the engine's admin screens) with one component every top-level screen
-mounts, whether or not it has a standing action to put in the slot.
+The admin toolkit's canonical page-header recipe: an optional eyebrow, the page's one
+display-face `h1`, an optional muted meta line, and an optional single action snippet top-right.
+This is the toolkit's one page-header idiom, so every top-level screen mounts the same component
+whether or not it has a standing action to put in the slot; `OfficeList` composes this component
+for its own header band rather than carrying a duplicate implementation.
 
-The meta line is the toolkit's one home for a page-level count outside a toolbar (ruling 4):
-`ListToolbar`'s own `computeCountLine` covers a screen with a search/filter toolbar row, and this
-component's `meta` line covers a screen with none (a stats-prose summary, a scope note). Search
-never lives in this band (ruling 5); a screen that needs search mounts `ListToolbar` below this
-header instead. The line renders at `type-meta` (13px), the size its own prop name already
-promises; a screen's own toolbar count line sits at the same size, so the two never mismatch when
-both appear on one screen.
+The meta line is the toolkit's one home for a page-level count outside a toolbar: `ListToolbar`'s
+own `computeCountLine` covers a screen with a search/filter toolbar row, and this component's
+`meta` line covers a screen with none (a stats-prose summary, a scope note). Search never lives in
+this band; a screen that needs search mounts `ListToolbar` below this header instead. The line
+renders at `type-meta` (13px), the size its own prop name already promises, so a screen's own
+toolbar count line matches it when both appear on one screen.
 
-Pass 2 Task 12 ported `OfficeList`'s own UA-margin fix here (this component's own doc calls itself
-that component's shape, generalized, and had not yet received the fix its original carries): the
-default `<h1>`/`<p>` margins do not collapse inside a flex column, so they leaked past this stack's
-`gap-0.5` intent into a roughly 58px rendered title-to-meta gap. Both elements zero their margin and
-the meta line restores a deliberate 4px with its own `mt-1`, matching `OfficeList` exactly.
+The default `<h1>`/`<p>` margins do not collapse inside this flex column, so both elements zero
+their own margin and the meta line restores a deliberate 4px with its own `mt-1`. The action slot
+carries `self-start`, since the flex row's default stretch would otherwise pull a header action
+full-width below `sm`.
 
 Props stay data-plus-slots throughout: `eyebrow`/`title`/`meta` are plain strings and `action` is
 a snippet the caller fully authors, so this component carries no domain knowledge of what an
 eyebrow names or what an action does.
 
 Typography and layout classes only, no daisyUI component class. The classes here come from the
-eyebrow and page-heading recipes in `docs/internal/admin-design-system.md`, already carried by
-`OfficeList.svelte`'s header and `ConceptList.svelte`'s own `mb-10` rhythm value.
-
-A scan-scope note this comment used to state the other way round: `src/lib/admin-toolkit` is
-INSIDE `scripts/build/admin-css.input.css`'s `@source` roots, so a utility class used only here does
-compile into the shipped sheet. It was outside when this component was minted on 2026-07-20, and
-joined the roots a day later in `c21ac3b8` once the gap was found. The h1's even-line-rag balancing
-(absorbed from `HelpHome.svelte`'s own sentence-length masthead title, so a long title's line rags
-evenly rather than leaving a lone last word) is a `text-wrap: balance` rule in the scoped `<style>`
-below, written that way under the old constraint. It stays scoped because scoped CSS ships
-regardless of the scan and the rule is settled, not because `text-balance` would fail to compile
-today.
+eyebrow and page-heading recipes in `docs/internal/admin-design-system.md`. `src/lib/admin-toolkit`
+is inside `scripts/build/admin-css.input.css`'s `@source` roots, so a utility class used only here
+still compiles into the shipped sheet. The `h1`'s even-line-rag balancing is a `text-wrap: balance`
+rule in the scoped `<style>` below, so a long title's line rags evenly rather than leaving a lone
+last word; it stays scoped CSS rather than a utility class, which ships the same way regardless.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -68,7 +58,12 @@ today.
     <h1 class="page-h1 m-0 type-title font-bold font-[family-name:var(--font-display)]">{title}</h1>
     {#if meta}<p class="m-0 mt-1 type-meta text-muted">{meta}</p>{/if}
   </div>
-  {#if action}{@render action()}{/if}
+  {#if action}
+    <!-- The flex row default (stretch) pulls the action full-width below `sm`; pin it to its
+         intrinsic content width instead (ported from OfficeList, Task 9 of the 2026-09-01
+         conformance pass, so a naive OfficeList-onto-PageHeader collapse would not regress it). -->
+    <div class="self-start">{@render action()}</div>
+  {/if}
 </header>
 
 <style>

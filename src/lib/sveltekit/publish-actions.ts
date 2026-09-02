@@ -19,15 +19,6 @@ export interface PublishActionEntry {
   concepts?: string[];
 }
 
-/** A site's raw `publishActions` config: next-step links rendered on the publish-success moment. */
-export type PublishActionsConfig = PublishActionEntry[];
-
-/**
- * A validated `PublishActionEntry`. The shape is unchanged from the raw entry; only its label, href,
- *  and `concepts` filter have been checked against the site's real concepts.
- */
-export type ResolvedPublishAction = PublishActionEntry;
-
 /** One publish-success next-step link, its href already templated for the published entry. */
 export interface PublishActionLink {
   label: string;
@@ -45,9 +36,9 @@ export interface PublishActionLink {
  * @returns The validated entries, in declaration order.
  */
 export function normalizePublishActions(
-  entries: PublishActionsConfig | undefined,
+  entries: PublishActionEntry[] | undefined,
   concepts: ConceptDescriptor[],
-): ResolvedPublishAction[] {
+): PublishActionEntry[] {
   if (!entries) return [];
   const known = new Set(concepts.map((c) => c.id));
   return entries.map((entry) => {
@@ -73,7 +64,7 @@ export function normalizePublishActions(
  * @returns The links to render, in declaration order.
  */
 export function resolvePublishActions(
-  entries: ResolvedPublishAction[],
+  entries: PublishActionEntry[],
   entry: { concept: string; id: string },
 ): PublishActionLink[] {
   return entries

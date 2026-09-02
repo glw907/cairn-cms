@@ -415,9 +415,9 @@ describe('createPublicRoutes media.resolver_absent', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     const [event, fields] = warnSpy.mock.calls[0];
     expect(event).toBe('media.resolver_absent');
-    expect(fields).toEqual({ enabled: true });
-    // The record carries the configured-on flag only, never a token or a session.
-    expect(Object.keys(fields ?? {})).toEqual(['enabled']);
+    // The event's own existence is the whole diagnostic: it fires only in the misconfigured
+    // case, so a field that can hold one value would say nothing the record does not.
+    expect(fields).toBeUndefined();
   });
 
   it('does not warn when a resolver is wired (the correctly configured case)', () => {

@@ -66,16 +66,18 @@ that renders only part of the date (a month/day list) or a longer form (a full m
 Stability tier: Extension API.
 
 ```ts
-declare function formatTimestamp(sqliteDatetime: string | null | undefined, options?: FormatTimestampOptions): string;
+declare function formatTimestamp(input: string | null | undefined, options?: FormatTimestampOptions): string;
 ```
 
-Format a SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no offset) as a
-date and time in `options.timeZone`. Swapping the space for `T` and appending `Z` keeps `Date`
-reading the input as UTC rather than the runtime's own zone. A nullish `sqliteDatetime` reads
-`options.fallback`. `options.timeZone` defaults `'UTC'`, the neutral zone a Cloudflare Worker's
-own runtime already reads in, never a site's own zone; a site that wants its own local time (a
-club's Anchorage, say) passes `timeZone` explicitly. `options.locale` defaults `'en-US'`;
-`options.fallback` defaults `''`.
+Format any Date-parseable timestamp as a date and time in `options.timeZone`: a SQLite
+`datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no offset), read as UTC by swapping
+the space for `T` and appending `Z` before parsing, or a full ISO 8601 string carrying its own `Z`
+suffix or explicit offset, parsed as-is. `options.timeZone` governs only the rendered zone, never
+how the input's own moment is read, so a Worker's SSR and a browser's hydration render the same
+text for the same moment. A nullish `input` reads `options.fallback`. `options.timeZone` defaults
+`'UTC'`, the neutral zone a Cloudflare Worker's own runtime already reads in, never a site's own
+zone; a site that wants its own local time (a club's Anchorage, say) passes `timeZone` explicitly.
+`options.locale` defaults `'en-US'`; `options.fallback` defaults `''`.
 
 `Pagination`'s range line and `ListToolbar`'s count line both pick the grammatical number for
 their own `itemLabel` prop internally (`label.one` at exactly 1, `label.many` otherwise, zero
@@ -251,6 +253,19 @@ same element, so a hand-composed chip should carry no weight utility of its own.
 ```svelte
 <StatusChip label="Overdue" register="warning" legend="Full benefits continue for 30 days." />
 ```
+
+**Badge tier, the raw daisyUI alternative.** `badge-error`, `badge-success`, `badge-soft`,
+`badge-outline`, and `badge-dash` all compile into the packaged admin sheet, tuned and measured on
+both admin themes: `badge-error`/`badge-success`/`badge-soft` each paint their own fill and ink,
+clearing a >= 4.5:1 text contrast floor (WCAG 1.4.3) against that fill; `badge-outline`/`badge-dash`
+paint no fill of their own and inherit their ink and border, clearing the same text floor against
+the row ground and a >= 3:1 non-text floor (WCAG 1.4.11) on the border. `badge-soft`'s own fill
+sits under the `chip-ground-collision` ground-contrast floor by design: it is boundary-less like
+`badge-outline`/`badge-dash`, so its label names the state in text (WCAG 1.4.1 Use of Color)
+rather than the fill being read as distinct from the row. Reach for one directly only
+for a stock daisyUI-flavored surface outside the chip vocabulary; reach for `StatusChip` for
+anything in the register grammar above, since only `StatusChip` carries the ground-tuned band, the
+`size` vocabulary, and the `legend` accessible-name pattern.
 
 ### `Pagination`
 
@@ -618,10 +633,10 @@ page-heading recipes from `docs/internal/admin-design-system.md`.
 Stability tier: Extension API.
 
 ```ts
-let { eyebrow, title, subtitle, action, children }: {
+let { eyebrow, title, meta, action, children }: {
   eyebrow?: string;
   title: string;
-  subtitle?: string;
+  meta?: string;
   action?: Snippet;
   children: Snippet;
 };
@@ -630,25 +645,27 @@ let { eyebrow, title, subtitle, action, children }: {
 The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
 out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
 screen, a Club-style events or members list say, wraps its own `<table>` in this to reuse the
-shared header and card frame instead of rebuilding it. `eyebrow` names a grouping, such as a
-custom nav section's label, and is omitted entirely when there is none to name. `title` is the
-display-face heading. `subtitle` is the muted one-line note under it, a live count or a scope
-note. `action` is an optional header-right control such as a filter or a primary button.
+shared header and card frame instead of rebuilding it. The header band composes the preceding
+`PageHeader`, so `eyebrow`, `title`, `meta`, and `action` carry its identical contract and rhythm.
 `children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
-shell.
+shell that sits directly under `PageHeader`'s own offset.
 
-`OfficeList` moved here from `/components` in CHANGELOG `0.94.0`: `PageHeader`, this
-component's own later generalization above, already lived on the toolkit, and a header-plus-card
-screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay; they cover different
-shapes, a header primitive versus a full list-screen scaffold, never a duplicate. A new build
-reaches for `PageHeader` first; `OfficeList` stays correct where it already ships.
+`OfficeList` moved here from `/components` in CHANGELOG `0.94.0`. `PageHeader`, this component's
+own later generalization documented preceding it, already lived on the toolkit, and a
+header-plus-card screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay. They
+cover different shapes, a header primitive versus a full list-screen scaffold, never a duplicate.
+A new build reaches for `PageHeader` first. `OfficeList` stays correct where it already ships.
+
+`OfficeList`'s own header markup now renders through `PageHeader`. The `subtitle` prop renamed to
+`meta` with no forwarding alias, and the merged header band adopted `PageHeader`'s rhythm as the
+toolkit's one office-header rhythm.
 
 ```svelte
 <script lang="ts">
   import { OfficeList } from '@glw907/cairn-cms/admin-toolkit';
 </script>
 
-<OfficeList eyebrow="Club" title="Events" subtitle="12 upcoming">
+<OfficeList eyebrow="Club" title="Events" meta="12 upcoming">
   {#snippet action()}
     <button type="button" class="btn btn-primary btn-sm">New event</button>
   {/snippet}

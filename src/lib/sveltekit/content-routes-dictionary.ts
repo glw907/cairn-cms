@@ -15,7 +15,8 @@ import type { CairnEvent } from './types.js';
 /**
  * The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
  *  add landed. The client reconciles its pending-additions set against this (a word now in the list
- *  is committed and dropped from pending).
+ *  is committed and dropped from pending). Retired from the public surface (4b, Task 1); the
+ *  module-level export stays, since `content-routes-dictionary.test.ts` imports it directly.
  */
 export interface DictionaryAddResult {
   words: string[];
@@ -122,10 +123,11 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     }
 
     const backend = ctx.resolveBackend(event);
-    const commitFields = { concept: 'dictionary', id: additions[0]!, editor: editor.email };
     try {
       const words = await mergeAndCommitDictionary(backend, additions, editor);
-      log.info('dictionary.added', { editor: editor.email, words: additions });
+      // The count, never the words: log-events.md states the dictionary records carry no document
+      // content, and an added word is the author's own text.
+      log.info('dictionary.added', { editor: editor.email, wordCount: additions.length });
       return { words };
     } catch (err) {
       if (!isConflict(err)) throw err;
@@ -134,13 +136,13 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
       // window is preserved and the two adds converge on the same sorted set.
       try {
         const words = await mergeAndCommitDictionary(backend, additions, editor);
-        log.info('dictionary.added', { editor: editor.email, words: additions, retried: true });
+        log.info('dictionary.added', { editor: editor.email, wordCount: additions.length, retried: true });
         return { words };
       } catch (retryErr) {
         if (!isConflict(retryErr)) throw retryErr;
         // A second conflict: give up rather than loop. The client keeps the words in its pending set
         // for the session and re-attempts on the next save, so the word is never silently dropped.
-        log.warn('dictionary.add_conflict', { editor: editor.email, words: additions });
+        log.warn('dictionary.add_conflict', { editor: editor.email, wordCount: additions.length });
         return fail(409, { error: 'The dictionary changed while saving. It will retry on the next save.' } satisfies DictionaryAddFailure);
       }
     }

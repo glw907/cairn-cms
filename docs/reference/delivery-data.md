@@ -562,7 +562,7 @@ the deliberate exception below), so their nested types (`AccessMap`, `RolesDecla
 `FileChange`, `CairnEnv`, `EmailSender`, `MagicLinkMessage`, `EmailAttachment`,
 `EmailRecipient`) aren't part of this closure and aren't importable from `/delivery/data`.
 
-**Import an adapter-only member from its own home.** Eighteen names this subpath once re-exported
+**Import an adapter-only member from its own home.** Seventeen names this subpath once re-exported
 now import from the barrel that declares them, because nothing this subpath publishes names them.
 
 - From [the root barrel](./core.md): `AssetConfig`, `SenderConfig`, `NavMenuConfig`,
@@ -571,7 +571,7 @@ now import from the barrel that declares them, because nothing this subpath publ
 - From [`/sveltekit`](./sveltekit.md): `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
   `NavLayoutSection`.
 - From [`/islands`](./islands.md): `IslandRegistry`.
-- From [`/media`](./media.md): `MediaRef`, `VariantSpec`.
+- From [`/media`](./media.md): `MediaRef`.
 
 `MediaRef`, `MediaResolve`, and `SiteRender` are also importable from
 [`/delivery`](./delivery.md), whose `PublicRoutesConfig` names all three.
@@ -619,5 +619,3 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. |
 | `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config. See [`TidyConfig`](./core.md#types). |
 | `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes. |
-| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config. |
-| `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link. |

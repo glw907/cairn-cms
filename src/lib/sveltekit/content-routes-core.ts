@@ -48,7 +48,7 @@ import type { ContentRoutesContext, AttentionItem } from './content-routes-conte
 import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './types.js';
 import { requireDb, requireOrigin } from '../env.js';
 import { deletePreviewTokens } from '../auth/preview-store.js';
-import { mintPreviewToken } from './preview.js';
+import { previewMint, type PreviewMintOutcome } from './preview.js';
 import { CairnError } from '../diagnostics/index.js';
 
 /**
@@ -544,7 +544,7 @@ function isMissingTableError(err: unknown): boolean {
  *  still swallowed, since the primary action has already committed (or, for discard, proceeds
  *  regardless) by the time this runs and failing it outright would be worse, but it logs
  *  `preview.cleanup_failed` so a stale row, the exact id-reuse collision this cleanup exists to
- *  close, is not silently invisible to an operator. The logged `reason` is the error's stringified
+ *  close, is not silently invisible to an operator. The logged `error` is the failure's stringified
  *  message; a store-level delete keyed by concept and id carries no token, so this cannot leak
  *  one. Publish deliberately never calls this: the ended page needs the row to outlive the branch,
  *  a stated coupling, not an oversight.
@@ -556,7 +556,7 @@ async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor,
   } catch (err) {
     if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;
     if (isMissingTableError(err)) return;
-    log.warn('preview.cleanup_failed', { concept: concept.id, id, reason: String(err) });
+    log.warn('preview.cleanup_failed', { concept: concept.id, id, error: String(err) });
   }
 }
 
@@ -1209,7 +1209,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (headSha === null) return null;
     const branchCommits = await backend.listCommits(path, branch, 1);
     const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
-    return head ? { editor: commitEditorName(head.author), startedAt: head.date } : null;
+    return head ? { editor: commitEditorName(head.author), lastSavedAt: head.date } : null;
   }
 
   /**
@@ -1559,7 +1559,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       log.info('entry.published', { ...commitFields, batch: false });
       // Only after the publish lands: a diagnostic that a live address now has a new owner.
       if (collision) {
-        log.warn('publish.address_collision', {
+        log.warn('publish.address_collided', {
           editor: editor.email,
           address,
           displacedConcept: collision.concept,
@@ -2050,12 +2050,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /**
    * Mint a public preview link for an entry's pending draft (spec part 3, "Public preview for a
-   *  non-editor"). Minting converts one editor's read on a concept into an unauthenticated public
-   *  read for anyone holding the URL, so it carries the full entry-scoped authorization every
-   *  other single-entry action carries: `requireEntryFromParams` is the FIRST statement, exactly
-   *  as `saveAction` and `publishAction` do. Without that call a signed-in `none`-capability
-   *  session, or one an access map denies, could mint a working preview of any draft, a clean
-   *  read bypass of the engine's own content authorization.
+   *  non-editor"). This action is the route half of `previewMint` (preview.ts): it names the
+   *  target from the route's own params and dresses each outcome in the refusal this screen
+   *  speaks, while the entry-scoped authorization, the draft check, the token hygiene, and the
+   *  `preview.token.minted` log all live in `previewMint` itself, so the engine's own route and a
+   *  site's custom mint run the identical sequence and log the identical event.
    *
    *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
    *  affordance can show and copy it in place. Refuses on the page when the entry carries no
@@ -2063,41 +2062,47 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  table, naming the migration to apply rather than surfacing a raw D1 error.
    */
   async function previewMintAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> {
-    const { editor, concept, id } = requireEntryFromParams(runtime, event);
-    const backend = ctx.resolveBackend(event);
-
-    // A preview shares a draft; without one there is nothing to share.
-    if ((await backend.branchHead(pendingBranch(concept.id, id))) === null) {
-      return fail(400, {
-        error: 'This entry has no unpublished draft to share. Save an edit first.',
-      } satisfies PreviewMintFailure);
-    }
-
     const env = event.platform?.env ?? {};
-    const origin = requireOrigin(env);
-    const db = requireDb(env);
+    const conceptId = event.params.concept ?? '';
+    const id = event.params.id ?? '';
 
-    let token: string;
-    let expiresAt: number;
+    // previewMint runs its own authorization sequence first (requireEditor, then
+    // requireEngineAccess against the target concept), so a refused editor's outcome reaches them
+    // before requireOrigin's site-misconfiguration throw ever runs. requireOrigin only guards the
+    // URL this action addresses on success, so it waits until a mint actually succeeds. The trade:
+    // a site with no PUBLIC_ORIGIN configured still lets previewMint write the preview-token row
+    // before requireOrigin throws, so that row sits unreachable (no URL was ever returned to share
+    // it) until its own TTL expires it, rather than the misconfiguration being caught up front.
+    let result: PreviewMintOutcome;
     try {
-      ({ token, expiresAt } = await mintPreviewToken(db, ctx.deps.preview ?? {}, {
-        concept: concept.id,
-        entryId: id,
-        editor: editor.email,
-      }));
+      result = await previewMint(runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
     } catch (err) {
       if (isMissingTableError(err)) return missingPreviewTableFailure();
       throw err;
     }
 
+    switch (result.outcome) {
+      // The target came from the route's params, so a bad target is a bad address: both answer
+      // exactly what `requireEntryFromParams` answers for the same fault on every other action.
+      case 'unknown-concept':
+        throw error(404, `Unknown content type: ${conceptId}`);
+      case 'invalid-id':
+        throw error(400, 'Invalid entry id');
+      case 'no-draft':
+        return fail(400, {
+          error: 'This entry has no unpublished draft to share. Save an edit first.',
+        } satisfies PreviewMintFailure);
+    }
+
+    const origin = requireOrigin(env);
+
     // The response body carries the bearer credential (the token, inside the URL); never let a
     // shared cache or intermediary retain it.
     event.setHeaders({ 'cache-control': 'no-store' });
-    log.info('preview.token.minted', { concept: concept.id, id, editor: editor.email, expiresAt });
     // Built from the configured origin, never event.url.origin (host-header-controlled on
     // Cloudflare): the token is never interpolated into anything but this return value, so it can
     // never reach an error message.
-    return { url: `${origin}/preview/${token}`, expiresAt };
+    return { url: `${origin}/preview/${result.token}`, expiresAt: result.expiresAt };
   }
 
   /**
@@ -2136,7 +2141,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     return fail(409, {
       reason: 'draft_exists',
       draftEditor: draft?.editor ?? 'unknown',
-      draftStartedAt: draft?.startedAt ?? '',
+      draftLastSavedAt: draft?.lastSavedAt ?? '',
     } satisfies RevertFailure);
   }
 

@@ -695,6 +695,15 @@ The original decision framing, for the record:
   five-viewport bar as its own task, while the admin suite's own route coverage went unexamined, and
   nobody asked which admin screens the corpus actually contains.
 
+  **A second, independent instance of the same corpus gap (`extender`, 2026-08-27, promoted from
+  the friction log at the 4b close).** The admin visual specs passed unchanged through the
+  StatusChip regrammar (dot removed, register renamed, grounds retuned) because no captured
+  screen renders a chip within the 120px diff budget (`playwright.config`'s
+  `maxDiffPixels: 120`). That pass's visual verification had to be a hand-built probe read by the
+  conductor. Candidate fix, riding the same regeneration-and-human-read work the corpus gap above
+  already owes: a chip-bearing admin screen (a list with status rows, or a dedicated probe route)
+  joins `admin-visual.spec.ts` in both themes.
+
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the
   client stub and the Worker never started) shipped past every gate this repo runs, and the two
@@ -949,7 +958,10 @@ the named human gates only):**
   `tabindex="0"`, no role, and no accessible name, and forces `white-space: nowrap` on every cell, so
   horizontal overflow at narrow widths is guaranteed and a keyboard-only user cannot scroll to reach
   it (axe-core `scrollable-region-focusable`). Nesting it inside `OfficeList`'s own `overflow-x-auto`
-  stacks two such regions. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
+  stacks two such regions. Refinement (2026-08-29, toolkit-seams fix round; promoted from the
+  friction log at the 4b close): Chrome 127+ and Firefox make an overflowing container natively
+  focusable, so the gap is partially mitigated on those engines already; it still reaches Safari
+  and older Chromium. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
   color from the chip's ancestor and can drop under the 3:1 border-contrast floor inside a muted-text
   ancestor, telling the reader to verify each new call site; the documented example ships a new call
   site (a chip inside a table cell) with no measurement recorded.
@@ -1196,9 +1208,11 @@ the named human gates only):**
   root's descendants only, so the layer's own root element is never in the list its own index is
   read against). `form-font-parity` (already advisory, `docs/reference/cairn-audit.md`) walks
   only the first `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` wrapper on the
-  page, so a page mounting more than one is only partly checked, and its explicit-face exemption
-  net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
-  and Tailwind 4's `font-(family-name:--x)` shorthand.
+  page, so a page mounting more than one is only partly checked. Its explicit-face exemption net's
+  three named gaps, variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
+  and Tailwind 4's `font-(family-name:--x)` shorthand, closed in the conformance pass, 2026-09-01;
+  the rule stays advisory, and the multi-wrapper walk limitation above is the one gap this line still
+  files.
 
 - **Three design-system gaps found in the same triage.** `Pagination`'s selected page
   (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps
@@ -1229,14 +1243,25 @@ the named human gates only):**
   the named blocker on `border-contrast` promotion). (ConceptList's sort targets, ListToolbar's
   320/390 overflow, the CMS pill's raw border, and StatusChip's own contrast floor are all fixed;
   see the error-tier entry and the CHANGELOG's `## Unreleased` window.) Rule and harness repairs:
-  `chip-ground-collision`'s contrast has no chroma term, so hue-distinct chips flag (24 false
-  errors on ASC; **resolved 2026-07-29: demoted to advisory**; the chroma-aware repair (a distance
-  formula that can see hue, plus a recalibrated floor) stays filed here, unbuilt). Until it
-  re-promotes, the quiet chip register is unguarded against its own fifth ground: quiet's
-  14%-tint mix over `--color-base-300` (e.g. daisyUI's `.table-zebra` row-hover) measures
-  ~1.34/1.41, under the 1.5 floor the register otherwise clears everywhere else, documented rather
-  than retuned in `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md`
-  (design infrastructure Pass 3, 2026-07-29 review triage);
+  `chip-ground-collision`'s hue/chroma term rescues the hue-distinct false-positive class; the rule
+  stays advisory, and promotion is a separate, later act on its own re-measured evidence.
+  **The floor-recalibration half stays filed**, scoped to two remaining gaps: the near-neutral
+  dark-theme class the chroma term cannot see (cairn's own dark tokens measure chroma distance
+  0.89 to 2.66 at ratios 1.190 to 1.432, all under both the 1.5 luminance floor and the chroma
+  floor, so this class still flags), and a CVD-safe minimum distance term (a red/green,
+  deuteranope- or protanope-safe distance check), since the current chroma term models trichromat
+  perception only and can call a pair hue-distinct that still collides for that viewer. Both need
+  measured pixel data (a real consumer admin audit run for the first, a CVD simulation or
+  measured-panel pass for the second) that no pass has carried into this repo yet; a later pass
+  with fresh consumer-admin measurement access (a follow-on audit-calibration or polish slice) is
+  this line's candidate home, not a gate-stage guess. The quiet chip register stays unguarded
+  against its own fifth ground even after the hue repair, since its own tint carries no hue
+  distinct from its base-content/base-200/base-300
+  neighbors, all the same warm-stone hue: quiet's 14%-tint mix over `--color-base-300` (e.g.
+  daisyUI's `.table-zebra` row-hover) measures ~1.34/1.41, under the 1.5 floor the register
+  otherwise clears everywhere else, documented rather than retuned in
+  `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md` (design
+  infrastructure Pass 3, 2026-07-29 review triage);
   `norms-bands` measures inside closed `dialog.modal` boxes (scale .95 artifact) and trips on UA
   button-vs-anchor default padding; the norms manifest generator passes `size='xs'` to StatusChip
   so the bands never saw the component's `sm` default; rendered mode's missing post-hydration
@@ -1410,8 +1435,9 @@ the named human gates only):**
   dogfoods it: every top-level built-in admin screen now renders its header through `PageHeader`
   (closing the 2026-07-15 audit's finding 11, "page-header idiom five ways"), and `ConceptList`
   and `CairnMediaLibrary` additionally converge their search, filter, count, table, and pager
-  markup onto `ListToolbar`/`AdminTable`/`Pagination`/`StatusChip`. `OfficeList` keeps its own
-  contract unchanged this wave (see the entry below). Whether the toolkit belongs on the `1.0`
+  markup onto `ListToolbar`/`AdminTable`/`Pagination`/`StatusChip`. `OfficeList` kept its own
+  contract unchanged in this wave (it later converged onto `PageHeader`'s rhythm in the 4b
+  conformance pass, 2026-09-01). Whether the toolkit belongs on the `1.0`
   readiness checklist as a versioned seam (the extending-developer story is stronger with it) is
   still an open call. The next wave holds:
   - **ASC's own import swap.** aksailingclub-org's admin still imports its first-party
@@ -1424,14 +1450,6 @@ the named human gates only):**
     an identity label and a single-use on/off pill (`CairnTidySettings`'s tidy-convention toggle)
     both stayed bespoke this wave, correctly: neither has a second consumer yet. Mint a shared
     toggle device once a third one demonstrates the repetition, not before.
-- **OfficeList's PageHeader convergence, filed at the T7 adoption sweep (2026-07-20).**
-  `OfficeList`'s own header is the exact shape `PageHeader` generalized from, but its rhythm
-  differs (`mb-6` versus `PageHeader`'s `mb-10`); re-expressing OfficeList's internals on
-  PageHeader would visibly change the vertical rhythm of every custom `/admin/` screen a site
-  already built on it, so it is not behavior-preserving (ruling 8 of the pass's adoption map).
-  OfficeList stays hand-rolled with its exported contract unchanged this wave. Whether to
-  converge its spacing onto PageHeader (a breaking visual change for an existing consumer) is
-  a question for a later major.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code
@@ -1905,6 +1923,39 @@ the named human gates only):**
   deferral's condition, a future refinement if editors hit it, has no detector: `history_stale` is
   not in the log event vocabulary (see `docs/reference/log-events.md`), so the trigger can only
   ever arrive as a verbal report today.
+
+- **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin (filed
+  2026-08-27, toolkit-seams fix round; promoted from the friction log at the 4b close).** The
+  toolkit-seams pass migrated the warning bracket form (`text-[var(--cairn-warning-ink)]`, 27
+  sites) to the new `cairn-text-warning` utility and the two positive-ink bracket sites
+  (`text-[var(--color-positive-ink)]`) to `cairn-text-success`, but left the error ink on the
+  bracket form: 33 in-tree sites still write `text-[var(--cairn-error-ink)]` directly
+  (`CairnMediaLibrary.svelte`, `VocabularyAdmin.svelte`, and others). Decision owed: add a
+  matching `cairn-text-error` utility, or explicitly bless the bracket form for error ink in
+  `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens pass, or the next component
+  that needs error-ink styling and has to choose which form to copy.
+
+- **`MediaPicker`'s empty-state `<li>` violates the owned-elements rule (filed 2026-08-29,
+  toolkit-seams fix round; promoted from the friction log at the 4b close).**
+  `MediaPicker.svelte:220` renders an empty-state `<li>` inside a `role="listbox"`, with neither
+  `role="option"` nor `role="presentation"` on it, so the listbox owns a child ARIA doesn't
+  recognize as a valid listbox child. Small, standalone fix; no other pass currently claims it.
+  Trigger: the next pass touching `MediaPicker.svelte`, or a consumer's own a11y audit.
+
+- **`isUniqueViolation` in `/cloudflare` is deferred, not dropped (toolkit-seams pass, former
+  Task 7, 2026-08-26; promoted from the friction log at the 4b close, since the plan's own
+  intent to record the defer in `docs/internal/engine-rulings.md` was not actually carried out
+  at pass close).** Four divergent site copies of a D1 unique-violation matcher motivated the
+  proposal, but the membership case did not clear the gate at review: the Cloudflare-specific
+  content is the workerd cause-chain nesting alone, four divergent copies in ONE consumer is the
+  `site-today-export` decline's own shape, and the engine itself never handles `UNIQUE
+  constraint failed` today, so shipping it would have been a fifth engine-unused export (C13).
+  The shape is right if it reopens: a type predicate, `is`-prefixed, structure not vocabulary.
+  **Reopens on:** a second unrelated consumer hitting the cause-chain nesting, or the cheaper
+  decisive check: an engine-side D1 path that can raise a UNIQUE violation and mishandles it
+  today (candidates: the `AUTH_DB` editor/invite inserts, `createD1AuditSink`); if one
+  qualifies, the engine becomes its own first consumer and the item clears both the gate and
+  C13 in one move.
 
 ## Later
 

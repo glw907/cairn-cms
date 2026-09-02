@@ -68,6 +68,35 @@ export function sameColor(a: Rgba, b: Rgba): boolean {
 }
 
 /**
+ * How far two colors sit from each other in hue and saturation alone, with luminance projected
+ * out. `contrastRatio` answers a different, WCAG-defined question (how far apart two colors' relative
+ * luminance sits) and is blind to this axis by construction: a bright purple and a bright orange at
+ * the same luminance measure 1:1 on it. This is the axis `chip-ground-collision` was missing (design
+ * infrastructure Pass 3, corpus C): a chip and its ground can read as plainly distinct to a sighted
+ * user on hue alone even where their luminance sits close enough to fail the contrast floor.
+ *
+ * Implemented as Euclidean distance in the Cb/Cr plane of YCbCr (ITU-R BT.601), over the same sRGB
+ * bytes every other measurement in this module reads. Two colors that differ only in
+ * lightness (any two grays, or the same hue at two shades) land at the same Cb/Cr point, so this
+ * distance is exactly zero for the achromatic pairs `contrastRatio` already measures correctly on its
+ * own, and grows only where the colors actually diverge in hue or saturation.
+ *
+ * Ignores `a` entirely: like `contrastRatio`, this takes colors a caller has already composited
+ * onto an opaque backdrop (`resolveGround`'s return is always opaque by construction), so there is
+ * no remaining alpha to account for by the time either function sees the pair.
+ *
+ * Models a trichromat's color perception only. A distance measured here can still read as a
+ * collision to a color-vision-deficient viewer: a red/green (protanope or deuteranope) pair that
+ * this measurement scores as hue-distinct can project to nearly the same perceived color for that
+ * viewer, the false-negative class this function cannot see and does not correct for.
+ */
+export function chromaDistance(a: Rgba, b: Rgba): number {
+  const cb = (c: Rgba) => -0.168736 * c.r - 0.331264 * c.g + 0.5 * c.b;
+  const cr = (c: Rgba) => 0.5 * c.r - 0.418688 * c.g - 0.081312 * c.b;
+  return Math.hypot(cb(a) - cb(b), cr(a) - cr(b));
+}
+
+/**
  * One painted layer as a rule's in-page walk reports it: the element's own background, the
  * `opacity` that scales it, and whether an image (a gradient, a sprite) also paints there.
  */

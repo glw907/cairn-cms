@@ -8,7 +8,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/sveltekit/content-routes.js';
+// `DictionaryAddResult` retired from the public barrel (4b, Task 1); still exported at its
+// declaring module, which this test imports directly.
+import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/sveltekit/content-routes-dictionary.js';
 import { parseDictionary, serializeDictionary } from '../../lib/content/site-dictionary.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
@@ -137,6 +139,20 @@ describe('dictionaryAdd read-modify-write', () => {
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
   });
+
+  it('logs the count of added words, never the words themselves', async () => {
+    const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha']) } });
+    gh.install();
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const routes = createContentRoutes(runtime());
+    await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }) as never);
+    const added = infoSpy.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((r) => r.event === 'dictionary.added');
+    expect(added).toHaveLength(1);
+    expect(added[0].wordCount).toBe(2);
+    expect(JSON.stringify(added[0])).not.toContain('gamma');
+  });
 });
 
 describe('dictionaryAdd SHA-guarded retry', () => {
@@ -196,6 +212,44 @@ describe('dictionaryAdd SHA-guarded retry', () => {
     // The retry's re-merge keeps the concurrent "newword" and adds "beta": order-independent convergence.
     expect(result.words).toEqual(['alpha', 'beta', 'newword']);
     expect(parseDictionary(file)).toEqual(['alpha', 'beta', 'newword']);
+  });
+});
+
+describe('dictionaryAdd second-conflict give-up', () => {
+  it('logs dictionary.add_conflict with the count of pending words, never the words themselves', async () => {
+    // Every ref PATCH fails non-fast-forward, so both the initial attempt and the retry exhaust
+    // commitFiles' own retries and throw CommitConflictError: the action gives up and the client
+    // keeps the words pending.
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+      const path = new URL(url).pathname;
+      if (method === 'GET' && path.includes('/contents/')) {
+        return new Response(serializeDictionary(['alpha']), { status: 200 });
+      }
+      if (method === 'GET' && path.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
+      if (method === 'GET' && path.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
+      if (method === 'POST' && path.endsWith('/git/trees')) return json({ sha: 'newtree' });
+      if (method === 'POST' && path.endsWith('/git/commits')) return json({ sha: 'commit1' });
+      if (method === 'PATCH' && path.includes('/git/refs/')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const routes = createContentRoutes(runtime());
+    const result = await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }) as never);
+    expect(result).toMatchObject({ status: 409 });
+    const conflicts = warnSpy.mock.calls
+      .map((c) => c[0] as Record<string, unknown>)
+      .filter((r) => r.event === 'dictionary.add_conflict');
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].wordCount).toBe(2);
+    expect(JSON.stringify(conflicts[0])).not.toContain('gamma');
   });
 });
 

@@ -21,6 +21,15 @@ const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'Advisory
 // inboundKind/id fields, the same F-1-class leak the six names above already establish.
 const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteRefusal', 'RenameFailure', 'CreateFailure', 'PreviewMintFailure'];
 
+// Six of this list's own names, retired from the /sveltekit barrel by the 4b conformance pass,
+// Task 1 (the Tier 1 media-janitorial retires): each stays a module-level export at its
+// declaring module, `content-routes-media.ts`, either for an in-process consumer
+// (CairnMediaLibrary.svelte, media-upload-outcome.ts) or because its action's return type
+// composes into `createContentRoutesInternal` (content-routes.ts), whose `.d.ts` emit must be
+// able to name it. ContentFormFailure, at the same original position in KEPT, is NOT one of
+// these: it is the flattened carrier that survives, not a retire.
+const RETIRED_TIER1 = ['MediaDeleteRefusal', 'MediaUpdateFailure', 'MediaReplaceFailure', 'MediaAltPropagateFailure', 'MediaBulkFailure', 'UploadResult'];
+
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
 // four demotions above and the six retired leaks above.
@@ -40,13 +49,7 @@ const KEPT = [
   'HelpData',
   'MediaLibraryData',
   'ContentRoutesConfig',
-  'MediaDeleteRefusal',
-  'MediaUpdateFailure',
-  'MediaReplaceFailure',
-  'MediaAltPropagateFailure',
-  'MediaBulkFailure',
   'ContentFormFailure',
-  'UploadResult',
   'createNavRoutes',
   'NavLoadData',
   'NavIcon',
@@ -88,6 +91,12 @@ describe('sveltekit barrel prune', () => {
   it('no longer resolves the retired core-arm names from the /sveltekit subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = RETIRED_CORE_ARMS.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
+  it('no longer resolves the Tier 1 conformance-pass retired names from the /sveltekit subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = RETIRED_TIER1.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
   });
 

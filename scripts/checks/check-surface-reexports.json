@@ -48,19 +48,7 @@
       "name": "PublishActionEntry",
       "subpath": ".",
       "home": "/sveltekit",
-      "reason": "R4 closure: `PublishActionsConfig` names it on this subpath."
-    },
-    {
-      "name": "PublishActionsConfig",
-      "subpath": ".",
-      "home": "/sveltekit",
-      "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it on this subpath. Reshape audit-adapter-publishactionsconfig is open, so its home is provisional."
-    },
-    {
-      "name": "VariantSpec",
-      "subpath": ".",
-      "home": "/media",
-      "reason": "R4 closure: `AssetConfig`, `CairnRuntime` name it on this subpath."
+      "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it directly as `PublishActionEntry[]` on this subpath."
     },
     {
       "name": "RateLimitLike",
@@ -243,18 +231,6 @@
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
-      "name": "PublishActionEntry",
-      "subpath": "/delivery/data",
-      "home": "/sveltekit",
-      "reason": "No R4 closure justifies it here either: it rides the held `PublishActionsConfig` below, which is itself held rather than closure-justified. Both leave this subpath when that reshape lands."
-    },
-    {
-      "name": "PublishActionsConfig",
-      "subpath": "/delivery/data",
-      "home": "/sveltekit",
-      "reason": "NOT closure-justified: nothing this subpath publishes names it, so R4 does not require it here. The one entry in this record that survives on the move rule instead, which holds a reshape in place: audit-adapter-publishactionsconfig is open, and moving it now would touch it twice. Its removal belongs to that reshape."
-    },
-    {
       "name": "ReferenceEdge",
       "subpath": "/delivery/data",
       "home": ".",
@@ -348,7 +324,7 @@
       "name": "ComponentContext",
       "subpath": "/render",
       "home": ".",
-      "reason": "R4 closure: `strAttr` names it on this subpath."
+      "reason": "R4 closure: a site's `build(ctx)` on this subpath types its own parameter with it."
     },
     {
       "name": "AccessMap",
@@ -367,12 +343,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `CairnRuntime` names it on this subpath."
-    },
-    {
-      "name": "AuthBranding",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `AuthRoutesConfig` names it on this subpath. Reshape audit-adapter-authbranding is open, so its home is provisional."
     },
     {
       "name": "Backend",
@@ -555,12 +525,6 @@
       "reason": "R4 closure: `SendMagicLink`, `EmailSender` name it on this subpath."
     },
     {
-      "name": "MediaEntry",
-      "subpath": "/sveltekit",
-      "home": "/media",
-      "reason": "R4 closure: `UploadResult` names it on this subpath. Reshape audit-sveltekit-mediaentry is open, so its home is provisional."
-    },
-    {
       "name": "MediaLibraryEntry",
       "subpath": "/sveltekit",
       "home": "/admin-toolkit",
@@ -721,12 +685,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor`, `Fieldset` name it on this subpath."
-    },
-    {
-      "name": "VariantSpec",
-      "subpath": "/sveltekit",
-      "home": "/media",
-      "reason": "R4 closure: `CairnRuntime`, `AssetConfig` name it on this subpath."
     },
     {
       "name": "VocabularyEntry",

@@ -13,7 +13,7 @@ export {
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
-export { mintPreviewToken, previewLoad, type PreviewTokenConfig, type PreviewData } from './preview.js';
+export { previewMint, previewLoad, type PreviewMintOutcome, type PreviewTokenConfig, type PreviewData } from './preview.js';
 export { createMediaRoute } from './media-route.js';
 export type {
   AdminShellData,
@@ -26,39 +26,15 @@ export type {
   MediaLibraryData,
   ContentRoutesConfig,
   AttentionItem,
-  MediaDeleteRefusal,
-  MediaUpdateFailure,
-  MediaReplaceFailure,
-  MediaAltPropagateFailure,
-  MediaBulkFailure,
   ContentFormFailure,
-  UploadResult,
-  MediaUploadFailure,
-  SettingsSaveFailure,
-  VocabularySaveFailure,
   // The export-rule sweep (C2 breaking-window pass, R4 ruling): every type a route factory's
   // return type names, down to its own nested shapes, becomes importable from this subpath.
   TidyClient,
-  TidyResult,
-  DictionaryAddResult,
-  MediaBulkDeleteResult,
-  MediaOrphanPurgeResult,
-  MediaReplacePreviewEntry,
-  MediaReplacePreviewPlan,
-  MediaAltPreviewPlan,
-  MediaAltPreviewEntry,
+  TidyEffort,
   MediaLibraryEntry,
-  UsageEntry,
-  MediaOrphanScanResult,
-  OrphanByteRow,
-  BrokenRefRow,
-  RepointPlacement,
-  AltPlacement,
-  BranchRef,
-  BulkDeleteSkip,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes } from './nav-routes.js';
-export type { NavLoadData, NavSaveFailure } from './nav-routes.js';
+export type { NavLoadData } from './nav-routes.js';
 export type {
   NavIcon,
   ResolvedNavEntry,
@@ -73,7 +49,7 @@ export type {
   ResolvedLayoutNode,
   ResolvedNavLayout,
 } from './admin-nav.js';
-export type { PublishActionEntry, PublishActionsConfig } from './publish-actions.js';
+export type { PublishActionEntry } from './publish-actions.js';
 export {
   adminAction,
   UnauditedActionError,
@@ -108,8 +84,10 @@ export type {
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';
-// Canonical home `.` for all four. `AuthBranding` carries an open reshape verdict
-// (`audit-adapter-authbranding`), so it stays put until that reshape settles its home.
+// `AuthBranding`'s canonical home is this subpath (settled: `audit-adapter-authbranding`
+// executed, conformance pass Task 2), since `AuthRoutesConfig.branding` is the one public
+// signature naming it and the root barrel no longer re-exports it. `MagicLinkMessage`,
+// `SendMagicLink`, and `EmailSender` keep canonical home `.`.
 export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
 // The binding-shaped types a site's app.d.ts intersects into its own Platform.env; /sveltekit is
 // their canonical home (decision: surface-pruning Task 6).
@@ -120,10 +98,10 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // still name the value it holds. `CairnRuntime`'s own structural body in turn names most of the
 // rest below it, the same recursive closure `/delivery` and root carry.
 //
-// Canonical home for everything below this line is the root barrel `.`, except `MediaRef`,
-// `VariantSpec`, and `MediaEntry` (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above).
-// Each is a recorded R4 re-export, not a second home (canonical-home rule, foundations A); the
-// full set with its per-name reason is `scripts/checks/check-surface-reexports.json`, and
+// Canonical home for everything below this line is the root barrel `.`, except `MediaRef`
+// (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded
+// R4 re-export, not a second home (canonical-home rule, foundations A); the full set with its
+// per-name reason is `scripts/checks/check-surface-reexports.json`, and
 // `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
 // Foundations B narrowed `ContentRoutes` and re-derived this closure without shrinking the list:
 // the narrowing was necessary for the media-janitorial retires, not sufficient, since
@@ -169,16 +147,12 @@ export type { CairnRef } from '../content/links.js';
 export type { MediaRef } from '../media/reference.js';
 export type { Capability, RolesDeclaration, RoleDeclaration } from '../auth/roles.js';
 export type { Editor } from '../auth/types.js';
-// Canonical home `/media`; the reshape verdict on `audit-sveltekit-mediaentry` is still open, so
-// this re-export stays where the audit found it until that reshape settles the shape.
-export type { MediaEntry } from '../media/manifest.js';
 export type { InboundLink } from '../content/manifest.js';
 export type { NavNode, VocabularyEntry, TidyConventions, TidyConfig } from '../nav/site-config.js';
 export type { RepoFile, CommitAuthor } from '../github/types.js';
 export type { FileChange } from '../github/repo.js';
 export type { ComponentRegistry, ComponentDef, ComponentContext, SlotDef } from '../render/registry.js';
 export type { IconSet } from '../render/glyph.js';
-export type { VariantSpec } from '../media/transform-url.js';
 export type { FragmentResolve } from '../render/resolve-include.js';
 export type { LinkResolve } from '../content/links.js';
 export type { MediaResolve } from '../render/resolve-media.js';

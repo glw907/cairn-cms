@@ -264,7 +264,7 @@ describe('confirm and logout logging', () => {
     vi.restoreAllMocks();
   });
 
-  it('logs auth.session.destroyed on logout when a session cookie is present', async () => {
+  it('logs auth.session.destroyed with the deleted row own email when logout destroys a session', async () => {
     // Establish a session through confirm, keeping the cookie jar that holds its id.
     const token = await liveToken('ed@x.dev');
     const cookies = makeCookies(pendingSeed());
@@ -272,8 +272,23 @@ describe('confirm and logout logging', () => {
     const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     await expectRedirect(() => routes.logoutAction(logoutEvent));
+    const destroyed = infoSpy.mock.calls
+      .map((c) => c[0] as { event?: string; email?: string })
+      .filter((r) => r.event === 'auth.session.destroyed');
+    expect(destroyed).toHaveLength(1);
+    expect(destroyed[0].email).toBe('ed@x.dev');
+    vi.restoreAllMocks();
+  });
+
+  it('logs nothing when the presented session id names no row, so the record means a real deletion', async () => {
+    // A stale cookie surviving its own row expiry: the delete matches nothing, so there is no
+    // destruction to record.
+    const cookies = makeCookies({ [sessionCookieName(true)]: 'sid-already-gone' });
+    const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await expectRedirect(() => routes.logoutAction(logoutEvent));
     const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
-    expect(events).toContain('auth.session.destroyed');
+    expect(events).not.toContain('auth.session.destroyed');
     vi.restoreAllMocks();
   });
 

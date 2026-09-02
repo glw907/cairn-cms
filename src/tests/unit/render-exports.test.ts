@@ -29,9 +29,13 @@ describe('engine entry render surface', () => {
   });
 
   it('exposes the authoring toolkit from /render', () => {
-    for (const fn of [authoring.iconSpan, authoring.cardShell, authoring.headRow, authoring.strAttr]) {
+    for (const fn of [authoring.iconSpan, authoring.cardShell, authoring.headRow]) {
       expect(typeof fn).toBe('function');
     }
+  });
+
+  it('omits strAttr from /render; the reader moved onto ComponentContext.attr', () => {
+    expect('strAttr' in authoring).toBe(false);
   });
 
   it('omits rehypeDispatch from /render but keeps it reachable from its module', async () => {

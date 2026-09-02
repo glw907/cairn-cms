@@ -98,7 +98,7 @@ export function createContentIndex<F = Record<string, unknown>>(
     const unmarked = descriptor.fields.find(
       (f) => f.type === 'multiselect' && TAG_FIELD_NAMES.includes(f.name),
     );
-    if (unmarked) log.warn('taxonomy.unmarked_field', { concept: descriptor.id, field: unmarked.name });
+    if (unmarked) log.warn('taxonomy.field_unmarked', { concept: descriptor.id, field: unmarked.name });
   }
   for (const file of files) {
     const { frontmatter: raw, body } = parseMarkdown(file.raw);

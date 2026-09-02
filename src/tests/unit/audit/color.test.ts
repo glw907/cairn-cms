@@ -7,6 +7,7 @@
 // past on its way to a white that was never there.
 import { describe, expect, it } from 'vitest';
 import {
+  chromaDistance,
   composite,
   contrastRatio,
   describeColor,
@@ -41,6 +42,36 @@ describe('contrast measurement', () => {
   it('weights green most, per the relative-luminance coefficients', () => {
     expect(relativeLuminance(opaque(0, 255, 0))).toBeGreaterThan(relativeLuminance(opaque(255, 0, 0)));
     expect(relativeLuminance(opaque(255, 0, 0))).toBeGreaterThan(relativeLuminance(opaque(0, 0, 255)));
+  });
+});
+
+// chip-ground-collision's chroma-aware repair (conformance pass, 2026-09-01): the formula this
+// distance feeds had no term for hue at all, which produced the corpus C 24-of-40 false-positive
+// rate on ASC's admin. These pin the axis itself, independent of the rule that consumes it.
+describe('chroma distance', () => {
+  it('is zero for any two grays, whatever their luminance', () => {
+    expect(chromaDistance(opaque(20, 20, 20), opaque(230, 230, 230))).toBeCloseTo(0, 5);
+  });
+
+  it('is zero for two shades of the same hue', () => {
+    // A uniform delta applied to every channel preserves chroma while shifting lightness: the same
+    // warm-stone hue at two different shades, one light and one dark.
+    expect(chromaDistance(opaque(210, 195, 180), opaque(70, 55, 40))).toBeCloseTo(0, 5);
+  });
+
+  it('is large for two hue-distinct colors at close luminance', () => {
+    // A lavender chip against a warm-neutral ground, the corpus C "purple-tinted chip" shape:
+    // close enough in luminance to fail a luminance-only floor, plainly different in hue.
+    const chip = opaque(195, 165, 222);
+    const ground = opaque(210, 205, 200);
+    expect(contrastRatio(chip, ground)).toBeLessThan(1.5);
+    expect(chromaDistance(chip, ground)).toBeGreaterThan(20);
+  });
+
+  it('stays small for two near-gray colors even when they differ slightly in warmth', () => {
+    // A warm off-white chip against a cooler near-white ground: a small tint, not a hue this rule
+    // should treat as distinguishing.
+    expect(chromaDistance(opaque(246, 244, 242), opaque(244, 244, 244))).toBeLessThan(10);
   });
 });
 

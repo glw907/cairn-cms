@@ -66,7 +66,7 @@ describe('resolveRenderedFindings', () => {
     const allowlist = [{ page: '/admin/x', selector: '.renamed-away', reason: 'stale' }];
     const { findings } = resolveRenderedFindings([], visits, allowlist);
     expect(findings).toHaveLength(1);
-    expect(findings[0].ruleId).toBe('rendered-allowlist-stale');
+    expect(findings[0].ruleId).toBe('rendered.allowlist-stale');
     expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('.renamed-away');
   });
@@ -75,7 +75,7 @@ describe('resolveRenderedFindings', () => {
     const allowlist = [{ page: '/admin/never-visited', selector: '.x', reason: 'stale' }];
     const { findings } = resolveRenderedFindings([], [], allowlist);
     expect(findings).toHaveLength(1);
-    expect(findings[0].ruleId).toBe('rendered-allowlist-stale');
+    expect(findings[0].ruleId).toBe('rendered.allowlist-stale');
   });
 
   // The staleness check keys on whether an entry's SELECTOR still matches, so an entry whose
@@ -88,7 +88,7 @@ describe('resolveRenderedFindings', () => {
     const { findings, suppressed } = resolveRenderedFindings([], visits, allowlist);
     expect(suppressed).toEqual([]);
     expect(findings).toHaveLength(1);
-    expect(findings[0].ruleId).toBe('rendered-allowlist-dead');
+    expect(findings[0].ruleId).toBe('rendered.allowlist-dead');
     expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('.legacy');
     expect(findings[0].message).toContain('ships next pass');
@@ -101,7 +101,7 @@ describe('resolveRenderedFindings', () => {
     const allowlist = [{ page: '/admin/x', selector: '.legacy', reason: 'held', rule: 'border-contrast' }];
     const { findings } = resolveRenderedFindings([], visits, allowlist, new Map([['border-contrast', 'advisory']]));
     expect(findings).toHaveLength(1);
-    expect(findings[0].ruleId).toBe('rendered-allowlist-dead');
+    expect(findings[0].ruleId).toBe('rendered.allowlist-dead');
     expect(findings[0].tier).toBe('advisory');
   });
 
@@ -150,7 +150,7 @@ describe('resolveRenderedFindings', () => {
     ];
     const allowlist = [{ page: '/admin/x', selector: '.legacy', reason: 'held' }];
     const { findings } = resolveRenderedFindings([], visits, allowlist);
-    expect(findings[0].ruleId).toBe('rendered-allowlist-dead');
+    expect(findings[0].ruleId).toBe('rendered.allowlist-dead');
     expect(findings[0].tier).toBe('error');
   });
 
@@ -451,7 +451,7 @@ describe('runRendered against a fake browser', () => {
     expect(report.findings.map((f) => f.message)).toEqual(
       expect.arrayContaining([expect.stringContaining('.new-thing')])
     );
-    expect(report.findings.some((f) => f.ruleId === 'rendered-allowlist-stale')).toBe(false);
+    expect(report.findings.some((f) => f.ruleId === 'rendered.allowlist-stale')).toBe(false);
     expect(report.suppressed.map((f) => f.message)).toEqual(
       expect.arrayContaining([expect.stringContaining('.legacy')])
     );
@@ -493,7 +493,7 @@ describe('runRendered against a fake browser', () => {
     // menu-open's own unreachability stays a silent skip (the pre-existing behavior): most admin
     // pages carry no menu trigger, and surfacing a line for every one of them would be noise nobody
     // asked for. That is a deliberate, narrower scope than row-expanded gets below.
-    expect(unreached.findings.some((f) => f.ruleId === 'rendered-state-unreachable')).toBe(false);
+    expect(unreached.findings.some((f) => f.ruleId === 'rendered.state-unreachable')).toBe(false);
   });
 
   it('surfaces an advisory report line, not just a silent skip, when row-expanded is unreachable', async () => {
@@ -517,7 +517,7 @@ describe('runRendered against a fake browser', () => {
     // in the report, since the run also raises its own advisory line naming the state and the page.
     expect(rowRule.check).not.toHaveBeenCalled();
     expect(unreached.findings.some((f) => f.ruleId === 'row-rule')).toBe(false);
-    const coverage = unreached.findings.find((f) => f.ruleId === 'rendered-state-unreachable');
+    const coverage = unreached.findings.find((f) => f.ruleId === 'rendered.state-unreachable');
     expect(coverage).toBeDefined();
     expect(coverage?.tier).toBe('advisory');
     expect(coverage?.file).toBe('/admin/x');
@@ -529,7 +529,7 @@ describe('runRendered against a fake browser', () => {
       loadPlaywright: async () => fakeBrowser({ interactionTargetPresent: true }),
     });
     expect(rowRule.check).toHaveBeenCalled();
-    expect(reached.findings.some((f) => f.ruleId === 'rendered-state-unreachable')).toBe(false);
+    expect(reached.findings.some((f) => f.ruleId === 'rendered.state-unreachable')).toBe(false);
   });
 
   it('fails loudly when a visited page renders outside 2xx', async () => {
@@ -607,7 +607,7 @@ describe('runRendered against a fake browser', () => {
       });
 
       expect(rule.check).not.toHaveBeenCalled();
-      const finding = report.findings.find((f) => f.ruleId === 'rendered-page-identity-mismatch');
+      const finding = report.findings.find((f) => f.ruleId === 'rendered.page-identity-mismatch');
       expect(finding).toBeDefined();
       expect(finding?.tier).toBe('error');
       expect(finding?.message).toContain('/admin/edit/some-post');
@@ -626,7 +626,7 @@ describe('runRendered against a fake browser', () => {
       });
 
       expect(rule.check).toHaveBeenCalled();
-      expect(report.findings.some((f) => f.ruleId === 'rendered-page-identity-mismatch')).toBe(false);
+      expect(report.findings.some((f) => f.ruleId === 'rendered.page-identity-mismatch')).toBe(false);
     });
 
     // The login page renders no `<main>` on either side: `landmark: null` on both is agreement,
@@ -645,7 +645,7 @@ describe('runRendered against a fake browser', () => {
       });
 
       expect(rule.check).toHaveBeenCalled();
-      expect(report.findings.some((f) => f.ruleId === 'rendered-page-identity-mismatch')).toBe(false);
+      expect(report.findings.some((f) => f.ruleId === 'rendered.page-identity-mismatch')).toBe(false);
     });
 
     // A refused page was never really probed, so an allowlist entry naming it cannot be told stale
@@ -666,11 +666,11 @@ describe('runRendered against a fake browser', () => {
           }),
       });
 
-      expect(report.findings.some((f) => f.ruleId === 'rendered-allowlist-stale')).toBe(false);
-      // The withheld-verdict path shares `rendered-allowlist-dead`'s id (the same idiom
+      expect(report.findings.some((f) => f.ruleId === 'rendered.allowlist-stale')).toBe(false);
+      // The withheld-verdict path shares `rendered.allowlist-dead`'s id (the same idiom
       // `unreachedStateFinding` already uses), tiered advisory and worded as a withholding rather
       // than an accusation.
-      const withheld = report.findings.find((f) => f.ruleId === 'rendered-allowlist-dead');
+      const withheld = report.findings.find((f) => f.ruleId === 'rendered.allowlist-dead');
       expect(withheld?.tier).toBe('advisory');
       expect(withheld?.message).toContain('guard refused');
     });

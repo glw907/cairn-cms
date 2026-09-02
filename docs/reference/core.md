@@ -267,18 +267,7 @@ interface AssetConfig {
   urlForm?: 'slug' | 'opaque';
   maxUploadBytes?: number;
   allowedTypes?: string[];
-  variants?: Record<string, VariantSpec>;
   transformations?: boolean;
-}
-
-interface VariantSpec {
-  width?: number;
-  height?: number;
-  quality?: number;
-  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up' | 'squeeze';
-  gravity?: 'auto' | 'face' | string;
-  format?: 'auto' | 'webp' | 'avif' | string;
-  upscale?: 'interpolate' | 'generate';
 }
 ```
 
@@ -287,8 +276,10 @@ names the R2 bucket bound to the Worker and is the one required field. `publicBa
 base path (default `/media`), and `urlForm` chooses whether the public URL carries the slug
 (`/media/<slug>.<hash>.<ext>`, the default) or stays opaque (`/media/<aa>/<hash>.<ext>`).
 `maxUploadBytes` (default 25 MB) and `allowedTypes` (default the common web image types) bound an
-upload. `variants` are named Cloudflare Images presets, merged over the built-in `thumb`, `inline`,
-`card`, and `hero` presets, so a same-named entry overrides a built-in.
+upload. A site can't declare its own named transform presets. The built-in `thumb`, `inline`,
+`card`, and `hero` presets are the whole vocabulary. A site needing a size beyond the four
+built-ins builds a URL directly against Cloudflare's `/cdn-cgi/image/<options>/<path>`
+transform-URL format. Cairn's own URL builder is engine-internal, not public surface.
 
 `transformations` (default `false`) declares whether Cloudflare Image Transformations are enabled
 for the zone. This is a per-zone setting that the dashboard or API turns on, not something a Worker
@@ -525,7 +516,10 @@ Stability tier: Extension API.
 
 - `FieldDescriptor` is the plain-data descriptor union the form, validator, and inference all read.
 - `Fieldset` is the schema a `defineFieldset` call returns, carrying the descriptors, the behavior table,
-  the validator, and the Standard Schema property.
+  the validator, and the Standard Schema property. `validate` takes an optional third argument, `owner`,
+  which names the schema for diagnostics: a concept binds its own id, and a component binds its directive
+  name. The value reaches only the
+  [`content.field_behavior_failed`](log-events.md) record, never the validated data.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
   declared `required: true` is a required key.
 - `FieldsetOptions` carries the `refine` cross-field check and the `behavior` table.
@@ -700,13 +694,14 @@ declare function renderGlyph(name: string, icons: IconSet): Element;
 ```
 
 The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
-`cardShell`, `headRow`, and `strAttr`, lives on the [`/render`](./render.md) subpath, not here. The
-showcase `alert` component composes `renderGlyph` with those helpers:
+`cardShell`, and `headRow`, lives on the [`/render`](./render.md) subpath, not here; `ctx.attr(key)`
+reads a declared string attribute off the `ComponentContext` `build` receives. The showcase `alert`
+component composes `renderGlyph` with those helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
-import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
+import { cardShell, headRow, iconSpan } from '@glw907/cairn-cms/render';
 
 const makeIcon = (name, role) => iconSpan(renderGlyph(name, icons), role);
 build: (ctx) =>
@@ -1049,7 +1044,7 @@ function signatures above reference these.
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. See the preceding [`nav` adapter `editor` member](#nav-adapter-editor-member). |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
-| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
+| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, and the upload limits. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
 | `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../extend/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from. |
 | `ComposeInput` | Extension API | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
@@ -1081,7 +1076,6 @@ function signatures above reference these.
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it with no cast. |
-| `AuthBranding` | Extension API | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries: the five required fields, plus optional `cc`, `bcc`, `replyTo`, and `attachments` widening the Email Sending API surface, live-verified 2026-07-07. `replyTo` takes a single address only; the platform rejects an array there. |
 | `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements: `(env, message) => Promise<void>`; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
@@ -1106,7 +1100,7 @@ function signatures above reference these.
 | `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
 | `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
 | `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |
-| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)` readers, and the stamped `node`. |
+| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)`/`attr(key)` readers, and the stamped `node`. |
 | `ManifestEntry` | Extension API | `interface ManifestEntry` | One committed manifest entry's projection: its identity, routing, draft flag, and outbound `cairn:` edges. `Manifest.entries` carries these. |
 | `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry, recorded per manifest entry and reverse-mapped by the cross-branch index. |
 | `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. `MediaResolve`'s own parameter. |
@@ -1116,9 +1110,7 @@ function signatures above reference these.
 | `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree; see [`NavLayoutEntry`](./sveltekit.md#navlayoutentry) for its members. |
 | `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
 | `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree; see [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
-| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config: next-step links rendered on the publish-success moment. |
 | `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link; `href` is a template string substituted with the published entry's identity at resolve time. |
-| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. See the preceding [`media` adapter member](#media-adapter-member). |
 | `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s; `hydrateIslands` mounts over the matching `hydrate` directive's static fallback. |
 | `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `ResolveOptions` | Extension API | `type ResolveOptions = { resolve?; resolveMedia?; resolveFragment? }` | The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto the VFile's data so the `cairn:` link, `media:`, and `::include` steps read them at process time. |

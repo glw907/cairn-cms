@@ -184,7 +184,7 @@ describe('revertAction', () => {
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(409);
     expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Other Editor' });
-    expect((result.data as { draftStartedAt: string }).draftStartedAt).toBeTruthy();
+    expect((result.data as { draftLastSavedAt: string }).draftLastSavedAt).toBeTruthy();
   });
 
   it('refuses with a populated RevertFailure when createBranch collides under a race the pre-check missed', async () => {
@@ -204,7 +204,7 @@ describe('revertAction', () => {
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(409);
     expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Racer' });
-    expect((result.data as { draftStartedAt: string }).draftStartedAt).toBeTruthy();
+    expect((result.data as { draftLastSavedAt: string }).draftLastSavedAt).toBeTruthy();
   });
 
   it('does not falsely conflict when a publish lands between the staleness check and createBranch', async () => {

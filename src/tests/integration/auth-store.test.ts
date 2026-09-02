@@ -339,11 +339,15 @@ describe('sessions (server-side, role read live)', () => {
     expect(await resolveSession(db, 'sid-live', Date.now())).toBeNull();
   });
 
-  it('deletes a session', async () => {
+  it('deletes a session and returns the email the deleted row carried', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     await createSession(db, 'sid-del', 'ed@x.dev', Date.now() + 10_000, Date.now());
-    await deleteSession(db, 'sid-del');
+    expect(await deleteSession(db, 'sid-del')).toBe('ed@x.dev');
     expect(await resolveSession(db, 'sid-del', Date.now())).toBeNull();
+  });
+
+  it('returns null when no session row matched, so the caller can skip its record', async () => {
+    expect(await deleteSession(db, 'sid-never-existed')).toBeNull();
   });
 });
 

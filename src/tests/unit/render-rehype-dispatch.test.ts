@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Root, Element, ElementContent } from 'hast';
-import { rehypeDispatch, cardShell, headRow, markFirstList, isElement, strAttr } from '../../lib/render/rehype-dispatch.js';
+import { rehypeDispatch, cardShell, headRow, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 import type { ComponentContext } from '../../lib/render/registry.js';
 
@@ -137,18 +137,27 @@ describe('rehypeDispatch', () => {
 });
 
 function ctxWith(attributes: Record<string, string | boolean>): ComponentContext {
-  return { attributes, slot: () => [], items: () => [], node: { type: 'element', tagName: 'div', properties: {}, children: [] } };
+  return {
+    attributes,
+    slot: () => [],
+    items: () => [],
+    attr: (key) => {
+      const value = attributes[key];
+      return typeof value === 'string' ? value : undefined;
+    },
+    node: { type: 'element', tagName: 'div', properties: {}, children: [] },
+  };
 }
 
-describe('strAttr', () => {
+describe('ctx.attr', () => {
   it('returns a string attribute value', () => {
-    expect(strAttr(ctxWith({ icon: 'leaf' }), 'icon')).toBe('leaf');
+    expect(ctxWith({ icon: 'leaf' }).attr('icon')).toBe('leaf');
   });
   it('returns undefined for a boolean attribute', () => {
-    expect(strAttr(ctxWith({ wide: true }), 'wide')).toBeUndefined();
+    expect(ctxWith({ wide: true }).attr('wide')).toBeUndefined();
   });
   it('returns undefined for an absent attribute', () => {
-    expect(strAttr(ctxWith({}), 'icon')).toBeUndefined();
+    expect(ctxWith({}).attr('icon')).toBeUndefined();
   });
 });
 

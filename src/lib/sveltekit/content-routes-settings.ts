@@ -93,7 +93,9 @@ export interface VocabularyLoadData {
 /**
  * A refused tidy settings save: `fail(400)` on an invalid conventions payload, `fail(500)` on a
  *  malformed committed config, `fail(409)` when the config's head moved since the editor opened
- *  the page.
+ *  the page. Retired from the public surface (4b, Task 1); the module-level export stays, since
+ *  `settingsSaveAction`'s return type composes into `createContentRoutesInternal`
+ *  (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
  */
 export interface SettingsSaveFailure {
   error: string;
@@ -102,7 +104,10 @@ export interface SettingsSaveFailure {
 /**
  * A refused tag-vocabulary save: `fail(400)` on an invalid vocabulary payload, `fail(500)` on a
  *  malformed committed config, `fail(409)` when a removed value is still in use or the config's
- *  head moved since the editor opened the page.
+ *  head moved since the editor opened the page. Retired from the public surface (4b, Task 1);
+ *  the module-level export stays, since `vocabularySaveAction`'s return type composes into
+ *  `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts`
+ *  emitter must be able to name.
  */
 export interface VocabularySaveFailure {
   error: string;
@@ -292,7 +297,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const parsedConfig = parseSiteConfigOrFail(raw, 'settings');
     if (!parsedConfig.ok) return parsedConfig.failure;
 
-    const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
+    const commitFields = { scope: 'settings' as const, id: 'tidy', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
@@ -429,7 +434,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       }
     }
 
-    const commitFields = { concept: 'vocabulary', id: 'site-config', editor: editor.email };
+    const commitFields = { scope: 'vocabulary' as const, id: 'site-config', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,

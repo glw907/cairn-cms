@@ -43,9 +43,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import { deserialize } from '$app/forms';
   import { goto, invalidateAll } from '$app/navigation';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
+  import type { MediaLibraryData, ContentFormFailure } from '../sveltekit/content-routes.js';
+  // Each of the below retired from the public barrel (4b, Task 1, the Tier 1 media-janitorial
+  // retires); still exported at its declaring module for this component's own typing.
   import type {
-    MediaLibraryData,
-    ContentFormFailure,
     MediaReplacePreviewPlan,
     MediaReplaceFailure,
     MediaReplacePreviewEntry,
@@ -54,7 +55,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     MediaBulkDeleteResult,
     MediaOrphanPurgeResult,
     MediaBulkFailure,
-  } from '../sveltekit/content-routes.js';
+  } from '../sveltekit/content-routes-media.js';
   import type { MediaOrphanScanResult } from '../media/orphan-scan.js';
   import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
   import type { AltPlacement } from '../content/media-rewrite.js';

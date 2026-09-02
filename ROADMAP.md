@@ -1196,9 +1196,11 @@ the named human gates only):**
   root's descendants only, so the layer's own root element is never in the list its own index is
   read against). `form-font-parity` (already advisory, `docs/reference/cairn-audit.md`) walks
   only the first `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` wrapper on the
-  page, so a page mounting more than one is only partly checked, and its explicit-face exemption
-  net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
-  and Tailwind 4's `font-(family-name:--x)` shorthand.
+  page, so a page mounting more than one is only partly checked. Its explicit-face exemption net's
+  three named gaps, variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
+  and Tailwind 4's `font-(family-name:--x)` shorthand, closed in the conformance pass, 2026-09-01;
+  the rule stays advisory, and the multi-wrapper walk limitation above is the one gap this line still
+  files.
 
 - **Three design-system gaps found in the same triage.** `Pagination`'s selected page
   (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps
@@ -1229,11 +1231,14 @@ the named human gates only):**
   the named blocker on `border-contrast` promotion). (ConceptList's sort targets, ListToolbar's
   320/390 overflow, the CMS pill's raw border, and StatusChip's own contrast floor are all fixed;
   see the error-tier entry and the CHANGELOG's `## Unreleased` window.) Rule and harness repairs:
-  `chip-ground-collision`'s contrast has no chroma term, so hue-distinct chips flag (24 false
-  errors on ASC; **resolved 2026-07-29: demoted to advisory**; the chroma-aware repair (a distance
-  formula that can see hue, plus a recalibrated floor) stays filed here, unbuilt). Until it
-  re-promotes, the quiet chip register is unguarded against its own fifth ground: quiet's
-  14%-tint mix over `--color-base-300` (e.g. daisyUI's `.table-zebra` row-hover) measures
+  `chip-ground-collision`'s contrast had no chroma term, so hue-distinct chips flagged (24 false
+  errors on ASC; **resolved 2026-07-29: demoted to advisory; chroma-aware repair landed in the
+  conformance pass, 2026-09-01**: the formula now also measures a Cb/Cr-plane hue/chroma distance,
+  so a collision requires both a close luminance ratio and a close hue. The rule stays advisory;
+  promotion is a separate, later act on its own re-measured evidence). The quiet chip register
+  stays unguarded against its own fifth ground even after the repair, since its own tint carries no
+  hue distinct from its base-content/base-200/base-300 neighbors, all the same warm-stone hue:
+  quiet's 14%-tint mix over `--color-base-300` (e.g. daisyUI's `.table-zebra` row-hover) measures
   ~1.34/1.41, under the 1.5 floor the register otherwise clears everywhere else, documented rather
   than retuned in `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md`
   (design infrastructure Pass 3, 2026-07-29 review triage);

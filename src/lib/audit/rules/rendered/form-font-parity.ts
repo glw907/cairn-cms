@@ -15,11 +15,17 @@
 // SCOPE (design ratchet Batch B fix). The walk is scoped to the theme root's own subtree, not the
 // whole document: a page that mounts more than one theme wrapper, or that renders unthemed chrome
 // alongside the admin surface, has no business comparing a control outside the root against a face
-// declared on the root. A control that opts INTO a different face on purpose (`font-mono`, or an
-// arbitrary `font-[family-name:...]` class) is exempt for the same reason a color the developer
-// chose deliberately is never a regression: CairnMediaLibrary's slug input and its two
-// type-to-confirm inputs, and MarkdownEditor's no-JS fallback textarea, all declare their own
-// monospace face this way and are mismatches by construction, not by omission.
+// declared on the root. A control that opts INTO a different face on purpose is exempt for the same
+// reason a color the developer chose deliberately is never a regression: CairnMediaLibrary's slug
+// input and its two type-to-confirm inputs, and MarkdownEditor's no-JS fallback textarea, all
+// declare their own monospace face this way and are mismatches by construction, not by omission.
+//
+// EXEMPTION NET CLOSED (conformance pass, 2026-09-01, closing the docket entry filed out of the
+// any-site audit, rank 6): the net used to match only a bare `font-mono` class or the Tailwind v3
+// arbitrary-value form `font-[family-name:...]`, which false-positived on three named shapes: a
+// variant-prefixed utility (`md:font-mono`, `dark:font-mono`), the `font-serif`/`font-sans`
+// families, and Tailwind 4's `font-(family-name:--x)` shorthand. `hasExplicitFace` now strips any
+// leading variant prefixes before testing the base utility, so all three close.
 //
 // Registered PROVISIONALLY at advisory (design ratchet Task 5). The intended tier is error, since a
 // consumer whose sheet never loaded is exactly the silent-fail-open shape this engine exists to
@@ -28,7 +34,9 @@
 // the CI runner (the local visual suite diverges from CI by dozens of threshold-marginal
 // comparisons, and font resolution is exactly the kind of measurement a runner's installed font set
 // can move). If CI disagrees with the workstation, this stays advisory and the divergence is
-// recorded in the plan's post-mortem rather than promoted anyway.
+// recorded in the plan's post-mortem rather than promoted anyway. Closing the exemption net above is
+// a false-positive fix, not new evidence toward that promotion, so the tier stays advisory in this
+// pass regardless.
 import { ensurePageHelpers } from '../../rendered.js';
 import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../rendered.js';
 
@@ -63,8 +71,14 @@ function readFontParity(): FontParityResult {
   /** A control carrying a class that declares its own face on purpose, exempt from the reset check. */
   function hasExplicitFace(el: Element): boolean {
     for (const className of el.classList) {
-      if (className === 'font-mono') return true;
-      if (className.startsWith('font-[family-name:')) return true;
+      // Strip any leading variant prefixes (`md:`, `dark:md:`) before testing the base utility, so
+      // a variant-prefixed exemption class reads the same as its unprefixed form. Only matches a run
+      // of bare word characters followed by a colon, so it never touches the colon inside an
+      // arbitrary-value class's brackets (`font-[family-name:...]`, `font-(family-name:--x)`).
+      const base = className.replace(/^(?:[a-z0-9-]+:)+/, '');
+      if (base === 'font-mono' || base === 'font-serif' || base === 'font-sans') return true;
+      if (base.startsWith('font-[family-name:')) return true;
+      if (base.startsWith('font-(family-name:')) return true;
     }
     return false;
   }
@@ -121,7 +135,8 @@ export const formFontParity: RenderedRule = {
         `computes font-family "${mismatch.family}", not the admin root's "${result.rootFamily}". A bare ` +
         `control that misses the reset layer falls back to the browser's UA face: check that the built ` +
         `admin sheet actually loaded (cairn-admin.css's base-layer "font: inherit" rule on button, input, ` +
-        `select, textarea, optgroup).`,
+        `select, textarea, optgroup). If this control opts into its own face on purpose, this finding may ` +
+        `be an exemption miss: allowlist the selector with a reason.`,
     }));
   },
 };

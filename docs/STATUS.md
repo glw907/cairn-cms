@@ -74,7 +74,13 @@ behind and its sheet says to run it as a numbered site pass.
   developers interact with most, so it SETS the code bar; its quality bar equals the
   engine's. The chassis pass gets the full cleanliness-and-beauty treatment the engine
   slices got, every line treated as copy-paste-taught exemplar code, and its plan gets
-  the same three-lens adversarial review.
+  the same three-lens adversarial review. Two planning consequences (Geoff, 2026-09-01):
+  the ROADMAP's 14-finding chassis improvement round predates this mandate, so the
+  chassis plan opens with a fresh showcase review at the exemplar bar and treats the old
+  finding list as input, never the ceiling; and the chassis-before-polish ordering is
+  load-bearing, since polish's cover-to-cover docs read must see the chassis that
+  teaches the surface, so a chassis slip resequences polish rather than skipping past
+  it.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

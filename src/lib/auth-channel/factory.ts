@@ -547,23 +547,24 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   }
 
   /**
-   * The correlation id for a record whose only identity is a destroyed session row's subject.
-   * `deriveIdentity` reads the contact only when the subject is null, so this reconstructs the
-   * exact value the request flow's own `s:` branch produced and a logout keys to the sign-in it
-   * ends. Undefined when the salt read faults: `resolveSalt` caches only success and the request
-   * path fails closed by design, but a session teardown is not a place to strand a member, so
-   * the caller skips the record and completes.
+   * Record a destroyed session row under the channel's own pseudonym, the one emit point for
+   * every teardown whose only identity is the deleted row's subject (the member's logout, the
+   * verify-refused revocation). Never the raw subject: no channel record carries a roster
+   * identity. `deriveIdentity` reads the contact only when the subject is null, so this
+   * reconstructs the exact value the request flow's own `s:` branch produced, and a teardown keys
+   * to the sign-in it ends. A salt read that faults skips the record and returns: `resolveSalt`
+   * caches only success and the request path fails closed by design, but a session teardown is
+   * not a place to strand a member. Call it only where a row was actually destroyed.
    */
-  async function correlationIdForSubject(
-    session: D1DatabaseSession,
-    subject: string,
-  ): Promise<string | undefined> {
+  async function logSessionDestroyed(session: D1DatabaseSession, subject: string): Promise<void> {
+    let correlationId: string;
     try {
       const salt = await resolveSalt(session);
-      return (await deriveIdentity(salt, subject, '')).slice(0, 16);
+      correlationId = (await deriveIdentity(salt, subject, '')).slice(0, 16);
     } catch {
-      return undefined;
+      return;
     }
+    log.info('auth.channel.session.destroyed', { correlationId });
   }
 
   /**
@@ -986,12 +987,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         // Logged only where a row was actually destroyed: a request with no session cookie, one
         // whose db is unavailable, and one whose cookie outlived its own row all destroy nothing
         // and must not fire this record (log-events.md's logout row states this condition).
-        // Never the raw subject: no channel record carries a roster identity, so the record
-        // names the same pseudonym the request flow derived from that subject.
-        if (subject !== null) {
-          const correlationId = await correlationIdForSubject(session, subject);
-          if (correlationId) log.info('auth.channel.session.destroyed', { correlationId });
-        }
+        if (subject !== null) await logSessionDestroyed(session, subject);
       }
     }
 
@@ -1032,14 +1028,11 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       if (verified === null) return null;
       if (!verified) {
         // A roster hook actively revoking a live session, silent until now. It records the same
-        // way the member's own logout does, under the pseudonym derived from the subject the
-        // session resolved to, and only when a row was actually destroyed.
+        // way the member's own logout does, keyed to the subject the session resolved to rather
+        // than the one the delete returned, and only when a row was actually destroyed.
         const revokeSession = database.withSession('first-primary');
         const destroyed = await destroyChannelSession(revokeSession, tokenHash);
-        if (destroyed !== null) {
-          const correlationId = await correlationIdForSubject(revokeSession, resolved.subject);
-          if (correlationId) log.info('auth.channel.session.destroyed', { correlationId });
-        }
+        if (destroyed !== null) await logSessionDestroyed(revokeSession, resolved.subject);
         return null;
       }
     }

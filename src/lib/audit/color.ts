@@ -75,8 +75,8 @@ export function sameColor(a: Rgba, b: Rgba): boolean {
  * infrastructure Pass 3, corpus C): a chip and its ground can read as plainly distinct to a sighted
  * user on hue alone even where their luminance sits close enough to fail the contrast floor.
  *
- * Implemented as Euclidean distance in the Cb/Cr plane of YCbCr (ITU-R BT.601, the same coefficients
- * `describeColor`'s callers already reason in sRGB terms about). Two colors that differ only in
+ * Implemented as Euclidean distance in the Cb/Cr plane of YCbCr (ITU-R BT.601), over the same sRGB
+ * bytes every other measurement in this module reads. Two colors that differ only in
  * lightness (any two grays, or the same hue at two shades) land at the same Cb/Cr point, so this
  * distance is exactly zero for the achromatic pairs `contrastRatio` already measures correctly on its
  * own, and grows only where the colors actually diverge in hue or saturation.

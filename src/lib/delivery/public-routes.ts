@@ -146,7 +146,6 @@ export async function composeEntryData(
   const rawImage = fields.image ?? defaultImage;
   const image = heroImage?.absoluteUrl ?? (rawImage ? resolveImageUrl(rawImage, origin) : undefined);
   const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
-  // A dated entry is an article; an undated one (a page) is a website.
   // Stamp the containing entry onto the engine's own fragment resolver, the marker
   // remarkResolveIncludes reads to name the entry in an include.missing record. A caller that
   // substitutes its own resolver (previewLoad) stamps it where it builds it, so nothing here
@@ -157,6 +156,7 @@ export async function composeEntryData(
     built.entry = `${entry.concept}/${entry.id}`;
     resolveFragment = built;
   }
+  // A dated entry is an article; an undated one (a page) is a website.
   const seo = buildSeoMeta({
     title: entry.title,
     description: fields.description || entry.excerpt || description,

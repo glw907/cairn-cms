@@ -38,6 +38,7 @@
     "check:reference": "npm run package && node scripts/checks/reference-coverage.mjs",
     "check:reference:signatures": "npm run package && node scripts/checks/check-reference-signatures.mjs",
     "check:surface": "npm run package && node scripts/checks/check-surface.mjs",
+    "check:self-use": "npm run package && node scripts/checks/check-self-use.mjs",
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
     "check:docs": "node scripts/checks/docs-links.mjs",
     "check:rulings-format": "node scripts/checks/check-rulings-format.mjs",

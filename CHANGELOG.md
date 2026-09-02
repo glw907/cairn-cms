@@ -149,6 +149,17 @@
   naming it; a CI job piping `cairn-manifest`'s output no longer risks a truncated error message.
   Nothing else changes for a caller already passing no arguments or valid flags.
 
+- New standing gate `check:self-use` (internals pass, Task 1): checks every public export for a
+  real call site, in `src/lib` outside its own declaring module or in the showcase, and fails on
+  one with neither and no reasoned entry in the new
+  `scripts/checks/check-self-use-allowlist.json`. An export declared under `src/lib/auth*` or one
+  of `src/lib/sveltekit/{guard,csrf,admin-action,section-action}.ts` is allowlist-only; a showcase
+  call site alone never discharges it there. Discharges R-0's second direction (the ratified,
+  previously unenforced "an export the engine could use and does not is a shape defect" rule) and
+  rehomes the retired `check:dogfood` proposal's underlying mechanism into `scripts/checks/`, its
+  correct home (see `docs/internal/engine-rulings.md`'s `check-self-use` row). Internal tooling
+  only; no consumer action.
+
 ### Changed
 
 - The log vocabulary's remaining ten evenness defects close, across every emit site and the

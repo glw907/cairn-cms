@@ -4988,3 +4988,42 @@ when the remediation pass lands.
 - **Shape:** Two evenness defects on the item every consumer touches. (a) `vite/bin.ts:10` used `process.exit(1)` where its three siblings deliberately do not (`doctor/bin.ts:5-7`: "The codes go through `process.exitCode`, never `process.exit`, so a piped stdout flushes the whole report before the process ends", the same note verbatim in `audit/bin.ts` and `media-seed/bin.ts`); a truncated stderr message in a piping CI job left a consumer with a red build and no reason. (b) It read no argv at all, so `--help`, `--verbose`, and `--typo` were all silently accepted and ignored, where the siblings reject unknown flags with a usage line; rides with rank 11's `--help` shape.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 50.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+
+## check-self-use: `check:self-use`, the standing self-use gate for R-0's second direction  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Ratified as a standing gate: `scripts/checks/check-self-use.mjs` walks the
+  public surface `check:surface`'s own `buildSurfaceModel()` derives and, for every export, checks
+  whether the engine itself (`src/lib`, outside the declaring module) or the showcase reaches for
+  it. A zero-caller export not covered by a reasoned allowlist entry
+  (`scripts/checks/check-self-use-allowlist.json`) fails the gate. This discharges both routings
+  named below: `read-from-the-source-rule`'s ratified but unenforced second direction (no gate
+  existed to catch a fifth "an export the engine could use and does not" instance after the four
+  C13 examples closed) and the retired `check:dogfood` proposal's underlying mechanism, rehomed
+  from the cairn-audit product it was wrongly proposed into to a `scripts/checks/*.mjs` engine
+  gate, its correct home.
+- **Reopens on:** closed. Executed by the internals pass, Task 1. A new zero-caller export is not
+  a reopen of this row; it is a new allowlist entry (with its own reason) or a new showcase call
+  site, decided at the time it appears.
+- **Shape:** Two-arm call-site count (in-engine, showcase) per export, STATIC TEXT SCANNING ONLY
+  (never `import()`s a showcase or consumer module). An export declared under `src/lib/auth*` or
+  one of `src/lib/sveltekit/{guard,csrf,admin-action,section-action}.ts` is ALLOWLIST-ONLY: a
+  showcase call site alone never discharges it, enforced in `analyzeExport`'s `authOnly` branch and
+  covered by `src/tests/unit/check-self-use.test.ts`. The failure message states the remedy order
+  (allowlist with reason first, showcase call site second, deletion never suggested by the gate
+  itself). The allowlist's 69 entries are seeded from each zero-caller export's ledger KEEP row
+  where one exists (cited by slug) and fresh prose (`no-ledger-row: true`) for the remainder,
+  mostly types introduced by a post-audit reshape (the auth-family discriminated results, the
+  `ToolbarDisclosure` attrs trio, `TidyEffort`) with the same anonymous-consumer shape their
+  siblings already carry.
+- **Plan-assumption correction:** the internals plan's draft named `presetUrl` and
+  `BUILT_IN_PRESETS` as seeds to allowlist "with the deferral reason." Verified against the built
+  surface (`buildSurfaceModel()`, and `docs/reference/media.md:55`'s own "engine-internal, not
+  public surface" line): neither is exported from any package subpath, so neither is in this
+  gate's domain (public exports only) and neither is allowlisted here; adding a dead entry for a
+  name the gate can never see would be confusing, not discharging. This does not touch the F-1 leak
+  question (Task 2) of whether either name still leaks through a rendered signature elsewhere.
+- **Record:** `read-from-the-source-rule` (this file, line 38) and
+  `audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c` (this file, line 4617),
+  both cited, both left byte-untouched by this row.
+- **Verified:** `npm run check:self-use` (CI, `.github/workflows/test.yml`) and
+  `src/tests/unit/check-self-use.test.ts`.

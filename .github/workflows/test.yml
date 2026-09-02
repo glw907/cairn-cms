@@ -63,6 +63,7 @@ jobs:
       - run: npm run check:reference
       - run: npm run check:reference:signatures
       - run: npm run check:surface
+      - run: npm run check:self-use
       - run: npm run check:custom-surface
       - run: npm run check:chassis-boundary
       - run: npm run check:cm-internals

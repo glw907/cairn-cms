@@ -872,14 +872,18 @@
   registry entries the conformance pass's docket routed here. `chip-ground-collision`'s contrast
   formula gains a chroma term: a collision now requires both a close luminance ratio and a close hue
   (`color.ts`'s new `chromaDistance`), so a chip whose fill differs mainly in hue from its ground no
-  longer flags merely for measuring close in luminance, closing the false-positive class that
-  produced a measured 60% false-positive rate on its first real consumer admin.
-  `form-font-parity`'s exemption net closes the three named gaps: a variant-prefixed font utility
-  (`md:font-mono`), `font-serif`/`font-sans`, and Tailwind 4's `font-(family-name:--x)` shorthand are
-  all now exempt from the parity check, with or without a stacked variant prefix. Both rules stay
-  advisory; this is a behavior change to audit output only, and no rule was promoted to error tier.
-  Consumers must: nothing. A build already treating either rule's advisory findings as non-gating
-  sees fewer of them; nothing that previously passed now fails.
+  longer flags merely for measuring close in luminance, closing the hue-distinct false-positive
+  class (roughly 14 of the 24 measured false positives on the rule's first real consumer admin). A
+  second named false-positive class, a near-neutral pill in dark theme reading bounded despite a low
+  ratio (roughly the other 10), carries no hue for this term to see and still flags; closing it
+  needs a recalibrated luminance floor built from measured pixel data this repo does not carry, and
+  stays filed in ROADMAP. `form-font-parity`'s exemption net closes the three named gaps: a
+  variant-prefixed font utility (`md:font-mono`), `font-serif`/`font-sans`, and Tailwind 4's
+  `font-(family-name:--x)` shorthand are all now exempt from the parity check, with or without a
+  stacked variant prefix. Both rules stay advisory; this is a behavior change to audit output only,
+  and no rule was promoted to error tier. Consumers must: nothing. A build already treating either
+  rule's advisory findings as non-gating sees fewer of them; nothing that previously passed now
+  fails.
 
 ### Documentation
 

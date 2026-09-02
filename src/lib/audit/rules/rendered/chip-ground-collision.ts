@@ -49,13 +49,18 @@
 //     a chip measuring 12.98 against the image it actually sits on. An overlapping painter outside
 //     the chip's own ancestors now makes the ground indeterminate, which is advisory, because
 //     "cannot measure" is a different claim from "this collides".
-//  7. The formula had no chroma term at all (conformance pass, 2026-09-01, closing the repair filed
-//     out of design infrastructure Pass 3): two colors of plainly different hue but similar
-//     luminance measured as a collision, which produced a 60% false-positive rate (24 of 40) on the
-//     first real consumer admin this rule ever measured. A collision now also requires the two
-//     colors to sit close in `color.ts`'s `chromaDistance`, the hue/saturation axis luminance alone
-//     cannot see, so a hue-distinct chip a sighted user reads as plainly bounded no longer flags
-//     merely for measuring close in luminance.
+//  7. The formula had no chroma term at all (conformance pass, 2026-09-01, closing the HUE half of
+//     the repair filed out of design infrastructure Pass 3): two colors of plainly different hue
+//     but similar luminance measured as a collision, one of the two named mechanisms behind the
+//     60% false-positive rate (24 of 40) on the first real consumer admin this rule ever measured
+//     (14 of the 24, the hue-distinct class). A collision now also requires the two colors to sit
+//     close in `color.ts`'s `chromaDistance`, the hue/saturation axis luminance alone cannot see,
+//     so a hue-distinct chip a sighted user reads as plainly bounded no longer flags merely for
+//     measuring close in luminance. The other named mechanism, roughly 10 of the 24, a near-neutral
+//     dark-theme pill reading bounded despite a low ratio, carries no hue for this term to rescue
+//     and STILL FLAGS: closing it needs the filed floor-recalibration half of the repair, which
+//     needs measured pixel data from a real consumer admin audit run this repo does not carry (see
+//     ROADMAP.md).
 //
 // Only the `rest` state is read (no interaction reveals or hides a chip's own background), so no
 // `states` field is declared; the runner's default `['rest']` already covers this rule.
@@ -114,12 +119,16 @@ const RATIO_FLOOR = 1.5;
  * same hue that `RATIO_FLOOR` alone decides collision; at or above it, the two colors are hue-distinct
  * enough that a sighted user reads a boundary even where the luminance-only ratio measures close.
  *
- * Calibrated, not borrowed: two grays (any luminance) and two shades of one hue both measure exactly
- * 0, which is every fixture `RATIO_FLOOR`'s own pinned tests exercise; a warm-vs-cool near-white pair
- * (a small, non-hue-carrying tint) measures under 4; a genuinely hue-distinct pair (a lavender chip on
- * a warm-neutral ground, a blue-tinted low-alpha pill on a dark neutral ground, both modeled on the
- * corpus C false-positive classes) measures 24 to 28. 10 sits in the gap between the largest tint and
- * the smallest genuine hue distinction measured so far; `color.test.ts` pins both sides.
+ * Calibrated against measured pairs, not borrowed: two grays (any luminance) and two shades of one
+ * hue both measure exactly 0, which is every fixture `RATIO_FLOOR`'s own pinned tests exercise.
+ * Cairn's own dark-theme neutral tokens (`cairn-admin.css`'s dark palette, real Chromium
+ * measurements) sit close beside that zero: `base-200` on `base-100` measures 0.89, `base-300` on
+ * `base-100` measures 1.77, `base-300` on `base-200` measures 2.66, all genuinely near-neutral pairs
+ * with no hue for this term to see. A genuinely hue-distinct pair (a lavender chip on a warm-neutral
+ * ground, cairn's own `--color-warning` tint against a near-neutral zebra row) measures 24 to 28. 10
+ * sits in the wide, empty band between the largest near-neutral measurement and the smallest genuine
+ * hue distinction measured so far, not a close call between two competing numbers;
+ * `color.test.ts` and `chip-ground-collision-chroma-repair.test.ts` pin both sides.
  */
 const CHROMA_DISTINCT_FLOOR = 10;
 
@@ -272,11 +281,16 @@ function readChipGrounds(): ChipGroundReading {
  * ruling 1 moved the rule's own domain (the chip recipe StatusChip ships), and repairing the
  * formula before that recipe settled would have fit it twice.
  *
- * CHROMA-AWARE REPAIR LANDED (conformance pass, 2026-09-01): the check below now also requires
- * `chromaDistance` (color.ts) under `CHROMA_DISTINCT_FLOOR`, so a collision needs both a close
- * luminance ratio AND a close hue, closing the false-positive class the demotion above named.
- * **Stays advisory in this pass regardless**: promotion to error is a separate, later act on its
- * own re-measured evidence, not a consequence of this repair landing.
+ * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY (conformance pass, 2026-09-01): the check below now
+ * also requires `chromaDistance` (color.ts) under `CHROMA_DISTINCT_FLOOR`, so a collision needs
+ * both a close luminance ratio AND a close hue, closing the hue-distinct false-positive class the
+ * demotion above named (roughly 14 of the 24 measured false positives). The other named class,
+ * a near-neutral dark-theme pill reading bounded despite a low ratio (roughly the other 10), carries
+ * no hue for this term to rescue and stays open: it needs the filed floor-recalibration half of the
+ * repair, which needs measured pixel data from a real consumer admin audit run (see ROADMAP.md), not
+ * something this task can honestly derive. **Stays advisory in this pass regardless**: promotion to
+ * error is a separate, later act on its own re-measured evidence, not a consequence of either half
+ * of this repair landing.
  */
 export const chipGroundCollision: RenderedRule = {
   id: 'chip-ground-collision',

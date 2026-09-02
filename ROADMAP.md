@@ -1232,16 +1232,25 @@ the named human gates only):**
   320/390 overflow, the CMS pill's raw border, and StatusChip's own contrast floor are all fixed;
   see the error-tier entry and the CHANGELOG's `## Unreleased` window.) Rule and harness repairs:
   `chip-ground-collision`'s contrast had no chroma term, so hue-distinct chips flagged (24 false
-  errors on ASC; **resolved 2026-07-29: demoted to advisory; chroma-aware repair landed in the
-  conformance pass, 2026-09-01**: the formula now also measures a Cb/Cr-plane hue/chroma distance,
-  so a collision requires both a close luminance ratio and a close hue. The rule stays advisory;
-  promotion is a separate, later act on its own re-measured evidence). The quiet chip register
-  stays unguarded against its own fifth ground even after the repair, since its own tint carries no
-  hue distinct from its base-content/base-200/base-300 neighbors, all the same warm-stone hue:
-  quiet's 14%-tint mix over `--color-base-300` (e.g. daisyUI's `.table-zebra` row-hover) measures
-  ~1.34/1.41, under the 1.5 floor the register otherwise clears everywhere else, documented rather
-  than retuned in `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md`
-  (design infrastructure Pass 3, 2026-07-29 review triage);
+  errors on ASC, two named mechanisms: roughly 14 hue-distinct chips, roughly 10 near-neutral
+  dark-theme pills reading bounded despite a low ratio; **resolved 2026-07-29: demoted to
+  advisory; hue half of the repair landed in the conformance pass, 2026-09-01**: the formula now
+  also measures a Cb/Cr-plane hue/chroma distance, so a collision requires both a close luminance
+  ratio and a close hue, which rescues the hue-distinct class. The rule stays advisory; promotion
+  is a separate, later act on its own re-measured evidence. **The floor-recalibration half stays
+  filed**, scoped now to the near-neutral dark-theme class the chroma term cannot see (cairn's own
+  dark tokens measure chroma distance 0.89 to 2.66 at ratios 1.190 to 1.432, all under both the
+  1.5 luminance floor and the chroma floor, so this class still flags): recalibrating the
+  luminance floor for it needs measured pixel data from a real consumer admin audit run, which no
+  pass has carried into this repo yet; a later pass with fresh consumer-admin measurement access
+  (a follow-on audit-calibration or polish slice) is this line's candidate home, not a gate-stage
+  guess. The quiet chip register stays unguarded against its own fifth ground even after the hue
+  repair, since its own tint carries no hue distinct from its base-content/base-200/base-300
+  neighbors, all the same warm-stone hue: quiet's 14%-tint mix over `--color-base-300` (e.g.
+  daisyUI's `.table-zebra` row-hover) measures ~1.34/1.41, under the 1.5 floor the register
+  otherwise clears everywhere else, documented rather than retuned in
+  `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md` (design
+  infrastructure Pass 3, 2026-07-29 review triage);
   `norms-bands` measures inside closed `dialog.modal` boxes (scale .95 artifact) and trips on UA
   button-vs-anchor default padding; the norms manifest generator passes `size='xs'` to StatusChip
   so the bands never saw the component's `sm` default; rendered mode's missing post-hydration

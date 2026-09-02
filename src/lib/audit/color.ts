@@ -80,6 +80,10 @@ export function sameColor(a: Rgba, b: Rgba): boolean {
  * lightness (any two grays, or the same hue at two shades) land at the same Cb/Cr point, so this
  * distance is exactly zero for the achromatic pairs `contrastRatio` already measures correctly on its
  * own, and grows only where the colors actually diverge in hue or saturation.
+ *
+ * Ignores `a` entirely: like `contrastRatio`, this takes colors a caller has already composited
+ * onto an opaque backdrop (`resolveGround`'s return is always opaque by construction), so there is
+ * no remaining alpha to account for by the time either function sees the pair.
  */
 export function chromaDistance(a: Rgba, b: Rgba): number {
   const cb = (c: Rgba) => -0.168736 * c.r - 0.331264 * c.g + 0.5 * c.b;

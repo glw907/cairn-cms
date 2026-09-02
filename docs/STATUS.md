@@ -43,7 +43,8 @@ pass plan is DRAFTED at
 sitting; round-1 three-lens review ran pre-merge at Geoff's direction against worktree
 state `189bf2d7` and is FOLDED at `3dde82a7`: 13 tasks, ceiling 6.5M, one ratified-letter
 amendment on the CAIRN_DEV_BACKEND refusal awaiting Geoff's confirmation at plan approval;
-round 2 verification in flight; anchors reconcile once more after 4b merges). Resume prompt for a fresh
+round 2 verified and its fixes applied at `a946e140`; the plan awaits Geoff's approval
+gate, with anchor reconciliation after 4b's merge the only remaining pre-dispatch step). Resume prompt for a fresh
 session: "In ~/Projects/cairn-cms, resume the conformance pass (4b) mid-execution: invoke
 cairn-pass, read docs/STATUS.md and the plan, verify worktree `conformance` state, then
 continue the pass-execute workflow chain from the last completed task."

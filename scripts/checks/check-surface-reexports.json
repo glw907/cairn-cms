@@ -51,12 +51,6 @@
       "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it directly as `PublishActionEntry[]` on this subpath."
     },
     {
-      "name": "VariantSpec",
-      "subpath": ".",
-      "home": "/media",
-      "reason": "R4 closure: `AssetConfig`, `CairnRuntime` name it on this subpath."
-    },
-    {
       "name": "RateLimitLike",
       "subpath": "/auth-channel",
       "home": "/cloudflare",
@@ -691,12 +685,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor`, `Fieldset` name it on this subpath."
-    },
-    {
-      "name": "VariantSpec",
-      "subpath": "/sveltekit",
-      "home": "/media",
-      "reason": "R4 closure: `CairnRuntime`, `AssetConfig` name it on this subpath."
     },
     {
       "name": "VocabularyEntry",

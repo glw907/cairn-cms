@@ -5,7 +5,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AccessMap`: { [x: string]: string[] }
 - `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
+- `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; transformations?: boolean }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; listCommits: (path: string, ref: string, limit: number) => Promise<BackendCommit[]>; createBranch: (name: string, fromBranch: string) => Promise<string>; deleteBranch: (name: string) => Promise<void> }
 - `BackendCommit`: { ref: string; author: { name: string; email: string }; date: string }
 - `BackendProvider`: { kind: string; branch: string; connect: (env: CairnEnv) => Backend }
@@ -15,7 +15,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[] } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
-- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
+- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `canReach`: (access: AccessMap | undefined, editor: Editor, target: string) => boolean
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
@@ -110,7 +110,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `verifyManifest`: (built: Manifest, committedRaw: string) => void
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
@@ -387,7 +386,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/media`
 
-- `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
+- `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; transformations?: boolean }
 - `createMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig) => MediaResolve
 - `formatMediaToken`: (ref: MediaRef) => string
 - `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
@@ -397,8 +396,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `normalizeAssets`: (assets: AssetConfig | undefined) => ResolvedAssetConfig
 - `parseMediaToken`: (href: string) => MediaRef | null
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest
-- `ResolvedAssetConfig`: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
+- `ResolvedAssetConfig`: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; transformations: boolean }
 
 ## `/render`
 
@@ -434,7 +432,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdminData`: { view: "login"; page: LoginData } | { view: "confirm"; page: ConfirmData } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "history"; page: HistoryData } | { view: "editors"; page: EditorsData } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData } | { view: "welcome"; page: WelcomeData }
 - `AdminShellData`: { public: true; siteName: string; theme: "cairn-admin" | "cairn-admin-dark" } | { public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
+- `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; transformations?: boolean }
 - `AttentionItem`: { href: string; count: number; label?: string }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
 - `AuthGuardOptions`: { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean }
@@ -451,7 +449,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
 - `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
 - `CairnRef`: { concept: string; id: string }
-- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
+- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
 - `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
@@ -564,7 +562,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 - `VocabularyLoadData`: { vocabulary: VocabularyEntry[]; usage: { [x: string]: number }; unlisted: { value: string; count: number }[] }
 - `WelcomeData`: { displayName: string; siteName: string }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeAssets } from '../../lib/media/config.js';
+import { normalizeAssets, BUILT_IN_PRESETS } from '../../lib/media/config.js';
+import { presetUrl, variantUrl } from '../../lib/media/transform-url.js';
 import type { AssetConfig } from '../../lib/content/types.js';
 
 const DEFAULT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
@@ -14,7 +15,6 @@ describe('normalizeAssets', () => {
     expect(resolved.urlForm).toBe('slug');
     expect(resolved.maxUploadBytes).toBe(25 * 1024 * 1024);
     expect(resolved.allowedTypes).toEqual(DEFAULT_TYPES);
-    expect(Object.keys(resolved.variants).sort()).toEqual(['card', 'hero', 'inline', 'thumb']);
     expect(resolved.transformations).toBe(false);
   });
 
@@ -22,15 +22,6 @@ describe('normalizeAssets', () => {
     const resolved = normalizeAssets({ bucketBinding: 'X', transformations: true });
     if (!resolved.enabled) throw new Error('expected enabled');
     expect(resolved.transformations).toBe(true);
-  });
-
-  it('lets a caller variant override a built-in preset while the rest stay built-in', () => {
-    const resolved = normalizeAssets({ bucketBinding: 'X', variants: { hero: { width: 2000 } } });
-    if (!resolved.enabled) throw new Error('expected enabled');
-    expect(resolved.variants.hero).toEqual({ width: 2000 });
-    expect(resolved.variants.thumb).toEqual({ width: 320, height: 320, fit: 'cover' });
-    expect(resolved.variants.inline).toEqual({ width: 800 });
-    expect(resolved.variants.card).toEqual({ width: 640, height: 400, fit: 'cover' });
   });
 
   it('carries an explicit opaque urlForm', () => {
@@ -47,51 +38,24 @@ describe('normalizeAssets', () => {
     expect(() => normalizeAssets({ bucketBinding: 'X', urlForm: 'weird' as 'slug' })).toThrow(/cairn:/);
   });
 
-  it('throws cairn: for a variant with a bad fit', () => {
-    expect(() =>
-      normalizeAssets({ bucketBinding: 'X', variants: { hero: { fit: 'stretch' as 'cover' } } }),
-    ).toThrow(/cairn:/);
-  });
-
-  it('throws cairn: for a variant with a bad gravity', () => {
-    expect(() =>
-      normalizeAssets({ bucketBinding: 'X', variants: { hero: { gravity: 'nonsense' } } }),
-    ).toThrow(/cairn:/);
-  });
-
-  it('accepts the entropy gravity keyword', () => {
-    const resolved = normalizeAssets({ bucketBinding: 'X', variants: { hero: { gravity: 'entropy' } } });
-    if (!resolved.enabled) throw new Error('expected enabled');
-    expect(resolved.variants.hero).toEqual({ gravity: 'entropy' });
-  });
-
-  it('accepts the aspect-crop, scale-up, and squeeze fit modes', () => {
-    const resolved = normalizeAssets({
-      bucketBinding: 'X',
-      variants: { crop: { fit: 'aspect-crop' }, up: { fit: 'scale-up' }, sq: { fit: 'squeeze' } },
-    });
-    if (!resolved.enabled) throw new Error('expected enabled');
-    expect(resolved.variants.crop).toEqual({ fit: 'aspect-crop' });
-    expect(resolved.variants.up).toEqual({ fit: 'scale-up' });
-    expect(resolved.variants.sq).toEqual({ fit: 'squeeze' });
-  });
-
-  it('accepts an explicit upscale value', () => {
-    const resolved = normalizeAssets({
-      bucketBinding: 'X',
-      variants: { up: { fit: 'scale-up', upscale: 'generate' } },
-    });
-    if (!resolved.enabled) throw new Error('expected enabled');
-    expect(resolved.variants.up).toEqual({ fit: 'scale-up', upscale: 'generate' });
-  });
-
-  it('throws cairn: for a variant with a bad upscale', () => {
-    expect(() =>
-      normalizeAssets({ bucketBinding: 'X', variants: { hero: { upscale: 'nope' as 'generate' } } }),
-    ).toThrow(/cairn:/);
-  });
-
   it('returns disabled media when no assets block is declared', () => {
     expect(normalizeAssets(undefined)).toEqual({ enabled: false });
   });
+});
+
+describe('BUILT_IN_PRESETS', () => {
+  // Ruling 4 (2026-09-01, the `variants` evidence sweep) retires a site's ability to declare its
+  // own transform presets; the four built-ins are the whole vocabulary presetUrl resolves
+  // against, so they must keep working through it with no AssetConfig in the loop.
+  it('names exactly the thumb, inline, card, and hero presets', () => {
+    expect(Object.keys(BUILT_IN_PRESETS).sort()).toEqual(['card', 'hero', 'inline', 'thumb']);
+  });
+
+  it.each(['thumb', 'inline', 'card', 'hero'] as const)(
+    'resolves the %s preset through presetUrl to the variantUrl its spec would build',
+    (name) => {
+      const path = '/media/x.a1b2c3d4e5f6a7b8.webp';
+      expect(presetUrl(path, name, BUILT_IN_PRESETS)).toBe(variantUrl(path, BUILT_IN_PRESETS[name]));
+    },
+  );
 });

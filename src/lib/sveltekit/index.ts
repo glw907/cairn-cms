@@ -98,8 +98,8 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // still name the value it holds. `CairnRuntime`'s own structural body in turn names most of the
 // rest below it, the same recursive closure `/delivery` and root carry.
 //
-// Canonical home for everything below this line is the root barrel `.`, except `MediaRef` and
-// `VariantSpec` (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded
+// Canonical home for everything below this line is the root barrel `.`, except `MediaRef`
+// (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded
 // R4 re-export, not a second home (canonical-home rule, foundations A); the full set with its
 // per-name reason is `scripts/checks/check-surface-reexports.json`, and
 // `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
@@ -153,7 +153,6 @@ export type { RepoFile, CommitAuthor } from '../github/types.js';
 export type { FileChange } from '../github/repo.js';
 export type { ComponentRegistry, ComponentDef, ComponentContext, SlotDef } from '../render/registry.js';
 export type { IconSet } from '../render/glyph.js';
-export type { VariantSpec } from '../media/transform-url.js';
 export type { FragmentResolve } from '../render/resolve-include.js';
 export type { LinkResolve } from '../content/links.js';
 export type { MediaResolve } from '../render/resolve-media.js';

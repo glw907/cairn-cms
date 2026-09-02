@@ -1951,7 +1951,6 @@ imports the matching `*Data` type to type its `data` prop.
 | `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). See [`ComponentDef`](./core.md#render). |
 | `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives. See [`ComponentContext`](./core.md#types). |
 | `IconSet` | Extension API | `type IconSet = Record<string, string>` | A glyph name to SVG path-data map the site owns. |
-| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies. See [`VariantSpec`](./media.md#types). |
 | `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. |
 | `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. |
 | `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. |

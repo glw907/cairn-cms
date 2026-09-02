@@ -146,6 +146,3 @@ export type { PublishActionEntry } from './sveltekit/publish-actions.js';
 // Canonical home `/islands`; a recorded R4 re-export here because `CairnAdapter.rendering.islands`
 // names it.
 export type { IslandRegistry } from './islands/types.js';
-// Canonical home `/media`; a recorded R4 re-export here because `AssetConfig.variants` and
-// `CairnRuntime.resolvedAssets` name it.
-export type { VariantSpec } from './media/transform-url.js';

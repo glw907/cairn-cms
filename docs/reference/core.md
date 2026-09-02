@@ -267,18 +267,7 @@ interface AssetConfig {
   urlForm?: 'slug' | 'opaque';
   maxUploadBytes?: number;
   allowedTypes?: string[];
-  variants?: Record<string, VariantSpec>;
   transformations?: boolean;
-}
-
-interface VariantSpec {
-  width?: number;
-  height?: number;
-  quality?: number;
-  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up' | 'squeeze';
-  gravity?: 'auto' | 'face' | string;
-  format?: 'auto' | 'webp' | 'avif' | string;
-  upscale?: 'interpolate' | 'generate';
 }
 ```
 
@@ -287,8 +276,11 @@ names the R2 bucket bound to the Worker and is the one required field. `publicBa
 base path (default `/media`), and `urlForm` chooses whether the public URL carries the slug
 (`/media/<slug>.<hash>.<ext>`, the default) or stays opaque (`/media/<aa>/<hash>.<ext>`).
 `maxUploadBytes` (default 25 MB) and `allowedTypes` (default the common web image types) bound an
-upload. `variants` are named Cloudflare Images presets, merged over the built-in `thumb`, `inline`,
-`card`, and `hero` presets, so a same-named entry overrides a built-in.
+upload. A site can't declare its own named transform presets. The built-in `thumb`, `inline`,
+`card`, and `hero` presets are the whole vocabulary (ruling 4, 2026-09-01), since the field had no
+reachable runtime consumer. A site needing a size beyond the four built-ins builds a URL directly
+against Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL format. Cairn's own URL
+builder is engine-internal, not public surface.
 
 `transformations` (default `false`) declares whether Cloudflare Image Transformations are enabled
 for the zone. This is a per-zone setting that the dashboard or API turns on, not something a Worker
@@ -1053,7 +1045,7 @@ function signatures above reference these.
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. See the preceding [`nav` adapter `editor` member](#nav-adapter-editor-member). |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
-| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
+| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, and the upload limits. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
 | `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../extend/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from. |
 | `ComposeInput` | Extension API | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
@@ -1120,7 +1112,6 @@ function signatures above reference these.
 | `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
 | `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree; see [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
 | `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link; `href` is a template string substituted with the published entry's identity at resolve time. |
-| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. See the preceding [`media` adapter member](#media-adapter-member). |
 | `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s; `hydrateIslands` mounts over the matching `hydrate` directive's static fallback. |
 | `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `ResolveOptions` | Extension API | `type ResolveOptions = { resolve?; resolveMedia?; resolveFragment? }` | The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto the VFile's data so the `cairn:` link, `media:`, and `::include` steps read them at process time. |

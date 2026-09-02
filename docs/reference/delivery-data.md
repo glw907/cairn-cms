@@ -562,8 +562,10 @@ the deliberate exception below), so their nested types (`AccessMap`, `RolesDecla
 `FileChange`, `CairnEnv`, `EmailSender`, `MagicLinkMessage`, `EmailAttachment`,
 `EmailRecipient`) aren't part of this closure and aren't importable from `/delivery/data`.
 
-**Import an adapter-only member from its own home.** Eighteen names this subpath once re-exported
-now import from the barrel that declares them, because nothing this subpath publishes names them.
+**Import an adapter-only member from its own home.** Seventeen names this subpath once re-exported
+now import from the barrel that declares them, because nothing this subpath publishes names them
+(an eighteenth, `VariantSpec`, was among them but is since retired outright; see
+[`/media`](./media.md)).
 
 - From [the root barrel](./core.md): `AssetConfig`, `SenderConfig`, `NavMenuConfig`,
   `PreviewConfig`, `SiteRender`, `ComponentRegistry`, `ComponentDef`, `ComponentContext`,
@@ -571,7 +573,7 @@ now import from the barrel that declares them, because nothing this subpath publ
 - From [`/sveltekit`](./sveltekit.md): `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
   `NavLayoutSection`.
 - From [`/islands`](./islands.md): `IslandRegistry`.
-- From [`/media`](./media.md): `MediaRef`, `VariantSpec`.
+- From [`/media`](./media.md): `MediaRef`.
 
 `MediaRef`, `MediaResolve`, and `SiteRender` are also importable from
 [`/delivery`](./delivery.md), whose `PublicRoutesConfig` names all three.

@@ -40,7 +40,6 @@ const MEDIA_ON: ResolvedAssetConfig = {
   urlForm: 'slug',
   maxUploadBytes: 25 * 1024 * 1024,
   allowedTypes: ['image/jpeg'],
-  variants: {},
   transformations: false,
 };
 

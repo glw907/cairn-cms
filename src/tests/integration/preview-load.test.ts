@@ -426,7 +426,6 @@ describe('previewLoad: the draft render', () => {
       urlForm: 'slug',
       maxUploadBytes: 1,
       allowedTypes: [],
-      variants: {},
       transformations: false,
     };
     const token = await mintValidToken();
@@ -469,7 +468,6 @@ describe('previewLoad: the draft render', () => {
       urlForm: 'slug',
       maxUploadBytes: 1,
       allowedTypes: [],
-      variants: {},
       transformations: false,
     };
     const token = await mintValidToken();
@@ -544,7 +542,6 @@ describe('PreviewData: the type and runtime shape contract', () => {
       urlForm: 'slug',
       maxUploadBytes: 1,
       allowedTypes: [],
-      variants: {},
       transformations: false,
     };
     const token = await mintValidToken();

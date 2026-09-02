@@ -79,9 +79,9 @@ site reaches into:
   `githubApp` provider is the only shipped implementation; the interface exists so the commit path
   is a typed contract rather than a hard-coded GitHub call threaded through every route. See
   [Core](../reference/core.md).
-- **`AssetConfig`**, a site's optional media declaration, resolved into the R2 bucket binding,
-  upload limits, and delivery variants a site's own routes and the admin's media library both read.
-  See [Data tiers](./data-tiers.md).
+- **`AssetConfig`**, a site's optional media declaration, resolved into the R2 bucket binding and
+  upload limits a site's own routes and the admin's media library both read. See
+  [Data tiers](./data-tiers.md).
 
 ## The write path
 

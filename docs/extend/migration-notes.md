@@ -13,17 +13,24 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
-- **Eighteen type-only names moved to their canonical home.** The engine now publishes each
+- **Seventeen type-only names moved to their canonical home.** The engine now publishes each
   exported name from exactly one subpath. Re-point these imports away from
   `@glw907/cairn-cms/delivery` and `@glw907/cairn-cms/delivery/data`, which no longer carry them:
   to `@glw907/cairn-cms` for `AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
   `SiteRender`, `ComponentRegistry`, `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`, and
   `MediaResolve`; to `@glw907/cairn-cms/sveltekit` for `NavLayout`, `NavLayoutEntry`,
   `NavLayoutEngineRef`, and `NavLayoutSection`; to `@glw907/cairn-cms/islands` for `IslandRegistry`;
-  and to `@glw907/cairn-cms/media` for `MediaRef` and `VariantSpec`. All are type-only,
-  so a missed one is a type error at build, never a runtime failure. `MediaRef`, `MediaResolve`,
-  and `SiteRender` are still importable from `@glw907/cairn-cms/delivery`, whose
-  `PublicRoutesConfig` names all three.
+  and to `@glw907/cairn-cms/media` for `MediaRef`. All are type-only, so a missed one is a type
+  error at build, never a runtime failure. `MediaRef`, `MediaResolve`, and `SiteRender` are still
+  importable from `@glw907/cairn-cms/delivery`, whose `PublicRoutesConfig` names all three. An
+  eighteenth name in this same move, `VariantSpec`, is since retired outright; see the next entry.
+- **`VariantSpec` and `AssetConfig.variants` are retired.** A site's evidence sweep found zero
+  reachable runtime consumers: no family site declared a custom transform preset, and
+  `presetUrl`, the only reader, had no non-test caller. The built-in `thumb`, `inline`, `card`,
+  and `hero` presets are now the whole vocabulary. Drop any `variants:` key from a `media` block
+  (it's a type error now, not a silent no-op); a site needing a size beyond the four built-ins
+  builds a URL directly against Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL
+  format, since cairn's own URL builder was never public surface.
 - **`StatusChip`'s register grammar moved to its second generation.** `register` is now
   `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the status dot, and the
   STATUS_CHIP_DOT_CLASS export are all removed. Replace `register="bounded"` with

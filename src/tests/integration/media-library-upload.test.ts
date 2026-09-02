@@ -45,7 +45,6 @@ function runtime(): CairnRuntime {
       urlForm: 'slug',
       maxUploadBytes: 25 * 1024 * 1024,
       allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
-      variants: {},
       transformations: false,
     },
   } as CairnRuntime;

@@ -354,9 +354,11 @@
   `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`, `MediaResolve`. From
   `@glw907/cairn-cms/sveltekit`: `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
   `NavLayoutSection`. From `@glw907/cairn-cms/islands`: `IslandRegistry`. From
-  `@glw907/cairn-cms/media`: `MediaRef`, `VariantSpec`. All are type-only imports, so no runtime
+  `@glw907/cairn-cms/media`: `MediaRef`. All are type-only imports, so no runtime
   behavior changes;
   `@glw907/cairn-cms/delivery` still carries `MediaRef`, `MediaResolve`, and `SiteRender`.
+  `VariantSpec`'s canonical-home move to `/media` is superseded within this same window: it's
+  retired outright, below.
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
   2026-08-24 owner probe, Geoff's own ratification: illegible-dot evidence and the ratified
@@ -1142,6 +1144,19 @@
   rather than leaving a bare 500 on the login POST. The column is nullable and a row without a
   binding still confirms, whatever the confirming browser carries, so applying the migration
   cannot strand a link already in an inbox.
+
+- `AssetConfig.variants` and the `VariantSpec` type are retired (ruling 4, 2026-09-01, the
+  `variants` evidence sweep). The field had zero reachable runtime consumers: none of the four
+  family sites (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org) or cairn-pub declared a
+  custom preset, `config.ts`'s per-variant fit/gravity/upscale validation existed only to guard
+  it, and `presetUrl`, its only reader, has no non-test caller since Task 3 of the conventions
+  pass dropped `createMediaResolver`'s own preset parameter. The built-in `thumb`, `inline`,
+  `card`, and `hero` presets are now the whole vocabulary; `BUILT_IN_PRESETS` (engine-internal)
+  is the fixed source of it. Consumers must: drop any `variants:` key from a `media` block, since
+  it's now an excess-property type error rather than a merged-and-ignored no-op; a site needing a
+  size beyond the four built-ins builds the Cloudflare Images transform URL directly against
+  Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's own URL builder
+  (`variantUrl`/`presetUrl`) was never exported from any public subpath.
 
 ## 0.96.0
 

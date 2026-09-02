@@ -695,6 +695,15 @@ The original decision framing, for the record:
   five-viewport bar as its own task, while the admin suite's own route coverage went unexamined, and
   nobody asked which admin screens the corpus actually contains.
 
+  **A second, independent instance of the same corpus gap (`extender`, 2026-08-27, promoted from
+  the friction log at the 4b close).** The admin visual specs passed unchanged through the
+  StatusChip regrammar (dot removed, register renamed, grounds retuned) because no captured
+  screen renders a chip within the 120px diff budget (`playwright.config`'s
+  `maxDiffPixels: 120`). That pass's visual verification had to be a hand-built probe read by the
+  conductor. Candidate fix, riding the same regeneration-and-human-read work the corpus gap above
+  already owes: a chip-bearing admin screen (a list with status rows, or a dedicated probe route)
+  joins `admin-visual.spec.ts` in both themes.
+
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the
   client stub and the Worker never started) shipped past every gate this repo runs, and the two
@@ -949,7 +958,10 @@ the named human gates only):**
   `tabindex="0"`, no role, and no accessible name, and forces `white-space: nowrap` on every cell, so
   horizontal overflow at narrow widths is guaranteed and a keyboard-only user cannot scroll to reach
   it (axe-core `scrollable-region-focusable`). Nesting it inside `OfficeList`'s own `overflow-x-auto`
-  stacks two such regions. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
+  stacks two such regions. Refinement (2026-08-29, toolkit-seams fix round; promoted from the
+  friction log at the 4b close): Chrome 127+ and Firefox make an overflowing container natively
+  focusable, so the gap is partially mitigated on those engines already; it still reaches Safari
+  and older Chromium. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
   color from the chip's ancestor and can drop under the 3:1 border-contrast floor inside a muted-text
   ancestor, telling the reader to verify each new call site; the documented example ships a new call
   site (a chip inside a table cell) with no measurement recorded.
@@ -1912,6 +1924,39 @@ the named human gates only):**
   deferral's condition, a future refinement if editors hit it, has no detector: `history_stale` is
   not in the log event vocabulary (see `docs/reference/log-events.md`), so the trigger can only
   ever arrive as a verbal report today.
+
+- **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin (filed
+  2026-08-27, toolkit-seams fix round; promoted from the friction log at the 4b close).** The
+  toolkit-seams pass migrated the warning bracket form (`text-[var(--cairn-warning-ink)]`, 27
+  sites) to the new `cairn-text-warning` utility and the two positive-ink bracket sites
+  (`text-[var(--color-positive-ink)]`) to `cairn-text-success`, but left the error ink on the
+  bracket form: 33 in-tree sites still write `text-[var(--cairn-error-ink)]` directly
+  (`CairnMediaLibrary.svelte`, `VocabularyAdmin.svelte`, and others). Decision owed: add a
+  matching `cairn-text-error` utility, or explicitly bless the bracket form for error ink in
+  `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens pass, or the next component
+  that needs error-ink styling and has to choose which form to copy.
+
+- **`MediaPicker`'s empty-state `<li>` violates the owned-elements rule (filed 2026-08-29,
+  toolkit-seams fix round; promoted from the friction log at the 4b close).**
+  `MediaPicker.svelte:220` renders an empty-state `<li>` inside a `role="listbox"`, with neither
+  `role="option"` nor `role="presentation"` on it, so the listbox owns a child ARIA doesn't
+  recognize as a valid listbox child. Small, standalone fix; no other pass currently claims it.
+  Trigger: the next pass touching `MediaPicker.svelte`, or a consumer's own a11y audit.
+
+- **`isUniqueViolation` in `/cloudflare` is deferred, not dropped (toolkit-seams pass, former
+  Task 7, 2026-08-26; promoted from the friction log at the 4b close, since the plan's own
+  intent to record the defer in `docs/internal/engine-rulings.md` was not actually carried out
+  at pass close).** Four divergent site copies of a D1 unique-violation matcher motivated the
+  proposal, but the membership case did not clear the gate at review: the Cloudflare-specific
+  content is the workerd cause-chain nesting alone, four divergent copies in ONE consumer is the
+  `site-today-export` decline's own shape, and the engine itself never handles `UNIQUE
+  constraint failed` today, so shipping it would have been a fifth engine-unused export (C13).
+  The shape is right if it reopens: a type predicate, `is`-prefixed, structure not vocabulary.
+  **Reopens on:** a second unrelated consumer hitting the cause-chain nesting, or the cheaper
+  decisive check: an engine-side D1 path that can raise a UNIQUE violation and mishandles it
+  today (candidates: the `AUTH_DB` editor/invite inserts, `createD1AuditSink`); if one
+  qualifies, the engine becomes its own first consumer and the item clears both the gate and
+  C13 in one move.
 
 ## Later
 

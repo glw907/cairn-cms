@@ -33,14 +33,6 @@ clearings.
   value. Trigger: a consumer reports needing a non-default CSRF fixture value, or a future audit
   round reaches this constant.
 
-- **The showcase e2e visual suite is blind to chip-bearing surfaces** (`extender`, 2026-08-27).
-  The admin visual specs passed unchanged through the StatusChip regrammar (dot removed, register
-  renamed, grounds retuned) because no captured screen renders a chip within the 120px diff
-  budget (`playwright.config` `maxDiffPixels: 120`). The pass's visual verification had to be a
-  hand-built probe read by the conductor. Candidate fix: a chip-bearing admin screen (a list with
-  status rows, or a dedicated probe route) joins `admin-visual.spec.ts` in both themes.
-
-
 - **The rulings ledger will not scale as one flat read** (`contributor`, 2026-08-26). The
   any-site audit appended 535 entries to `docs/internal/engine-rulings.md` (~3,970 lines),
   and `engine-triage`'s first action reads it in full on every dispatch. Fine for now under
@@ -83,67 +75,14 @@ clearings.
   stops recurring, or produces a discriminated record that names a mechanism this pass did not
   already close.
 
-- **`StatusChip`'s `outline` register border drops under the 3:1 non-text floor inside a
-  muted-ink ancestor** (`extender`, 2026-08-27, fix round). The hairline is `color-mix(in oklab,
-  currentColor 55%, transparent)`, so it inherits its color from whatever ancestor ink surrounds
-  it; measured inside a `text-muted` ancestor (`--color-muted` at 55%, composited onto the page
-  ground): 2.405:1 light, 2.971:1 dark, both under the WCAG 1.4.11 non-text floor `StatusChip`'s
-  own prop doc already tells a caller to verify. Latent in-tree today (cairn's own five call sites
-  clear the floor; none nests an `outline` chip inside a muted-text ancestor), so nothing ships
-  broken, but the gap is real and only self-defends by convention. A candidate for a `cairn-audit`
-  rendered rule (compute the actual inherited ink at each `outline` chip's own ancestor chain,
-  the same ancestor-walk `chip-ground-collision` already does for the fill registers) rather than
-  leaving it to a doc sentence a future call site can miss. Trigger: the harvest-detection pass, or
-  a consumer call site that nests an `outline` chip inside its own muted-text ancestor.
-
-- **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin**
-  (`extender`, 2026-08-27). The toolkit-seams pass migrated the warning bracket form
-  (`text-[var(--cairn-warning-ink)]`, 27 sites) to the new `cairn-text-warning` utility and the
-  two positive-ink bracket sites (`text-[var(--color-positive-ink)]`) to `cairn-text-success`, but
-  left the error ink on the bracket form: 33 in-tree sites still write
-  `text-[var(--cairn-error-ink)]` directly (`CairnMediaLibrary.svelte`, `VocabularyAdmin.svelte`,
-  and others). Decision owed: add a matching `cairn-text-error` utility, or explicitly bless the
-  bracket form for error ink in `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens
-  pass, or the next component that needs error-ink styling and has to choose which form to copy.
-
-- **`list-role`'s class-only re-grounding misses daisyUI's own descendant-selector lists**
-  (`extender`, 2026-08-29, fix round). The rule resolves an item's rendered display from the
-  item's own classes only, but daisyUI styles list items through descendant selectors scoped to
-  the LIST's own class (`.menu :where(li) { display: flex }`, `.breadcrumbs > li`), so a `<ul
-  class="menu">` whose `<li>` carries no class of its own never registers as re-grounded even
-  though its rendered display is not `list-item`. Nine engine lists sit in this exact gap:
-  `CairnAdminShell.svelte:646`, `:740`, `:832`; `EditPage.svelte:1778`; `EditorToolbar.svelte:372`,
-  `:449`; `ComponentInsertDialog.svelte:447`; `EntryPicker.svelte:141`; `DeleteDialog.svelte:88`.
-  A robust fix needs a rendered-mode check of the item's actual computed `display`, not a second
-  class-source lookup; `role="listitem"` on each item may also be needed once the list itself
-  carries `role="list"` (ARIA's owned-elements rule), and the remedy wants VoiceOver verification,
-  not only a computed-style read. Two adjacent defects in the same rule's own diagnostics:
-  `sheet.ts:544`'s class-to-declaration lookup for a finding's cause string is scoped to the
-  selector's mention, not the subject the rule actually flagged, so a shared selector with several
-  declarations can mis-attribute which one caused the finding, and an at-rule's own condition (a
-  media query, a `@supports` block) is dropped from the message entirely, so two declarations that
-  differ only by their surrounding at-rule read identical in the finding text. Routed to the
-  any-site audit remediation initiative (`ROADMAP.md`, "The any-site audit remediation").
-
-- **`panel-width` cannot see a closed `<select>`'s clipped label** (`extender`, 2026-08-29, fix
-  round). Measured in Chromium: a closed native `<select>` never grows `scrollWidth` past its own
-  `clientWidth`, so any overflow check built on that comparison reads clean on a select whose
-  visible option text is truncated. Catching a genuinely clipped select label needs a painted
-  text-width measurement, the same approach `resolveColors` already takes for a computation the
-  DOM's own layout boxes can't answer directly, not a `scrollWidth` comparison. Follow-up for the
-  audit remediation initiative.
-
-- **`AdminTable`'s horizontal scroll wrapper isn't keyboard-reachable** (`extender`, 2026-08-29,
-  fix round). `toolkit-admin-table-wrap` (`overflow-x: auto`) carries no `tabindex`, `role`, or
-  accessible name, so a keyboard user can't scroll a table wider than its wrapper in Chrome or
-  Safari (the axe `scrollable-region-focusable` rule); Chrome 127+ and Firefox make an overflowing
-  container natively focusable, so the gap is partially mitigated on those engines already, but
-  not on Safari or older Chromium. Toolkit-wide, out of this pass's diff.
-
-- **`MediaPicker`'s empty-state `<li>` violates the owned-elements rule** (`extender`, 2026-08-29,
-  fix round). `MediaPicker.svelte:220` renders an empty-state `<li>` inside a `role="listbox"`,
-  with neither `role="option"` nor `role="presentation"` on it, so the listbox owns a child ARIA
-  doesn't recognize as a valid listbox child. Out of this pass's diff.
+- **`presetUrl` and `BUILT_IN_PRESETS` have zero production callers after the conformance pass's
+  Task 14 variants retirement** (`contributor`, 2026-09-01, the 4b close). `presetUrl`
+  (`src/lib/media/transform-url.ts`) and `BUILT_IN_PRESETS` (`src/lib/media/config.ts`) are
+  unreferenced anywhere in `src/lib` outside their own declaration and the test suite;
+  `presetUrl` is still on the public surface, so pruning it is a surface change and a ruling
+  matter, not a plain dead-code deletion. Filed to `ROADMAP.md` rather than acted on here.
+  Trigger: the next surface-ruling sitting, or the internals-B slice of the any-site audit
+  remediation initiative.
 
 ## Tombstones (decided, do not resurface)
 
@@ -181,49 +120,6 @@ New findings start below this line, one per finding, with its perspective and a 
   2026-08-22) reads the list by that exact heading, so renaming the heading requires updating the
   routine in the same change.
 
-The fourteen entries below are the survivors of the 2026-08-26 adversarial triage of the
-late-August ASC harvests. Full substance, evidence, and the ruled-out list:
-[`record/2026-08-26-asc-harvest-triage.md`](./record/2026-08-26-asc-harvest-triage.md). Each is
-queued in one of two prepped pass plans (`2026-08-26-toolkit-seams-pass.md`,
-`2026-08-26-harvest-detection-pass.md`); prune these entries when those passes ship.
-
-- **extender:** the media picker has no legal import path (`MediaPicker.svelte` unexported,
-  `mediaLibraryEntry` internal per `src/lib/media/library-entry.ts:11`); ASC rebuilt the field.
-  Queued: toolkit-seams T1.
-- **extender:** `StatusChip` still renders the tone dot the 2026-08-24 owner probe retired, and
-  lacks the ratified warning-tint and outline registers now proven across three ASC screens.
-  Queued: toolkit-seams T2.
-- **extender:** `ExpandableRow`'s trigger is a ~24px target and its row handler offers no escape
-  for an interactive summary cell, forcing `svelte-ignore`'d `stopPropagation` wrappers.
-  Queued: toolkit-seams T3.
-- **extender:** the four disclosure mechanics live only inside `ListToolbar`'s overflow; the one
-  hand-copy missed all four. Queued: toolkit-seams T4 (`ToolbarDisclosure`).
-- **extender:** `CsrfField` blanks on the `use:enhance` success reset and the next submit 403s
-  against cairn's own guard; hit twice in one repo. Queued: toolkit-seams T5.
-- **admin:** unchecked `.checkbox` edge measures 1.50:1/1.75:1 against the 3:1 WCAG 1.4.11 floor
-  in the packaged admin sheet. Queued: toolkit-seams T6.
-- **extender:** admin scope has no compiled success/warning text tint; dead `text-success`
-  utilities shipped silently. Queued: toolkit-seams T6.
-- **extender:** bare `<ul>` inside `.toolkit-*` containers keeps the UA 40px gutter; the blanket
-  reset is ruled out (`cairn-admin.css:468`), the scoped padding-only form is in.
-  Queued: toolkit-seams T6.
-- **extender:** four divergent site copies of a D1 unique-violation matcher; the cause-chain walk
-  is workerd platform knowledge. Queued: toolkit-seams T7 (`/cloudflare`).
-- **admin:** a site-wide `Referrer-Policy: no-referrer` makes every plain POST carry
-  `Origin: null` and 403 against the guard (`csrf.ts:23`); the guard stays strict, the doctor
-  detects the misconfiguration. Queued: harvest-detection T1.
-- **extender:** `no-uncompiled-class` cannot register site-compiled stylesheets, so a pass closed
-  with six known-false-positives. Queued: harvest-detection T2.
-- **contributor:** six mechanically detectable mechanics want audit rules (stripe/trim parity,
-  `font: inherit` clobber, bare-tag hover parity, DaisyUI dead class, styled `<ul>` without
-  `role="list"`, panel width at 320/390). Queued: harvest-detection T3–T5.
-- **contributor:** each rendered contrast rule needs a falsification test proving it reds on an
-  oklch surface (`interactive-contrast.ts:21` documents the parser trap).
-  Queued: harvest-detection T6.
-- **extender:** chassis smooth-scroll triple with a header-height token, `PUBLIC_ORIGIN` as the
-  only origin source, and three documented patterns (fixed clock, dialog-form failure, streamed
-  panel data). Queued: harvest-detection T7.
-
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in
@@ -245,6 +141,11 @@ history holds every pruned entry in full.
 | 2026-08-18 | seam Pass 2 Task B0 | the cost-preamble finding, the last live one. Geoff ruled the copy hedges rather than waiting on a browser glance; `money.mjs` and two admin pages now scope the total to the confirmed figures, with a test pinning the hedge |
 | 2026-08-19 | the release-debt pass | **supersedes the B0 cost ruling above.** A measured build put the deployable bundle at 3,246,163 bytes gzipped, over Cloudflare's 3 MiB Workers Free script limit, so "free, and stays free" was not a hedge to tune but a false claim. Geoff ruled Workers Paid is the expectation, stated plainly and without apology. `money.mjs`, its transcript fixture, and three admin pages now say so; the CLI's own consent prompt still does not, and is filed to `ROADMAP.md` as its own pass |
 | 2026-08-22 | the aksailingclub-org 0.95.0 adoption fix pass (`15a2c979`) | five `extender` findings from a real production adoption of 0.95.0, all shipped: `previewLoad`'s static `$app/environment` import broke a raw, non-Vite Wrangler bundle of the `/sveltekit` barrel (now a dynamic import, gated by a new static-import-graph walker test over the built barrel); `previewLoad` now strips `canonical`/`og:url`/`jsonLd.url` from its `seo` instead of leaving every adopter to rediscover the strip; `PreviewBanner`'s four `--cairn-preview-*` custom properties are now documented as the site-override seam; `PreviewBanner` renders the expiry as a fixed UTC `<time>` string instead of `Intl.DateTimeFormat(undefined, ...)`, closing a possible hydration mismatch, with an optional `formatExpiry` prop; `@cloudflare/workers-types` is now a `peerDependency` at `^5`, so a `wrangler types`-only consumer's install now surfaces the requirement instead of silently losing every cairn-typed binding signature to `any` |
+| 2026-09-01 | the 4b conformance pass's whole-log sweep | toolkit-seams T1–T6, all verified shipped against the code: T1 `MediaPicker`/`MediaLibraryEntry` now export from `/admin-toolkit` (and `MediaLibraryEntry` from `/sveltekit`); T2 `StatusChip`'s tone dot retired and the `quiet`/`warning`/`outline` registers ship (`docs/internal/probes/2026-08-26-chip-registers-v2`); T3 `ExpandableRow`'s trigger measured inside the engine's own 24x24 floor (no fix needed) and the documented `data-cairn-inert-cell` escape ships; T4 `ToolbarDisclosure` ships and exports; T5 `CsrfField` sets `defaultValue` explicitly (the reset-blanking theory itself did not hold, per the csrf-hardening entry above, but the component still carries the fix); T6 the checkbox/select/radio edge-contrast fix, the `cairn-text-warning`/`cairn-text-success` utilities, and the `.toolkit-list` padding-only opt-in all ship in `cairn-admin.css` |
+| 2026-09-01 | the 4b conformance pass's whole-log sweep | toolkit-seams T7 (`isUniqueViolation` in `/cloudflare`) verified NOT shipped: the plan deferred it at review (membership did not clear the gate) with recorded reopen triggers, but the plan's own commitment to record that defer in `docs/internal/engine-rulings.md` was never carried out (no ledger entry found). Promoted to `ROADMAP.md`'s Next tier with its reopen triggers rather than re-queued here |
+| 2026-09-01 | the 4b conformance pass's whole-log sweep | harvest-detection T1–T7, all verified against the code: T1 the blanket-`no-referrer` doctor check ships (`checks-local.ts`); T2 `sheet` became a list of compiled-class sources (`b82f06b5`); T3 `stripe-trim-parity` and `unlayered-font-clobber` ship as static rules; the "bare-tag hover parity" sub-item was dropped at the pre-approval review as a falsified premise (`focus-parity.ts` already catches it) and the "DaisyUI dead class" sub-item was dropped as unbuildable on its own motivating case (both recorded in the plan's "second-round review record", not silently missed); `list-role` ships and is explicitly routed to the any-site audit remediation initiative for its own known descendant-selector gap; T4 `panel-width` ships as a rendered rule; T5 (oklch falsification) was cut at the same pre-approval review as a proven no-op, since `border-contrast` already carries an extensive real-Chromium oklch red-path suite (`rulings.border-contrast.test.ts`) and the other two contrast rules already route through the shared canvas normalizer; T6 (chassis+docs) ships the smooth-scroll halves and the dialog-form-failure/load-when-the-panel-opens recipes |
+| 2026-09-01 | the 4b conformance pass's whole-log sweep | `StatusChip`'s `outline`-register border-contrast gap verified already covered: the general `border-contrast` rendered rule (pre-existing, `border-contrast.ts`) geometrically resolves any rendered border's real computed color, `currentColor` inheritance included, against its true surroundings, so it already catches the "outline chip inside a muted-ink ancestor" case the finding asked for a new rule to build |
+| 2026-09-01 | the 4b conformance pass's whole-log sweep | the showcase chip-blindness finding folded into the existing "showcase visual suite... corpus gap" entry in `ROADMAP.md`'s Now tier as a second instance of the same gap; `cairn-text-error` and `MediaPicker`'s empty-state `<li>` findings, having no other home, promoted whole to `ROADMAP.md`'s Next tier; `list-role`'s and `panel-width`'s own already-recorded routing to the any-site audit remediation initiative (confirmed by the harvest-detection pass's post-mortem) is why those two entries are deleted rather than re-filed; `AdminTable`'s scroll-wrapper finding folded as a refinement into the pre-existing "Three admin-toolkit accessibility gaps" `ROADMAP.md` entry (filed 2026-08-18, predating this finding) |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

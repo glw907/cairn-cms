@@ -323,6 +323,8 @@ rank/verify records actually contain:
 four (of the five source constants) the "four" figure means, and what the renamed dot-namespaced
 form should be, since no rank/verify record supplies either.
 
+Resolved by the 2026-09-01 sitting ruling 3, executed in conformance-pass Task 13.
+
 ---
 
 ## Decisions for the 4b brainstorm

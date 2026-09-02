@@ -188,9 +188,12 @@
   Consumers must: rename `taxonomy.unmarked_field` to `taxonomy.field_unmarked` and
   `publish.address_collision` to `publish.address_collided` in any log filter or alert; read
   `scope` rather than `concept` on a `commit.succeeded`/`commit.failed` for a nav, settings,
-  vocabulary, or media commit; and expect no `auth.session.destroyed` or
+  vocabulary, or media commit; expect no `auth.session.destroyed` or
   `auth.channel.session.destroyed` record when a logout's session id or token names no row, so an
-  alert counting sign-outs now counts real ones only.
+  alert counting sign-outs now counts real ones only; read `wordCount` rather than `words` on
+  `dictionary.added` and `dictionary.add_conflict`; stop reading `enabled` on
+  `media.resolver_absent`, a field that carried one possible value; and read the stringified throw
+  off `error` rather than `reason` on `preview.cleanup_failed`.
 
 - `ReproContext` (`/reproductions`) gains an optional `mediaBase` prop, defaulting to
   `/repro-assets`, threaded to both places a mounted story reaches its media base: the
@@ -340,8 +343,9 @@
   four nav-layout types, `IslandRegistry`, `VariantSpec`, `MediaRef`, and `MediaResolve`, none of
   which any signature on that subpath names, since the barrel deliberately stops short of
   `CairnAdapter` itself. `/delivery` drops the same set apart from `MediaRef`, `MediaResolve`, and
-  `SiteRender`, which `PublicRoutesConfig` names and which it now exports directly. The 120
-  surviving non-home publications are recorded in
+  `SiteRender`, which `PublicRoutesConfig` names and which it now exports directly. The 114
+  surviving non-home publications (recounted at 4b close against `reexports.length` in the file
+  below) are recorded in
   `scripts/checks/check-surface-reexports.json` with their home and the signature that requires
   each, and `check:surface` now fails an unrecorded duplicate, a record entry the surface has
   outlived, and a record entry whose stated home the surface does not declare, so the set shrinks as
@@ -1155,9 +1159,8 @@
   (engine-internal) is the fixed source of it. Consumers must: drop any `variants:` key from a
   `media` block, since it's now an excess-property type error rather than a merged-and-ignored
   no-op; a site needing a size beyond the four built-ins builds the Cloudflare Images transform
-  URL directly against Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's
-  own URL builder
-  (`variantUrl`/`presetUrl`) was never exported from any public subpath.
+  URL directly against Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's own
+  URL builder (`variantUrl`/`presetUrl`) was never exported from any public subpath.
 
 ## 0.96.0
 

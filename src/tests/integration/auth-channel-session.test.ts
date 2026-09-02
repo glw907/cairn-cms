@@ -109,6 +109,24 @@ describe('confirm cleans up an orphaned prior session', () => {
       .first<{ n: number }>();
     expect(oldRow?.n ?? 0).toBe(0);
   });
+
+  it('logs nothing when the incoming session cookie names no row, so the record means a real deletion', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-orphan-gone' }));
+    // A session cookie whose row is already gone (expired and swept, or a stale browser copy):
+    // destroyChannelSession's RETURNING finds nothing, so the emit at this third call site must
+    // stay conditional on it the same way logout's and the verify-refused revocation's do.
+    const { nonceToken, code } = await seedCode({ contact: 'orphan-gone@x.test', subject: 'sub-orphan-gone' });
+    const jar = makeCookies({ [PENDING_HTTPS]: nonceToken, [SESSION_HTTPS]: 'a-token-whose-row-is-gone' });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
 });
 
 describe('logout', () => {
@@ -179,6 +197,31 @@ describe('logout', () => {
       expect(destroyed[0].correlationId).toBe(requested[requested.length - 1].correlationId);
     } finally {
       vi.restoreAllMocks();
+    }
+  });
+
+  it('completes and logs nothing when the salt read faults, so a teardown never strands the member', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-salt-fault' }));
+    const token = await signIn(channel, 'salt-fault@x.test', 'sub-salt-fault');
+    const jar = makeCookies({ [SESSION_HTTPS]: token });
+
+    // Drop the meta table only after signIn already verified the schema on this channel instance
+    // (schemaVerified caches to true): logout's resolveVerifiedSession then skips the recheck and
+    // reaches destroyChannelSession normally, and only the salt read that follows faults, the same
+    // way correlationIdForSubject's own doc comment describes.
+    await db.exec('DROP TABLE cairn_channel_meta');
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.logout(makeEvent({ cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+      await db.exec('CREATE TABLE IF NOT EXISTS cairn_channel_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+      await db
+        .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1')")
+        .run();
     }
   });
 

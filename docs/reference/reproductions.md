@@ -167,9 +167,9 @@ component. `ReproContext` itself throws if its `story` prop's `id` ever changes 
 missing `{#key}` fails loudly rather than rendering a mismatched story.
 
 The media-base and CSRF context keys `ReproContext` sets (the media base from the preceding
-`mediaBase` prop) are reserved: `ReproContext` applies `story.context` first and then sets both unconditionally, so a
-story's own `context` entry under either key is shadowed by the value `ReproContext` supplies,
-never the other way around.
+`mediaBase` prop) are reserved: `ReproContext` applies `story.context` first and then sets both
+unconditionally, so a story's own `context` entry under either key is shadowed by the value
+`ReproContext` supplies, never the other way around.
 
 ---
 

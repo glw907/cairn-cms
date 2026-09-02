@@ -22,8 +22,7 @@ The release step sets the version number at the cut and renames this section to 
   `NavLayoutEngineRef`, and `NavLayoutSection`; to `@glw907/cairn-cms/islands` for `IslandRegistry`;
   and to `@glw907/cairn-cms/media` for `MediaRef`. All are type-only, so a missed one is a type
   error at build, never a runtime failure. `MediaRef`, `MediaResolve`, and `SiteRender` are still
-  importable from `@glw907/cairn-cms/delivery`, whose `PublicRoutesConfig` names all three. An
-  eighteenth name in this same move, `VariantSpec`, is since retired outright; see the next entry.
+  importable from `@glw907/cairn-cms/delivery`, whose `PublicRoutesConfig` names all three.
 - **`VariantSpec` and `AssetConfig.variants` are retired.** A site's evidence sweep found zero
   reachable runtime consumers: no family site declared a custom transform preset, and
   `presetUrl`, the only reader, had no non-test caller. The built-in `thumb`, `inline`, `card`,
@@ -65,6 +64,40 @@ The release step sets the version number at the cut and renames this section to 
   consolidated entry for the full name list, grouped by subpath, and the row-for-row replacement
   expression for the 18 names that survive only as an unnamed structural member of another
   export's shape, such as `EditData['linkTargets'][number]` in place of `LinkTarget`.
+- **Two log event names change to match the vocabulary's own grammar.** `taxonomy.unmarked_field`
+  becomes `taxonomy.field_unmarked` and `publish.address_collision` becomes
+  `publish.address_collided`. Rename both in any log filter or alert.
+- **`previewMint` replaces `mintPreviewToken`** (`/sveltekit`), taking
+  `(runtime, config, event, { concept, entryId })` and performing the entry-scoped authorization
+  and draft check itself, rather than leaving them to the caller. It returns a discriminated
+  `PreviewMintOutcome` (`minted`, `unknown-concept`, `invalid-id`, `no-draft`) instead of throwing
+  for a bad target. A site calling `mintPreviewToken` from its own workflow route switches to
+  `previewMint` and its new signature and outcome shape.
+- **`TidyClient` (`/sveltekit`) narrows to an engine-owned contract**: `tidy(request, options)`
+  takes `{ model, system, text, effort? }` and returns `{ corrected, refused, tokens: { input,
+  output } }`, dropping the transcribed Anthropic wire fields (`max_tokens`, `output_config.effort`,
+  `stop_reason`, `usage.*`). A hand-rolled `TidyClient` fake (through
+  `ContentRoutesConfig.tidy.client`) implements the narrower shape instead of `messages.create`'s
+  wire body. `TidyResult.model` (the action's own return, separate from `TidyClient`) is unaffected:
+  it still names the requested model, never one the client or Anthropic resolved it to.
+- **`ComponentContext` (`/render`) gains `attr(key)`; `strAttr` retires.** Replace
+  `strAttr(ctx, key)` with `ctx.attr(key)`.
+- **`HistoryData.draft.startedAt` renames to `lastSavedAt`, and `RevertFailure`'s
+  `draft_exists.draftStartedAt` renames to `draftLastSavedAt`.** Rename both field reads.
+- **`cairn-audit`'s five rendered-mode harness failure ids move to a dot-namespace.**
+  `rendered-allowlist-stale`, `rendered-allowlist-unprobeable`, `rendered-allowlist-dead`,
+  `rendered-page-identity-mismatch`, and `rendered-state-unreachable` become
+  `rendered.allowlist-stale`, `rendered.allowlist-unprobeable`, `rendered.allowlist-dead`,
+  `rendered.page-identity-mismatch`, and `rendered.state-unreachable`. Update any
+  `cairn-audit.config.json` allowlist `rule` value from the old `rendered-*` form to `rendered.*`.
+- **`ReproContext` (`/reproductions`) gains a `mediaBase` prop; `fixtureMediaBase` retires from
+  `/reproductions/manifest`.** Pass `mediaBase` to `ReproContext` instead of importing
+  `fixtureMediaBase`; a site deployed under a SvelteKit `paths.base` composes fixture image URLs
+  inside its own namespace by passing that prefix.
+- **`OfficeList`'s `subtitle` prop renames to `meta`**, matching `PageHeader`'s own prop name now
+  that `OfficeList` renders its header band through `PageHeader`. Rename the prop; expect the
+  office header to adopt `PageHeader`'s rhythm (`mb-10`, `gap-0.5`, `type-meta`) in place of
+  `OfficeList`'s former `mb-6`/`gap-0`/`type-body`.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

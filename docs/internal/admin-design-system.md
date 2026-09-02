@@ -430,16 +430,21 @@ alongside the component recipes above and below it.
   for `StatusChip` for anything in the chip register grammar above, since only `StatusChip`
   carries the register set's ground-tuned band, the `size` vocabulary, and the `legend`
   accessible-name pattern. Two shapes, two measurements, both against the register set's own
-  floors on both packaged themes (`badge-tier-legibility.test.ts`, the same canvas-readback
-  method `status-chip-register-tuning.test.ts` measures the chip registers with). `badge-error`,
+  floors on both packaged themes, and both clearing with no retune needed: `badge-error`,
   `badge-success`, and `badge-soft` each paint their own fill and their own base-content-derived
   ink (daisyUI 5.7.20's `badge-soft` recipe carries a fill and an ink of its own even with no tone
-  class set); each ink clears the >= 4.5:1 text floor (WCAG 1.4.3) against its own fill: measured
-  light error 4.848, light success 4.915, light soft 12.736, dark error 6.298, dark success 7.036,
-  dark soft 11.244. `badge-outline` and `badge-dash` paint no fill of their own and inherit their
-  ink and currentColor border from the surrounding row; both clear the same text floor against the
-  row ground and the unrelated >= 3:1 non-text floor (WCAG 1.4.11) on the border: measured light
-  15.087, dark 13.322 (ink and border share the value, since the border is currentColor).
+  class set), each clearing the >= 4.5:1 text floor (WCAG 1.4.3) against its own fill; `badge-outline`
+  and `badge-dash` paint no fill of their own and inherit their ink and currentColor border from the
+  surrounding row, clearing the same text floor against the row ground and the unrelated >= 3:1
+  non-text floor (WCAG 1.4.11) on the border. `badge-tier-legibility.test.ts` (the same
+  canvas-readback method `status-chip-register-tuning.test.ts` measures the chip registers with)
+  is the one canonical home for the measured numbers themselves.
+  `badge-soft`'s own fill measures 1.185:1 against its row ground on both themes, roughly 0.32
+  under `chip-ground-collision`'s 1.5:1 floor, and the gap is a deliberate exemption, not an
+  oversight: `badge-soft` is boundary-less by design, the same shape choice `badge-outline` and
+  `badge-dash` make, and carries no claim that its fill alone reads as distinct from the row. Its
+  label names the state in text (WCAG 1.4.1 Use of Color), so the badge never depends on a reader
+  distinguishing its fill from its ground to know what it means.
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty

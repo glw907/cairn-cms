@@ -20,12 +20,21 @@
 // input and its two type-to-confirm inputs, and MarkdownEditor's no-JS fallback textarea, all
 // declare their own monospace face this way and are mismatches by construction, not by omission.
 //
-// EXEMPTION NET CLOSED (conformance pass, 2026-09-01, closing the docket entry filed out of the
-// any-site audit, rank 6): the net used to match only a bare `font-mono` class or the Tailwind v3
-// arbitrary-value form `font-[family-name:...]`, which false-positived on three named shapes: a
-// variant-prefixed utility (`md:font-mono`, `dark:font-mono`), the `font-serif`/`font-sans`
-// families, and Tailwind 4's `font-(family-name:--x)` shorthand. `hasExplicitFace` now strips any
-// leading variant prefixes before testing the base utility, so all three close.
+// EXEMPTION NET CLOSED, THE THREE DOCKET-NAMED SHAPES ONLY (conformance pass, 2026-09-01, closing
+// the docket entry filed out of the any-site audit, rank 6): the net used to match only a bare
+// `font-mono` class or the Tailwind v3 arbitrary-value form `font-[family-name:...]`, which
+// false-positived on three shapes the docket named explicitly: a variant-prefixed utility
+// (`md:font-mono`, `dark:font-mono`), the `font-serif`/`font-sans` families (the docket's own text
+// names both), and Tailwind 4's `font-(family-name:--x)` shorthand. `hasExplicitFace` now strips a
+// leading run of bare word-character variant prefixes (`md:`, `dark:md:`) before testing the base
+// utility, so all three named shapes close.
+//
+// STILL OPEN, not docket-named, found while closing the net above: a bracketed arbitrary variant
+// (`[&:hover]:font-mono`, `has-[:checked]:font-mono`) is not a bare word-character run, so the
+// strip above leaves it whole and the base-utility test misses it; a trailing Tailwind 4
+// important-modifier bang (`font-mono!`) fails the exact `base === 'font-mono'` match for the same
+// reason. Both would still false-positive as a mismatch today; neither blocks the docket's own
+// closure, since the docket named neither.
 //
 // Registered PROVISIONALLY at advisory (design ratchet Task 5). The intended tier is error, since a
 // consumer whose sheet never loaded is exactly the silent-fail-open shape this engine exists to

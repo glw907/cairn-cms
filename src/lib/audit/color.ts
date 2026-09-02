@@ -84,6 +84,11 @@ export function sameColor(a: Rgba, b: Rgba): boolean {
  * Ignores `a` entirely: like `contrastRatio`, this takes colors a caller has already composited
  * onto an opaque backdrop (`resolveGround`'s return is always opaque by construction), so there is
  * no remaining alpha to account for by the time either function sees the pair.
+ *
+ * Models a trichromat's color perception only. A distance measured here can still read as a
+ * collision to a color-vision-deficient viewer: a red/green (protanope or deuteranope) pair that
+ * this measurement scores as hue-distinct can project to nearly the same perceived color for that
+ * viewer, the false-negative class this function cannot see and does not correct for.
  */
 export function chromaDistance(a: Rgba, b: Rgba): number {
   const cb = (c: Rgba) => -0.168736 * c.r - 0.331264 * c.g + 0.5 * c.b;

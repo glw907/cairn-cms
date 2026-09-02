@@ -68,6 +68,8 @@ export const ALLOWLIST = new Set([
   'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
   'log-event:tidy.conventions', // docs/extend/enable-tidy.md, the site config's `tidy.conventions` field
   'log-event:tidy.model', // docs/extend/enable-tidy.md, migration-notes.md, and log-events.md, the site config's `tidy.model` field
+  'log-event:taxonomy.unmarked_field', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
+  'log-event:publish.address_collision', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
 
   // Site-relative illustrative file paths: the conventional layout a worked example shows for a
   // reader's own site, never a path in cairn's own repo, so the filesystem check correctly

@@ -50,9 +50,8 @@ upload, storage, delivery, and render paths read. An absent block leaves media o
 `{ enabled: false }` rather than throwing. A declared block must name its R2 bucket binding and
 carry a known `urlForm`; each failure throws a `cairn:`-prefixed error. A site can't declare its
 own named transform presets; the built-in `thumb`, `inline`, `card`, and `hero` presets are the
-whole vocabulary (ruling 4, 2026-09-01, the `variants` evidence sweep: the field had no reachable
-runtime consumer across the family's sites). A site needing a size beyond the four built-ins
-builds a URL directly against Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL format;
+whole vocabulary. A site needing a size beyond the four built-ins builds a URL directly against
+Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL format;
 cairn's own URL builder (`variantUrl`/`presetUrl`) is engine-internal, not public surface.
 
 The engine normalizes the adapter's `media` block once at compose time and exposes the result as

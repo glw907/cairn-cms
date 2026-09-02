@@ -993,8 +993,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       if (session) {
         const subject = await destroyChannelSession(session, await hashToken(token));
         // Logged only where a row was actually destroyed: a request with no session cookie, one
-        // whose db is unavailable, and one whose cookie outlived its own row all destroy nothing
-        // and must not fire this record (log-events.md's logout row states this condition).
+        // whose db is unavailable, and one whose cookie names no row all destroy nothing and must
+        // not fire this record (log-events.md's logout row states this condition).
         if (subject !== null) await logSessionDestroyed(session, subject);
       }
     }

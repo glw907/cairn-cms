@@ -277,10 +277,9 @@ base path (default `/media`), and `urlForm` chooses whether the public URL carri
 (`/media/<slug>.<hash>.<ext>`, the default) or stays opaque (`/media/<aa>/<hash>.<ext>`).
 `maxUploadBytes` (default 25 MB) and `allowedTypes` (default the common web image types) bound an
 upload. A site can't declare its own named transform presets. The built-in `thumb`, `inline`,
-`card`, and `hero` presets are the whole vocabulary (ruling 4, 2026-09-01), since the field had no
-reachable runtime consumer. A site needing a size beyond the four built-ins builds a URL directly
-against Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL format. Cairn's own URL
-builder is engine-internal, not public surface.
+`card`, and `hero` presets are the whole vocabulary. A site needing a size beyond the four
+built-ins builds a URL directly against Cloudflare's `/cdn-cgi/image/<options>/<path>`
+transform-URL format. Cairn's own URL builder is engine-internal, not public surface.
 
 `transformations` (default `false`) declares whether Cloudflare Image Transformations are enabled
 for the zone. This is a per-zone setting that the dashboard or API turns on, not something a Worker

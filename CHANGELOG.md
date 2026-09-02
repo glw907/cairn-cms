@@ -166,7 +166,7 @@
   pseudonymous `correlationId` the request flow derives from it, and the channel's third teardown
   path, a session `resolveSubject` revokes when the site's `verify` hook refuses it, now emits the
   record too instead of revoking silently. Both events fire only when a row was actually
-  destroyed, so a stale cookie whose row already expired leaves no record.
+  destroyed, so a stale cookie naming no row leaves no record.
 
   `commit.succeeded` and `commit.failed` stop overloading `concept` with the four non-entry
   surfaces. An entry commit still carries `concept`; a nav, settings, vocabulary, or media commit
@@ -829,7 +829,10 @@
   `usage.*` no longer reach the public contract, so a vendor field rename stops being a cairn
   break; the real Anthropic SDK mapping moves into an internal adapter
   (`lazyAnthropicClient`, `content-routes-context.ts`). `tidy.succeeded`'s log record carries the
-  same reshape: its `usage` field becomes `tokens: { input, output }`. **Consumers must:** a site
+  same reshape: its `usage` field becomes `tokens: { input, output }`. `TidyResult.model`
+  (`tidyAction`'s own return, distinct from `TidyClient`'s narrower result) still names the
+  requested model, `tidy.model` or the engine default, never a value Anthropic resolved it to:
+  the client's own narrowed result carries no `model` field to read one from. **Consumers must:** a site
   injecting a hand-rolled `TidyClient` fake (through `ContentRoutesConfig.tidy.client`, for a
   gateway or proxy in front of Anthropic) implements `tidy(request, options)` returning
   `{ corrected, refused, tokens: { input, output } }` in place of `messages.create`'s wire body;

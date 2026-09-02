@@ -87,13 +87,15 @@ for the bare form.
 ## Compose the screen
 
 Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md) before hand-rolling a
-list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `PageHeader`
-for the title band, `OfficeList` or `AdminTable` for the triage table, `ListToolbar` for search and
-filters, `Pagination`, `StatusChip` for a status pill, `EmptyState` for the zero-rows case, and
-`FieldLabel` for a form control's label. Every one of these primitives
-ships pre-compiled inside cairn's own admin stylesheet, so it renders correctly with no Tailwind
-setup of your own; your route's own markup outside these components compiles through your site's
-usual build and can use anything your stack supports.
+list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `OfficeList`
+renders the title band and the triage table together, `AdminTable` for a table with no
+`OfficeList` wrapping it, `ListToolbar` for search and filters, `Pagination`, `StatusChip` for a
+status pill, `EmptyState` for the zero-rows case, and `FieldLabel` for a form control's label.
+Reach for `PageHeader` alone only on a screen that isn't `OfficeList`-shaped: `OfficeList` already
+renders its own `PageHeader`, so a screen never nests both, which would render two `<h1>`s. Every
+one of these primitives ships pre-compiled inside cairn's own admin stylesheet, so it renders
+correctly with no Tailwind setup of your own; your route's own markup outside these components
+compiles through your site's usual build and can use anything your stack supports.
 
 ```svelte
 <script lang="ts">

@@ -418,8 +418,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     if (id) {
       try {
         // The record fires only when a row was actually destroyed, and names the email that row
-        // carried: a cookie outliving its own expired row destroys nothing, and a record for it
-        // would claim a sign-out that never happened.
+        // carried: a cookie naming no row destroys nothing, and a record for it would claim a
+        // sign-out that never happened.
         const email = await deleteSession(db, id);
         if (email !== null) log.info('auth.session.destroyed', { email });
       } catch (err) {

@@ -1,25 +1,24 @@
 <!--
 @component
-The office-list primitive (Part C item 2 of the phase-2 design suite): the header-plus-card shell
-every triage-table screen composes, lifted out of `ConceptList` and kept to exactly its header and
-card frame, so a site's own custom `/admin/` screen gets the same office rhythm without hand-rolling
-it. The header band composes `PageHeader`, this component's own later generalization, so the
-eyebrow-plus-display heading, an optional live meta line, and an optional header-right action sit
-above a bordered, theme-adaptive card shell the caller's own content (typically a `<table>`) renders
-inside. Moved here from `/components` in the C2 breaking-window pass (R3): `PageHeader` already
-lived on the toolkit, and a header-plus-card screen scaffold belongs beside it, not on the admin's
-own view barrel. `PageHeader` and this component both stay; they cover different shapes (a header
-primitive versus a full list-screen scaffold), never a duplicate.
+The office-list primitive: the header-plus-card shell every triage-table screen composes, kept to
+exactly its header and card frame, so a site's own custom `/admin/` screen gets the same office
+rhythm without hand-rolling it. The header band composes `PageHeader`, so the eyebrow-plus-display
+heading, an optional live meta line, and an optional header-right action sit above a bordered,
+theme-adaptive card shell the caller's own content (typically a `<table>`) renders inside.
+`PageHeader` and this component cover different shapes, a header primitive versus a full
+list-screen scaffold, and both stay: never a duplicate.
 
-The 4b conformance pass's Task 9 collapsed this component's own header markup onto `PageHeader`
-(engine-rulings.md, `audit-admin-officelist`): the two implementations had drifted (`mb-6` versus
-`PageHeader`'s `mb-10`, `gap-0` versus `gap-0.5`, `type-body` versus `type-meta`, and this
-component's own `subtitle` prop against `PageHeader`'s `meta`), so `subtitle` RENAMED to `meta`
-(no forwarding alias; the rename is paid once inside this pass's already-breaking window) and the
-merged header band adopts `PageHeader`'s rhythm as the toolkit's one office-header rhythm, per the
-design system's F3 proximity-grouping scale: the header stands apart as the page's one loose
-element, and this component's card keeps its own tighter proximity by sitting directly under
-`PageHeader`'s own `mb-10` offset rather than adding a second margin of its own.
+The header band renders through `PageHeader` directly rather than its own markup, so the two never
+drift apart; `meta` (not `subtitle`) matches `PageHeader`'s own prop name for the same field. The
+card sits directly under `PageHeader`'s own bottom margin rather than adding a second margin of its
+own, per the design system's proximity-grouping scale: the header stands apart as the page's one
+loose element, and this component's card keeps its own tighter proximity to it.
+
+`gap-0` compiles into the shipped admin sheet with no current component reference: this file's own
+former header stack was its last user before that markup moved onto `PageHeader`. Named here to
+keep it compiling, since the shipped sheet's class inventory is a de facto public API and a class
+leaving it is a deliberate, CHANGELOG-carried act, never a side effect of an unrelated doc edit
+(`admin-sheet-inventory.test.ts` is the standing proof).
 -->
 
 <script lang="ts">

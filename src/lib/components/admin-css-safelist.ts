@@ -103,24 +103,16 @@ export const ADMIN_CSS_SAFELIST = [
   'badge-soft',
   'badge-outline',
   'badge-dash',
-  // `badge-error`/`badge-success` (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01):
-  // these first compiled only as a side effect of StatusChip's own first-generation doc comment
-  // naming them in prose (Tailwind's scanner is a naive text match, blind to comment-versus-code
-  // context), then stayed blessed here as an incidental side effect of preserving the de facto
-  // public sheet once that prose left with the tone/dot retirement. The badge-tier ruling made the
-  // blessing deliberate and covered every blessed badge class, not just these two: each one's ink
-  // clears the register set's own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged themes, so all
-  // five stay blessed as a documented, measured badge-tier recipe, the raw daisyUI alternative to
-  // `StatusChip` (docs/internal/admin-design-system.md names the when-to-use line).
-  // `badge-error`/`badge-success`/`badge-soft` each paint their own fill and their own
-  // base-content-derived ink (daisyUI 5.7.20's `badge-soft` recipe carries a fill and an ink of its
-  // own even with no tone class set); measured against that own fill: light error 4.848, light
-  // success 4.915, light soft 12.736, dark error 6.298, dark success 7.036, dark soft 11.244.
-  // `badge-outline`/`badge-dash` paint no fill of their own and inherit their ink and currentColor
-  // border from the surrounding row; measured against the row ground, plus the border against the
-  // unrelated >= 3:1 non-text floor (WCAG 1.4.11): light 15.087, dark 13.322 (ink and border share
-  // the value since the border is currentColor). badge-tier-legibility.test.ts is the standing
-  // proof for all five.
+  // `badge-error`/`badge-success`: these first compiled only as a side effect of StatusChip's own
+  // first-generation doc comment naming them in prose (Tailwind's scanner is a naive text match,
+  // blind to comment-versus-code context), then stayed blessed here as an incidental side effect
+  // of preserving the de facto public sheet once that prose left with the tone/dot retirement. The
+  // blessing is now deliberate and covers every blessed badge class, not just these two: each
+  // class is measured against the register set's own floors on both packaged themes, the raw
+  // daisyUI alternative to `StatusChip` (docs/internal/admin-design-system.md names the
+  // when-to-use line). `badge-tier-legibility.test.ts` carries the measured numbers and is the one
+  // place they're allowed to live; a comment repeating them here would just be a second copy to
+  // fall out of date the next time daisyUI's recipe moves.
   'badge-error',
   'badge-success',
 ] as const;

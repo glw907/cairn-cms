@@ -21,7 +21,7 @@ in production, see the [read cairn's logs guide](../admin/troubleshooting.md).
 | `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |
 | `auth.session.created` | info | A session row is created after a confirm. | `email` |
-| `auth.session.destroyed` | info | Logout deletes a session row. It fires only when a row was actually destroyed, so a stale cookie whose row already expired leaves no record. The `email` comes from the deleted row itself: logout is a public admin path, so no editor is resolved onto it. | `email` |
+| `auth.session.destroyed` | info | Logout deletes a session row. It fires only when a row was actually destroyed, so a stale cookie naming no row leaves no record. The `email` comes from the deleted row itself: logout is a public admin path, so no editor is resolved onto it. | `email` |
 | `auth.session.destroy_failed` | error | Logout's session-row delete fails, a D1 fault. Logout clears the cookie first regardless, so the browser signs out either way and leaves the row for its own expiry to clear. | `error` |
 | `commit.succeeded` | info | A content or non-entry commit lands. | `concept` on an entry commit or `scope` otherwise, `id`, `editor`, `branch` on a save |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason` (`conflict`) on a 409, `error` with `error` otherwise. | `concept` on an entry commit or `scope` otherwise, `id`, `editor`, `reason` or `error`, `branch` on a save |

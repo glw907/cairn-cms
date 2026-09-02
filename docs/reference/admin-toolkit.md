@@ -259,7 +259,10 @@ same element, so a hand-composed chip should carry no weight utility of its own.
 both admin themes: `badge-error`/`badge-success`/`badge-soft` each paint their own fill and ink,
 clearing a >= 4.5:1 text contrast floor (WCAG 1.4.3) against that fill; `badge-outline`/`badge-dash`
 paint no fill of their own and inherit their ink and border, clearing the same text floor against
-the row ground and a >= 3:1 non-text floor (WCAG 1.4.11) on the border. Reach for one directly only
+the row ground and a >= 3:1 non-text floor (WCAG 1.4.11) on the border. `badge-soft`'s own fill
+sits under the `chip-ground-collision` ground-contrast floor by design: it is boundary-less like
+`badge-outline`/`badge-dash`, so its label names the state in text (WCAG 1.4.1 Use of Color)
+rather than the fill being read as distinct from the row. Reach for one directly only
 for a stock daisyUI-flavored surface outside the chip vocabulary; reach for `StatusChip` for
 anything in the register grammar above, since only `StatusChip` carries the ground-tuned band, the
 `size` vocabulary, and the `legend` accessible-name pattern.
@@ -653,9 +656,9 @@ header-plus-card screen scaffold belongs beside it. `PageHeader` and `OfficeList
 cover different shapes, a header primitive versus a full list-screen scaffold, never a duplicate.
 A new build reaches for `PageHeader` first. `OfficeList` stays correct where it already ships.
 
-`OfficeList`'s own header markup collapsed onto `PageHeader` in the 4b conformance pass, Task 9.
-The `subtitle` prop renamed to `meta` with no forwarding alias, and the merged header band adopted
-`PageHeader`'s rhythm as the toolkit's one office-header rhythm.
+`OfficeList`'s own header markup now renders through `PageHeader`. The `subtitle` prop renamed to
+`meta` with no forwarding alias, and the merged header band adopted `PageHeader`'s rhythm as the
+toolkit's one office-header rhythm.
 
 ```svelte
 <script lang="ts">

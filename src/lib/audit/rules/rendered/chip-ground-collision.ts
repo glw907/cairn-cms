@@ -117,18 +117,23 @@ const RATIO_FLOOR = 1.5;
 /**
  * Below this `chromaDistance` (color.ts), a chip's fill and its ground carry close enough to the
  * same hue that `RATIO_FLOOR` alone decides collision; at or above it, the two colors are hue-distinct
- * enough that a sighted user reads a boundary even where the luminance-only ratio measures close.
+ * enough that a sighted trichromat reads a boundary even where the luminance-only ratio measures
+ * close. `chromaDistance` models trichromat perception only: a pair this term calls hue-distinct
+ * can still collide for a red/green color-vision-deficient (protanope or deuteranope) viewer, a
+ * false negative this floor does not correct for.
  *
- * Calibrated against measured pairs, not borrowed: two grays (any luminance) and two shades of one
- * hue both measure exactly 0, which is every fixture `RATIO_FLOOR`'s own pinned tests exercise.
- * Cairn's own dark-theme neutral tokens (`cairn-admin.css`'s dark palette, real Chromium
- * measurements) sit close beside that zero: `base-200` on `base-100` measures 0.89, `base-300` on
- * `base-100` measures 1.77, `base-300` on `base-200` measures 2.66, all genuinely near-neutral pairs
- * with no hue for this term to see. A genuinely hue-distinct pair (a lavender chip on a warm-neutral
- * ground, cairn's own `--color-warning` tint against a near-neutral zebra row) measures 24 to 28. 10
- * sits in the wide, empty band between the largest near-neutral measurement and the smallest genuine
- * hue distinction measured so far, not a close call between two competing numbers;
- * `color.test.ts` and `chip-ground-collision-chroma-repair.test.ts` pin both sides.
+ * Anchored by measured pairs at both ends, not the middle: two grays (any luminance) and two
+ * shades of one hue both measure exactly 0, which is every fixture `RATIO_FLOOR`'s own pinned
+ * tests exercise. Cairn's own dark-theme neutral tokens (`cairn-admin.css`'s dark palette, real
+ * Chromium measurements) sit close beside that zero: `base-200` on `base-100` measures 0.89,
+ * `base-300` on `base-100` measures 1.77, `base-300` on `base-200` measures 2.66, all genuinely
+ * near-neutral pairs with no hue for this term to see. A genuinely hue-distinct pair (a lavender
+ * chip on a warm-neutral ground, cairn's own `--color-warning` tint against a near-neutral zebra
+ * row) measures 24 to 28. `10` sits inside that gap, but the gap itself, roughly 3 to 24, is
+ * unsampled: no measured pair from a real theme falls there, so this floor is a provisional pick
+ * inside a wide margin rather than a value pinned by evidence on both sides of it. Reopens on a
+ * measured pair landing inside the unsampled band; `color.test.ts` and
+ * `chip-ground-collision-chroma-repair.test.ts` pin only the two ends above.
  */
 const CHROMA_DISTINCT_FLOOR = 10;
 

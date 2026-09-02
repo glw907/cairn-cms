@@ -5111,7 +5111,7 @@ when the remediation pass lands.
   prior audit history at all: `DatePrefix`, `EditorActionFailure`, `MediaLibrary`, `UsageOrigin`.
   A leak with neither is a stop-and-rule, enforced by `findLeakViolations`' `hasReason` check
   (exactly one of the two, never both, never neither); the registry currently derives to 43 entries
-  across 35 distinct names, a MEASURED output, never a hard-coded count.
+  across 36 distinct names, a MEASURED output, never a hard-coded count.
 - **Stated limits (the rider is a name-keyed guard, not a completeness claim).** Svelte component
   PROPS sit outside this rider's scope entirely: `/components` exports Svelte components
   exclusively, and every component's declared type is a generic reference to its own

@@ -5010,11 +5010,22 @@ when the remediation pass lands.
   showcase call site alone never discharges it, enforced in `analyzeExport`'s `authOnly` branch and
   covered by `src/tests/unit/check-self-use.test.ts`. The failure message states the remedy order
   (allowlist with reason first, showcase call site second, deletion never suggested by the gate
-  itself). The allowlist's 69 entries are seeded from each zero-caller export's ledger KEEP row
-  where one exists (cited by slug) and fresh prose (`no-ledger-row: true`) for the remainder,
-  mostly types introduced by a post-audit reshape (the auth-family discriminated results, the
-  `ToolbarDisclosure` attrs trio, `TidyEffort`) with the same anonymous-consumer shape their
-  siblings already carry.
+  itself). `prepareText` blanks block comments, barrel re-export lines, AND every whole-line `//`
+  comment (a line whose trimmed text starts with `//`) before scanning, so a prose mention of an
+  export's name in its own doc header never counts as a call site; a `//` starting partway through
+  a code line is left alone (a whole line cannot sit inside a string literal, so blanking it risks
+  nothing, but a partial-line strip risks corrupting a string literal that itself contains `//`).
+  The residual gap this narrows to is a name mentioned only in a trailing same-line comment on an
+  otherwise-comment-free line. The allowlist's 86 entries are seeded from each zero-caller export's
+  ledger KEEP row where one exists (cited by slug) and fresh prose (`no-ledger-row: true`) for the
+  remainder, mostly types introduced by a post-audit reshape (the auth-family discriminated
+  results, the `ToolbarDisclosure` attrs trio, `TidyEffort`) with the same anonymous-consumer shape
+  their siblings already carry. Round-2 fix (whole-line-comment blanking): 17 more exports surfaced
+  as zero-caller once whole-line `//` prose stopped counting as usage, five of them auth-path
+  (`AuthChannelConfig`, `SectionActionConfig`, `createSectionAction`, `defineAccess`,
+  `requireAccess`); every one carries a pre-existing ledger KEEP or reshape row with a genuine
+  anonymous-consumer argument, so each got a cited allowlist entry rather than a showcase call
+  site or a filler reason.
 - **Plan-assumption correction:** the internals plan's draft named `presetUrl` and
   `BUILT_IN_PRESETS` as seeds to allowlist "with the deferral reason." Verified against the built
   surface (`buildSurfaceModel()`, and `docs/reference/media.md:55`'s own "engine-internal, not

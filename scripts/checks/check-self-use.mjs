@@ -17,9 +17,13 @@
 // multi-line) naming it. A file that only re-exports a name has not used it; only an import that
 // a caller can act on, a type annotation, or a real invocation counts. Block comments (`/* ... */`,
 // including TSDoc `{@link X}` prose) are blanked before scanning, so a doc-comment mentioning a
-// sibling export's name is never mistaken for a real call site; a `//` line comment is not
-// stripped (the risk of corrupting a string literal that itself contains `//` outweighs the
-// class of false positive this misses in practice).
+// sibling export's name is never mistaken for a real call site. A WHOLE-LINE `//` comment (the
+// line's trimmed text starts with `//`) is blanked the same way: a whole line cannot sit inside a
+// string literal, so blanking it carries none of the mid-line-`//`-inside-a-string corruption
+// risk. A `//` that starts partway through a code line is deliberately left alone (a trailing
+// comment on a real statement stays scannable without parsing the line to find where code ends
+// and comment text begins); the residual gap this narrows to is a name mentioned only in a
+// trailing same-line comment on an otherwise-comment-free line, never a whole-line one.
 //
 // Two arms feed the "has callers" verdict: in-engine call sites (src/lib, outside the declaring
 // module) and showcase call sites (examples/showcase/src, the whole tree, since the showcase
@@ -83,9 +87,17 @@ export function blankBlockComments(text) {
   return text.replace(BLOCK_COMMENT_RE, (m) => m.replace(/[^\n]/g, ' '));
 }
 
+// Blank every whole-line `//` comment: a line whose trimmed text starts with `//`. A trailing
+// same-line comment on a real statement is left alone (see the header note on the residual gap).
+const LINE_COMMENT_RE = /^([ \t]*)\/\/.*$/gm;
+/** @param {string} text @returns {string} */
+export function blankLineComments(text) {
+  return text.replace(LINE_COMMENT_RE, (m, indent) => indent + ' '.repeat(m.length - indent.length));
+}
+
 /** @param {string} text @returns {string} */
 function prepareText(text) {
-  return blankBlockComments(blankReexportBlocks(text));
+  return blankLineComments(blankBlockComments(blankReexportBlocks(text)));
 }
 
 // A top-level export declaration: `export (default)? (async)? function|class|interface|type|enum

@@ -5,6 +5,7 @@ import {
   isAuthOnlyPath,
   blankReexportBlocks,
   blankBlockComments,
+  blankLineComments,
   buildDeclMap,
   callSites,
   analyzeExport,
@@ -76,6 +77,27 @@ describe('blankBlockComments', () => {
 
   it('leaves real code untouched', () => {
     expect(blankBlockComments('const y = presetUrl(a);')).toContain('presetUrl');
+  });
+});
+
+describe('blankLineComments', () => {
+  it('blanks a whole-line // comment mentioning a name, preserving line count', () => {
+    const text = '// See requireAccess for the shape.\nconst x = 1;\n';
+    const blanked = blankLineComments(text);
+    expect(blanked).not.toContain('requireAccess');
+    expect(blanked.split('\n')).toHaveLength(text.split('\n').length);
+  });
+
+  it('blanks an indented whole-line // comment', () => {
+    const text = 'function f() {\n  // uses requireAccess internally\n  return 1;\n}\n';
+    expect(blankLineComments(text)).not.toContain('requireAccess');
+  });
+
+  it('leaves a trailing same-line // comment and any real code untouched', () => {
+    const text = "const url = 'https://example.com'; // not a whole-line comment\nrequireAccess();\n";
+    const blanked = blankLineComments(text);
+    expect(blanked).toContain("const url = 'https://example.com';");
+    expect(blanked).toContain('requireAccess();');
   });
 });
 

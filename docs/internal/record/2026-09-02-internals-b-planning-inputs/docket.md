@@ -202,7 +202,41 @@ set. **Ledger:** none.
 
 ---
 
-## Decisions for the brainstorm
+## Ratified (Geoff, 2026-09-02, mid-internals; supersedes "Decisions for the brainstorm")
+
+The seven questions below were presented with derived answers; Geoff ratified the pass
+split (item 7) explicitly and let the six derived defaults stand unobjected, the same
+pattern the internals rulings used. The ruled outcomes:
+
+1. **Read-seam boundary: DROPPED as unfoundable.** No source document, no consumer ask;
+   the charter's out-of-scope answer applies. Reopen trigger (detectable): a consumer
+   building a custom admin screen asks for an engine seam to read content.
+2. **`FieldInput`: FIX.** Warnings are defects under the initiative's posture; the
+   benign-comment is a rationalized local workaround. The shape (`$bindable` vs a
+   register callback) is a technical call made at plan time against the post-Task-7
+   wiring.
+3. **`ec-*`: RENAME to an engine-owned prefix.** One `Consumers must:` line in the
+   already-batching window; grandfathering only wins when migration is expensive, and a
+   class rename is not.
+4. **Formatter: least-churn default.** Measure the dominant existing practice, enforce
+   that; override only on a stated preference.
+5. **Exhaustiveness idiom: plan rules it.** Technical; the never-idiom and
+   compile-vs-runtime choice follow from where `FieldDescriptor` values originate,
+   verified at authoring; ledger records the rationale.
+6. **OfficeList: ruling-first ordering.** No internals-B effort on a component polish
+   may retire; either the retire ruling is raised before touching it or the scroll item
+   defers to polish and rides the outcome.
+7. **THE PASS SPLITS (ratified).** internals-B carries the four monolith splits (items
+   1, 6, 7, 8, with items 2-5 riding their stated homes); a new **internals-C:
+   coherence** carries the coherence thirteen, the exhaustiveness idiom, and the
+   newcomer map. B precedes C so gates and sweeps do not churn under files being split.
+   Sequence: internals -> internals-B -> internals-C -> chassis -> polish; still ONE
+   release cut after polish. The running internals pass's Task 11 dispatch is amended
+   to re-file ROADMAP in this two-slice shape (the plan's ruled text predates the
+   split).
+
+The original questions, kept as the record of what was asked:
+
 
 1. **Read-seam boundary (item 12):** define it or drop it—no source document exists.
 2. **`FieldInput` posture (item 2):** ROADMAP says fix (`$bindable()` or callback); the

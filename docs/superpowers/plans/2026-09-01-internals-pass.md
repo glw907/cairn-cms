@@ -10,7 +10,9 @@
 > file); (2) absorb anything 4b's post-mortem routes here beyond what the fold already
 > carried; (3) pass round 2, an `engine-triage` verification of this folded revision.
 > This block is the canonical statement of the pre-dispatch gates; other sections point
-> here rather than restating them.
+> here rather than restating them. Round 2 ran 2026-09-01 and its seven fixes are
+> applied (see "Review folds (round 2)"); the remaining pre-dispatch gate is the
+> anchor reconciliation, items (1) and (2).
 
 > **For agentic workers:** execute through the `cairn-implementer` chain per task
 > (implementer, `diff-reviewer`, full gate), workflow mode via
@@ -32,7 +34,9 @@
    condition and the `formatTimestamp` contract (Task 13).
 
 Mostly consumer-invisible, riding outside the `Consumers must:` window except where a
-task states otherwise (Tasks 7, 10, 12, 13 state otherwise).
+task states otherwise (Tasks 7 and 10 state otherwise; Task 12 is a non-breaking new
+export and Task 13 extends 4b's unpublished entry in place, so neither adds a
+`Consumers must:` line).
 
 **Architecture:** This is the audit-remediation internals slice. The ratified sequence is
 internals → internals-B (monoliths and coherence) → chassis → polish, with ONE release
@@ -164,7 +168,7 @@ Carried from the 4a/4b plans (same initiative); every task inherits them.
 - Create: `scripts/checks/check-self-use.mjs` + its allowlist JSON; wire into
   `package.json` scripts and `.github/workflows/test.yml`
 - Modify: `docs/internal/engine-rulings.md` (a NEW standing row for the gate, with
-  reopen conditions, cross-referencing the two CLOSED rows —`audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c` (a retire,
+  reopen conditions, cross-referencing the two CLOSED rows—`audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c` (a retire,
   `Reopens on: closed`; building the gate in `scripts/checks/` is a new home for the
   retired proposal's underlying rule, recorded as such, never a re-close) and
   `read-from-the-source-rule` (whose own text forbids reopening for downstream
@@ -308,9 +312,10 @@ holds; the render-trio block is allowlisted, not broken; the reference tree is g
 - Modify: `docs/admin/README.md` + `docs/extend/README.md` (the 16 genuine spaced
   em-dash violations), `.vale.ini` or the check's own header (the arbiter record),
   `docs/internal/docs-friction-log.md` (complete-or-move: the quote-drift entry
-  leaves), the workstation `CLAUDE.md` authoring section's `.vale.ini` description (one
-  line; it currently claims scoping sections that do not exist), `CHANGELOG.md`
-  (internal)
+  leaves), the REPO's `CLAUDE.md` (`:319-321`: the authoring section claims `.vale.ini`
+  scopes Google to `reference`/`guides`/`explanation`/`tutorial` sections that do not
+  exist; one line. The repo-root `CLAUDE.md` sits outside the standard drift-hunt
+  scope, which is why nothing else catches it), `CHANGELOG.md` (internal)
 
 - [ ] **Step 1 (quote-drift):** extract the bolded quoted sentences from
   `docs/editors/when-something-goes-wrong.md` and match each against the shipped
@@ -436,9 +441,10 @@ optional chain are gone; `check:comments` green.
   the two object props fold in as `api.tidy` and `api.imagePlaceholders`; the eleven
   callbacks become verb members dropping the `register` stems—`api.insert`,
   `api.insertLink`, `api.getSelection`, `api.caretCoords`, `api.focusEditor`,
-  `api.undo`, `api.format`, `api.replaceRange`, `api.selectRange`, and the remaining
-  two enumerated from the source's own prop list in the same naming shape. Plus the
-  `Props` interface extending the stable/wiring split, and the props gate.
+  `api.undo`, `api.format`, `api.replaceRange`, `api.selectRange`, `api.insertImage`
+  (from `registerInsertImage`), and `api.getSelectionRange` (from
+  `registerGetSelectionRange`), completing the eleven. Plus the `Props` interface
+  extending the stable/wiring split, and the props gate.
 
 - [ ] **Step 1:** Author `EditorApi` from the callbacks' signatures per the grammar
   above; failing component tests first (the editor still registers every capability
@@ -496,10 +502,15 @@ engine lists' audit results are read and dispositioned (fixed or advisory-explai
 **Files:**
 - Modify: `src/lib/auth-channel/factory.ts` (the tripwire; also the salt-fault
   diagnostic below), `src/lib/sveltekit/guard.ts` (the existing refusal's home—its
-  message and `isLocalHost` witness are REUSED, not duplicated: one internal shared
-  constant/helper module carries the message text and the locality predicate, and the
-  task states its home; a divergent second wording would violate the
-  `read-from-the-source-rule` this pass's own Task 1 enforces), `src/lib/log/events.ts`
+  message and `isLocalHost` witness are REUSED, not duplicated), a NEW internal module
+  `src/lib/auth-channel/dev-flag.ts` exporting the flag name, the message text, and the
+  locality predicate, which `guard.ts` and `factory.ts` both import (a divergent second
+  wording would violate the `read-from-the-source-rule` this pass's own Task 1
+  enforces). The two refusals deliberately diverge on WITNESS, not wording: the guard
+  fires on flag-set-alone with a 503 because it mounts only in production builds (the
+  dev branch replaces it entirely), while the factory fires on set-AND-non-local with a
+  throw because one factory instance serves both dev and prod—same message, different
+  witnesses, and each states why where it fires. Also: `src/lib/log/events.ts`
   + `docs/reference/log-events.md` (the new `auth.channel.salt_unavailable` record),
   `docs/reference/` auth-channel page, `docs/internal/engine-rulings.md`
   (`audit-auth-devdelivery`'s Shape-field question resolves), `CHANGELOG.md`
@@ -564,7 +575,8 @@ coverage boundary.
   so the docs register and Vale floor apply; no `docs/internal/` security doc exists and
   none is created), `docs/extend/restrict-admin-access.md` (the cross-link),
   `docs/internal/engine-rulings.md` (a standing ruling row with reopen conditions and
-  the call-site map as evidence), `src/lib/sveltekit/guard.ts` / `admin-action.ts`
+  the call-site map as evidence), `src/lib/auth/access.ts` (home of `canReach`,
+  `:152`), `src/lib/sveltekit/guard.ts` / `admin-action.ts` / `section-action.ts`
   (doc-comments naming which posture each helper carries and why—no behavior change),
   `src/lib/sveltekit/admin-nav.ts` (`validateAccessComposition` gains the startup
   warning), `src/lib/log/events.ts` + `docs/reference/log-events.md` (the warning's
@@ -583,9 +595,11 @@ coverage boundary.
   `ownerOnly` stacking cross-link from `restrict-admin-access.md`; (4) the fail-closed
   `authorizeAdminTarget` contract for site-authored POSTs. Contract prose only: the
   call-site map and verdict history go to the ledger row, exclusively.
-- [ ] **Step 2 (doc-comments):** each of the four named helpers carries a one-sentence
-  posture doc-comment naming its posture and its reason (this is the checkable form of
-  the old criterion).
+- [ ] **Step 2 (doc-comments):** the four helpers—`canReach`
+  (`src/lib/auth/access.ts:152`), `requireEngineAccess` (`src/lib/sveltekit/guard.ts`),
+  `adminAction` (`src/lib/sveltekit/admin-action.ts`), and the section-action helper
+  (`src/lib/sveltekit/section-action.ts`)—each carry a one-sentence posture doc-comment
+  naming the posture and its reason (this is the checkable form of the old criterion).
 - [ ] **Step 3 (the startup warning—inside the no-blanket-harden constraint):**
   `validateAccessComposition` already holds `ctx.conceptIds` and `ACCESS_FIXED_SCREENS`;
   add a NON-THROWING warn-level record enumerating every screen and concept the declared
@@ -600,7 +614,8 @@ coverage boundary.
   line; commit.
 
 **Acceptance criteria:** `security-model.md` carries all four content points with no
-verdict provenance; each of the four helpers has its one-sentence posture doc-comment;
+verdict provenance; each of the four helpers enumerated in Step 2 has its one-sentence
+posture doc-comment;
 the unmapped-screen warning fires in a test with a partial map and is silent with an
 exhaustive one; the ledger row carries the detectable reopen condition; the CHANGELOG
 entry carries the audit-your-map `Consumers must:` line; no route behavior changed.
@@ -615,7 +630,10 @@ entry carries the audit-your-map `Consumers must:` line; no route behavior chang
   assert—`resolve` does not contain, so assert the resolved path stays under the base—REGARDLESS of which direction Step 1 lands),
   `packages/create-cairn-site/src/substitute.mjs` (reads the shared source), the
   transcript fixture (`packages/create-cairn-site/test/fixtures/transcripts/02-doctor-bare.txt`
-  regenerates if the message changes), `docs/internal/engine-rulings.md`
+  regenerates if the message changes), `src/lib/media-seed/bin.ts` (a `// WATCH:`
+  comment only, on its byte-identical uncontained `readFileUnderCwd` twin at `:67`,
+  routing that file's own containment assert to internals-B—this task does not change
+  media-seed behavior), `docs/internal/engine-rulings.md`
   (`audit-cli-config-site-config-check`'s open half closes; PLUS the owed
   `isUniqueViolation` defer row—toolkit-seams deferred that `/cloudflare` helper at
   review with reopen triggers and promised a ledger record that was never written; the
@@ -649,7 +667,7 @@ paths never become engine contract.
   re-files as the named follow-on slice "internals-B: monoliths and coherence" carrying
   **FOUR monoliths** (`EditPage`, `CairnMediaLibrary`, `content-routes-core`,
   `audit/rendered.ts`)—`MarkdownEditor` is STRUCK from the list because Task 7 lands
-  it, and ROADMAP's "33-prop" figure reconciles to the shipped shape in the same edit —plus the exhaustiveness idiom, the coherence thirteen, the newcomer internals map,
+  it, and ROADMAP's "33-prop" figure reconciles to the shipped shape in the same edit—plus the exhaustiveness idiom, the coherence thirteen, the newcomer internals map,
   and the read-seam boundary decision. Two ordering sentences the re-file must carry:
   a hand-authored per-file header survives a later split (each split file re-derives
   its own; Task 6's `content-routes-core` header is not wasted work), and Task 7's
@@ -765,7 +783,8 @@ budgets scored.
   current evidence, so the polish slice's whole-surface read raises it as a fresh
   ruling before any task; it is also still taught in the extend arm, so a retire is a
   `Consumers must:` event), the `CHROMA_DISTINCT_FLOOR` polarity naming, the repo-wide
-  `throw error()` sweep, and the shared `data-theme` test-harness helper.
+  `throw error()` sweep, the shared `data-theme` test-harness helper, and the
+  release-gate promotion of the e2e workflow's `devBackendHandle` dry-run grep (S-4).
 - **Release:** the window still holds; ONE cut after the polish slice.
 
 ## Review folds (round 1, 2026-09-01, run pre-merge at Geoff's direction)
@@ -782,9 +801,9 @@ block). Three lenses: cleanliness-and-beauty (B), `web-auth-security-reviewer` (
   stated-limits paragraph.
 - **B-2 / T-11 (Task 1 amending closed ledger rows):** FOLDED—new row only; both
   closed rows byte-untouched; the "closes" claims removed.
-- **B-3 (internals-B re-filed with five monoliths while Task 7 lands one):** FOLDED —four monoliths; MarkdownEditor struck; the two ordering sentences added (Task 11 and
+- **B-3 (internals-B re-filed with five monoliths while Task 7 lands one):** FOLDED—four monoliths; MarkdownEditor struck; the two ordering sentences added (Task 11 and
   hands-forward).
-- **B-4 / T-9 (Task 5's phantom count and the introduce-a-name hazard):** FOLDED —corpus derived from Task 2's rider output; `reproductions.md` added, `core.md`
+- **B-4 / T-9 (Task 5's phantom count and the introduce-a-name hazard):** FOLDED—corpus derived from Task 2's rider output; `reproductions.md` added, `core.md`
   dropped; absent-name-is-never-retrofitted stated; the `UsageEntry` step corrected
   from verify to add.
 - **B-5 (Task 5 stands on an existing provenance leak):** FOLDED—the scar-tissue
@@ -804,7 +823,7 @@ block). Three lenses: cleanliness-and-beauty (B), `web-auth-security-reviewer` (
   shared message/predicate constant; the refusal's throw form specified.
 - **B-10 (SITE_CONFIG_PATHS list-vs-path and unpriced export):** FOLDED—two-name
   shape; data-file default; pricing stated (with S-8's containment requirements).
-- **B-11 (Task 6's wrong deletion reason and stranded optional chain):** FOLDED —corrected reason; the chain tightened in the same step.
+- **B-11 (Task 6's wrong deletion reason and stranded optional chain):** FOLDED—corrected reason; the chain tightened in the same step.
 - **B-12 (five unresolved ORs):** FOLDED—all five resolved; the tie-break rule added
   to the global constraints.
 - **B-13 (PROPOSED labels under a RATIFIED banner):** FOLDED—relabeled RULED
@@ -835,7 +854,7 @@ block). Three lenses: cleanliness-and-beauty (B), `web-auth-security-reviewer` (
 - **S-8 (SITE_CONFIG_PATH path-traversal class):** FOLDED—data-not-code read;
   validation at both consumers; the `readFileUnderCwd` containment assert
   unconditional.
-- **S-9 (self-use gate points deletion pressure at anti-lockout primitives):** FOLDED —allowlist-first remedy order; auth-path exports allowlist-only; the three named seeds;
+- **S-9 (self-use gate points deletion pressure at anti-lockout primitives):** FOLDED—allowlist-first remedy order; auth-path exports allowlist-only; the three named seeds;
   static parsing only.
 - **S-10 (EditorApi trust boundary clean; uniform over-grant + `spellcheckTest`):**
   FOLDED—the over-grant sentence owed to `components.md`; `spellcheckTest` pinned
@@ -865,6 +884,11 @@ block). Three lenses: cleanliness-and-beauty (B), `web-auth-security-reviewer` (
   Task 13 (no predicate; record-side fix); (f) OfficeList retire → polish,
   ruling-first (its closed row reopens on no current evidence).
 - **T-13 (`isUniqueViolation` ledger debt):** FOLDED—the defer row rides Task 11.
+- **4b routing, `CHROMA_DISTINCT_FLOOR` polarity naming:** FOLDED—polish hands-forward.
+- **4b routing, repo-wide `throw error()` sweep:** FOLDED—polish hands-forward.
+- **4b routing, shared `data-theme` test-harness helper:** FOLDED—polish hands-forward.
+- **4b routing, OfficeList/AdminTable scroll-container ownership:** FOLDED—internals-B
+  hands-forward.
 - **T-15 (hygiene: ceiling thin; Task 10 criterion uncheckable; workflow mode sound;
   Task 7 count consistent; CLAUDE.md vale drift):** FOLDED—ceiling 6.5M with the
   growth stated; criterion restated; the rest recorded as verified. The `.vale.ini`
@@ -875,3 +899,23 @@ Declined or deferred, with reasons: S-4's release-gate grep promotion (polish; t
 pass does not own the release workflow); B-4's implied option of hand-maintaining a
 site list in the plan (the corpus derives from Task 2's output instead, so it cannot go
 stale twice).
+
+## Review folds (round 2, 2026-09-01)
+
+Round 2 (`engine-triage` verification of the folded revision) returned fix with seven
+mechanical items, all applied: **F-1** Task 10 adds `src/lib/auth/access.ts` and
+`src/lib/sveltekit/section-action.ts` to its files and enumerates the four helpers once
+in Step 2, with the criteria referencing the enumeration. **F-2** Task 4's `.vale.ini`
+description drift repointed to the REPO's `CLAUDE.md:319-321` (the repo-root file sits
+outside the standard drift-hunt scope, which is why nothing else catches it). **F-3**
+Task 7's member grammar completes the eleven (`api.insertImage`,
+`api.getSelectionRange`), making ruling 1's "no implementer evenness call remains" and
+B-7's disposition true. **F-4** the polish hands-forward gains S-4's release-gate grep
+promotion, and the four 4b routings previously asserted-but-unrecorded gained fold
+entries. **F-5** the window sentence corrected: Tasks 7 and 10 state otherwise; Tasks
+12 and 13 add no `Consumers must:` line. **F-6** the shared refusal constant homed at
+`src/lib/auth-channel/dev-flag.ts`, with the guard/factory witness divergence and its
+reason stated. **F-7** six spaced-em-dash rewrap artifacts fixed. Plus the verifier's
+observation: Task 11 adds a `// WATCH:` on the byte-identical uncontained
+`readFileUnderCwd` twin at `src/lib/media-seed/bin.ts:67`, routing that file's own
+containment assert to internals-B.

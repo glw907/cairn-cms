@@ -979,6 +979,19 @@
 
 ### Fixed
 
+- `check:reference`'s stale-name (reverse) check is now scoped per page (internals pass, Task 3):
+  it used to flag a reference-page name only when NO subpath anywhere in the package exported it, so
+  a page could name a real export of a DIFFERENT subpath as if it were its own and the gate stayed
+  green, exactly how 14 dead rows once survived undetected in `delivery-data.md` until a manual
+  sweep found them (`b065ea51`). The check now compares each page against the real exports THAT PAGE
+  documents (`scripts/checks/reference-coverage.mjs`'s new `knownNamesByPage`), correctly pooling
+  the two pages that cover two subpaths each (`delivery.md`, `reproductions.md`). The one legitimate
+  exception the rescope surfaces, `core.md`'s narrative mention of the `/render` trio
+  (`cardShell`/`headRow`/`iconSpan`, re-homing deferred to the chassis pass), is recorded in a new
+  reasoned `NARRATIVE_CONTEXT_ALLOWLIST`, the same fail-unless-recorded idiom `check:surface`'s leak
+  registry uses. See `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope`
+  row. Internal tooling only; no consumer action.
+
 - `createAuthChannel`'s three cookie deletes now pass their setter's own `secure` flag: `confirm`'s
   clear of the pending nonce cookie, and both of `logout`'s. A cookie jar's `delete` defaults the
   flag ON for every host but `localhost` itself, and a browser discards a Secure `Set-Cookie`

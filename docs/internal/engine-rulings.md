@@ -5133,3 +5133,45 @@ when the remediation pass lands.
 - **Verified:** `npm run check:surface` (CI, `.github/workflows/test.yml`, which already runs this
   entry) and `src/tests/unit/check-surface-leaks.test.ts`, including a failing-first proof against a
   synthetic unrecorded leak.
+
+## reference-coverage-stale-names-rescope: `staleNames` scoped per page, not per the whole package  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Executed as foundations A's own inheritance note 1 prescribed
+  (`docs/internal/record/2026-08-29-foundations-a-move-set.md:18-25`, echoed as docket item 2 in
+  `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md`): `scripts/checks/reference-coverage.mjs`'s
+  `staleNames` reverse (stale-prose) check used to flag a reference-page name only when NO subpath
+  anywhere in the package exported it, fed by `globalKnownNames()`, the union of every subpath's
+  exports. A page could therefore name a real export of a DIFFERENT subpath as if it were its own
+  and the gate stayed green, exactly how 14 dead Types-table rows (`AccessMap`, `Backend`,
+  `RolesDeclaration`, `Capability`, `MagicLinkMessage`, and nine more) survived undetected in
+  `delivery-data.md` until a manual sweep (`b065ea51`) found and removed them by hand. The gate now
+  checks each page against the real exports THAT PAGE documents, via the new `knownNamesByPage()`,
+  so a foreign name fails there instead of hiding behind an unrelated subpath's export list.
+- **Reopens on:** closed. Executed by the internals pass, Task 3. A future page that legitimately
+  needs to show a real export from another subpath as narrative context is not a reopen of this
+  row; it is a new `NARRATIVE_CONTEXT_ALLOWLIST` entry with its own reason, same discipline as
+  `check-surface-leaks`' registry above.
+- **Shape (the per-PAGE pool, not per-subpath-entry).** Two page files each cover two `CONFIG`
+  entries: `delivery.md` documents both `/delivery` and `/delivery/head`, and `reproductions.md`
+  documents both `/reproductions` and `/reproductions/manifest`. Pooling per CONFIG entry rather
+  than per page would false-positive a name real only on the page's OTHER covered subpath, so
+  `knownNamesByPage()` unions every entry's own exports keyed by `entry.page`, and `checkOne()`
+  checks a page against that union. `globalKnownNames()` (the old pool) survives unchanged, now
+  used only to keep a narrative-context allowlist entry honest: an allowlisted name must still be a
+  real export SOMEWHERE in the package, so a later rename or removal of `cardShell`/`headRow`/
+  `iconSpan` (below) still fails here rather than hiding behind a stale allowlist reason.
+- **Shape (the allowlist, fail-unless-recorded).** `NARRATIVE_CONTEXT_ALLOWLIST` records the one
+  legitimate exception the rescope surfaces: `core.md`'s "Component-author helpers" section shows
+  the `/render` hast-building trio (`cardShell`, `headRow`, `iconSpan`) beside the root-barrel
+  `renderGlyph` export, in the alert component's worked `build()` example, because re-homing them
+  onto `/render`'s own page is deferred to the chassis pass (this ledger's
+  `f1-return-position-leak-sanction` row carries the same trio as list (c) Tier 4,
+  chassis-coupled). `assertAllowlistReasoned()` fails any entry with an empty `reason`, the same
+  fail-unless-recorded idiom `check-surface-leaks`' registry uses above. Every other page in the
+  reference tree runs clean with an empty allowlist; no other live drift survived the rescope.
+- **Record:** `docs/internal/record/2026-08-29-foundations-a-move-set.md` (inheritance note 1),
+  `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md` (item 2), and commit
+  `b065ea51` (the manual fix the rescope now automates), all cited above.
+- **Verified:** `npm run check:reference` (CI, `.github/workflows/test.yml`) and
+  `src/tests/unit/reference-coverage.test.ts`, including a failing-first proof reconstructing the
+  `delivery-data.md` drift shape against fixture subpaths.

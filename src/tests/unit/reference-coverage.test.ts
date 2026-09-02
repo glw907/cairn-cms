@@ -6,6 +6,9 @@ import {
   hasTierMarker,
   untaggedNames,
   staleNames,
+  checkOne,
+  assertAllowlistReasoned,
+  NARRATIVE_CONTEXT_ALLOWLIST,
 } from '../../../scripts/checks/reference-coverage.mjs';
 
 const fixture = (name: string) => resolve(__dirname, 'fixtures/reference-coverage', name);
@@ -188,5 +191,77 @@ describe('staleNames', () => {
   it('still flags a `declare const` naming a removed export inside a signature-only block', () => {
     const text = ['```ts', 'declare const kept: string;', 'declare const removed: string;', '```'].join('\n');
     expect(staleNames(['kept'], text)).toEqual(['removed']);
+  });
+});
+
+describe('checkOne (per-subpath stale-name rescope)', () => {
+  // The historical case: `delivery-data.md` once carried 14 Types-table rows naming types real
+  // only on other subpaths (core, auth-channel), which the old union-over-everything pool never
+  // caught (see `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope`
+  // row). `rescope-page-a.md` reconstructs that shape: it correctly documents `fromA` (subpath A's
+  // own export) and, like the dead delivery-data.md rows, also names `fromB`, a name real only on
+  // a different subpath (B).
+  const pageA = fixture('rescope-page-a.md');
+  const pageAFixed = fixture('rescope-page-a-fixed.md');
+  const entryA = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: pageA };
+  const entryAFixed = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: pageAFixed };
+  const pageKnownNames = new Set(['fromA']); // subpath A's own pool: fromB is foreign
+  const globalKnownNames = new Set(['fromA', 'fromB']); // fromB is still real, just elsewhere
+
+  it('fails a page that names a foreign subpath export the old global pool let pass', () => {
+    const result = checkOne(entryA, pageKnownNames, globalKnownNames, []);
+    expect(result.stale).toEqual(['fromB']);
+  });
+
+  it('runs clean once the foreign row is removed (the real fix, not an allowlist)', () => {
+    const result = checkOne(entryAFixed, pageKnownNames, globalKnownNames, []);
+    expect(result.stale).toEqual([]);
+  });
+
+  it('excuses an allowlisted foreign name that is still a real export somewhere', () => {
+    const allowlist = [{ page: pageA, names: ['fromB'], reason: 'narrative context, see /b.' }];
+    const result = checkOne(entryA, pageKnownNames, globalKnownNames, allowlist);
+    expect(result.stale).toEqual([]);
+  });
+
+  it('does not excuse an allowlisted name outside its own page', () => {
+    const allowlist = [{ page: fixture('some-other-page.md'), names: ['fromB'], reason: 'wrong page.' }];
+    const result = checkOne(entryA, pageKnownNames, globalKnownNames, allowlist);
+    expect(result.stale).toEqual(['fromB']);
+  });
+
+  it('keeps the renamed/removed lock even for an allowlisted name: a name real nowhere still fails', () => {
+    const allowlist = [{ page: pageA, names: ['fromB'], reason: 'narrative context, see /b.' }];
+    const globalWithoutFromB = new Set(['fromA']); // fromB renamed or removed everywhere
+    const result = checkOne(entryA, pageKnownNames, globalWithoutFromB, allowlist);
+    expect(result.stale).toEqual(['fromB']);
+  });
+
+  it('pools two subpath entries that share one page: neither name is foreign to the shared page', () => {
+    const sharedPage = fixture('rescope-shared-page.md');
+    const entryOnSharedPage = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: sharedPage };
+    // The shared-page pool a real `main()` run builds via `knownNamesByPage`: the union of both
+    // subpaths' own exports, since both document the same page (delivery.md and
+    // reproductions.md's own real shape).
+    const sharedPoolFromMain = new Set(['fromA', 'fromB']);
+    const result = checkOne(entryOnSharedPage, sharedPoolFromMain, globalKnownNames, []);
+    expect(result.stale).toEqual([]);
+  });
+});
+
+describe('NARRATIVE_CONTEXT_ALLOWLIST (the render trio, F-1 list (c) Tier 4)', () => {
+  it('is reasoned: every entry carries a non-empty reason', () => {
+    expect(() => assertAllowlistReasoned(NARRATIVE_CONTEXT_ALLOWLIST)).not.toThrow();
+  });
+
+  it('rejects an entry with no reason (the fail-unless-recorded idiom)', () => {
+    expect(() =>
+      assertAllowlistReasoned([{ page: 'docs/reference/core.md', names: ['cardShell'], reason: '' }]),
+    ).toThrow(/no reason/);
+  });
+
+  it('records core.md as the render trio\'s narrative-context page', () => {
+    const coreEntry = NARRATIVE_CONTEXT_ALLOWLIST.find((e) => e.page === 'docs/reference/core.md');
+    expect(coreEntry?.names).toEqual(['cardShell', 'headRow', 'iconSpan']);
   });
 });

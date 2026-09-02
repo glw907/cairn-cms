@@ -316,14 +316,12 @@ export const CONFIG = [
   { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
 ];
 
-// The full, unfiltered real-export set across every covered subpath, not just the one a page
-// documents. A reference page legitimately shows a real name from another subpath for narrative
-// context (core's "Component-author helpers" block declares `cardShell`, `headRow`, and
-// `iconSpan` alongside the root export `glyph`, even though the three live on `/render`), so the
-// reverse check's job is narrower than "is this name exported here": it is "does this name still
-// exist anywhere as a real export", which is what makes it a lock against a renamed or removed
-// name rather than a page-boundary purity check. Built from all of CONFIG regardless of the
-// `--only` filter, so a single-subpath run sees the same pool a full run does.
+// The full, unfiltered real-export set across every covered subpath. This is no longer the pool
+// `staleNames` checks a page against (see `knownNamesByPage` below, the per-page rescope); it
+// survives as the realness check `isAllowlisted` runs a narrative-context exception against, so an
+// allowlisted name that is later renamed or removed everywhere still fails here instead of hiding
+// behind a stale allowlist entry. Built from all of CONFIG regardless of the `--only` filter, so a
+// single-subpath run sees the same pool a full run does.
 /** @param {{ dts: string }[]} entries */
 function globalKnownNames(entries) {
   const known = new Set();
@@ -335,11 +333,87 @@ function globalKnownNames(entries) {
   return known;
 }
 
+// The real-export names a page itself documents, the pool `staleNames` checks that page against.
+// Scoped per PAGE, not per CONFIG entry, because two page files each cover two subpath entries
+// (delivery.md documents both /delivery and /delivery/head; reproductions.md documents both
+// /reproductions and /reproductions/manifest): a name real only on the page's OTHER covered
+// subpath is still that page's own name, not foreign. A name real on some unrelated subpath the
+// page does not cover no longer excuses a stale mention (the union-over-everything pool this
+// replaces let 14 dead rows survive undetected in delivery-data.md, see
+// `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope` row); the
+// deliberate exceptions that remain go in `NARRATIVE_CONTEXT_ALLOWLIST`. Built from all of CONFIG
+// regardless of the `--only` filter, matching `globalKnownNames`.
+/** @param {{ dts: string, page: string, excludeDts?: string }[]} entries */
+function knownNamesByPage(entries) {
+  const byPage = new Map();
+  for (const entry of entries) {
+    const dtsPath = resolve(ROOT, entry.dts);
+    if (!existsSync(dtsPath)) continue;
+    let names = enumerateExports(dtsPath);
+    if (entry.excludeDts) {
+      const excluded = new Set(enumerateExports(resolve(ROOT, entry.excludeDts)));
+      names = names.filter((n) => !excluded.has(n));
+    }
+    if (!byPage.has(entry.page)) byPage.set(entry.page, new Set());
+    for (const n of names) byPage.get(entry.page).add(n);
+  }
+  return byPage;
+}
+
+// A reasoned exception to the per-page pool above: a page may legitimately show a real export
+// from another subpath as narrative context, a claim about where a related helper lives rather
+// than a claim that it lives here. Each entry names its page, the foreign names it shows, and the
+// reason, the same fail-unless-recorded idiom `check:surface`'s leak registry uses, so a carve-out
+// is self-explaining rather than silent.
+/** @type {{ page: string, names: string[], reason: string }[]} */
+export const NARRATIVE_CONTEXT_ALLOWLIST = [
+  {
+    page: 'docs/reference/core.md',
+    names: ['cardShell', 'headRow', 'iconSpan'],
+    reason:
+      "the Component-author helpers section shows the /render hast-building trio beside the " +
+      "root-barrel renderGlyph export, in the alert component's worked build() example. " +
+      'Re-homing is deferred to the chassis pass: engine-rulings.md\'s ' +
+      "f1-return-position-leak-sanction row carries the trio as list (c) Tier 4, chassis-coupled.",
+  },
+];
+
+// Every allowlist entry must carry a non-empty reason: a recorded exception that does not explain
+// itself is a bug in the allowlist, not a silent pass-through.
+/** @param {{ page: string, names: string[], reason: string }[]} allowlist */
+export function assertAllowlistReasoned(allowlist) {
+  for (const entry of allowlist) {
+    if (!entry.reason || !entry.reason.trim()) {
+      throw new Error(
+        `narrative-context allowlist entry for ${entry.page} (${entry.names.join(', ')}) has no reason`,
+      );
+    }
+  }
+}
+
+// Whether `name` on `page` is a recorded narrative-context exception AND still a real export
+// somewhere in the package. The realness check is what keeps the renamed/removed lock intact for
+// an allowlisted name: if `name` is later renamed or removed everywhere, this returns false and
+// the name fails as stale, same as any other dead name.
+/**
+ * @param {string} page
+ * @param {string} name
+ * @param {Set<string>} globalNames
+ * @param {{ page: string, names: string[], reason: string }[]} allowlist
+ */
+function isAllowlisted(page, name, globalNames, allowlist) {
+  return allowlist.some((entry) => entry.page === page && entry.names.includes(name) && globalNames.has(name));
+}
+
 /**
  * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} entry
- * @param {Set<string>} knownNames
+ * @param {Set<string>} pageKnownNames the real exports this page documents (own subpath, plus any
+ *   sibling subpath entry that shares the same page)
+ * @param {Set<string>} globalKnownNamesSet the full real-export pool, used only to keep an
+ *   allowlisted name honest against a later rename or removal
+ * @param {{ page: string, names: string[], reason: string }[]} [allowlist]
  */
-function checkOne(entry, knownNames) {
+export function checkOne(entry, pageKnownNames, globalKnownNamesSet, allowlist = NARRATIVE_CONTEXT_ALLOWLIST) {
   const dtsPath = resolve(ROOT, entry.dts);
   if (!existsSync(dtsPath)) throw new Error(`missing ${entry.dts}; run "npm run package" first`);
   let names = enumerateExports(dtsPath);
@@ -357,7 +431,9 @@ function checkOne(entry, knownNames) {
   // missing, so the tier check runs over the documented (present) names only.
   const present = names.filter((n) => !missing.includes(n));
   const untagged = untaggedNames(present, pageText);
-  const stale = staleNames([...knownNames], pageText);
+  const stale = staleNames([...pageKnownNames], pageText).filter(
+    (name) => !isAllowlisted(entry.page, name, globalKnownNamesSet, allowlist),
+  );
   return { subpath: entry.subpath, page: entry.page, missing, untagged, stale };
 }
 
@@ -391,10 +467,12 @@ export function runIfMain(main, moduleUrl) {
 
 function main() {
   const entries = resolveEntries(process.argv[2], CONFIG);
-  const knownNames = globalKnownNames(CONFIG);
+  assertAllowlistReasoned(NARRATIVE_CONTEXT_ALLOWLIST);
+  const pageNames = knownNamesByPage(CONFIG);
+  const globalNames = globalKnownNames(CONFIG);
   let failed = false;
   for (const entry of entries) {
-    const r = checkOne(entry, knownNames);
+    const r = checkOne(entry, pageNames.get(entry.page) ?? new Set(), globalNames, NARRATIVE_CONTEXT_ALLOWLIST);
     if (r.noPage) {
       console.error(`MISSING PAGE ${r.page} (${r.subpath})`);
       failed = true;
@@ -405,7 +483,9 @@ function main() {
       console.error(`${r.subpath} (${r.page}): ${r.untagged.length} untagged (no stability tier): ${r.untagged.join(', ')}`);
       failed = true;
     } else if (r.stale.length) {
-      console.error(`${r.subpath} (${r.page}): ${r.stale.length} stale (no longer exported): ${r.stale.join(', ')}`);
+      console.error(
+        `${r.subpath} (${r.page}): ${r.stale.length} stale (not a real export this page covers): ${r.stale.join(', ')}`,
+      );
       failed = true;
     } else {
       console.log(`OK ${r.subpath} (${r.page})`);

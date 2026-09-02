@@ -11,8 +11,12 @@
 > carried; (3) pass round 2, an `engine-triage` verification of this folded revision.
 > This block is the canonical statement of the pre-dispatch gates; other sections point
 > here rather than restating them. Round 2 ran 2026-09-01 and its seven fixes are
-> applied (see "Review folds (round 2)"); the remaining pre-dispatch gate is the
-> anchor reconciliation, items (1) and (2).
+> applied (see "Review folds (round 2)"). Items (1) and (2) ran 2026-09-02 against
+> merged `main` at `a5352f0b`: the 4b post-mortem routes nothing beyond what the fold
+> already carried, and the anchor sweep confirmed every anchor except four corrections
+> applied inline (Task 5: `sveltekit.md:1917`; Task 6: the vacuous block at `:1031`
+> and the STATUS `:272` note overtaken; Task 8: the diagnostic-message defects' real
+> site is `list-role.ts`, not `sheet.ts:544`). All pre-dispatch gates are discharged.
 
 > **For agentic workers:** execute through the `cairn-implementer` chain per task
 > (implementer, `diff-reviewer`, full gate), workflow mode via
@@ -362,7 +366,7 @@ plan order already sequences them; this line states the reason).
   list is the rider's output, enumerated at dispatch, never a hard-coded count). Two
   rules: a name ABSENT from the reference tree is NOT retrofitted (never introduce a
   retired name to hang a parenthetical on—that is a surface regression dressed as
-  compliance); and `sveltekit.md:1914`'s `usage?: UsageEntry[]` row GAINS the
+  compliance); and `sveltekit.md:1917`'s `usage?: UsageEntry[]` row GAINS the
   `NonNullable<ContentFormFailure['usage']>[number]` parenthetical (the 4b ledger close
   promised it; the expression exists today only in the ledger and a test, so this is an
   add, not a verify).
@@ -392,9 +396,10 @@ is gone from touched pages; the README note exists.
   stale sites OUTSIDE the six files the review found:
   `src/lib/components/CairnMediaLibrary.svelte:32` and `src/lib/sveltekit/nav-routes.ts:2`;
   `src/tests/component/reproductions-stories.test.ts` (the vacuous
-  `it('has a matching manifest entry', ...)` block, at `:1022` post-4b)
-- Note for the pass's STATUS update: `docs/STATUS.md:44` carries the same stale `:272`
-  anchor; correct it there when STATUS is next written.
+  `it('has a matching manifest entry', ...)` block, at `:1031` on merged `main`; its
+  stranded defensive chain at `:1037`)
+- (The draft's note about a stale `:272` anchor in `docs/STATUS.md` is overtaken: the
+  4b-close STATUS rewrite already removed it.)
 
 - [ ] **Step 1:** Rewrite the six headers (each states the actual caller and why the
   public name is a thin wrapper—comment-standard conformant, no em dashes in
@@ -474,8 +479,10 @@ ledger rows are closed or progress-noted.
 - Modify: `src/lib/audit/rules/static/list-role.ts` (+ its rendered-mode counterpart if
   the fix lands there), `src/lib/audit/rules/rendered/panel-width.ts` (the documented
   gap at `:78-95`, with the `resolveColors` paint-not-parse precedent at `:92-93`),
-  `src/lib/audit/sheet.ts:544` (the two adjacent diagnostic-message defects: cause-string
-  mis-attribution on shared selectors; dropped at-rule condition),
+  `src/lib/audit/rules/static/list-role.ts` also hosts the two adjacent
+  diagnostic-message defects the docket filed against a stale `sheet.ts:544` anchor
+  (the message build at `:120-128`; the cause-lookup helpers at `:33-66` mis-attribute
+  among shared-selector declarations and drop an at-rule's own condition),
   `docs/reference/cairn-audit.md`, `CHANGELOG.md` (audit output change; no consumer
   action)
 - Spec sources: the internals docket and the harvest-detection post-mortem. (The two
@@ -487,8 +494,8 @@ ledger rows are closed or progress-noted.
   `role="listitem"` per-item addition against ARIA's owned-elements rule; both themes.
 - [ ] **Step 2 (`panel-width`):** painted text-width measurement for the closed-select
   case; fixture proves a clipped select label now flags.
-- [ ] **Step 3 (`sheet.ts:544`):** fix the two diagnostic-message defects; fixtures per
-  defect.
+- [ ] **Step 3 (diagnostic messages):** fix the two message defects at their real site
+  in `list-role.ts` (the docket's `sheet.ts:544` anchor was stale); fixtures per defect.
 - [ ] **Step 4:** Docs, CHANGELOG; commit.
 
 **Acceptance criteria:** a class-less `<li>` under `.menu` registers as re-grounded; a

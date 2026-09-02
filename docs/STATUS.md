@@ -69,7 +69,12 @@ behind and its sheet says to run it as a numbered site pass.
   un-importable members (18 sites), and the factory per-call `CAIRN_DEV_BACKEND` refusal
   design question. Routed to chassis: the render trio re-homing
   (`cardShell`/`headRow`/`iconSpan`), and the carried showcase hand-mounted
-  `+page.server.ts` against generated `./$types`.
+  `+page.server.ts` against generated `./$types`. Standing chassis mandate (Geoff,
+  2026-09-01): the chassis is the most developer-visible part of cairn and the code
+  developers interact with most, so it SETS the code bar; its quality bar equals the
+  engine's. The chassis pass gets the full cleanliness-and-beauty treatment the engine
+  slices got, every line treated as copy-paste-taught exemplar code, and its plan gets
+  the same three-lens adversarial review.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

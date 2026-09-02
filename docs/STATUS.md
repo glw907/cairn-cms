@@ -39,8 +39,11 @@ record-shape changes (`words` to `wordCount`, the dropped `resolver_absent` `ena
 `cleanup_failed` `reason` to `error`); two stale "still allowlisted" annotation lines in
 the rulings ledger (`engine-rulings.md:4592,:4601`); sweep `.task9-evidence/`. The internals
 pass plan is DRAFTED at
-`docs/superpowers/plans/2026-09-01-internals-pass.md` (docket banked beside it; six open
-decisions await Geoff; its adversarial review runs after 4b merges). Resume prompt for a fresh
+`docs/superpowers/plans/2026-09-01-internals-pass.md` (rulings RATIFIED at the 2026-09-01
+sitting; round-1 three-lens review ran pre-merge at Geoff's direction against worktree
+state `189bf2d7` and is FOLDED at `3dde82a7`: 13 tasks, ceiling 6.5M, one ratified-letter
+amendment on the CAIRN_DEV_BACKEND refusal awaiting Geoff's confirmation at plan approval;
+round 2 verification in flight; anchors reconcile once more after 4b merges). Resume prompt for a fresh
 session: "In ~/Projects/cairn-cms, resume the conformance pass (4b) mid-execution: invoke
 cairn-pass, read docs/STATUS.md and the plan, verify worktree `conformance` state, then
 continue the pass-execute workflow chain from the last completed task."

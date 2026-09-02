@@ -1,0 +1,262 @@
+{
+  "leaks": [
+    {
+      "name": "AdvisoryAction",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisoryaction; the two-hop case the type checker's own model exists to catch (invisible to the renderer, which expands one member level)."
+    },
+    {
+      "name": "AdvisoryNotice",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisorynotice."
+    },
+    {
+      "name": "ConfirmData",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-confirmdata."
+    },
+    {
+      "name": "DatePrefix",
+      "subpath": "/sveltekit",
+      "model": "renderer",
+      "standing-unverdicted": "First surfaced by this rider's own derivation (2026-09-02), never audited or verdicted. `DatePrefix` (src/lib/content/ids.ts:41) is exported from root but expanded, not named, inside `ConceptDescriptor.datePrefix` on /sveltekit: the NavIcon-class per-subpath shape, a dts-bundling artifact, not a decision anyone made."
+    },
+    {
+      "name": "DictionaryAddFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). docs/internal/record/2026-08-30-r4-rederivation.md section 3(c) names it beside `TidyFailure` as un-verdicted standing leaks and hands this rider the decision whether to fold them with `RemoveIndex`/`ValueOf`/`StandardResult`. RULED here (engine-rulings.md, this rider's own row): one standing-unverdicted class, no principled distinction separates the two groups."
+    },
+    {
+      "name": "DictionaryAddResult",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-dictionaryaddresult (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-dictionary.ts per the three-case rule, still named inside CairnAdminRoutes'/createCairnAdmin's rendered action union."
+    },
+    {
+      "name": "EditorActionFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "First surfaced by this rider's own derivation (2026-09-02), never audited or verdicted. `EditorActionFailure` (src/lib/sveltekit/editors-routes.ts:25) is used only via `satisfies` inside editors-routes.ts's own action handlers, never exported from any subpath, and reachable through EditorRoutes'/CairnAdminRoutes' rendered action union."
+    },
+    {
+      "name": "EditorsData",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-editorsdata."
+    },
+    {
+      "name": "EngineScreenId",
+      "subpath": ".",
+      "model": "renderer",
+      "standing-unverdicted": "Never ledger-verdicted; one of the three names docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, api-surface.md:540 era anchor, but expanded inline inside root's NavLayoutEngineRef.screen). This rider is the owner section 1 says the leak is waiting for."
+    },
+    {
+      "name": "EntrySummary",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-entrysummary."
+    },
+    {
+      "name": "FragmentTarget",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-fragmenttarget, whose own close text states the accepted NavIcon-class leak directly."
+    },
+    {
+      "name": "GettingStarted",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-gettingstarted."
+    },
+    {
+      "name": "HistoryEntry",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-historyentry."
+    },
+    {
+      "name": "LinkTarget",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-linktarget."
+    },
+    {
+      "name": "LoginData",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-logindata."
+    },
+    {
+      "name": "MarkdownReferenceRow",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-markdownreferencerow."
+    },
+    {
+      "name": "MediaLibrary",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "First surfaced by this rider's own derivation (2026-09-02), never audited or verdicted. `MediaLibrary` (src/lib/media/library-entry.ts:46, `Record<string, MediaLibraryEntry>`) is never exported from any subpath and is reachable through EditData.mediaLibrary's rendered shape."
+    },
+    {
+      "name": "MediaUploadFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-mediauploadfailure (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-media.ts per the three-case rule, still named inside the rendered action union."
+    },
+    {
+      "name": "MediaUsageInfo",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-mediausageinfo, whose own close text states the accepted NavIcon-class leak directly."
+    },
+    {
+      "name": "NavConcept",
+      "subpath": "/reproductions",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table names the /sveltekit carrier AdminShellData; the move record's own row also names ReproStory as a transitive carrier, which this rider's derivation confirms via /reproductions) and docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
+    },
+    {
+      "name": "NavConcept",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
+    },
+    {
+      "name": "NavIcon",
+      "subpath": ".",
+      "model": "renderer",
+      "standing-unverdicted": "Never ledger-verdicted; one of the three names docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, expanded inline inside root's NavLayoutEntry.icon). This rider is the owner section 1 says the leak is waiting for."
+    },
+    {
+      "name": "NavPageOption",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-navpageoption."
+    },
+    {
+      "name": "NavSaveFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-navsavefailure (retire, 4b conformance Task 1), whose own close text states the accepted NavIcon-class leak directly."
+    },
+    {
+      "name": "PublishActionLink",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-publishactionlink."
+    },
+    {
+      "name": "ReproInstance",
+      "subpath": "/reproductions",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table, addendum \"ReproInstance stays sanctioned\") and docs/internal/engine-rulings.md#audit-repro-reproinstance."
+    },
+    {
+      "name": "ResolvedPreview",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-resolvedpreview."
+    },
+    {
+      "name": "SettingsSaveFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-settingssavefailure (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-settings.ts per the three-case rule, still named inside the rendered action union."
+    },
+    {
+      "name": "SlotKind",
+      "subpath": ".",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; the one genuinely absent-everywhere member of the original three-name group docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (no subpath exports it under any name; SlotDef.kind expands it inline everywhere). This rider is the owner section 1 says the leak is waiting for."
+    },
+    {
+      "name": "SlotKind",
+      "subpath": "/delivery",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery re-renders SlotDef through its own InferFieldset instantiation."
+    },
+    {
+      "name": "SlotKind",
+      "subpath": "/delivery/data",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery/data re-renders SlotDef through its own InferFieldset instantiation."
+    },
+    {
+      "name": "SlotKind",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (docs/internal/record/2026-08-30-r4-rederivation.md section 1): /sveltekit re-renders SlotDef through its own InferFieldset instantiation."
+    },
+    {
+      "name": "StandardResult",
+      "subpath": ".",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). docs/internal/record/2026-08-30-retires-move-record.md's 'Two written exclusions' bullet names it, alongside RemoveIndex/ValueOf, as structurally identical in standing to DictionaryAddFailure/TidyFailure and hands this rider the decision. RULED here: folded into the same one standing-unverdicted class."
+    },
+    {
+      "name": "StandardResult",
+      "subpath": "/delivery",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above: /delivery re-renders InferFieldset through its own instantiation."
+    },
+    {
+      "name": "StandardResult",
+      "subpath": "/delivery/data",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above: /delivery/data re-renders InferFieldset through its own instantiation."
+    },
+    {
+      "name": "StandardResult",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above: /sveltekit re-renders InferFieldset through its own instantiation."
+    },
+    {
+      "name": "TidyFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). docs/internal/record/2026-08-30-r4-rederivation.md section 3(c) names it beside `DictionaryAddFailure` as un-verdicted standing leaks and hands this rider the decision whether to fold them with `RemoveIndex`/`ValueOf`/`StandardResult`. RULED here: one standing-unverdicted class, no principled distinction separates the two groups."
+    },
+    {
+      "name": "TidyKeyProbeResult",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-tidykeyproberesult, whose own close text states the accepted NavIcon-class leak directly."
+    },
+    {
+      "name": "TidyResult",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-tidyresult (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-tidy.ts because tidyAction's return type composes into createContentRoutesInternal, still named inside the rendered action union."
+    },
+    {
+      "name": "UploadResult",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-uploadresult (retire, 4b conformance Task 1, verify-wins resolution); the interface keeps its module-level export in content-routes-media.ts per the three-case rule, still named inside the rendered action union."
+    },
+    {
+      "name": "UsageEntry",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-usageentry, whose own close text names the public recovery directly (`NonNullable<ContentFormFailure['usage']>[number]`)."
+    },
+    {
+      "name": "UsageOrigin",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "First surfaced by this rider's own derivation (2026-09-02), never audited or verdicted. `UsageOrigin` (src/lib/media/usage.ts:34) is never exported from any subpath and is reachable through UsageEntry.origin's rendered shape, one hop past the already-sanctioned `UsageEntry`."
+    },
+    {
+      "name": "VocabularySaveFailure",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-vocabularysavefailure (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-settings.ts per the three-case rule, still named inside the rendered action union."
+    }
+  ]
+}

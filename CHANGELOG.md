@@ -160,6 +160,14 @@
   correct home (see `docs/internal/engine-rulings.md`'s `check-self-use` row). Internal tooling
   only; no consumer action.
 
+- `check:surface` now chains the F-1 leak-class rider (internals pass, Task 2,
+  `scripts/checks/check-surface-leaks.mjs`): derives, every run against the current built surface,
+  a retire-verdicted or absent name still named inside a surviving public export's rendered shape
+  (`AdvisoryAction`, `NavIcon`, `SlotKind`, and 40 others today), and fails on any such leak with no
+  reasoned entry in the new `scripts/checks/check-surface-leaks.json`. See
+  `docs/internal/engine-rulings.md`'s `check-surface-leaks` row for the two-model derivation and the
+  registry's reason grammar. Internal tooling only; no consumer action.
+
 ### Changed
 
 - The log vocabulary's remaining ten evenness defects close, across every emit site and the

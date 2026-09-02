@@ -5038,3 +5038,98 @@ when the remediation pass lands.
   both cited, both left byte-untouched by this row.
 - **Verified:** `npm run check:self-use` (CI, `.github/workflows/test.yml`) and
   `src/tests/unit/check-self-use.test.ts`.
+
+## check-surface-leaks: the F-1 leak-class rider on `check:surface`  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Ratified as a standing gate, chained from the existing `check:surface`
+  package entry (no new top-level gate name): `scripts/checks/check-surface-leaks.mjs` derives
+  F-1's own predicate ("a retire-verdicted OR ABSENT name still named inside a surviving KEEP
+  export's rendered public shape") against the CURRENT surface every run, never a fixed count, and
+  fails on any leak the derivation finds with no matching entry in
+  `scripts/checks/check-surface-leaks.json`. This is the owner
+  `docs/internal/record/2026-08-30-r4-rederivation.md`'s ratified hybrid ruling (section 7, "the
+  sanction arrives with an owner") and
+  `docs/internal/record/2026-08-30-retires-move-record.md` name explicitly, discharging the manual
+  18-row ledger that document keeps until this rider lands.
+- **Reopens on:** closed. Executed by the internals pass, Task 2. A new leak the derivation surfaces
+  on a later pass is not a reopen of this row; it is a new registry entry (with its own reason),
+  same discipline as `check-self-use`'s allowlist above.
+- **Shape (the two-model derivation, stated join).** The recorded set is the UNION of two
+  independent derivations, keyed by `(name, subpath)`, because the two known proof cases live in
+  different models and neither alone finds both:
+  - **The TYPE-CHECKER model** (`deriveTypeCheckerLeaks`) walks the real TypeScript type graph
+    through the compiler API, from every currently-exported symbol on each subpath's own built
+    `.d.ts` (excluding `/components`, see the stated-limits paragraph below), to a fixed point:
+    union/intersection members (including the pre-flattening `.origin` TypeScript keeps only for
+    display, which is what still names `TidyKeyProbeResult` after `TidyKeyProbeResult | "missing"`
+    flattens to four raw literals), array element types, index signatures, generic type arguments,
+    and call-signature parameter/return types (needed to reach an action's own failure/result
+    types, `DictionaryAddFailure` and its whole family, which sit on a callable member, not an
+    object property). A name is recorded only when it is absent from every subpath's export list
+    AND declared somewhere in `src/lib` (`collectDeclaredTypeNames`, the known-type-universe filter
+    that keeps an ambient library type like `Promise`/`RequestEvent` out of the candidate set
+    without needing a hand-maintained denylist). This is the model that proves `AdvisoryAction`: two
+    hops deep (`EditData.advisories[].actions[]`), invisible to the renderer, which expands exactly
+    one member level (`renderInterface` prints a nested INTERFACE reference as its bare name, never
+    recursing into ITS members), so `AdvisoryAction` never appears in `docs/internal/api-surface.md`
+    text at all once its one-hop carrier `AdvisoryNotice` loses its own top-level row.
+  - **The RENDERER model** (`deriveRendererLeaks`) works over `buildSurfaceModel()`'s already-
+    rendered shape strings, comparing a name's OWN literal-string-union shape (only a shape this
+    distinctive is compared, so an ordinary object or primitive member never false-matches) against
+    every OTHER subpath's rendered members, canonicalized as a set so union-member reordering across
+    subpaths (a real dts-bundling artifact, not a semantic difference) does not defeat the match.
+    This is the model that proves `NavIcon`/`EngineScreenId`: each has its own top-level export row
+    on `/sveltekit`, but root's rolled-up `.d.ts` bundles `NavLayoutEntry.icon`/
+    `NavLayoutEngineRef.screen` with NO surviving symbol reference back to the named alias (an
+    anonymous inlined union), so the type-checker model finds no symbol there to name; the renderer
+    model catches it by comparing the printed TEXT instead. `SlotKind` is the negative control for
+    this asymmetry: unlike `NavIcon`, its declaring module bundles into BOTH subpaths' own `.d.ts`
+    (a real symbol reference survives on each), so the type-checker model finds it directly and the
+    renderer model, which needs a name's OWN export row to read a comparison shape from, never even
+    attempts it (`SlotKind` has no row on any subpath).
+- **Shape (Step 3, the un-verdicted split, RULED not inherited).** The move record hands this rider
+  the decision it declined to make: `DictionaryAddFailure`/`TidyFailure` (r4-rederivation section
+  3(c)) versus `RemoveIndex`/`ValueOf`/`StandardResult` (the move record's "Two written exclusions"
+  bullet) were treated differently by accident of discovery order, both groups structurally
+  identical under F-1's predicate (unexported, never ledger-verdicted, rendered inside a surviving
+  shape). RULED: fold both groups into ONE `standing-unverdicted` class; no rule separates them.
+  Executed narrower than stated, honestly: the derivation's type-checker model finds
+  `DictionaryAddFailure`, `TidyFailure`, and `StandardResult` (all recorded, `standing-unverdicted`),
+  but not `RemoveIndex`/`ValueOf`: both live only inside `InferFieldset`'s unresolved CONDITIONAL
+  and MAPPED type expression (`S extends Fieldset<infer R> ? { [K in keyof RemoveIndex<R> ...] }`),
+  and the compiler's public checker API exposes no clean accessor for a conditional type's own
+  `checkType`/`extendsType`/`trueType`/`falseType` the way it does for a union's `.types`; this is a
+  stated derivation limit (see below), not a decision to exclude `RemoveIndex`/`ValueOf` from the
+  ruled class should a later derivation reach them.
+- **Shape (registry grammar).** Every recorded entry carries exactly one of two reason kinds:
+  `sanctioned-by` (a move-record row, a ledger slug, or both: 27 of the 43 recorded entries, the
+  18-name move-record sanction plus the 8 additional 4b Tier-1 retires Step 0 names, `UsageEntry`,
+  `MediaUploadFailure`, `VocabularySaveFailure`, `SettingsSaveFailure`, `NavSaveFailure`,
+  `DictionaryAddResult`, `TidyResult`, `UploadResult`) or `standing-unverdicted` (a one-line
+  citation: the remaining 16, the Step 3 fold above, `NavIcon`/`EngineScreenId`/`SlotKind` per
+  r4-rederivation section 1, and four names first surfaced by this rider's own derivation with no
+  prior audit history at all: `DatePrefix`, `EditorActionFailure`, `MediaLibrary`, `UsageOrigin`.
+  A leak with neither is a stop-and-rule, enforced by `findLeakViolations`' `hasReason` check
+  (exactly one of the two, never both, never neither); the registry currently derives to 43 entries
+  across 35 distinct names, a MEASURED output, never a hard-coded count.
+- **Stated limits (the rider is a name-keyed guard, not a completeness claim).** Svelte component
+  PROPS sit outside this rider's scope entirely: `/components` exports Svelte components
+  exclusively, and every component's declared type is a generic reference to its own
+  Props/Events/Slots parameters, so walking it structurally reaches every prop's own callback and
+  object types, a different surface with a different owner: Task 7's props gate (`check:reference`'s
+  props-vs-reference clause). `/components` therefore contributes no roots to the type-checker
+  model. Beyond that: an anonymous inline shape (an object literal type with no declared name at
+  all) is invisible by construction, since this rider is name-keyed; a runtime value can diverge
+  from its declared type without either model seeing it (this rider reads static types only); a
+  name reachable only through doc prose or a TSDoc `@link` is out of scope (text, not a type); a
+  `dist`-on-disk deep import outside the `exports` map is out of scope (the package boundary, not
+  the type graph); and, per the Step 3 note above, a name reachable only through an unresolved
+  conditional/mapped type's own internals (`RemoveIndex`, `ValueOf`) is not currently derivable
+  through the compiler's public checker API.
+- **Record:** `docs/internal/record/2026-08-30-r4-rederivation.md` (section 7's hybrid ruling, its
+  addendum, and section 1's three unowned names) and
+  `docs/internal/record/2026-08-30-retires-move-record.md` (the 18-row sanction table and its "Two
+  written exclusions" bullet), both cited throughout, both left byte-untouched by this row.
+- **Verified:** `npm run check:surface` (CI, `.github/workflows/test.yml`, which already runs this
+  entry) and `src/tests/unit/check-surface-leaks.test.ts`, including a failing-first proof against a
+  synthetic unrecorded leak.

@@ -2069,7 +2069,10 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // previewMint runs its own authorization sequence first (requireEditor, then
     // requireEngineAccess against the target concept), so a refused editor's outcome reaches them
     // before requireOrigin's site-misconfiguration throw ever runs. requireOrigin only guards the
-    // URL this action addresses on success, so it waits until a mint actually succeeds.
+    // URL this action addresses on success, so it waits until a mint actually succeeds. The trade:
+    // a site with no PUBLIC_ORIGIN configured still lets previewMint write the preview-token row
+    // before requireOrigin throws, so that row sits unreachable (no URL was ever returned to share
+    // it) until its own TTL expires it, rather than the misconfiguration being caught up front.
     let result: PreviewMintOutcome;
     try {
       result = await previewMint(runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });

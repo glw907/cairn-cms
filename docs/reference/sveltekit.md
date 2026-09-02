@@ -1123,8 +1123,11 @@ warns on drift, it never refuses on it, so an old version is never permanently u
 
 `previewMintAction` and `previewRevokeAction` back the edit screen's share affordance (spec part 3,
 "Public preview for a non-editor"): minting hands an editor's own read on a draft to anyone holding
-the returned URL, so both call `requireEntryFromParams` as their first statement, the same
-entry-scoped authorization `saveAction` and `publishAction` carry, not merely the view gate.
+the returned URL, so both run entry-scoped authorization as their first act, the same authorization
+`saveAction` and `publishAction` carry, not merely the view gate. `previewRevokeAction` runs that
+authorization directly through `requireEntryFromParams`. `previewMintAction` delegates it to
+`previewMint`, which runs the same `requireEditor` then `requireEngineAccess` sequence before this
+route ever reaches `requireOrigin`.
 `previewMintAction` refuses with `fail(400)` when the entry carries no pending draft (there is
 nothing to share yet); on success it returns `{ url, expiresAt }` directly, no redirect, so the
 share panel can show and copy the link in place, sets `cache-control: no-store` on its own

@@ -208,9 +208,6 @@ describe('logout', () => {
     // signIn only exercises confirmAction, which never derives an identity and so never calls
     // resolveSalt: the salt read this test forces to fault is genuinely the first one this channel
     // instance attempts, not one resolveSalt's own cache would have already answered from memory.
-    const priorSalt = await db
-      .prepare("SELECT value FROM cairn_channel_meta WHERE key = 'identity_salt'")
-      .first<{ value: string }>();
 
     // Drop the meta table only after signIn already verified the schema on this channel instance
     // (schemaVerified caches to true): logout's resolveVerifiedSession then skips the recheck and
@@ -239,12 +236,9 @@ describe('logout', () => {
       await db
         .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1')")
         .run();
-      if (priorSalt) {
-        await db
-          .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('identity_salt', ?1)")
-          .bind(priorSalt.value)
-          .run();
-      }
+      // No identity_salt restore needed: the harness's own resetChannelDb beforeEach deletes every
+      // meta row but schema_version before the next test runs, so a restored salt would just be
+      // discarded again.
     }
   });
 

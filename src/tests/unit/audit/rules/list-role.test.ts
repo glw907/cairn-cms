@@ -129,15 +129,53 @@ describe('list-role', () => {
   // marker-suppressed list carries role=list": the rule only sees marker suppression an
   // element's OWN classes cause, never a descendant-selector rule keyed on some ancestor's class
   // (daisyUI's `.menu :where(li)`, breadcrumbs' `> li`), so a list suppressed that way is outside
-  // what this run can catch and outside what this assertion proves; that gap is known and filed
-  // for a later remediation pass. The full registry runs (not just this rule alone), so a
-  // suppression directive naming some OTHER rule still resolves against that rule's own findings
-  // instead of reading as dead only because this narrower run never raised it; the assertion
-  // below still isolates this rule's own findings.
+  // what this run can catch and outside what this assertion proves. That gap is now covered by
+  // the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's actual
+  // computed `display` in a live browser instead; the nine engine lists it found were fixed
+  // in-tree (`role="list"` plus `role="listitem"` on their unroled items), which is what lets this
+  // static half stay clean here too, on the same markup, through its narrower own-class lens. The
+  // full registry runs (not just this rule alone), so a suppression directive naming some OTHER
+  // rule still resolves against that rule's own findings instead of reading as dead only because
+  // this narrower run never raised it; the assertion below still isolates this rule's own findings.
   it('runs clean on the engine\'s own tree', () => {
     const root = resolve(process.cwd());
     const config = resolveConfig(root, null, (path) => existsSync(resolve(root, path)));
     const report = runStatic(config, staticRules());
     expect(report.findings.filter((finding) => finding.ruleId === 'list-role')).toEqual([]);
+  });
+
+  // Defect fixture 1 (mis-attribution among shared-selector declarations): `.menu :where(li)`
+  // styles the `<li>`, gated by an ancestor's `.menu` class; it declares nothing about an element
+  // that merely carries the class "menu" itself. Reading "does declarations('menu') contain a
+  // display decl" without checking the declaration's own SUBJECT compound would misattribute this
+  // ancestor-gated rule to an item wearing that class, flagging a list that this declaration never
+  // actually touches.
+  it('does not misattribute an ancestor-gated descendant declaration to an item merely sharing its class name', () => {
+    const sheet = parseSheet('.menu :where(li) { display: flex; }');
+    const findings = listRole.check({
+      files: [component('<ul class="mt-1"><li class="menu">One</li></ul>\n')],
+      sheet,
+      config: resolveConfig('/site', null, () => true),
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  // Defect fixture 2 (a dropped at-rule condition): a class whose marker-removing declaration
+  // lives inside a media query is still a real, findable cause, but reporting it as if it applied
+  // unconditionally is misleading: the class only suppresses the marker under that condition. The
+  // message must carry the condition rather than silently dropping it.
+  it("names an at-rule's own condition in the message rather than dropping it", () => {
+    const sheet = parseSheet(
+      '@media (prefers-color-scheme: dark) { .dark\\:list-none { list-style-type: none; } }'
+    );
+    const findings = listRole.check({
+      files: [component('<ul class="dark:list-none"><li>One</li></ul>\n')],
+      sheet,
+      config: resolveConfig('/site', null, () => true),
+      cssFiles: [],
+    });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('only under @media (prefers-color-scheme: dark)');
   });
 });

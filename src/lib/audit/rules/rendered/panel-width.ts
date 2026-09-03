@@ -82,24 +82,48 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
   // the raw `scrollWidth > clientWidth` measurement would otherwise fire. `select` is deliberately
   // NOT exempt here: it carries no caret and does not scroll its own displayed value, so a `select`
   // clipped at the family's composition floor loses its option text with no recovery, the same
-  // defect this rule exists to catch on any other element. Measured directly (Chromium 151): this
-  // still catches only a `select[multiple]` listbox, whose options lay out as real child boxes and
-  // grow `scrollWidth`; a closed single-value `select`'s rendered label never grows its own
-  // `scrollWidth` past its box no matter how long the option text is, so that shape's clipped value
-  // stays outside what `scrollWidth > clientWidth` can see here. Dropping the tag from the
-  // exemption is still correct (a select should never be blanket-declared safe), it just does not
-  // by itself close the closed-select gap; that needs a different measurement (rendered text width
-  // against the box, the way `resolveColors` paints rather than parses) and is filed for a later
-  // pass, not built here. An element carrying `text-overflow: ellipsis` together with a clipping
-  // `overflow-x` (`hidden` or `clip`) is the house truncation idiom, a deliberate reading rather
-  // than a clip to flag; it is the same self-absorption reasoning as `scrolls()`, applied to a box
-  // that clips instead of scrolling.
+  // defect this rule exists to catch on any other element. An element carrying `text-overflow:
+  // ellipsis` together with a clipping `overflow-x` (`hidden` or `clip`) is the house truncation
+  // idiom, a deliberate reading rather than a clip to flag; it is the same self-absorption
+  // reasoning as `scrolls()`, applied to a box that clips instead of scrolling.
   function isExempt(el: Element): boolean {
     const tag = el.tagName.toLowerCase();
     if (tag === 'input' || tag === 'textarea') return true;
     const style = getComputedStyle(el);
     const clips = style.overflowX === 'hidden' || style.overflowX === 'clip';
     return clips && style.textOverflow === 'ellipsis';
+  }
+
+  // A closed single-value `<select>`'s rendered label never grows its own `scrollWidth` past its
+  // box no matter how long the option text is (measured directly, Chromium 151), so the raw
+  // `scrollWidth > clientWidth` test above can never see it clip: it only ever catches a
+  // `select[multiple]` listbox, whose options lay out as real child boxes and DO grow `scrollWidth`.
+  // Closing the closed-select gap needs a different measurement, painting the selected option's own
+  // text with the select's own computed font and comparing it against the box's available width,
+  // the same paint-not-parse precedent `resolveColors` (`rendered.ts`) already takes for a
+  // computation the DOM's own layout boxes can't answer. `available` reads the select's own
+  // horizontal padding, not a hand-picked chrome allowance: daisyUI's `.select select` recipe
+  // reserves the arrow's own room there (`padding-inline: .75rem 1.75rem`), so a themed select's
+  // measurement already accounts for it, and a bare unthemed select simply gets a smaller margin of
+  // error rather than a wrong answer.
+  // `select` carries no DOM lib type of its own here (this file, like the rest of the audit
+  // package, type-checks with no `dom` lib entry, so a rule's own page-side code stays generic
+  // `Element` throughout); the two members `Element` itself doesn't carry, `options` and
+  // `selectedIndex`, are read through a narrow structural cast rather than pulling in
+  // `HTMLSelectElement` and everything it drags with it.
+  function closedSelectOverflowPx(el: Element): number {
+    const select = el as Element & { options: { item(index: number): { text: string } | null }; selectedIndex: number };
+    const selected = select.options.item(select.selectedIndex);
+    const text = selected ? selected.text : '';
+    if (!text) return 0;
+    const canvas = document.createElement('canvas');
+    const measureCtx = canvas.getContext('2d');
+    if (!measureCtx) return 0;
+    const style = getComputedStyle(el);
+    measureCtx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const painted = measureCtx.measureText(text).width;
+    const available = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return painted - available;
   }
 
   // Whether some ancestor strictly between `el` and the document root absorbs `el`'s own overflow.
@@ -131,7 +155,13 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
       // one sitting under such an ancestor, whether that ancestor is inside the row (a nested
       // scroll region) or outside it (the table wrapper's own sanctioned scroll).
       if (scrolls(el) || isAbsorbed(el) || isExempt(el)) continue;
-      const overflowPx = el.scrollWidth - el.clientWidth;
+      // A closed single-value select's own scrollWidth can never see its clipped label (its own
+      // header comment above); every other element, including a select[multiple] listbox, keeps
+      // the ordinary scrollWidth/clientWidth measurement.
+      const overflowPx =
+        el.tagName === 'SELECT' && !(el as Element & { multiple: boolean }).multiple
+          ? closedSelectOverflowPx(el)
+          : el.scrollWidth - el.clientWidth;
       if (overflowPx > 1 && (!worst || overflowPx > worst.overflowPx)) worst = { el, overflowPx };
     }
     if (worst) {

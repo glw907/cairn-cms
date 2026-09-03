@@ -444,9 +444,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                 {#if group.heading}
                   <div data-testid="cairn-pk-group-heading" class="px-2 pb-1.5 type-label font-semibold uppercase tracking-[0.08em] text-muted">{group.heading}</div>
                 {/if}
-                <ul class="menu w-full p-0">
+                <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
+                     display: flex, which strips the implicit list role in WebKit/VoiceOver
+                     (cairn-audit's list-role rule, rendered mode). -->
+                <ul class="menu w-full p-0" role="list">
                   {#each group.defs as def (def.name)}
-                    <li>
+                    <li role="listitem">
                       <button type="button" data-testid="cairn-pk-row" class="flex items-start gap-3 py-2" onclick={() => choose(def)} onkeydown={onRowKeydown}>
                         {#if def.icon && icons?.[def.icon]}
                           <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-base-200 text-base-content">

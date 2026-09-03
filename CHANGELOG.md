@@ -1030,6 +1030,32 @@
 
 ### Fixed
 
+- `cairn-audit`'s `list-role` rule gains a rendered-mode counterpart (internals pass, Task 8),
+  closing the gap the static rule's own coverage note names: daisyUI styles a list item through a
+  descendant selector scoped to the LIST's own class (`.menu :where(li)`, `.breadcrumbs > li`), not
+  the item's own, so a class-less `<li>` under one of those never registered even though its
+  rendered display strips its `list-item` box. The new rendered rule reads each item's actual
+  computed `display` in a live browser instead of a second class-source lookup, whatever selector
+  produced the change, and recommends `role="listitem"` on each affected item alongside
+  `role="list"` on the list per ARIA's owned-elements rule. The nine engine lists the gap named
+  (`CairnAdminShell.svelte`'s breadcrumb, command palette, and nav-item lists; `EditPage.svelte`'s
+  actions menu; `EditorToolbar.svelte`'s more-formatting and device menus;
+  `ComponentInsertDialog.svelte`'s picker list; `EntryPicker.svelte`'s entry list;
+  `DeleteDialog.svelte`'s inbound-links list) all carried the gap and are now fixed in-tree with
+  `role="list"` on the list and `role="listitem"` on each unroled item; an item that already
+  carries its own explicit role (a menu-divider's `role="separator"`) is left alone. The static
+  rule's two adjacent diagnostic-message defects are also fixed: its cause-lookup no longer
+  misattributes a descendant-selector declaration scoped to an ancestor's class (`.menu :where(li)`)
+  to an element merely sharing that class name, and a finding whose cause sits inside an at-rule
+  (a media query) now names that condition in its message instead of dropping it. `panel-width`
+  gains a painted text-width measurement for a closed single-value `<select>`, the same paint-not-
+  parse approach `resolveColors` already takes: a closed select's rendered label never grows its
+  own `scrollWidth` past its box no matter how clipped it is, so the rule's existing
+  `scrollWidth`/`clientWidth` comparison read clean on a genuinely clipped select label; it now
+  paints the selected option's text with the select's own computed font and compares it against the
+  box's own available width. Both rules run against the engine's own admin surfaces as part of this
+  fix; no other finding surfaced. Internal audit-output change; no consumer action.
+
 - `check:reference`'s stale-name (reverse) check is now scoped per page (internals pass, Task 3):
   it used to flag a reference-page name only when NO subpath anywhere in the package exported it, so
   a page could name a real export of a DIFFERENT subpath as if it were its own and the gate stayed

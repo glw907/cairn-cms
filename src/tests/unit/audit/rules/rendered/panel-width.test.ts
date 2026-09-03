@@ -223,6 +223,43 @@ describe('panel-width against a real browser', () => {
     expect(findings[0].message).toContain('select');
   });
 
+  // The closed-select gap this file's own header names as the follow-up: a closed single-value
+  // select's scrollWidth never grows past its clientWidth no matter how clipped its rendered label
+  // is (the select[multiple] fixture above proves the listbox shape separately), so this fixture
+  // proves the painted-text-width measurement catches what scrollWidth structurally cannot.
+  it('fires when a closed select label is wider than its own box, unreachable by scrollWidth', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <select style="width:80px">
+             <option selected>A very long option label that keeps going and going and going</option>
+             <option>Short</option>
+           </select>
+         </div>`
+      )
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].message).toContain('select');
+  });
+
+  // The no-false-positive twin: a closed select whose selected label comfortably fits its own box
+  // stays quiet, proving the painted-text measurement isn't just always-on for the tag.
+  it('does not flag a closed select whose selected label fits its own box', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <select style="width:200px">
+             <option selected>Short</option>
+             <option>Also short</option>
+           </select>
+         </div>`
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
   // The deliberate-truncation false positive: the house `truncate` idiom (`text-overflow: ellipsis`
   // paired with a clipping `overflow-x`) is a sanctioned reading, not a defect, symmetric with the
   // deliberately-scrollable-descendant exemption above.

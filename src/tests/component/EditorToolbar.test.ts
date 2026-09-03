@@ -347,7 +347,9 @@ describe('EditorToolbar', () => {
     expect(menu.matches(':popover-open')).toBe(true);
     // The device list mirrors the More menu: plain buttons in a popover list with aria-pressed,
     // never the ARIA menu pattern, whose roles promise interactions this list does not have.
-    expect(menu.getAttribute('role')).toBeNull();
+    // role="list" is the cairn-audit list-role fix (daisyUI's .menu :where(li) strips the
+    // implicit list role in WebKit/VoiceOver), not the ARIA menu pattern this comment excludes.
+    expect(menu.getAttribute('role')).toBe('list');
     expect(menu.querySelector('[role="menu"], [role="menuitemradio"]')).toBeNull();
     const triggerEl = screen.container.querySelector('[popovertarget="cairn-preview-device-menu"]')!;
     expect(triggerEl.getAttribute('aria-haspopup')).toBeNull();

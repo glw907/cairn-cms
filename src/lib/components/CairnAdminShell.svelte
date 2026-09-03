@@ -643,9 +643,12 @@ discriminant, not the fields, gates the chrome).
                  alone never renders one (audit finding). min-w-0 lets the flex-laid label shrink
                  past its content size so truncate can take effect. -->
             <nav aria-label="Breadcrumb" class="breadcrumbs min-w-0 max-w-full p-0 type-body">
-              <ul class="min-w-0">
+              <!-- role="list"/"listitem": the .breadcrumbs > ul > li descendant selector renders
+                   every crumb at display: flex, which strips the implicit list role in
+                   WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode). -->
+              <ul class="min-w-0" role="list">
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
-                  <li class="min-w-0">
+                  <li class="min-w-0" role="listitem">
                     {#if crumb.href}
                       <a href={crumb.href} class="min-w-0"><span class="min-w-0 max-w-[9rem] truncate">{crumb.label}</span></a>
                     {:else}
@@ -737,9 +740,12 @@ discriminant, not the fields, gates the chrome).
             />
           </div>
           {#if paletteResults.length}
-            <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2">
+            <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
+                 display: flex, which strips the implicit list role in WebKit/VoiceOver
+                 (cairn-audit's list-role rule, rendered mode). -->
+            <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2" role="list">
               {#each paletteResults as cmd, i (i)}
-                <li>
+                <li role="listitem">
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
                        so it carries no onclick (closing here would cancel the navigation). An external link
@@ -829,10 +835,13 @@ discriminant, not the fields, gates the chrome).
         </div>
 
         {#snippet navItemList(items: NavItem[], extraClass: string = '')}
-          <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`}>
+          <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
+               display: flex, which strips the implicit list role in WebKit/VoiceOver
+               (cairn-audit's list-role rule, rendered mode). -->
+          <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`} role="list">
             {#each items as item, i (i)}
               {@const att = attentionFor(item.href)}
-              <li>
+              <li role="listitem">
                 <a
                   href={item.href}
                   class={isActive(item.href)

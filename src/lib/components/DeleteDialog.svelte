@@ -85,9 +85,12 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
           broken.
         {/if}
       </p>
-      <ul class="menu w-full">
+      <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
+           display: flex, which strips the implicit list role in WebKit/VoiceOver
+           (cairn-audit's list-role rule, rendered mode). -->
+      <ul class="menu w-full" role="list">
         {#each inboundLinks as link (link.concept + '/' + link.id)}
-          <li>
+          <li role="listitem">
             <a href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
           </li>
         {/each}

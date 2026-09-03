@@ -12,12 +12,27 @@
 // The broad "any utility class" condition is rejected on purpose: only a class the compiled sheet
 // actually resolves to a marker- or display-changing declaration counts, never a class present
 // for some unrelated reason.
+//
+// This rule only sees marker suppression an element's OWN classes cause: a class the compiled
+// sheet resolves DIRECTLY on that element's own selector position, never a descendant selector
+// scoped to some ANCESTOR's class (daisyUI's `.menu :where(li)`, `.breadcrumbs > li`). That gap is
+// closed by the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's
+// actual computed `display` in a live browser instead of a second class-source lookup here; this
+// static half stays the cheap, no-browser-required first pass.
+import { selectorClassNames, splitSelectorList } from '../../sheet.js';
 import type { ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
 
 const LIST_TAGS = new Set(['ul', 'ol']);
 const LIST_STYLE_PROPERTY = /^list-style(-type)?$/;
 const LIST_ITEM_DISPLAY = 'list-item';
+const COMBINATOR_CHARS = new Set(['>', '+', '~']);
+
+/** A cause-lookup match: the class that caused it, and any at-rule condition it is scoped under. */
+interface CauseMatch {
+  name: string;
+  conditions: string[];
+}
 
 /** The class tokens one element in a file writes, keyed by the element's own start offset. */
 function classesOf(file: ParsedComponent, elementStart: number): string[] {
@@ -31,13 +46,80 @@ function hasRoleAttribute(node: SourceNode): boolean {
   return (node.attributes ?? []).some((attr) => attr.name === 'role');
 }
 
+/**
+ * The segment of a selector branch after its final descendant, child, or sibling combinator (a
+ * bare space, `>`, `+`, or `~`, outside any bracket or paren group): the compound that names the
+ * element the branch actually styles, as opposed to an ancestor the branch merely gates on.
+ * `.menu :where(li)` styles the `<li>`, gated by a `.menu` ancestor; it declares nothing about an
+ * element that happens to carry the class "menu" itself, so a cause-lookup keyed on "does this
+ * class appear anywhere in the selector text" would misattribute this declaration to that element.
+ */
+function lastCompound(selector: string): string {
+  let depth = 0;
+  let start = 0;
+  let subject = selector;
+  let i = 0;
+  while (i < selector.length) {
+    const ch = selector[i];
+    if (ch === '"' || ch === "'") {
+      i++;
+      while (i < selector.length && selector[i] !== ch) {
+        if (selector[i] === '\\') i++;
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (ch === '(' || ch === '[') {
+      depth++;
+      i++;
+      continue;
+    }
+    if (ch === ')' || ch === ']') {
+      depth = Math.max(0, depth - 1);
+      i++;
+      continue;
+    }
+    if (depth === 0 && (ch === ' ' || COMBINATOR_CHARS.has(ch))) {
+      const compound = selector.slice(start, i).trim();
+      if (compound) subject = compound;
+      while (i < selector.length && (selector[i] === ' ' || COMBINATOR_CHARS.has(selector[i]))) i++;
+      start = i;
+      continue;
+    }
+    i++;
+  }
+  const tail = selector.slice(start).trim();
+  if (tail) subject = tail;
+  return subject;
+}
+
+/**
+ * Every class name a declaration's selector genuinely targets on its own subject element, across
+ * every comma-separated branch. Used to reject a declaration whose selector only mentions a class
+ * as an ANCESTOR gate (see {@link lastCompound}), which `ctx.sheet.declarations` cannot itself
+ * distinguish: it indexes a rule under every class its selector text contains, subject or not.
+ */
+function subjectClassNames(selector: string): Set<string> {
+  const names = new Set<string>();
+  for (const branch of splitSelectorList(selector)) {
+    for (const name of selectorClassNames(lastCompound(branch))) names.add(name);
+  }
+  return names;
+}
+
 /** The first of an element's own classes the compiled sheet resolves to a marker-removing rule. */
-function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): string | undefined {
+function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): CauseMatch | undefined {
   for (const name of classes) {
-    const declared = ctx.sheet
+    const decl = ctx.sheet
       .declarations(name)
-      .some((decl) => LIST_STYLE_PROPERTY.test(decl.property) && decl.value.trim().toLowerCase() === 'none');
-    if (declared) return name;
+      .find(
+        (candidate) =>
+          LIST_STYLE_PROPERTY.test(candidate.property) &&
+          candidate.value.trim().toLowerCase() === 'none' &&
+          subjectClassNames(candidate.selector).has(name)
+      );
+    if (decl) return { name, conditions: decl.conditions };
   }
   return undefined;
 }
@@ -53,13 +135,14 @@ function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): string 
 function itemDisplayChange(
   ctx: StaticRuleContext,
   classes: string[]
-): { name: string; value: string } | undefined {
+): (CauseMatch & { value: string }) | undefined {
   for (const name of classes) {
     for (const decl of ctx.sheet.declarations(name)) {
       if (decl.property !== 'display') continue;
+      if (!subjectClassNames(decl.selector).has(name)) continue;
       const value = decl.value.trim().toLowerCase();
       if (value === LIST_ITEM_DISPLAY || value === 'none') continue;
-      return { name, value: decl.value.trim() };
+      return { name, value: decl.value.trim(), conditions: decl.conditions };
     }
   }
   return undefined;
@@ -90,6 +173,16 @@ function itemsByList(file: ParsedComponent, lists: SourceNode[]): Map<SourceNode
   return grouped;
 }
 
+/**
+ * A `CauseMatch`'s at-rule conditions, rendered for the finding message. Dropping this from the
+ * message reads as an unconditional cause ("this class always suppresses the marker") when the
+ * declaration may only apply under a media query or another at-rule the class is nested inside;
+ * a reader chasing the wrong condition cannot reproduce or fix what the message claims.
+ */
+function conditionSuffix(conditions: string[]): string {
+  return conditions.length > 0 ? `, only under ${conditions.join(' / ')}` : '';
+}
+
 export const listRole: StaticRule = {
   id: 'list-role',
   tier: 'error',
@@ -108,13 +201,13 @@ export const listRole: StaticRule = {
         const ownSuppressor = ownMarkerSuppressor(ctx, classesOf(file, list.start));
         let cause: string;
         if (ownSuppressor) {
-          cause = `its own class "${ownSuppressor}" resolves to a list-style-removing declaration`;
+          cause = `its own class "${ownSuppressor.name}" resolves to a list-style-removing declaration${conditionSuffix(ownSuppressor.conditions)}`;
         } else {
           const hit = (items.get(list) ?? [])
             .map((item) => itemDisplayChange(ctx, classesOf(file, item.start)))
             .find((value) => value !== undefined);
           if (!hit) continue;
-          cause = `an item's class "${hit.name}" resolves to "display: ${hit.value}"`;
+          cause = `an item's class "${hit.name}" resolves to "display: ${hit.value}"${conditionSuffix(hit.conditions)}`;
         }
 
         findings.push({

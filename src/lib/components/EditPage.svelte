@@ -1778,6 +1778,10 @@ persistent "?" carries Markdown help, design-arc D2).
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
         </svg>
       </button>
+      <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
+           display: flex, which strips the implicit list role in WebKit/VoiceOver (cairn-audit's
+           list-role rule, rendered mode). The two menu-divider <li> keep their own role="separator"
+           instead: that role is a deliberate, different reading, not a listitem. -->
       <ul
         bind:this={actionsMenu}
         popover="auto"
@@ -1785,18 +1789,19 @@ persistent "?" carries Markdown help, design-arc D2).
         style="position-anchor:--cairn-edit-actions"
         ontoggle={(e) => (actionsOpen = e.newState === 'open')}
         class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+        role="list"
       >
         <!-- The narrow-width fold: below sm this is the only way to reach Details and the theme
              toggle, mirroring the hidden standalone controls above (Details here) and in
              CairnAdminShell (the theme toggle, folded through the topbar holder). Hidden at sm
              and up, where both controls stand on their own. -->
-        <li class="sm:hidden">
+        <li class="sm:hidden" role="listitem">
           <button type="button" aria-expanded={detailsOpen} onclick={() => pickAction(toggleDetails)}>
             Details
           </button>
         </li>
         {#if themeToggleFold}
-          <li class="sm:hidden">
+          <li class="sm:hidden" role="listitem">
             <button type="button" onclick={() => pickAction(themeToggleFold)}>
               {currentTheme === 'cairn-admin' ? 'Switch to dark mode' : 'Switch to light mode'}
             </button>
@@ -1812,19 +1817,19 @@ persistent "?" carries Markdown help, design-arc D2).
                swap unmounts EditPage, and this popover along with it, as part of that navigation.
                A leave guard that cancels the navigation (an unsaved dirty edit) correctly leaves the
                menu open, since nothing unmounted. -->
-          <li>
+          <li role="listitem">
             <a href={`/admin/${data.conceptId}/${data.id}/history`}>History</a>
           </li>
           <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
         {/if}
         {#if data.pending}
-          <li>
+          <li role="listitem">
             <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
               Discard changes
             </button>
           </li>
         {/if}
-        <li>
+        <li role="listitem">
           <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
             Delete
           </button>

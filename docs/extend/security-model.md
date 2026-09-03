@@ -225,6 +225,34 @@ reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`, so a sign-
 diagnosable from the logs rather than guessed at. The exception is step 6: a missing or invalid
 session redirects to `/admin/login` without logging.
 
+### The dev-backend flag's two refusals, and what they don't cover
+
+`CAIRN_DEV_BACKEND` is refused in two places, deliberately on different terms, both sourced from
+one shared message and locality predicate so the wording can't drift between them. The preceding
+guard refuses on the flag alone, because it mounts only in a production build; a site's own dev
+branch replaces it entirely rather than running alongside it, so there's no legitimate case where
+the guard sees the flag live at all. `createAuthChannel`'s own actions (`request`, `confirm`,
+`logout`) refuse only when the flag is set **and** the request is non-local, because
+`CAIRN_DEV_BACKEND='1'` is a second-audience dev transport's own enable contract (see [Auth
+channel security model](./auth-channel-security-model.md#the-dev-transport-is-not-a-dev-only-risk)):
+refusing on the flag alone there would break every legitimate local dev-backend deployment. Both
+refusals fire as a hard, unconditional throw or response before any other work the surface would
+otherwise do.
+
+State the tripwire's coverage honestly: it catches the flag live in a deployed runtime, on
+whichever of the two surfaces it touches. It can't see a dev-shaped transport a site deploys with
+the flag left unset: `deliver`, `lookup`, and the rest of `createAuthChannel`'s config are opaque
+site functions, so a site that builds a capture-style stand-in without ever setting the flag is
+invisible to both refusals; that residual is exactly what the documented in-body pattern (a
+`deliver` implementation that itself refuses without `ctx.env.CAIRN_DEV_BACKEND === '1'`, the
+showcase's `captureDeliver`) exists to close. And a dev-branch bundle that replaces the guard
+entirely, behind a site's own build-time `__CAIRN_DEV_BUILD__` conditional import, sits outside
+both refusals by construction, since neither one ever runs in that bundle. The artifact-level
+answer for that residual is CI's own dry-run grep: the showcase's e2e workflow runs `wrangler
+deploy --dry-run` against a default build and greps the deployable output for
+`scripts/checks/dev-fold-markers.txt` (which names `devBackendHandle` among other dev-only
+symbols), failing if any marker survives into what Cloudflare would actually receive.
+
 ## Roles, capability, and the access map
 
 An editor's `role` (the string stored in D1) resolves to one of three capabilities, `none`,

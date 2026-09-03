@@ -200,7 +200,7 @@ describe('logout', () => {
     }
   });
 
-  it('completes and logs nothing when the salt read faults, so a teardown never strands the member', async () => {
+  it('completes, logs auth.channel.salt_unavailable, and logs nothing else when the salt read faults, so a teardown never strands the member', async () => {
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-salt-fault' }));
     const token = await signIn(channel, 'salt-fault@x.test', 'sub-salt-fault');
     const jar = makeCookies({ [SESSION_HTTPS]: token });
@@ -215,11 +215,23 @@ describe('logout', () => {
     // way logSessionDestroyed's own doc comment describes.
     await db.exec('DROP TABLE cairn_channel_meta');
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const result = await channel.actions.logout(makeEvent({ cookies: jar }));
       expect(result).toEqual({ ok: true });
       const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
       expect(events).not.toContain('auth.channel.session.destroyed');
+
+      const faults = warnSpy.mock.calls
+        .map((c) => c[0] as Record<string, unknown>)
+        .filter((r) => r.event === 'auth.channel.salt_unavailable');
+      expect(faults).toHaveLength(1);
+      expect(faults[0].path).toBe('logout');
+      expect(typeof faults[0].error).toBe('string');
+      // No correlationId: none is derivable without the salt, and the only substitute would be
+      // the raw subject, which this channel's no-roster-identity posture forbids.
+      expect(faults[0].correlationId).toBeUndefined();
+      expect(JSON.stringify(faults[0])).not.toContain('sub-salt-fault');
 
       // The teardown itself must still have run: the salt fault only skips the log record, per
       // logSessionDestroyed's contract, never the deletion that made a record true in the first
@@ -239,6 +251,39 @@ describe('logout', () => {
       // No identity_salt restore needed: the harness's own resetChannelDb beforeEach deletes every
       // meta row but schema_version before the next test runs, so a restored salt would just be
       // discarded again.
+    }
+  });
+
+  it('records path: "revoke" (not "logout") when the salt fault happens on a verify-refused revocation', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(
+      makeConfig({ lookup: async () => 'sub-revoke-salt-fault', verify: async () => false }),
+    );
+    const token = await signIn(channel, 'revoke-salt-fault@x.test', 'sub-revoke-salt-fault');
+
+    // Same forcing technique as the logout case above: drop the meta table only after signIn has
+    // already verified the schema on this channel instance, so resolveSubject's own verify-refused
+    // teardown reaches destroyChannelSession normally and only the salt read that follows faults.
+    await db.exec('DROP TABLE cairn_channel_meta');
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const subject = await channel.resolveSubject(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }));
+      expect(subject).toBeNull();
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+
+      const faults = warnSpy.mock.calls
+        .map((c) => c[0] as Record<string, unknown>)
+        .filter((r) => r.event === 'auth.channel.salt_unavailable');
+      expect(faults).toHaveLength(1);
+      expect(faults[0].path).toBe('revoke');
+      expect(faults[0].correlationId).toBeUndefined();
+    } finally {
+      vi.restoreAllMocks();
+      await db.exec('CREATE TABLE IF NOT EXISTS cairn_channel_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+      await db
+        .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1')")
+        .run();
     }
   });
 

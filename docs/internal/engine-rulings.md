@@ -5280,3 +5280,59 @@ when the remediation pass lands.
   different row's marker; an array-type suffix's empty brackets are not mistaken for one) and an
   integration proof that `sveltekit.md` and `reproductions.md` carry the parenthetical for every
   name the `check-surface-leaks` registry records against them and prints.
+
+## dev-backend-flag-refusal: `CAIRN_DEV_BACKEND`'s two refusals, on diverging witnesses (ruling 4, letter-amended)  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept, executing ruling 4 as letter-amended at the round-1 fold (this file, "The
+  rulings" section, item 4). The docket's original text, "refuse when set," would have broken the
+  engine's own exemplar: `CAIRN_DEV_BACKEND='1'` is the dev transport's ENABLE contract (the
+  showcase capture transport refuses WITHOUT it), so a flag-alone refusal inside
+  `createAuthChannel` would have failed the showcase's own members e2e suite before this task
+  ever ran. The amended, executed predicate is *refuse when the flag is set AND the request is
+  non-local*: `guard.ts` keeps its original flag-alone predicate unchanged (it mounts only in a
+  production build, so there is no legitimate live-flag case for it to admit), and
+  `auth-channel/factory.ts` gains a new, stricter tripwire on the AND-non-local predicate, since
+  one factory instance serves both dev and prod. This executes the ruling's intent, that the flag
+  must never be live in a deployed environment, with a buildable sense.
+- **Reopens on:** a site's documented dev-backend deployment pattern changes shape such that the
+  factory's own `event.url.hostname` is no longer a trustworthy locality witness for it (for
+  example, a proxy or tunnel fronting local dev with a non-local hostname), or a consumer reports
+  the AND-non-local predicate still admitting a genuinely deployed, non-local leak the tripwire
+  was meant to catch.
+- **Shape (the discriminator gate, Step 1).** Both discriminants the amended predicate needs are
+  readable at every one of the factory's per-request entry points (`request`, `confirm`,
+  `logout`): the env flag off `event.platform?.env`, a structural probe since `createAuthChannel`
+  is generic over a site-defined `Env` and carries no guaranteed `CAIRN_DEV_BACKEND` member, and
+  the request host off `event.url.hostname`, always present on every real `CairnEvent`. The
+  discriminator gate therefore ran and took the PRIMARY path (the first-request tripwire), never
+  the sanctioned fallback (documenting today's transport-body pattern as the sole contract): both
+  reads are unconditionally available with no missing-input branch to route around.
+- **Shape (isolate-stable vs. per-request, round-1 review S-2).** Only the env flag observation is
+  cached, once per channel instance (`DevBackendFlagCache`), since a Worker isolate's env vars do
+  not change between requests. The host observation is evaluated fresh on every call and never
+  cached: one isolate can serve `*.workers.dev` and a custom domain interchangeably, so a cached
+  host verdict from an early warm-up request would pin a permissive answer onto later production
+  traffic. A caching scheme that memoized the host half alongside the flag, the naive reading of
+  "a first-request tripwire," would have been unsound for exactly this reason.
+- **Shape (one wording, two witnesses).** `src/lib/auth-channel/dev-flag.ts`, a new internal
+  module, is the one source for the flag name, the refusal message, and the locality predicate;
+  `guard.ts` and `factory.ts` both import it rather than hand-writing a second wording
+  (`read-from-the-source-rule`, above). The two refusals diverge only on witness and status form:
+  `guard.ts` returns a bare 503 `Response` (it runs ahead of SvelteKit's own error machinery in
+  the `handle` hook); `factory.ts` throws SvelteKit's `error(503, ...)`, a hard throw outside
+  either action's own result union, matching the guard's unconditional, checked-first-of-everything
+  form.
+- **Resolves:** `audit-auth-devdelivery`'s closed row (byte-untouched by this row) posed this
+  exact question in its Shape field: "a factory-side CAIRN_DEV_BACKEND refusal is a design
+  question for a later pass (`createAuthChannel` reads no env at construction time, so it cannot
+  observe a per-request value)." This task is that later pass: the factory reads the flag at each
+  per-request entry point instead of at construction, which is what makes the per-request host
+  witness available to pair it with.
+- **Record:** `docs/superpowers/plans/2026-09-01-internals-pass.md`, Task 9, and "The rulings"
+  (ruling 4) and the round-1 review fold (S-1, S-2), both in the same plan file.
+- **Verified:** `src/tests/unit/auth-channel-dev-backend-tripwire.test.ts` (flag set + non-local
+  refuses on `request`/`confirm`/`logout` with a hard throw carrying `guard.ts`'s own message and
+  status; flag set + local host is untouched; flag absent changes nothing; the env observation
+  caches across calls within one instance) and the showcase's members e2e suite (its capture
+  transport requires `CAIRN_DEV_BACKEND='1'` locally, proving the amended, AND-non-local sense
+  breaks no legitimate dev-backend deployment).

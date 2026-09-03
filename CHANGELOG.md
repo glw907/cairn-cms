@@ -168,6 +168,25 @@
   `docs/internal/engine-rulings.md`'s `check-surface-leaks` row for the two-model derivation and the
   registry's reason grammar. Internal tooling only; no consumer action.
 
+- `createAuthChannel` (`/auth-channel`) refuses every action (`request`, `confirm`, `logout`) with
+  a hard 503 throw the moment `CAIRN_DEV_BACKEND` is live on a non-local request (internals pass,
+  Task 9, ruling 4 as letter-amended: see `docs/internal/engine-rulings.md`'s
+  `dev-backend-flag-refusal` row). This is a defense-in-depth tripwire alongside the documented
+  in-`deliver`-body refusal pattern ([Auth channel security
+  model](docs/extend/auth-channel-security-model.md#the-dev-transport-is-not-a-dev-only-risk)),
+  never a replacement for it: it catches the flag live in a deployed runtime, but can't see a
+  dev-shaped transport a site deploys with the flag left unset, so a site's own `deliver` still
+  needs its own refusal. `CAIRN_DEV_BACKEND='1'` on a local host (`wrangler dev`, a local preview
+  server) is untouched, since that is the dev transport's own enable contract. Consumers must:
+  nothing, for a site whose local dev already sets `CAIRN_DEV_BACKEND` only on a local host, which
+  every documented pattern already does.
+
+- New log event `auth.channel.salt_unavailable` (internals pass, Task 9): the `logout` action's or
+  `resolveSubject`'s verify-refused-revocation teardown warns when the salt read that would derive
+  `auth.channel.session.destroyed`'s pseudonym faults, carrying `path` (`'logout'` or `'revoke'`)
+  and a scrubbed `error`, never a `correlationId`. The teardown itself still completes; only its
+  own log record is skipped. See [Log events](docs/reference/log-events.md).
+
 ### Changed
 
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,

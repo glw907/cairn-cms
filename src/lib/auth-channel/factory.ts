@@ -13,6 +13,7 @@ import { error, isHttpError, isRedirect } from '@sveltejs/kit';
 import { cookieName, generateToken, hashToken } from '../auth/crypto.js';
 import { originMatches } from '../sveltekit/csrf.js';
 import { log } from '../log/index.js';
+import { CAIRN_DEV_BACKEND_FLAG, CAIRN_DEV_BACKEND_MESSAGE, isLocalHost } from './dev-flag.js';
 import {
   verifySchema,
   readSalt,
@@ -58,22 +59,6 @@ const IDENTITY_CEILING_SCOPE = 'ceiling';
 const IDENTITY_ESCALATION_SCOPE = 'escalation';
 
 /**
- * Local development (`wrangler dev`) legitimately speaks http; a deployed host does not. Mirrors
- * `guard.ts`'s own `isLocalHost`, duplicated here rather than imported since that helper is
- * private to the admin guard and this factory serves routes outside `/admin` entirely.
- */
-function isLocalHost(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '0.0.0.0' ||
-    hostname === '::1' ||
-    hostname === '[::1]' ||
-    hostname.endsWith('.localhost')
-  );
-}
-
-/**
  * Step 1 of every action: the unconditional origin and scheme checks, mirroring `guard.ts`'s admin
  * rule. Neither result union carries a wire code for a forged or downgraded request, so both
  * refusals throw the framework's own `error()` rather than degrade the cookie or the response.
@@ -86,6 +71,39 @@ function assertOriginAndScheme<Env>(event: CairnEvent<Env>): void {
   if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
     throw error(403, 'cairn auth-channel: https required');
   }
+}
+
+/**
+ * Step 0 of every action, ahead even of {@link assertOriginAndScheme}: the dev-backend leak
+ * tripwire (Task 9, ruling 4 as letter-amended). `CAIRN_DEV_BACKEND` is the dev transport's own
+ * ENABLE contract (the showcase capture transport, and the documented transport-body pattern
+ * this tripwire backs up, both refuse WITHOUT it), so refusing on the flag alone, the way
+ * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
+ * refuses only when the flag is set AND the request is non-local: the flag observation is
+ * isolate-stable (a Worker isolate's env vars do not change between requests) and cached once
+ * per channel instance; the host observation is evaluated fresh on every call, never cached,
+ * since one isolate can serve `*.workers.dev` and a custom domain interchangeably, so a cached
+ * host verdict from an early warm-up request would pin a permissive answer onto later production
+ * traffic (round-1 review S-2). The refusal is a hard throw, not a member of either action's own
+ * result union, matching `guard.ts`'s own unconditional form; it fires before any print, store,
+ * or network call, mirroring `assertOriginAndScheme`'s own contract.
+ * @throws HttpError 503 when the flag is live on a non-local host.
+ */
+function assertNoDevBackendLeak<Env>(env: Env | undefined, event: CairnEvent<Env>, cache: DevBackendFlagCache): void {
+  if (!cache.checked) {
+    const raw = (env as Record<string, unknown> | undefined)?.[CAIRN_DEV_BACKEND_FLAG];
+    cache.set = raw === '1' || raw === true;
+    cache.checked = true;
+  }
+  if (cache.set && !isLocalHost(event.url.hostname)) {
+    throw error(503, CAIRN_DEV_BACKEND_MESSAGE);
+  }
+}
+
+/** The dev-backend flag's cached env observation, one per `createAuthChannel` instance (isolate-stable; never re-read once checked). */
+interface DevBackendFlagCache {
+  checked: boolean;
+  set: boolean;
 }
 
 /**
@@ -145,6 +163,15 @@ function scrubDeliverError(err: unknown, contact: string): string {
   const raw = String(err);
   const scrubbed = contact.length > 0 ? raw.split(contact).join('[redacted]') : raw;
   return scrubbed.slice(0, 300);
+}
+
+/**
+ * Cap a thrown salt-fault error for logging, the same length cap `scrubDeliverError` applies. No
+ * contact redaction is needed here: `resolveSalt`'s own faults are D1 read/write errors, never a
+ * delivery provider's response, so there is nothing contact-shaped to strip.
+ */
+function scrubSaltError(err: unknown): string {
+  return String(err).slice(0, 300);
 }
 
 /**
@@ -539,6 +566,10 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   // a transient failure must not pin an isolate into refusing every login for its lifetime.
   let cachedSalt: string | null = null;
 
+  // The dev-backend flag's env observation, cached once per channel instance and never re-read
+  // (see assertNoDevBackendLeak's own doc comment for why only this half is cacheable).
+  const devBackendFlagCache: DevBackendFlagCache = { checked: false, set: false };
+
   /**
    * Resolve the channel's identity salt, reading the already-provisioned row first and
    * provisioning only on a genuine first use. A fresh isolate's every teardown path
@@ -560,16 +591,21 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * verify-refused revocation). Never the raw subject: no channel record carries a roster
    * identity. `deriveIdentity` reads the contact only when the subject is null, so this
    * reconstructs the exact value the request flow's own `s:` branch produced, and a teardown keys
-   * to the sign-in it ends. A salt read that faults skips the record and returns: `resolveSalt`
-   * caches only success and the request path fails closed by design, but a session teardown is
-   * not a place to strand a member. Call it only where a row was actually destroyed.
+   * to the sign-in it ends. A salt read that faults logs `auth.channel.salt_unavailable` and
+   * returns rather than stranding the member: `resolveSalt` caches only success and the request
+   * path fails closed by design, but a session teardown must still complete. The fault record
+   * carries no `correlationId` (none is derivable without the salt, and the only substitute would
+   * be the raw subject, which this channel's no-roster-identity posture forbids), triggers no
+   * retry, and invalidates no cache: a fault-triggered retry would hand an attacker who can
+   * induce D1 pressure a lever to spend against. Call it only where a row was actually destroyed.
    */
-  async function logSessionDestroyed(session: D1DatabaseSession, subject: string): Promise<void> {
+  async function logSessionDestroyed(session: D1DatabaseSession, subject: string, path: 'logout' | 'revoke'): Promise<void> {
     let correlationId: string;
     try {
       const salt = await resolveSalt(session);
       correlationId = (await deriveIdentity(salt, subject, '')).slice(0, 16);
-    } catch {
+    } catch (err) {
+      log.warn('auth.channel.salt_unavailable', { path, error: scrubSaltError(err) });
       return;
     }
     log.info('auth.channel.session.destroyed', { correlationId });
@@ -601,6 +637,9 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * stay uniform and the response never leaks roster membership.
    */
   async function requestAction(event: ChannelEvent<Env>): Promise<ChannelRequestResult> {
+    // Step 0: the dev-backend leak tripwire, ahead of everything else this action does.
+    assertNoDevBackendLeak(event.platform?.env, event, devBackendFlagCache);
+
     // Step 1: origin and scheme.
     assertOriginAndScheme(event);
 
@@ -823,6 +862,9 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * failed guess accumulates toward escalation and a correct one never does.
    */
   async function confirmAction(event: ChannelEvent<Env>): Promise<ChannelConfirmResult> {
+    // Step 0: the dev-backend leak tripwire, identical discipline to requestAction.
+    assertNoDevBackendLeak(event.platform?.env, event, devBackendFlagCache);
+
     // Step 1: origin and scheme, identical discipline to requestAction.
     assertOriginAndScheme(event);
 
@@ -977,6 +1019,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * best-effort deletes the session row named by the incoming session cookie.
    */
   async function logoutAction(event: CairnEvent<Env>): Promise<{ ok: true }> {
+    assertNoDevBackendLeak(event.platform?.env, event, devBackendFlagCache);
     assertOriginAndScheme(event);
 
     const secure = event.url.protocol === 'https:';
@@ -995,7 +1038,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         // Logged only where a row was actually destroyed: a request with no session cookie, one
         // whose db is unavailable, and one whose cookie names no row all destroy nothing and must
         // not fire this record (log-events.md's logout row states this condition).
-        if (subject !== null) await logSessionDestroyed(session, subject);
+        if (subject !== null) await logSessionDestroyed(session, subject, 'logout');
       }
     }
 
@@ -1042,7 +1085,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         // provable one, not an assumption that the read and the delete still agree.
         const revokeSession = database.withSession('first-primary');
         const destroyed = await destroyChannelSession(revokeSession, tokenHash);
-        if (destroyed !== null) await logSessionDestroyed(revokeSession, destroyed);
+        if (destroyed !== null) await logSessionDestroyed(revokeSession, destroyed, 'revoke');
         return null;
       }
     }

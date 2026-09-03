@@ -522,6 +522,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `previewLoad`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
 - `previewMint`: (runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewMintOutcome>
 - `PreviewMintOutcome`: { outcome: "minted"; token: string; expiresAt: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" } | { outcome: "no-draft" }
+- `previewRevoke`: (runtime: CairnRuntime, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewRevokeOutcome>
+- `PreviewRevokeOutcome`: { outcome: "revoked"; count: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" }
 - `PreviewTokenConfig`: { ttlMs?: number }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }

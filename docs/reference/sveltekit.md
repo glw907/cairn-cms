@@ -1126,10 +1126,12 @@ warns on drift, it never refuses on it, so an old version is never permanently u
 `previewMintAction` and `previewRevokeAction` back the edit screen's share affordance (spec part 3,
 "Public preview for a non-editor"): minting hands an editor's own read on a draft to anyone holding
 the returned URL, so both run entry-scoped authorization as their first act, the same authorization
-`saveAction` and `publishAction` carry, not merely the view gate. `previewRevokeAction` runs that
-authorization directly through `requireEntryFromParams`. `previewMintAction` delegates it to
-`previewMint`, which runs the same `requireEditor` then `requireEngineAccess` sequence before this
-route ever reaches `requireOrigin`.
+`saveAction` and `publishAction` carry, not merely the view gate. Each action names the target from
+the route's own params and delegates the authorization, the D1 work, and the log record to its
+exported counterpart: `previewMintAction` to [`previewMint`](#previewmint), `previewRevokeAction`
+to [`previewRevoke`](#previewrevoke). Both exports run the same `requireEditor` then
+`requireEngineAccess` sequence before touching anything else, so a route and a site's own workflow
+route calling the export directly run the identical sequence and log the identical event.
 `previewMintAction` refuses with `fail(400)` when the entry carries no pending draft (there is
 nothing to share yet); on success it returns `{ url, expiresAt }` directly, no redirect, so the
 share panel can show and copy the link in place, sets `cache-control: no-store` on its own
@@ -1390,8 +1392,10 @@ declare function previewMint(runtime: CairnRuntime, config: PreviewTokenConfig, 
 Mint a preview token for one entry's pending draft: generate a fresh 256-bit token, store only its
 hash (`hashToken`, `/auth-crypto`) in `AUTH_DB` alongside the entry it shares and the minting
 editor, and return the plaintext once, since it's never stored and can't be recovered later. Call
-it from a site's own mint workflow, such as an editorial queue that emails a reviewer on submit;
-[`previewMintAction`](#createcontentroutes) is the engine's own route over the same function.
+it from a site's own mint-and-revoke workflow, such as an editorial queue that emails a reviewer on
+submit and later expires their link; [`previewMintAction`](#createcontentroutes) is the engine's
+own route over the same function, and [`previewRevoke`](#previewrevoke) is this function's
+counterpart for taking a link back.
 
 Converting one editor's read into an unauthenticated public read is an authority-delegation act,
 so `previewMint` carries the authorization itself and runs it first: the signed-in editor from
@@ -1417,6 +1421,37 @@ type PreviewMintOutcome =
 `config.ttlMs` defaults to seven days and must be finite, positive, and between one minute and
 thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error before any token
 is generated.
+
+### `previewRevoke`
+
+Stability tier: Unstable API.
+
+```ts
+declare function previewRevoke(runtime: CairnRuntime, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }): Promise<PreviewRevokeOutcome>;
+```
+
+Revoke every outstanding preview link for one entry: delete every `preview_tokens` row the
+entry's concept and id match. Idempotent: revoking with nothing minted still succeeds, with a
+count of zero. Call it from the same site workflow that calls [`previewMint`](#previewmint), the
+mint's counterpart for taking a link back; [`previewRevokeAction`](#createcontentroutes) is the
+engine's own route over the same function.
+
+Revoking is the same authority-scoped act minting is, an entry-scoped credential the site's access
+map governs, so `previewRevoke` mirrors `previewMint`'s own authorization sequence exactly and
+runs it first: the signed-in editor from `event.locals.cairnEditor`, the concept lookup, the
+concept-scoped access check against `runtime.access`, and the entry-id shape rule, all before the
+delete. A session without editor capability, or one the site's access map denies the concept, gets
+a 403 before the delete ever runs.
+
+The `target` is the argument's, never the route's, so the call works from any route, exactly like
+`previewMint`. A refusal comes back as a value on the `outcome` discriminant, not a throw:
+
+```ts
+type PreviewRevokeOutcome =
+  | { outcome: 'revoked'; count: number }
+  | { outcome: 'unknown-concept' }
+  | { outcome: 'invalid-id' };
+```
 
 ## Navigation routes
 

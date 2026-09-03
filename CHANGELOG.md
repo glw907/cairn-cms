@@ -4,6 +4,17 @@
 
 ### Added
 
+- `previewRevoke` (`/sveltekit`) completes the pair `previewMint` opened: a site that mints a
+  preview link from its own workflow route could not revoke one, since revocation lived only
+  behind the engine's own `previewRevokeAction` route. `previewRevoke(runtime, event, { concept,
+  entryId })` mirrors `previewMint`'s own shape and authorization sequence exactly (the
+  guard-resolved editor, the concept lookup, the concept-scoped access check, the entry-id shape
+  rule, all before the delete), returning a `PreviewRevokeOutcome` discriminated on `revoked` (with
+  the deleted row count), `unknown-concept`, or `invalid-id`; a denied session throws, the way every
+  other engine content surface refuses. `previewRevokeAction` now delegates to it, so the engine's
+  own route and a site's own call log the identical `preview.token.revoked` record from the same
+  chokepoint.
+
 - `ExpandableRow` (`/admin-toolkit`) accepts a `data-cairn-inert-cell` attribute on any element
   inside a summary cell: the row's own click handler now ignores a click whose target resolves
   inside one (`closest('[data-cairn-inert-cell]')`), so a consumer wraps a genuinely interactive

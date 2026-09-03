@@ -8,7 +8,13 @@
 import { error } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { generateToken, hashToken } from '../auth/crypto.js';
-import { insertPreviewToken, findPreviewToken, findPreviewTokenAnyExpiry, type PreviewTokenRow } from '../auth/preview-store.js';
+import {
+  insertPreviewToken,
+  findPreviewToken,
+  findPreviewTokenAnyExpiry,
+  deletePreviewTokens,
+  type PreviewTokenRow,
+} from '../auth/preview-store.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { requireDb } from '../env.js';
 import { CairnError } from '../diagnostics/index.js';
@@ -156,6 +162,53 @@ export async function previewMint(
   });
   log.info('preview.token.minted', { concept: concept.id, id: target.entryId, editor: editor.email, expiresAt });
   return { outcome: 'minted', token, expiresAt };
+}
+
+/**
+ * What {@link previewRevoke} returns: the number of rows deleted, or the one refusal the target
+ * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s own
+ * arms; a session the engine's own access check refuses never reaches either, it throws, the way
+ * every other engine content surface refuses.
+ */
+export type PreviewRevokeOutcome =
+  | { outcome: 'revoked'; count: number }
+  | { outcome: 'unknown-concept' }
+  | { outcome: 'invalid-id' };
+
+/**
+ * Revoke every outstanding preview link for one entry: delete every `preview_tokens` row the
+ * entry's concept and id match, over {@link deletePreviewTokens}. Idempotent: revoking with
+ * nothing minted still succeeds, with a count of zero.
+ *
+ * Mirrors {@link previewMint}'s authorization sequence exactly, since revoking is the same
+ * authority-scoped act minting is (an entry-scoped credential the site's access map governs), so
+ * the auth outcome reaches the caller FIRST and short-circuits: `requireEditor` (the
+ * guard-resolved session), the concept lookup, `requireEngineAccess` against `runtime.access`,
+ * then the id shape rule. A refusal therefore never reaches the delete, and the `target` is the
+ * argument's, never the route's, so a site's own workflow route revokes from anywhere the guard
+ * has run, the same way `previewMint` mints from anywhere.
+ *
+ * Logs `preview.token.revoked` on success, from inside this function, so the engine's own route
+ * and a site's own workflow route both leave the identical record; never called on a refusal.
+ * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
+ *  the concept, and Redirect 303 to the login page when there is no session at all.
+ */
+export async function previewRevoke(
+  runtime: CairnRuntime,
+  event: CairnEvent,
+  target: { concept: string; entryId: string },
+): Promise<PreviewRevokeOutcome> {
+  const editor = requireEditor(event);
+  const concept = findConcept(runtime.concepts, target.concept);
+  if (!concept) return { outcome: 'unknown-concept' };
+  requireEngineAccess(runtime.access, editor, concept.id);
+  if (!isValidId(target.entryId)) return { outcome: 'invalid-id' };
+
+  const env = event.platform?.env ?? {};
+  const db = requireDb(env);
+  const count = await deletePreviewTokens(db, concept.id, target.entryId);
+  log.info('preview.token.revoked', { concept: concept.id, id: target.entryId, editor: editor.email, count });
+  return { outcome: 'revoked', count };
 }
 
 /**

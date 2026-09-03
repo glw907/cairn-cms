@@ -50,7 +50,7 @@ import type { ContentRoutesContext, AttentionItem } from './content-routes-conte
 import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './types.js';
 import { requireDb, requireOrigin } from '../env.js';
 import { deletePreviewTokens } from '../auth/preview-store.js';
-import { previewMint, type PreviewMintOutcome } from './preview.js';
+import { previewMint, previewRevoke, type PreviewMintOutcome, type PreviewRevokeOutcome } from './preview.js';
 import { CairnError } from '../diagnostics/index.js';
 
 /**
@@ -2109,24 +2109,41 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /**
    * Revoke every outstanding preview link for an entry: one delete by concept and id, the
-   *  mis-shared-link remedy. Same entry-scoped authorization as minting, `requireEntryFromParams`
-   *  as the FIRST statement. Idempotent: revoking with no minted links succeeds with a count of
-   *  zero. The engine ships this affordance to every upgraded site's edit screen regardless of
-   *  adoption, so a missing `preview_tokens` table answers the same actionable refusal minting
-   *  does, naming the migration, rather than a raw D1 error.
+   *  mis-shared-link remedy. This action is the route half of `previewRevoke` (preview.ts): it
+   *  names the target from the route's own params and dresses each outcome in the refusal this
+   *  screen speaks, while the entry-scoped authorization, the delete, and the
+   *  `preview.token.revoked` log all live in `previewRevoke` itself, so the engine's own route and
+   *  a site's custom revoke run the identical sequence and log the identical event. Idempotent:
+   *  revoking with no minted links succeeds with a count of zero. The engine ships this affordance
+   *  to every upgraded site's edit screen regardless of adoption, so a missing `preview_tokens`
+   *  table answers the same actionable refusal minting does, naming the migration, rather than a
+   *  raw D1 error.
    */
   async function previewRevokeAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { count: number }> {
-    const { editor, concept, id } = requireEntryFromParams(runtime, event);
-    const db = requireDb(event.platform?.env ?? {});
-    let count: number;
+    const conceptId = event.params.concept ?? '';
+    const id = event.params.id ?? '';
+
+    // previewRevoke runs its own authorization sequence first (requireEditor, then
+    // requireEngineAccess against the target concept), the same ordering previewMint runs, so a
+    // refused editor's outcome reaches them before any D1 read.
+    let result: PreviewRevokeOutcome;
     try {
-      count = await deletePreviewTokens(db, concept.id, id);
+      result = await previewRevoke(runtime, event, { concept: conceptId, entryId: id });
     } catch (err) {
       if (isMissingTableError(err)) return missingPreviewTableFailure();
       throw err;
     }
-    log.info('preview.token.revoked', { concept: concept.id, id, editor: editor.email, count });
-    return { count };
+
+    switch (result.outcome) {
+      // The target came from the route's params, so a bad target is a bad address: both answer
+      // exactly what `requireEntryFromParams` answers for the same fault on every other action.
+      case 'unknown-concept':
+        throw error(404, `Unknown content type: ${conceptId}`);
+      case 'invalid-id':
+        throw error(400, 'Invalid entry id');
+    }
+
+    return { count: result.count };
   }
 
   /**

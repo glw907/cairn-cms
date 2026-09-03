@@ -162,6 +162,10 @@ export type SectionAction<Env, Db> = <T>(
  *   }, { action: 'approve', entity: 'event' }),
  * };
  * ```
+ *
+ * Posture: fail-closed on every call, unconditionally, unlike `adminAction`'s own opt-in `access`
+ * option: a target the map has no rule for refuses through {@link authorizeAdminTarget}, never the
+ * permissive reading `canReach` gives an engine screen's own unmapped route.
  */
 export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db> {
   return function wrap<T>(

@@ -3,10 +3,11 @@
 // site's real concept list and engine-route table, so it fails loud at server start rather than
 // silently never gating (or never being reachable) at request time. Mirrors
 // nav-layout-validate.test.ts's own direct-call and wired-at-construction split.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { validateAccessComposition } from '../../lib/sveltekit/admin-nav.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime } from './_content-harness.js';
+import { log } from '../../lib/log/index.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 
 const CONCEPT_IDS = ['posts', 'pages'];
@@ -55,5 +56,42 @@ describe('validateAccessComposition: wired at admin construction', () => {
 
   it('skips validation entirely when access is undeclared, the common case', () => {
     expect(() => createContentRoutes(runtime())).not.toThrow();
+  });
+});
+
+describe('validateAccessComposition: the unmapped-screen warning (Task 10)', () => {
+  it('warns naming every concept and fixed screen a partial map leaves unmapped', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const access: AccessMap = { posts: ['owner'] };
+    validateAccessComposition(access, { conceptIds: CONCEPT_IDS });
+    expect(warnSpy).toHaveBeenCalledWith('config.access_unmapped', {
+      unmapped: ['media', 'nav', 'pages', 'settings', 'vocabulary'],
+    });
+    warnSpy.mockRestore();
+  });
+
+  it('stays silent when the map covers every concept and every fixed screen', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const access: AccessMap = {
+      posts: ['owner'],
+      pages: ['owner'],
+      media: ['owner'],
+      vocabulary: ['owner'],
+      nav: ['owner'],
+      settings: ['owner'],
+    };
+    validateAccessComposition(access, { conceptIds: CONCEPT_IDS });
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('does not count an href key toward coverage', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const access: AccessMap = { '/admin/money': ['owner'] };
+    validateAccessComposition(access, { conceptIds: CONCEPT_IDS });
+    expect(warnSpy).toHaveBeenCalledWith('config.access_unmapped', {
+      unmapped: ['media', 'nav', 'pages', 'posts', 'settings', 'vocabulary'],
+    });
+    warnSpy.mockRestore();
   });
 });

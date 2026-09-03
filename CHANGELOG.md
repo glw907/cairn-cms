@@ -1047,6 +1047,23 @@
   clause, sourcing its corpus directly from the `check-surface-leaks` registry (Task 2) rather
   than a hand-maintained list. Internal/docs only; no consumer action.
 
+- `docs/extend/security-model.md` documents the engine's two-posture access model (internals
+  pass, Task 10): a declared access map narrows only the targets it names, so an unmapped concept
+  id or fixed engine screen (`media`, `vocabulary`, `nav`, `settings`), and the site-wide
+  `publishAll` action, stay reachable to every editor-capability session, the same permissive
+  default `canReach` already applied; a site-authored POST through `createSectionAction` or
+  `adminAction`'s opt-in `access` option reads the opposite way and refuses an unmapped target.
+  Behavior is unchanged everywhere; this is a doc and diagnostics change. `validateAccessComposition`
+  gains a non-throwing `config.access_unmapped` warning at composition, naming every concept and
+  fixed screen a site's declared map leaves uncovered, and the four helpers that carry each
+  posture (`canReach`, `requireEngineAccess`, `adminAction`, `createSectionAction`) each gain a
+  one-sentence posture doc-comment. `docs/extend/restrict-admin-access.md` gains the `ownerOnly`
+  stacking section this page cross-links. Consumers must: audit your access map for coverage. A
+  map you believed was a whitelist may have left a screen or concept open; the new
+  `config.access_unmapped` warning names exactly which ones on the next server start, and
+  `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map recipe
+  to close the gap.
+
 ### Fixed
 
 - `cairn-audit`'s `list-role` rule gains a rendered-mode counterpart (internals pass, Task 8),

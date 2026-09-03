@@ -253,6 +253,10 @@ export function requireEditor(event: CairnEvent): Editor {
  * `auth.access.denied` with the editor's email, role, and `target`, the same shape `requireAccess`
  * emits. Unlike `requireAccess`, an unmapped target is never a fail-closed misconfiguration here:
  * an engine screen's own route is always a legitimate destination, mapped or not.
+ *
+ * Posture: permissive, mirroring `canReach`'s own unmapped-target default; an engine screen's
+ * mutations (save, publish, upload, and the rest) stay reachable to any editor-capability session
+ * until a site names that screen in its own map.
  */
 export function requireEngineAccess(access: AccessMap | undefined, editor: Editor, target: string): void {
   if (canReach(access, editor, target)) return;

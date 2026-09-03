@@ -6,6 +6,7 @@
 // segment, the media or index view, or a concept route), so a partial reserved-segment list is never
 // reimplemented here.
 import { parseAdminPath } from './admin-dispatch.js';
+import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
@@ -290,6 +291,12 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
  *
  * The second parameter carries context this validation needs but does not itself derive: the
  *  site's real concept ids, the same role `validateNavLayout`'s own second parameter plays.
+ *
+ * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when a declared
+ *  concept or fixed screen carries no rule at all, since that target stays reachable to every
+ *  editor-capability session by `canReach`'s own permissive default (see "An access map is not a
+ *  whitelist," docs/extend/security-model.md). This never blocks composition; it exists only to
+ *  surface a map a site believed was exhaustive but is not.
  */
 export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {
   const knownScreens = new Set<string>([...ctx.conceptIds, ...ACCESS_FIXED_SCREENS]);
@@ -312,6 +319,13 @@ export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: 
         `access: "${key}" is neither a declared concept nor one of the fixed engine screens (${ACCESS_FIXED_SCREENS.join(', ')})`,
       );
     }
+  }
+  // Only a screen-id key counts as coverage: an href key gates a route, never a screen or concept
+  // id, so it never closes this gap.
+  const declaredScreens = new Set(Object.keys(access).filter((key) => !key.startsWith('/')));
+  const unmapped = [...knownScreens].filter((screen) => !declaredScreens.has(screen)).sort();
+  if (unmapped.length > 0) {
+    log.warn('config.access_unmapped', { unmapped });
   }
 }
 

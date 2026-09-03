@@ -5336,3 +5336,39 @@ when the remediation pass lands.
   caches across calls within one instance) and the showcase's members e2e suite (its capture
   transport requires `CAIRN_DEV_BACKEND='1'` locally, proving the amended, AND-non-local sense
   breaks no legitimate dev-backend deployment).
+
+## access-semantics-documented-divergence: engine-wide access semantics, documented divergence, no blanket harden (ruling 2)  (accept, 2026-09-03, internals pass)
+
+- **Verdict:** accept, executing ruling 2 (this file, "The rulings" section, item 2) as a docs and
+  diagnostics task, with no route-behavior change. `canReach`'s permissive unmapped-target reading
+  stays the posture for the engine's own screens and nav visibility (a target the map never names
+  stays reachable to any editor-capability session); `authorizeAdminTarget`'s fail-closed reading
+  stays the posture for a site-authored POST through `createSectionAction` or `adminAction`'s
+  opt-in `access` option (an unmapped target refuses). `docs/extend/security-model.md` documents
+  both postures under one section with the round-1 fold's four mandatory points: the map is not a
+  whitelist (naming the unmapped fixed screens and the site-wide `publishAll` action's own
+  residual, and naming the real mutations `canReach` gates, not only nav semantics); the
+  exhaustive-map recovery recipe; the `ownerOnly`-stacks-on-the-map cross-link into
+  `docs/extend/restrict-admin-access.md`; and `authorizeAdminTarget`'s fail-closed contract.
+- **Reopens on:** the new `config.access_unmapped` warning (below) surfaces a real site's own
+  partial map, one that covers some but not all of its concept ids and the four fixed engine
+  screens, in production logs, or a consumer explicitly asks for a hardened, deny-by-default
+  floor. Either is a detectable trigger; the docket's original "real-world exploit evidence"
+  condition is unfalsifiable and is replaced by these two.
+- **Shape (the four helpers' posture doc-comments, Step 2).** `canReach` (`src/lib/auth/access.ts`),
+  `requireEngineAccess` (`src/lib/sveltekit/guard.ts`), `adminAction`
+  (`src/lib/sveltekit/admin-action.ts`), and `createSectionAction`
+  (`src/lib/sveltekit/section-action.ts`) each carry a one-sentence `Posture:` paragraph naming
+  which of the two readings they run and why; no other doc-comment text changed.
+- **Shape (the startup warning, Step 3).** `validateAccessComposition`
+  (`src/lib/sveltekit/admin-nav.ts`) now logs `config.access_unmapped` (warn, non-throwing) once
+  per composition when the map leaves any declared concept id or fixed engine screen without a
+  rule; an href key never counts toward coverage, since it gates a route, not a screen or concept
+  id. The event fires alongside, never instead of, the existing throw-on-bad-key checks, and never
+  blocks composition. `src/lib/log/events.ts` and `docs/reference/log-events.md` carry the new
+  vocabulary entry.
+- **Record:** `docs/superpowers/plans/2026-09-01-internals-pass.md`, Task 10, and "The rulings"
+  (ruling 2).
+- **Verified:** `src/tests/unit/access-composition.test.ts` (the warning fires naming every
+  concept and fixed screen a partial map leaves unmapped, stays silent against an exhaustive map,
+  and an href key never counts toward coverage).

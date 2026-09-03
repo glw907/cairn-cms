@@ -266,15 +266,83 @@ share that one declaration, so a route a session cannot reach does not appear in
 built-in screens': with no map at all it refuses every session, owner included, since an explicit
 call to a gate that found nothing to gate on is a configuration bug.
 
-A site's own form actions authorize the same way, through one shared sequence: the map must carry
-a rule for the target, the session's role must be admitted, and `ownerOnly` stacks on top of both
-rather than standing in for either. [`createSectionAction`](../reference/sveltekit.md#createsectionaction)
-runs it on every call and refuses with `fail(403)`.
-[`adminAction`](../reference/sveltekit.md#adminaction) runs it only when the call sets the `access`
-option, and refuses by throwing `error(403, ...)`; with the option omitted it authorizes nothing,
-which is what every action written before the option existed relies on. Either way the refusal is
-audited through `cairnAuditSink` and logged as `auth.access.denied`, and the response names no
-gate.
+cairn deliberately runs two different postures on that one map, described below: the engine's own
+screens read it permissively, and a site's own POST actions read it fail-closed. Both postures are
+intentional and stay as they are; nothing here changes route behavior.
+
+### An access map is not a whitelist
+
+A declared map narrows only the targets it names. Every screen or concept id the map has no key
+for stays reachable to any editor-capability session, exactly the zero-config behavior a site with
+no map at all gets; only a `none` session is refused everywhere, and the roster screen
+(`editors`) stays owner-only no matter what the map says. [`canReach`](../reference/core.md#canreach-hasaccessrule)
+is the one function that decides this, for both the engine's own route enforcement and the nav's
+own visibility, so the two can never drift apart, and that pairing is easy to misread as "the map
+only affects what's in the sidebar." It also gates real writes. An unmapped concept still lets an
+editor-capability session save, publish, discard, delete, or rename its entries, and mint or
+revoke a preview link for one. An unmapped `media` still lets that session upload, delete,
+bulk-delete, replace, or purge an asset, and propagate its alt text. An unmapped `nav` still lets
+it save the nav layout. An unmapped `settings` or `vocabulary` still lets it save the tidy
+settings or the tag vocabulary.
+
+The site-wide publish (`publishAll`, see
+[`createContentRoutes`](../reference/sveltekit.md#createcontentroutes)) carries the same default
+in its own shape. One request spans every concept, so it has no single target to gate with a
+`requireEngineAccess` call; any editor-capability session can post to it. It filters the pending
+entries it acts on by running `canReach` per entry's own concept id, so a concept the map narrows
+publishes nothing on that session's behalf, but a concept the map never names publishes exactly as
+it would with no map declared at all.
+
+### Recovering whitelist semantics
+
+A site that wants deny-by-default declares a rule for every target: each of its own concept ids,
+plus all four fixed engine screens `validateAccessComposition` enforces (`media`, `vocabulary`,
+`nav`, `settings`). Nothing is left for `canReach`'s permissive default to admit once every target
+the map is asked about carries its own rule:
+
+```ts
+export const access = defineAccess(roles, {
+  posts: ['editor'],
+  pages: ['editor'],
+  media: ['editor'],
+  vocabulary: ['editor'],
+  nav: ['owner'],
+  settings: ['owner'],
+});
+```
+
+An exhaustive map closes the site-wide publish path's own residual too, since that action's own
+filter runs per concept id: once every concept carries a rule, no concept is left for it to
+publish under the permissive default. Composition also runs a non-throwing check for exactly this
+gap: see [`config.access_unmapped`](../reference/log-events.md) for the startup warning that
+surfaces a map that covers some, but not all, of the required targets.
+
+### `ownerOnly` stacks on the map, and does not replace it
+
+A [`createSectionAction`](../reference/sveltekit.md#createsectionaction) or
+[`adminAction`](../reference/sveltekit.md#adminaction) call's own `ownerOnly` option requires owner
+capability in addition to the map's own rule, never instead of it: a target the map denies to
+everyone is denied to an owner-only call too. This is a different `ownerOnly` from the cosmetic
+one a `navLayout` entry carries; see [Restrict admin access by role, "ownerOnly stacks on the map,
+not the nav"](./restrict-admin-access.md#owneronly-stacks-on-the-map-not-the-nav) for the full
+contrast and a worked example.
+
+### The fail-closed floor for a site-authored POST
+
+The permissive reading above is `canReach`'s own default; it is not the only posture the engine
+runs on one map. `authorizeAdminTarget`, the shared sequence both
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
+[`adminAction`](../reference/sveltekit.md#adminaction)'s opt-in `access` option run, is fail-closed
+at every one of its three gates, checked in order: no rule at all for the target refuses, the
+session's role absent from an existing rule refuses, and `ownerOnly` set against a non-owner
+session refuses. A target the map has no opinion on is refused here, the opposite of `canReach`'s
+own unmapped-target reading, because this sequence's contract is "the site opted this action into
+the map," the same "opted in and found nothing" refusal `requireAccess` already carries for a
+site's own routes. `createSectionAction` runs it on every call and refuses with `fail(403)`.
+`adminAction` runs it only when the call sets the `access` option, and refuses by throwing
+`error(403, ...)`; with the option omitted it authorizes nothing, which is what every action
+written before the option existed relies on. Either way the refusal is audited through
+`cairnAuditSink` and logged as `auth.access.denied`, and the response names no gate.
 
 ## Response hardening
 

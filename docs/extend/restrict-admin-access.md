@@ -99,6 +99,31 @@ Restricting `media` restricts more than the media library screen: the inline ima
 every image-bearing concept's editor calls the same access-gated endpoint, so a role that edits
 one of those concepts also needs `media` reachable, or its picker breaks.
 
+## `ownerOnly` stacks on the map, not the nav
+
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
+[`adminAction`](../reference/sveltekit.md#adminaction) both accept an `ownerOnly` option, unrelated
+to the `ownerOnly` a [`navLayout`](./organize-your-admin-nav.md) entry carries. The nav one is
+cosmetic: it hides a sidebar link from a non-owner session and gates nothing on its own. This one
+is a real authorization check: it requires owner capability *in addition to* the access map's own
+rule for the target, never in place of it. A target the map denies to every role is still denied
+to an `ownerOnly` call; the option only ever narrows further, from "the roles this rule admits" to
+"owner alone," and never widens a denial into an admission.
+
+```ts
+// src/routes/admin/club/payroll/+page.server.ts
+export const actions = {
+  approveRun: sectionAction(async ({ ctx }) => { /* ... */ }, {
+    action: 'approve-run',
+    entity: 'payroll',
+    ownerOnly: true, // requires owner AND a map rule admitting this session for the target
+  }),
+};
+```
+
+See [Security model, "The fail-closed floor for a site-authored POST"](./security-model.md) for
+the full check order `ownerOnly` stacks onto.
+
 ## Hiding is not denying
 
 The [`navLayout`](./organize-your-admin-nav.md) seam reads the same access map for visibility:

@@ -1019,21 +1019,18 @@ describe('toolkit/custom-screen', () => {
 // The universal contract every registered story must satisfy, exercised across the full inventory
 // now that A4 through A6b have registered all 25. Looked up through `getStory` (the seam the real
 // admin reaches a story through) rather than the module-internal `stories` array, which the
-// retires pass, batch 1c, un-exported.
+// retires pass, batch 1c, un-exported. Each story is paired with its own manifest entry right here,
+// at the same derivation that filters `manifest` down to the registered ids, so `entry` is defined
+// by construction; a later re-lookup (e.g. `manifest.find`) would only reintroduce the possibility
+// of a miss this pairing already rules out.
 const registeredStories = manifest
   .filter((candidate) => isRegistered(candidate.id))
-  .map((candidate) => getStory(candidate.id));
+  .map((candidate) => ({ entry: candidate, story: getStory(candidate.id) }));
 
-for (const story of registeredStories) {
-  const entry = manifest.find((candidate) => candidate.id === story.id);
-
+for (const { entry, story } of registeredStories) {
   describe(`${story.id}: the universal story contract`, () => {
-    it('has a matching manifest entry', () => {
-      expect(entry).toBeDefined();
-    });
-
     it('declares marker keys matching its manifest entry', () => {
-      expect((story.markers ?? []).map((marker) => marker.key)).toEqual(entry?.markerKeys ?? []);
+      expect((story.markers ?? []).map((marker) => marker.key)).toEqual(entry.markerKeys);
     });
 
     // The chip numbers a reader sees, checked separately from the keys above because they are a
@@ -1054,11 +1051,11 @@ for (const story of registeredStories) {
     // (a story mounted `bare` while its manifest entry claims `shell`, or vice versa) with every
     // other assertion here still green: this closes that gap.
     it('mounts under the host its manifest entry declares', () => {
-      expect(story.host).toBe(entry?.host);
+      expect(story.host).toBe(entry.host);
     });
 
     it('declares a pose function exactly when its manifest entry says it needs one', () => {
-      expect(Boolean(story.pose)).toBe(entry?.pose);
+      expect(Boolean(story.pose)).toBe(entry.pose);
     });
 
     it(

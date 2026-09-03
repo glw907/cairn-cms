@@ -1,7 +1,9 @@
 // cairn-cms: the core content-entry loads and actions (the admin shell payload, the Help home, the
 // concept list, and the create/edit/save/publish/discard/delete/rename cycle for a single entry).
-// createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts) built
-// once by createContentRoutes, so a shim stays one line: `export const load = routes.editLoad`.
+// createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts), which
+// createContentRoutesInternal builds once and passes to every sibling factory; the public
+// createContentRoutes is a thin wrapper around that internal factory. A shim stays one line:
+// `export const load = routes.editLoad`.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';

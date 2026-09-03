@@ -1,7 +1,8 @@
 // cairn-cms: the Media Library's load and every media action (upload, safe-delete, bulk delete,
 // the orphan scan and purge, metadata edit, and the replace-in-place / alt-propagation preview and
 // apply pairs). createMediaActions closes over the shared ContentRoutesContext
-// (content-routes-context.ts) built once by createContentRoutes.
+// (content-routes-context.ts), built once per call by createContentRoutesInternal; the public
+// createContentRoutes only forwards to that internal factory.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';

@@ -1,5 +1,5 @@
 // cairn-cms: the content routes' shared closure context. createContentRoutesContext builds this
-// object once per createContentRoutes call (the backend resolver, the manifest and media-json
+// object once per createContentRoutesInternal call (the backend resolver, the manifest and media-json
 // readers, the commit-failure handlers, the tidy client), and every per-domain sibling module
 // (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) closes over it
 // instead of re-deriving these from `runtime`/`deps` itself. This is the seam a pure closure-lift
@@ -328,10 +328,12 @@ export interface ContentRoutesContext {
 }
 
 /**
- * Build the shared closure context for one createContentRoutes call: validate a declared navLayout,
- *  resolve the tidy client and its deadline from the injectable deps, and bind the
- *  backend/manifest/media-json/dictionary/commit-failure helpers over `runtime`. Every per-domain
- *  sibling factory takes the returned object as its one argument.
+ * Build the shared closure context for one createContentRoutesInternal call (the public
+ *  createContentRoutes is a thin wrapper around it, so this runs once per createContentRoutes
+ *  call too): validate a declared navLayout, resolve the tidy client and its deadline from the
+ *  injectable deps, and bind the backend/manifest/media-json/dictionary/commit-failure helpers
+ *  over `runtime`. Every per-domain sibling factory takes the returned object as its one
+ *  argument.
  */
 export function createContentRoutesContext(runtime: CairnRuntime, config: ContentRoutesConfig = {}): ContentRoutesContext {
   // Validate a declared navLayout the fail-loud-at-startup way, so a bad screen reference or an

@@ -1,6 +1,7 @@
 // cairn-cms: the tidy (LLM copy-edit) action. createTidyActions closes over the shared
-// ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes, reusing its
-// resolved Anthropic client and request deadline.
+// ContentRoutesContext (content-routes-context.ts), built once per call by
+// createContentRoutesInternal (the public createContentRoutes is a thin wrapper around it),
+// reusing the context's resolved Anthropic client and request deadline.
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import { DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import { log } from '../log/index.js';

@@ -108,6 +108,18 @@ describe('candidatesForFile', () => {
     expect(candidates.some((c) => c.includes('is not in your tag list'))).toBe(true);
   });
 
+  it('reads string literals from every <script> block, not just the first one', () => {
+    // MediaPicker.svelte leads with a `<script module>` block (type-only, no string literals of
+    // interest) before its main `<script>` block. A single `.match` against
+    // `/<script[\s\S]*?<\/script>/i` is non-greedy and stops at the FIRST `</script>`, so it
+    // captures only the module block and silently drops every literal in the main script,
+    // including this one, which lives nowhere in the rendered markup ("Needs alt" is the markup's
+    // own, differently worded, string).
+    const file = join(LIB_DIR, 'components/MediaPicker.svelte');
+    const candidates = candidatesForFile(file);
+    expect(candidates.some((c) => c.includes('needs alt text'))).toBe(true);
+  });
+
   it('does not strand a literal after a same-line comment-lookalike ("//") inside an earlier string', () => {
     // `content-routes-core.ts` builds a URL against 'https://internal.invalid' well before the
     // two messages this test checks for. A comment strip with no notion of "inside a string"

@@ -202,16 +202,21 @@ export function extractMarkupCandidates(src) {
 
 /**
  * Every candidate shipped string a `.svelte` or `.ts` file under `src/lib` carries: for a
- * `.svelte` file, both its `<script>` block's string literals and its markup text nodes; for a
+ * `.svelte` file, both every `<script>` block's string literals and its markup text nodes; for a
  * `.ts` file, its string literals alone.
+ *
+ * A `.svelte` file can carry more than one `<script>` block (a leading `<script module>` plus the
+ * instance `<script>`), so this scans every block with `matchAll` rather than a single `match`,
+ * which would stop at the first `</script>` and silently drop every literal in the blocks after it.
  * @param {string} file An absolute path.
  * @returns {string[]}
  */
 export function candidatesForFile(file) {
   const src = readFileSync(file, 'utf8');
   if (!file.endsWith('.svelte')) return extractScriptCandidates(src);
-  const scriptMatch = src.match(/<script[\s\S]*?<\/script>/i);
-  const scriptCandidates = scriptMatch ? extractScriptCandidates(scriptMatch[0]) : [];
+  const scriptCandidates = [...src.matchAll(/<script[\s\S]*?<\/script>/gi)].flatMap((m) =>
+    extractScriptCandidates(m[0]),
+  );
   return [...scriptCandidates, ...extractMarkupCandidates(src)];
 }
 

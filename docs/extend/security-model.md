@@ -321,8 +321,9 @@ surfaces a map that covers some, but not all, of the required targets.
 
 A [`createSectionAction`](../reference/sveltekit.md#createsectionaction) or
 [`adminAction`](../reference/sveltekit.md#adminaction) call's own `ownerOnly` option requires owner
-capability in addition to the map's own rule, never instead of it: a target the map denies to
-everyone is denied to an owner-only call too. This is a different `ownerOnly` from the cosmetic
+capability in addition to the map's own rule, never instead of it: a target the map has no rule for
+at all refuses even an owner-only call, and for a non-owner session the role list still applies on
+top of the owner requirement. This is a different `ownerOnly` from the cosmetic
 one a `navLayout` entry carries; see [Restrict admin access by role, "ownerOnly stacks on the map,
 not the nav"](./restrict-admin-access.md#owneronly-stacks-on-the-map-not-the-nav) for the full
 contrast and a worked example.
@@ -334,7 +335,8 @@ runs on one map. `authorizeAdminTarget`, the shared sequence both
 [`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
 [`adminAction`](../reference/sveltekit.md#adminaction)'s opt-in `access` option run, is fail-closed
 at every one of its three gates, checked in order: no rule at all for the target refuses, the
-session's role absent from an existing rule refuses, and `ownerOnly` set against a non-owner
+session's role absent from an existing rule refuses, unless the session carries owner capability,
+which `canReach` admits regardless of the role list, and `ownerOnly` set against a non-owner
 session refuses. A target the map has no opinion on is refused here, the opposite of `canReach`'s
 own unmapped-target reading, because this sequence's contract is "the site opted this action into
 the map," the same "opted in and found nothing" refusal `requireAccess` already carries for a

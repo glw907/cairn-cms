@@ -106,9 +106,11 @@ one of those concepts also needs `media` reachable, or its picker breaks.
 to the `ownerOnly` a [`navLayout`](./organize-your-admin-nav.md) entry carries. The nav one is
 cosmetic: it hides a sidebar link from a non-owner session and gates nothing on its own. This one
 is a real authorization check: it requires owner capability *in addition to* the access map's own
-rule for the target, never in place of it. A target the map denies to every role is still denied
-to an `ownerOnly` call; the option only ever narrows further, from "the roles this rule admits" to
-"owner alone," and never widens a denial into an admission.
+rule for the target, never in place of it. `ownerOnly` never widens the map: a target with no rule
+at all still refuses even an owner, the same no-rule floor as above, and for a non-owner session
+both the access map's role list and the owner requirement must pass; the option only ever narrows
+further, from "the roles this rule admits" to "owner alone," and never widens a denial into an
+admission.
 
 ```ts
 // src/routes/admin/club/payroll/+page.server.ts

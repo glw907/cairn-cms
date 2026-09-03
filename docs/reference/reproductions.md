@@ -92,9 +92,9 @@ internal state rather than a prop. Both take `root`, the element `ReproContext` 
 into, never `document`: a posed dialog and the editor's fixed-position insert panel render inside
 that element rather than appended to `document.body`, so a `settle` or `pose` that queries
 `document` instead of `root` misses them. `pose` also takes the mounted component's own exports
-(`ReproInstance`, module-internal since the retires pass unexported it, a sanctioned
-`NavIcon`-class leak: a consumer reads the type as `Parameters<NonNullable<ReproStory['pose']>>[1]`),
-for a story the real admin reaches by calling an exported method rather than by clicking, such as
+(`ReproInstance`, which carries no export row of its own: a consumer reaches it as
+`Parameters<NonNullable<ReproStory['pose']>>[1]`), for a story the real admin reaches by calling
+an exported method rather than by clicking, such as
 the insert panel the editor mounts headless and opens from its toolbar. The parameter is required,
 so a host that cannot supply an instance fails to compile rather than posing half a story.
 `markers` are the numbered callout anchors a story exposes, mirroring its manifest entry's

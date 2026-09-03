@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import {
   enumerateExports,
   missingNames,
@@ -9,7 +10,12 @@ import {
   checkOne,
   assertAllowlistReasoned,
   NARRATIVE_CONTEXT_ALLOWLIST,
+  missingIndexedAccessParentheticals,
+  leakNamesForSubpath,
 } from '../../../scripts/checks/reference-coverage.mjs';
+import { loadRegistry } from '../../../scripts/checks/check-surface-leaks.mjs';
+
+const ROOT = resolve(__dirname, '../../..');
 
 const fixture = (name: string) => resolve(__dirname, 'fixtures/reference-coverage', name);
 
@@ -246,6 +252,109 @@ describe('checkOne (per-subpath stale-name rescope)', () => {
     const sharedPoolFromMain = new Set(['fromA', 'fromB']);
     const result = checkOne(entryOnSharedPage, sharedPoolFromMain, globalKnownNames, []);
     expect(result.stale).toEqual([]);
+  });
+});
+
+describe('leakNamesForSubpath', () => {
+  it('returns the distinct names recorded against one subpath', () => {
+    const leaks = [
+      { name: 'Foo', subpath: '/a' },
+      { name: 'Bar', subpath: '/a' },
+      { name: 'Foo', subpath: '/a' }, // duplicate, e.g. two reason kinds would never coexist but dedupe anyway
+      { name: 'Baz', subpath: '/b' },
+    ];
+    expect(leakNamesForSubpath(leaks, '/a')).toEqual(['Foo', 'Bar']);
+  });
+
+  it('returns an empty array for a subpath with no recorded leaks', () => {
+    expect(leakNamesForSubpath([{ name: 'Foo', subpath: '/a' }], '/z')).toEqual([]);
+  });
+});
+
+describe('missingIndexedAccessParentheticals (ruling 3, the indexed-access convention)', () => {
+  it('is silent for a name the page never prints (nothing to retrofit a parenthetical onto)', () => {
+    const text = 'This page never mentions the leaked name at all.';
+    expect(missingIndexedAccessParentheticals(['NeverPrinted'], text)).toEqual([]);
+  });
+
+  it('flags a printed name with no indexed-access expression anywhere near it', () => {
+    const text = 'The `EditData.advisories` field is typed `AdvisoryNotice[]`, documented above.';
+    expect(missingIndexedAccessParentheticals(['AdvisoryNotice'], text)).toEqual(['AdvisoryNotice']);
+  });
+
+  it('passes a printed name whose parenthetical sits later in the same prose paragraph', () => {
+    const text = [
+      '`LoginData` and `ConfirmData`, shown in the preceding signature for their shape, carry no',
+      "export row of their own: a consumer reaches them as `Extract<AdminData, { view: 'login' }>['page']`",
+      "and `Extract<AdminData, { view: 'confirm' }>['page']` respectively.",
+    ].join('\n');
+    expect(missingIndexedAccessParentheticals(['LoginData', 'ConfirmData'], text)).toEqual([]);
+  });
+
+  it('scopes a Types-table row to its own line: a marker on a different row does not excuse it', () => {
+    const text = [
+      '| Name | Stability | Signature | Meaning |',
+      '| --- | --- | --- | --- |',
+      '| `ListData` | Extension API | `interface ListData { entries: EntrySummary[] }` | The list data. |',
+      "| `Other` | Extension API | `interface Other {}` | Reaches `Foo['bar'][number]` elsewhere. |",
+    ].join('\n');
+    expect(missingIndexedAccessParentheticals(['EntrySummary'], text)).toEqual(['EntrySummary']);
+  });
+
+  it('passes a Types-table row that carries its own indexed-access parenthetical', () => {
+    const text = [
+      '| Name | Stability | Signature | Meaning |',
+      '| --- | --- | --- | --- |',
+      "| `ListData` | Extension API | `interface ListData { entries: EntrySummary[] }` | The list data. `EntrySummary` carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'list' }>['page']['entries'][number]`. |",
+    ].join('\n');
+    expect(missingIndexedAccessParentheticals(['EntrySummary'], text)).toEqual([]);
+  });
+});
+
+describe('the indexed-access retrofit is complete on its two target pages (Task 5)', () => {
+  // The corpus is derived, never hard-coded: every leak the check-surface-leaks registry
+  // records against /sveltekit or /reproductions is a site this retrofit must cover.
+  const leaks = loadRegistry();
+  const sveltekitPage = resolve(ROOT, 'docs/reference/sveltekit.md');
+  const reproductionsPage = resolve(ROOT, 'docs/reference/reproductions.md');
+  const sveltekitText = readFileSync(sveltekitPage, 'utf8');
+  const reproductionsText = readFileSync(reproductionsPage, 'utf8');
+
+  it('derives a non-trivial corpus for /sveltekit (never a hard-coded count)', () => {
+    expect(leakNamesForSubpath(leaks, '/sveltekit').length).toBeGreaterThan(20);
+  });
+
+  it('carries no missing parenthetical on sveltekit.md', () => {
+    const names = leakNamesForSubpath(leaks, '/sveltekit');
+    expect(missingIndexedAccessParentheticals(names, sveltekitText)).toEqual([]);
+  });
+
+  it('carries no missing parenthetical on reproductions.md', () => {
+    const names = [
+      ...leakNamesForSubpath(leaks, '/reproductions'),
+      ...leakNamesForSubpath(leaks, '/reproductions/manifest'),
+    ];
+    expect(missingIndexedAccessParentheticals(names, reproductionsText)).toEqual([]);
+  });
+
+  it('is wired to fail via check:reference if the retrofit ever regresses', () => {
+    // Reconstructs the shape a regression would take: a real subpath entry whose page prints a
+    // recorded leak with no parenthetical. `fromB` already appears on `rescope-page-a.md`
+    // (see the `checkOne` describe block above) with no indexed-access marker anywhere on the
+    // page, so passing it through `leakNames` must surface it on `missingParenthetical`.
+    const entry = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: fixture('rescope-page-a.md') };
+    const pageKnownNames = new Set(['fromA']);
+    const globalKnownNames = new Set(['fromA', 'fromB']);
+    const result = checkOne(entry, pageKnownNames, globalKnownNames, [], ['fromB']);
+    expect(result.missingParenthetical).toEqual(['fromB']);
+  });
+
+  it('does not require a parenthetical for a leak name the entry does not carry', () => {
+    const entry = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: fixture('rescope-page-a.md') };
+    const pageKnownNames = new Set(['fromA']);
+    const globalKnownNames = new Set(['fromA', 'fromB']);
+    const result = checkOne(entry, pageKnownNames, globalKnownNames, [], []);
+    expect(result.missingParenthetical).toEqual([]);
   });
 });
 

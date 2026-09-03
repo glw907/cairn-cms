@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadRegistry } from './check-surface-leaks.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -291,6 +292,88 @@ function declaredNames(pageText) {
   return names;
 }
 
+// The distinct names the check-surface-leaks registry records against one subpath: the corpus
+// of un-importable members whose printed occurrence on that subpath's page requires the
+// indexed-access parenthetical (ruling 3, docs/internal/engine-rulings.md's
+// indexed-access-parenthetical-convention row). Deduped, since a name can carry more than one
+// registry entry only by (name, subpath) uniqueness, never twice for the same subpath.
+/**
+ * @param {{ name: string, subpath: string }[]} leaks
+ * @param {string} subpath
+ * @returns {string[]}
+ */
+export function leakNamesForSubpath(leaks, subpath) {
+  return [...new Set(leaks.filter((l) => l.subpath === subpath).map((l) => l.name))];
+}
+
+// The real backtick code spans in `text`, in document order. Splitting on the backtick
+// character and taking every odd-indexed piece assumes well-formed alternating pairs (every
+// reference page's own convention: prose never contains a bare backtick), which is what keeps
+// this from bridging across two UNRELATED code spans the way a single greedy `` `[^`]*` ``
+// regex would: two spans separated by ordinary prose that happens to contain a markdown link's
+// `[text](url)` brackets must not read as one indexed-access expression.
+/** @param {string} text */
+function codeSpans(text) {
+  const parts = text.split('`');
+  const spans = [];
+  for (let i = 1; i < parts.length; i += 2) spans.push(parts[i]);
+  return spans;
+}
+
+// Whether `text` carries a code span with at least one NON-EMPTY bracket subscript: the
+// convention's own marker that a consumer reaches an un-importable member via indexed access
+// off a real exported type (`Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`,
+// `NonNullable<ContentFormFailure['usage']>[number]`, and the like). The bracket contents must be
+// non-empty (`[^\]]+`, not `[^\]]*`) so an ordinary array-type suffix (`AdvisoryNotice[]`, empty
+// brackets) never false-matches as an indexed-access marker.
+/** @param {string} text */
+function hasIndexedAccessSpan(text) {
+  return codeSpans(text).some((span) => /\[[^\]]+\]/.test(span));
+}
+
+// The page split into the locality units the parenthetical-required check measures against. A
+// markdown table's rows carry no blank line between them, so each row is its own unit: the same
+// row a printed member and its parenthetical both live on (the Types table's dense Meaning
+// cells). Every other run of text is one unit per blank-line-delimited paragraph, since the
+// established convention (LoginData/ConfirmData, EditorsData) places the parenthetical a few
+// sentences into the same prose paragraph, not necessarily the same line. Treating the whole
+// page as one unit would let an unrelated bracket expression anywhere excuse every leak, which
+// defeats the check; treating every line as its own unit would fail a paragraph whose
+// parenthetical wraps onto a second line, which the wrapped prose convention already does.
+/** @param {string} pageText */
+function localityUnits(pageText) {
+  const units = [];
+  for (const block of pageText.split(/\n{2,}/)) {
+    const lines = block.split('\n').filter((line) => line.length > 0);
+    const isTable = lines.length > 0 && lines.every((line) => line.trimStart().startsWith('|'));
+    if (isTable) units.push(...lines);
+    else units.push(block);
+  }
+  return units;
+}
+
+// The names from `names` that the page prints as a whole-word mention with no indexed-access
+// parenthetical in the same locality unit. A name the page never prints at all is out of scope:
+// ruling 3 never retrofits a parenthetical onto a name absent from the page (that would be
+// introducing a name to hang documentation on, not documenting one already there).
+/**
+ * @param {string[]} names
+ * @param {string} pageText
+ * @returns {string[]}
+ */
+export function missingIndexedAccessParentheticals(names, pageText) {
+  const units = localityUnits(pageText);
+  const offenders = [];
+  for (const name of names) {
+    const escaped = name.replace(/[$]/g, '\\$&');
+    const nameRe = new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`);
+    if (!nameRe.test(pageText)) continue;
+    const covered = units.some((unit) => nameRe.test(unit) && hasIndexedAccessSpan(unit));
+    if (!covered) offenders.push(name);
+  }
+  return offenders;
+}
+
 // One reference page per importable subpath. `excludeDts` drops a re-exported surface that is
 // documented on its own page: /delivery re-exports all of /delivery/data, so the delivery page
 // documents only its own additions. The /delivery/head entry points at the same delivery.md page,
@@ -413,8 +496,16 @@ function isAllowlisted(page, name, globalNames, allowlist) {
  * @param {Set<string>} globalKnownNamesSet the full real-export pool, used only to keep an
  *   allowlisted name honest against a later rename or removal
  * @param {{ page: string, names: string[], reason: string }[]} [allowlist]
+ * @param {string[]} [leakNames] the check-surface-leaks names recorded against this subpath
+ *   (see `leakNamesForSubpath`); a printed one with no indexed-access parenthetical fails
  */
-export function checkOne(entry, pageKnownNames, globalKnownNamesSet, allowlist = NARRATIVE_CONTEXT_ALLOWLIST) {
+export function checkOne(
+  entry,
+  pageKnownNames,
+  globalKnownNamesSet,
+  allowlist = NARRATIVE_CONTEXT_ALLOWLIST,
+  leakNames = [],
+) {
   const dtsPath = resolve(ROOT, entry.dts);
   if (!existsSync(dtsPath)) throw new Error(`missing ${entry.dts}; run "npm run package" first`);
   let names = enumerateExports(dtsPath);
@@ -424,7 +515,15 @@ export function checkOne(entry, pageKnownNames, globalKnownNamesSet, allowlist =
   }
   const pagePath = resolve(ROOT, entry.page);
   if (!existsSync(pagePath)) {
-    return { subpath: entry.subpath, page: entry.page, missing: names, untagged: [], stale: [], noPage: true };
+    return {
+      subpath: entry.subpath,
+      page: entry.page,
+      missing: names,
+      untagged: [],
+      stale: [],
+      missingParenthetical: [],
+      noPage: true,
+    };
   }
   const pageText = readFileSync(pagePath, 'utf8');
   const missing = missingNames(names, pageText);
@@ -435,7 +534,8 @@ export function checkOne(entry, pageKnownNames, globalKnownNamesSet, allowlist =
   const stale = staleNames([...pageKnownNames], pageText).filter(
     (name) => !isAllowlisted(entry.page, name, globalKnownNamesSet, allowlist),
   );
-  return { subpath: entry.subpath, page: entry.page, missing, untagged, stale };
+  const missingParenthetical = missingIndexedAccessParentheticals(leakNames, pageText);
+  return { subpath: entry.subpath, page: entry.page, missing, untagged, stale, missingParenthetical };
 }
 
 // The CONFIG entries selected by an optional `--only <subpath>` CLI arg, or every entry when
@@ -471,9 +571,11 @@ function main() {
   assertAllowlistReasoned(NARRATIVE_CONTEXT_ALLOWLIST);
   const pageNames = knownNamesByPage(CONFIG);
   const globalNames = globalKnownNames(CONFIG);
+  const leaks = loadRegistry();
   let failed = false;
   for (const entry of entries) {
-    const r = checkOne(entry, pageNames.get(entry.page) ?? new Set(), globalNames, NARRATIVE_CONTEXT_ALLOWLIST);
+    const leakNames = leakNamesForSubpath(leaks, entry.subpath);
+    const r = checkOne(entry, pageNames.get(entry.page) ?? new Set(), globalNames, NARRATIVE_CONTEXT_ALLOWLIST, leakNames);
     if (r.noPage) {
       console.error(`MISSING PAGE ${r.page} (${r.subpath})`);
       failed = true;
@@ -486,6 +588,11 @@ function main() {
     } else if (r.stale.length) {
       console.error(
         `${r.subpath} (${r.page}): ${r.stale.length} stale (not a real export this page covers): ${r.stale.join(', ')}`,
+      );
+      failed = true;
+    } else if (r.missingParenthetical.length) {
+      console.error(
+        `${r.subpath} (${r.page}): ${r.missingParenthetical.length} printed with no indexed-access parenthetical: ${r.missingParenthetical.join(', ')}`,
       );
       failed = true;
     } else {

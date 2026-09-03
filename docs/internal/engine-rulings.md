@@ -5182,3 +5182,73 @@ when the remediation pass lands.
   `delivery-data.md` drift shape against fixture subpaths. The reference tree, including
   `core.md`, passes with an empty allowlist; the recorded entry is inert against current page
   text, confirmed by running `staleNames([], coreMdText)` directly.
+
+## indexed-access-parenthetical-convention: the indexed-access reference convention (ruling 3)  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Executed per ruling 3 (this file, "The rulings" section): a rendered shape
+  that prints a member whose own type carries no export row now carries an inline parenthetical,
+  beside the member's row, giving the exact expression a consumer types to reach it by indexed
+  access off the containing exported type. One README note
+  (`docs/reference/README.md#reading-indexed-access-forms`) states the convention once; the check
+  clause enforces it wherever it applies.
+- **Reopens on:** closed. Executed by the internals pass, Task 5. A future leak the
+  `check-surface-leaks` rider records against a page this convention already covers inherits the
+  requirement automatically (the check clause reads that registry directly); a future retrofit
+  site outside `/sveltekit` and `/reproductions` is not a reopen of this row, it is the same
+  convention applied to a new page as that page's own leaks accumulate.
+- **Shape (the corpus, derived not counted).** The retrofit's corpus is the `check-surface-leaks`
+  registry's own output (Task 2), filtered to the two subpaths this task's file list covers,
+  `/sveltekit` and `/reproductions` (`core.md` carries no leak recorded against it and is dropped;
+  `/delivery` and `/delivery/data`'s leaks are out of this task's scope, left for a later
+  retrofit): 35 recorded entries across those two subpaths at execution time, of which 25 print
+  the leaked name literally on the page (a member field typed by name, not fully inlined
+  structurally): 21 needed the parenthetical added, and three (`LoginData`, `ConfirmData`,
+  `EditorsData`) plus `ReproInstance` already carried it, needing only the scar-tissue sweep
+  below. The other 10 (`AdvisoryAction`,
+  `DatePrefix`, `EditorActionFailure`, `FragmentTarget`, `LinkTarget`, `MediaLibrary`, `SlotKind`,
+  `StandardResult`, `UsageOrigin`, and `NavConcept` on `/reproductions`) are never printed by name
+  on either page at all (each is absorbed into a fully-expanded inline structural type, or reaches
+  the page only through a nested carrier that itself never surfaces as a bare name), so ruling 3's
+  own rule (a name absent from the page is never retrofitted a parenthetical to hang on) leaves
+  them untouched. `LoginData` and `ConfirmData` needed only the "or equivalently
+  `Awaited<ReturnType<...>>`" alternate removed, per ruling 3's fold note (the canonical form is
+  single).
+- **Shape (the check clause, `reference-coverage.mjs`).** `leakNamesForSubpath` reads
+  `check-surface-leaks.json` (via `check-surface-leaks.mjs`'s newly exported `loadRegistry`, one
+  parse, no duplicated logic) and scopes it to one subpath; `missingIndexedAccessParentheticals`
+  reports a leak name that the page prints with no code-span carrying a non-empty bracket
+  subscript (`['page']`, `[number]`, `[string]`, and the like) in the same locality unit, where a
+  Types-table row is its own unit (no blank line separates table rows, so the whole table would
+  otherwise read as one paragraph and let one row's unrelated bracket expression excuse every
+  other row's missing parenthetical) and a prose paragraph is a blank-line-delimited block
+  (matching where `LoginData`/`ConfirmData`/`EditorsData` already placed theirs, a few sentences
+  into the same paragraph as the printed name). The bracket search reads real backtick code spans
+  (splitting on the backtick character, not a single greedy regex spanning two unrelated spans
+  across intervening prose that happens to contain a markdown link's own `[text](url)` brackets)
+  and requires non-empty bracket contents, so an ordinary array-type suffix (`Foo[]`) never
+  false-matches as the marker. Wired into `checkOne`/`main` as a new failure class alongside
+  `missing`/`untagged`/`stale`, chained on the existing `check:reference` entry (no new script,
+  per the tie-break rule).
+- **Shape (the scar-tissue sweep).** Every touched line's verdict provenance moved here: the
+  `LoginData`/`ConfirmData` and `EditorsData` parentheticals no longer say "the retires pass
+  unexported them, a sanctioned `NavIcon`-class leak"; `reproductions.md:95`'s `ReproInstance`
+  parenthetical no longer carries that clause either. Each now states plainly that the type
+  "carries no export row of its own," the same phrasing every new site in this retrofit uses, and
+  the ledger is the only place the pass/taxonomy history lives (this row, and the rows the
+  scar-tissue text pointed at: `audit-sveltekit-fragmenttarget`, `audit-sveltekit-mediausageinfo`,
+  `audit-sveltekit-navpageoption`, and the F-1 hybrid ruling's own `NavIcon`-class taxonomy in
+  `check-surface-leaks`, above, all byte-untouched by this row).
+- **Resolves:** `audit-sveltekit-usageentry`'s closed row (byte-untouched by this row) states the
+  public recovery, `NonNullable<ContentFormFailure['usage']>[number]`, as the outcome of 4b's
+  retire ruling, but that expression lived only in the ledger and a test until this task: the
+  `sveltekit.md` `ContentFormFailure` row now carries it as the required parenthetical (an add,
+  not a verify, per this task's own scoping note), closing the gap between what the ledger
+  promised and what the page said.
+- **Record:** `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md` (item 7) and
+  "The rulings" (ruling 3), both cited above.
+- **Verified:** `npm run check:reference` (CI, `.github/workflows/test.yml`) and
+  `src/tests/unit/reference-coverage.test.ts`, including unit coverage for
+  `missingIndexedAccessParentheticals`'s locality scoping (a Types-table row is not excused by a
+  different row's marker; an array-type suffix's empty brackets are not mistaken for one) and an
+  integration proof that `sveltekit.md` and `reproductions.md` carry the parenthetical for every
+  name the `check-surface-leaks` registry records against them and prints.

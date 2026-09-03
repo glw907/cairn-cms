@@ -994,6 +994,23 @@
   CI's pinned 3.15.1 governs whenever a local Vale disagrees with a green CI run. Internal only;
   no consumer action.
 
+- `docs/reference/sveltekit.md` and `docs/reference/reproductions.md` gain the indexed-access
+  reference convention (internals pass, Task 5, ruling 3): a rendered shape that prints a member
+  whose own type carries no export row now carries an inline parenthetical, beside the member's
+  row, giving the exact expression a consumer types to reach it by indexed access off the
+  containing exported type (`Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`
+  for `AdvisoryNotice`, `NonNullable<ContentFormFailure['usage']>[number]` for `UsageEntry`, and
+  20 more). `docs/reference/README.md` gains one "Reading indexed-access forms" note stating the
+  convention once. Three sites (`LoginData`, `ConfirmData`, `EditorsData`) drop their prior "or
+  equivalently `Awaited<ReturnType<...>>`" alternate, now that the indexed-access form is the
+  single canonical one, and those two sites plus `ReproInstance` drop the verdict-provenance
+  language ("a sanctioned `NavIcon`-class leak") in favor of the plain "carries no export row of
+  its own" phrasing every site now uses; the history moves to
+  `docs/internal/engine-rulings.md`'s new `indexed-access-parenthetical-convention` row.
+  `scripts/checks/reference-coverage.mjs` extends `check:reference` with the parenthetical-required
+  clause, sourcing its corpus directly from the `check-surface-leaks` registry (Task 2) rather
+  than a hand-maintained list. Internal/docs only; no consumer action.
+
 ### Fixed
 
 - `check:reference`'s stale-name (reverse) check is now scoped per page (internals pass, Task 3):

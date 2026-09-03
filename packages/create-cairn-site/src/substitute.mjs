@@ -8,9 +8,49 @@
 // naming the file and the missing string rather than silently doing nothing: that throw is the
 // rot gate against showcase drift, not an edge case to soften.
 import { readFile, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const SITE_CONFIG_RELATIVE = 'src/theme/site.config.yaml';
+// The committed twin of src/lib/doctor/site-config-path.json (engine side). The bake never
+// import()s engine code into its process (a compromised or buggy engine install must not
+// execute in the scaffolder), so this is its own copy of the same value, not a cross-package
+// import; the two committed files staying in sync is proved by a test, not by a shared module.
+const SITE_CONFIG_PATH_FILE = fileURLToPath(new URL('./site-config-path.json', import.meta.url));
+
+/**
+ * Verify a site-config relative path before it is ever joined onto a real directory: relative,
+ * no leading slash, no NUL byte, and no ".." segment, so a corrupted data file cannot walk a
+ * scaffold's file read or write outside its own tree.
+ * @param {unknown} value the candidate relative path, read from site-config-path.json
+ * @returns {string} the same value, once verified
+ */
+export function verifySiteConfigPath(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`substitute: ${SITE_CONFIG_PATH_FILE}: expected a non-empty string, got ${JSON.stringify(value)}`);
+  }
+  if (value.startsWith('/')) {
+    throw new Error(`substitute: ${SITE_CONFIG_PATH_FILE}: must be relative, got "${value}"`);
+  }
+  if (value.includes('\0')) {
+    throw new Error(`substitute: ${SITE_CONFIG_PATH_FILE}: must not contain a NUL byte`);
+  }
+  if (value.split('/').includes('..')) {
+    throw new Error(`substitute: ${SITE_CONFIG_PATH_FILE}: must not contain a ".." segment, got "${value}"`);
+  }
+  return value;
+}
+
+/**
+ * Read this package's own committed site-config-path.json and verify its shape.
+ * @returns {string} the verified relative path
+ */
+function readSiteConfigPath() {
+  const raw = JSON.parse(readFileSync(SITE_CONFIG_PATH_FILE, 'utf8'));
+  return verifySiteConfigPath(raw !== null && typeof raw === 'object' ? raw.path : undefined);
+}
+
+const SITE_CONFIG_RELATIVE = readSiteConfigPath();
 const THEME_CSS_RELATIVE = 'src/theme/theme.css';
 
 const SITE_NAME_LINE = 'siteName: Waymark';
@@ -146,7 +186,14 @@ async function readTarget(absolutePath, relativePath) {
 export async function applySubstitutions(dir, { name, description, brandColor }) {
   const changed = [];
 
-  const siteConfigPath = path.join(dir, SITE_CONFIG_RELATIVE);
+  // path.join already normalizes away "..", and verifySiteConfigPath already refused one in the
+  // relative path itself; this resolved-containment check is the third, independent layer,
+  // regardless of how SITE_CONFIG_RELATIVE reached this point.
+  const resolvedDir = path.resolve(dir);
+  const siteConfigPath = path.resolve(dir, SITE_CONFIG_RELATIVE);
+  if (siteConfigPath !== resolvedDir && !siteConfigPath.startsWith(resolvedDir + path.sep)) {
+    throw new Error(`substitute: ${SITE_CONFIG_RELATIVE} resolves outside the scaffold root`);
+  }
   const siteConfig = await readTarget(siteConfigPath, SITE_CONFIG_RELATIVE);
   // A description rides along in this one replacement rather than a second lookup for the line
   // just written: the template's own `siteName:` line is the only string worth gating on, and

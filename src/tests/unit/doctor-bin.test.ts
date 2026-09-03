@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -254,6 +254,35 @@ describe('packaged bin (needs dist/doctor/bin.js; run npm run package to unskip)
       expect([0, 1, 3]).toContain(out.status);
       expect(out.stderr).toContain('cairn-doctor: --fix failed to install the admin-screens skill');
       expect(out.stdout).toMatch(/\d+ passed, \d+ failed, \d+ skipped, \d+ info, \d+ unchecked/);
+    }
+  );
+
+  // The end-to-end proof for SITE_CONFIG_PATH: a traversal-shaped value in the shipped data file
+  // fails verification loudly (a build-time defect must never silently read outside cwd), rather
+  // than reaching doctor/bin.ts's readFileUnderCwd at all. checks-local.ts reads and verifies the
+  // canonical path at module load, so a bad shipped file crashes the whole bin, naming the file
+  // and the violation, instead of degrading into a per-check failure.
+  const SITE_CONFIG_PATH_JSON = resolve(process.cwd(), 'dist/doctor/site-config-path.json');
+  const siteConfigPathJsonExists = existsSync(SITE_CONFIG_PATH_JSON);
+
+  it.skipIf(!built || !siteConfigPathJsonExists)(
+    'a traversal-shaped SITE_CONFIG_PATH in the shipped data file crashes the bin loudly, naming the violation',
+    () => {
+      const original = readFileSync(SITE_CONFIG_PATH_JSON, 'utf8');
+      writeFileSync(SITE_CONFIG_PATH_JSON, JSON.stringify({ path: '../../../etc/passwd' }));
+      try {
+        const dir = mkdtempSync(join(tmpdir(), 'cairn-doctor-traversal-'));
+        const out = spawnSync(process.execPath, [BIN], {
+          cwd: dir,
+          env: { PATH: process.env.PATH },
+          encoding: 'utf8',
+        });
+        expect(out.status).not.toBe(0);
+        expect(out.stderr).toContain('site-config-path.json');
+        expect(out.stderr).toMatch(/"\.\."/);
+      } finally {
+        writeFileSync(SITE_CONFIG_PATH_JSON, original);
+      }
     }
   );
 });

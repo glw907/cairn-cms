@@ -4937,6 +4937,20 @@ when the remediation pass lands.
 - **Shape:** Add `src/theme/site.config.yaml` to `SITE_CONFIG_PATHS` (the path the engine's own scaffolder bakes to, per `create-cairn-site`'s and the showcase's template), and derive the candidate list from the same constant the template bake uses, so the scaffolder and the checker cannot diverge again.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 39.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Amendment (2026-09-02, internals pass, Task 11):** the closure above left the one-source
+  derivation as a `// WATCH:` comment, routed here rather than executed. This is the open half
+  it named. `SITE_CONFIG_PATH` (the canonical `src/theme/site.config.yaml`) now lives in a
+  committed data file, `src/lib/doctor/site-config-path.json`, read as data (never `import()`ed
+  code) by both `checks-local.ts` and `create-cairn-site/src/substitute.mjs`, per ruling 5 of
+  the internals pass's sitting (the sanctioned default: a generated data file both packages
+  read, since the bake never imports engine code into its process). `create-cairn-site` keeps
+  its own committed twin of the JSON rather than a cross-package import; a test proves the two
+  stay in sync. Both consumers verify the value's shape (relative, no leading `/`, no `..`
+  segment, no NUL) before use, and `doctor/bin.ts`'s `readFileUnderCwd` gains a
+  resolved-path-stays-under-cwd containment assert covering this and every other candidate it
+  reads. `media-seed/bin.ts`'s byte-identical, still-uncontained twin is routed forward to
+  internals-B by its own `// WATCH:` comment (see `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`, item 5).
+  This closes the WATCH; the row above stays untouched.
 
 ## audit-cli-type-scale-gap-scale-token-colors-grammar-boundary-static-gr: `type-scale, gap-scale, token-colors, grammar-boundary (static grammar rules)`  (keep, 2026-08-26, any-site audit)
 

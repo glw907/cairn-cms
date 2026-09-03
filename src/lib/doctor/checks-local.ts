@@ -2,6 +2,8 @@
 // svelte.config CSRF handoff, the site-config validation, the public origin, and the blanket
 // no-referrer trap. Every read goes through the injected ctx.readFile, so the tests pass
 // fixtures and the bin passes node:fs.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { fail, info, pass, skip, unchecked } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { readWranglerConfig } from './wrangler-config.js';
@@ -143,18 +145,60 @@ export const configPublicOrigin: DoctorCheck = {
   },
 };
 
-// Where sites keep site.config.yaml. The adapter's configPath is TypeScript the CLI cannot
-// evaluate, so the check probes the conventional spots instead (the repo root, the two src
-// locations older production sites use, and src/theme, where both create-cairn-site's template
-// and the showcase bake it).
-// WATCH: derive this list from the same constant the template bake uses, so the scaffolder and
-// the checker cannot diverge again; routed to the internals pass's one-source dogfood work
-// (docs/internal/engine-rulings.md, audit-cli-config-site-config-check).
-const SITE_CONFIG_PATHS = [
+// Where the shipped site-config-path.json sits, beside this module in both the source tree and
+// dist (svelte-package copies .json files verbatim, the same mechanism norms-manifest.json
+// relies on).
+const SITE_CONFIG_PATH_FILE = fileURLToPath(new URL('./site-config-path.json', import.meta.url));
+
+/**
+ * Verify a site-config relative path before it joins the candidate list: relative, no leading
+ * slash, no NUL byte, and no ".." segment. This is the same shape guard create-cairn-site's
+ * substitute.mjs runs on its own copy of the value, so a corrupted data file on either side is
+ * caught before it can walk a read outside the project directory. Exported for its own test
+ * coverage; doctor/checks-local.ts is not part of the package's public exports map.
+ */
+export function verifySiteConfigPath(value: unknown): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`${SITE_CONFIG_PATH_FILE}: expected a non-empty string, got ${JSON.stringify(value)}`);
+  }
+  if (value.startsWith('/')) {
+    throw new Error(`${SITE_CONFIG_PATH_FILE}: must be relative, got "${value}"`);
+  }
+  if (value.includes('\0')) {
+    throw new Error(`${SITE_CONFIG_PATH_FILE}: must not contain a NUL byte`);
+  }
+  if (value.split('/').includes('..')) {
+    throw new Error(`${SITE_CONFIG_PATH_FILE}: must not contain a ".." segment, got "${value}"`);
+  }
+  return value;
+}
+
+// Read the canonical path once, at module load: a bad shipped data file is a build-time defect
+// that should throw immediately, the same posture loadNormsManifest takes on its own JSON.
+function readCanonicalSiteConfigPath(): string {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(SITE_CONFIG_PATH_FILE, 'utf8'));
+  } catch (err) {
+    throw new Error(`${SITE_CONFIG_PATH_FILE}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  const path = raw !== null && typeof raw === 'object' ? (raw as { path?: unknown }).path : undefined;
+  return verifySiteConfigPath(path);
+}
+
+// The canonical location the bake (create-cairn-site's substitute.mjs) writes site.config.yaml
+// to. Both packages read this value from their own committed copy of site-config-path.json,
+// never importing each other's code, so the scaffolder and the checker cannot diverge (see
+// docs/internal/engine-rulings.md, audit-cli-config-site-config-check).
+export const SITE_CONFIG_PATH = readCanonicalSiteConfigPath();
+
+// Where sites keep site.config.yaml: the canonical path first, then the three legacy locations
+// older production sites still use (the repo root and two earlier src conventions).
+export const SITE_CONFIG_PATHS = [
+  SITE_CONFIG_PATH,
   'site.config.yaml',
   'src/lib/site.config.yaml',
   'src/site.config.yaml',
-  'src/theme/site.config.yaml',
 ];
 
 // Read the first site.config.yaml that exists in a conventional spot, or null when none does.

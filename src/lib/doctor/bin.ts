@@ -6,7 +6,7 @@
 // clean run (pass, skip, and info only) exits 0. The codes go through process.exitCode, never
 // process.exit, so a piped stdout flushes the whole report before the process ends.
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { liveProbeCheck } from './check-probe.js';
 import { liveSendCheck } from './check-send.js';
 import { installSkill, SKILL_INSTALL_DIR } from './check-skill.js';
@@ -56,8 +56,14 @@ async function main(): Promise<void> {
   }
 
   const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
+    // resolve() does not contain: a relPath carrying enough ".." segments walks the result
+    // outside cwd, so every read is checked against cwd regardless of where relPath came from.
+    const resolved = resolve(cwd, relPath);
+    if (resolved !== cwd && !resolved.startsWith(cwd + sep)) {
+      throw new Error(`cairn-doctor: refusing to read outside the project directory: ${relPath}`);
+    }
     try {
-      return await readFile(resolve(cwd, relPath), 'utf8');
+      return await readFile(resolved, 'utf8');
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
       throw err;

@@ -187,6 +187,16 @@
   and a scrubbed `error`, never a `correlationId`. The teardown itself still completes; only its
   own log record is skipped. See [Log events](docs/reference/log-events.md).
 
+- `SITE_CONFIG_PATH` (internals pass, Task 11; discharges `docs/internal/engine-rulings.md`'s
+  `audit-cli-config-site-config-check` WATCH): the doctor's `config.site-config` check and
+  `create-cairn-site`'s `substitute.mjs` now both read the canonical site-config path from a
+  committed data file (`src/lib/doctor/site-config-path.json`, mirrored in
+  `packages/create-cairn-site/src/site-config-path.json`), never from a hand-typed string on
+  either side. Both consumers verify the value's shape before use (relative, no leading `/`, no
+  `..` segment, no NUL byte), and `doctor/bin.ts`'s `readFileUnderCwd` gains a
+  resolved-path-stays-under-cwd containment assert covering every relative read it does, not only
+  this one. Internal tooling and CLI hardening only; no consumer action.
+
 ### Changed
 
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,

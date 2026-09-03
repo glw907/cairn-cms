@@ -670,6 +670,13 @@ paths never become engine contract.
   touched; failing-first proof (a synthetic path divergence between doctor and bake is
   impossible by construction or fails a test; a traversal-shaped value fails
   validation).
+- [ ] **Step 3 note (RATIFIED AMENDMENT, Geoff 2026-09-02, post-plan-approval):** the
+  re-file below executes in the TWO-SLICE shape: "internals-B: monoliths" (the four
+  splits and their riders) and "internals-C: coherence" (the coherence thirteen, the
+  exhaustiveness idiom, the newcomer map), B before C so gates and sweeps do not churn
+  under files being split. The ratified record, including six standing planning
+  defaults, is `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`
+  ("Ratified" section) on `main`; the ROADMAP re-file cites it.
 - [ ] **Step 3 (the internals-B re-file, corrected):** ROADMAP's "internals half" block
   re-files as the named follow-on slice "internals-B: monoliths and coherence" carrying
   **FOUR monoliths** (`EditPage`, `CairnMediaLibrary`, `content-routes-core`,

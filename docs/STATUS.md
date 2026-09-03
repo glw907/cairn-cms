@@ -20,9 +20,11 @@ until the polish slice per the amended initiative design. CI on `main` is fully 
 
 **The internals pass is EXECUTING (approved 2026-09-02; the CAIRN_DEV_BACKEND letter
 amendment was confirmed with the approval). Chunk one (Tasks 1-4) is landed:** the
-check:self-use gate, the F-1 leak rider, the staleNames per-subpath rescope, and the
-editor-quotes/vale task, eight commits through `ee05140b` plus one surgical fix round in
-flight on the quote extractor's multi-script-block gap. Worktree
+check:self-use gate, the F-1 leak rider, the staleNames rescope, and the editor-quotes
+task. **Chunk two (Tasks 5-8) is landed and review-accepted:** the indexed-access
+convention, the header/vacuous-test residue, the MarkdownEditor registerEditor collapse
+(`Consumers must:` rides it), and the list-role/panel-width re-groundings, through
+`918eb57e`. Worktree
 `.claude/worktrees/internals`; workflow run `wf_87445ff5-d58` (resume with
 pass-execute.js + resumeFromRunId; NOTE: its agent cache is same-process only, so a
 resume after a process restart re-verifies rather than replays). Next: dispatch chunk

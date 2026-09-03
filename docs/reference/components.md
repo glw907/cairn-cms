@@ -467,14 +467,15 @@ under the same names.
 Stability tier: Unstable API.
 
 ```ts
-let { data }: { data: NavLoadData };
+let { data, form }: { data: NavLoadData; form?: ContentFormFailure | null };
 ```
 
 The drag-to-reorder navigation editor. `data` is the `NavLoadData` from the nav load (the menu
 metadata, the current tree, the page options, and the feature flags). Saving posts the named
-`?/save` action, which commits the rebuilt nav to the site config. On the per-route mounting it
-lives at `src/routes/admin/(app)/nav/+page.svelte` against the nav load and a `save`-named
-action.
+`?/save` action, which commits the rebuilt nav to the site config; `form` carries a refused save's
+`ContentFormFailure`, so a stale-edit reload or a rejected tree reapplies its message. On the
+per-route mounting it lives at `src/routes/admin/(app)/nav/+page.svelte` against the nav load and a
+`save`-named action.
 
 ```svelte
 <script lang="ts">
@@ -493,7 +494,7 @@ action.
 Stability tier: Unstable API.
 
 ```ts
-let { data }: { data: SettingsData };
+let { data, form }: { data: SettingsData; form?: ContentFormFailure | null };
 ```
 
 The two-tier tidy settings screen. `data` is the `SettingsData` from the settings load: the
@@ -502,7 +503,8 @@ model), the truthful gate flag, and the resolved editor-tier `conventions`. The 
 per-convention check-and-tint toggles and the radiogroup variant choosers) renders only when tidy is
 enabled and the key is present; otherwise the screen shows the honest gate note with no disabled
 controls. Saving posts the named `?/settingsSave` action, which commits the conventions block to the
-same committed site-config YAML the nav editor writes.
+same committed site-config YAML the nav editor writes; `form` carries a refused save's
+`ContentFormFailure`, so a stale-edit reload or a rejected conventions block reapplies its message.
 
 ```svelte
 <script lang="ts">
@@ -547,7 +549,7 @@ an explicit empty string suppresses the hand-off, the self-serve state. It mount
 Stability tier: Unstable API.
 
 ```ts
-let { data }: { data: VocabularyLoadData };
+let { data, form }: { data: VocabularyLoadData; form?: ContentFormFailure | null };
 ```
 
 The tag-vocabulary admin screen ("Tags"). `data` is the committed vocabulary, the per-value
@@ -555,8 +557,9 @@ cross-branch usage count, and the in-use-but-unlisted seed set, from the vocabul
 a tag (a typed label derives its slug `value` live), renames a tag's label (the `value` slug stays
 immutable once created), removes a zero-usage tag (a guarded, disabled control for an in-use one,
 naming the count), and seeds the working copy from tags already on posts but absent from the
-vocabulary. A `role="status"` live region narrates the last mutation. It mounts inside
-`CairnAdminShell` on `PageHeader` for its header band.
+vocabulary. `form` carries a refused post's `ContentFormFailure`: a stale-edit reload, a rejected
+add or rename, or the in-use delete refusal. A `role="status"` live region narrates the last
+mutation. It mounts inside `CairnAdminShell` on `PageHeader` for its header band.
 
 ```svelte
 <script lang="ts">
@@ -605,15 +608,14 @@ for a site that builds its own per-route admin surface, pairing with the same lo
 
 ### `MarkdownEditor`
 
-Stability tier: Extension API for its eleven stable props below; every other prop is `EditPage`
+Stability tier: Extension API for its stable props below; every other prop is `EditPage`
 wiring, [documented separately as `Unstable API`](#markdowneditor-wiring-props-unstable-api).
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerFormat, completionSources = [], focusMode = false, typewriter = false, surface = 'prose', spellcheck = true, spellcheckDictionary = 'dictionary-en-us.txt', siteDictionary = [] }: {
+let { value = $bindable(), name, registerEditor, completionSources = [], focusMode = false, typewriter = false, surface = 'prose', spellcheck = true, spellcheckDictionary = 'dictionary-en-us.txt', siteDictionary = [] }: {
   value: string;
   name: string;
-  registerInsert?: (insert: (text: string) => void) => void;
-  registerFormat?: (format: (kind: FormatKind) => void) => void;
+  registerEditor?: (api: EditorApi) => void;
   completionSources?: CompletionSource[];
   focusMode?: boolean;
   typewriter?: boolean;
@@ -627,33 +629,59 @@ let { value = $bindable(), name, registerInsert, registerFormat, completionSourc
 The bare CodeMirror editing surface behind the `MarkdownEditor` seam, and cairn's authoring seam:
 this is the frozen stable contract a site mounting the component directly can depend on across
 minors. `value` is bindable, so the parent reads edits back; `name` is the hidden field the value
-mirrors to for form submit. `registerInsert` hands the parent a `(text) => void` that inserts at
-the cursor, and `registerFormat` hands the parent a `(kind) => void` that applies a named
-selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`.
-`completionSources` wires generic CodeMirror autocomplete, such as the internal-link source.
-`focusMode` fades every paragraph except the caret's, and `typewriter` keeps the caret line
-vertically centered while typing. `surface` picks the posture: `prose` (the default) sets a 72ch
-centered measure at a larger type step, `markup` fills the pane densely for tables and directives.
-`spellcheck` turns the markdown-aware lint underlines on (the default) or off, reconfiguring the
-lint compartment to empty and idling the Worker while off. `spellcheckDictionary` names the
-dialect-resolved dictionary file (for example `dictionary-en-us.txt`) the source resolves to a real
-asset URL and hands to the spellcheck Worker's init. `siteDictionary` seeds the Worker's personal
-layer with the committed personal-dictionary words at init, so a word another editor committed
-answers correct from the first lint. All are plain reactive props, so the host owns any toggle
-persistence (`EditPage` persists the writing-mode toggles per browser). CodeMirror loads only in
-the browser, so this component is client-only.
+mirrors to for form submit. `registerEditor` hands the parent the buffer-scoped
+`EditorApi` once, on mount (its member grammar is below): every editor capability (insert, selection, format,
+undo, tidy, image placeholders, and the rest) is a member of that one object, which replaces the
+13 retired `register*` props (11 per-capability callbacks plus the two object grants,
+`registerTidy` and `registerImagePlaceholders`). `completionSources` wires generic CodeMirror
+autocomplete, such as the internal-link source. `focusMode` fades every paragraph except the
+caret's, and `typewriter` keeps the caret line vertically centered while typing. `surface` picks
+the posture: `prose` (the default) sets a 72ch centered measure at a larger type step, `markup`
+fills the pane densely for tables and directives. `spellcheck` turns the markdown-aware lint
+underlines on (the default) or off, reconfiguring the lint compartment to empty and idling the
+Worker while off. `spellcheckDictionary` names the dialect-resolved dictionary file (for example
+`dictionary-en-us.txt`) the source resolves to a real asset URL and hands to the spellcheck
+Worker's init. `siteDictionary` seeds the Worker's personal layer with the committed
+personal-dictionary words at init, so a word another editor committed answers correct from the
+first lint. All are plain reactive props, so the host owns any toggle persistence (`EditPage`
+persists the writing-mode toggles per browser). CodeMirror loads only in the browser, so this
+component is client-only.
 
 The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
 composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`
-directly gets the plain surface and supplies its own controls through `registerFormat`, since the
-engine's toolbar component is internal and not exported here. The surface ships as a quiet
-writing surface: the self-hosted iA Writer Mono face on a centered measure, stepped heading
-sizes, dimmed syntax markers, GFM parsing, depth-stepped rails on `:::` directive machinery with
-a plain-language hover hint.
+directly gets the plain surface and supplies its own controls through `EditorApi`'s `format`
+member, since the engine's toolbar component is internal and not exported here. The surface ships
+as a quiet writing surface: the self-hosted iA Writer Mono face on a centered measure, stepped
+heading sizes, dimmed syntax markers, GFM parsing, depth-stepped rails on `:::` directive
+machinery with a plain-language hover hint.
 
 ```svelte
-<MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
+<MarkdownEditor bind:value={body} name="body" registerEditor={(api) => (editor = api)} />
 ```
+
+#### `EditorApi` (the `registerEditor` grant)
+
+The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
+editor. Before this collapse, each of the 13 retired `register*` props handed a caller back only
+the one callback or object it wired; every `registerEditor` caller now receives the same full
+surface uniformly, since the host is always `EditPage`, which always needed the whole thing
+anyway.
+
+| Member | Type | What it does |
+| --- | --- | --- |
+| `insert` | `(text: string) => void` | Inserts text at the cursor. |
+| `insertLink` | `(href: string, title: string) => void` | Inserts an inline link at the current selection. |
+| `getSelection` | `() => string` | Returns the selected text. |
+| `caretCoords` | `() => { left: number; right: number; top: number; bottom: number } \| null` | Returns the caret's viewport coordinates, or `null` before mount or when unmeasurable. |
+| `focusEditor` | `() => void` | Returns focus to the editor surface. |
+| `undo` | `() => void` | Undoes the last editor transaction. |
+| `format` | `(kind: FormatKind) => void` | Applies a named selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`. |
+| `replaceRange` | `(from: number, to: number, text: string) => void` | Overwrites a document span with new text and drops the caret after it. |
+| `selectRange` | `(from: number, to: number) => void` | Selects a document span, focuses the surface, and scrolls it into view. |
+| `insertImage` | `(alt: string, ref: string) => void` | Inserts an inline `![alt](media:slug.hash)` image at the caret. |
+| `getSelectionRange` | `() => { from: number; to: number } \| null` | Returns the selection's document offsets, or `null` for a bare caret. |
+| `tidy` | `TidyApi` | The tidy apply API (`enter`, `acceptOne`, `rejectOne`, `acceptMany`, `rejectAll`, `exit`) driving the review surface's in-buffer decorations and its accept/reject state machine. |
+| `imagePlaceholders` | `ImagePlaceholderApi` | The optimistic-placeholder API (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload loop's in-flight thumbnail and determinate progress, with no document text written until the upload resolves. |
 
 #### `MarkdownEditor` wiring props (Unstable API)
 
@@ -662,42 +690,35 @@ Stability tier: Unstable API.
 `EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
 rather than wrapping it, with no stability promise across minors: a site that reaches past
 `EditPage` for one of these should expect it to move or change shape. `onComponentAtCaret` and
-`registerReplaceRange` are the round-trip editing seams; the media seams (`registerInsertImage`,
-`onImageIngest`, `mediaLibrary`, `onMediaImageAtCaret`) support the insert popover and the figure
-control.
+`onMediaImageAtCaret` are the round-trip editing seams (the figure control writes back through
+`EditorApi.replaceRange`); the media seams (`mediaLibrary`, `onImageIngest`) support the insert
+popover and the figure control.
 
 | Prop | Type | What it does |
 | --- | --- | --- |
-| `registerInsertLink` | `(insert: (href: string, title: string) => void) => void` | Hands the parent a callback that inserts an inline link. The link pickers call it. |
-| `registerInsertImage` | `(insert: (alt: string, ref: string) => void) => void` | Hands the parent a callback that inserts an inline `![alt](media:slug.hash)` image at the caret. The media picker and the capture card call it. |
 | `onImageIngest` | `(file: File) => void` | Fires with the first image file of a paste or drop onto the surface. The host opens the capture card with the bytes. |
 | `mediaLibrary` | `Record<string, MediaLibraryEntry>` | The per-asset projection the source decoration reads to render a `media:` token as a thumbnail chip. |
-| `registerCaretCoords` | `(get: () => { left: number; right: number; top: number; bottom: number } \| null) => void` | Hands the parent a getter for the caret's viewport coordinates, so the insert popover anchors to the cursor. |
-| `registerFocusEditor` | `(focus: () => void) => void` | Hands the parent a callback that returns focus to the surface on close. |
-| `registerImagePlaceholders` | `(api: ImagePlaceholderApi) => void` | Hands the host the optimistic-placeholder API (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload loop's in-flight thumbnail and determinate progress, with no document text written until the upload resolves. |
-| `registerGetSelection` | `(get: () => string) => void` | Hands the parent a getter that returns the selected text. The web-link dialog prefills from it. |
-| `registerGetSelectionRange` | `(get: () => { from: number; to: number } \| null) => void` | Hands the parent a getter that returns the selection's document offsets, or `null` for a bare caret, so the tidy host maps a selection tidy onto the exact selected span. |
-| `registerTidy` | `(api: TidyApi) => void` | Hands the tidy review surface the apply API that drives its in-buffer decorations and its accept/reject state machine. |
-| `registerUndo` | `(undo: () => void) => void` | Hands the parent a callback that undoes the tidy apply's whole history entry in one move, for the "Undo tidy" chip. |
+| `fragmentTitles` | `Record<string, string>` | The published fragment titles the `include:` source decoration resolves a `::include{fragment="id"}` chip's label against, keyed by fragment id. A resolved include line always chips; an id absent from this map falls back to naming the chip from the raw id. |
 | `onComponentAtCaret` | `(info: { name: string \| null; markdown: string; from: number; to: number } \| null) => void` | Reports the directive container under the caret whenever it changes: the opening directive's `name`, the block's `markdown`, and the document character offsets (`from`, `to`) of its inclusive line range, or `null` when the caret sits outside any container. The host resolves that block against the registry to offer an Edit-block control. |
-| `onMediaImageAtCaret` | `(info: FigureAtImage \| null) => void` | Reports the media image under the caret whenever it changes: the inner `![alt](media:slug.hash)` token's exact source offsets, plus the enclosing `:::figure` block (its range, raw caption, and placement role) when the image is wrapped, or `figure: null` when it is bare, or `null` when the caret is not on a media image. The host opens the figure control over it to wrap, edit, or unwrap a figure, writing the source through `registerReplaceRange`. |
-| `registerReplaceRange` | `(replace: (from: number, to: number, text: string) => void) => void` | Hands the parent a callback that overwrites a document span and drops the caret after it. The Edit-block dialog's Update calls it to write an edited block back over its original range. |
-| `registerSelectRange` | `(select: (from: number, to: number) => void) => void` | Hands the parent a callback that selects a document span, focuses the surface, and scrolls the range into view. The publish-time needs-alt notice's jump control calls it to land the author on an image that lacks alt text. |
+| `onMediaImageAtCaret` | `(info: FigureAtImage \| null) => void` | Reports the media image under the caret whenever it changes: the inner `![alt](media:slug.hash)` token's exact source offsets, plus the enclosing `:::figure` block (its range, raw caption, and placement role) when the image is wrapped, or `figure: null` when it is bare, or `null` when the caret is not on a media image. The host opens the figure control over it to wrap, edit, or unwrap a figure, writing the source through `EditorApi.replaceRange`. |
 | `pendingAdditions` | `Set<string>` | The caller-owned pending personal-dictionary additions set. `EditPage` commits it through the save-time dictionary action and reconciles it against the merged response. |
-| `spellcheckTest` | `{ createWorker?: () => SpellWorker; assumeReady?: boolean }` | A test-only seam for the spellcheck Worker (the real wasm and dictionary assets do not load under the component test runner). Never set this outside a test. |
+| `spellcheckTest` | `{ createWorker?: () => SpellWorker; assumeReady?: boolean }` | A test-only seam for the spellcheck Worker (the real wasm and dictionary assets do not load under the component test runner). Never set this outside a test; documented-unstable, and pinned there rather than joining the stable snippet above. |
 | `tidyMode` | `boolean` | Makes the surface read-only while a tidy review is open, the way Preview disables the toolbar, so the author cannot edit underneath a pending review. |
+| `onDiagnosticsCounts` | `(counts: DiagnosticCounts) => void` | Reports the settled spelling and style diagnostic counts on the same debounced cadence as the diagnostics-summary announcer. |
 | `foldOnMount` | `boolean` | Folds every component block the moment the surface mounts. `EditPage` turns this on so an entry opens with its blocks collapsed; off by default. |
+| `registry` | `ComponentRegistry` | The site's component registry. The fold pill and the gutter fold control resolve a folded block's directive name through it, reading its human `label` (falling back to the raw directive name) and the matched component's `use` line for the pill's tooltip. |
 
 ### `DeleteDialog`
 
 Stability tier: Unstable API.
 
 ```ts
-let { conceptId, id, singular, inboundLinks, pending = false, trigger = true, onsubmitting }: {
+let { conceptId, id, singular, inboundLinks, inboundKind = 'link', pending = false, trigger = true, onsubmitting }: {
   conceptId: string;
   id: string;
   singular: string;
   inboundLinks: InboundLink[];
+  inboundKind?: 'link' | 'include';
   pending?: boolean;
   trigger?: boolean;
   onsubmitting?: () => void;
@@ -708,7 +729,9 @@ A confirm dialog that deletes one entry, with a guard that blocks the delete whi
 link to it. `conceptId` and `id` identify the entry and post with the confirm, `singular` names the
 entry's own concept in the singular for the title and confirm prompts, for example "Post," and
 `inboundLinks` is the list of entries that link here. A non-empty list shows the linkers and blocks
-the delete until they are repointed. Pass `pending` for an entry with unpublished edits; the confirm
+the delete until they are repointed; `inboundKind` picks the blocked copy family, "link" (the
+default) for an entry other entries link to, "include" for a fragment the listed entries include.
+Pass `pending` for an entry with unpublished edits; the confirm
 copy then warns that those edits are discarded too, since the delete cascades to the entry's pending
 branch. With `trigger={false}` the component renders only the dialog, no visible button, and the
 exported `open()` method shows it; `EditPage`'s overflow menu drives it that way. `onsubmitting`

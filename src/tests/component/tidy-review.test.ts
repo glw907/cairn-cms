@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
 import TidyReview from '../../lib/components/TidyReview.svelte';
 import { diffChanges } from '../../lib/components/tidy-diff.js';
 import { resolveTidyConventions } from '../../lib/nav/site-config.js';
@@ -47,8 +47,10 @@ async function mountReview(
   const editor = await render(MarkdownEditor, {
     value: original,
     name: 'body',
-    registerTidy: (a: TidyApi) => (api = a),
-    registerUndo: (u: () => void) => (undo = u),
+    registerEditor: (a: EditorApi) => {
+      api = a.tidy;
+      undo = a.undo;
+    },
   });
   await expect.poll(() => api, COLD_START).not.toBeNull();
   const changes = diffChanges(original, corrected);
@@ -268,7 +270,9 @@ describe('TidyReview (real browser)', () => {
     await render(MarkdownEditor, {
       value: original,
       name: 'body',
-      registerTidy: (a: TidyApi) => (api = a),
+      registerEditor: (a: EditorApi) => {
+        api = a.tidy;
+      },
     });
     await expect.poll(() => api, COLD_START).not.toBeNull();
     const changes = diffChanges(original, corrected);

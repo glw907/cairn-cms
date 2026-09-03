@@ -1,7 +1,7 @@
 <!--
 @component
 The "Link to page" control. It wraps EntryPicker, the shared search + concept-grouped target list, and
-turns the chosen target into an inline cairn: internal link through the editor's registerInsertLink
+turns the chosen target into an inline cairn: internal link through the editor's EditorApi.insertLink
 seam. EntryPicker owns the list and search; this component owns the cairn-token meaning and the trigger.
 The plain-URL link is the toolbar's Web link dialog; this is for an internal target.
 -->

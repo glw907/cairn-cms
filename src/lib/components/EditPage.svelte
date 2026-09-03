@@ -34,7 +34,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
-  import MarkdownEditor from './MarkdownEditor.svelte';
+  import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
@@ -539,28 +539,30 @@ persistent "?" carries Markdown help, design-arc D2).
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
   const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
+  // The editor holders below are all populated from the one EditorApi registerEditor hands back on
+  // mount (the seam collapse, ruling 1); each stays a no-op (or null) until then, the same as when
+  // each had its own register* prop.
   let insert = $state.raw<(text: string) => void>(() => {});
-  // The editor's range-replace seam, registered by MarkdownEditor on mount; the dialog's Update
-  // routes through it to overwrite an edited block's source span. A no-op until then.
+  // The editor's range-replace seam; the dialog's Update routes through it to overwrite an edited
+  // block's source span.
   let replaceRange = $state.raw<(from: number, to: number, text: string) => void>(() => {});
-  // The editor's select-range seam, registered by MarkdownEditor on mount; the needs-alt notice's
-  // jump control routes through it to land the author on an image that lacks alt. A no-op until then.
+  // The editor's select-range seam; the needs-alt notice's jump control routes through it to land
+  // the author on an image that lacks alt.
   let selectRange = $state.raw<(from: number, to: number) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
-  // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
-  // reads it for the Text field's default.
+  // The editor's current selection; the web link dialog reads it for the Text field's default.
   let getSelection = $state.raw<() => string>(() => '');
-  // The editor's selection range, registered by MarkdownEditor on mount; tidy reads it for the exact
-  // selected span's offset so a selection tidy never maps onto an identical passage earlier in the
-  // document. Returns null when the selection is empty (a bare caret), which reads as document scope.
+  // The editor's selection range; tidy reads it for the exact selected span's offset so a selection
+  // tidy never maps onto an identical passage earlier in the document. Returns null when the
+  // selection is empty (a bare caret), which reads as document scope.
   let getSelectionRange = $state.raw<() => { from: number; to: number } | null>(() => null);
-  // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
+  // The editor's selection transform.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
 
-  // The tidy apply seam, registered by MarkdownEditor on mount; the review surface drives the in-buffer
-  // decorations and the batched apply through it. Null until the editor mounts.
+  // The tidy apply seam (EditorApi.tidy); the review surface drives the in-buffer decorations and
+  // the batched apply through it. Null until the editor mounts.
   let tidyApi = $state.raw<import('./editor-tidy.js').TidyApi | null>(null);
-  // The editor's undo, registered on mount; the Undo-tidy chip calls it. A no-op until then.
+  // The editor's undo; the Undo-tidy chip calls it.
   let undoEditor = $state.raw<() => void>(() => {});
   // The open review's data: the validated change set, the captured original it was diffed against, the
   // scope, and the model. Null when no review is open. The diff positions index `tidyOriginal`, which
@@ -734,8 +736,8 @@ persistent "?" carries Markdown help, design-arc D2).
     tidyAppliedBody = null;
   }
 
-  // The media insert seams, registered by MarkdownEditor on mount, mirroring the range holders
-  // above. The popover drives the optimistic upload loop through them: the caret anchor, the focus
+  // The media insert seams, populated from EditorApi on mount, mirroring the range holders above.
+  // The popover drives the optimistic upload loop through them: the caret anchor, the focus
   // restore, the placeholder api, and the direct-insert path for a picked image. The placeholder
   // api type is referenced inline (import('...').Type), never a static `import type ... from`, so
   // no static edge to the dynamically-imported editor-placeholder module sits in this component
@@ -2272,22 +2274,24 @@ persistent "?" carries Markdown help, design-arc D2).
           bind:value={body}
           name="body"
           {surface}
-          registerInsert={(fn) => (insert = fn)}
+          registerEditor={(api: EditorApi) => {
+            insert = api.insert;
+            insertLink = api.insertLink;
+            getSelection = api.getSelection;
+            caretCoords = api.caretCoords;
+            focusEditor = api.focusEditor;
+            undoEditor = api.undo;
+            format = api.format;
+            replaceRange = api.replaceRange;
+            selectRange = api.selectRange;
+            insertImageFn = api.insertImage;
+            getSelectionRange = api.getSelectionRange;
+            tidyApi = api.tidy;
+            placeholders = api.imagePlaceholders;
+          }}
           onComponentAtCaret={(info) => (caretComponent = info)}
           onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
-          registerReplaceRange={(fn) => (replaceRange = fn)}
-          registerSelectRange={(fn) => (selectRange = fn)}
-          registerInsertLink={(fn) => (insertLink = fn)}
-          registerGetSelection={(fn) => (getSelection = fn)}
-          registerGetSelectionRange={(fn) => (getSelectionRange = fn)}
-          registerFormat={(fn) => (format = fn)}
-          registerTidy={(api) => (tidyApi = api)}
-          registerUndo={(fn) => (undoEditor = fn)}
           {tidyMode}
-          registerCaretCoords={(fn) => (caretCoords = fn)}
-          registerFocusEditor={(fn) => (focusEditor = fn)}
-          registerImagePlaceholders={(api) => (placeholders = api)}
-          registerInsertImage={(fn) => (insertImageFn = fn)}
           onImageIngest={(file) => mediaPopover?.open('capture', file)}
           onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}

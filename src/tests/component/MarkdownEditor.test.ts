@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
-import type { FormatKind } from '../../lib/components/markdown-format.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 
@@ -112,49 +111,49 @@ describe('MarkdownEditor', () => {
       .toContain('mountain weather');
   });
 
-  it('inserts text at the cursor through registerInsert and mirrors it', async () => {
-    let insert: ((text: string) => void) | undefined;
+  it('inserts text at the cursor through registerEditor\'s api.insert and mirrors it', async () => {
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerInsert: (fn: (text: string) => void) => {
-        insert = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof insert).toBe('function');
-    insert!('INSERTED');
+    await expect.poll(() => typeof api?.insert).toBe('function');
+    api!.insert('INSERTED');
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('INSERTED');
   });
 
-  it('inserts an inline link through registerInsertLink', async () => {
-    let insertLink: ((href: string, title: string) => void) | undefined;
+  it("inserts an inline link through registerEditor's api.insertLink", async () => {
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerInsertLink: (fn: (href: string, title: string) => void) => {
-        insertLink = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof insertLink).toBe('function');
-    insertLink!('cairn:pages/about', 'About');
+    await expect.poll(() => typeof api?.insertLink).toBe('function');
+    api!.insertLink('cairn:pages/about', 'About');
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('[About](cairn:pages/about)');
   });
 
-  it('applies a markdown format through registerFormat and mirrors it', async () => {
-    let format: ((kind: FormatKind) => void) | undefined;
+  it("applies a markdown format through registerEditor's api.format and mirrors it", async () => {
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerFormat: (fn: (kind: FormatKind) => void) => {
-        format = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof format).toBe('function');
-    format!('h2');
+    await expect.poll(() => typeof api?.format).toBe('function');
+    api!.format('h2');
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('## start');
@@ -883,23 +882,23 @@ describe('MarkdownEditor', () => {
   it('unfolds in the same transaction when an edit lands on the absorbed opener line', async () => {
     // Ratified 7B: the opener's own fence machinery now folds away into the chip along with the
     // body and the closer, so an edit reaching the opener text (not just the body) must unfold too,
-    // revealing exact source rather than editing hidden text blind. registerReplaceRange mirrors
+    // revealing exact source rather than editing hidden text blind. api.replaceRange mirrors
     // how an in-place rename actually lands (the same seam the dialog's Update and the fold-name
     // sync tests use), landing the change inside the still-folded opener's directive name.
-    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: FOLD_DOC,
       name: 'body',
-      registerReplaceRange: (fn) => {
-        replace = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
-    await expect.poll(() => typeof replace).toBe('function');
+    await expect.poll(() => typeof api?.replaceRange).toBe('function');
     const from = FOLD_DOC.indexOf('panel');
-    replace!(from, from + 'panel'.length, 'callout');
+    api!.replaceRange(from, from + 'panel'.length, 'callout');
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
     // The exact source is back, opener included, with the rename applied.
     expect(lineWith(screen.container, ':::callout{title="Day pass"}')).toBeTruthy();
@@ -1287,19 +1286,19 @@ describe('MarkdownEditor', () => {
     // dedupe equality makes any content change refire with the new source.
     const doc = ['intro', '::::callout[Heads up]', 'body line', '::::', 'outro'].join('\n');
     const reports: ({ name: string | null; markdown: string; from: number; to: number } | null)[] = [];
-    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       onComponentAtCaret: (info) => {
         reports.push(info);
       },
-      registerReplaceRange: (fn) => {
-        replace = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
     await expect.poll(() => lineWith(screen.container, 'body line')).toBeTruthy();
-    await expect.poll(() => typeof replace).toBe('function');
+    await expect.poll(() => typeof api?.replaceRange).toBe('function');
 
     await userEvent.click(lineWith(screen.container, 'body line')!);
     await expect.poll(() => reports.at(-1)?.name).toBe('callout');
@@ -1308,7 +1307,7 @@ describe('MarkdownEditor', () => {
 
     // Replace 'body line' with 'BODY LINE' (same length, so from/to/name are unchanged).
     const from = doc.indexOf('body line');
-    replace!(from, from + 'body line'.length, 'BODY LINE');
+    api!.replaceRange(from, from + 'body line'.length, 'BODY LINE');
 
     await expect.poll(() => reports.at(-1)?.markdown.includes('BODY LINE')).toBe(true);
     const afterSpan = reports.at(-1)!;
@@ -1317,77 +1316,69 @@ describe('MarkdownEditor', () => {
     expect(afterSpan.name).toBe('callout');
   });
 
-  it('replaces a document span through registerReplaceRange', async () => {
+  it("replaces a document span through registerEditor's api.replaceRange", async () => {
     const doc = ['alpha', '::::callout[Old]', 'body', '::::', 'omega'].join('\n');
-    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerReplaceRange: (fn) => {
-        replace = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof replace).toBe('function');
+    await expect.poll(() => typeof api?.replaceRange).toBe('function');
     const from = doc.indexOf('::::callout[Old]');
     const to = doc.indexOf('\n::::\n') + '\n::::'.length;
     const next = ['::::callout[New]', 'fresh body', '::::'].join('\n');
-    replace!(from, to, next);
+    api!.replaceRange(from, to, next);
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe(['alpha', '::::callout[New]', 'fresh body', '::::', 'omega'].join('\n'));
   });
 
-  it('selects a document span, focuses the surface, through registerSelectRange', async () => {
+  it("selects a document span, focuses the surface, through registerEditor's api.selectRange", async () => {
     const doc = 'before ![](media:cat.0123456789abcdef) after';
-    let select: ((from: number, to: number) => void) | undefined;
-    let getSelection: (() => string) | undefined;
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerSelectRange: (fn: (from: number, to: number) => void) => {
-        select = fn;
-      },
-      registerGetSelection: (fn: () => string) => {
-        getSelection = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof select).toBe('function');
-    await expect.poll(() => typeof getSelection).toBe('function');
+    await expect.poll(() => typeof api?.selectRange).toBe('function');
+    await expect.poll(() => typeof api?.getSelection).toBe('function');
     const from = doc.indexOf('![');
     const to = from + '![](media:cat.0123456789abcdef)'.length;
-    select!(from, to);
+    api!.selectRange(from, to);
     await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
-    expect(getSelection!()).toBe('![](media:cat.0123456789abcdef)');
+    expect(api!.getSelection()).toBe('![](media:cat.0123456789abcdef)');
   });
 
-  it('reports the selection range through registerGetSelectionRange, and null when empty', async () => {
+  it("reports the selection range through registerEditor's api.getSelectionRange, and null when empty", async () => {
     // The tidy host needs the selection's exact document offsets, not just its text, so a repeated
     // passage maps a selection tidy onto the actually-selected occurrence. This seam returns the
     // range; an empty selection (a bare caret) returns null so the host falls back to document scope.
     const doc = 'colour and colour again';
-    let select: ((from: number, to: number) => void) | undefined;
-    let getSelectionRange: (() => { from: number; to: number } | null) | undefined;
+    let api: EditorApi | undefined;
     await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerSelectRange: (fn: (from: number, to: number) => void) => {
-        select = fn;
-      },
-      registerGetSelectionRange: (fn: () => { from: number; to: number } | null) => {
-        getSelectionRange = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof select).toBe('function');
-    await expect.poll(() => typeof getSelectionRange).toBe('function');
+    await expect.poll(() => typeof api?.selectRange).toBe('function');
+    await expect.poll(() => typeof api?.getSelectionRange).toBe('function');
     // The second "colour" begins at index 11, not the first at index 0.
     const from = doc.lastIndexOf('colour');
     const to = from + 'colour'.length;
-    select!(from, to);
-    await expect.poll(() => getSelectionRange!()?.from).toBe(from);
-    expect(getSelectionRange!()).toEqual({ from, to });
+    api!.selectRange(from, to);
+    await expect.poll(() => api!.getSelectionRange()?.from).toBe(from);
+    expect(api!.getSelectionRange()).toEqual({ from, to });
     // Collapsing the selection to a bare caret reports null.
-    select!(to, to);
-    await expect.poll(() => getSelectionRange!()).toBeNull();
+    api!.selectRange(to, to);
+    await expect.poll(() => api!.getSelectionRange()).toBeNull();
   });
 
   it('offers and applies a cairn link through the [[ autocomplete', async () => {
@@ -1455,17 +1446,17 @@ describe('MarkdownEditor', () => {
     return new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], name, { type });
   }
 
-  it('inserts an inline image at the caret through registerInsertImage', async () => {
-    let insertImage: ((alt: string, ref: string) => void) | undefined;
+  it("inserts an inline image at the caret through registerEditor's api.insertImage", async () => {
+    let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerInsertImage: (fn: (alt: string, ref: string) => void) => {
-        insertImage = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
-    await expect.poll(() => typeof insertImage).toBe('function');
-    insertImage!('A trail map', `media:trail-map.${HASH_A}`);
+    await expect.poll(() => typeof api?.insertImage).toBe('function');
+    api!.insertImage('A trail map', `media:trail-map.${HASH_A}`);
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain(`![A trail map](media:trail-map.${HASH_A})`);

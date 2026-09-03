@@ -156,7 +156,8 @@ const placeholderField = StateField.define<PlaceholderState>({
 /**
  * The seam the host drives: begin lands a placeholder and returns its id; progress moves its bar;
  *  resolveTo swaps it for the committed image text; cancel removes it leaving the source untouched.
- *  Mirrors the register-callback idiom MarkdownEditor uses for its other editor ops.
+ *  Reached through EditorApi.imagePlaceholders, the object grant MarkdownEditor's registerEditor
+ *  hands the host on mount.
  */
 export interface ImagePlaceholderApi {
   /** Land an optimistic placeholder at the current caret from a local object URL; returns its id. */
@@ -183,8 +184,9 @@ export function cairnImagePlaceholders(): Extension {
 }
 
 /**
- * Build the api that drives the placeholders against one editor view. The host registers it through
- * registerImagePlaceholders; the insert popover calls begin, progress, resolveTo, and cancel.
+ * Build the api that drives the placeholders against one editor view. The host receives it as
+ * EditorApi.imagePlaceholders through registerEditor; the insert popover calls begin, progress,
+ * resolveTo, and cancel.
  */
 export function imagePlaceholderApi(view: EditorView): ImagePlaceholderApi {
   const api: ImagePlaceholderApi = {

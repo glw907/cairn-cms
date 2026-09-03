@@ -402,6 +402,10 @@ open edits, not part of the shape itself.
   `mediainsertpopover-export`), which also stays internal, deferred until the `MarkdownEditor` seam
   collapse. The evidenced ASC need was selection and display, which the newly exported
   `MediaPicker` serves.
+- **Progress (internals pass, Task 7, 2026-09-02):** `MediaHeroField` names no `register*` prop
+  itself (its own upload/save-path wiring is untouched by the collapse), so the collapse landing
+  changes nothing about this component's shape or its export case. Re-examined against the
+  executed `EditorApi` shape: no new evidence surfaced.
 - **Reopens on:** a second consumer needing the whole save-path field rather than selection alone.
 - **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
 
@@ -411,9 +415,17 @@ open edits, not part of the shape itself.
   ruling previously lived only as a sub-clause of `mediaherofield-export`. Same objection sustained
   against `MediaHeroField`: it is `MarkdownEditor`/`EditPage` save-path wiring, not a selection
   surface, so publishing it advertises internal composition rather than a seam a consumer needs.
-- **Reopens on:** the `MarkdownEditor` seam collapse, the same reshape tracked at
-  `audit-admin-markdowneditor`, which is where this component's own wiring props are due to be
-  re-examined.
+- **Progress (internals pass, Task 7, 2026-09-02): the reopen trigger fired, re-examined, verdict
+  stands.** The collapse landed: `MarkdownEditor`'s `registerEditor` now hands `EditPage` the full,
+  exported `EditorApi` (13 members). `MediaInsertPopover`'s own `editor` prop still narrows that
+  down to the four members it drives (`caretCoords`, `focusEditor`, `placeholders`,
+  `insertImage`) through `EditPage`'s local wrapper, unchanged by the collapse: the component's
+  composition role is identical, and nothing about the collapse evidences a consumer that needs
+  `MediaInsertPopover` itself rather than the seams it composes. The decline stands.
+- **Reopens on:** a second consumer needing the whole popover composition (not just the seams it
+  drives), evidenced the way `mediaherofield-export`'s condition requires. The earlier "the
+  `MarkdownEditor` seam collapse" trigger is spent: that collapse has now executed and produced no
+  new evidence, so it cannot reopen this row a second time.
 - **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; originally recorded as a sub-clause of `mediaherofield-export` above.
 
 ## isuniqueviolation-cloudflare: `isUniqueViolation` in `/cloudflare`  (defer, 2026-08-26, toolkit-seams pass; recorded 2026-09-01, promoted from the friction log at the 4b conformance pass close since the plan's own intent to record this defer here at pass close was not actually carried out)
@@ -2935,8 +2947,24 @@ when the remediation pass lands.
 ## audit-admin-markdowneditor: `MarkdownEditor`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site mounting the bare CodeMirror surface with its own chrome, supplying controls through registerFormat, gets markdown-aware lint, GFM parsing, the directive rails, and the editor face — reachable no other way.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Shape:** Collapse the roughly twenty Unstable EditPage wiring props into one non-exported internal composition object, publishing only the eleven stable bare-surface props.
+- **Reopens on:** closed. Executed by the internals pass, Task 7 (2026-09-02). The 13 `register*`
+  props (11 per-capability callbacks plus the two object grants, `registerTidy` and
+  `registerImagePlaceholders`) collapsed into one `registerEditor?: (api: EditorApi) => void`;
+  `Props` now reads `extends StableEditorProps, EditPageWiringProps`. `EditorApi` is a real
+  export of `MarkdownEditor.svelte` (not re-exported through the `/components` barrel, the same
+  posture `FormatKind`/`TidyApi`/`ImagePlaceholderApi` already held), documented on
+  `docs/reference/components.md` with its full member grammar. `spellcheckTest` is pinned
+  documented-unstable, enforced by the new `check:reference` props-vs-reference clause.
+- **Usage evidence:** neither the showcase nor any in-repo fixture mounts `MarkdownEditor` directly
+  with a `register*` prop (`grep -rn` across `examples/showcase/src` turns up nothing); every
+  reachable direct-mount caller is a test, migrated in the same task. The breaking `Consumers
+  must:` line in `CHANGELOG.md` names the recovery for the theoretical external direct-mount case
+  the stability tier promises, not an evidenced one.
+- **Shape:** reconciled to the executed shape (ruling 1). The ledger's earlier "roughly twenty
+  Unstable EditPage wiring props into one non-exported internal composition object, publishing
+  only the eleven stable bare-surface props" text undercounted (13 register* props, not
+  "roughly twenty") and mis-scoped the shape (the grant object is a real, documented export, not
+  an internal-only composition). The executed shape is the one in the Verdict line above.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 55.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 

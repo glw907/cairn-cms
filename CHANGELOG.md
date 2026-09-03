@@ -170,6 +170,23 @@
 
 ### Changed
 
+- `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
+  ruling 1: the MarkdownEditor seam collapse) into one `registerEditor?: (api: EditorApi) => void`.
+  `EditorApi` hands the host the full buffer-scoped editing surface on mount: `insert`,
+  `insertLink`, `getSelection`, `caretCoords`, `focusEditor`, `undo`, `format`, `replaceRange`,
+  `selectRange`, `insertImage`, `getSelectionRange`, `tidy` (formerly the `registerTidy` object
+  grant), and `imagePlaceholders` (formerly `registerImagePlaceholders`). Every `registerEditor`
+  caller now receives the whole surface uniformly, where the retired shape handed each caller back
+  only the one callback or object it wired. `spellcheckTest` stays documented-unstable, pinned by
+  a new `check:reference` clause that diffs every exported component's props against its own
+  reference-page section. See `docs/reference/components.md`'s `MarkdownEditor` section for the
+  full grammar. Consumers must: replace any `register*` prop passed to `MarkdownEditor` directly
+  (`registerInsert`, `registerInsertLink`, `registerInsertImage`, `registerCaretCoords`,
+  `registerFocusEditor`, `registerImagePlaceholders`, `registerGetSelection`,
+  `registerGetSelectionRange`, `registerTidy`, `registerUndo`, `registerFormat`,
+  `registerReplaceRange`, `registerSelectRange`) with one `registerEditor` callback that reads the
+  matching member off the `EditorApi` it receives.
+
 - The log vocabulary's remaining ten evenness defects close, across every emit site and the
   reference table. Two events rename, four records change shape, one field is dropped, and two
   session-teardown records now fire only when a row was actually destroyed.

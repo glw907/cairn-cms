@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
 import { COLD_START, makeFakeWorker } from './_fake-spell-worker.js';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
@@ -64,21 +64,21 @@ describe('fold-control disclosure semantics', () => {
 describe('fold-control name stays in sync with an in-place directive rename', () => {
   it('updates the gutter aria-label when the opener directive is renamed in place', async () => {
     const doc = ':::note\nbody line one\nbody line two\n:::\n';
-    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    let api: EditorApi | undefined;
     const { container } = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
-        replace = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
     const before = container.querySelector('.cm-cairn-fold-btn')!.getAttribute('aria-label');
     expect(before).toBe('note section');
-    await expect.poll(() => typeof replace).toBe('function');
+    await expect.poll(() => typeof api?.replaceRange).toBe('function');
     // Rename the opener in place: same span, same fold state, caret lands on the opener line.
     const from = doc.indexOf('note');
-    replace!(from, from + 'note'.length, 'warning');
+    api!.replaceRange(from, from + 'note'.length, 'warning');
     await expect
       .poll(() => container.querySelector('.cm-cairn-fold-btn')?.getAttribute('aria-label'), COLD_START)
       .toBe('warning section');
@@ -112,13 +112,13 @@ describe('a folded container unfolds on an in-place directive rename, revealing 
       ],
     });
     const doc = ':::note\nbody line one\nbody line two\n:::\n';
-    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    let api: EditorApi | undefined;
     const { container } = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       registry,
-      registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
-        replace = fn;
+      registerEditor: (a: EditorApi) => {
+        api = a;
       },
     });
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
@@ -127,10 +127,10 @@ describe('a folded container unfolds on an in-place directive rename, revealing 
     expect(container.querySelector('.cm-cairn-fold-pill')!.getAttribute('title')).toBe(
       'Use for a supporting aside.',
     );
-    await expect.poll(() => typeof replace).toBe('function');
+    await expect.poll(() => typeof api?.replaceRange).toBe('function');
     // Rename note -> warning while folded: the edit lands on the absorbed opener and unfolds.
     const from = doc.indexOf('note');
-    replace!(from, from + 'note'.length, 'warning');
+    api!.replaceRange(from, from + 'note'.length, 'warning');
     await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeNull();
     expect(
       Array.from(container.querySelectorAll('.cm-line')).some((l) => l.textContent?.includes(':::warning')),

@@ -374,6 +374,155 @@ export function missingIndexedAccessParentheticals(names, pageText) {
   return offenders;
 }
 
+// Task 7's props-vs-reference clause (an extension of this gate, not a new script per the plan's
+// tie-break rule): a component's own Props keys, diffed against its reference-page section.
+//
+// A component's per-file dist declaration carries its Props shape under one of two names,
+// depending on how svelte-package generated it: a local `interface Props { ... }` when the
+// component's own script declares one explicitly (the common case, and the one an `extends`
+// composition such as MarkdownEditor's `Props extends StableEditorProps, EditPageWiringProps`
+// still uses), or a synthesized `type $$ComponentProps = { ... }` alias when it does not (a
+// component whose `$props()` destructuring types its shape inline, such as HelpHome and
+// WelcomeView).
+const PROPS_TYPE_NAMES = ['Props', '$$ComponentProps'];
+
+// The Props member names a component's own dist `.svelte.d.ts` declares, resolved through the type
+// checker (`type.getProperties()`) so an `interface Props extends A, B` reports A's and B's
+// members too, not just Props' own declared ones. Null when the file declares neither known Props
+// shape.
+/** @param {string} dtsPath */
+export function componentPropsNames(dtsPath) {
+  const { checker, source } = loadDts(dtsPath);
+  for (const shapeName of PROPS_TYPE_NAMES) {
+    const decl = source.statements.find(
+      (s) => (ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s)) && s.name.text === shapeName,
+    );
+    if (!decl) continue;
+    const type = checker.getTypeAtLocation(decl);
+    return type.getProperties().map((p) => p.name).sort();
+  }
+  return null;
+}
+
+// The doc window for one component's own `### `Name`` section on the components reference page:
+// from its heading to the next h2 or h3 heading, deliberately never stopping at an h4, so a
+// component's own sub-section under an h4 (MarkdownEditor's "wiring props (Unstable API)" table)
+// stays inside its owning component's window rather than falling out of scope. Null when the page
+// carries no such heading for `name`.
+/**
+ * @param {string} name
+ * @param {string} pageText
+ * @returns {string | null}
+ */
+export function componentSectionWindow(name, pageText) {
+  const escaped = name.replace(/[$]/g, '\\$&');
+  const headingRe = new RegExp(`^###\\s+\`${escaped}\`\\s*$`, 'm');
+  const m = headingRe.exec(pageText);
+  if (!m) return null;
+  const after = pageText.slice(m.index + m[0].length);
+  const closer = /^#{2,3}[ \t]/m;
+  const next = closer.exec(after);
+  return m[0] + (next ? after.slice(0, next.index) : after);
+}
+
+// The prop names from `names` that never appear as a whole-word token anywhere in `sectionText`
+// (the owning component's own doc window, not the whole page). Mirrors `missingNames`, scoped per
+// component so an undocumented prop on a page covering many components is attributed to the right
+// one, not lost in the page-wide pool.
+/**
+ * @param {string[]} names
+ * @param {string} sectionText
+ * @returns {string[]}
+ */
+export function missingComponentProps(names, sectionText) {
+  return names.filter((name) => {
+    const escaped = name.replace(/[$]/g, '\\$&');
+    return !new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(sectionText);
+  });
+}
+
+// A Props member that is documented, but PINNED unstable so it never quietly promotes into the
+// component's frozen stable contract even though a plain presence check (missingComponentProps)
+// passes it regardless of which part of the section names it. Ruling 1 / S-10:
+// MarkdownEditor's `spellcheckTest` is a test-only Worker-factory seam that must stay out of
+// `StableEditorProps`. Each entry is checked against the component's own STABLE snippet (see
+// `stableSnippet` below), which must never name the pinned prop.
+/** @type {{ component: string, prop: string, reason: string }[]} */
+export const DOCUMENTED_UNSTABLE_PROPS = [
+  {
+    component: 'MarkdownEditor',
+    prop: 'spellcheckTest',
+    reason:
+      'a test-only Worker-factory seam for the component test harness (the real wasm and ' +
+      'dictionary assets do not load under the vitest browser runner); pinning it here stops it ' +
+      'quietly joining the frozen stable snippet the way an ordinary documented prop would.',
+  },
+];
+
+// Every DOCUMENTED_UNSTABLE_PROPS entry must carry a non-empty reason, the same fail-unless-
+// recorded idiom the narrative-context allowlist uses.
+/** @param {{ component: string, prop: string, reason: string }[]} registry */
+export function assertDocumentedUnstableReasoned(registry) {
+  for (const entry of registry) {
+    if (!entry.reason || !entry.reason.trim()) {
+      throw new Error(`documented-unstable entry for ${entry.component}.${entry.prop} has no reason`);
+    }
+  }
+}
+
+// The component's own stable-contract snippet: the first fenced ```ts/```typescript block inside
+// its section window, the convention every component page's frozen-contract listing opens with
+// (the `let { ... }: { ... } = $props();` destructuring). Empty string when the section carries no
+// such block, so a pinned prop trivially fails to appear in it.
+/** @param {string} sectionText */
+function stableSnippet(sectionText) {
+  return tsFencedBlocks(sectionText)[0] ?? '';
+}
+
+// The DOCUMENTED_UNSTABLE_PROPS entries for `component` whose pinned prop has crept into its own
+// stable snippet, which would silently promote it into the frozen contract the snippet documents.
+/**
+ * @param {string} component
+ * @param {string} sectionText
+ * @param {{ component: string, prop: string, reason: string }[]} [registry]
+ * @returns {string[]}
+ */
+export function promotedUnstableProps(component, sectionText, registry = DOCUMENTED_UNSTABLE_PROPS) {
+  const snippet = stableSnippet(sectionText);
+  return registry
+    .filter((e) => e.component === component)
+    .filter((e) => {
+      const escaped = e.prop.replace(/[$]/g, '\\$&');
+      return new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(snippet);
+    })
+    .map((e) => e.prop);
+}
+
+// One component's props-vs-reference result: `missing` (an undocumented Props key), `promoted` (a
+// documented-unstable pin that crept into the stable snippet), and `noSection` (the page carries no
+// `### `name`` heading at all, so every real prop is trivially missing). Null when the component's
+// dist declaration carries no Props shape (nothing to check).
+/**
+ * @param {string} name
+ * @param {string} dtsPath
+ * @param {string} pageText
+ */
+export function checkComponentProps(name, dtsPath, pageText) {
+  if (!existsSync(dtsPath)) return null;
+  const names = componentPropsNames(dtsPath);
+  if (!names || names.length === 0) return null;
+  const section = componentSectionWindow(name, pageText);
+  if (section === null) {
+    return { component: name, missing: names, promoted: [], noSection: true };
+  }
+  return {
+    component: name,
+    missing: missingComponentProps(names, section),
+    promoted: promotedUnstableProps(name, section),
+    noSection: false,
+  };
+}
+
 // One reference page per importable subpath. `excludeDts` drops a re-exported surface that is
 // documented on its own page: /delivery re-exports all of /delivery/data, so the delivery page
 // documents only its own additions. The /delivery/head entry points at the same delivery.md page,
@@ -597,6 +746,36 @@ function main() {
       failed = true;
     } else {
       console.log(`OK ${r.subpath} (${r.page})`);
+    }
+  }
+  // The props-vs-reference clause runs once over every exported component, only when the run
+  // covers /components (an `--only` run for another subpath has nothing to check).
+  const componentsEntry = entries.find((e) => e.subpath === '/components');
+  if (componentsEntry) {
+    assertDocumentedUnstableReasoned(DOCUMENTED_UNSTABLE_PROPS);
+    const indexPath = resolve(ROOT, componentsEntry.dts);
+    if (!existsSync(indexPath)) throw new Error(`missing ${componentsEntry.dts}; run "npm run package" first`);
+    const pageText = readFileSync(resolve(ROOT, componentsEntry.page), 'utf8');
+    for (const name of enumerateExports(indexPath)) {
+      const dtsPath = resolve(ROOT, `dist/components/${name}.svelte.d.ts`);
+      const r = checkComponentProps(name, dtsPath, pageText);
+      if (!r) continue;
+      if (r.noSection) {
+        console.error(`/components props (${componentsEntry.page}): ${r.component} has no own section on the page`);
+        failed = true;
+      } else if (r.missing.length) {
+        console.error(
+          `/components props (${componentsEntry.page}): ${r.component} ${r.missing.length} undocumented prop(s): ${r.missing.join(', ')}`,
+        );
+        failed = true;
+      } else if (r.promoted.length) {
+        console.error(
+          `/components props (${componentsEntry.page}): ${r.component} documented-unstable prop(s) crept into the stable snippet: ${r.promoted.join(', ')}`,
+        );
+        failed = true;
+      } else {
+        console.log(`OK /components props (${r.component})`);
+      }
     }
   }
   process.exit(failed ? 1 : 0);

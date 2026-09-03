@@ -12,6 +12,14 @@ import {
   NARRATIVE_CONTEXT_ALLOWLIST,
   missingIndexedAccessParentheticals,
   leakNamesForSubpath,
+  componentPropsNames,
+  componentSectionWindow,
+  missingComponentProps,
+  promotedUnstableProps,
+  checkComponentProps,
+  assertDocumentedUnstableReasoned,
+  DOCUMENTED_UNSTABLE_PROPS,
+  CONFIG,
 } from '../../../scripts/checks/reference-coverage.mjs';
 import { loadRegistry } from '../../../scripts/checks/check-surface-leaks.mjs';
 
@@ -372,5 +380,169 @@ describe('NARRATIVE_CONTEXT_ALLOWLIST (the render trio, F-1 list (c) Tier 4)', (
   it('records core.md as the render trio\'s narrative-context page', () => {
     const coreEntry = NARRATIVE_CONTEXT_ALLOWLIST.find((e) => e.page === 'docs/reference/core.md');
     expect(coreEntry?.names).toEqual(['cardShell', 'headRow', 'iconSpan']);
+  });
+});
+
+describe('componentPropsNames (Task 7, the props-vs-reference clause)', () => {
+  it('reads a local `interface Props` declaration', () => {
+    expect(componentPropsNames(fixture('component-props-a.d.ts'))).toEqual(['bar', 'foo']);
+  });
+
+  it('falls back to a synthesized `$$ComponentProps` alias when there is no local Props interface', () => {
+    // svelte-package emits this shape for a component whose $props() destructuring types its
+    // shape inline (no local `interface Props`), such as HelpHome and WelcomeView.
+    expect(componentPropsNames(fixture('component-props-b.d.ts'))).toEqual(['data']);
+  });
+
+  it('resolves inherited members through an `extends` composition, not just Props\' own', () => {
+    // Mirrors MarkdownEditor's `interface Props extends StableEditorProps, EditPageWiringProps`:
+    // Props itself declares no members, so a naive AST scan of only its own body would find none.
+    expect(componentPropsNames(fixture('component-props-extends.d.ts'))).toEqual([
+      'registerEditor',
+      'spellcheckTest',
+      'value',
+    ]);
+  });
+});
+
+describe('componentSectionWindow', () => {
+  const pageText = readFileSync(fixture('component-props-page.md'), 'utf8');
+
+  it('captures a component\'s own `### `Name`` section up to the next h2/h3', () => {
+    const window = componentSectionWindow('CompA', pageText);
+    expect(window).toContain('let { foo }');
+    expect(window).not.toContain('CompC');
+  });
+
+  it('spans through an owned h4 sub-section (a wiring-props table under the same component)', () => {
+    const window = componentSectionWindow('CompC', pageText);
+    expect(window).toContain('registerEditor');
+    expect(window).toContain('spellcheckTest');
+  });
+
+  it('returns null for a name with no heading on the page', () => {
+    expect(componentSectionWindow('Nowhere', pageText)).toBeNull();
+  });
+});
+
+describe('missingComponentProps', () => {
+  it('flags a real Props key the component\'s own section never mentions (failing-first proof)', () => {
+    const pageText = readFileSync(fixture('component-props-page.md'), 'utf8');
+    const section = componentSectionWindow('CompA', pageText)!;
+    expect(missingComponentProps(['foo', 'bar'], section)).toEqual(['bar']);
+  });
+
+  it('passes once every key is mentioned somewhere in the section', () => {
+    const pageText = readFileSync(fixture('component-props-page.md'), 'utf8');
+    const section = componentSectionWindow('CompC', pageText)!;
+    expect(missingComponentProps(['registerEditor', 'spellcheckTest', 'value'], section)).toEqual([]);
+  });
+});
+
+describe('promotedUnstableProps (ruling 1 / S-10: spellcheckTest pinned documented-unstable)', () => {
+  const pageText = readFileSync(fixture('component-props-page.md'), 'utf8');
+  const section = componentSectionWindow('CompC', pageText)!;
+  const registry = [{ component: 'CompC', prop: 'spellcheckTest', reason: 'test-only pin.' }];
+
+  it('holds the pin: the prop stays out of the stable snippet (the first fenced block)', () => {
+    expect(promotedUnstableProps('CompC', section, registry)).toEqual([]);
+  });
+
+  it('flags a pin that crept into the stable snippet', () => {
+    const promoted = [
+      '### `CompC`',
+      '',
+      '```ts',
+      'let { value, spellcheckTest }: { value: string; spellcheckTest?: unknown } = $props();',
+      '```',
+    ].join('\n');
+    expect(promotedUnstableProps('CompC', promoted, registry)).toEqual(['spellcheckTest']);
+  });
+
+  it('ignores an entry for a different component', () => {
+    const other = [{ component: 'SomeoneElse', prop: 'spellcheckTest', reason: 'unrelated.' }];
+    expect(promotedUnstableProps('CompC', section, other)).toEqual([]);
+  });
+});
+
+describe('assertDocumentedUnstableReasoned', () => {
+  it('is reasoned: every real entry carries a non-empty reason', () => {
+    expect(() => assertDocumentedUnstableReasoned(DOCUMENTED_UNSTABLE_PROPS)).not.toThrow();
+  });
+
+  it('rejects an entry with no reason (the fail-unless-recorded idiom)', () => {
+    expect(() =>
+      assertDocumentedUnstableReasoned([{ component: 'X', prop: 'y', reason: '' }]),
+    ).toThrow(/no reason/);
+  });
+
+  it('pins MarkdownEditor.spellcheckTest, per ruling 1', () => {
+    const entry = DOCUMENTED_UNSTABLE_PROPS.find(
+      (e) => e.component === 'MarkdownEditor' && e.prop === 'spellcheckTest',
+    );
+    expect(entry).toBeTruthy();
+  });
+});
+
+describe('checkComponentProps (composed)', () => {
+  const pageText = readFileSync(fixture('component-props-page.md'), 'utf8');
+
+  it('reports a real undocumented prop as missing', () => {
+    const r = checkComponentProps('CompA', fixture('component-props-a.d.ts'), pageText);
+    expect(r).toMatchObject({ component: 'CompA', missing: ['bar'], promoted: [], noSection: false });
+  });
+
+  it('reports clean for a fully documented component', () => {
+    const r = checkComponentProps('CompC', fixture('component-props-extends.d.ts'), pageText);
+    expect(r).toMatchObject({ component: 'CompC', missing: [], promoted: [], noSection: false });
+  });
+
+  it('reports noSection when the page carries no heading for the component at all', () => {
+    const r = checkComponentProps('CompA', fixture('component-props-a.d.ts'), 'nothing about it here.');
+    expect(r).toMatchObject({ component: 'CompA', missing: ['bar', 'foo'], noSection: true });
+  });
+
+  it('returns null for a component whose declaration carries no Props shape', () => {
+    // A component with truly zero props is not among today's exported set, so this exercises the
+    // null branch directly through a dts with neither known shape name (rescope-a.d.ts, a bare
+    // value export fixture from the stale-names suite above).
+    expect(componentPropsNames(fixture('rescope-a.d.ts'))).toBeNull();
+    expect(checkComponentProps('fromA', fixture('rescope-a.d.ts'), pageText)).toBeNull();
+  });
+});
+
+describe('the props gate is clean on the real /components surface (Task 7)', () => {
+  // The corpus is the real exported component set, read the same way main() does: every default
+  // export of dist/components/index.d.ts, diffed against its own section on components.md.
+  const componentsEntry = CONFIG.find((e: { subpath: string }) => e.subpath === '/components')!;
+  const indexPath = resolve(ROOT, componentsEntry.dts);
+  const pageText = readFileSync(resolve(ROOT, componentsEntry.page), 'utf8');
+
+  it(
+    'finds no missing or promoted props on any real exported component',
+    () => {
+      const names = enumerateExports(indexPath);
+      expect(names.length).toBeGreaterThan(10); // a corpus sanity floor, never a hard-coded list
+      const offenders = names
+        .map((name) => checkComponentProps(name, resolve(ROOT, `dist/components/${name}.svelte.d.ts`), pageText))
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .filter((r) => r.noSection || r.missing.length > 0 || r.promoted.length > 0);
+      expect(offenders).toEqual([]);
+    },
+    // A fresh ts.createProgram per component (~19 of them) is slow under full-suite parallel
+    // contention; the default 30s budget is tight even though a standalone run clears it easily.
+    60000,
+  );
+
+  it('keeps MarkdownEditor\'s registerEditor free of any bare register* callback', () => {
+    const names = componentPropsNames(resolve(ROOT, 'dist/components/MarkdownEditor.svelte.d.ts'))!;
+    const bareRegisterCallbacks = names.filter((n) => n.startsWith('register') && n !== 'registerEditor');
+    expect(bareRegisterCallbacks).toEqual([]);
+    expect(names).toContain('registerEditor');
+  });
+
+  it('keeps spellcheckTest out of MarkdownEditor\'s stable snippet', () => {
+    const section = componentSectionWindow('MarkdownEditor', pageText)!;
+    expect(promotedUnstableProps('MarkdownEditor', section)).toEqual([]);
   });
 });

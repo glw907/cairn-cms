@@ -18,20 +18,21 @@ until the polish slice per the amended initiative design. CI on `main` is fully 
 
 ## Immediate next action
 
-**The internals pass awaits Geoff's plan approval.** The plan at
-`docs/superpowers/plans/2026-09-01-internals-pass.md` is twice-reviewed (three-lens round 1
-folded, round-2 engine-triage verification passed, fixes applied): 13 tasks, ceiling 6.5M,
-checkpoints at 4/8/12, workflow mode. **One confirmation item rides the approval: the
-ratified CAIRN_DEV_BACKEND refusal's letter is amended** from "refuse when set" to "refuse
-when set AND non-local" (the flag's `='1'` value is the dev transport's own enable
-contract, so the ruled sense would break the showcase exemplar; both round-1 security and
-round-2 triage verified the amendment executes the ruling's intent). After approval, the
-one remaining pre-dispatch step is reconciling the plan's line anchors against merged
-`main`, then execution starts on a fresh worktree `.claude/worktrees/internals` off `main`
-(from-scratch showcase `npm ci` before trusting any e2e). Resume prompt for a fresh
-session: "In ~/Projects/cairn-cms, invoke cairn-pass and start the internals pass:
-read docs/STATUS.md and the plan, reconcile the plan's anchors against merged main,
-confirm the approval state, then execute per the plan's workflow mode."
+**The internals pass is EXECUTING (approved 2026-09-02; the CAIRN_DEV_BACKEND letter
+amendment was confirmed with the approval). Chunk one (Tasks 1-4) is landed:** the
+check:self-use gate, the F-1 leak rider, the staleNames per-subpath rescope, and the
+editor-quotes/vale task, eight commits through `ee05140b` plus one surgical fix round in
+flight on the quote extractor's multi-script-block gap. Worktree
+`.claude/worktrees/internals`; workflow run `wf_87445ff5-d58` (resume with
+pass-execute.js + resumeFromRunId; NOTE: its agent cache is same-process only, so a
+resume after a process restart re-verifies rather than replays). Next: dispatch chunk
+two (Tasks 5-8), then 9-12 (Task 11's ROADMAP re-file is AMENDED to the ratified B/C
+split: internals-B = four monolith splits, internals-C = coherence; see the ratified
+section of `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` on
+main), then Task 13, then the pass-end ritual. Spend through chunk one: rough estimate
+1.5-2M of the 6.5M ceiling (conductor-side metering is coarse; re-verify overhead from
+two process restarts included). Guards: runaway watcher, dual sleep inhibitors
+(suspend-only), battery watchdog (11% floor), /loop heartbeat.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

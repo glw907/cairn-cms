@@ -994,9 +994,13 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       // The record keys on THIS flow's correlation id, the one the confirm already derived, and
       // takes nothing from the deleted row: that row belongs to the incoming cookie's session,
       // which need not be the subject this confirm just proved, so pairing the two identities in
-      // one record would silently link them. It fires only when a row was actually destroyed.
+      // one record would silently link them. It fires only when a row was actually destroyed and
+      // was still live (its `expiresAt` in the future); the delete itself stays unconditional
+      // either way.
       const destroyed = await destroyChannelSession(session, await hashToken(existingSessionToken));
-      if (destroyed !== null) log.info('auth.channel.session.destroyed', { correlationId });
+      if (destroyed !== null && destroyed.expiresAt > now) {
+        log.info('auth.channel.session.destroyed', { correlationId });
+      }
     }
 
     const sessionToken = generateToken();
@@ -1032,13 +1036,17 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     event.cookies.delete(pendingCookie, { path: '/', secure });
 
     if (token) {
+      const now = Date.now();
       const session = await resolveVerifiedSession(event.platform?.env);
       if (session) {
-        const subject = await destroyChannelSession(session, await hashToken(token));
-        // Logged only where a row was actually destroyed: a request with no session cookie, one
-        // whose db is unavailable, and one whose cookie names no row all destroy nothing and must
-        // not fire this record (log-events.md's logout row states this condition).
-        if (subject !== null) await logSessionDestroyed(session, subject, 'logout');
+        const destroyed = await destroyChannelSession(session, await hashToken(token));
+        // Logged only where a row was actually destroyed and was still live: a request with no
+        // session cookie, one whose db is unavailable, one whose cookie names no row, and one
+        // whose row had already expired all destroy nothing worth recording (log-events.md's
+        // logout row states this condition). The delete itself stays unconditional either way.
+        if (destroyed !== null && destroyed.expiresAt > now) {
+          await logSessionDestroyed(session, destroyed.subject, 'logout');
+        }
       }
     }
 
@@ -1085,7 +1093,9 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         // provable one, not an assumption that the read and the delete still agree.
         const revokeSession = database.withSession('first-primary');
         const destroyed = await destroyChannelSession(revokeSession, tokenHash);
-        if (destroyed !== null) await logSessionDestroyed(revokeSession, destroyed, 'revoke');
+        if (destroyed !== null && destroyed.expiresAt > now) {
+          await logSessionDestroyed(revokeSession, destroyed.subject, 'revoke');
+        }
         return null;
       }
     }

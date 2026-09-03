@@ -237,12 +237,15 @@
 
   `auth.session.destroyed` and `auth.channel.session.destroyed` now name their subject.
   `deleteSession` and `destroyChannelSession` both delete with `RETURNING`, one statement and one
-  round trip as before, and answer with the row's own email or subject. The magic-link record
-  carries that email; the channel record never carries the roster subject, only the same
-  pseudonymous `correlationId` the request flow derives from it, and the channel's third teardown
-  path, a session `resolveSubject` revokes when the site's `verify` hook refuses it, now emits the
-  record too instead of revoking silently. Both events fire only when a row was actually
-  destroyed, so a stale cookie naming no row leaves no record.
+  round trip and unconditional as before (an expired row still gets removed), and answer with the
+  row's own email or subject plus its expiry. The magic-link record carries that email; the
+  channel record never carries the roster subject, only the same pseudonymous `correlationId` the
+  request flow derives from it, and the channel's third teardown path, a session `resolveSubject`
+  revokes when the site's `verify` hook refuses it, now emits the record too instead of revoking
+  silently. Both events fire only when a row was actually destroyed AND was still live at the
+  moment of deletion, its `expires_at` in the future: a stale cookie naming no row, or one naming
+  an already-expired row, leaves no record, so the event's meaning stays stable for a site
+  building alerting on it, "a live session ended."
 
   `commit.succeeded` and `commit.failed` stop overloading `concept` with the four non-entry
   surfaces. An entry commit still carries `concept`; a nav, settings, vocabulary, or media commit
@@ -265,8 +268,9 @@
   `publish.address_collision` to `publish.address_collided` in any log filter or alert; read
   `scope` rather than `concept` on a `commit.succeeded`/`commit.failed` for a nav, settings,
   vocabulary, or media commit; expect no `auth.session.destroyed` or
-  `auth.channel.session.destroyed` record when a logout's session id or token names no row, so an
-  alert counting sign-outs now counts real ones only; read `wordCount` rather than `words` on
+  `auth.channel.session.destroyed` record when a logout's session id or token names no row, or
+  names a row that had already expired, so an alert counting sign-outs now counts live ones only;
+  read `wordCount` rather than `words` on
   `dictionary.added` and `dictionary.add_conflict`; stop reading `enabled` on
   `media.resolver_absent`, a field that carried one possible value; and read the stringified throw
   off `error` rather than `reason` on `preview.cleanup_failed`.

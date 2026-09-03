@@ -339,11 +339,20 @@ describe('sessions (server-side, role read live)', () => {
     expect(await resolveSession(db, 'sid-live', Date.now())).toBeNull();
   });
 
-  it('deletes a session and returns the email the deleted row carried', async () => {
+  it('deletes a session and returns the email and expiry the deleted row carried', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
-    await createSession(db, 'sid-del', 'ed@x.dev', Date.now() + 10_000, Date.now());
-    expect(await deleteSession(db, 'sid-del')).toBe('ed@x.dev');
+    const expiresAt = Date.now() + 10_000;
+    await createSession(db, 'sid-del', 'ed@x.dev', expiresAt, Date.now());
+    expect(await deleteSession(db, 'sid-del')).toEqual({ email: 'ed@x.dev', expiresAt });
     expect(await resolveSession(db, 'sid-del', Date.now())).toBeNull();
+  });
+
+  it('deletes an already-expired session unconditionally, still answering its expiry so the caller can skip its record', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const expiresAt = Date.now() - 10_000;
+    await createSession(db, 'sid-expired', 'ed@x.dev', expiresAt, Date.now() - 20_000);
+    expect(await deleteSession(db, 'sid-expired')).toEqual({ email: 'ed@x.dev', expiresAt });
+    expect(await countRows('session')).toBe(0);
   });
 
   it('returns null when no session row matched, so the caller can skip its record', async () => {

@@ -390,7 +390,9 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  The `auth.session.destroyed` record names the email the deleted row carried, read back from
    *  the delete's own `RETURNING`: logout is a public admin path, so the guard never resolves an
    *  editor onto it and the row is the only place the subject exists. It fires only when a row
-   *  was actually destroyed.
+   *  was actually destroyed AND was still live at the moment of deletion (its `expires_at` in the
+   *  future); the delete itself stays unconditional either way, so an already-expired row is
+   *  still removed, just not recorded as a sign-out.
    *
    *  A `deleteSession` fault is caught and logged here, never rethrown to `viewAction`'s generic
    *  `fail(500)`: this action posts to the bare `/admin`, whose own load (`indexLoad`) always
@@ -417,11 +419,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     event.cookies.delete(cookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
     if (id) {
       try {
-        // The record fires only when a row was actually destroyed, and names the email that row
-        // carried: a cookie naming no row destroys nothing, and a record for it would claim a
-        // sign-out that never happened.
-        const email = await deleteSession(db, id);
-        if (email !== null) log.info('auth.session.destroyed', { email });
+        // The record fires only when a row was actually destroyed and was still live, and names
+        // the email that row carried: a cookie naming no row, or one naming an already-expired
+        // row, destroys nothing worth recording, and a record for either would claim a sign-out
+        // that never happened.
+        const deleted = await deleteSession(db, id);
+        if (deleted !== null && deleted.expiresAt > Date.now()) {
+          log.info('auth.session.destroyed', { email: deleted.email });
+        }
       } catch (err) {
         log.error('auth.session.destroy_failed', { error: String(err) });
       }

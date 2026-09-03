@@ -13,6 +13,7 @@ import {
   makeEvent,
   resetChannelDb,
   seedCode,
+  sessionRowCount,
   PENDING_HTTP,
   PENDING_HTTPS,
   SESSION_HTTP,
@@ -117,6 +118,26 @@ describe('confirm cleans up an orphaned prior session', () => {
     // stay conditional on it the same way logout's and the verify-refused revocation's do.
     const { nonceToken, code } = await seedCode({ contact: 'orphan-gone@x.test', subject: 'sub-orphan-gone' });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken, [SESSION_HTTPS]: 'a-token-whose-row-is-gone' });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('logs nothing when the orphaned row is already expired, so an expired teardown is not counted as a live sign-out', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-orphan-expired' }));
+    const firstToken = await signIn(channel, 'orphan-expired@x.test', 'sub-orphan-expired');
+    // The old row exists but its own expiry has already passed, the same forcing technique
+    // resolveSubject's own expiry test uses.
+    await db.prepare('UPDATE cairn_channel_session SET expires_at = ?1').bind(Date.now() - 1000).run();
+
+    const { nonceToken, code } = await seedCode({ contact: 'orphan-expired@x.test', subject: 'sub-orphan-expired' });
+    const jar = makeCookies({ [PENDING_HTTPS]: nonceToken, [SESSION_HTTPS]: firstToken });
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
@@ -300,6 +321,27 @@ describe('logout', () => {
     } finally {
       vi.restoreAllMocks();
     }
+  });
+
+  it('logs nothing when the session row is already expired, so an expired teardown is not counted as a live sign-out', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-logout-expired' }));
+    const token = await signIn(channel, 'logout-expired@x.test', 'sub-logout-expired');
+    // Force the row's expiry into the past directly, the same technique
+    // resolveSubject's own expiry test uses, so the row still exists but is no longer live.
+    await db.prepare('UPDATE cairn_channel_session SET expires_at = ?1').bind(Date.now() - 1000).run();
+    const jar = makeCookies({ [SESSION_HTTPS]: token });
+
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.logout(makeEvent({ cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
+    // The delete stays unconditional: the expired row is gone regardless of the skipped record.
+    expect(await sessionRowCount()).toBe(0);
   });
 
   it('is a no-op, still clearing cookies, when no session cookie is present', async () => {

@@ -74,6 +74,22 @@ describe('formatTimestamp', () => {
       formatTimestamp('2026-03-08 09:00:00', { timeZone: 'America/Anchorage' }),
     );
   });
+
+  it('passes a zone-less near-ISO string through unchanged, rather than parsing it in the runtime local zone', () => {
+    expect(formatTimestamp('2026-06-01T12:00:00')).toBe('2026-06-01T12:00:00');
+  });
+
+  it('passes a zone-less near-ISO string with fractional seconds through unchanged', () => {
+    expect(formatTimestamp('2026-06-01T12:00:00.123')).toBe('2026-06-01T12:00:00.123');
+  });
+
+  it('passes a bare calendar day through unchanged, since it names neither a time nor a zone', () => {
+    expect(formatTimestamp('2026-06-01')).toBe('2026-06-01');
+  });
+
+  it('passes an unrecognized non-date string through unchanged', () => {
+    expect(formatTimestamp('not-a-date')).toBe('not-a-date');
+  });
 });
 
 describe('itemNoun', () => {

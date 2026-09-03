@@ -18,23 +18,23 @@ until the polish slice per the amended initiative design. CI on `main` is fully 
 
 ## Immediate next action
 
-**The internals pass is EXECUTING (approved 2026-09-02; the CAIRN_DEV_BACKEND letter
-amendment was confirmed with the approval). Chunk one (Tasks 1-4) is landed:** the
-check:self-use gate, the F-1 leak rider, the staleNames rescope, and the editor-quotes
-task. **Chunk two (Tasks 5-8) is landed and review-accepted:** the indexed-access
-convention, the header/vacuous-test residue, the MarkdownEditor registerEditor collapse
-(`Consumers must:` rides it), and the list-role/panel-width re-groundings, through
-`918eb57e`. Worktree
-`.claude/worktrees/internals`; workflow run `wf_87445ff5-d58` (resume with
-pass-execute.js + resumeFromRunId; NOTE: its agent cache is same-process only, so a
-resume after a process restart re-verifies rather than replays). Next: dispatch chunk
-two (Tasks 5-8), then 9-12 (Task 11's ROADMAP re-file is AMENDED to the ratified B/C
-split: internals-B = four monolith splits, internals-C = coherence; see the ratified
-section of `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` on
-main), then Task 13, then the pass-end ritual. Spend through chunk one: rough estimate
-1.5-2M of the 6.5M ceiling (conductor-side metering is coarse; re-verify overhead from
-two process restarts included). Guards: runaway watcher, dual sleep inhibitors
-(suspend-only), battery watchdog (11% floor), /loop heartbeat.
+**The internals pass is TWELVE of THIRTEEN tasks complete; execution paused deliberately
+(2026-09-03 ~14:45) for a machine reboot that activates the new zram config.** Chunks
+one, two, and three (Tasks 1-12) are all committed and review-accepted on branch
+`internals` (worktree `.claude/worktrees/internals`), pushed to origin. Remaining: Task
+13 (record honesty: destroyed-row liveness + formatTimestamp contract), then the full
+`cairn-pass` pass-end ritual: code-simplifier, reviewer fan-out (svelte on Task 7,
+daisyui-a11y on Task 8, web-auth-security on 9/10/12/13, cloudflare-workers on 13, plus
+the standing cleanliness review), the SIX CI-only gates by name, from-scratch consumer
+proof, whole-log friction triage, STATUS/HISTORY/ROADMAP, post-mortem with both budgets
+scored, then push + open the PR (Geoff authorized push-and-PR 2026-09-02). Layer-3 OOM
+containment (MemoryMax scope on the browser gate in package.json) and the vitest
+browser-recycling investigation land at the pass close. Approval state: pass approved
+2026-09-02 with the CAIRN_DEV_BACKEND letter amendment; the B/C split is ratified and
+already executed into ROADMAP by Task 11. Resume prompt for a fresh session: "In
+~/Projects/cairn-cms, invoke cairn-pass and resume the internals pass: read docs/STATUS.md
+on the internals worktree, dispatch Task 13 per the plan's workflow mode, then run the
+pass-end ritual. Re-arm the FULL guard set first (unattended-work-guards.md)."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

@@ -79,7 +79,12 @@ const HOLE = /\$?\{[^{}]*\}/g;
 /**
  * Build the grounding pattern for one raw candidate string (still carrying its `${...}`/`{...}`
  * holes, not yet folded). Returns null when the candidate's literal text is too short to prove
- * anything (see MIN_LITERAL_LENGTH).
+ * anything (see MIN_LITERAL_LENGTH). The pattern is anchored (`^...$`): a candidate grounds a
+ * quote only when its literal parts, in order, span the WHOLE quote, not merely appear somewhere
+ * inside it. An unanchored pattern lets an unrelated 8+ character fragment shared by two
+ * unrelated strings (a word like "published" or "fragment") vacuously ground a quote whose real
+ * source string has since drifted; anchoring requires the candidate to account for the quote's
+ * entire text, holes aside.
  * @param {string} raw
  * @returns {RegExp | null}
  */
@@ -87,7 +92,7 @@ export function buildPattern(raw) {
   const parts = raw.split(HOLE).map((p) => fold(p));
   const literalLength = parts.reduce((n, p) => n + p.length, 0);
   if (literalLength < MIN_LITERAL_LENGTH) return null;
-  return new RegExp(parts.map(escapeRegExp).join('.*'));
+  return new RegExp('^' + parts.map(escapeRegExp).join('.*') + '$');
 }
 
 /**
@@ -125,16 +130,55 @@ export function extractDocQuotes(markdown) {
 
 /**
  * Extract every single-quoted, double-quoted, and backtick string literal from a `.ts` source (or
- * a `.svelte` file's `<script>` block), with holes and all, for `buildPattern` to fold later. Line
- * and block comments are stripped first so a stale TSDoc example is never read as shipped text.
+ * a `.svelte` file's `<script>` block), with holes and all, for `buildPattern` to fold later.
+ *
+ * A single left-to-right scan, tracking comment-vs-code-vs-string state character by character,
+ * rather than a comment-stripping regex pass followed by three independent per-quote-type regex
+ * passes. Two failure modes that independence produces: a `//` inside a string literal (a literal
+ * URL like `'https://internal.invalid'`) reads as a line comment under a standalone comment
+ * regex, deleting the rest of the line and stranding the opening quote for every later pairing in
+ * the file; and an apostrophe inside a double-quoted or template string (a contraction like
+ * `"can't"`) reads as opening a single-quoted string under a standalone single-quote regex,
+ * swallowing everything up to the next unrelated apostrophe anywhere later in the file. Scanning
+ * once with explicit state (in a string, and which quote character closes it) never misreads
+ * either.
  * @param {string} src
  * @returns {string[]}
  */
 export function extractScriptCandidates(src) {
-  const stripped = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
   const found = [];
-  for (const rx of [/`((?:[^`\\]|\\.)*)`/g, /'((?:[^'\\]|\\.)*)'/g, /"((?:[^"\\]|\\.)*)"/g]) {
-    for (const m of stripped.matchAll(rx)) found.push(m[1]);
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const next = src[i + 1];
+    if (c === '/' && next === '/') {
+      while (i < n && src[i] !== '\n') i++;
+    } else if (c === '/' && next === '*') {
+      i += 2;
+      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++;
+      i = Math.min(i + 2, n);
+    } else if (c === "'" || c === '"' || c === '`') {
+      const quote = c;
+      let literal = '';
+      i += 1;
+      while (i < n) {
+        if (src[i] === '\\') {
+          literal += src.slice(i, i + 2);
+          i += 2;
+          continue;
+        }
+        if (src[i] === quote) {
+          i += 1;
+          break;
+        }
+        literal += src[i];
+        i += 1;
+      }
+      found.push(literal);
+    } else {
+      i += 1;
+    }
   }
   return found;
 }

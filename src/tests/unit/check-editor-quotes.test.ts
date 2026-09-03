@@ -83,6 +83,16 @@ describe('buildPattern and isGrounded', () => {
     const candidates = ['Pick a date for this entry.'];
     expect(isGrounded(quote, candidates)).toBe(false);
   });
+
+  it('does not vacuously ground a quote via an unrelated candidate that only shares a substring', () => {
+    // An 8+ character fragment ("published", "fragment", "vocabulary") can appear inside an
+    // unrelated candidate string without that candidate being the quote's real source. An
+    // unanchored pattern.test(quote) call matches this as a substring hit; the anchored form
+    // requires the candidate's literal parts to span the whole quote, so it does not.
+    const quote = 'the draft has already been published elsewhere.';
+    const candidates = ['This page links to unpublished pages.'];
+    expect(isGrounded(quote, candidates)).toBe(false);
+  });
 });
 
 describe('candidatesForFile', () => {
@@ -96,6 +106,24 @@ describe('candidatesForFile', () => {
     const file = join(LIB_DIR, 'content/taxonomy-enforce.ts');
     const candidates = candidatesForFile(file);
     expect(candidates.some((c) => c.includes('is not in your tag list'))).toBe(true);
+  });
+
+  it('does not strand a literal after a same-line comment-lookalike ("//") inside an earlier string', () => {
+    // `content-routes-core.ts` builds a URL against 'https://internal.invalid' well before the
+    // two messages this test checks for. A comment strip with no notion of "inside a string"
+    // deletes from that string's "//" to end of line, and an independent per-quote-type regex
+    // pass on top of that misreads an apostrophe inside a later double-quoted string ("can't")
+    // as opening a single-quoted literal, each swallowing everything up to the next unrelated
+    // quote character anywhere later in the file. Both bugs strand real messages with nothing
+    // between them and the doc's own copy of the same text.
+    const file = join(LIB_DIR, 'sveltekit/content-routes-core.ts');
+    const candidates = candidatesForFile(file);
+    expect(
+      candidates.some((c) => c.includes('An unpublished entry with that address already exists')),
+    ).toBe(true);
+    expect(
+      candidates.some((c) => c.includes('Another editor has unpublished edits referencing this entry')),
+    ).toBe(true);
   });
 });
 

@@ -977,6 +977,23 @@
   `createCairnAdmin`'s own un-narrowed return (with the per-item blocking signature, so the retires
   pass does not attempt a deletion that breaks the R4 closure). Internal only; no consumer action.
 
+- `check:editor-quotes` gates `docs/editors/when-something-goes-wrong.md`'s own promise that
+  "every message below is quoted exactly as it appears" (internals pass, Task 4): it extracts
+  every bolded double-quoted sentence and fails when no shipped `src/lib` string grounds it, a
+  case a copy edit in a component (`LoginPage.svelte`, `EditPage.svelte`, `refusal-codes.ts`, and
+  so on) used to strand with nothing noticing (`check:prose` scans components, `check:docs` scans
+  links, neither compares one against the other). Grounding tolerates a template's interpolation
+  holes (a ternary word choice, an editor's name) rather than requiring exact equality, so the
+  gate does not fire on a doc quote naming a variable value in its own words. Wired into `npm
+  test` (a unit suite proving the real doc grounds, plus a stranded-copy regression) and into CI.
+  The same pass fixed the 16 genuine spaced em-dash violations `Google.EmDash` flags under Vale
+  3.19.0 in `docs/admin/README.md` and `docs/extend/README.md` (3.15.1, CI's pinned version, has
+  the false negative; the repo's own Google standard wants them unspaced), exempted the one
+  `Microsoft.Quotes` finding on the editors page as a 3.19.0 false positive (the punctuation is
+  already correctly inside the quote), and recorded `.vale.ini`'s new version-arbiter comment:
+  CI's pinned 3.15.1 governs whenever a local Vale disagrees with a green CI run. Internal only;
+  no consumer action.
+
 ### Fixed
 
 - `check:reference`'s stale-name (reverse) check is now scoped per page (internals pass, Task 3):

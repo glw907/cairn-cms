@@ -41,10 +41,16 @@ through your draft, make sure it still says what you want, and save again.
 but making it live ran into the same kind of conflict above. Nothing is lost. Select
 Publish again.
 
+<!-- vale Microsoft.Quotes = NO -->
+<!-- False positive under Vale 3.19.0: the period sits correctly inside the quote already; -->
+<!-- the rule misreads the comma that follows the bold-close marker as trailing punctuation -->
+<!-- outside the quote. CI's pinned 3.15.1 does not fire here (see .vale.ini's arbiter note). -->
 **"This page links to a page that no longer exists. Remove the broken link and save
 again."**, or, with more than one broken link, **"This page links to pages that no
 longer exist. Remove the broken links and save again."** Either way you'll see a list of
-addresses. A link in your draft points somewhere that doesn't exist on your site, maybe
+addresses.
+<!-- vale Microsoft.Quotes = YES -->
+A link in your draft points somewhere that doesn't exist on your site, maybe
 because of a typo, or because the page it pointed to was renamed or removed. Each broken
 link in the list has a **Remove link** button beside it. Fix the link yourself in the
 text, or use the button to take it out, then save again.

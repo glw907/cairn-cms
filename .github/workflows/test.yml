@@ -74,6 +74,7 @@ jobs:
       - run: npm run check:rulings-format
       - run: npm run check:target-stack
       - run: npm run check:arm-indexes
+      - run: npm run check:editor-quotes
       - run: npm run check:visuals
       - run: npm run check:transcripts
       - run: npm run check:symbols

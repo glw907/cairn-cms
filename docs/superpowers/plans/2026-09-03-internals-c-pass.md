@@ -70,6 +70,17 @@ any e2e.
 - **`as never` (docket sizing):** full retirement — 862 casts / 91 files, minus Task 5's
   five heaviest (263), leaves 599 across 86 files, swept as three independent
   per-directory tasks.
+- **Recorded drops from the thirteen's other halves (round-2 triage: docket item 10
+  demands the full re-enumeration land or drop, never fade):** (a) the `$app/state`
+  plain-object test stub (finding 9's third half) → polish, reopen on a reactivity bug
+  traced to the stub; (b) the aggregate gate-list target and the docs corpus declared
+  five ways (finding 10) → polish, reopen when the by-name ritual list next drifts from
+  `test.yml` (the pass-end lists here and in B are the interim mitigation);
+  (c) finding 6's seven hand-maintained lists beyond the one fixed in Task 7 → polish's
+  whole-surface read, reopen on the next list-drift defect. The other halves this plan
+  DOES take: `unstubGlobals` (Task 5 Step 3), the dead lab script (Task 2 Step 3), the
+  `toolkit-*` defectors and unnamed literal (Task 4 Step 2), the audit barrel gap
+  (Task 7 Step 3).
 - **csrf reconciliation (routed at close; review-ruled):** ONE shared
   `readPublicOrigin` with TWO documented consultation depths. `isDeployedHost` keeps
   the dual read (the tripwire is inert on adapter-node without it); `csrfSecure`
@@ -133,8 +144,9 @@ any e2e.
   acceptance test of zero behavior change). Then the mutation check: add a scratch
   sixteenth arm locally, confirm `npm run check` fails at all five sites, revert.
 - [ ] **Step 4:** ledger row (type-level mechanism, the validated-value posture vs
-  registry.ts's input posture, the template-fallback exception); partial-site notes;
-  full gate; commit.
+  registry.ts's input posture, the template-fallback exception) — run
+  `check:rulings-format` by name (CI-only, exit-ratcheted, has bitten before);
+  partial-site notes; full gate; commit.
 
 **Acceptance criteria:** the characterization tests are byte-stable across the rewrite;
 the sixteenth-arm experiment fails closed at all five sites; no runtime throw is
@@ -153,10 +165,12 @@ reachable for any real arm; the four partial sites carry their notes.
   spellings; `.editorconfig` (claim becomes true); `package.json` + CI wiring
 
 **Interfaces:**
-- Produces: `check:idioms` with three rules — leading-tab indentation banned in
-  `src/lib` + `scripts` (`*.ts`/`*.svelte`/`*.mjs`); `process.exit(` banned in
-  `scripts/checks/*.mjs` (both rules share that scope; the earlier draft's split scoping
-  left three non-`check-` gates half-covered); one self-identity spelling per gate.
+- Produces: `check:idioms` with three rules and two distinct scopes (round-2 triage: the
+  earlier "both rules share that scope" sentence contradicted itself) — leading-tab
+  indentation banned in `src/lib` + `scripts` (`*.ts`/`*.svelte`/`*.mjs`; verified born
+  green outside the eight swept files); `process.exit(` banned in **`scripts/checks/*.mjs`
+  ONLY** (do not widen into `scripts/lab|build|test/`, five files outside this task's
+  inventory); one self-identity spelling per gate under `scripts/checks/`.
   Self-exclusion stated in the gate: its rule literals are assembled
   (`'process.' + 'exit('`), and `scripts/checks/fixtures/` is outside scope.
 
@@ -178,8 +192,11 @@ reachable for any real arm; the four partial sites carry their notes.
   demanded, since "no `process.exit(` remains" is satisfied perfectly by a silently
   disabled gate.
 - [ ] **Step 3:** the indentation sweep (verify `git diff -w` is empty), the identity
-  spellings, `.editorconfig`; write and wire the gate; born green on the real tree.
-  Full gate; commit.
+  spellings; `.editorconfig` needs NO edit (round-2 verified it already declares
+  2-space repo-wide; its claim becomes true by the gate existing — say so in the gate's
+  header). Delete the dead `scripts/lab/migrate-allowlist.mjs` (round-2: present,
+  unreferenced, and invisible to knip's entry-point treatment of `scripts/**/*.mjs`).
+  Write and wire the gate; born green on the real tree. Full gate; commit.
 
 **Acceptance criteria:** every converted gate proven red-on-failure by fixture;
 `check-readiness` still distinguishes exit 2; `git diff -w` empty for the indentation
@@ -233,7 +250,7 @@ rewritten comment still true against the code (diff-reviewer verifies a sample);
 **Acceptance criteria:** zero purge-pattern hits across all of `src/lib`; the hostname
 rule matches by shape with no private hostname in the rule data; gate green.
 
-### Task 4: `ec-*` → `cairn-*` (independent; the pass's one consumer-facing change)
+### Task 4: `ec-*` → `cairn-*` (depends on Tasks 1 and 3b; the pass's one consumer-facing change)
 
 **Files:**
 - Modify: `src/lib/render/glyph.ts`, `src/lib/render/rehype-dispatch.ts` (emission),
@@ -243,10 +260,18 @@ rule matches by shape with no private hostname in the rule data; gate green.
   CHASSIS change, the seed every theme copy descends from, gated by
   `check:chassis-boundary` and read by `check-public-tokens.mjs`), the e2e locator,
   `src/tests/unit/__snapshots__/render-pipeline-snapshot.test.ts.snap` (regenerated),
+  `src/tests/unit/render-rehype-dispatch.test.ts` (10 hits),
+  `src/tests/unit/render-glyph.test.ts` (2), `render-pipeline-snapshot.test.ts` (1),
   `src/tests/component/ComponentInsertDialog.test.ts` (keys on the classes),
-  `CHANGELOG.md`, `docs/extend/migration-notes.md`, `docs/internal/engine-rulings.md`
-  (an appended renamed-at-internals-C annotation on the two rows naming `ec-head`/
-  `ec-icon` — annotate, never rewrite history rows)
+  **`templates/waymark/src/chassis/prose.css` via `npm run emit:template`** (round-2
+  triage: the baked template is generated wholesale from the showcase and carries 14
+  `ec-*` hits; `check:template` runs in CI and fails on divergence — re-emit, never
+  hand-edit), `CHANGELOG.md`, `docs/extend/migration-notes.md`,
+  `docs/internal/engine-rulings.md` (appended annotations on `audit-render-iconspan`
+  :3905-3916 and `audit-render-headrow` :3918-3929 — round-2 triage: these are OPEN
+  rulings whose execution is owned by the CHASSIS pass, not history rows; the annotation
+  states the class vocabulary those helpers bake was renamed here, so the chassis
+  re-homing re-teaches `cairn-*` names)
 
 **Interfaces:**
 - Produces: emitted classes `cairn-head`, `cairn-icon`, `cairn-icon-secondary`,
@@ -257,17 +282,27 @@ rule matches by shape with no private hostname in the rule data; gate green.
 
 - [ ] **Step 1:** failing render tests asserting the new names; rename at the emission
   sites and scoped re-declarations; snapshot regenerated; green.
-- [ ] **Step 2:** chassis selectors, e2e locator, `ComponentInsertDialog.test.ts`; docs
-  (`render.md`, CHANGELOG with the `Consumers must:` line naming the five exact old →
-  new selectors AND the chassis propagation path — the four production sites carry
-  `ec-*` in their own chassis copies and queue the rename in their own passes;
-  migration-notes; ledger annotations). Full gate including `check:chassis-boundary`
-  and `check:public-tokens` by name; commit.
+- [ ] **Step 2:** chassis selectors, the template re-emit, e2e locator, the three render
+  test files; docs (`render.md`, CHANGELOG with the `Consumers must:` line naming the
+  five exact old → new selectors AND the chassis propagation path — the four production
+  sites carry `ec-*` in their own chassis copies and queue the rename in their own
+  passes; migration-notes; ledger annotations). **Also fold the namespace-registration
+  stragglers finding 11 of the audit names** (`int-coherence.md:343-347`): the two
+  `toolkit-*` defectors and the ten-site unnamed class literal get registered or renamed
+  per the same registration rule this task documents. Full gate including
+  `check:chassis-boundary`, `check:public-tokens`, `check:template`, and
+  `check:rulings-format` by name; commit.
 
 **Acceptance criteria:** `grep -rEn '\bec-(icon|icon-secondary|glyph|head|grid)\b'` over
-the tree (excluding `docs/internal/history`, `docs/internal/record`,
-`docs/superpowers`, and the annotated ledger rows) returns nothing; showcase CI visual
-suite green; the namespace rule as documented matches the ruled registration form.
+the tree — `templates/` included, post-re-emit — (excluding `docs/internal/history`,
+`docs/internal/record`, `docs/superpowers`, and the annotated ledger rows) returns
+nothing; showcase CI visual suite and `check:template` green; the namespace rule as
+documented matches the ruled registration form.
+
+**Dependencies (round-2 triage: the "independent" labels hid three file contentions):**
+Task 4 runs AFTER Task 1 (both append to `engine-rulings.md`) and AFTER Task 3b (which
+sweeps `components/`, where Task 4 edits three files); Task 7 runs AFTER Task 4 (Task 7
+headers the ten `render/*.ts` files Task 4 edits two of).
 
 ### Task 5: The typed test-event builder (independent)
 
@@ -285,8 +320,13 @@ suite green; the namespace rule as documented matches the ruled registration for
 
 - [ ] **Step 1:** inventory the five files' cast shapes; build + test the builder.
 - [ ] **Step 2:** convert the five files (263 casts); suites green with assertions
-  unweakened (diff-reviewer checks deleted casts took no assertions with them); full
-  gate; commit.
+  unweakened (diff-reviewer checks deleted casts took no assertions with them).
+- [ ] **Step 3 (the test-infra rider round-2 surfaced from audit finding 9's other
+  half):** enable `unstubGlobals: true` in the vitest config (87 `vi.stubGlobal` sites
+  currently pair with `vi.restoreAllMocks`, which does NOT restore globals — a live
+  cross-test leakage hazard); run the full suite and fix any test that was silently
+  depending on a leaked stub. Test-first in the sense that the config flip IS the test:
+  a suite green under `unstubGlobals` proves the leakage is gone. Full gate; commit.
 
 **Acceptance criteria:** zero `as never` in the five files; suite counts unchanged or
 higher; builder name/path exactly as pinned.
@@ -310,7 +350,7 @@ higher; builder name/path exactly as pinned.
 (target: zero unannotated); suite counts monotonically non-decreasing; the three tasks'
 file sets are disjoint by directory.
 
-### Task 7: Truthful headers and self-licensing duplication comments (depends on 3a/3b; shares files)
+### Task 7: Truthful headers and self-licensing duplication comments (depends on 3a/3b AND Task 4)
 
 **Files:**
 - Modify: the ~12 contradicted headers (int-coherence.md :163-182; `admin-icons.ts`
@@ -327,11 +367,14 @@ file sets are disjoint by directory.
 - [ ] **Step 2:** duplication comments: ruled exception → cite the slug; unruled and
   one-import-line collapsible → collapse; otherwise reword to the actual tradeoff.
   Unify `logCommitFailed` onto the module-import style.
-- [ ] **Step 3:** `render/`'s ten M1 headers; full gate; commit.
+- [ ] **Step 3:** `render/`'s ten M1 headers. One barrel-truth fix rides here (round-2,
+  from audit finding 6's list drift): `audit/index.ts` is missing the
+  `splitSelectorList` export that `audit/sheet.ts:513` declares — add it and its
+  reference row (`check:reference` will demand the doc). Full gate; commit.
 
 **Acceptance criteria:** every touched header states something the code does; no comment
 cites a sibling copy as sole license; `render/` fully headered; the `'publish.failed'`
-argument intact.
+argument intact; the audit barrel matches its modules' exports.
 
 ### Task 8: The internals map and the boundary signal (independent of 1-7; after B)
 
@@ -368,15 +411,18 @@ matches the export map mechanically; nothing new ships under `src/lib`.
 **Interfaces:**
 - Produces: `readPublicOrigin(platformEnv: unknown): string | undefined` exported (real
   signature; the dual read stays as-is for `isDeployedHost`). `csrfSecure` consumes the
-  shared reader **at platform depth only** — mechanically, it calls
-  `readPublicOrigin(event.platform?.env ?? {})` with an empty-object floor so the
-  process-env fallback can never engage from this call site, or the reader gains an
-  explicit `depth: 'platform-only'` option; either form is acceptable if the
-  suppression is structural, not conventional. NO behavior change (the header's ruled
-  input carries the four reasons: probe invariant, suite determinism, LAN-dev cookies,
-  session invalidation). Both functions' docs record the two depths and the
-  monotonicity fact (platform-first + https short-circuit ⇒ no fallback can downgrade
-  Secure).
+  shared reader **at platform depth only, via an explicit
+  `depth: 'platform-only'` option on the reader** — round-2 triage struck the
+  empty-object-floor form: `readPublicOrigin` falls through to `process.env`
+  UNCONDITIONALLY when the platform read yields nothing (`dev-flag.ts:58-67`), so an
+  empty-object argument suppresses nothing; only the option form is structural. NO
+  behavior change (the header's ruled input carries the four reasons: probe invariant,
+  suite determinism, LAN-dev cookies, session invalidation). Both functions' docs record
+  the two depths and the monotonicity fact (platform-first + https short-circuit ⇒ no
+  fallback can downgrade Secure). **One line lands in the docs and the docket close-out:
+  the consultation-depth divergence PERSISTS BY DESIGN; retirement trigger: `csrfSecure`
+  starts running on adapter-node in a production site** (the routed item's substance
+  stays open and visible rather than retiring as "reconciled").
 - The F-1 `/components` skip (`check-surface-leaks.mjs:233-244`): derive the subpath's
   type-export list mechanically from the components barrel + dist declarations so the
   enumerated-exports premise is gate-verified; if the two-model structure genuinely

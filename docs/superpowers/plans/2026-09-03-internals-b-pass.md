@@ -18,9 +18,9 @@ becomes six sibling modules behind the unchanged `content-routes.ts` composition
 `audit/rendered.ts` becomes a directory whose old path stays the barrel so 17 rule files and
 23 test files keep their imports; the two Svelte monoliths extract child components and
 `.svelte.ts` modules that stay OUT of the components barrel. In Chain D the holder collapse
-lands BEFORE the extractions, so each extracted unit is born consuming the single `editor`
-grant and owning its own entry-key reset (review fold: this removes planned rework and
-splits the largest task). The one deliberate seam change is `registerEditor` delivering
+lands BEFORE the holder-consuming extractions (Tasks 12-13; Task 10's two units touch no
+holder), so those units are born consuming the single `editor` grant and owning their own
+entry-key resets (review fold: this removes planned rework and splits the largest task). The one deliberate seam change is `registerEditor` delivering
 `null` on editor destroy, identity-guarded, free while the window is unpublished.
 
 **Tech stack:** Svelte 5 runes, SvelteKit 2, TypeScript, vitest, the repo's gate estate.
@@ -50,9 +50,12 @@ from-scratch showcase `npm ci` before trusting any e2e.
   a hand-applied consumer action (`docs/extend/upgrade-cairn.md:31-36`) for a per-login
   scan over an editor-roster-sized table already measured negligible. Task 14 states the
   asymmetry at the sweep site. Reopen trigger: editor rosters stop being small.
-- **Docket item 4 (OfficeList/AdminTable double scroll container) DEFERS to polish**,
-  riding the OfficeList retire ruling (ratified default 6). `viewport-overflow.ts:18-24`'s
-  special case is built around the pair; unwinding it before the ruling is churn either way.
+- **Docket item 4 (OfficeList/AdminTable double scroll container) DEFERS to polish**, the
+  second branch ratified default 6 explicitly permits. Precision for polish (round-2
+  triage): `audit-admin-officelist` is a CLOSED reshape row (`engine-rulings.md:2660-2666`,
+  executed by 4b, `Reopens on: closed`), so an outright retire there is a NEW proposal
+  against a closed row, not a reopen. `viewport-overflow.ts:18-24`'s special case is built
+  around the pair; unwinding it before that ruling is churn either way.
 - **Docket item 12 (custom-screen read-seam boundary) was DROPPED as unfoundable at the
   2026-09-02 sitting** (ratified outcome 1). Listed here because this section is where a
   future reader looks for the pass's drops; the docket carries the reopen trigger (a
@@ -212,7 +215,10 @@ no re-export of `FragmentTarget` appears in `content-routes.ts`.
   `stories/publish.ts` repoints directly.
 
 - [ ] **Step 1:** move the five actions and helpers; delete core.ts; repoint the remaining
-  importers; generalize the editor-quotes test path list.
+  importers; generalize the editor-quotes test path list. Append a one-line annotation to
+  the two ledger rows whose FACTS the delete falsifies (`engine-rulings.md:725` "still
+  calls it internally", `:1749` "stays in `content-routes-core.ts`"): the module became
+  `content-routes-entry.ts` at internals-B — annotate, never rewrite the rows.
 - [ ] **Step 2:** full content-routes suite plus `check:editor-quotes`, `check:docs`, full
   gate, surface unchanged. Commit.
 
@@ -272,9 +278,12 @@ their historical mentions untouched.
   menu-open/row-expanded state machinery included), with `rendered.ts` shrinking to
   `runRendered` + `redirectTrapRefusal` + the barrel re-exports.
 - **One deliberate behavior fix rides the move (security lens):** `resolveExtraCookies`
-  (:572-593) currently interpolates a malformed `CAIRN_AUDIT_COOKIES` entry — cookie VALUE
-  included — into its thrown error, so a session value lands in a CI log. During the move,
-  the message redacts the value (name and position only). Test-first.
+  (:572-594) currently interpolates a malformed `CAIRN_AUDIT_COOKIES` entry — cookie VALUE
+  included — into its thrown error, so a session value lands in a CI log. During the move
+  the message redacts per branch (round-2 triage: the shapes differ): the `eq === -1`
+  branch (:579) has no name to report, so it reports the entry's POSITION only; the
+  `name === ''` branch (:584) reports position only, never the value. Test-first, one
+  case per branch.
 
 - [ ] **Step 1:** write the failing redaction test (a malformed entry's value must not
   appear in the thrown message).
@@ -308,7 +317,12 @@ cookie parser.
   `bind:this` container ref), NOT `document`-wide (security lens: a document query lets
   the admin shell's palette dialog suppress the library's Escape-to-close). All six
   library dialogs live inside the component subtree, so scoped matching preserves today's
-  semantics exactly, including after extraction.
+  semantics exactly, including after extraction. **The resulting intra-component scope
+  split is deliberate and gets a comment** (round-2 triage): `libraryDropBusy` (:623-627)
+  stays DOCUMENT-scoped because drag-drop should stand down for ANY open dialog, the
+  palette included, while Escape must never be stolen by a foreign dialog — one question,
+  two correct scopes, stated where both live so the internals-C comment sweep reads a
+  true rationale.
 - Produces: `MediaOrphanTools.svelte` (script :1158-1332 — the cluster ends at :1332, not
   :1339; `brokenWhereUsed` stays in the shell — markup :2812-3105), self-contained,
   own-`getContext` csrf, exposing `open()`; `MediaBulkDeleteDialog.svelte` (script
@@ -449,6 +463,15 @@ string appears in any new file; `check:cm-internals` (run by name — it is in n
   an earlier identical passage and publish.)
 - The shell's entry-key reset shrinks to `editor = null` plus shell-owned slots; the
   extracted units from Tasks 10/12/13 own their `entryKey`-scoped resets as they are born.
+- **Reset completeness becomes enforced, and one measured defect is fixed here** (round-2
+  triage; source `int-coherence.md:230-231`): EditPage carries ~78 `$state` declarations
+  and the reset covers a fraction by hand; **`uploadedRecords` (:784) is missing from the
+  reset today, so a same-route link hop carries entry A's media records into entry B's
+  save payload** (:1524, :1548, :2337). Fix test-first (entry-hop test asserting the save
+  payload carries no prior entry's records), add `uploadedRecords` to the reset, and land
+  a source-enumeration unit test that parses `EditPage.svelte`'s `$state`/`$state.raw`
+  declarations and fails when any name is neither in the reset nor in an explicit
+  commented exempt list — so the distributed-reset design cannot silently drop state.
 
 - [ ] **Step 1:** write the failing revocation test: navigating the entry key revokes the
   captured grant (nulled) before the new mount registers, AND a stale revocation (an old
@@ -502,8 +525,18 @@ covers both new resets.
 
 **Interfaces:**
 - Produces: `DetailsPanel.svelte` owning the Details fieldset markup (~:2531-2620), the
-  `<FieldInput>` loop, and local ownership of `heroFieldRefs`/`heroNeedsAlt`/
-  `uploadedRecords`; exposes `focusHeroAlt(name)` for the needs-alt notice (:1309).
+  `<FieldInput>` loop, and local ownership of **`heroFieldRefs` ONLY** (round-2 triage
+  blocking find: the previously claimed `heroNeedsAlt`/`uploadedRecords` ownership serves
+  one of at least four cross-boundary consumers). The full seam, per consumer:
+  - `heroFieldRefs` moves into the panel (truly local once Step 2's callback lands);
+    `focusHeroAlt(name)` is the one exposure, serving the needs-alt jump (:1309).
+  - `heroNeedsAlt` STAYS a shell `$state`: the shell's `heroRows` derived (:1279) feeds
+    the needs-alt notice from it; the panel forwards FieldInput's existing
+    `onheroneedsalt` callback up unchanged.
+  - `uploadedRecords` STAYS a shell `$state`: it has TWO writers — the fields tree and
+    the media slide-over's `onuploaded` at :2762, outside the panel — and three shell
+    consumers (:1524, :1548, the hidden form input :2337). The panel forwards
+    `onuploaded` up, exactly as FieldInput already reports it.
 - **The ratified callback fix, realized precisely (grounding lens: `bind:this` cannot
   simply be "deleted"):** `FieldInput` keeps a LOCAL `bind:this` on `MediaHeroField`
   (:274) and adds an effect calling `registerHeroField(name, ref)` on mount/change and
@@ -516,11 +549,14 @@ covers both new resets.
 - [ ] **Step 1:** failing test — mounting the fields tree with an image field logs no
   `ownership_invalid_mutation` warning (it currently does).
 - [ ] **Step 2:** land the callback and prop removal through the three components; green.
-- [ ] **Step 3:** extract `DetailsPanel` owning the map with its own entry-key reset; wire
-  `focusHeroAlt`; full gate. Commit.
+- [ ] **Step 3:** extract `DetailsPanel` owning the ref map with its own entry-key reset;
+  wire `focusHeroAlt` and the two forwarded callbacks; full gate. Commit.
 
 **Acceptance criteria:** zero ownership warnings across the component suite; needs-alt
-jump focuses the right input; the `heroFieldRefs` name exists in exactly one file.
+jump focuses the right input; the `heroFieldRefs` name exists in exactly one file;
+`heroNeedsAlt` and `uploadedRecords` remain shell-owned with their consumers unchanged
+(the save payload and the hidden `media` input verified by the existing suites plus Task
+11's entry-hop test).
 
 ---
 

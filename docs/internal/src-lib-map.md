@@ -114,7 +114,7 @@ Six files sit beside the 23 directories, each with a stated reason to sit outsid
   rather than each hand-writing the same check: `sveltekit/guard.ts`, `auth-channel/factory.ts`,
   and `sveltekit/csrf.ts`. Internal; not re-exported from any subpath.
 - `email.ts`: the magic-link email boundary, `SendMagicLink`/`EmailSender`/`AuthBranding`. The file
-  sits at the root, not inside `auth/`, but its types are re-exported from the root barrel as auth
+  sits at the root, outside `auth/`. Its types are re-exported from the root barrel as auth
   surface, so a consumer never notices the file boundary.
 - `env.ts`: the platform-binding guards (`CairnEnv`), turning a missing or malformed binding into a
   named `CairnError`. `CairnEnv` itself is re-exported from the root barrel; the guard functions are

@@ -228,7 +228,8 @@
 ### Changed
 
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
-  ruling 1: the MarkdownEditor seam collapse) into one `registerEditor?: (api: EditorApi) => void`.
+  ruling 1: the MarkdownEditor seam collapse) into one
+  `registerEditor?: (api: EditorApi | null) => void`.
   `EditorApi` hands the host the full buffer-scoped editing surface on mount: `insert`,
   `insertLink`, `getSelection`, `caretCoords`, `focus`, `undo`, `format`, `replaceRange`,
   `selectRange`, `insertImage`, `getSelectionRange`, `tidy` (formerly the `registerTidy` object
@@ -245,6 +246,18 @@
   `registerGetSelectionRange`, `registerTidy`, `registerUndo`, `registerFormat`,
   `registerReplaceRange`, `registerSelectRange`) with one `registerEditor` callback that reads the
   matching member off the `EditorApi` it receives.
+
+  Internals pass, Task 11 extends the same seam: `registerEditor` now also delivers `null` once,
+  from the real `onDestroy` teardown, revoking the mount grant. `EditPage` itself collapses its own
+  13 per-capability holders (each populated from one member of the `registerEditor` grant) into one
+  `editor` reference, read through an optional chain at every call site, and builds an
+  identity-guarded revocation handler per mount: it nulls its `editor` reference only when the
+  revoked value is the one it still holds (a reference compare), so an out-of-order destroy from a
+  superseded `{#key}` instance can never clobber a newer, already-live grant, and a destroy with no
+  prior grant (an SSR teardown) is a no-op. Consumers must: a direct `MarkdownEditor` mount whose
+  `registerEditor` callback assumes it is only ever called with a live `EditorApi` should narrow the
+  parameter (`(api) => { if (!api) return; ... }`) before this release ships, since the type widens
+  to `EditorApi | null`.
 
 - The log vocabulary's remaining ten evenness defects close, across every emit site and the
   reference table. Two events rename, four records change shape, one field is dropped, and two

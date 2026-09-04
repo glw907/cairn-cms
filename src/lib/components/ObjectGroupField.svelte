@@ -37,8 +37,9 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
     conceptId: string;
     /** The entry id (the upload action's route param). */
     id: string;
-    /** The host's hero-field refs, keyed by the prefixed `name` so two groups do not collide. */
-    heroFieldRefs: Record<string, MediaHeroField>;
+    /** Registers a leaf's hero-field ref (or `null` on teardown) with the host, keyed by the
+     *  prefixed name; forwarded straight through to each leaf, same as `onuploaded`. */
+    registerHeroField: (name: string, ref: MediaHeroField | null) => void;
     /** Called with the server-owned record on a successful upload, so the host merges it. */
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */
@@ -56,7 +57,7 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
     mediaLibrary,
     conceptId,
     id,
-    heroFieldRefs,
+    registerHeroField,
     onuploaded,
     onheroneedsalt,
     icons,
@@ -88,7 +89,7 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
       {mediaLibrary}
       {conceptId}
       {id}
-      {heroFieldRefs}
+      {registerHeroField}
       {onuploaded}
       {onheroneedsalt}
       {icons}

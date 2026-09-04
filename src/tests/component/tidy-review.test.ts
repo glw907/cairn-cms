@@ -47,9 +47,11 @@ async function mountReview(
   const editor = await render(MarkdownEditor, {
     value: original,
     name: 'body',
-    registerEditor: (a: EditorApi) => {
-      api = a.tidy;
-      undo = a.undo;
+    registerEditor: (a: EditorApi | null) => {
+      if (a) {
+        api = a.tidy;
+        undo = a.undo;
+      }
     },
   });
   await expect.poll(() => api, COLD_START).not.toBeNull();
@@ -270,8 +272,8 @@ describe('TidyReview (real browser)', () => {
     await render(MarkdownEditor, {
       value: original,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a.tidy;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a.tidy;
       },
     });
     await expect.poll(() => api, COLD_START).not.toBeNull();

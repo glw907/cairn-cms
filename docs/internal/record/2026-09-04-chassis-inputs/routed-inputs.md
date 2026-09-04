@@ -538,7 +538,7 @@ No explicit amendment or "harvest rule" heading beyond the above was found by gr
 > This is Waymark, cairn's starter template: a complete, working cairn site built in the
 > DaisyUI and Tailwind idiom. The engine's own e2e and design suites run against this
 > directory in CI, and it's the companion to
-> [`docs/extend/build-a-site-by-hand.md`](../../docs/extend/build-a-site-by-hand.md):
+> [`docs/extend/build-a-site-by-hand.md`](../../extend/build-a-site-by-hand.md):
 > every file that page builds by hand already exists here and runs.
 >
 > The showcase depends on cairn through the relative `file:../..` path, so it always
@@ -550,7 +550,7 @@ No explicit amendment or "harvest rule" heading beyond the above was found by gr
 >
 > Read it as the worked example every guide in `docs/` refers back to. Once you have your
 > own site, restyle or replace it however you like. For the rest of the docs, start at
-> [`docs/README.md`](../../docs/README.md)."
+> [`docs/README.md`](../../README.md)."
 
 **`examples/showcase/src/chassis/README.md`** — no other `docs/` subdirectory exists
 under `examples/showcase` (only these two README files carry showcase-specific docs).

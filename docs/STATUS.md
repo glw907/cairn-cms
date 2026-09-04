@@ -19,14 +19,15 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**IN FLIGHT (2026-09-04, checkpoint 2): internals-C mid-pass.** Ledger: Tasks 1, 9, 8, 5
-ACCEPTED (Task 8 after an escalation decided by the conductor, complete the
+**IN FLIGHT (2026-09-04, checkpoint 3): internals-C mid-pass.** Ledger: Tasks 1, 9, 8, 5, 6a,
+6b ACCEPTED (chain R complete at `634fdf16`, run `wf_b02e967c-515`, 0.56M; both sweeps
+annotate survivors as `// idioms-allow: as-never  <reason>` with two spaces, so 6c's rule
+matches the prefix, not the separator) (Task 8 after an escalation decided by the conductor, complete the
 `cairn.config.ts` location migration on the scaffold's `$theme/cairn.config.js` spelling,
 plus two fix rounds; Task 5's gate re-proven green on an idle machine). Chains Q and T are
-MERGED into `internals-c` (`78af949d`, `724296c2`). Two workflow runs are live: chain R
-(`internals-c-chain-r`, run `wf_b02e967c-515`) runs 6a then 6b; the main worktree
-`internals-c` (run `wf_abf056a2-cb4`) runs 2, 3a, 3b, 4 sequentially. Then: merge R into
-`internals-c`; run 6c, 7, 10 sequentially there; pass-end ritual; push, PR, merge on green
+MERGED into `internals-c` (`78af949d`, `724296c2`). One workflow run is live: the main worktree
+`internals-c` (run `wf_abf056a2-cb4`) runs 2, 3a, 3b, 4 sequentially. Then: merge chain R
+(`internals-c-chain-r`) into `internals-c`; run 6c, 7, 10 sequentially there; pass-end ritual; push, PR, merge on green
 CI (authorized). Spend: 1.57M for phase 1 plus about 0.6M of fix and review dispatches, of
 the 6.5M ceiling. Lesson: three concurrent full gates on this 15 GB / 8-core machine cause
 load-induced timeouts; two is the ceiling. If a cold session finds this line: inspect the

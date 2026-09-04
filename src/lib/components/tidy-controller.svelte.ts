@@ -126,9 +126,13 @@ export function createTidyController(params: TidyControllerParams) {
     const text = useSelection ? selected : bodyNow;
 
     busy = true;
-    controller = new AbortController();
+    // Captured locally: the entry-hop reset (the effect above) nulls the module-level `controller`
+    // on an entry hop, but this run must keep reading its OWN signal and must only clear the shared
+    // flags in `finally` if it is still the current run (a reset already tore down a superseded one).
+    const ac = new AbortController();
+    controller = ac;
     // The bounded client timeout: a slow call becomes a cancel/retry rather than hanging the review.
-    const timer = setTimeout(() => controller?.abort(), TIDY_CLIENT_TIMEOUT_MS);
+    const timer = setTimeout(() => ac.abort(), TIDY_CLIENT_TIMEOUT_MS);
     try {
       const outcome = await postFormAction<{ corrected?: unknown; model?: unknown }>(
         `/admin/${params.getConceptId()}/${params.getId()}?/tidy`,
@@ -137,7 +141,7 @@ export function createTidyController(params: TidyControllerParams) {
           redirect: 'manual',
           headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': params.getCsrf() ?? '' },
           body: JSON.stringify({ text, scope: useSelection ? 'selection' : 'document' }),
-          signal: controller.signal,
+          signal: ac.signal,
         },
       );
       if (!outcome.ok) {
@@ -146,7 +150,7 @@ export function createTidyController(params: TidyControllerParams) {
         // signal directly so Cancel stays silent instead of showing the generic retry message
         // below. A response that was actually received (outcome.ok) is processed on its own merits
         // below regardless of the flag, so a late-arriving success is never discarded.
-        if (controller.signal.aborted) {
+        if (ac.signal.aborted) {
           message = null;
           return;
         }
@@ -196,8 +200,12 @@ export function createTidyController(params: TidyControllerParams) {
       message = 'Tidy could not finish. Try again.';
     } finally {
       clearTimeout(timer);
-      controller = null;
-      busy = false;
+      // Supersession-safe: only clear the shared flags if this run is still the current one. An
+      // entry-hop reset that already nulled `controller` (or started a new run) owns those flags now.
+      if (controller === ac) {
+        controller = null;
+        busy = false;
+      }
     }
   }
 

@@ -2517,6 +2517,64 @@ describe('EditPage', () => {
     }
   });
 
+  it('does not surface a stale tidy error on the new entry when an entry hop aborts an in-flight tidy', async () => {
+    // Diff-review finding on Task 12: runTidy captured only the module-level `controller` and
+    // re-read it unguarded after its await. The entry-hop reset ($effect.pre above, keyed on
+    // entryKey) aborts and nulls that SAME `controller` while a tidy call for the outgoing entry
+    // is still in flight; the resumed continuation then dereferenced `controller.signal` on a
+    // null, threw, and the outer catch folded that TypeError into the same generic retry message
+    // a real failure shows, setting it AFTER the reset had already cleared it to null. The result
+    // popped entry A's tidy-error dialog over entry B's freshly-hopped-to state.
+    const body = '# Title\n\nA paragraph that is fine.';
+    let rejectFetch!: (err: unknown) => void;
+    const pendingFetch = new Promise<Response>((_resolve, reject) => {
+      rejectFetch = reject;
+    });
+    const spy = vi.fn((_url: string, init?: RequestInit) => {
+      // A real fetch rejects with an AbortError once its signal fires; the entry-hop reset's
+      // controller.abort() call below drives this the same way.
+      init?.signal?.addEventListener('abort', () => rejectFetch(new DOMException('Aborted', 'AbortError')));
+      return pendingFetch;
+    });
+    vi.stubGlobal('fetch', spy);
+    try {
+      const screen = await render(
+        EditPage,
+        postProps({
+          body,
+          tidy: {
+            enabled: true,
+            model: 'claude-sonnet-4-6',
+            conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+          },
+        }) as never,
+      );
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      const tidyButton = () =>
+        Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+          (b) => b.getAttribute('aria-label') === 'Tidy',
+        );
+      await expect.poll(() => tidyButton()).toBeTruthy();
+      tidyButton()!.click();
+      // Wait for the tidy call to actually start (the fetch mock invoked, its signal wired) before
+      // hopping, so the hop's abort lands on a real in-flight request rather than racing ahead of it.
+      await expect.poll(() => spy.mock.calls.length).toBeGreaterThan(0);
+
+      // Hop to entry B on the same route while entry A's tidy call is still pending.
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toBe('second body');
+      // Give the aborted fetch's rejection a turn to resolve through postFormAction's catch and
+      // back into runTidy's own catch/finally before asserting nothing surfaced.
+      await expect
+        .poll(() => screen.container.querySelector('[data-testid="tidy-message"]'), { timeout: 2000 })
+        .toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("resets figure-editor's open-dialog prefill on an entry hop", async () => {
     // The figure dialog's <h2> reads figureEditor.figurePrefill?.mode unconditionally (not gated
     // behind figurePrefill's truthiness the way the form fields are), so a fresh remount's FIRST

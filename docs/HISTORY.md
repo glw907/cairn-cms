@@ -7,7 +7,7 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
-## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits), branch pushed for PR
+## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits), merged at `0ac9b40a` (PR #48)
 
 Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-b-pass.md` (worktree
 `internals-b`, off `main` at `c95ff02d`). All fourteen tasks across five independent chains

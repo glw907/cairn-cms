@@ -10,67 +10,36 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries NINE
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries TEN
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
 (slice 1), foundations A (2a), foundations B (2b), retires (3), conventions (4a, PR #43),
-conformance (4b, PR #46), and internals (5, merged 2026-09-03 at `c54645d5`, PR #47, all CI
-green); the window holds until the polish slice per the amended initiative design. CI on
-`main` is fully green.
+conformance (4b, PR #46), internals (5, PR #47), and internals-B (6, merged 2026-09-04 at
+`0ac9b40a`, PR #48, CI green); the window holds until the polish slice per the amended
+initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**INTERNALS-B: all 14 tasks ACCEPTED and merged to branch `internals-b`** (worktree
-`.claude/worktrees/internals-b`; session closed 2026-09-04 morning for a CLI update, mid
-pass-end ritual). Ledger: chains A-E all landed through the implementer/diff-reviewer
-chain (2 fix rounds total in the task phase); chain merges `0211da99` + `c6310117`;
-simplifier `eaaafbe4`; eleven named gates ALL PASS on the merged branch (the six CI-only
-plus cm-internals/docs/package/editor-quotes); from-scratch showcase consumer build OK;
-five-reviewer fan-out DONE (svelte, a11y, workers, security, cleanliness), no blocking
-architectural findings; consolidated fix-now findings split across three fixers, of which
-TWO ARE COMMITTED (`ee446bd3` media-dialog a11y+comments, `eb26bf1c` media-seed
-hardening + audit/content-routes comment fixes) and ONE (EditPage-family: tidy
-supersession guard, hero-dereg identity guard, bindEditorGrant harness test, reset-gate
-widening to the two controllers, needs-alt reveal, ShareLinkPanel a11y, comment fixes)
-was STILL RUNNING at close. **Resume step 1: inspect the worktree** - if that fixer
-committed (look for a commit after `eb26bf1c` touching EditPage/ShareLinkPanel/
-tidy-controller), verify via a diff-review dispatch; if it left uncommitted residue,
-`git checkout -- .` back to clean and re-dispatch its finding list (recorded in full in
-the pass plan's post-mortem inputs; the findings are the five reviewer reports).
-CAUTION: two fixers ran `git stash` in the shared worktree and transiently clobbered
-each other (both recovered); never let parallel writers share one worktree again.
-**Remaining ritual:** final full gate + eleven gates on the settled tree; one re-review
-of the fixer commits; docs dimension (CHANGELOG internals-B block, ROADMAP: remove the
-shipped internals-B entry and the FieldInput ownership bug at :889, record
-`content-routes-media.ts` 1,447 lines as the remaining tracked monolith, file the
-route-forward reviewer notes to internals-C/polish tiers), post-mortem into the plan
-file, HISTORY entry, STATUS rewrite; commit, push `internals-b`, PR, merge on green CI
-(authorization recorded below). Then reconcile internals-C's anchors against merged main
-and execute it per the paragraph below. Resume prompt: "In ~/Projects/cairn-cms, invoke
-cairn-pass and resume the internals-B pass-end ritual per docs/STATUS.md's in-flight
-entry (worktree .claude/worktrees/internals-b), then proceed to internals-C."
+**Execute internals-C** (audit-remediation slice 7, coherence). The plan is
+`docs/superpowers/plans/2026-09-03-internals-c-pass.md`: 13 tasks, ceiling 6.5M, checkpoints
+4/8/12, workflow mode with explicit per-task dependencies, worktree
+`.claude/worktrees/internals-c` off `main` (post-B), from-scratch showcase `npm ci` before
+trusting any e2e. Its anchors were reconciled against the post-B tree on 2026-09-04
+(`754d5057`; one reconciliation note under Task 7), so it dispatches as written. **The plan is
+APPROVED (Geoff, 2026-09-03 evening, with internals-B, via the approval-gate question) with
+full git authorization: push the branch, open the PR, and merge on green CI.** Arm the
+workflow runaway guard before dispatching (`~/.claude/docs/unattended-work-guards.md`); add
+the sleep inhibitors and battery watchdog only when running unattended on battery. On any
+blocker, stop, WIP-commit, write STATUS with the resume state. After C: chassis, then polish,
+ONE release cut after polish. Resume prompt: "In ~/Projects/cairn-cms, invoke cairn-pass and
+execute the approved internals-C plan
+(docs/superpowers/plans/2026-09-03-internals-c-pass.md) per its workflow mode: arm the
+runaway guard, run the pass and its full ritual, push, PR, merge on green CI. The approval
+and the git authorization are recorded in this STATUS entry."
 
-**Execute internals-B, then internals-C, in one overnight run. BOTH PLANS ARE APPROVED
-(Geoff, 2026-09-03 evening, via the approval-gate question) with FULL overnight git
-authorization: for each pass in order, push the branch, open the PR, and merge on green
-CI.** The plans are twice-reviewed (three-lens round 1 and round-2 engine-triage
-verification, both folded):
-`docs/superpowers/plans/2026-09-03-internals-b-pass.md` (15 tasks, ceiling 8M,
-checkpoints 4/8/12, workflow mode, five independent chains, worktree
-`.claude/worktrees/internals-b` off `main`) and
-`docs/superpowers/plans/2026-09-03-internals-c-pass.md` (13 tasks, ceiling 6.5M,
-checkpoints 4/8/12, workflow mode, worktree `.claude/worktrees/internals-c` off POST-B
-`main`; its anchors MUST be reconciled against post-B main before dispatch, since the B
-splits move files C sweeps). The serial seam is B's merge; everything inside each pass
-parallelizes per its plan. Arm the FULL guard set before dispatching
-(`~/.claude/docs/unattended-work-guards.md`: both sleep inhibitors held to ~09:00, the
-battery watchdog, the workflow runaway guard). On any blocker, stop, WIP-commit, write
-STATUS with the resume state. After C: chassis, then polish, ONE release cut after
-polish. Resume prompt for the overnight session: "In ~/Projects/cairn-cms, invoke
-cairn-pass and execute the approved internals-B plan
-(docs/superpowers/plans/2026-09-03-internals-b-pass.md) per its workflow mode: re-arm
-the full guard set, run the pass and its full ritual, push, PR, merge on green CI; then
-reconcile the internals-C plan's anchors against merged main and execute it the same
-way. Both approvals and the git authorization are recorded in this STATUS entry."
+One execution rule from internals-B's close, binding on every pass: **never let parallel
+writers share one worktree.** Two of three parallel pass-end fixers ran `git stash` in the
+shared `internals-b` worktree and transiently clobbered each other. Give each parallel
+writer its own worktree (the chain worktrees did this correctly), or serialize.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -79,34 +48,21 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b MERGED; internals
-  COMPLETE, PR open (immediate next action, above). Next: internals-B (four monoliths;
-  filed by the internals plan's Task 11; also carries `FieldInput`'s
-  `ownership_invalid_mutation` fix inside the `EditPage` split, the confirm
-  destroy-then-create `batch()` question, and the OfficeList/AdminTable
-  scroll-container ownership, plus the items routed at the internals close), then
-  internals-C (coherence), then chassis, then the final **polish** slice (Geoff,
-  2026-09-01: a full-surface cleanliness-and-beauty sweep, reading the exports as a
-  family, the docs cover to cover, and the rendered admin against the design system,
-  because per-pass beauty reviews read only their own diff; also carries the
-  OfficeList outright-retire question, ruling-first, the internals plan's own
-  hands-forward items, and the internals-B docket's polish-slice inputs); ONE release
-  cut after polish. The internals plan's task list and the internals-B docket are the
-  canonical routing record now; this bullet stops restating them.
-  Routed to chassis: the render trio re-homing
-  (`cardShell`/`headRow`/`iconSpan`), and the carried showcase hand-mounted
-  `+page.server.ts` against generated `./$types`. Standing chassis mandate (Geoff,
-  2026-09-01): the chassis is the most developer-visible part of cairn and the code
-  developers interact with most, so it SETS the code bar; its quality bar equals the
-  engine's. The chassis pass gets the full cleanliness-and-beauty treatment the engine
-  slices got, every line treated as copy-paste-taught exemplar code, and its plan gets
-  the same three-lens adversarial review. Two planning consequences (Geoff, 2026-09-01):
-  the ROADMAP's 14-finding chassis improvement round predates this mandate, so the
-  chassis plan opens with a fresh showcase review at the exemplar bar and treats the old
-  finding list as input, never the ceiling; and the chassis-before-polish ordering is
-  load-bearing, since polish's cover-to-cover docs read must see the chassis that
-  teaches the surface, so a chassis slip resequences polish rather than skipping past
-  it.
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b, 5 (internals), and 6
+  (internals-B) MERGED. Next: internals-C (coherence; immediate next action above), then
+  chassis, then the final **polish** slice (Geoff, 2026-09-01: a full-surface
+  cleanliness-and-beauty sweep, reading the exports as a family, the docs cover to cover,
+  and the rendered admin against the design system; it also carries the OfficeList
+  outright-retire question ruling-first, the `aria-disabled`-versus-native-`disabled`
+  busy-idiom ruling, and the items ROADMAP's polish sub-bullet lists); ONE release cut
+  after polish. `content-routes-media.ts` at 1,447 lines is the one file left from the
+  audit's monolith list; ROADMAP's audit-remediation entry is the canonical routing
+  record. Standing chassis mandate (Geoff, 2026-09-01): the chassis is the most
+  developer-visible part of cairn and SETS the code bar, so its quality bar equals the
+  engine's; the chassis plan opens with a fresh showcase review at the exemplar bar and
+  treats the ROADMAP's older 14-finding list as input, never the ceiling; chassis precedes
+  polish because polish's cover-to-cover docs read must see the chassis that teaches the
+  surface.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.
@@ -129,8 +85,6 @@ behind and its sheet says to run it as a numbered site pass.
 - `packages/create-cairn-site/src/github/install.test.mjs` ("the concurrent installation poll
   logs a periodic waiting line"): flaked once in a 30x local loop (2026-08-29). Trigger: its
   next CI failure gets the same mock-timer deflake the server grace-window tests received.
-- `ROADMAP.md`'s Now tier carries the `FieldInput` `ownership_invalid_mutation` fix (a plain
-  prop bound with `bind:this` against `EditPage`'s `$state`).
 - Post-deploy CSRF: a consumer `guard.rejected` record with `detail: 'mismatch'`,
   `witness: 'field'` can be the known double-mint residual (friction-log WATCH entry), not a
   new mechanism; the discriminator now names any genuinely new one.

@@ -209,8 +209,9 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
 
 // `decodeField` (the nested-use sibling: object leaves, array rows) shares the same default arm,
 // but its own explicit cases are boolean/multiselect/image/object, so text/textarea/date land here
-// too, alongside number/select/url/email/icon and (structurally, though the declaration-time
-// checkContainerNesting guard never lets a real fieldset reach this with either) reference/array.
+// too, alongside number/select/url/email/datetime/icon and (structurally, though the
+// declaration-time checkContainerNesting guard never lets a real fieldset reach this with either)
+// reference/array.
 describe('decodeField default-arm absorption (nested; every arm not explicitly cased)', () => {
   const nested: NamedField = {
     type: 'object',
@@ -224,6 +225,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
       site: { type: 'url', label: 'Site' },
       contact: { type: 'email', label: 'Contact' },
       when: { type: 'date', label: 'When' },
+      scheduled: { type: 'datetime', label: 'Scheduled' },
       glyph: { type: 'icon', label: 'Glyph' },
       author: { type: 'reference', concept: 'pages', label: 'Author' },
       extra: { type: 'array', item: { type: 'text', label: 'Extra' }, label: 'Extra' },
@@ -239,6 +241,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
     form.set('meta.site', 'https://example.com');
     form.set('meta.contact', 'a@b.c');
     form.set('meta.when', '2026-01-05');
+    form.set('meta.scheduled', '2026-01-05T09:00');
     form.set('meta.glyph', 'leaf');
     form.set('meta.author', 'jane-doe');
     form.set('meta.extra', 'x');
@@ -251,6 +254,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
       site: 'https://example.com',
       contact: 'a@b.c',
       when: '2026-01-05',
+      scheduled: '2026-01-05T09:00',
       glyph: 'leaf',
       author: 'jane-doe',
       extra: 'x',

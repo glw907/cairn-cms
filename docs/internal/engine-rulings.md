@@ -5418,7 +5418,7 @@ when the remediation pass lands.
 - **Reopens on:** a sixth dispatch site is added over `FieldDescriptor` without the guard.
 - **Record:** [int-coherence.md, finding 6](record/2026-08-26-any-site-audit/int-coherence.md);
   [2026-09-03 internals-C pass](../superpowers/plans/2026-09-03-internals-c-pass.md), Task 1.
-- **Verified:** `content/unreachable.test.ts`; the five dispatch sites' characterization suites
+- **Verified:** `src/tests/unit/content-unreachable.test.ts`; the five dispatch sites' characterization suites
   (`content-frontmatter.test.ts`, `fieldset-validate.test.ts`, `fields-icon.test.ts`,
   `field-input.test.ts`, `ComponentForm.test.ts`), byte-stable across the rewrite; the sixteenth-arm
   mutation check (a scratch arm added to the union fails `npm run check` at all five sites, then

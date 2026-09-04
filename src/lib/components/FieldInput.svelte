@@ -179,7 +179,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
    *  cannot prove the chain exhaustive from the template alone; this function lists every
    *  `FieldDescriptor` arm as its own case so a sixteenth arm fails `npm run check` here, before it
    *  silently renders through the generic fallback. Never called: the compile-time check is its
-   *  only purpose.
+   *  only purpose. Deliberately unused; keep it despite looking like dead code.
    */
   function assertFieldInputArmsExhaustive(kind: FieldDescriptor['type']): void {
     switch (kind) {

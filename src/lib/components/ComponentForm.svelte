@@ -155,7 +155,8 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
    *  check` here. multiselect, image, object, reference, and array never reach a real component
    *  attribute (`checkComponentAttributes` rejects them at `defineComponent`), but `def.attributes`
    *  is still typed over the full union, so this proof covers them too. Never called: the
-   *  compile-time check is its only purpose.
+   *  compile-time check is its only purpose. Deliberately unused; keep it despite looking like
+   *  dead code.
    */
   function assertComponentFormArmsExhaustive(kind: FieldDescriptor['type']): void {
     switch (kind) {

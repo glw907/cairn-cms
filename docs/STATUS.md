@@ -27,11 +27,13 @@ install/build/e2e (155 Playwright tests) exits 0. Post-mortem appended to
 under an 8G MemoryMax systemd scope (`scripts/test/contained.mjs`, CI falls back to a
 direct spawn); the browser-recycling investigation found one recycled Chromium across
 the whole component project with RSS plateauing near 3.6G, so no config change.
-**Next: the branch is being pushed and its PR opened (Geoff authorized push-and-PR
-2026-09-02).** After merge: internals-B planning per
+**Next: PR #47 is open (push-and-PR authorized 2026-09-02); merging it is the next
+action once CI is green.** After merge: internals-B planning per
 `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (including the
 items routed at the internals close), then internals-C, then chassis, then the final
-polish slice, with ONE release cut after polish.
+polish slice, with ONE release cut after polish. Resume prompt for a fresh session:
+"In ~/Projects/cairn-cms, invoke cairn-pass: confirm PR #47 merged (merge it if CI is
+green), then plan internals-B from the docket per its ratified defaults."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

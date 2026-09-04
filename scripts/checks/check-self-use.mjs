@@ -224,12 +224,12 @@ function loadAllowlist() {
 }
 
 /**
- * The gate's verdict: every zero-caller export not covered by a reasoned allowlist entry, plus
- * every allowlist entry that names an export but carries no reason. An empty reason still counts
- * as absent for coverage purposes (matching the historical behavior), but the entry ITSELF is now
- * its own violation class, matching check-surface-leaks.mjs's `unreasoned` shape, rather than
- * silently dropping the entry and reporting its export as "carries no allowlist entry" at all,
- * which is false: it carries one, the entry is just missing its reason.
+ * The gate's verdict: every zero-caller export not covered by ANY allowlist entry (named,
+ * regardless of reason), plus every allowlist entry that names an export but carries no reason.
+ * A named-but-unreasoned entry still excludes its export from `unlisted`, so an empty reason
+ * never re-reports the export as "carries no allowlist entry" at all, which would be false: it
+ * carries one, the entry is just missing its reason. The entry ITSELF is instead its own
+ * violation class, matching check-surface-leaks.mjs's `unreasoned` shape.
  * @param {ReturnType<typeof analyzeExport>[]} analysis
  * @param {AllowlistEntry[]} entries
  * @returns {{ ok: true } | { ok: false, unlisted: ReturnType<typeof analyzeExport>[], unreasoned: AllowlistEntry[] }}

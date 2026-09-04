@@ -86,19 +86,25 @@ describe('CodeMirror stays off the server', () => {
 
   it('the editor modules are reached only through dynamic imports', () => {
     // MarkdownEditor.svelte loads them via `await import('./editor-highlight.js')` and
-    // `await import('./editor-modes.js')`, which carry no `from` clause; any `from '...'` edge
-    // is a static one that would pull the module (and its codemirror imports) into every
+    // `await import('./editor-modes.js')`, which carry no `from` clause; any VALUE `from '...'`
+    // edge is a static one that would pull the module (and its codemirror imports) into every
     // importer's bundle. The $lib alias spelling reaches the same files, so it is scanned too.
+    // A bare `export type { ... } from '...'` or `import type { ... } from '...'` re-export is
+    // exempt, the same carve-out STATIC_EDITOR_VALUE makes above: it is fully erased at compile
+    // time, so it never emits a JS import and never pulls the module into a bundle.
     const offenders: string[] = [];
     for (const file of sourceFiles('src/lib')) {
       const source = readFileSync(file, 'utf8');
       for (const name of DYNAMIC_ONLY) {
         const stem = name.replace(/\.ts$/, '');
-        if (
-          source.includes(`from './${stem}`) ||
-          source.includes(`from '../components/${stem}`) ||
-          source.includes(`from '$lib/components/${stem}`)
-        ) {
+        const stemRe = new RegExp(
+          `from '(?:\\./|\\.\\./components/|\\$lib/components/)${stem}(?:\\.[jt]s)?'`,
+          'g',
+        );
+        for (const match of source.matchAll(stemRe)) {
+          const lineStart = source.lastIndexOf('\n', match.index) + 1;
+          const line = source.slice(lineStart, source.indexOf('\n', match.index));
+          if (/^\s*(?:export|import)\s+type\b/.test(line)) continue;
           offenders.push(file);
         }
       }

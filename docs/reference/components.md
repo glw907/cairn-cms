@@ -662,26 +662,35 @@ machinery with a plain-language hover hint.
 #### `EditorApi` (the `registerEditor` grant)
 
 The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
-editor. Before this collapse, each of the 13 retired `register*` props handed a caller back only
-the one callback or object it wired; every `registerEditor` caller now receives the same full
-surface uniformly, since the host is always `EditPage`, which always needed the whole thing
-anyway.
+editor: every capability, insertion, selection, view, history, and the format/tidy/image-placeholder
+subsystems, is a member of that one object, since the host is always `EditPage`, which always
+needed the whole thing anyway.
 
 | Member | Type | What it does |
 | --- | --- | --- |
 | `insert` | `(text: string) => void` | Inserts text at the cursor. |
 | `insertLink` | `(href: string, title: string) => void` | Inserts an inline link at the current selection. |
+| `insertImage` | `(alt: string, ref: string) => void` | Inserts an inline `![alt](media:slug.hash)` image at the caret. |
+| `replaceRange` | `(from: number, to: number, text: string) => void` | Overwrites a document span with new text and drops the caret after it. |
 | `getSelection` | `() => string` | Returns the selected text. |
+| `getSelectionRange` | `() => { from: number; to: number } \| null` | Returns the selection's document offsets, or `null` for a bare caret. |
+| `selectRange` | `(from: number, to: number) => void` | Selects a document span, focuses the surface, and scrolls it into view. |
 | `caretCoords` | `() => { left: number; right: number; top: number; bottom: number } \| null` | Returns the caret's viewport coordinates, or `null` before mount or when unmeasurable. |
 | `focus` | `() => void` | Returns focus to the editor surface. |
 | `undo` | `() => void` | Undoes the last editor transaction. |
 | `format` | `(kind: FormatKind) => void` | Applies a named selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`. |
-| `replaceRange` | `(from: number, to: number, text: string) => void` | Overwrites a document span with new text and drops the caret after it. |
-| `selectRange` | `(from: number, to: number) => void` | Selects a document span, focuses the surface, and scrolls it into view. |
-| `insertImage` | `(alt: string, ref: string) => void` | Inserts an inline `![alt](media:slug.hash)` image at the caret. |
-| `getSelectionRange` | `() => { from: number; to: number } \| null` | Returns the selection's document offsets, or `null` for a bare caret. |
 | `tidy` | `TidyApi` | The tidy apply API (`enter`, `acceptOne`, `rejectOne`, `acceptMany`, `rejectAll`, `exit`) driving the review surface's in-buffer decorations and its accept/reject state machine. |
 | `imagePlaceholders` | `ImagePlaceholderApi` | The optimistic-placeholder API (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload loop's in-flight thumbnail and determinate progress, with no document text written until the upload resolves. |
+
+`/components` exports `TidyApi`, `ImagePlaceholderApi`, and `FormatKind` by name, since a caller that
+types a held `EditorApi` grant needs its `tidy`, `imagePlaceholders`, and `format` members named, not
+just reachable through property access.
+
+| Name | Stability | Meaning |
+| --- | --- | --- |
+| `TidyApi` | Extension API | The `tidy` member's type, the tidy apply API from the preceding table. |
+| `ImagePlaceholderApi` | Extension API | The `imagePlaceholders` member's type, the optimistic-placeholder API from the preceding table. |
+| `FormatKind` | Extension API | The `format` member's parameter type, the selection-transform name union. |
 
 #### `MarkdownEditor` wiring props (Unstable API)
 

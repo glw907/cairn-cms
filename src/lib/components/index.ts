@@ -21,6 +21,15 @@ export { default as EditPage } from './EditPage.svelte';
 export { default as CairnHistory } from './CairnHistory.svelte';
 export { default as ManageEditors } from './ManageEditors.svelte';
 export { default as MarkdownEditor, type EditorApi } from './MarkdownEditor.svelte';
+// TidyApi, ImagePlaceholderApi, and FormatKind are structural members of EditorApi (its `tidy`,
+// `imagePlaceholders`, and `format` fields), so a consumer that types a held `EditorApi` grant
+// needs them named, not just reachable through property access. editor-tidy.ts and
+// editor-placeholder.ts are dynamically-imported-only editor modules (the CodeMirror-off-the-server
+// boundary); a bare `export type { ... } from` re-export is fully erased at compile time (no JS
+// import emitted, unlike a value import), so it never pulls the module into a consumer's bundle.
+export type { TidyApi } from './editor-tidy.js';
+export type { ImagePlaceholderApi } from './editor-placeholder.js';
+export type { FormatKind } from './markdown-format.js';
 export { default as NavTree } from './NavTree.svelte';
 export { default as DeleteDialog } from './DeleteDialog.svelte';
 export { default as RenameDialog } from './RenameDialog.svelte';

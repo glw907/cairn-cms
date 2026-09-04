@@ -561,9 +561,10 @@ describe('the props gate is clean on the real /components surface (Task 7)', () 
       // /components also carries a plain type export or two (EditorApi) with no matching
       // `.svelte.d.ts`, by design; checkComponentProps now throws on a genuinely missing
       // declaration (round B), so this corpus is pre-filtered to real component exports the same
-      // way main() is, rather than relying on a null return to skip a non-component name.
+      // way main() is: by the *source* file, not the dist output, so a missing dist declaration
+      // for a genuine component would still reach the throw rather than being silently dropped.
       const offenders = names
-        .filter((name) => existsSync(resolve(ROOT, `dist/components/${name}.svelte.d.ts`)))
+        .filter((name) => existsSync(resolve(ROOT, `src/lib/components/${name}.svelte`)))
         .map((name) => checkComponentProps(name, resolve(ROOT, `dist/components/${name}.svelte.d.ts`), pageText))
         .filter((r): r is NonNullable<typeof r> => r !== null)
         .filter((r) => r.noSection || r.missing.length > 0 || r.promoted.length > 0);

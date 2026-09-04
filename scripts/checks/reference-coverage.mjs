@@ -385,7 +385,7 @@ export function missingIndexedAccessParentheticals(names, pageText) {
 // A component's per-file dist declaration carries its Props shape under one of two names,
 // depending on how svelte-package generated it: a local `interface Props { ... }` when the
 // component's own script declares one explicitly (the common case, and the one an `extends`
-// composition such as MarkdownEditor's `Props extends StableEditorProps, EditPageWiringProps`
+// composition such as MarkdownEditor's `Props extends StableEditorProps, UnstableEditorProps`
 // still uses), or a synthesized `type $$ComponentProps = { ... }` alias when it does not (a
 // component whose `$props()` destructuring types its shape inline, such as HelpHome and
 // WelcomeView).
@@ -770,10 +770,11 @@ function main() {
       const dtsPath = resolve(ROOT, `dist/components/${name}.svelte.d.ts`);
       // /components exports a component per name (each with a `.svelte.d.ts`), plus a handful of
       // plain type exports riding the same barrel (EditorApi, say): no matching `.svelte.d.ts`
-      // exists for those, by design, never a build failure, so they are skipped here rather than
-      // reaching checkComponentProps's own missing-file throw (which guards a genuine component
-      // whose dist declaration should exist and does not).
-      if (!existsSync(dtsPath)) continue;
+      // exists for those, by design, never a build failure. Discriminate on the *source*, not the
+      // dist output: a name with no `src/lib/components/<name>.svelte` is a type export and is
+      // skipped here; a name that IS a real component but is missing its dist declaration (a stale
+      // or partial build) falls through to checkComponentProps's own missing-file throw.
+      if (!existsSync(resolve(ROOT, `src/lib/components/${name}.svelte`))) continue;
       const r = checkComponentProps(name, dtsPath, pageText);
       if (!r) continue;
       if (r.noSection) {

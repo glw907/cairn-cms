@@ -230,12 +230,17 @@ export function deriveTypeCheckerLeaks(model, universe) {
   /** @type {{ name: string, subpath: string, model: 'type-checker' }[]} */
   const leaks = [];
   for (const entry of surfaceSubpaths()) {
-    // `/components` exports Svelte components exclusively (MarkdownEditor, EditPage, ...), never
-    // an interface or type alias of its own; each component's declared type is a generic
-    // reference to its own Props/Events/Slots parameters, and walking those reaches every prop's
-    // type, including a component's own internal callback and object props. Component props are
-    // outside this rider's scope by design (Task 7's props gate is the answer for that surface;
-    // see the ledger row's stated-limits paragraph), so this subpath contributes no roots here.
+    // `/components` exports Svelte components (MarkdownEditor, EditPage, ...) plus a handful of
+    // enumerated editor-grant types riding the same barrel (TidyApi, ImagePlaceholderApi,
+    // FormatKind, EditorApi): those types are exported by name, so `check:reference` already
+    // covers their coverage and stability tagging, rather than needing leak modeling here. A
+    // component's declared type is a generic reference to its own Props/Events/Slots parameters,
+    // and walking those reaches every prop's type, including a component's own internal callback
+    // and object props; component props are outside this rider's scope by design (Task 7's props
+    // gate is the answer for that surface; see the ledger row's stated-limits paragraph), so this
+    // subpath contributes no roots here. Structurally modeling `/components` itself (walking
+    // component prop types the way this rider walks a plain module's exports) is routed to
+    // internals-B, not answered by this skip.
     if (entry.subpath === '/components') continue;
     const dtsPath = resolve(ROOT, entry.dts);
     if (!existsSync(dtsPath)) continue;

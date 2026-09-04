@@ -540,8 +540,8 @@ persistent "?" carries Markdown help, design-arc D2).
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
   const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
   // The editor holders below are all populated from the one EditorApi registerEditor hands back on
-  // mount (the seam collapse, ruling 1); each stays a no-op (or null) until then, the same as when
-  // each had its own register* prop.
+  // mount (the seam collapse, ruling 1; docs/internal/engine-rulings.md, `audit-admin-markdowneditor`);
+  // each stays a no-op (or null) until then, the same as when each had its own register* prop.
   let insert = $state.raw<(text: string) => void>(() => {});
   // The editor's range-replace seam; the dialog's Update routes through it to overwrite an edited
   // block's source span.

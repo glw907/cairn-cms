@@ -120,6 +120,11 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
   // shorthand `ctx.font` silently rejected (a rejected assignment leaves the property at whatever
   // it already held, so the caller would otherwise measure against the WRONG font and could report
   // a false clean). The caller skips a `NaN` element entirely rather than treating it as a clean 0.
+  // The rejection check (`measureCtx.font === beforeFont`) has one blind window: a select whose
+  // computed font happens to serialize to exactly the canvas default, `10px sans-serif`, reads as
+  // a rejected assignment and is skipped even though the assignment actually succeeded. The
+  // direction is safe either way: a skip never reports a false overflow, it only forgoes checking
+  // that one element, so this window costs coverage, never a false positive.
   function closedSelectOverflowPx(el: Element): number {
     const select = el as Element & { options: { item(index: number): { text: string } | null }; selectedIndex: number };
     const selected = select.options.item(select.selectedIndex);

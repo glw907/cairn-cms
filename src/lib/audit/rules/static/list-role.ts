@@ -235,7 +235,7 @@ export const listRole: StaticRule = {
           start: list.start,
           end: list.end,
           message:
-            `<${list.name}> suppresses its own marker: ${cause}, and a marker-suppressed <ul>/<ol> ` +
+            `<${list.name}> suppresses its own marker: ${cause}, and a marker-suppressed <ul>/<ol>/<menu> ` +
             'with no role attribute stops being announced as a list in WebKit/VoiceOver; add ' +
             `role="list" to restore the list semantics (WCAG 1.3.1).${itemNote}`,
         });

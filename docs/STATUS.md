@@ -59,7 +59,7 @@ writer its own worktree (the chain worktrees did this correctly), or serialize.
 `docs/superpowers/specs/2026-09-04-chassis-passes-design.md` (brainstormed and ratified
 2026-09-04, revised after a three-lens review banked at
 `docs/internal/record/2026-09-04-chassis-inputs/`); plan
-`docs/superpowers/plans/2026-09-04-chassis-a-pass.md` (12 sequential tasks, ceiling 6.5M,
+`docs/superpowers/plans/2026-09-04-chassis-a-pass.md` (12 sequential tasks, ceiling 7.5M,
 checkpoints 4/8/12, worktree `.claude/worktrees/chassis-a` off post-C `main`; its own
 three-lens review is folded before dispatch). Geoff's "add this work to the existing
 workflow" is the approval and carries the same authorization: push, PR, merge on green CI.

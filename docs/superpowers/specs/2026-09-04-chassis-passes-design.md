@@ -96,8 +96,9 @@ The passes work under two rules rather than a flat finding list:
   the home page holds more than 12 entries, and the home page paginates the corpus minus one
   featured entry, so a page size under 13 kills a taught feature and fails `tag-filter.spec.ts`.
   The corpus grows from 14 to 27 posts and `ARCHIVE_PAGE_SIZE` becomes 13: page one keeps 13
-  entries (the tag filter and the home baseline are unchanged) and `/archive/2` exists, is
-  prerendered, and enters the visual matrix. This amends the brainstorm's "5 or 6" figure on the
+  entries (the tag filter survives and page one's entry count is unchanged, though the
+  pagination block the home page reveals at two or more pages moves its baselines) and
+  `/archive/2` exists, is prerendered, and enters the visual matrix. This amends the brainstorm's "5 or 6" figure on the
   reviewer's arithmetic. Proving it reveals the home page's pagination block and moves at least
   twelve committed baselines, so it executes in chassis-B (plan review, 2026-09-04).
 - **The `handleUnseenRoutes` exception stays.** It is not showcase dead weight. A scaffolded
@@ -146,37 +147,37 @@ Tasks (the plan fixes the steps):
    as the first commit (the CSS half rides chassis-B, after internals-C's `prose.css` rename
    settles), `playwright.config.ts` and the three tab-indented e2e specs, with the visual suite
    run before and after so a reformat that changes paint stops the task.
-2. **The comment gate reaches the showcase.** Both halves of the lint decision; the findings the
-   extension surfaces are fixed in the same task; if they exceed one task's scope, the remainder
-   is recorded at the checkpoint as a named follow-on rather than lowering the bar.
-3. **Fixtures out of the scaffold.** `src/routes/probe-craft/` and `(site)/+layout.server.ts`
-   excluded by path (the layout load exists only for the sentinel, so exclusion beats a marker
-   that would leave a vacuous exported `load`); the fixture convention stated in the showcase
-   README; `docs/extend/what-the-scaffold-wrote.md` loses its `probe-craft/` tree line and
-   public-routes row; `.github/workflows/create-site.yml`'s leftover assertion gains
-   `src/routes/probe-craft` and the string `siteLayoutSentinel`; re-emit. Recorded rank 2.
-4. **Dead code out.** `IntroLedger.svelte` and `Carousel.svelte` (464 unimported lines, each
-   carrying one of the 22 focus rings) and `scripts/reference-capture.mjs`, whose header says it
-   was to be deleted (under the excluded `scripts/`, so hygiene rather than a leak);
-   `what-the-scaffold-wrote.md` stops describing the two components as registered. Recorded
-   rank 5, review 2.6.
-5. **`cairn.config.ts` split.** The icon set and the nine `defineComponent` declarations move to
-   their own theme modules; the adapter file keeps adapter, concepts, backend, and `navLayout`
-   under a true header; the `$theme` self-import residue goes. Pure move, no rendered change.
-   Recorded rank 10, review 2.1.
-6. **The scaffold's format check.** The bake's generated files listed in the emitted
+2. **The scaffold's format check.** The bake's generated files listed in the emitted
    `.prettierignore`, verified in both a fresh `templates/waymark` and a bake-only tree; the
    two workflow wirings. (The archive proof moved whole to chassis-B: it changes rendered
    output. Its non-visual halves ride task 10: `sortNewestFirst` removed with the engine's
    newest-first ordering documented as a contract in `docs/reference/delivery.md`; the two
    stale 220-post comments ride task 11.) Recorded rank 11.
+3. **The comment gate reaches the showcase.** Both halves of the lint decision; the findings the
+   extension surfaces are fixed in the same task; if they exceed one task's scope, the remainder
+   is recorded at the checkpoint as a named follow-on rather than lowering the bar.
+4. **Fixtures out of the scaffold.** `src/routes/probe-craft/` and `(site)/+layout.server.ts`
+   excluded by path (the layout load exists only for the sentinel, so exclusion beats a marker
+   that would leave a vacuous exported `load`); the fixture convention stated in the showcase
+   README; `docs/extend/what-the-scaffold-wrote.md` loses its `probe-craft/` tree line and
+   public-routes row; `.github/workflows/create-site.yml`'s leftover assertion gains
+   `src/routes/probe-craft` and the string `siteLayoutSentinel`; re-emit. Recorded rank 2.
+5. **Dead code out.** `IntroLedger.svelte` and `Carousel.svelte` (464 unimported lines, each
+   carrying one of the 22 focus rings) and `scripts/reference-capture.mjs`, whose header says it
+   was to be deleted (under the excluded `scripts/`, so hygiene rather than a leak);
+   `what-the-scaffold-wrote.md` stops describing the two components as registered. Recorded
+   rank 5, review 2.6.
+6. **`cairn.config.ts` split.** The icon set and the nine `defineComponent` declarations move to
+   their own theme modules; the adapter file keeps adapter, concepts, backend, and `navLayout`
+   under a true header; the `$theme` self-import residue goes. Pure move, no rendered change.
+   Recorded rank 10, review 2.1.
 7. **Single-source public routes.** The `[...path=md]` twin route and the `feed.xml`/`feed.json`
    handlers consume the chassis `PublicRoutesConfig` instead of retyping it. Recorded rank 3.
 8. **Render trio re-homing** per the decision above, one change, ledger rows closed with the
    seam-fit line, `Consumers must:` and migration note carrying the replacement code.
 9. **Showcase unit tests.** A standalone vitest config inside `examples/showcase` (not a project
    in the engine's root config) with a `test:unit` script, covering the chassis's pure logic
-   (`paginateArchive`, `formatDate`, `isBannerExpired`, `isAdminHref`, and what task 5 exposes).
+   (`paginateArchive`, `formatDate`, `isBannerExpired`, `isAdminHref`, and what task 6 exposes).
    The script, the devDependency, and the test files ship to the scaffold on purpose: a
    scaffolded site inherits the chassis logic and should inherit its tests. Recorded rank 4.
 10. **Idiom conformance.** Import specifiers one way (`.js`) across `$chassis`/`$theme`; route

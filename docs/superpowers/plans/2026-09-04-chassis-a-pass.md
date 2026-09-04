@@ -112,8 +112,9 @@ other full gate may run on the machine concurrently.
 - Create: `examples/showcase/.prettierrc`, `examples/showcase/.prettierignore`
 - Modify: `examples/showcase/package.json` (devDependencies `prettier`,
   `prettier-plugin-svelte`; scripts `format` and `format:check` sharing ONE target set
-  written once, `src/**/*.{ts,js,svelte} e2e/**/*.ts *.ts *.js`, with `format:check` never
-  wider than `format`), every showcase source file the reformat touches,
+  written once, `src/**/*.{ts,js,svelte} e2e/**/*.ts *.ts *.js`, both invoked with
+  `--no-error-on-unmatched-pattern` because the scaffold has no `e2e/` and Prettier 3 errors on
+  an unmatched pattern; `format:check` never wider than `format`), every showcase source file the reformat touches,
   `examples/showcase/playwright.config.ts` (tabs at :4-14), `e2e/masthead-responsive.spec.ts`,
   `e2e/site-visual.spec.ts`, `e2e/theme-toggle.spec.ts` (tab-indented), `templates/waymark`
   (regenerated)
@@ -136,7 +137,8 @@ other full gate may run on the machine concurrently.
 
 **Acceptance criteria:** `format:check` green on the showcase; `check:template` green; the
 showcase e2e suite green with every baseline unchanged; the commit is the first on the
-branch; `format` and `format:check` share one target set.
+branch; `format` and `format:check` share one target set and tolerate the scaffold's missing
+`e2e/`.
 
 ### Task 2: The scaffold's format check
 

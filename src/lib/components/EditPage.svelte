@@ -535,16 +535,6 @@ persistent "?" carries Markdown help, design-arc D2).
   function getSelection(): string {
     return editor?.getSelection() ?? '';
   }
-  // The editor's selection range; tidy reads it for the exact selected span's offset so a selection
-  // tidy never maps onto an identical passage earlier in the document. Returns null when the
-  // selection is empty (a bare caret), which reads as document scope. The `?? null` is load-bearing:
-  // a bare `editor?.getSelectionRange()` yields `undefined` while no editor is live, which the
-  // `if (range)` check below in `runTidy` would still treat as absent (falsy), but tidy's own scope
-  // math also reads `range.from` off it directly elsewhere, so the declared return type must stay
-  // the real `null`, never `undefined`.
-  function getSelectionRange(): { from: number; to: number } | null {
-    return editor?.getSelectionRange() ?? null;
-  }
   // The editor's selection transform.
   function format(kind: FormatKind) {
     editor?.format(kind);
@@ -705,10 +695,10 @@ persistent "?" carries Markdown help, design-arc D2).
   // (a form nested in a form is invalid HTML), the Edit-block dialog pattern. Kept here, not in
   // figure-editor.svelte.ts: a `.svelte.ts` module has no template to bind:this a native ref into.
   let figureDialog = $state<HTMLDialogElement | null>(null);
-  // The Figure control's availability, label, decorative read, and open-dialog prefill (out of this
-  // shell, figure-editor.svelte.ts, Task 12). Writes reach the buffer through editor?.replaceRange/
-  // selectRange only; the module never touches figureDialog, so the shell wrappers below still own
-  // showModal()/close() around it.
+  // The Figure control's availability, label, and open-dialog prefill, which carries the decorative
+  // read (out of this shell, figure-editor.svelte.ts, Task 12). Writes reach the buffer through
+  // editor?.replaceRange/selectRange only; the module never touches figureDialog, so the shell
+  // wrappers below still own showModal()/close() around it.
   const figureEditor = createFigureEditor({
     getEditor: () => editor,
     getMediaAtCaret: () => mediaAtCaret,

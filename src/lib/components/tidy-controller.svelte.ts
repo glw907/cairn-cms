@@ -113,6 +113,12 @@ export function createTidyController(params: TidyControllerParams) {
     // carries the exact selection offsets, so a passage that repeats earlier in the body still maps
     // the corrections onto the actually-selected occurrence. Fall back to the first textual match
     // only when no range is available (offset 0 keeps document-scope tidy unchanged).
+    //
+    // The `?? null` on the range read is load-bearing, not cosmetic: a bare
+    // `getEditor()?.getSelectionRange()` yields `undefined` while no editor is live, a second absent
+    // value the seam's declared `{ from, to } | null` contract does not carry. The truthiness check
+    // below treats both alike; a later `=== null` reader would not, and would then reach
+    // `range.from` on an undefined.
     const selected = params.getEditor()?.getSelection() ?? '';
     const range = params.getEditor()?.getSelectionRange() ?? null;
     const bodyNow = params.getBody();

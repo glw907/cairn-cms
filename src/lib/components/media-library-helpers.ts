@@ -37,4 +37,6 @@ export function branchRows(usage: Record<string, MediaUsageInfo>, hash: string):
 }
 
 /** A branch usage row's branch name, or empty for a published row. */
-export const branchNameOf = (e: UsageEntry): string => (e.origin.kind === 'branch' ? e.origin.branch : '');
+export function branchNameOf(e: UsageEntry): string {
+  return e.origin.kind === 'branch' ? e.origin.branch : '';
+}

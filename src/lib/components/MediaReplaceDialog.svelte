@@ -285,6 +285,16 @@ full-page POST to `?/mediaReplace` navigates away.
   // The server's distinct affected-entry count, read in several places across the review markup and
   // the apply button. Coalesced once here so each read stays a plain number.
   const replaceAffected = $derived(replacePlan?.affectedCount ?? 0);
+  // The open cairn/* edits the replace leaves on the old file, report-only. Coalesced here for the
+  // same reason: the delta well, its count, and the live region below all read it.
+  const replaceBranchCount = $derived(replacePlan?.branchDelta?.length ?? 0);
+  // The live region's trailing branch-delta clause, empty when no open edit is affected. Built here
+  // rather than inline so the announced sentence stays one readable interpolation.
+  const replaceBranchNote = $derived(
+    replaceBranchCount > 0
+      ? ` ${replaceBranchCount} open ${replaceBranchCount === 1 ? 'edit is' : 'edits are'} not touched.`
+      : '',
+  );
 
   // The where-used summary line for one affected entry, derived from its repointed placements: a hero
   // count and a body count, folded into a plain phrase ("Hero and 2 in the body", "1 in the body").
@@ -470,14 +480,14 @@ full-page POST to `?/mediaReplace` navigates away.
             </div>
           </div>
 
-          {#if (replacePlan?.branchDelta?.length ?? 0) > 0}
+          {#if replaceBranchCount > 0}
             <!-- The report-only branch delta: open cairn/* edits keep the old file until they publish.
                  Calm dashed base-200, never the danger register. -->
             <div class="rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
               <div class="mb-1.5 flex items-center gap-2">
                 <GitBranchIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
                 <span class="type-meta font-semibold">Open edits still on the old file</span>
-                <span class="type-meta tabular-nums text-muted">{replacePlan?.branchDelta.length ?? 0}</span>
+                <span class="type-meta tabular-nums text-muted">{replaceBranchCount}</span>
               </div>
               <p class="mb-2 type-meta leading-relaxed text-muted">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
               <ul role="list" class="flex list-none flex-col gap-1 p-0">
@@ -502,7 +512,7 @@ full-page POST to `?/mediaReplace` navigates away.
         <!-- A polite live region mirrors the footer impact for a screen reader on the review step. The
              role="status" matches the Push-alt live region: the stronger, more portable form. -->
         <div class="sr-only" role="status" aria-live="polite">
-          Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}.{(replacePlan?.branchDelta?.length ?? 0) > 0 ? ` ${replacePlan?.branchDelta.length} open ${(replacePlan?.branchDelta?.length ?? 0) === 1 ? 'edit is' : 'edits are'} not touched.` : ''}
+          Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}.{replaceBranchNote}
         </div>
 
         <form method="POST" action="?/mediaReplace" onsubmit={() => onapplied?.()} class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">

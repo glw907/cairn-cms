@@ -75,15 +75,11 @@ export function createFigureEditor(params: FigureEditorParams) {
   // control is unavailable, the fallback reason must say so rather than claim no image is there.
   const label = $derived.by(() => {
     const at = params.getMediaAtCaret();
-    return available
-      ? at?.figure
-        ? 'Edit the figure at the cursor'
-        : 'Wrap the image at the cursor in a figure'
-      : at
-        ? at.figure
-          ? 'Switch to Write to edit this figure'
-          : 'Switch to Write to wrap this image in a figure'
-        : 'Place the cursor on an image to add a figure';
+    if (!at) return 'Place the cursor on an image to add a figure';
+    if (!available) {
+      return at.figure ? 'Switch to Write to edit this figure' : 'Switch to Write to wrap this image in a figure';
+    }
+    return at.figure ? 'Edit the figure at the cursor' : 'Wrap the image at the cursor in a figure';
   });
   // Whether the image at the caret is decorative (empty or whitespace-only alt). The token came from
   // a parsed image node, so the alt is the source between `![` and the closing `]` before `](`. An
@@ -164,10 +160,6 @@ export function createFigureEditor(params: FigureEditorParams) {
     /** The Figure control's accessible label and tooltip. */
     get figureLabel() {
       return label;
-    },
-    /** Whether the image at the caret is decorative. */
-    get figureDecorative() {
-      return decorative;
     },
     /** The open dialog's snapshot, or null while the dialog is closed. */
     get figurePrefill() {

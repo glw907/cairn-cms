@@ -108,9 +108,9 @@ entry's minted link from surviving onto another entry's panel.
     }
   }
 
-  /** Copy the minted URL to the clipboard (the `copyReference` idiom, `CairnMediaLibrary.svelte`).
-   *  A denied or unavailable clipboard falls back to selecting the field's text, so a manual copy
-   *  still works. */
+  /** Copy the minted URL to the clipboard. A denied or unavailable clipboard falls back to selecting
+   *  the field's text, so a manual copy still works. The Media Library's own copy affordance answers
+   *  the same failure with a notice instead, since the reference it copies sits in no field. */
   function copyShareUrl() {
     if (!shareResult) return;
     const url = shareResult.url;

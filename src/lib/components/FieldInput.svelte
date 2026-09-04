@@ -100,14 +100,13 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   let heroRef = $state<MediaHeroField | null>(null);
   $effect(() => {
     if (field.type !== 'image') return;
-    // Snapshot both at registration time: RepeatableField keys rows by row.id while the
+    // Snapshot the key at registration time: RepeatableField keys rows by row.id while the
     // prefixed name embeds the row's index, so a preceding row's deletion or reorder can
     // change `name` for a surviving row before this effect's teardown runs. Reading `name`
     // fresh at teardown would deregister the NEW key and leave the OLD key's ref stale; the
     // closure must deregister the same key it registered.
     const key = name;
-    const ref = heroRef;
-    registerHeroField(key, ref);
+    registerHeroField(key, heroRef);
     return () => registerHeroField(key, null);
   });
 

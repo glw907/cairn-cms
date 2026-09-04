@@ -1,9 +1,10 @@
 <!--
 @component
-The Share preview group inside the Details panel (spec part 3, "Public preview for a
-non-editor"): mint a link so someone who is not an editor can read the pending draft, and
-revoke every outstanding link in one move. Renders nothing when the mounting admin facade
-does not expose the `previewMint`/`previewRevoke` actions.
+The Share preview group inside the edit page's slide-over (spec part 3, "Public preview for
+a non-editor"): mint a link so someone who is not an editor can read the pending draft, and
+revoke every outstanding link in one move. It renders as a sibling of `DetailsPanel`, not
+inside it. Renders nothing when the mounting admin facade does not expose the
+`previewMint`/`previewRevoke` actions.
 
 The minted URL is a bearer credential (anyone holding it can read the draft with no
 session), so it lives only in this component's transient state, never in localStorage or a
@@ -108,6 +109,15 @@ entry's minted link from surviving onto another entry's panel.
     }
   }
 
+  // The copy confirmation's own auto-dismiss: shareCopied already resets on a fresh mint or a
+  // revoke, but a copy with no further action must also stop claiming "Copied" after a few
+  // seconds, both on the button's own label and the role="status" line below.
+  const COPIED_RESET_MS = 2000;
+  let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    return () => clearTimeout(copiedTimer);
+  });
+
   /** Copy the minted URL to the clipboard. A denied or unavailable clipboard falls back to selecting
    *  the field's text, so a manual copy still works. The Media Library's own copy affordance answers
    *  the same failure with a notice instead, since the reference it copies sits in no field. */
@@ -115,7 +125,11 @@ entry's minted link from surviving onto another entry's panel.
     if (!shareResult) return;
     const url = shareResult.url;
     void navigator.clipboard?.writeText(url).then(
-      () => (shareCopied = true),
+      () => {
+        shareCopied = true;
+        clearTimeout(copiedTimer);
+        copiedTimer = setTimeout(() => (shareCopied = false), COPIED_RESET_MS);
+      },
       () => shareUrlInput?.select(),
     );
   }
@@ -153,48 +167,70 @@ entry's minted link from surviving onto another entry's panel.
 </script>
 
 {#if previewMint}
-  <!-- Share preview (spec part 3, "Public preview for a non-editor"): mint a link so someone
-       who is not an editor can read the pending draft, and revoke every outstanding link in
-       one move. The minted URL is a bearer credential, so it lives only in shareResult, never
-       persisted; a revoke clears it from view immediately (never implying a dead link still
-       works). -->
   <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
     <legend class={eyebrowClass}>Share preview</legend>
     <p class="type-meta text-muted">
       Share a private link so someone who is not an editor can read this draft before it publishes.
     </p>
     <div class="flex flex-wrap items-center gap-2">
-      <button type="button" class="btn btn-ghost btn-sm" disabled={shareBusy} onclick={mintPreview}>
+      <!-- aria-disabled, not the native attribute (the repo's guarded-control pattern,
+           EditPage.svelte's Publish button): the control stays focusable and mintPreview's own
+           early return (`if (shareBusy) return;`) makes the busy click inert, so no extra
+           onclick wrapper is needed here the way the form-submitting Publish button needs one. -->
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm cairn-btn-guarded"
+        class:cursor-not-allowed={shareBusy}
+        aria-disabled={shareBusy ? true : undefined}
+        onclick={mintPreview}
+      >
         {#if shareBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Minting…{:else}Share preview link{/if}
       </button>
-      <button type="button" class="btn btn-ghost btn-sm" disabled={revokeBusy} onclick={revokePreview}>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm cairn-btn-guarded"
+        class:cursor-not-allowed={revokeBusy}
+        aria-disabled={revokeBusy ? true : undefined}
+        onclick={revokePreview}
+      >
         {#if revokeBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Revoking…{:else}Revoke all links{/if}
       </button>
     </div>
-    <!-- One always-mounted role="status" region, so a later first result still announces
-         (the needs-alt notice's live-region rule). It carries both success confirmations;
-         errors below are separate role="alert" lines, following ComponentForm's inline
-         validation-message idiom. -->
+    {#if shareResult}
+      <!-- The Copy button is a real interactive control, so it stays OUT of the role="status"
+           region below: AT support for a control inside a live region is inconsistent, and the
+           button's own label mutation would otherwise re-trigger the whole region's announcement
+           on every copy. Its "Copied to clipboard" confirmation instead renders as a plain text
+           line inside the region. -->
+      <div class="flex flex-col gap-1.5">
+        <label class="type-meta font-medium" for="cairn-preview-share-url">Preview link</label>
+        <div class="flex items-center gap-1.5">
+          <input
+            bind:this={shareUrlInput}
+            id="cairn-preview-share-url"
+            type="text"
+            readonly
+            autocomplete="off"
+            class="input input-sm min-w-0 flex-1 font-mono type-meta"
+            value={shareResult.url}
+            onclick={(e) => (e.currentTarget as HTMLInputElement).select()}
+          />
+          <button type="button" class="btn btn-ghost btn-sm shrink-0" onclick={copyShareUrl}>
+            {shareCopied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+      </div>
+    {/if}
+    <!-- One always-mounted role="status" region, so a later first result still announces (the
+         needs-alt notice's live-region rule). Text only: the mint/expiry confirmation, the copy
+         confirmation, and the revoke count; errors below are separate role="alert" lines,
+         following ComponentForm's inline validation-message idiom. -->
     <div role="status" aria-live="polite" class="flex flex-col gap-2">
       {#if shareResult}
-        <div class="flex flex-col gap-1.5">
-          <label class="type-meta font-medium" for="cairn-preview-share-url">Preview link</label>
-          <div class="flex items-center gap-1.5">
-            <input
-              bind:this={shareUrlInput}
-              id="cairn-preview-share-url"
-              type="text"
-              readonly
-              class="input input-sm min-w-0 flex-1 font-mono type-meta"
-              value={shareResult.url}
-              onclick={(e) => (e.currentTarget as HTMLInputElement).select()}
-            />
-            <button type="button" class="btn btn-ghost btn-sm shrink-0" onclick={copyShareUrl}>
-              {shareCopied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-          <p class="type-meta text-muted">Expires {formatExpiry(shareResult.expiresAt)}.</p>
-        </div>
+        <p class="type-meta text-muted">Expires {formatExpiry(shareResult.expiresAt)}.</p>
+      {/if}
+      {#if shareCopied}
+        <p class="type-meta text-muted">Copied to clipboard.</p>
       {/if}
       {#if revokeCount !== null}
         <p class="type-meta text-muted">
@@ -202,7 +238,15 @@ entry's minted link from surviving onto another entry's panel.
         </p>
       {/if}
     </div>
-    {#if shareError}<p role="alert" class="text-error type-meta">{shareError}</p>{/if}
-    {#if revokeError}<p role="alert" class="text-error type-meta">{revokeError}</p>{/if}
+    <!-- Two always-mounted role="alert" wrappers (present and empty at load), the EditPage
+         role="status" region's own recipe: a region conditionally mounted with its first content
+         may not be observed by assistive tech (WCAG 4.1.3). Each message gates on its own
+         presence inside, so an empty wrapper shows nothing. -->
+    <div role="alert">
+      {#if shareError}<p class="text-error type-meta">{shareError}</p>{/if}
+    </div>
+    <div role="alert">
+      {#if revokeError}<p class="text-error type-meta">{revokeError}</p>{/if}
+    </div>
   </fieldset>
 {/if}

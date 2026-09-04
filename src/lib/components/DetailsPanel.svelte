@@ -62,9 +62,14 @@ upload path, and the save form's hidden `media` input).
   // mutated outside its owner.
   let heroFieldRefs: Record<string, MediaHeroField> = {};
 
-  function registerHeroField(name: string, ref: MediaHeroField | null): void {
+  // Identity-guarded: FieldInput's teardown passes the exact instance it registered as `owned`,
+  // so a deregistering row deletes the map entry only when the map still holds that same
+  // instance. Two RepeatableField rows can swap index-derived names within one render pass (a
+  // deletion or reorder), and without this guard the outgoing row's teardown (running after the
+  // incoming row's registration under the same key) would drop the surviving row's live ref.
+  function registerHeroField(name: string, ref: MediaHeroField | null, owned?: MediaHeroField | null): void {
     if (ref) heroFieldRefs[name] = ref;
-    else delete heroFieldRefs[name];
+    else if (!owned || heroFieldRefs[name] === owned) delete heroFieldRefs[name];
   }
 
   /** The needs-alt remediation jump for a frontmatter hero: focuses the named field's own alt

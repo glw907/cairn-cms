@@ -3367,6 +3367,41 @@ describe('EditPage', () => {
       expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
       vi.unstubAllGlobals();
     });
+
+    it('discards a stale SUCCESS response when an entry hop lands while the tidy call is still in flight', async () => {
+      // Round-2 review finding: runTidy's success branch (open the review, call
+      // getEditor()?.tidy.enter(changes)) ran unguarded after the await, unlike the failure and
+      // finally paths 221e382d already guarded. An entry-hop reset aborts and nulls
+      // tidy-controller's own `controller`, but abort() alone does not guarantee the awaited
+      // fetch actually rejects (a stub, or a real race where the body has already fully arrived);
+      // deferredTidyFetch below models exactly that by never observing the AbortSignal at all, so
+      // only the supersession guard - never the abort - can stop entry A's review from opening
+      // over entry B's editor.
+      const original = 'We can accomodate the crowd.';
+      const corrected = 'We can accommodate the crowd.';
+      const deferred = deferredTidyFetch();
+      const screen = await render(EditPage, tidyProps({ body: original }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      const working = () => document.querySelector<HTMLDialogElement>('[data-testid="tidy-working"]');
+      await expect.poll(working, { timeout: 8000 }).not.toBeNull();
+
+      // Hop to entry B on the same route while entry A's tidy call is still pending; the reset
+      // aborts and nulls the shared controller, but the deferred fetch below has not settled yet.
+      await screen.rerender(tidyProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toBe('second body');
+
+      // Now let entry A's stale request resolve as a genuine, validated, non-noop change: the
+      // only thing left that could stop it from opening over entry B is the supersession guard.
+      deferred.resolveSuccess(corrected);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
+      expect(screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value).toBe('second body');
+      vi.unstubAllGlobals();
+    });
   });
 
   describe('desk band collisions at phone widths (audit finding 2)', () => {

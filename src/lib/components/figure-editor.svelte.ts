@@ -62,9 +62,17 @@ export function createFigureEditor(params: FigureEditorParams) {
     if (key === seededKey) return;
     seededKey = key;
     untrack(() => {
+      // RESET_BLOCK_START (src/tests/unit/edit-page-state-reset-coverage.test.ts parses this
+      // span's assignment targets against the RESET_EXEMPT list below; every $state / $state.raw
+      // name this module declares must appear in one list or the other).
       prefill = null;
+      // RESET_BLOCK_END
     });
   });
+
+  // No name is exempt here: the one $state/$state.raw this module declares (prefill) is reset
+  // above.
+  // RESET_EXEMPT:
 
   // Whether the Figure control is available: a media image sits at the caret and Preview is not
   // showing (the insert controls disable together with the Write surface). The control is always

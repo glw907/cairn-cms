@@ -621,9 +621,11 @@ persistent "?" carries Markdown help, design-arc D2).
   // exposed as focusHeroAlt); this holds only their reported needs-alt signals, keyed by field
   // name. A hero is a frontmatter value with no body offset, so its needs-alt signal comes from
   // the field, not the body scanner (findMediaImagesNeedingAlt), and its remediation focuses the
-  // alt input, never a source range (selectRange). The records are keyed by field name;
-  // `data.fields` is static for the page's lifetime, so a key never goes stale (no per-key
-  // cleanup on unmount is needed).
+  // alt input, never a source range (selectRange). The records are keyed by field name; a stale
+  // key from a same-route concept hop never lingers, since heroRows below filters against the
+  // INCOMING concept's own imageFields and each surviving MediaHeroField re-reports its
+  // needs-alt status on mount, so a key an outgoing concept's fields no longer name is simply
+  // never read (no per-key cleanup on unmount is needed).
   let heroNeedsAlt = $state<Record<string, boolean>>({});
   // DetailsPanel.svelte's focusHeroAlt/registerHeroField pair, bound below.
   let detailsPanel = $state<DetailsPanel | null>(null);
@@ -967,7 +969,13 @@ persistent "?" carries Markdown help, design-arc D2).
               ...heroRows.map((hero) => ({
                 rowLabel: hero.label,
                 label: 'Add alt text',
-                onAct: () => detailsPanel?.focusHeroAlt(hero.name),
+                // A hero's alt input lives in the details aside, which starts `hidden`: a
+                // display:none subtree cannot take focus, so the jump must open the panel first
+                // (the same flushSync reveal onFormInvalid uses) before focusing the field.
+                onAct: () => {
+                  if (!detailsOpen) flushSync(() => (detailsOpen = true));
+                  detailsPanel?.focusHeroAlt(hero.name);
+                },
               })),
             ],
           },

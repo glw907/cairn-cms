@@ -73,8 +73,11 @@ export function createTidyController(params: TidyControllerParams) {
     if (key === seededKey) return;
     seededKey = key;
     untrack(() => {
-      controller?.abort();
-      controller = null;
+      // RESET_BLOCK_START (src/tests/unit/edit-page-state-reset-coverage.test.ts parses this
+      // span's assignment targets against the RESET_EXEMPT list below; every $state / $state.raw
+      // name this module declares must appear in one list or the other). `controller` is a plain
+      // `let`, not `$state` (see its own declaration above), so its abort/null here is outside
+      // the gate's scope, not a name the enumeration test tracks.
       mode = false;
       busy = false;
       review = null;
@@ -82,8 +85,15 @@ export function createTidyController(params: TidyControllerParams) {
       noop = false;
       applied = false;
       appliedBody = null;
+      // RESET_BLOCK_END
+      controller?.abort();
+      controller = null;
     });
   });
+
+  // No name is exempt here: every $state/$state.raw this module declares (mode, busy, review,
+  // message, noop, applied, appliedBody) is reset above.
+  // RESET_EXEMPT:
 
   // The applied-tidy dismissal: the Undo-tidy chip clears itself once the body diverges from the
   // snapshot Apply produced (any further edit).
@@ -150,6 +160,12 @@ export function createTidyController(params: TidyControllerParams) {
           signal: ac.signal,
         },
       );
+      // Supersession guard, before any state write: an entry-hop reset can null the shared
+      // `controller` while this call is still in flight (the reset's own abort() does not
+      // guarantee the awaited fetch actually rejects; a stub or a race can still resolve it as a
+      // success). Once superseded, this run must never write review/mode/noop/message for an
+      // entry the host has already navigated away from, nor hand its offsets to the new editor.
+      if (controller !== ac) return;
       if (!outcome.ok) {
         // An abort (Cancel or the client timeout) resolves through the round-trip helper's own
         // fail-closed catch with no way to tell it apart from a genuine network failure; read the

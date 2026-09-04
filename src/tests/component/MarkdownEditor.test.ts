@@ -1,10 +1,28 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditorRekeyHarness from './_MarkdownEditorRekeyHarness.svelte';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+
+// A controllable gate on the spellcheck module, the LAST of MarkdownEditor's own chained dynamic
+// imports before its onMount calls registerEditor (the same seam EditPage.test.ts gates). Defaults
+// open (already resolved) so every ordinary mount in this file proceeds immediately; the re-key
+// test below holds it shut to force a real window between an outgoing mount's onDestroy and an
+// incoming mount's own registerEditor call. `vi.hoisted` is required (not a bare top-level `let`):
+// the browser mocker reconstructs a `vi.mock` factory in isolation and cannot close over an
+// ordinary file-scope binding.
+const spellcheckGate = vi.hoisted(() => ({ promise: Promise.resolve() as Promise<void> }));
+vi.mock('../../lib/components/spellcheck.js', async (importOriginal) => {
+  await spellcheckGate.promise;
+  return importOriginal();
+});
+
+// The first CodeMirror mount in the file pays the one-time cold-start of the editor's dynamic
+// imports (the other mount-polling assertions in this file absorb it with the same timeout).
+const COLD_START = { timeout: 20000 };
 
 // Reads the hidden form mirror so a test asserts what the form would submit.
 const hiddenValue = (container: Element) =>
@@ -225,6 +243,42 @@ describe('MarkdownEditor', () => {
 
       await b.unmount();
       expect(held).toBeNull();
+    });
+
+    it('nulls the holder on a real {#key k} re-key, pinning the bindEditorGrant() memoization EditPage relies on', async () => {
+      // Unlike the two tests above (which call bindGrant() from the test itself, over two separate
+      // render() calls with no component boundary between the closure and the mount), this exercises
+      // the literal shape EditPage actually writes: `{#key k}<MarkdownEditor
+      // registerEditor={bindEditorGrant()} />{/key}`, through a real Svelte component. The assumption
+      // being pinned is that Svelte evaluates `bindEditorGrant()` once per `{#key}` instance rather
+      // than re-invoking it on some unrelated re-render, so the closure that registers a grant is the
+      // same one MarkdownEditor's onDestroy later calls to revoke it.
+      let held: EditorApi | null = null;
+      const screen = await render(MarkdownEditorRekeyHarness, {
+        k: 'entry-a',
+        onheld: (api) => (held = api),
+      });
+      await expect.poll(() => held, COLD_START).not.toBeNull();
+
+      // Hold the incoming instance's own mount open behind the spellcheck import, so the window
+      // between the outgoing instance's synchronous onDestroy and the incoming instance's own
+      // registerEditor call is wide enough to observe reliably.
+      let releaseGate: () => void = () => {};
+      spellcheckGate.promise = new Promise((resolve) => {
+        releaseGate = resolve;
+      });
+      try {
+        await screen.rerender({ k: 'entry-b', onheld: (api) => (held = api) });
+        // The outgoing instance's onDestroy has already fired as part of the {#key} remount; the
+        // incoming instance is parked mid-onMount, so nothing has re-registered yet. A holder still
+        // pointing at the outgoing instance's api here would mean bindEditorGrant() was re-invoked
+        // (or its closure discarded) somewhere between grant and revoke, breaking the identity guard.
+        expect(held).toBeNull();
+      } finally {
+        releaseGate();
+      }
+      // Once entry B's own mount completes, it re-registers through its own fresh closure.
+      await expect.poll(() => held, COLD_START).not.toBeNull();
     });
   });
 

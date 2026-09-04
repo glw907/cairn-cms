@@ -2613,6 +2613,44 @@ describe('EditPage', () => {
     expect(screen.container.querySelector('#cairn-figure-dialog-title')?.textContent?.trim()).toBe('Wrap in a figure');
   });
 
+  it('resets mediaAtCaret on an entry hop so the Figure control does not keep pointing at the old entry', async () => {
+    // Diff-review finding on Task 12: caretComponent/mediaAtCaret are shell-owned state written
+    // straight from MarkdownEditor's onComponentAtCaret/onMediaImageAtCaret callbacks, which fire
+    // only when the reported identity CHANGES from the last one seen (starting at null per
+    // instance). Entry B's caret below never lands on any component or image, so neither callback
+    // fires for entry B, and without an explicit reset the Figure control would keep showing
+    // entry A's "Edit the figure at the cursor" label as enabled over entry B's plain body: a
+    // content-corruption path (applying entry A's figure edit into entry B's buffer).
+    const hash = '0123456789abcdef';
+    const screen = await render(
+      EditPage,
+      postProps({ body: `plain prose\n\n:::figure\n![A cat](media:cat.${hash})\n\nA caption.\n:::\n\ntail prose` }),
+    );
+    await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+    const pill = screen.container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+    if (pill) await userEvent.click(pill);
+    const line = await vi.waitFor(() =>
+      Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+        (l.textContent ?? '').includes('cat'),
+      ),
+    );
+    await userEvent.click(line!);
+    const figureButton = () =>
+      screen.container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"][aria-label*="figure" i]');
+    await expect.poll(() => figureButton()?.getAttribute('aria-label')).toBe('Edit the figure at the cursor');
+    expect(figureButton()?.getAttribute('aria-disabled')).toBe('false');
+
+    // Hop to entry B, a plain body with no component or image anywhere in it.
+    await screen.rerender(postProps({ body: 'second body, no image at all', id: '2026-06-other', slug: 'other' }) as never);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body, no image at all');
+    await expect
+      .poll(() => figureButton()?.getAttribute('aria-label'))
+      .toBe('Place the cursor on an image to add a figure');
+    expect(figureButton()?.getAttribute('aria-disabled')).toBe('true');
+  });
+
   it('lets a discard submission through the leave guard', async () => {
     // Capture the beforeunload handler the component registers (a real dispatch on window would
     // unload the test page), the recipe the beforeunload test above uses.

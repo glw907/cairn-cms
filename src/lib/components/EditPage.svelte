@@ -1048,6 +1048,18 @@ persistent "?" carries Markdown help, design-arc D2).
       // registerEditor call (MarkdownEditor's onMount awaits a long chain of dynamic imports
       // before it fires).
       editor = null;
+      // caretComponent/mediaAtCaret do NOT reliably re-report themselves on the new editor: they
+      // change only when MarkdownEditor's onComponentAtCaret/onMediaImageAtCaret callbacks fire,
+      // and those fire only when the caret's component/image identity actually differs from the
+      // last reported one, which starts at null per instance. An incoming entry whose caret lands
+      // on plain text (no component, no image) never fires either callback, so without this reset
+      // the outgoing entry's stale value survives, and editable/editReason (derived from
+      // caretComponent) and the Figure control's enabled state (derived from mediaAtCaret) would
+      // both keep pointing at entry A's ranges over entry B's buffer.
+      caretComponent = null;
+      mediaAtCaret = null;
+      editable = null;
+      editReason = 'none';
       // RESET_BLOCK_END
     });
   });
@@ -1061,16 +1073,21 @@ persistent "?" carries Markdown help, design-arc D2).
   // figure-editor.svelte.ts, Task 12, each owning its own entry-key-scoped reset there, so their
   // names no longer appear in this file's declared list at all); (2) state that moves out of
   // EditPage entirely in a later task, owning its own entry-key reset there (Task 13's
-  // DetailsPanel.svelte); and (3) transient UI-only state that is never entry content, either
-  // re-reporting itself once the new editor mounts (a caret position, a diagnostics count, a
+  // DetailsPanel.svelte); and (3) transient UI-only state that is never entry content and never
+  // caret-derived, either re-reporting itself independently of the caret (a diagnostics count, a
   // per-field needs-alt flag) or never entry-scoped to begin with (a viewport-width match, a
-  // preview device pick, a menu's open flag, an announcer nonce).
+  // preview device pick, a menu's open flag, an announcer nonce). caretComponent, mediaAtCaret,
+  // editable, and editReason are NOT in this group: MarkdownEditor's onComponentAtCaret/
+  // onMediaImageAtCaret callbacks fire only when the caret's reported identity changes from the
+  // last one seen, so an incoming entry whose caret lands off any component or image never fires
+  // either callback and the outgoing entry's value would otherwise survive; they are reset
+  // explicitly in RESET_BLOCK above instead.
   //
   // RESET_EXEMPT: editForm, publishButton, discardDialog, editorCard, actionsMenu, detailsTrigger,
   // detailsClose, mediaPopover, webLinkDialog, linkPicker, fragmentPicker, insertDialog,
   // deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
-  // tidyNoopDialog, tidyMessageDialog, editable, editReason, heroFieldRefs,
-  // heroNeedsAlt, caretComponent, mediaAtCaret, actionsOpen, narrow, device, assertiveNonce,
+  // tidyNoopDialog, tidyMessageDialog, heroFieldRefs,
+  // heroNeedsAlt, actionsOpen, narrow, device, assertiveNonce,
   // diagnosticsCounts
 
   // Reads one post-save redirect flag off the search string as a display list. page.url is

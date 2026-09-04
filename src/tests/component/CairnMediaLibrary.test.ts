@@ -452,6 +452,27 @@ describe('CairnMediaLibrary detail slide-over', () => {
     expect(document.activeElement).toBe(tile);
   });
 
+  it('stands down for a dialog rendered by a child component, not just the six the shell names by ref', async () => {
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const panel = await openSlideOver(screen, /first-light/);
+
+    // Simulate a dialog a child component (e.g. MediaOrphanTools) renders inside the library's own
+    // subtree: it carries no named ref the shell could check by name, only the native open attribute
+    // a scoped query can see. Appended inside the panel, so it is unquestionably within the
+    // component's own subtree regardless of exactly how that subtree is wrapped.
+    const foreignDialog = document.createElement('dialog');
+    foreignDialog.setAttribute('open', '');
+    panel.appendChild(foreignDialog);
+
+    // Escape must stand down (the open dialog claims it), not close the panel underneath it. The
+    // named-ref implementation cannot see this dialog at all, so it would close the panel here.
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.container.querySelector('[role="region"]')).not.toBeNull();
+
+    foreignDialog.remove();
+  });
+
   it('does not close the slide-over when Escape fires with focus in the search box (the native search clear keeps the panel)', async () => {
     const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const panel = await openSlideOver(screen, /first-light/);

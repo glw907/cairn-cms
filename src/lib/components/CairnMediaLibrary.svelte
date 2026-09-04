@@ -54,12 +54,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     MediaReplacePreviewEntry,
     MediaAltPreviewPlan,
     MediaAltPropagateFailure,
-    MediaBulkDeleteResult,
-    MediaOrphanPurgeResult,
-    MediaBulkFailure,
   } from '../sveltekit/content-routes-media.js';
-  import type { MediaOrphanScanResult } from '../media/orphan-scan.js';
-  import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
   import type { AltPlacement } from '../content/media-rewrite.js';
   import type { UsageEntry } from '../media/usage.js';
   import type { MediaEntry } from '../media/manifest.js';
@@ -84,6 +79,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import { postFormAction, createRequestGuard } from './client-action.js';
   import CsrfField from './CsrfField.svelte';
   import MediaCaptureCard from './MediaCaptureCard.svelte';
+  import MediaOrphanTools from './MediaOrphanTools.svelte';
+  import MediaBulkDeleteDialog from './MediaBulkDeleteDialog.svelte';
+  import { usageCount as usageCountOf, needsAlt as needsAltOf, usageEntries as usageEntriesOf, publishedRows as publishedRowsOf, branchRows as branchRowsOf, branchNameOf } from './media-library-helpers.js';
   import {
     SearchIcon,
     UploadIcon,
@@ -128,6 +126,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   let { data, form }: Props = $props();
 
+  // The CSRF token getter comes from the admin context, the same seam the insert popover reads.
+  // Hoisted to the script top: the Replace, Alt-fill, and Upload flows below all read it.
+  const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
+
   // The success flash a redirected action carried back: a safe-delete or a metadata edit. Every
   // media refusal now answers in place through `form`, so there is no redirected conflict error
   // to carry here.
@@ -142,17 +144,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   } as const;
   const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
 
-  // --- the per-hash usage facts the screen joins onto each asset ---
+  // --- the per-hash usage facts the screen joins onto each asset, over media-library-helpers.ts's
+  // pure functions (shared with the extracted bulk-delete/orphan-tools dialogs) ---
   /** The distinct-entry usage count for an asset; zero when the asset has no usage key. */
   function usageCount(hash: string): number {
-    return data.usage[hash]?.count ?? 0;
+    return usageCountOf(data.usage, hash);
   }
-  /** Empty alt is the needs-alt signal (the asset carries no caption field, so this is the only
-   *  per-asset alt fact). A non-image asset would read Not applicable, but the delivery route is
-   *  image-only today, so every committed asset here is an image. */
-  function needsAlt(asset: MediaLibraryEntry): boolean {
-    return asset.alt.trim() === '';
-  }
+  const needsAlt = needsAltOf;
 
   // --- the live count line and the triage counts, over the FULL loaded set ---
   const usedCount = $derived(data.assets.filter((a) => usageCount(a.hash) > 0).length);
@@ -254,6 +252,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // {#if selected} slide-over stays closed for a delete-only intent.
   let deleteOnly = $state(false);
 
+  // The component's own root element, bound below on the wrapping <div>. It scopes the Escape
+  // open-dialog query (onWindowKeydown) to this component's subtree; see that function's comment
+  // for the two-scope rationale it shares with libraryDropBusy.
+  let rootEl = $state<HTMLElement | undefined>();
+
+  // The extracted dialog components, opened imperatively from the shell's own trigger buttons.
+  // Typed structurally over their exported open() (the EditPage DialogHandle idiom).
+  let bulkDeleteDialog = $state<{ open: (hashes: string[], origin?: HTMLElement | null) => void } | null>(null);
+  let orphanTools = $state<{ open: (origin?: HTMLElement | null) => void } | null>(null);
+
   // The element that opened the slide-over (a tile or a row trigger), so focus returns to it on
   // close (the non-modal region recipe: focus moves in on open, back to the origin on close).
   let panelOrigin: HTMLElement | null = null;
@@ -285,9 +293,19 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // this handler stands down while any dialog is open); else an open slide-over with focus inside it
   // closes (today's behavior); else a non-empty selection is cleared. The search box keeps its own
   // native Escape-to-clear: the selection clear fires only when focus is NOT in the search input.
+  //
+  // The open-dialog check is scoped to THIS component's own subtree (rootEl), not document-wide. Some
+  // of the six dialogs it must see now render from a child component (MediaOrphanTools,
+  // MediaBulkDeleteDialog), so a check by named ref cannot reach them; a rootEl-scoped query still
+  // finds them, since a child mounts inline into the parent's DOM subtree. A document-wide query would
+  // overreach the other way: the admin shell also owns a dialog (the command palette), and a library
+  // Escape must never stand down because a wholly unrelated dialog elsewhere on the page happens to be
+  // open. libraryDropBusy below makes the opposite call on purpose for a different question (drag-drop
+  // should stand down for ANY open dialog, the palette included), so it stays document-scoped; see its
+  // own comment for that half of the split.
   function onWindowKeydown(e: KeyboardEvent) {
     if (e.key !== 'Escape') return;
-    if (deleteDialog?.open || replaceDialog?.open || altDialog?.open || bulkDialog?.open || orphanDialog?.open || uploadDialog?.open) return;
+    if (rootEl?.querySelector('dialog[open]')) return;
     if (selected && panelEl?.contains(document.activeElement)) {
       e.preventDefault();
       closePanel();
@@ -328,10 +346,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // Replace uploads a new file for the selected asset; cairn is content-addressed, so the new file has a
   // new hash and every published reference is repointed to it in one commit to main. The dialog opens on
   // the quiet upload step, holds the server-owned record on a successful upload, fetches the preview
-  // (fail-closed), and renders the impact review behind a typed-slug gate. The CSRF token getter comes
-  // from the admin context, the same seam the insert popover reads.
-  const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
-
+  // (fail-closed), and renders the impact review behind a typed-slug gate.
   type ReplaceStep = 'upload' | 'review' | 'blocked';
   // The transient upload status under the upload step: idle, an in-flight ingest/upload, or a typed
   // ingest failure card with a retry. Mirrors the insert popover's failed-card grammar.
@@ -621,9 +636,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // handlers live on the window rather than one element. They stand down while the Replace dialog or
   // this capture dialog is already open, so a drop never fights with an in-progress upload.
   function libraryDropBusy(): boolean {
-    // Any open native dialog, not just Replace/Upload, so a drop while the delete, alt, bulk, or
-    // orphan dialog is open never stacks the capture dialog over it. Testing for the open attribute
-    // directly stays correct as dialogs are added, unlike enumerating them by name.
+    // Deliberately DOCUMENT-scoped, not rootEl-scoped like onWindowKeydown's Escape check: drag-drop
+    // should stand down for ANY open dialog anywhere on the page, the admin shell's command palette
+    // included, since dropping a file while an unrelated dialog covers the screen would stack the
+    // capture dialog behind it. Escape's question is the opposite (a foreign dialog must never steal
+    // Escape from this library), so the two checks land on different scopes on purpose; see
+    // onWindowKeydown's comment for that half. Testing for the open attribute directly stays correct
+    // as dialogs are added, unlike enumerating them by name.
     return document.querySelector('dialog[open]') !== null;
   }
   function onPageDragover(e: DragEvent) {
@@ -833,18 +852,17 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     void tick().then(() => (altFillList?.children[ALT_ROW_CAP] as HTMLElement | undefined)?.focus());
   }
 
-  // --- the where-used overlay the slide-over and the dialog read, grouped published-then-branch ---
+  // --- the where-used overlay the slide-over and the dialog read, grouped published-then-branch,
+  // over media-library-helpers.ts's pure functions (shared with the extracted orphan tools) ---
   function usageEntries(hash: string): UsageEntry[] {
-    return data.usage[hash]?.entries ?? [];
+    return usageEntriesOf(data.usage, hash);
   }
-  /** Published rows first, then the edit-branch rows. */
   function publishedRows(hash: string): UsageEntry[] {
-    return usageEntries(hash).filter((e) => e.origin.kind === 'published');
+    return publishedRowsOf(data.usage, hash);
   }
   function branchRows(hash: string): UsageEntry[] {
-    return usageEntries(hash).filter((e) => e.origin.kind === 'branch');
+    return branchRowsOf(data.usage, hash);
   }
-  const branchNameOf = (e: UsageEntry): string => (e.origin.kind === 'branch' ? e.origin.branch : '');
 
   // --- the safe-delete dialog's face and its type-to-confirm gate ---
   // The breaking list the dialog shows: the FRESH list from a refusal when one is present for this
@@ -1037,300 +1055,6 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     return { noRefs, used };
   });
 
-  // --- the bulk-delete alertdialog: the skip-and-report dry-run, the reversible register, the
-  // announced progress, and the itemized summary (the rev.2 mockup, panels 3 and 4) ---
-  // The whole selection is reversible (a git-tracked removal of manifest rows), so the dialog is the
-  // danger-OUTLINE register with a plain confirm and no typed gate. The display split below is
-  // advisory: every selected hash is sent and the server re-checks each one strictly, so an asset that
-  // looks deletable here but turns up in use at delete time is skipped authoritatively, not removed.
-  type BulkPhase = 'review' | 'deleting' | 'done' | 'error';
-  let bulkDialog = $state<HTMLDialogElement | null>(null);
-  // The entry-point (the bar's Delete button), so focus restores to it on close.
-  let bulkOrigin: HTMLElement | null = null;
-  // The Cancel control, the destructive-confirm initial focus.
-  let bulkCancelButton = $state<HTMLButtonElement | null>(null);
-  // The summary title, focused when the result lands so a screen reader is carried to the outcome.
-  let bulkSummaryTitle = $state<HTMLElement | null>(null);
-  let bulkPhase = $state<BulkPhase>('review');
-  let bulkResult = $state<MediaBulkDeleteResult | null>(null);
-  let bulkError = $state<string | null>(null);
-  // The hashes the dialog acts on, pinned at open so a background re-render never shifts the dry-run.
-  let bulkHashes = $state<string[]>([]);
-
-  // The dry-run split over the DISPLAY index: the no-reference selection is what will be deleted, the
-  // still-referenced selection is what the server will skip. Both keep the asset row for the screen.
-  // The selected assets in pick order, dropping any hash absent from the loaded set (the type
-  // predicate keeps the element type non-nullable so the markup reads asset.slug without a guard).
-  const bulkSelectedAssets = $derived(
-    bulkHashes
-      .map((h) => data.assets.find((a) => a.hash === h))
-      .filter((a): a is MediaLibraryEntry => a != null),
-  );
-  const bulkWillDelete = $derived(bulkSelectedAssets.filter((a) => usageCount(a.hash) === 0));
-  const bulkWillSkip = $derived(bulkSelectedAssets.filter((a) => usageCount(a.hash) > 0));
-  // The apply button names the outcome from the split: "Delete N" with no skips, else "Delete N, skip M".
-  const bulkApplyLabel = $derived(
-    bulkWillSkip.length === 0
-      ? `Delete ${bulkWillDelete.length}`
-      : `Delete ${bulkWillDelete.length}, skip ${bulkWillSkip.length}`,
-  );
-
-  // The skipped summary row reads its display name from the loaded assets; a hash absent from the load
-  // (deleted out from under the index) falls back to the bare hash so the row is never blank.
-  function bulkAssetName(hash: string): string {
-    return data.assets.find((a) => a.hash === hash)?.displayName ?? hash;
-  }
-  // The skip reason line: a still-referenced skip names its fresh where-used count; an uncommitted skip
-  // says it was not committed (the timing-honest reason the recheck turned up).
-  function bulkSkipReason(skip: BulkDeleteSkip): string {
-    if (skip.reason === 'still-referenced') {
-      const n = skip.usage.length;
-      return `now found in ${n} ${n === 1 ? 'entry' : 'entries'} on the recheck`;
-    }
-    return 'was not committed';
-  }
-
-  const BULK_DELETE_URL = '?/mediaBulkDelete';
-
-  function openBulkDialog(origin?: HTMLElement | null) {
-    if (selectedCount === 0) return;
-    bulkOrigin = resolveDialogOrigin(origin);
-    bulkHashes = [...selectedHashes];
-    bulkPhase = 'review';
-    bulkResult = null;
-    bulkError = null;
-    void tick().then(() => {
-      bulkDialog?.showModal();
-      bulkCancelButton?.focus();
-    });
-  }
-  function closeBulkDialog() {
-    bulkDialog?.close();
-    bulkPhase = 'review';
-    bulkResult = null;
-    bulkError = null;
-    bulkHashes = [];
-    bulkOrigin = refocusDialogOrigin(bulkOrigin);
-  }
-  // Escape (the dialog's cancel event) must not abandon an in-flight delete: while the request is
-  // running the close is suppressed; in every other phase Escape closes normally.
-  function onBulkCancel(e: Event) {
-    if (bulkPhase === 'deleting') {
-      e.preventDefault();
-      return;
-    }
-    closeBulkDialog();
-  }
-  // The Done action after a summary: re-read the load so the deleted rows leave the list, clear the
-  // selection, then close and reset. invalidateAll re-runs the media load behind the dialog.
-  async function finishBulkDelete() {
-    await invalidateAll();
-    clearSelection();
-    closeBulkDialog();
-  }
-
-  // Apply: send every SELECTED hash (repeated `hash` fields) so the server is the gate; it re-checks
-  // each one strictly and skips the in-use ones authoritatively. The CSRF token rides the X-Cairn-CSRF
-  // header (the guard accepts it for any unsafe POST), and the ActionResult envelope is read through
-  // deserialize. A success carries the MediaBulkDeleteResult; a fail-closed 503 or a network throw
-  // routes to the error phase and a role="alert".
-  async function applyBulkDelete() {
-    bulkPhase = 'deleting';
-    bulkError = null;
-    const formData = new FormData();
-    for (const h of bulkHashes) formData.append('hash', h);
-    const outcome = await postFormAction<MediaBulkDeleteResult>(BULK_DELETE_URL, {
-      method: 'POST',
-      headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
-      body: formData,
-    });
-    if (outcome.ok) {
-      bulkResult = outcome.data;
-      bulkPhase = 'done';
-      void tick().then(() => bulkSummaryTitle?.focus());
-    } else {
-      const failure = outcome.data as { error?: string } | undefined;
-      bulkError = failure?.error ?? 'The delete could not be completed. Please try again.';
-      bulkPhase = 'error';
-    }
-  }
-
-  // --- the on-demand orphan scan surface: the entry point, the loading/blocked phases, the
-  // two-section result, and the IRREVERSIBLE byte purge (the rev.2 mockup, panels 6, 7, and 8-right) ---
-  // Raw R2 bytes have no git history, so this is the one irreversible media action and it is kept
-  // structurally apart from the reversible bulk delete above: a separate dialog, a separate selection
-  // Set of R2 KEYS (never the asset-hash Set), a solid-danger Purge (not the danger-OUTLINE bulk
-  // apply), and a typed-count confirm reserved for this path. The scan fails CLOSED at detection: a
-  // 503 routes to the blocked surface (no dry-run, no collect action), because under-reporting orphans
-  // could feed an unrecoverable purge.
-  type OrphanPhase = 'idle' | 'scanning' | 'result' | 'blocked';
-  const ORPHAN_SCAN_URL = '?/mediaOrphanScan';
-  const ORPHAN_PURGE_URL = '?/mediaOrphanPurge';
-
-  let orphanDialog = $state<HTMLDialogElement | null>(null);
-  // The "Find orphaned files" entry control, so focus restores to it on close.
-  let orphanFindButton = $state<HTMLButtonElement | null>(null);
-  // The dialog title, focused on open so a screen reader is carried to the surface.
-  let orphanTitle = $state<HTMLElement | null>(null);
-  let orphanPhase = $state<OrphanPhase>('idle');
-  // The scan result (the result phase) or the fail-closed error message (the blocked phase).
-  let orphanScan = $state<MediaOrphanScanResult | null>(null);
-  let orphanBlockedError = $state('');
-  // The orphaned-byte selection: a Set of R2 KEYS, distinct from the asset-hash Set above. Never
-  // mutated in place; every change reassigns (the reactive-Set rule the rest of the screen follows).
-  let orphanKeys = $state(new Set<string>());
-  // The section-level select-all checkbox, set to indeterminate in an effect when some-but-not-all rows
-  // are selected (a property, not an attribute, so it is driven imperatively).
-  let orphanSelectAll = $state<HTMLInputElement | null>(null);
-  // The purge confirm: a nested phase inside the result surface, gated by typing the selected count.
-  let orphanPurging = $state(false);
-  let orphanConfirmInput = $state('');
-  // The purge outcome (the summary) or, on a post-action failure, the error for a role="alert".
-  let orphanPurgeResult = $state<MediaOrphanPurgeResult | null>(null);
-  let orphanPurgeError = $state('');
-  let orphanPurgeBusy = $state(false);
-
-  const orphanBytes = $derived(orphanScan?.orphanedBytes ?? []);
-  const orphanBroken = $derived(orphanScan?.brokenRefs ?? []);
-  const orphanSelectedCount = $derived(orphanKeys.size);
-  // The typed-count gate: the submit is enabled only when the typed value equals the selected count and
-  // at least one byte is selected. The one legitimate disable, a visible typed destructive confirm.
-  const orphanConfirmMatches = $derived(orphanSelectedCount > 0 && confirmGateMatches(orphanConfirmInput, orphanSelectedCount));
-  // The select-all is checked when every byte is selected, indeterminate on a strict subset. Driven
-  // imperatively because `indeterminate` is a DOM property with no HTML attribute.
-  $effect(() => {
-    if (!orphanSelectAll) return;
-    const n = orphanSelectedCount;
-    const total = orphanBytes.length;
-    orphanSelectAll.checked = total > 0 && n === total;
-    orphanSelectAll.indeterminate = n > 0 && n < total;
-  });
-
-  function openOrphanScan() {
-    orphanPhase = 'scanning';
-    orphanScan = null;
-    orphanBlockedError = '';
-    orphanKeys = new Set<string>();
-    orphanPurging = false;
-    orphanConfirmInput = '';
-    orphanPurgeResult = null;
-    orphanPurgeError = '';
-    orphanPurgeBusy = false;
-    void tick().then(() => {
-      orphanDialog?.showModal();
-      orphanTitle?.focus();
-    });
-    void runOrphanScan();
-  }
-  function closeOrphanScan() {
-    orphanDialog?.close();
-    orphanPhase = 'idle';
-    orphanScan = null;
-    orphanKeys = new Set<string>();
-    orphanPurging = false;
-    orphanConfirmInput = '';
-    orphanPurgeResult = null;
-    orphanPurgeError = '';
-    orphanFindButton?.focus();
-  }
-  // Escape (the dialog's cancel event) must not abandon an in-flight purge: while the irreversible
-  // delete is running the close is suppressed; in every other phase Escape closes normally.
-  function onOrphanCancel(e: Event) {
-    if (orphanPurgeBusy) {
-      e.preventDefault();
-      return;
-    }
-    closeOrphanScan();
-  }
-  // The Done action after a purge: the bytes are gone, so re-read the load (the broken-refs readout is
-  // untouched), then close. invalidateAll re-runs the media load behind the dialog.
-  async function finishOrphanPurge() {
-    await invalidateAll();
-    closeOrphanScan();
-  }
-
-  // Run the scan: POST ?/mediaOrphanScan, parse the ActionResult envelope, and route to the result
-  // phase (a MediaOrphanScanResult) or the fail-closed blocked phase (a 503 MediaBulkFailure or a
-  // network throw). The action reads no fields, but a SvelteKit form action rejects a body-less POST
-  // with a 415, so send an empty FormData to carry the form content-type. The CSRF token rides the
-  // header. Nothing is pre-selected: this feeds an irreversible purge, so the operator picks each
-  // byte (or the select-all) deliberately.
-  async function runOrphanScan() {
-    orphanPhase = 'scanning';
-    orphanBlockedError = '';
-    const outcome = await postFormAction<MediaOrphanScanResult>(ORPHAN_SCAN_URL, {
-      method: 'POST',
-      headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
-      body: new FormData(),
-    });
-    if (outcome.ok) {
-      orphanScan = outcome.data;
-      orphanKeys = new Set<string>();
-      orphanPhase = 'result';
-    } else {
-      // A network throw and a parsed failure both block the scan; a network throw carries no data, so
-      // orphanBlockedError falls back to '' and the surface shows its own framing with no server message.
-      const failure = outcome.data as MediaBulkFailure | undefined;
-      orphanBlockedError = failure?.error ?? '';
-      orphanPhase = 'blocked';
-    }
-  }
-
-  /** Toggle one orphaned-byte key in the selection (reassign-only). */
-  function toggleOrphanKey(key: string) {
-    const next = new Set(orphanKeys);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    orphanKeys = next;
-  }
-  /** Select all or clear all orphaned bytes from the section header checkbox. */
-  function toggleOrphanAll() {
-    orphanKeys = orphanKeys.size === orphanBytes.length ? new Set<string>() : new Set(orphanBytes.map((b) => b.key));
-  }
-  function clearOrphanSelection() {
-    orphanKeys = new Set<string>();
-  }
-
-  // Open the typed-count purge confirm over the current selection.
-  function openOrphanPurge() {
-    if (orphanSelectedCount === 0) return;
-    orphanConfirmInput = '';
-    orphanPurgeError = '';
-    orphanPurging = true;
-  }
-  function cancelOrphanPurge() {
-    orphanPurging = false;
-    orphanConfirmInput = '';
-    orphanPurgeError = '';
-  }
-
-  // The purge: POST ?/mediaOrphanPurge with each selected key as a repeated `key` field plus `confirm` set to
-  // the typed count. The server re-derives fresh and skips any key claimed since the scan, so the
-  // selection here is advisory. The CSRF token rides the X-Cairn-CSRF header; the ActionResult envelope
-  // is read through deserialize. A success carries the MediaOrphanPurgeResult; a fail or a network throw
-  // surfaces a role="alert".
-  async function applyOrphanPurge() {
-    if (!orphanConfirmMatches) return;
-    orphanPurgeBusy = true;
-    orphanPurgeError = '';
-    const formData = new FormData();
-    for (const key of orphanKeys) formData.append('key', key);
-    formData.append('confirm', orphanConfirmInput);
-    const outcome = await postFormAction<MediaOrphanPurgeResult>(ORPHAN_PURGE_URL, {
-      method: 'POST',
-      headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
-      body: formData,
-    });
-    orphanPurgeBusy = false;
-    if (outcome.ok) {
-      orphanPurgeResult = outcome.data;
-      orphanPurging = false;
-    } else {
-      const failure = outcome.data as MediaBulkFailure | undefined;
-      orphanPurgeError = failure?.error ?? 'The purge could not be completed. Please try again.';
-    }
-  }
-
   // The where-used line for one broken-reference row: a plain "used in N entries" count.
   function brokenWhereUsed(count: number): string {
     if (count === 0) return 'no references found';
@@ -1424,6 +1148,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
 <svelte:window onkeydown={onWindowKeydown} ondragover={onPageDragover} ondrop={onPageDrop} />
 
+<!-- The wrapping element rootEl binds to, so onWindowKeydown's Escape open-dialog check can scope
+     itself to this component's own subtree instead of the whole document (see that function's
+     comment). Plain, unstyled: every visual and layout class stays exactly where it already was. -->
+<div bind:this={rootEl}>
 {#snippet uploadAction()}
   <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
     <UploadIcon class="h-4 w-4" /> Upload
@@ -1484,11 +1212,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
            (it opens a scan, not a purge). The mockup places it beside Upload; the Library has no
            Upload button in the toolbar, so it sits beside the density toggle instead. -->
       <button
-        bind:this={orphanFindButton}
         type="button"
         class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100 font-normal text-muted hover:bg-base-content/[0.06]"
         aria-haspopup="dialog"
-        onclick={openOrphanScan}
+        onclick={(e) => orphanTools?.open(e.currentTarget as HTMLElement)}
       >
         <DatabaseIcon class="h-4 w-4" aria-hidden="true" /> Find orphaned files
       </button>
@@ -1738,7 +1465,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <!-- The reversible bulk Delete: a git-tracked removal of manifest rows, so the danger-OUTLINE
            register (the irreversible byte purge lives on a separate surface and keeps the solid fill).
            It opens the skip-and-report alertdialog over the current selection. -->
-      <button type="button" aria-haspopup="dialog" onclick={(e) => openBulkDialog(e.currentTarget)} class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
+      <button type="button" aria-haspopup="dialog" onclick={(e) => bulkDeleteDialog?.open([...selectedHashes], e.currentTarget as HTMLElement)} class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
         <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Delete {selectedCount}
       </button>
     </div>
@@ -2571,538 +2298,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   {/if}
 </dialog>
 
-<!-- The bulk-delete alertdialog: a native modal <dialog> (native focus trap + Escape), NO light
-     dismiss. The confirm IS the dry-run (the skip-and-report split), so there is no separate preview
-     step. A git-tracked removal is reversible, so the register is danger-OUTLINE with a plain confirm
-     and no typed gate, carrying the git-revert reassurance. Apply posts every selected hash to
-     ?/mediaBulkDelete; the server re-checks each one strictly and the itemized summary reports the
-     outcome (succeeded / skipped-with-reason / failed-with-reason). The recheck runs at execution, so
-     there is no review-time tick implying the gate passed. -->
-<dialog
-  bind:this={bulkDialog}
-  data-testid="cairn-bulk-dialog"
-  class="modal"
-  role="alertdialog"
-  aria-modal="true"
-  aria-labelledby="cairn-ml-bulk-title"
-  aria-describedby="cairn-ml-bulk-desc"
-  oncancel={onBulkCancel}
->
-  <div class="modal-box max-w-xl">
-    {#if bulkPhase === 'review'}
-      <!-- THE CENTRAL SAFETY SCREEN: the selection split into what will be deleted and what is held
-           back, careful about timing (the usage shown rode a quick read; each item is re-checked when
-           it deletes, not now). -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          <Trash2Icon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete {bulkHashes.length} selected {bulkHashes.length === 1 ? 'image' : 'images'}?</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 type-meta leading-relaxed text-muted">
-            {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'has' : 'have'} no references and will be deleted.
-            {#if bulkWillSkip.length > 0}{bulkWillSkip.length} {bulkWillSkip.length === 1 ? 'is' : 'are'} still used and will be skipped. {/if}Each one is checked again at delete time, so nothing in use is removed.
-          </p>
-        </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={closeBulkDialog}>
-          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
+<MediaBulkDeleteDialog bind:this={bulkDeleteDialog} assets={data.assets} usage={data.usage} onfinished={clearSelection} />
 
-      <div class="flex flex-col gap-3">
-        <!-- The scope strip: the explicit count plus the safety-floor disclosure, timed at execution. -->
-        <div class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 type-meta leading-relaxed">
-          <span class="inline-flex items-start gap-2">
-            <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
-            <span><b class="font-semibold">{bulkHashes.length} {bulkHashes.length === 1 ? 'image' : 'images'} selected</b> in the current view.</span>
-          </span>
-          <span class="inline-flex items-start gap-2 text-muted">
-            <ClockIcon class="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
-            <span>The usage shown here came from a quick read. cairn checks each image again the moment it deletes it, and skips any that turns out to be in use.</span>
-          </span>
-        </div>
-
-        {#if bulkWillDelete.length > 0}
-          <!-- WILL BE DELETED: the no-reference items, each with its slug and the "no references" tag. -->
-          <div>
-            <span class="mb-2 inline-flex items-center gap-2 type-label font-semibold uppercase tracking-wide text-muted">
-              Will be deleted <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 tabular-nums">{bulkWillDelete.length}</span>
-            </span>
-            <ul role="list" class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
-              {#each bulkWillDelete as asset (asset.hash)}
-                <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
-                  <div class="min-w-0 flex-1">
-                    <div class="truncate type-meta font-semibold">{asset.displayName}</div>
-                    <div class="truncate font-[family-name:var(--font-editor)] type-label text-muted">{asset.slug}.{asset.hash}</div>
-                  </div>
-                  <span class="flex-none type-label font-semibold text-muted">no references found</span>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/if}
-
-        {#if bulkWillSkip.length > 0}
-          <!-- WILL BE SKIPPED: the still-used items, reported with their where-used. A bulk delete never
-               force-removes an in-use asset; it points to the single-item typed-confirm path. The
-               warning register on plain base-100 (a skip is not a failure), text-only. -->
-          <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
-            <div class="flex items-start gap-2.5 bg-[color-mix(in_oklab,var(--cairn-warning-ink)_8%,var(--color-base-100))] p-3">
-              <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none cairn-text-warning" aria-hidden="true" />
-              <div class="type-meta leading-relaxed">
-                <b class="font-semibold cairn-text-warning">{bulkWillSkip.length} will be skipped, still in use</b>
-                <span class="mt-0.5 block type-meta text-muted">A bulk delete never removes an image that is still referenced. To delete one of these, open it and use Delete with the typed confirm, where you can see and confirm what breaks.</span>
-              </div>
-            </div>
-            <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
-              {#each bulkWillSkip as asset (asset.hash)}
-                {@const where = usageCount(asset.hash)}
-                <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                  <span class="min-w-0 flex-1 truncate type-meta font-semibold">{asset.slug}</span>
-                  <span class="flex-none type-label font-semibold cairn-text-warning">found in {where} {where === 1 ? 'entry' : 'entries'}</span>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/if}
-
-        <!-- The recoverability reassurance: a git-tracked removal is reversible. -->
-        <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 type-meta leading-relaxed">
-          <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
-          <span><b class="font-semibold">Every removal is one revertible commit you can undo.</b> The deletes are one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>, so a developer can revert it and the images come back.</span>
-        </div>
-
-        <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <span class="mr-auto inline-flex items-center gap-1.5 type-meta text-muted">
-            <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
-          </span>
-          <button bind:this={bulkCancelButton} type="button" class="btn btn-sm" onclick={closeBulkDialog}>Cancel</button>
-          <!-- The danger-OUTLINE apply (not the solid fill the irreversible purge reserves), naming the
-               outcome from the split. Disabled only when nothing in the selection is deletable. -->
-          <button type="button" class="btn btn-sm border-[var(--cairn-error-border)] bg-base-100 text-[var(--cairn-error-ink)] hover:bg-[var(--cairn-error-tint)]" disabled={bulkWillDelete.length === 0} onclick={applyBulkDelete}>
-            <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> {bulkApplyLabel}
-          </button>
-        </div>
-      </div>
-    {:else if bulkPhase === 'deleting'}
-      <!-- ANNOUNCED PROGRESS: the per-item recheck against the fresh strict index runs here. The live
-           region is role=status (role=alert is reserved for a post-action failure). No review-time tick. -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          <Trash2Icon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Deleting images</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 type-meta leading-relaxed text-muted">Checking each one against a fresh read and removing the ones with no references. This can take a moment across branches.</p>
-        </div>
-      </div>
-      <div class="flex flex-col items-center gap-3 py-4">
-        <RefreshCwIcon class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
-        <span class="type-meta text-muted">Checking and deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'image' : 'images'}…</span>
-      </div>
-      <div class="mt-2 border-t border-[var(--cairn-card-border)] pt-3.5 type-meta text-muted">Please keep this open until it finishes.</div>
-      <div class="sr-only" role="status" aria-live="polite">Deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'asset' : 'assets'}…</div>
-    {:else if bulkPhase === 'done' && bulkResult}
-      {@const res = bulkResult}
-      <!-- THE ITEMIZED SUMMARY (the 207-Multi-Status shape): succeeded / skipped-with-reason /
-           failed-with-reason. The skipped reason is timing-honest (a reference turned up on the
-           recheck). The Done action re-reads the load behind the dialog. -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-content/[0.07] text-muted" aria-hidden="true">
-          <CheckIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 bind:this={bulkSummaryTitle} tabindex="-1" id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Done. {res.deleted.length} deleted{res.skipped.length > 0 ? `, ${res.skipped.length} skipped` : ''}</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 type-meta leading-relaxed text-muted">
-            The {res.deleted.length} {res.deleted.length === 1 ? 'delete is' : 'deletes are'} one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>.{#if res.skipped.length > 0} The {res.skipped.length} skipped had a reference turn up on the recheck and {res.skipped.length === 1 ? 'was' : 'were'} left as {res.skipped.length === 1 ? 'it is' : 'they are'}.{/if}
-          </p>
-        </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={() => void finishBulkDelete()}>
-          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
-            <div class="type-heading font-bold tabular-nums text-base-content">{res.deleted.length}</div>
-            <div class="type-label uppercase tracking-wide text-muted">Deleted</div>
-          </div>
-          <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
-            <div class="type-heading font-bold tabular-nums cairn-text-warning">{res.skipped.length}</div>
-            <div class="type-label uppercase tracking-wide text-muted">Skipped</div>
-          </div>
-          <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
-            <div class="type-heading font-bold tabular-nums text-[var(--cairn-error-ink)]">{res.failed.length}</div>
-            <div class="type-label uppercase tracking-wide text-muted">Failed</div>
-          </div>
-        </div>
-
-        {#if res.skipped.length > 0}
-          <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
-            <div class="inline-flex w-full items-center gap-2 bg-[color-mix(in_oklab,var(--cairn-warning-ink)_8%,var(--color-base-100))] p-2.5 type-meta font-semibold cairn-text-warning">
-              <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Skipped, a reference turned up on the recheck
-            </div>
-            <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
-              {#each res.skipped as skip (skip.hash)}
-                <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                  <span class="min-w-0 flex-1 truncate type-meta font-semibold">{bulkAssetName(skip.hash)}</span>
-                  <span class="flex-none type-label text-muted">{bulkSkipReason(skip)}</span>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/if}
-
-        {#if res.failed.length > 0}
-          <div class="overflow-hidden rounded-box border border-[var(--cairn-error-border)]">
-            <div class="inline-flex w-full items-center gap-2 bg-[var(--cairn-error-tint)] p-2.5 type-label font-semibold text-[var(--cairn-error-ink)]">
-              <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Failed
-            </div>
-            <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
-              {#each res.failed as fail (fail.hash)}
-                <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-error-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                  <span class="min-w-0 flex-1 truncate type-meta font-semibold">{bulkAssetName(fail.hash)}</span>
-                  <span class="flex-none type-label text-[var(--cairn-error-ink)]">{fail.error}</span>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/if}
-
-        <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <span class="mr-auto inline-flex items-center gap-1.5 type-meta text-muted">
-            <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
-          </span>
-          <button type="button" class="btn btn-sm btn-primary" onclick={() => void finishBulkDelete()}>Done</button>
-        </div>
-      </div>
-      <div class="sr-only" role="status" aria-live="polite">Done. {res.deleted.length} deleted, {res.skipped.length} skipped, {res.failed.length} failed.</div>
-    {:else}
-      <!-- POST-ACTION FAILURE: the fail-closed 503 (the whole batch refused) or a network throw. This
-           is the one place role="alert" belongs (an action was attempted and failed). -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          <TriangleAlertIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)]">The delete did not run</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 type-meta leading-relaxed text-muted">Nothing was deleted. You can close this and try again.</p>
-        </div>
-      </div>
-      <div role="alert" class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3 type-meta leading-relaxed text-[var(--cairn-error-ink)]">
-        <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
-        <span>{bulkError}</span>
-      </div>
-      <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-        <button type="button" class="btn btn-sm" onclick={closeBulkDialog}>Close</button>
-        <button type="button" class="btn btn-sm border-[var(--cairn-error-border)] bg-base-100 text-[var(--cairn-error-ink)]" onclick={() => (bulkPhase = 'review')}>Back to the selection</button>
-      </div>
-    {/if}
-  </div>
-</dialog>
-
-<!-- The on-demand orphan scan surface: a native modal <dialog> (native focus trap + Escape), NO light
-     dismiss. The result is the two-section dry-run, the loading state, and the detection-time blocked
-     surface. The irreversible byte purge lives inside this dialog only, kept structurally apart from
-     the reversible bulk delete: a separate selection Set of R2 keys, a solid-danger Purge, and a
-     typed-count confirm. It relies on the native <dialog> role and aria-labelledby, with no redundant
-     role or aria-modal: the scan itself changes nothing, and the irreversible step is gated behind
-     the typed confirm below. -->
-<dialog
-  bind:this={orphanDialog}
-  data-testid="cairn-orphan-dialog"
-  class="modal"
-  aria-labelledby="cairn-ml-orphan-title"
-  aria-describedby="cairn-ml-orphan-desc"
-  oncancel={onOrphanCancel}
->
-  <div class="modal-box max-w-2xl">
-    {#if orphanPhase === 'scanning'}
-      <!-- LOADING: a polite live region announces the scan is running. The scan is far heavier than the
-           loaded index (an R2 list plus a cross-branch reconcile), so it is on demand, never instant. -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
-          <DatabaseIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Scanning storage</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 type-meta leading-relaxed text-muted">Listing every stored file and checking it against the library across the site and every open edit. This can take a moment.</p>
-        </div>
-      </div>
-      <div class="flex flex-col items-center gap-3 py-6">
-        <RefreshCwIcon class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
-        <span class="type-meta text-muted">Scanning storage for orphaned files…</span>
-      </div>
-      <div class="sr-only" role="status" aria-live="polite">Scanning storage for orphaned files…</div>
-    {:else if orphanPhase === 'blocked'}
-      <!-- DETECTION-TIME FAIL CLOSED: the scan did not run because an open edit branch could not be
-           read, so cairn cannot be sure which files are truly orphaned. There is NO collect or purge
-           action, not even disabled. The banner is role="status" (no action was attempted). The server
-           returns a generic message, so the framing names an unreadable open edit without naming the
-           specific branch (naming it is a known carry-forward). -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
-          <DatabaseIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">The scan could not finish</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 type-meta leading-relaxed text-muted">cairn could not read one of your open edits, so it cannot tell which files are truly orphaned. No file was changed.</p>
-        </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeOrphanScan}>
-          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
-      <div role="status" class="flex flex-col gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3.5 type-meta leading-relaxed">
-        <span class="inline-flex items-center gap-2 font-semibold">
-          <TriangleAlertIcon class="h-4 w-4 flex-none cairn-text-warning" aria-hidden="true" /> Could not read every branch
-        </span>
-        <p class="text-base-content">
-          A file looks orphaned only if no record on any branch points to it. One open edit would not load, so cairn cannot be sure. It will not show a list of files to purge that it might be wrong about.
-        </p>
-        {#if orphanBlockedError}
-          <p class="text-muted">{orphanBlockedError}</p>
-        {/if}
-      </div>
-      <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-        <span class="mr-auto inline-flex items-center gap-1.5 type-meta text-muted">No file was changed.</span>
-        <button type="button" class="btn btn-sm" onclick={closeOrphanScan}>Close</button>
-        <button type="button" class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100" onclick={() => void runOrphanScan()}>
-          <RefreshCwIcon class="h-3.5 w-3.5" aria-hidden="true" /> Check again
-        </button>
-      </div>
-    {:else if orphanPhase === 'result' && orphanPurgeResult}
-      {@const res = orphanPurgeResult}
-      <!-- THE PURGE SUMMARY: the purged count, the keys skipped because their hash was claimed since the
-           scan, and any per-object failure. The Done action re-reads the load (the bytes are gone). -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-content/[0.07] text-muted" aria-hidden="true">
-          <CheckIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Done. {res.purged.length} purged{res.skippedClaimed.length > 0 ? `, ${res.skippedClaimed.length} kept` : ''}</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 type-meta leading-relaxed text-muted">
-            The {res.purged.length} {res.purged.length === 1 ? 'file is' : 'files are'} gone for good.{#if res.skippedClaimed.length > 0} {res.skippedClaimed.length} {res.skippedClaimed.length === 1 ? 'was' : 'were'} kept because the file was claimed by a record since the scan.{/if}
-          </p>
-        </div>
-      </div>
-      {#if res.skippedClaimed.length > 0}
-        <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
-          <div class="bg-base-200/60 p-2.5 type-meta font-semibold text-muted">Kept, the file was claimed since the scan</div>
-          <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
-            {#each res.skippedClaimed as key (key)}
-              <li class="border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 font-[family-name:var(--font-editor)] type-meta first:border-t-0">{key}</li>
-            {/each}
-          </ul>
-        </div>
-      {/if}
-      {#if res.failed.length > 0}
-        <div class="mt-3 overflow-hidden rounded-box border border-[var(--cairn-error-border)]">
-          <div class="bg-[var(--cairn-error-tint)] p-2.5 type-label font-semibold text-[var(--cairn-error-ink)]">Failed</div>
-          <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
-            {#each res.failed as fail (fail.key)}
-              <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-error-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                <span class="min-w-0 flex-1 truncate font-[family-name:var(--font-editor)] type-meta">{fail.key}</span>
-                <span class="flex-none type-label text-[var(--cairn-error-ink)]">{fail.error}</span>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {/if}
-      <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-        <button type="button" class="btn btn-sm btn-primary" onclick={() => void finishOrphanPurge()}>Done</button>
-      </div>
-      <div class="sr-only" role="status" aria-live="polite">Done. {res.purged.length} purged, {res.skippedClaimed.length} kept, {res.failed.length} failed.</div>
-    {:else if orphanPhase === 'result' && orphanPurging}
-      <!-- THE IRREVERSIBLE PURGE CONFIRM: the typed-count gate, reserved for THIS path only. The badge
-           and the submit carry the SOLID danger fill (--color-error), the one fill the destructive
-           register owns. The verb is Purge, never Delete, and the callout states that there is no git
-           history for raw bytes. The submit is disabled until the typed value equals the selected
-           count. role="alert" is reserved for a post-action failure below. -->
-      <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--color-error)] text-[var(--color-error-content)]" aria-hidden="true">
-          <TriangleAlertIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}?</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 type-meta leading-relaxed text-muted">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p>
-        </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={cancelOrphanPurge}>
-          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
-      <div class="flex flex-col gap-3">
-        <!-- The dry-run: the keys to remove, each with a checkerboard mat (record-not-picture). -->
-        <ul role="list" class="flex max-h-40 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
-          {#each orphanBytes.filter((b) => orphanKeys.has(b.key)) as byte (byte.key)}
-            <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
-              <span class="h-6 w-8 flex-none rounded border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
-              <span class="min-w-0 flex-1 truncate font-[family-name:var(--font-editor)] type-meta">{byte.key}</span>
-            </li>
-          {/each}
-        </ul>
-        <!-- The IRREVERSIBLE callout, distinct from the bulk delete's git-revert reassurance. -->
-        <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3 type-meta leading-relaxed text-[var(--cairn-error-ink)]">
-          <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
-          <span><b class="font-semibold">This cannot be undone.</b> A library delete lives in git history and a developer can bring it back. There is no git history for raw bytes, so once these are purged they are gone.</span>
-        </div>
-        <!-- The typed-count gate, reserved for the irreversible path. -->
-        <div class="flex flex-col gap-1.5">
-          <label class="type-meta" for="cairn-ml-purge-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">{orphanSelectedCount}</code> to purge these files for good.</label>
-          <input
-            id="cairn-ml-purge-confirm"
-            class="input input-sm"
-            type="text"
-            autocomplete="off"
-            placeholder="Type the number of files"
-            aria-label="Type the file count to confirm the purge"
-            bind:value={orphanConfirmInput}
-          />
-        </div>
-        {#if orphanPurgeError}
-          <div role="alert" class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3 type-meta leading-relaxed text-[var(--cairn-error-ink)]">
-            <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
-            <span>{orphanPurgeError}</span>
-          </div>
-        {/if}
-        <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <button type="button" class="btn btn-sm" onclick={cancelOrphanPurge}>Cancel</button>
-          <button
-            type="button"
-            class="btn btn-sm border-0 bg-[var(--color-error)] text-[var(--color-error-content)] hover:bg-[var(--color-error)]/90"
-            disabled={!orphanConfirmMatches || orphanPurgeBusy}
-            onclick={() => void applyOrphanPurge()}
-          >
-            <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Purge {orphanSelectedCount} {orphanSelectedCount === 1 ? 'file' : 'files'}
-          </button>
-        </div>
-      </div>
-      <div class="sr-only" aria-live="polite">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}. This cannot be undone.</div>
-    {:else if orphanPhase === 'result' && orphanScan}
-      <!-- THE TWO-SECTION RESULT: an "Orphaned files" purge surface and a read-only "Broken references"
-           data-integrity readout. -->
-      <div class="mb-4 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
-          <DatabaseIcon class="h-5 w-5" />
-        </span>
-        <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Orphaned files and broken references</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 type-meta leading-relaxed text-muted">
-            A scan of stored files against the library across every tracked branch. It found {orphanBytes.length} stored {orphanBytes.length === 1 ? 'file' : 'files'} with no record, and {orphanBroken.length} {orphanBroken.length === 1 ? 'record whose file is' : 'records whose files are'} gone.
-          </p>
-        </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeOrphanScan}>
-          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
-
-      <div class="flex flex-col gap-5">
-        <!-- SECTION 1: orphaned BYTES, the irreversible purge surface. -->
-        <section>
-          <div class="mb-2 flex items-baseline justify-between gap-2">
-            <span class="inline-flex items-center gap-2 type-meta font-semibold">Orphaned files <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBytes.length}</span></span>
-          </div>
-          <p class="mb-2 type-meta leading-relaxed text-muted">Stored files with no record in the library. No <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-label">media:</code> reference can point to these, so nothing on the site uses them through cairn.</p>
-          {#if orphanBytes.length === 0}
-            <!-- The calm empty state: a clean scan, no purge control. -->
-            <div class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 type-meta text-muted">
-              <CheckIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" /> No orphaned files found. Every stored file has a record.
-            </div>
-          {:else}
-            <!-- The residual-risk note, named at the point of action. -->
-            <div class="mb-2 flex items-start gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3 type-meta leading-relaxed text-[var(--cairn-error-ink)]">
-              <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
-              <span><b class="font-semibold">Purging a file removes the bytes for good.</b> There is no git history for raw storage, so this cannot be undone. The one thing cairn cannot check: a page that hardcodes a file's web address in raw HTML would still load these.</span>
-            </div>
-            <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
-              <div class="flex items-center gap-2.5 border-b border-[var(--cairn-card-border)] bg-base-200/60 px-3 py-2">
-                <input
-                  bind:this={orphanSelectAll}
-                  type="checkbox"
-                  class="checkbox checkbox-sm border-[var(--cairn-error-border)]"
-                  aria-label="Select all orphaned files"
-                  onchange={toggleOrphanAll}
-                />
-                <span class="type-meta font-semibold text-muted">{orphanBytes.length} {orphanBytes.length === 1 ? 'file' : 'files'} in storage with no record</span>
-              </div>
-              <!-- A plain list of labelled native checkboxes, NOT a listbox. The rows carry no roving
-                   tabindex or key handler, so the listbox role would have been decorative and would
-                   have fought the Tab-to-checkbox model. Each checkbox is the selection signal; the
-                   header select-all conveys group state. -->
-              <ul role="list" aria-label="Orphaned files" class="flex max-h-52 list-none flex-col overflow-y-auto p-0">
-                {#each orphanBytes as byte (byte.key)}
-                  {@const picked = orphanKeys.has(byte.key)}
-                  <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                    <input
-                      type="checkbox"
-                      class="checkbox checkbox-sm border-[var(--cairn-error-border)]"
-                      checked={picked}
-                      aria-label={`Select ${byte.key}`}
-                      onchange={() => toggleOrphanKey(byte.key)}
-                    />
-                    <span class="h-6 w-8 flex-none rounded border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
-                    <div class="min-w-0 flex-1">
-                      <div class="truncate font-[family-name:var(--font-editor)] type-meta">{byte.key}</div>
-                      <div class="type-label text-muted">No library record</div>
-                    </div>
-                  </li>
-                {/each}
-              </ul>
-            </div>
-            <!-- The per-section action: a selection note plus the SOLID-danger Purge (never a warning fill). -->
-            <div class="mt-3 flex items-center gap-2.5">
-              <span class="inline-flex items-center gap-1.5 type-meta text-muted">
-                {orphanSelectedCount} of {orphanBytes.length} selected
-                {#if orphanSelectedCount > 0}<button type="button" class="link text-muted" onclick={clearOrphanSelection}>Clear</button>{/if}
-              </span>
-              <span class="flex-1"></span>
-              <button
-                type="button"
-                class="btn btn-sm border-0 bg-[var(--color-error)] text-[var(--color-error-content)] hover:bg-[var(--color-error)]/90"
-                aria-haspopup="dialog"
-                disabled={orphanSelectedCount === 0}
-                onclick={openOrphanPurge}
-              >
-                <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Purge {orphanSelectedCount} {orphanSelectedCount === 1 ? 'file' : 'files'}
-              </button>
-            </div>
-          {/if}
-        </section>
-
-        <!-- SECTION 2: BROKEN references, a READ-ONLY data-integrity readout. No checkbox, no action. -->
-        {#if orphanBroken.length > 0}
-          <section data-testid="cairn-broken-refs">
-            <div class="mb-2 flex items-baseline justify-between gap-2">
-              <span class="inline-flex items-center gap-2 type-meta font-semibold">Broken references <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBroken.length}</span></span>
-            </div>
-            <p class="mb-2 type-meta leading-relaxed text-muted">A record points at a file that is no longer in storage. This is not something to delete here. Re-upload or remove the reference from the entries below.</p>
-            <ul role="list" class="flex list-none flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] p-0">
-              {#each orphanBroken as ref (ref.hash)}
-                <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                  <span class="flex h-7 w-9 flex-none items-center justify-center rounded border border-[var(--cairn-card-border)] bg-base-200 text-muted" aria-hidden="true">
-                    <ImageOffIcon class="h-3.5 w-3.5" />
-                  </span>
-                  <div class="min-w-0 flex-1">
-                    <div class="truncate type-meta font-semibold">{ref.slug || ref.hash}</div>
-                    <div class="truncate font-[family-name:var(--font-editor)] type-label text-muted">file missing in storage</div>
-                  </div>
-                  <span class="flex-none type-label font-semibold text-muted">{brokenWhereUsed(ref.usage.length)}</span>
-                </li>
-              {/each}
-            </ul>
-          </section>
-        {/if}
-      </div>
-
-      <div class="mt-5 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-        <span class="mr-auto inline-flex items-center gap-1.5 type-meta text-muted">
-          <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> Scanned across the site and every open edit
-        </span>
-        <button type="button" class="btn btn-sm" onclick={closeOrphanScan}>Close</button>
-      </div>
-    {/if}
-  </div>
-</dialog>
+<MediaOrphanTools bind:this={orphanTools} {brokenWhereUsed} />
 
 <!-- The Library upload dialog: a standard modal <dialog>. NO light dismiss (no method="dialog"
      backdrop form, matching the Replace/Alt siblings): a backdrop click does nothing, and only
@@ -3156,6 +2354,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     </div>
   {/if}
 </dialog>
+</div>
 
 <style>
   /* A test-selector hook (CairnMediaLibrary.test.ts queries it directly); the visible name's own

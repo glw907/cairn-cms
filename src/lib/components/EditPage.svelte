@@ -19,7 +19,7 @@ count, the Prose/Wide posture pair, and the focus and typewriter toggles (the to
 persistent "?" carries Markdown help, design-arc D2).
 -->
 <script lang="ts">
-  import { flushSync, untrack, getContext, tick } from 'svelte';
+  import { flushSync, untrack, getContext } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import { building } from '$app/environment';
@@ -77,9 +77,11 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
-  import { postFormAction, type ActionOutcome } from './client-action.js';
+  import { postFormAction } from './client-action.js';
   import { arbitrateChecked } from './spellcheck.js';
   import type { DiagnosticCounts } from './editor-diagnostics-announcer.js';
+  import { createEditorPreferences } from './editor-preferences.svelte.js';
+  import ShareLinkPanel from './ShareLinkPanel.svelte';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -141,7 +143,7 @@ persistent "?" carries Markdown help, design-arc D2).
     // Zen drops the band: CairnAdminShell reads this flag to remove the whole topbar element, so the
     // desk's clusters and CairnAdminShell's own chrome (the drawer toggle, the breadcrumb) all slide
     // away together. The effect tracks `zen`, so a toggle reaches the band live.
-    topbar.zen = zen;
+    topbar.zen = prefs.zen;
     return () => {
       topbar.desk = null;
       topbar.zen = false;
@@ -285,7 +287,7 @@ persistent "?" carries Markdown help, design-arc D2).
       // a dialog, so it has no native light-dismiss), and only when no panel is open does Escape
       // exit zen. So under zen with the panel open, the first Escape closes the panel and the
       // second exits zen, which keeps the two affordances independent.
-      if (e.key === 'Escape' && (detailsOpen || zen)) {
+      if (e.key === 'Escape' && (detailsOpen || prefs.zen)) {
         const inDialog = !!(e.target as Element | null)?.closest?.('dialog');
         if (inDialog) return;
         e.preventDefault();
@@ -326,7 +328,7 @@ persistent "?" carries Markdown help, design-arc D2).
       if (e.shiftKey && key === 'f') {
         e.preventDefault();
         if (inDialog) return;
-        setFocusMode(!focusMode);
+        prefs.setFocusMode(!prefs.focusMode);
         return;
       }
       // Ctrl+Shift+. toggles zen (the bindings' zen key); the period reads off e.key. This sits
@@ -334,7 +336,7 @@ persistent "?" carries Markdown help, design-arc D2).
       if (e.shiftKey && !e.altKey && e.key === '.') {
         e.preventDefault();
         if (inDialog) return;
-        setZen(!zen);
+        setZen(!prefs.zen);
         return;
       }
       // Ctrl+. toggles the details slide-over (the bindings' panel key); the period reads off
@@ -398,58 +400,18 @@ persistent "?" carries Markdown help, design-arc D2).
     device = id;
     localStorage.setItem(deviceStorageKey, id);
   }
-  // The writing modes (focus, typewriter) and the surface posture, per-browser preferences on
-  // the device pick's pattern: read in an effect so SSR never touches localStorage, written by
-  // the card footer's toggles. The effect tracks nothing reactive, so it runs once.
-  const focusStorageKey = 'cairn-editor-focus-mode';
-  const typewriterStorageKey = 'cairn-editor-typewriter';
-  const surfaceStorageKey = 'cairn-editor-surface';
-  const zenStorageKey = 'cairn-editor-zen';
-  // Spellcheck (the markdown-aware lint underlines) defaults ON, so a fresh editor checks spelling
-  // without a choice. The toggle joins the editor-preference family on the same pattern: a localStorage
-  // key read once in the effect below, written by the footer setter. Stored as 'false' only when the
-  // author turns it off; any other value (including unset) reads as on.
-  const spellcheckStorageKey = 'cairn-editor-spellcheck';
-  let focusMode = $state(false);
-  let typewriter = $state(false);
-  let ownSpellcheck = $state(true);
+  // The writing modes (focus, typewriter, spellcheck), the prose/markup surface posture, and
+  // zen: storage-backed per-browser preferences, owned by editor-preferences.svelte.ts.
+  const prefs = createEditorPreferences();
   // What the editor actually runs with: a mounting context's override when it supplies one, this
   // page's own preference otherwise. The stored read below and the footer toggle keep writing the
   // author's own value, so removing the override restores exactly what the author chose.
-  const spellcheck = $derived(spellcheckOverride ?? ownSpellcheck);
+  const spellcheck = $derived(spellcheckOverride ?? prefs.ownSpellcheck);
   // Whether this page offers the spellcheck flip at all. Under an override it does not: the toggle
   // would announce an aria-pressed state it cannot change (WCAG 4.1.2) and would overwrite the
   // author's stored preference on the way. Both faces gate on this, the card footer's toggle and
   // the below-sm overflow pick, which is the only one a phone editor can reach.
   const offersSpellcheckToggle = $derived(spellcheckOverride === undefined);
-  // Zen: the manuscript alone on the recessed ground. The band, the document title, the toolbar
-  // strip, and the footer go; the editing surface stays. It joins the editor-preference family on
-  // the same pattern (a localStorage key, read once below, written by the setter), and composes
-  // with focus mode and the postures rather than resetting them.
-  let zen = $state(false);
-  // The surface posture: prose (the writing instrument) by default; markup is the dense
-  // working surface.
-  let surface = $state<'prose' | 'markup'>('prose');
-  $effect(() => {
-    focusMode = localStorage.getItem(focusStorageKey) === 'true';
-    typewriter = localStorage.getItem(typewriterStorageKey) === 'true';
-    zen = localStorage.getItem(zenStorageKey) === 'true';
-    if (localStorage.getItem(surfaceStorageKey) === 'markup') surface = 'markup';
-    // Spellcheck is on unless the author explicitly stored it off.
-    ownSpellcheck = localStorage.getItem(spellcheckStorageKey) !== 'false';
-  });
-  function setFocusMode(on: boolean) {
-    focusMode = on;
-    localStorage.setItem(focusStorageKey, String(on));
-  }
-  function setTypewriter(on: boolean) {
-    typewriter = on;
-    localStorage.setItem(typewriterStorageKey, String(on));
-  }
-  function setSpellcheck(on: boolean) {
-    ownSpellcheck = on;
-    localStorage.setItem(spellcheckStorageKey, String(on));
-  }
 
   // The personal-dictionary pending additions (spec 1.6), owned here and shared with MarkdownEditor's
   // lint source: an add-to-dictionary choice records the lowercased word here (and clears the underline
@@ -488,21 +450,18 @@ persistent "?" carries Markdown help, design-arc D2).
     const committed = new Set(merged.filter((w): w is string => typeof w === 'string').map((w) => w.toLowerCase()));
     for (const w of words) if (committed.has(w.toLowerCase())) pendingAdditions.delete(w);
   }
-  function setSurface(posture: 'prose' | 'markup') {
-    surface = posture;
-    localStorage.setItem(surfaceStorageKey, posture);
-  }
   function setZen(on: boolean) {
     // Entering zen hides the band, the document title, the toolbar strip, and the footer. Focus on
     // any of those (a band action like Publish, a strip button, the title input, a footer toggle)
     // would strand on a detached node when its host leaves the DOM, so move focus into the editing
     // surface first. The surface (.cm-editor) and the exit chip are all that survive, so any focus
     // outside the surface is about to hide. Reading activeElement before the DOM updates is what
-    // tells a hiding control from the surviving one.
+    // tells a hiding control from the surviving one. This DOM read must precede the zen flip
+    // below (editor-preferences.svelte.ts owns the flag and its storage, not the DOM
+    // choreography: check:cm-internals only allowlists this file for `.cm-` reads).
     const surface = editorCard?.querySelector('.cm-editor');
     const focusHides = on && !surface?.contains(document.activeElement);
-    zen = on;
-    localStorage.setItem(zenStorageKey, String(on));
+    prefs.setZen(on);
     if (focusHides) {
       // flushSync applies the zen layout (the strip and footer leave the DOM) before we reach for
       // the surface, so the focus call lands on the now-sole interactive region.
@@ -1107,136 +1066,6 @@ persistent "?" carries Markdown help, design-arc D2).
     else openDetails();
   }
 
-  // The share-preview affordance (spec part 3, "Public preview for a non-editor"): mint posts to
-  // `?/previewMint` and shows the returned URL and expiry in place; revoke posts to
-  // `?/previewRevoke` and reports the count. Both are fetch-based JS actions over the same
-  // postFormAction round trip tidy uses, since neither carries a redirect. The minted URL is a
-  // bearer credential (anyone holding it can read the draft with no session), so it lives only in
-  // this transient state, never in localStorage or a query param, and a revoke clears it from view
-  // immediately: the row is gone from the store (hash-only at rest), so a lingering display would
-  // imply a link that no longer works is still good.
-  let shareBusy = $state(false);
-  let shareResult = $state<{ url: string; expiresAt: number } | null>(null);
-  let shareError = $state<string | null>(null);
-  let shareCopied = $state(false);
-  let shareUrlInput = $state<HTMLInputElement | null>(null);
-  let revokeBusy = $state(false);
-  let revokeCount = $state<number | null>(null);
-  let revokeError = $state<string | null>(null);
-
-  const MINT_FAILED = 'Could not create a preview link. Try again.';
-  const REVOKE_FAILED = 'Could not revoke preview links. Try again.';
-
-  /** Render a preview link's millisecond expiry as a human date and time (the store's own unit,
-   *  per the round-3 amendment's epoch-ms `expires_at`). */
-  function formatExpiry(expiresAt: number): string {
-    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(expiresAt));
-  }
-
-  /** The POST both preview round trips make: an empty body, the CSRF header, and `redirect:
-   *  'manual'` so the guard's expired-session 303 arrives as `sessionExpired` instead of a
-   *  followed redirect (the tidy and dictionary calls above post the same way). */
-  function postPreviewAction<T>(action: 'previewMint' | 'previewRevoke'): Promise<ActionOutcome<T>> {
-    return postFormAction<T>(`/admin/${data.conceptId}/${data.id}?/${action}`, {
-      method: 'POST',
-      redirect: 'manual',
-      headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-      body: '',
-    });
-  }
-
-  /** The message a refused preview round trip shows: the expired-session line, else the server's
-   *  own actionable refusal when it sent one, else `generic`. A bare `'csrf'` is the guard's
-   *  diagnostic code rather than author-facing copy, so it falls through to `generic` too. */
-  function previewFailureMessage(outcome: { data?: unknown; sessionExpired?: boolean }, expired: string, generic: string): string {
-    if (outcome.sessionExpired) return expired;
-    const failure = outcome.data as { error?: unknown } | undefined;
-    if (typeof failure?.error === 'string' && failure.error !== 'csrf') return failure.error;
-    return generic;
-  }
-
-  /** Mint a preview link for this entry's pending draft. A refusal (no draft to share, the
-   *  migration not yet applied) shows the server's own actionable message; a network failure or an
-   *  expired session shows a generic retry line. */
-  async function mintPreview() {
-    if (shareBusy) return;
-    shareBusy = true;
-    shareError = null;
-    try {
-      const outcome = await postPreviewAction<{ url?: unknown; expiresAt?: unknown }>('previewMint');
-      if (!outcome.ok) {
-        shareError = previewFailureMessage(
-          outcome,
-          'Your session expired. Sign in again to share a preview link.',
-          MINT_FAILED,
-        );
-        return;
-      }
-      const url = typeof outcome.data.url === 'string' ? outcome.data.url : '';
-      const expiresAt = typeof outcome.data.expiresAt === 'number' ? outcome.data.expiresAt : 0;
-      if (!url) {
-        shareError = MINT_FAILED;
-        return;
-      }
-      shareResult = { url, expiresAt };
-      shareCopied = false;
-      // The store now holds a live link; drop any revoke result still on screen so the panel
-      // never implies the store is empty right under a URL that says otherwise.
-      revokeCount = null;
-      revokeError = null;
-      // Focus the URL field once it renders, so a keyboard or screen-reader author lands on the
-      // result without hunting for it.
-      void tick().then(() => shareUrlInput?.focus());
-    } catch {
-      shareError = MINT_FAILED;
-    } finally {
-      shareBusy = false;
-    }
-  }
-
-  /** Copy the minted URL to the clipboard (the `copyReference` idiom, `CairnMediaLibrary.svelte`).
-   *  A denied or unavailable clipboard falls back to selecting the field's text, so a manual copy
-   *  still works. */
-  function copyShareUrl() {
-    if (!shareResult) return;
-    const url = shareResult.url;
-    void navigator.clipboard?.writeText(url).then(
-      () => (shareCopied = true),
-      () => shareUrlInput?.select(),
-    );
-  }
-
-  /** Revoke every outstanding preview link for this entry. Always clears any minted URL still on
-   *  screen, whether or not the count was zero: a revoked link cannot be recovered (the store
-   *  holds only its hash), so this affordance never leaves a stale URL implying otherwise. */
-  async function revokePreview() {
-    if (revokeBusy) return;
-    revokeBusy = true;
-    revokeError = null;
-    try {
-      const outcome = await postPreviewAction<{ count?: unknown }>('previewRevoke');
-      if (!outcome.ok) {
-        revokeError = previewFailureMessage(
-          outcome,
-          'Your session expired. Sign in again to revoke preview links.',
-          REVOKE_FAILED,
-        );
-        return;
-      }
-      revokeCount = typeof outcome.data.count === 'number' ? outcome.data.count : 0;
-      // The store now holds nothing for this entry; drop any minted URL or stale mint error
-      // still on screen so the panel never shows a link (or a share refusal) the store can no
-      // longer stand behind.
-      shareResult = null;
-      shareCopied = false;
-      shareError = null;
-    } catch {
-      revokeError = REVOKE_FAILED;
-    } finally {
-      revokeBusy = false;
-    }
-  }
-
   // An overflow-menu pick runs its action, then dismisses the popover menu. Opening a modal
   // dialog already closes an auto popover, so the explicit hide fires only when the menu is
   // still up.
@@ -1360,13 +1189,8 @@ persistent "?" carries Markdown help, design-arc D2).
       previewHtml = '';
       previewFailed = false;
       removedLinks = [];
-      shareBusy = false;
-      shareResult = null;
-      shareError = null;
-      shareCopied = false;
-      revokeBusy = false;
-      revokeCount = null;
-      revokeError = null;
+      // ShareLinkPanel owns its own share/revoke state and mounts inside the {#key} block below,
+      // so an entry hop clears it by remount, not by an explicit reset here.
       // The 13 EditorApi holders below: the {#key} block this reset backs remounts MarkdownEditor
       // itself, destroying the outgoing entry's CodeMirror view, but these are plain component
       // state, untouched by a DOM remount. Without this, every holder keeps pointing at the
@@ -2090,11 +1914,11 @@ persistent "?" carries Markdown help, design-arc D2).
        measure (49rem covers it at the prose type step), markup puts the ceiling near 89ch of
        the base face for tables, attributed directives, and long URLs. The toggle lives in the
        card footer with the other writing preferences. -->
-  <div class={mode === 'preview' ? '' : `mx-auto w-full ${surface === 'prose' ? 'max-w-[49rem]' : 'max-w-[56rem]'}`}>
+  <div class={mode === 'preview' ? '' : `mx-auto w-full ${prefs.surface === 'prose' ? 'max-w-[49rem]' : 'max-w-[56rem]'}`}>
     <!-- The page's accessible name. The visible title is a borderless input, so a real heading
          lives here for assistive tech (the band no longer carries one). -->
     <h1 class="sr-only">{data.title}</h1>
-    {#if titleField && !zen}
+    {#if titleField && !prefs.zen}
       <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
            reads as the protagonist. It submits as name="title", the same field as before. The
            admin sheet gives it the editor's quiet focus hairline (see .cairn-doc-title there).
@@ -2104,10 +1928,10 @@ persistent "?" carries Markdown help, design-arc D2).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
       <!-- cairn-audit-disable-next-line type-scale -- the editor's own prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
-      <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+      <div class={prefs.surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
         <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its own type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
         <input
-          class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
+          class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {prefs.focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"
           value={str(data.frontmatter.title)}
           placeholder={titleField.label}
@@ -2121,11 +1945,11 @@ persistent "?" carries Markdown help, design-arc D2).
     <div
       bind:this={editorCard}
       class="card-shell overflow-hidden card-shadow"
-      class:cairn-editor-zen={zen}
+      class:cairn-editor-zen={prefs.zen}
       role="group"
       aria-label="Editor"
     >
-      {#if !zen}
+      {#if !prefs.zen}
       <EditorToolbar
         {format}
         {mode}
@@ -2277,15 +2101,15 @@ persistent "?" carries Markdown help, design-arc D2).
           {@render moreToggle('Write', mode === 'write', () => { setMode('write'); closeMenu(); })}
           {@render moreToggle('Preview', mode === 'preview', () => { setMode('preview'); closeMenu(); })}
           {@render moreDivider()}
-          {@render moreToggle('Prose', surface === 'prose', () => { setSurface('prose'); closeMenu(); })}
-          {@render moreToggle('Wide', surface === 'markup', () => { setSurface('markup'); closeMenu(); })}
+          {@render moreToggle('Prose', prefs.surface === 'prose', () => { prefs.setSurface('prose'); closeMenu(); })}
+          {@render moreToggle('Wide', prefs.surface === 'markup', () => { prefs.setSurface('markup'); closeMenu(); })}
           {@render moreDivider()}
-          {@render moreToggle('Focus mode', focusMode, () => { setFocusMode(!focusMode); closeMenu(); })}
-          {@render moreToggle('Typewriter', typewriter, () => { setTypewriter(!typewriter); closeMenu(); })}
+          {@render moreToggle('Focus mode', prefs.focusMode, () => { prefs.setFocusMode(!prefs.focusMode); closeMenu(); })}
+          {@render moreToggle('Typewriter', prefs.typewriter, () => { prefs.setTypewriter(!prefs.typewriter); closeMenu(); })}
           {#if offersSpellcheckToggle}
-            {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+            {@render moreToggle('Spellcheck', spellcheck, () => { prefs.setSpellcheck(!spellcheck); closeMenu(); })}
           {/if}
-          {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
+          {@render moreToggle('Zen', prefs.zen, () => { setZen(!prefs.zen); closeMenu(); })}
           {@render moreDivider()}
           <li class="sm:hidden">
             <span class="pointer-events-none px-3 py-1.5 type-meta text-muted tabular-nums">{wordLabel}</span>
@@ -2299,7 +2123,7 @@ persistent "?" carries Markdown help, design-arc D2).
         <MarkdownEditor
           bind:value={body}
           name="body"
-          {surface}
+          surface={prefs.surface}
           registerEditor={(api) => {
             insert = api.insert;
             insertLink = api.insertLink;
@@ -2323,8 +2147,8 @@ persistent "?" carries Markdown help, design-arc D2).
           {completionSources}
           {mediaLibrary}
           {fragmentTitles}
-          {focusMode}
-          {typewriter}
+          focusMode={prefs.focusMode}
+          typewriter={prefs.typewriter}
           {spellcheck}
           spellcheckDictionary={data.spellcheckDictionary}
           siteDictionary={data.siteDictionary}
@@ -2402,7 +2226,7 @@ persistent "?" carries Markdown help, design-arc D2).
            second, ambiguous copy of the popover's own moreExtra line even while this strip sits
            display:none (the same reasoning EditorToolbar's moreExtra mount-gate documents for the
            More popover). -->
-      {#if !zen && !narrow}
+      {#if !prefs.zen && !narrow}
       <div
         data-testid="cairn-editor-footer"
         class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 type-meta text-muted"
@@ -2428,20 +2252,20 @@ persistent "?" carries Markdown help, design-arc D2).
           >
             <button
               type="button"
-              class={segButtonClass(surface === 'prose')}
-              aria-pressed={surface === 'prose'}
-              onclick={() => setSurface('prose')}
+              class={segButtonClass(prefs.surface === 'prose')}
+              aria-pressed={prefs.surface === 'prose'}
+              onclick={() => prefs.setSurface('prose')}
             >
-              {#if surface === 'prose'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              {#if prefs.surface === 'prose'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Prose
             </button>
             <button
               type="button"
-              class="{segButtonClass(surface === 'markup')} border-l border-[var(--cairn-card-border)]"
-              aria-pressed={surface === 'markup'}
-              onclick={() => setSurface('markup')}
+              class="{segButtonClass(prefs.surface === 'markup')} border-l border-[var(--cairn-card-border)]"
+              aria-pressed={prefs.surface === 'markup'}
+              onclick={() => prefs.setSurface('markup')}
             >
-              {#if surface === 'markup'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              {#if prefs.surface === 'markup'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Wide
             </button>
           </div>
@@ -2452,20 +2276,20 @@ persistent "?" carries Markdown help, design-arc D2).
           <div class="flex shrink-0 flex-wrap items-center gap-0.5">
             <button
               type="button"
-              class={ftrToggleClass(focusMode)}
-              aria-pressed={focusMode}
-              onclick={() => setFocusMode(!focusMode)}
+              class={ftrToggleClass(prefs.focusMode)}
+              aria-pressed={prefs.focusMode}
+              onclick={() => prefs.setFocusMode(!prefs.focusMode)}
             >
-              {#if focusMode}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              {#if prefs.focusMode}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Focus mode
             </button>
             <button
               type="button"
-              class={ftrToggleClass(typewriter)}
-              aria-pressed={typewriter}
-              onclick={() => setTypewriter(!typewriter)}
+              class={ftrToggleClass(prefs.typewriter)}
+              aria-pressed={prefs.typewriter}
+              onclick={() => prefs.setTypewriter(!prefs.typewriter)}
             >
-              {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              {#if prefs.typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Typewriter
             </button>
             <!-- Spellcheck: the markdown-aware lint underlines. Off reconfigures the lint compartment
@@ -2476,7 +2300,7 @@ persistent "?" carries Markdown help, design-arc D2).
               type="button"
               class={ftrToggleClass(spellcheck)}
               aria-pressed={spellcheck}
-              onclick={() => setSpellcheck(!spellcheck)}
+              onclick={() => prefs.setSpellcheck(!spellcheck)}
             >
               {#if spellcheck}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Spellcheck
@@ -2486,11 +2310,11 @@ persistent "?" carries Markdown help, design-arc D2).
                  toggle here, but once on it hides the whole footer, so the chip carries the way out. -->
             <button
               type="button"
-              class={ftrToggleClass(zen)}
-              aria-pressed={zen}
-              onclick={() => setZen(!zen)}
+              class={ftrToggleClass(prefs.zen)}
+              aria-pressed={prefs.zen}
+              onclick={() => setZen(!prefs.zen)}
             >
-              {#if zen}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              {#if prefs.zen}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Zen
             </button>
           </div>
@@ -2578,60 +2402,7 @@ persistent "?" carries Markdown help, design-arc D2).
           </button>
         </div>
       </fieldset>
-      {#if previewMint}
-        <!-- Share preview (spec part 3, "Public preview for a non-editor"): mint a link so someone
-             who is not an editor can read the pending draft, and revoke every outstanding link in
-             one move. The minted URL is a bearer credential, so it lives only in shareResult, never
-             persisted; a revoke clears it from view immediately (never implying a dead link still
-             works). -->
-        <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
-          <legend class={eyebrowClass}>Share preview</legend>
-          <p class="type-meta text-muted">
-            Share a private link so someone who is not an editor can read this draft before it publishes.
-          </p>
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" class="btn btn-ghost btn-sm" disabled={shareBusy} onclick={mintPreview}>
-              {#if shareBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Minting…{:else}Share preview link{/if}
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm" disabled={revokeBusy} onclick={revokePreview}>
-              {#if revokeBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Revoking…{:else}Revoke all links{/if}
-            </button>
-          </div>
-          <!-- One always-mounted role="status" region, so a later first result still announces
-               (the needs-alt notice's live-region rule). It carries both success confirmations;
-               errors below are separate role="alert" lines, following ComponentForm's inline
-               validation-message idiom. -->
-          <div role="status" aria-live="polite" class="flex flex-col gap-2">
-            {#if shareResult}
-              <div class="flex flex-col gap-1.5">
-                <label class="type-meta font-medium" for="cairn-preview-share-url">Preview link</label>
-                <div class="flex items-center gap-1.5">
-                  <input
-                    bind:this={shareUrlInput}
-                    id="cairn-preview-share-url"
-                    type="text"
-                    readonly
-                    class="input input-sm min-w-0 flex-1 font-mono type-meta"
-                    value={shareResult.url}
-                    onclick={(e) => (e.currentTarget as HTMLInputElement).select()}
-                  />
-                  <button type="button" class="btn btn-ghost btn-sm shrink-0" onclick={copyShareUrl}>
-                    {shareCopied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <p class="type-meta text-muted">Expires {formatExpiry(shareResult.expiresAt)}.</p>
-              </div>
-            {/if}
-            {#if revokeCount !== null}
-              <p class="type-meta text-muted">
-                {revokeCount === 0 ? 'No preview links to revoke.' : `Revoked ${revokeCount} ${revokeCount === 1 ? 'link' : 'links'}.`}
-              </p>
-            {/if}
-          </div>
-          {#if shareError}<p role="alert" class="text-error type-meta">{shareError}</p>{/if}
-          {#if revokeError}<p role="alert" class="text-error type-meta">{revokeError}</p>{/if}
-        </fieldset>
-      {/if}
+      <ShareLinkPanel conceptId={data.conceptId} entryId={data.id} {csrf} {previewMint} />
       {#if data.conceptId === FRAGMENTS_CONCEPT_ID}
         <!-- The where-used surface (spec section on reuse): a fragment's own edit screen names its
              consumers, the same data.inboundLinks the delete guard blocks on, so an author sees the
@@ -2676,7 +2447,7 @@ persistent "?" carries Markdown help, design-arc D2).
      bottom"); staying above an open keyboard depends on the interactive-widget viewport hint
      above. Hidden under zen with the rest of the chrome, the same gate the band and the footer
      strip use. -->
-{#if !zen && narrow}
+{#if !prefs.zen && narrow}
   <div
     data-testid="cairn-edit-actionbar"
     class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
@@ -2706,7 +2477,7 @@ persistent "?" carries Markdown help, design-arc D2).
      WordPress/Ghost rule says never disappear under zen, the live save state and the way out. The
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
      restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
-{#if zen}
+{#if prefs.zen}
   <div class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 type-meta text-muted shadow-[var(--cairn-shadow)]">
     <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
       {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}

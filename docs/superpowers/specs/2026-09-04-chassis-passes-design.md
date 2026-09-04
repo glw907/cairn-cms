@@ -98,7 +98,8 @@ The passes work under two rules rather than a flat finding list:
   The corpus grows from 14 to 27 posts and `ARCHIVE_PAGE_SIZE` becomes 13: page one keeps 13
   entries (the tag filter and the home baseline are unchanged) and `/archive/2` exists, is
   prerendered, and enters the visual matrix. This amends the brainstorm's "5 or 6" figure on the
-  reviewer's arithmetic.
+  reviewer's arithmetic. Proving it reveals the home page's pagination block and moves at least
+  twelve committed baselines, so it executes in chassis-B (plan review, 2026-09-04).
 - **The `handleUnseenRoutes` exception stays.** It is not showcase dead weight. A scaffolded
   site whose owner trims the sample posts below one page has an archive `entries()` of `[]`,
   and without the exception SvelteKit's unseen-route check fails the build. The exception is the
@@ -140,9 +141,11 @@ CI job; the from-scratch showcase install rule from `cairn-pass` applies at pass
 
 Tasks (the plan fixes the steps):
 
-1. **Prettier adoption and the tab fixes.** The pinned config, `.prettierignore`, the scripts,
-   the whole-showcase reformat as the first commit, `playwright.config.ts` and the three
-   tab-indented e2e specs, the scaffold's format check with the bake-artifact answer above.
+1. **The Prettier reformat and the tab fixes.** The pinned config, `.prettierignore`, the
+   scripts sharing one target set, the whole-showcase reformat of `.ts`, `.js`, and `.svelte`
+   as the first commit (the CSS half rides chassis-B, after internals-C's `prose.css` rename
+   settles), `playwright.config.ts` and the three tab-indented e2e specs, with the visual suite
+   run before and after so a reformat that changes paint stops the task.
 2. **The comment gate reaches the showcase.** Both halves of the lint decision; the findings the
    extension surfaces are fixed in the same task; if they exceed one task's scope, the remainder
    is recorded at the checkpoint as a named follow-on rather than lowering the bar.
@@ -161,13 +164,12 @@ Tasks (the plan fixes the steps):
    their own theme modules; the adapter file keeps adapter, concepts, backend, and `navLayout`
    under a true header; the `$theme` self-import residue goes. Pure move, no rendered change.
    Recorded rank 10, review 2.1.
-6. **Archive proven.** Thirteen new posts written to the showcase's content guide,
-   `ARCHIVE_PAGE_SIZE` 13 with its derivation comment rewritten, `/archive/2` baselined at the
-   five viewports in both schemes, the `svelte.config.js` exception comment rewritten,
-   `sortNewestFirst` removed with the engine's newest-first ordering for dated concepts
-   documented as a contract in `docs/reference/delivery.md` in the same task. The entry-row
-   extraction and the CSS de-duplication move to chassis-B (they change rendered output).
-   Recorded ranks 1 and 11.
+6. **The scaffold's format check.** The bake's generated files listed in the emitted
+   `.prettierignore`, verified in both a fresh `templates/waymark` and a bake-only tree; the
+   two workflow wirings. (The archive proof moved whole to chassis-B: it changes rendered
+   output. Its non-visual halves ride task 10: `sortNewestFirst` removed with the engine's
+   newest-first ordering documented as a contract in `docs/reference/delivery.md`; the two
+   stale 220-post comments ride task 11.) Recorded rank 11.
 7. **Single-source public routes.** The `[...path=md]` twin route and the `feed.xml`/`feed.json`
    handlers consume the chassis `PublicRoutesConfig` instead of retyping it. Recorded rank 3.
 8. **Render trio re-homing** per the decision above, one change, ledger rows closed with the
@@ -179,13 +181,16 @@ Tasks (the plan fixes the steps):
    scaffolded site inherits the chassis logic and should inherit its tests. Recorded rank 4.
 10. **Idiom conformance.** Import specifiers one way (`.js`) across `$chassis`/`$theme`; route
     handler and error idioms one way; the `fail` literal onto the sanctioned shape; the
-    `cairn-cms:` header prefix on every chassis module; the `../../members` traversals left as
-    they are, recorded as fixture-only (a `$members` alias would ship a dangling pointer into
+    `// cairn-cms:` header prefix removed from the eight showcase modules that carry it (the
+    fresh review's 3.4: the prefix carries no information inside a file that lives in a cairn
+    site, so leanness drops it rather than spreading it); the `../../members` traversals left
+    as they are, recorded as fixture-only (a `$members` alias would ship a dangling pointer into
     every scaffold); the hand-mounted `+page.server.ts` against generated `./$types`
-    carry-forward closed; the `createSectionAction` showcase half conditional on internals-C's
-    Task 10 ruling (adopt it in `admin/signups` if the docs keep teaching it, otherwise keep
-    the raw shape and say so), reconciled at dispatch. Recorded ranks 9, 12, 13, 14b-d; audit
-    finding 8's showcase half.
+    carry-forward closed; the `createSectionAction` showcase half NOT adopted here (adoption
+    changes the extension-seam proof route's auth and audit path, behavioral work whose input
+    is internals-C's Task 10 ruling): one comment records the raw shape as deliberate, and
+    adoption, if the docs keep teaching the helper, is chassis-B's. Recorded ranks 9, 12, 13,
+    14b-d; audit finding 8's showcase half.
 11. **Register purge of shipped exemplar comments.** Pass and plan citations, history narration
     about code no longer present, the derivation narrative in `theme.css`, the `@component`
     blocks past the standard's length, the `ec-*` residue the rename steps over. Review 3.1 to
@@ -195,10 +200,9 @@ Tasks (the plan fixes the steps):
     rulings ledger closed for the trio; `ROADMAP.md`'s chassis improvement round marked done
     for what shipped, with the rest carried to chassis-B by name; the harvest banked.
 
-Ceiling 6.5M (twelve tasks with a heavier gate than internals-C's, at the observed 0.3M to
-0.55M per task); checkpoints at 4, 8, 12; the three-lens adversarial plan review before
-approval; authorship of task 10's conditional is reconciled against internals-C's Task 10
-output at dispatch, so the plan can be written before C lands.
+Ceiling 7.5M (twelve tasks with a heavier gate than internals-C's, above the observed 0.55M
+per task, with two tasks of unbounded finding volume); checkpoints at 4, 8, 12; the three-lens
+adversarial plan review folded 2026-09-04 (banked as `plan-review.md` in the inputs record).
 
 ## Chassis-B: the exemplar uses its chassis (slice 9)
 
@@ -215,9 +219,13 @@ Scope:
    markup, is baselined, and is proven at 320 and 2560. Review 5.5.
 3. **One focus ring.** A chassis primitive replaces the 20 hand-written rings that remain after
    A's deletions, and as a primitive it meets item 2's proof rule. Review 4.2.
-4. **The entry row once.** The `<article class="entry">` block written three times and its CSS
-   twice become one component with one stylesheet, carried here from A because it changes the
-   two most-baselined pages. Recorded rank 6.
+4. **The archive proven and the entry row once.** Thirteen new posts (written under the site
+   content method; the showcase has no content guide of its own), `ARCHIVE_PAGE_SIZE` 13,
+   the home page's pagination block and `/archive/2` baselined at the five viewports in both
+   schemes, the `admin-office-*` baselines regenerated for the longer posts list, the
+   `svelte.config.js` exception kept; and the `<article class="entry">` block written three
+   times and its CSS twice become one component with one stylesheet. Both carried here from
+   A because they change baselined pages. Recorded ranks 1 and 6.
 5. **Site identity from `siteConfig`.** The five hardcoded "Waymark" sites (header, footer,
    error page, archive, styleguide) read `siteConfig.siteName`; the two unexplained origin
    literals are explained or derived; the footer nav stops forking from the header nav.
@@ -230,7 +238,9 @@ Scope:
    5.6.
 8. **Small idiom items.** `siteConfig` imported through one door; `feed.ts`'s mixed optional
    chaining and non-null assertions; the three `platform!` assertions in the custom-screen
-   exemplar; the design-system doc's stale file paths. Review 1.2 to 1.4, 2.8.
+   exemplar; the design-system doc's stale file paths; the CSS half of the Prettier adoption;
+   `createSectionAction` adopted in `admin/signups` if internals-C's Task 10 left the docs
+   teaching it, test-first against `e2e/custom-screen.spec.ts`. Review 1.2 to 1.4, 2.8.
 9. **Waymark's deliberate adaptation and final rebake.** The initiative design's item 6 second
    half: `templates/waymark` adapted to the changed engine on purpose, not only kept compiling,
    then the final `emit:template` before the release window closes.

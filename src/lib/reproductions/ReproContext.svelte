@@ -54,7 +54,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   import CairnAdminShell from '../components/CairnAdminShell.svelte';
   import { MEDIA_BASE_CONTEXT_KEY } from '../components/media-base-context.js';
   import { CSRF_CONTEXT_KEY } from '../components/csrf-context.js';
-  import type { AdminShellData } from '../sveltekit/content-routes-core.js';
+  import type { AdminShellData } from '../sveltekit/content-routes-shell.js';
   import { fixtureConcept, fixtureCsrf, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
   import { manifest } from './manifest.js';
   import type { ReproStory } from './index.js';

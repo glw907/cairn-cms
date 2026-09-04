@@ -5,7 +5,8 @@
 // module needs that same one.
 import type { NamedField, SiteRender } from '../../content/types.js';
 import { defineRegistry, type ComponentRegistry } from '../../render/registry.js';
-import type { EditData, ListData } from '../../sveltekit/content-routes-core.js';
+import type { EditData } from '../../sveltekit/content-routes-entry.js';
+import type { ListData } from '../../sveltekit/content-routes-list.js';
 import { fixtureConcept, fixtureEntries, fixtureSiteName, fixtureTidyReview } from '../fixtures.js';
 
 /** The entry every `EditPage` story opens: the first fixture post, the one `fixtureDeskPathname` names. */

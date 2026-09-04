@@ -20,7 +20,7 @@
 // App.Platform`, which would leak the simulated platform typing across the whole suite's compile.
 import { describe, it, expect } from 'vitest';
 import { createContentRoutes, type ContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import type { AdminShellData } from '../../lib/sveltekit/content-routes-core.js';
+import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { D1Database } from '@cloudflare/workers-types';

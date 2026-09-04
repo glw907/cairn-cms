@@ -18,7 +18,7 @@ import { healthLoad, type HealthData } from '../../lib/sveltekit/health.js';
 import { adminAction } from '../../lib/sveltekit/admin-action.js';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
-import type { AdminShellData } from '../../lib/sveltekit/content-routes-core.js';
+import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { D1Database, SendEmail } from '@cloudflare/workers-types';
 import type { RequestEvent, ServerLoadEvent } from '@sveltejs/kit';

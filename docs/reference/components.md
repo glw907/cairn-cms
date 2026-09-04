@@ -71,7 +71,7 @@ not do. The showcase mounts it like this:
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/components';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$lib/cairn.config.js';
+  import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';
 
   let { data, form }: { data: AdminData; form: ActionData } = $props();
@@ -329,7 +329,7 @@ web-link dialog.
 <script lang="ts">
   import { EditPage } from '@glw907/cairn-cms/components';
   import type { EditData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn, siteConfig } from '$lib/cairn.config.js';
+  import { cairn, siteConfig } from '$theme/cairn.config.js';
 
   let { data }: { data: EditData } = $props();
 </script>

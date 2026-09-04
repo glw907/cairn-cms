@@ -47,7 +47,7 @@ declare-once pattern `roles` already follows:
 ```ts
 // src/hooks.server.ts
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { roles } from './lib/cairn.config.js';
+import { roles } from '$theme/cairn.config.js';
 import { access } from './lib/cairn.access.js';
 
 export const handle = createAuthGuard({ roles, access });

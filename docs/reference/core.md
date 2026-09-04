@@ -731,7 +731,7 @@ permalinks cannot diverge.
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime);
@@ -976,7 +976,7 @@ once the runtime knows the real concept list.
 ```ts
 // src/lib/cairn.access.ts
 import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from './cairn.config.js';
+import { roles } from '$theme/cairn.config.js';
 
 export const access = defineAccess(roles, {
   pages: ['webmaster'],

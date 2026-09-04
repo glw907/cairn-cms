@@ -24,7 +24,7 @@ Declaring the field alone changes no bytes. `robotsResponse` reads its posture f
 ```ts
 // src/routes/robots.txt/+server.ts
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
-import { cairn } from '$lib/cairn.config.js';
+import { cairn } from '$theme/cairn.config.js';
 import { ORIGIN } from '$lib/content.js';
 
 export const GET = () =>

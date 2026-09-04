@@ -13,11 +13,12 @@ the tree and fix the map, the same rule `CONTRIBUTING.md`'s Repository map state
 
 ## 1. Public or internal, and how to tell
 
-A directory is public exactly when `package.json`'s `exports` map points a subpath into it. Every
-public directory has a matching page in `docs/reference/`, gated by `check:reference`; a directory
-with no reference page is internal, per `CONTRIBUTING.md`'s own rule. Do not guess from a
-directory's name or its neighbors: two of the four `auth*` directories below are internal, two are
-public, and nothing about the alphabetical listing signals which.
+A directory is public exactly when `package.json`'s `exports` map points a subpath into it; that
+is the whole test. A reference page is not proof either way: `audit`, `doctor`, and `media-seed`
+each have one (`docs/reference/cairn-audit.md`, `doctor.md`, `cli-cairn-media-seed.md`) despite
+being internal, reachable only through their `bin` entry, never an `exports` subpath. Do not guess
+from a directory's name or its neighbors: two of the four `auth*` directories below are internal,
+two are public, and nothing about the alphabetical listing signals which.
 
 **Public (13 directories, each a package subpath):**
 
@@ -51,12 +52,15 @@ public, and nothing about the alphabetical listing signals which.
 - `vite` (`/vite`): the `cairnManifest` Vite plugin and its options type, the only two symbols a
   consumer site's `vite.config.ts` imports from here.
 
-**Internal (10 directories, no reference page, reachable from no package subpath):**
+**Internal (10 directories, reachable from no package subpath; three of them, `audit`, `doctor`,
+and `media-seed`, still carry a reference page, since each backs a `bin` command):**
 
 - `content`: the content model. `adapter.ts`, `concepts.ts`, `fields.ts`, `fieldset.ts`,
   `frontmatter.ts`, `manifest.ts`, `ids.ts`, `links.ts`, `references.ts`, `taxonomy.ts`.
-- `auth`: the engine's own magic-link implementation (crypto, session store, roles, access), 841
-  lines, distinct from the two re-export shims below and from `auth-channel`'s separate factory.
+- `auth`: the engine's own magic-link implementation (crypto, session store, roles, access), 1,149
+  lines (`access.ts` 224, `crypto.ts` 130, `preview-store.ts` 92, `roles.ts` 111, `store.ts` 556,
+  `types.ts` 36), distinct from the two re-export shims below and from `auth-channel`'s separate
+  factory.
 - `github`: the Backend seam. Read, commit, and branch operations over files, deliberately no
   `query()`, so a store stays swappable and a database stays out.
 - `nav`: the navigation tree and its YAML site-config, pure parse, validate, and rewrite; a site's
@@ -77,9 +81,10 @@ public, and nothing about the alphabetical listing signals which.
 
 The auth cluster is the sharpest instance of the public/internal split cutting across a naming
 family: `auth` (internal, the real implementation) sits beside `auth-channel` (public, a separate
-second-audience factory), `auth-crypto` (public, a 13-line re-export of `auth/crypto.ts`), and
-`auth-store` (public, a 17-line re-export of `auth/store.ts`). Two of the four are export shims
-over the first, one is the engine's own auth, and one is an unrelated subsystem.
+second-audience factory), `auth-crypto` (public, a 12-line re-export of `auth/crypto.ts` plus a
+4-line `browser.ts`), and `auth-store` (public, a 23-line re-export of `auth/store.ts`). Two of the
+four are export shims over the first, one is the engine's own auth, and one is an unrelated
+subsystem.
 
 ## 2. Where a request enters
 
@@ -142,13 +147,15 @@ directory:
   than the earlier single `content-routes-core.ts` this pass's predecessor split it out of.
   `content-routes-entry.ts` (entry CRUD, publish, rename, revert) and `content-routes-media.ts`
   (the media library actions) are by far the largest, at well over a thousand lines each; the
-  other six are two to five hundred lines apiece.
+  other six range from 139 lines (`content-routes-preview.ts`) to 457
+  (`content-routes-settings.ts`).
 
 Every type `content-routes.ts` used to declare inline now lives with the domain that owns it and
 is re-exported from `content-routes.ts`, so an existing importer sees the same names at the same
 path regardless of which sibling actually defines them.
 
-The same shared-prefix-instead-of-directory pattern recurs in `components/` (92 flat files:
+The same shared-prefix-instead-of-directory pattern recurs in `components/` (90 `.ts`/`.svelte`
+files, plus one shared stylesheet and two asset subdirectories, `fonts/` and `spellcheck-assets/`:
 `editor-*.ts` CodeMirror extensions, `tidy-*.ts`, `media-*.ts`, the admin screens, and the field
 widgets, all in one directory) and in `src/tests/unit/` (also flat, by file count the largest
 directory in the tree). Neither is in scope for this page; `grep` by prefix is the practical way

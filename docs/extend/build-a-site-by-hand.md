@@ -398,6 +398,7 @@ export default defineConfig(({ command }) => ({
       },
       adapter: adapter(),
       csrf: { checkOrigin: false },
+      alias: { $theme: 'src/theme' },
     }),
   ],
   ssr: { noExternal: ['@glw907/cairn-cms'] },

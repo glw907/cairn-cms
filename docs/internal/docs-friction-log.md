@@ -52,10 +52,10 @@ all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearin
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-None open. The internals-pass whole-log triage (2026-09-03) deleted the one entry this
-section carried, "`ROADMAP.md`'s Platform watch heading text is a machine key": it
-duplicates the trigger already stated inline in `ROADMAP.md`'s own "Platform watch:
-Cloudflare" heading, so it added no information this file's copy did not.
+- **contributor:** `scripts/checks/check-snippets.mjs` (around :63-66) stubs every `$`-prefixed
+  and relative import specifier to `any`, so the snippet gate can never catch a wrong adapter
+  path in a documented snippet. This migration's `cairn.config` spelling misses were invisible
+  to it.
 
 ## Clearings
 

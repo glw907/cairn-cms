@@ -771,7 +771,7 @@ Read one named menu from a parsed config and validate it. Returns `[]` when the 
 
 ```ts
 import { readMenu } from '@glw907/cairn-cms';
-import { siteConfig } from './cairn.config.js';
+import { siteConfig } from '$theme/cairn.config.js';
 
 const primary = readMenu(siteConfig, 'primary', 2);
 ```
@@ -791,7 +791,7 @@ and edit paths read.
 
 ```ts
 import { readVocabulary } from '@glw907/cairn-cms';
-import { siteConfig } from './cairn.config.js';
+import { siteConfig } from '$theme/cairn.config.js';
 
 const vocabulary = readVocabulary(siteConfig);
 ```

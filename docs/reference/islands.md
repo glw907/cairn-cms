@@ -36,7 +36,7 @@ Mount each island in `root` over its server-rendered fallback. Call it from a ro
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { cairn } from '$lib/cairn.config';
+  import { cairn } from '$theme/cairn.config.js';
 
   let { children } = $props();
 

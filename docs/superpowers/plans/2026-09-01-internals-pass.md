@@ -11,8 +11,12 @@
 > carried; (3) pass round 2, an `engine-triage` verification of this folded revision.
 > This block is the canonical statement of the pre-dispatch gates; other sections point
 > here rather than restating them. Round 2 ran 2026-09-01 and its seven fixes are
-> applied (see "Review folds (round 2)"); the remaining pre-dispatch gate is the
-> anchor reconciliation, items (1) and (2).
+> applied (see "Review folds (round 2)"). Items (1) and (2) ran 2026-09-02 against
+> merged `main` at `a5352f0b`: the 4b post-mortem routes nothing beyond what the fold
+> already carried, and the anchor sweep confirmed every anchor except four corrections
+> applied inline (Task 5: `sveltekit.md:1917`; Task 6: the vacuous block at `:1031`
+> and the STATUS `:272` note overtaken; Task 8: the diagnostic-message defects' real
+> site is `list-role.ts`, not `sheet.ts:544`). All pre-dispatch gates are discharged.
 
 > **For agentic workers:** execute through the `cairn-implementer` chain per task
 > (implementer, `diff-reviewer`, full gate), workflow mode via
@@ -362,7 +366,7 @@ plan order already sequences them; this line states the reason).
   list is the rider's output, enumerated at dispatch, never a hard-coded count). Two
   rules: a name ABSENT from the reference tree is NOT retrofitted (never introduce a
   retired name to hang a parenthetical on—that is a surface regression dressed as
-  compliance); and `sveltekit.md:1914`'s `usage?: UsageEntry[]` row GAINS the
+  compliance); and `sveltekit.md:1917`'s `usage?: UsageEntry[]` row GAINS the
   `NonNullable<ContentFormFailure['usage']>[number]` parenthetical (the 4b ledger close
   promised it; the expression exists today only in the ledger and a test, so this is an
   add, not a verify).
@@ -392,9 +396,10 @@ is gone from touched pages; the README note exists.
   stale sites OUTSIDE the six files the review found:
   `src/lib/components/CairnMediaLibrary.svelte:32` and `src/lib/sveltekit/nav-routes.ts:2`;
   `src/tests/component/reproductions-stories.test.ts` (the vacuous
-  `it('has a matching manifest entry', ...)` block, at `:1022` post-4b)
-- Note for the pass's STATUS update: `docs/STATUS.md:44` carries the same stale `:272`
-  anchor; correct it there when STATUS is next written.
+  `it('has a matching manifest entry', ...)` block, at `:1031` on merged `main`; its
+  stranded defensive chain at `:1037`)
+- (The draft's note about a stale `:272` anchor in `docs/STATUS.md` is overtaken: the
+  4b-close STATUS rewrite already removed it.)
 
 - [ ] **Step 1:** Rewrite the six headers (each states the actual caller and why the
   public name is a thin wrapper—comment-standard conformant, no em dashes in
@@ -474,8 +479,10 @@ ledger rows are closed or progress-noted.
 - Modify: `src/lib/audit/rules/static/list-role.ts` (+ its rendered-mode counterpart if
   the fix lands there), `src/lib/audit/rules/rendered/panel-width.ts` (the documented
   gap at `:78-95`, with the `resolveColors` paint-not-parse precedent at `:92-93`),
-  `src/lib/audit/sheet.ts:544` (the two adjacent diagnostic-message defects: cause-string
-  mis-attribution on shared selectors; dropped at-rule condition),
+  `src/lib/audit/rules/static/list-role.ts` also hosts the two adjacent
+  diagnostic-message defects the docket filed against a stale `sheet.ts:544` anchor
+  (the message build at `:120-128`; the cause-lookup helpers at `:33-66` mis-attribute
+  among shared-selector declarations and drop an at-rule's own condition),
   `docs/reference/cairn-audit.md`, `CHANGELOG.md` (audit output change; no consumer
   action)
 - Spec sources: the internals docket and the harvest-detection post-mortem. (The two
@@ -487,8 +494,8 @@ ledger rows are closed or progress-noted.
   `role="listitem"` per-item addition against ARIA's owned-elements rule; both themes.
 - [ ] **Step 2 (`panel-width`):** painted text-width measurement for the closed-select
   case; fixture proves a clipped select label now flags.
-- [ ] **Step 3 (`sheet.ts:544`):** fix the two diagnostic-message defects; fixtures per
-  defect.
+- [ ] **Step 3 (diagnostic messages):** fix the two message defects at their real site
+  in `list-role.ts` (the docket's `sheet.ts:544` anchor was stale); fixtures per defect.
 - [ ] **Step 4:** Docs, CHANGELOG; commit.
 
 **Acceptance criteria:** a class-less `<li>` under `.menu` registers as re-grounded; a
@@ -663,6 +670,13 @@ paths never become engine contract.
   touched; failing-first proof (a synthetic path divergence between doctor and bake is
   impossible by construction or fails a test; a traversal-shaped value fails
   validation).
+- [ ] **Step 3 note (RATIFIED AMENDMENT, Geoff 2026-09-02, post-plan-approval):** the
+  re-file below executes in the TWO-SLICE shape: "internals-B: monoliths" (the four
+  splits and their riders) and "internals-C: coherence" (the coherence thirteen, the
+  exhaustiveness idiom, the newcomer map), B before C so gates and sweeps do not churn
+  under files being split. The ratified record, including six standing planning
+  defaults, is `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`
+  ("Ratified" section) on `main`; the ROADMAP re-file cites it.
 - [ ] **Step 3 (the internals-B re-file, corrected):** ROADMAP's "internals half" block
   re-files as the named follow-on slice "internals-B: monoliths and coherence" carrying
   **FOUR monoliths** (`EditPage`, `CairnMediaLibrary`, `content-routes-core`,
@@ -894,6 +908,89 @@ block). Three lenses: cleanliness-and-beauty (B), `web-auth-security-reviewer` (
   growth stated; criterion restated; the rest recorded as verified. The `.vale.ini`
   drift rides Task 4.
 - **T-NOTE (no pending consultation briefs):** recorded; nothing preempts this plan.
+
+## Post-mortem (2026-09-03)
+
+**Built.** All thirteen tasks landed on branch `internals` (worktree
+`.claude/worktrees/internals`), off `main` at `a5352f0b`, through the
+implementer/diff-reviewer/gate chain across three chunks: the standing gates
+(`check:self-use`, the F-1 leak-class rider on `check:surface`, the `staleNames`
+per-subpath rescope, the `check:editor-quotes` docs-truth tripwire and the vale
+reconciliation), the routed reshapes (the `MarkdownEditor` seam collapse onto one
+`registerEditor(api)` prop and its `EditorApi`, the `list-role`/`panel-width`
+audit-rule re-groundings), the ruled design questions (the indexed-access reference
+convention, the `CAIRN_DEV_BACKEND` refuse-on-set-AND-non-local tripwire per the
+round-1 letter amendment, the access-semantics two-posture documentation, the
+`SITE_CONFIG_PATH` engine-owned data-file convention), and the record-honesty residue
+(the six stale module headers, the vacuous per-story assertion, the `previewRevoke`
+export half, and Task 13's destroyed-row liveness plus the `formatTimestamp` two-shape
+contract). Task 13 landed at `db99d0bc` plus a doc fix at `8676e8a5` after a
+diff-reviewer fix verdict: its two blocking findings were the reference page and the
+`CHANGELOG.md` entry still describing the old "any Date-parseable" contract, ruled to
+carry a real `Consumers must:` line since zone-less near-ISO inputs now pass through
+raw where published `0.96.0` rendered them as UTC.
+
+**Verified with evidence.** The pass-end ritual ran code-simplifier (five refinements
+banked at `20c5c431`), all six CI-only gates by name (`check:comments`,
+`check:reference:signatures`, `check:surface`, `check:snippets`—red at three problems
+in the access-model docs, fixed at `7604e2b3`—`check:transcripts`, `check:symbols`),
+plus the four doc gates, then a five-reviewer fan-out (`svelte-reviewer`,
+`daisyui-a11y-reviewer`, `web-auth-security-reviewer`, `cloudflare-workers-reviewer`,
+and the standing cleanliness lens on Opus) that folded across three rounds. Round A
+(`25b0d6e3`) reworked the dev-backend tripwire on the security findings: the cache
+latch's fail-open bug, the dual env-source read, `PUBLIC_ORIGIN`-first locality
+through a new shared `isDeployedHost`, shared `isDevBackendFlagSet` truthiness,
+`isLocalHost` consolidation including `csrf.ts`, `dev-flag.ts` re-homed to
+`src/lib/`, salt-error hex-run scrubbing, fresh `Date.now()` at every liveness
+comparison, and the 503-refusal/startup-scope-logging/conditional-gate doc updates.
+Round B (`7f5f1707`) folded 21 items: rendered `list-role` message honesty plus
+menu-open state plus a `listitem` retrofit at four sites plus menu coverage;
+`@layer` no longer prints as a condition; `panel-width` size/letter-spacing/
+text-transform/font-assert fixes; a new `check-self-use` unreasoned-entry violation
+class; `process.exitCode` convergence across gate scripts; ledger-slug citations;
+`reference-coverage`'s options object and its missing-`.d.ts` throw; `EditorApi`
+exported, `focusEditor` renamed to `focus`, its members regrouped, and `EditPage`'s
+entry-key reset now clears all 13 holders; and doc prose fixes. Round C (`ef764a80`)
+answered the verifier's escalation: the `existsSync` pre-filter regression fixed with
+a source-file discriminator in both the gate and its test, `TidyApi`/
+`ImagePlaceholderApi`/`FormatKind` exported from the components barrel per conductor
+ruling, the `check-surface-leaks` rationale corrected, and six smaller cleanups. Fix
+rounds A and B were verified by a fresh diff-reviewer (verdict: escalate, resolved by
+round C). The from-scratch consumer proof ran clean for the final tree (round C was
+type-only/scripts/docs): showcase `rm -rf node_modules package-lock.json`, a fresh
+install, a build, and the full Playwright e2e suite—155 passed, exit 0. A separate
+in-flight commit adding MemoryMax containment on the browser test gate plus a vitest
+browser-recycling investigation lands at the close.
+
+**Decisions locked.** The `formatTimestamp` two-shape contract (SQLite shape or a
+zone-carrying ISO pattern; anything else passes through unchanged) with its real
+`Consumers must:` line; the dev-backend tripwire's `PUBLIC_ORIGIN`-first
+discriminator, its dual env-source read, and its definite-observation latch (no
+fail-open on an unset cache); `EditorApi` and its three grant types
+(`api.tidy`, `api.imagePlaceholders`, plus the verb members) exported from the
+components barrel, with `focusEditor` renamed to `focus` while the export stays
+unpublished; an unreasoned `check:self-use` allowlist entry is its own violation
+class, distinct from a missing entry; and every gate script converges on
+`process.exitCode` over `process.exit` for a clean async-drain shutdown.
+
+**Both budgets scored.** Ceiling 6.5M. Chunk one carried a rough 1.5-2M estimate at
+its own checkpoint; chunks two and three ran unmetered (the conductor-side metering
+is coarse across chunk boundaries); the close session's subagent spend alone sums to
+roughly 2.5M plus main-loop overhead. Best estimate: 5-5.5M total, under ceiling, but
+the metering gap itself is recorded honestly as a process defect rather than papered
+over. Human interaction points: plan approval plus the `CAIRN_DEV_BACKEND`
+letter-amendment confirmation (one combined event, 2026-09-02); the deliberate reboot
+pause on 2026-09-03; zero questions during the entire close session's fully
+autonomous five-reviewer fold.
+
+**Lessons.** The pre-baked handoff worked as designed: a cold session resumed after
+the reboot pause read `docs/STATUS.md` and continued to the same next action with no
+re-derivation. The OOM-containment spec (the MemoryMax scope and the browser-recycling
+investigation) lived only in conversation rather than in a committed artifact, which is
+a pre-bake miss the next multi-session pass should avoid by writing that kind of
+mid-flight infrastructure decision to a file before a pause, not just to STATUS prose.
+Checkpoint spend metering lapsed after chunk one; a pass that spans chunks needs the
+same per-chunk ledger discipline the single-chunk passes get for free.
 
 Declined or deferred, with reasons: S-4's release-gate grep promotion (polish; this
 pass does not own the release workflow); B-4's implied option of hand-maintaining a

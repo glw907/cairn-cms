@@ -10,6 +10,12 @@ import { renderConditionResponse, REASON_CONDITION } from './condition-response.
 import { log } from '../log/index.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
 import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
+import {
+  CAIRN_DEV_BACKEND_FLAG,
+  CAIRN_DEV_BACKEND_MESSAGE,
+  isDevBackendFlagSet,
+  isLocalHost,
+} from '../dev-flag.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
@@ -22,22 +28,6 @@ export function isPublicAdminPath(pathname: string): boolean {
 
 function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
-}
-
-/**
- * Local development (`wrangler dev`) legitimately speaks http; a deployed host does not. The hostname
- * comes from the client `Host` header, so this is UX only: it decides whether to show the help page,
- * never whether to grant access. The session gate below runs regardless. Do not make it an auth check.
- */
-function isLocalHost(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '0.0.0.0' ||
-    hostname === '::1' ||
-    hostname === '[::1]' ||
-    hostname.endsWith('.localhost')
-  );
 }
 
 /** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
@@ -91,15 +81,20 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // Cloudflare Worker var lands on platform.env, an adapter-node OS var on process.env. A correct
     // production build already eliminated the dev backend (the consumer gates it on a build-time
     // define named at each call site), so a set flag signals a polluted environment; refuse loudly.
-    const platformFlag = event.platform?.env?.CAIRN_DEV_BACKEND;
+    // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
+    // production build (the dev branch replaces it entirely rather than running alongside it), so
+    // there is no legitimate live-flag case for this handler to admit (Task 9, ruling 4;
+    // docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
+    // `auth-channel/factory.ts` carries the flag's OTHER refusal, on a narrower set-AND-deployed
+    // predicate, since one factory instance serves both dev and prod; both import the flag name,
+    // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto
+    // different wording or a different reading of the same value.
+    const platformFlag = event.platform?.env?.[CAIRN_DEV_BACKEND_FLAG];
     const processFlag =
-      typeof process !== 'undefined' ? process.env?.CAIRN_DEV_BACKEND : undefined;
-    if (platformFlag === '1' || platformFlag === true || processFlag === '1') {
+      typeof process !== 'undefined' ? process.env?.[CAIRN_DEV_BACKEND_FLAG] : undefined;
+    if (isDevBackendFlagSet(platformFlag) || isDevBackendFlagSet(processFlag)) {
       log.error('guard.rejected', { reason: 'dev_backend_in_prod', path: pathname });
-      return new Response(
-        'cairn: the dev backend flag is set in a deployed environment. Unset CAIRN_DEV_BACKEND.',
-        { status: 503 },
-      );
+      return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
     }
 
     // Rule 2 - non-admin: restore the framework's strict Origin check the consumer disabled when
@@ -115,7 +110,9 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // A deployed admin request over http never works: the magic-link form POST would fail the
     // framework's CSRF guard with an opaque 403. Serve the help page instead, before resolve()
     // runs that check. This covers the public login/auth paths too, since that is where the form
-    // posts. Local http (wrangler dev) is exempt.
+    // posts. Local http (wrangler dev) is exempt. `isLocalHost` here is UX only: it decides
+    // whether to show the help page, never whether to grant access. The session gate below runs
+    // regardless; do not repurpose this into an auth check.
     if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
       log.warn('guard.rejected', { reason: 'https', path: pathname });
       return renderConditionResponse('edge.https-not-forced', { url: event.url });
@@ -263,6 +260,10 @@ export function requireEditor(event: CairnEvent): Editor {
  * `auth.access.denied` with the editor's email, role, and `target`, the same shape `requireAccess`
  * emits. Unlike `requireAccess`, an unmapped target is never a fail-closed misconfiguration here:
  * an engine screen's own route is always a legitimate destination, mapped or not.
+ *
+ * Posture: permissive, mirroring `canReach`'s own unmapped-target default; an engine screen's
+ * mutations (save, publish, upload, and the rest) stay reachable to any editor-capability session
+ * until a site names that screen in its own map.
  */
 export function requireEngineAccess(access: AccessMap | undefined, editor: Editor, target: string): void {
   if (canReach(access, editor, target)) return;

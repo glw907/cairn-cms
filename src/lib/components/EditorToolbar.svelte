@@ -369,6 +369,10 @@ stays pinned at the row's right end, reachable at every width.
         </button>
       </div>
     </div>
+    <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at display: flex,
+         which strips the implicit list role in WebKit/VoiceOver (cairn-audit's list-role rule,
+         rendered mode). The divider <li> keeps its own role="separator" instead: a deliberate,
+         different reading, not a listitem. -->
     <ul
       bind:this={moreMenu}
       popover="auto"
@@ -376,12 +380,13 @@ stays pinned at the row's right end, reachable at every width.
       style="position-anchor:--cairn-more-formatting"
       ontoggle={(e) => (moreOpen = e.newState === 'open')}
       class="dropdown menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+      role="list"
     >
       {#each moreItems as item (item.kind)}
         {#if item.divideBefore}
           <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
         {/if}
-        <li><button type="button" disabled={mode === 'preview'} onclick={() => pickMore(item.kind)}>{item.label}</button></li>
+        <li role="listitem"><button type="button" disabled={mode === 'preview'} onclick={() => pickMore(item.kind)}>{item.label}</button></li>
       {/each}
       {#if moreExtra && moreOpen}
         <!-- Mounted only while the popover is actually open, not merely present-but-closed: a closed
@@ -446,6 +451,9 @@ stays pinned at the row's right end, reachable at every width.
     <!-- The device list mirrors the More menu exactly: a DaisyUI v5 popover dropdown of plain
          buttons, with the active pick carried by aria-pressed and the check glyph. Deliberately
          NOT the ARIA menu pattern: menu roles promise interactions this list does not have. -->
+    <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at display: flex,
+         which strips the implicit list role in WebKit/VoiceOver (cairn-audit's list-role rule,
+         rendered mode). -->
     <ul
       bind:this={deviceMenu}
       popover="auto"
@@ -453,9 +461,10 @@ stays pinned at the row's right end, reachable at every width.
       style="position-anchor:--cairn-preview-device"
       ontoggle={(e) => (deviceOpen = e.newState === 'open')}
       class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+      role="list"
     >
       {#each previewDevices as d (d.id)}
-        <li>
+        <li role="listitem">
           <button type="button" aria-pressed={device === d.id} onclick={() => pickDevice(d.id)}>
             <span class="grow">{deviceLabel(d)}</span>
             {#if device === d.id}

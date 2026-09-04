@@ -6,6 +6,7 @@ import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { createAuthChannel } from '../../lib/auth-channel/index.js';
 import type { AuthChannelConfig } from '../../lib/auth-channel/index.js';
 import { hashToken } from '../../lib/auth/crypto.js';
+import * as store from '../../lib/auth-channel/store.js';
 import {
   applyChannelSchema,
   makeChannelConfig,
@@ -13,6 +14,7 @@ import {
   makeEvent,
   resetChannelDb,
   seedCode,
+  sessionRowCount,
   PENDING_HTTP,
   PENDING_HTTPS,
   SESSION_HTTP,
@@ -127,6 +129,26 @@ describe('confirm cleans up an orphaned prior session', () => {
       vi.restoreAllMocks();
     }
   });
+
+  it('logs nothing when the orphaned row is already expired, so an expired teardown is not counted as a live sign-out', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-orphan-expired' }));
+    const firstToken = await signIn(channel, 'orphan-expired@x.test', 'sub-orphan-expired');
+    // The old row exists but its own expiry has already passed, the same forcing technique
+    // resolveSubject's own expiry test uses.
+    await db.prepare('UPDATE cairn_channel_session SET expires_at = ?1').bind(Date.now() - 1000).run();
+
+    const { nonceToken, code } = await seedCode({ contact: 'orphan-expired@x.test', subject: 'sub-orphan-expired' });
+    const jar = makeCookies({ [PENDING_HTTPS]: nonceToken, [SESSION_HTTPS]: firstToken });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
 });
 
 describe('logout', () => {
@@ -200,7 +222,7 @@ describe('logout', () => {
     }
   });
 
-  it('completes and logs nothing when the salt read faults, so a teardown never strands the member', async () => {
+  it('completes, logs auth.channel.salt_unavailable, and logs nothing else when the salt read faults, so a teardown never strands the member', async () => {
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-salt-fault' }));
     const token = await signIn(channel, 'salt-fault@x.test', 'sub-salt-fault');
     const jar = makeCookies({ [SESSION_HTTPS]: token });
@@ -215,11 +237,23 @@ describe('logout', () => {
     // way logSessionDestroyed's own doc comment describes.
     await db.exec('DROP TABLE cairn_channel_meta');
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const result = await channel.actions.logout(makeEvent({ cookies: jar }));
       expect(result).toEqual({ ok: true });
       const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
       expect(events).not.toContain('auth.channel.session.destroyed');
+
+      const faults = warnSpy.mock.calls
+        .map((c) => c[0] as Record<string, unknown>)
+        .filter((r) => r.event === 'auth.channel.salt_unavailable');
+      expect(faults).toHaveLength(1);
+      expect(faults[0].path).toBe('logout');
+      expect(typeof faults[0].error).toBe('string');
+      // No correlationId: none is derivable without the salt, and the only substitute would be
+      // the raw subject, which this channel's no-roster-identity posture forbids.
+      expect(faults[0].correlationId).toBeUndefined();
+      expect(JSON.stringify(faults[0])).not.toContain('sub-salt-fault');
 
       // The teardown itself must still have run: the salt fault only skips the log record, per
       // logSessionDestroyed's contract, never the deletion that made a record true in the first
@@ -242,6 +276,39 @@ describe('logout', () => {
     }
   });
 
+  it('records path: "revoke" (not "logout") when the salt fault happens on a verify-refused revocation', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(
+      makeConfig({ lookup: async () => 'sub-revoke-salt-fault', verify: async () => false }),
+    );
+    const token = await signIn(channel, 'revoke-salt-fault@x.test', 'sub-revoke-salt-fault');
+
+    // Same forcing technique as the logout case above: drop the meta table only after signIn has
+    // already verified the schema on this channel instance, so resolveSubject's own verify-refused
+    // teardown reaches destroyChannelSession normally and only the salt read that follows faults.
+    await db.exec('DROP TABLE cairn_channel_meta');
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const subject = await channel.resolveSubject(makeEvent({ cookies: makeCookies({ [SESSION_HTTPS]: token }) }));
+      expect(subject).toBeNull();
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+
+      const faults = warnSpy.mock.calls
+        .map((c) => c[0] as Record<string, unknown>)
+        .filter((r) => r.event === 'auth.channel.salt_unavailable');
+      expect(faults).toHaveLength(1);
+      expect(faults[0].path).toBe('revoke');
+      expect(faults[0].correlationId).toBeUndefined();
+    } finally {
+      vi.restoreAllMocks();
+      await db.exec('CREATE TABLE IF NOT EXISTS cairn_channel_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+      await db
+        .prepare("INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1')")
+        .run();
+    }
+  });
+
   it('logs nothing when the session cookie names no row, so the record means a real deletion', async () => {
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig());
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -255,6 +322,62 @@ describe('logout', () => {
     } finally {
       vi.restoreAllMocks();
     }
+  });
+
+  it('logs nothing when the session row is already expired, so an expired teardown is not counted as a live sign-out', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-logout-expired' }));
+    const token = await signIn(channel, 'logout-expired@x.test', 'sub-logout-expired');
+    // Force the row's expiry into the past directly, the same technique
+    // resolveSubject's own expiry test uses, so the row still exists but is no longer live.
+    await db.prepare('UPDATE cairn_channel_session SET expires_at = ?1').bind(Date.now() - 1000).run();
+    const jar = makeCookies({ [SESSION_HTTPS]: token });
+
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.logout(makeEvent({ cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
+    // The delete stays unconditional: the expired row is gone regardless of the skipped record.
+    expect(await sessionRowCount()).toBe(0);
+  });
+
+  // The stale-clock regression (round B): logoutAction must read Date.now() AT the liveness
+  // comparison, not before the awaits (resolveVerifiedSession, destroyChannelSession, hashToken)
+  // that precede it, matching the confirm and revoke sites. The row's expiry is set to fall
+  // between "before those awaits" and "after them": a `now` captured early would still read the
+  // row as live and wrongly log a destroyed record; a `now` read fresh at the comparison correctly
+  // finds it already expired and stays silent.
+  it('reads the clock fresh at the liveness comparison, not before the awaited destroy call', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-logout-stale-clock' }));
+    const token = await signIn(channel, 'logout-stale-clock@x.test', 'sub-logout-stale-clock');
+    // Live when logoutAction starts, expired only after the artificial delay below elapses.
+    const expiresAt = Date.now() + 30;
+    await db.prepare('UPDATE cairn_channel_session SET expires_at = ?1').bind(expiresAt).run();
+    const jar = makeCookies({ [SESSION_HTTPS]: token });
+
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const originalDestroy = store.destroyChannelSession;
+    const destroySpy = vi
+      .spyOn(store, 'destroyChannelSession')
+      .mockImplementation(async (...args: Parameters<typeof store.destroyChannelSession>) => {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        return originalDestroy(...args);
+      });
+    try {
+      const result = await channel.actions.logout(makeEvent({ cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      expect(destroySpy).toHaveBeenCalledTimes(1);
+      const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+      expect(events).not.toContain('auth.channel.session.destroyed');
+    } finally {
+      vi.restoreAllMocks();
+    }
+    // The delete stays unconditional regardless of the skipped record.
+    expect(await sessionRowCount()).toBe(0);
   });
 
   it('is a no-op, still clearing cookies, when no session cookie is present', async () => {

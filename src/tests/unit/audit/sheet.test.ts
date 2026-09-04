@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSheet } from '../../../lib/audit/sheet.js';
+import { conditionalConditions, parseSheet } from '../../../lib/audit/sheet.js';
 
 describe('parseSheet', () => {
   it('resolves a class token to its declarations', () => {
@@ -175,6 +175,30 @@ describe('parseSheet', () => {
     expect(sheet.declarations('bg-tile').map((d) => d.value)).toEqual([
       'url("data:image/svg+xml;base64,AA")',
       'color-mix(in oklab, red 50%, blue)',
+    ]);
+  });
+});
+
+describe('conditionalConditions', () => {
+  // @layer is a cascade-scoping at-rule, not a condition: its block always applies, so a caller
+  // building an "only under X" message must never see it.
+  it('drops @layer, which always applies', () => {
+    expect(conditionalConditions(['@layer components'])).toEqual([]);
+  });
+
+  it('keeps @media, @supports, and @container, which genuinely gate their block', () => {
+    expect(
+      conditionalConditions([
+        '@media (min-width: 40rem)',
+        '@supports (display: grid)',
+        '@container (min-width: 20rem)',
+      ])
+    ).toEqual(['@media (min-width: 40rem)', '@supports (display: grid)', '@container (min-width: 20rem)']);
+  });
+
+  it('keeps a genuine condition alongside a dropped @layer, in their original order', () => {
+    expect(conditionalConditions(['@layer components', '@media (min-width: 40rem)'])).toEqual([
+      '@media (min-width: 40rem)',
     ]);
   });
 });

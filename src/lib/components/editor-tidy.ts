@@ -175,8 +175,9 @@ const tidyField = StateField.define<TidyState>({
 
 /**
  * The api the host drives over one editor view (spec 2.5). Mirrors imagePlaceholderApi: the host
- *  registers it through registerTidy, and the review surface calls it as the author works the list.
- *  Every accept lands as a CodeMirror transaction; reject and reject-all write no text.
+ *  receives it as EditorApi.tidy through registerEditor, and the review surface calls it as the
+ *  author works the list. Every accept lands as a CodeMirror transaction; reject and reject-all
+ *  write no text.
  */
 export interface TidyApi {
 	/**
@@ -213,8 +214,9 @@ export function cairnTidy(): Extension {
 }
 
 /**
- * Build the api that drives tidy against one editor view. The host registers it through registerTidy;
- *  the review surface calls enter, the per-hunk and bulk accept/reject, and exit.
+ * Build the api that drives tidy against one editor view. The host receives it as EditorApi.tidy
+ *  through registerEditor; the review surface calls enter, the per-hunk and bulk accept/reject, and
+ *  exit.
  */
 export function tidyApi(view: EditorView): TidyApi {
 	// Dispatch the named changes' replacements over their CURRENT mapped spans in one transaction, mark

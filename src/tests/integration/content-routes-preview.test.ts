@@ -8,7 +8,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { previewMint } from '../../lib/sveltekit/preview.js';
+import { previewMint, previewRevoke } from '../../lib/sveltekit/preview.js';
 import { findPreviewToken, insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { hashToken } from '../../lib/auth/crypto.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
@@ -238,6 +238,91 @@ describe('previewMint', () => {
     // The draft check never ran for either, so the refusal cannot report whether a draft exists.
     expect(withDraft).toEqual([]);
     expect(withoutDraft).toEqual([]);
+  });
+});
+
+describe('previewRevoke', () => {
+  const TARGET = { concept: 'posts', entryId: ID };
+  const ROLES = defineRoles({ owner: 'owner', 'other-editor': 'editor', publisher: 'editor' });
+  const DENY_POSTS = defineAccess(ROLES, { posts: ['publisher'] });
+
+  /** An event for a direct previewRevoke call, mirroring previewMint's own mintEvent: off
+   *  `/admin/[concept]/[id]` and carrying no route params at all, so the target read from the
+   *  argument rather than the route is what a site's own workflow route relies on. `db` defaults
+   *  to the real harness AUTH_DB and is overridable to prove the authorization-before-delete
+   *  ordering against a DB that would throw if ever reached. */
+  function revokeEvent(
+    opts: { role?: string; capability?: 'owner' | 'editor' | 'none'; email?: string; db?: D1Database } = {},
+  ) {
+    const { role = 'editor', capability = 'editor', email = `${role}@t`, db: authDb = db } = opts;
+    const url = 'https://site.example/queue/revoke';
+    return {
+      url: new URL(url),
+      params: {},
+      route: { id: '/queue/revoke' },
+      request: new Request(url, { method: 'POST' }),
+      locals: { cairnEditor: { email, displayName: role, role, capability } },
+      platform: { env: { AUTH_DB: authDb, PUBLIC_ORIGIN: ORIGIN } },
+      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+      setHeaders: () => {},
+    };
+  }
+
+  it('revokes for an authorized editor, deleting every row for the entry and reporting the count', async () => {
+    await seedToken(ID, 'hash-x1', 'ed@t');
+    await seedToken(ID, 'hash-x2', 'other@t');
+    const result = await previewRevoke(runtime(), revokeEvent() as never, TARGET);
+    expect(result).toEqual({ outcome: 'revoked', count: 2 });
+    expect(await findPreviewToken(db, 'hash-x1')).toBeNull();
+    expect(await findPreviewToken(db, 'hash-x2')).toBeNull();
+  });
+
+  it('is idempotent: revoking with nothing minted succeeds with a count of zero', async () => {
+    const result = await previewRevoke(runtime(), revokeEvent() as never, TARGET);
+    expect(result).toEqual({ outcome: 'revoked', count: 0 });
+  });
+
+  it('refuses an undeclared concept, and a malformed entry id, without revoking', async () => {
+    expect(await previewRevoke(runtime(), revokeEvent() as never, { concept: 'ghosts', entryId: ID })).toEqual({
+      outcome: 'unknown-concept',
+    });
+    expect(await previewRevoke(runtime(), revokeEvent() as never, { concept: 'posts', entryId: '../etc' })).toEqual({
+      outcome: 'invalid-id',
+    });
+  });
+
+  it('refuses a none-capability session the same way the engine’s own actions do', async () => {
+    const refusal = await expectHttpError(() =>
+      previewRevoke(runtime(), revokeEvent({ role: 'reader', capability: 'none' }) as never, TARGET),
+    );
+    expect(refusal.status).toBe(403);
+  });
+
+  it('refuses an editor the access map denies', async () => {
+    const refusal = await expectHttpError(() =>
+      previewRevoke(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }) as never, TARGET),
+    );
+    expect(refusal.status).toBe(403);
+  });
+
+  it('authorizes before it deletes, so a denied session never reaches AUTH_DB (the 4b lesson)', async () => {
+    // A throwing AUTH_DB would surface as an uncaught Error, not an HttpError, if the delete ever
+    // ran: the 403 alone proves requireEditor/requireEngineAccess short-circuited first.
+    const refusal = await expectHttpError(() =>
+      previewRevoke(
+        runtime({ access: DENY_POSTS }),
+        revokeEvent({ role: 'other-editor', db: throwingDb('boom') }) as never,
+        TARGET,
+      ),
+    );
+    expect(refusal.status).toBe(403);
+  });
+
+  it('logs preview.token.revoked from inside the function, with the right fields', async () => {
+    await seedToken(ID, 'hash-x3');
+    const captured = await records(() => previewRevoke(runtime(), revokeEvent() as never, TARGET));
+    const record = captured.find((r) => r.event === 'preview.token.revoked');
+    expect(record).toMatchObject({ concept: 'posts', id: ID, editor: 'editor@t', count: 1 });
   });
 });
 

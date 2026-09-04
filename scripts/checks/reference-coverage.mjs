@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadRegistry } from './check-surface-leaks.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -45,16 +46,22 @@ export function enumerateExports(dtsPath) {
     .sort();
 }
 
+// A whole-word matcher for one export or prop name: the name itself, bounded on both sides by a
+// non-identifier character. `$` is the one name character that also means something to the regex
+// engine, so it is the only one escaped.
+/** @param {string} name @returns {RegExp} */
+function wholeWordRe(name) {
+  const escaped = name.replace(/[$]/g, '\\$&');
+  return new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`);
+}
+
 // The names from `names` that do not appear as a whole-word token in the page text.
 /**
  * @param {string[]} names
  * @param {string} pageText
  */
 export function missingNames(names, pageText) {
-  return names.filter((/** @type {string} */ name) => {
-    const escaped = name.replace(/[$]/g, '\\$&');
-    return !new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(pageText);
-  });
+  return names.filter((/** @type {string} */ name) => !wholeWordRe(name).test(pageText));
 }
 
 // The stability-tier token the marker carries, recognized in two forms: the inline
@@ -185,10 +192,11 @@ export function untaggedNames(names, pageText) {
 // column read as a whole, not any backticked span anywhere on the page: an ordinary prose mention,
 // a non-export table (the admin action table's `request`/`confirm`/… rows), or a dependent,
 // non-exported type shown for context in a signature block must not false-positive. `names` is
-// the caller's known-real-export pool; the check is package-wide, not page-scoped, because a page
-// legitimately names a real export that lives on a different subpath (core's "Component-author
-// helpers" section shows `cardShell`/`headRow`/`iconSpan`, all `/render` exports, beside the root
-// export `glyph`), so this stays a lock against a genuinely dead name, not a page-boundary check.
+// the caller-supplied known-real-export pool, scoped per page via `knownNamesByPage` so a name
+// real only on some unrelated subpath no longer excuses a stale mention. `globalKnownNames` widens
+// that pool back out, but only as the realness check `isAllowlisted` applies to a recorded
+// narrative-context exception (see `NARRATIVE_CONTEXT_ALLOWLIST`), never as the pool this function
+// itself checks against.
 /**
  * @param {string[]} names
  * @param {string} pageText
@@ -290,6 +298,235 @@ function declaredNames(pageText) {
   return names;
 }
 
+// The distinct names the check-surface-leaks registry records against one subpath: the corpus
+// of un-importable members whose printed occurrence on that subpath's page requires the
+// indexed-access parenthetical (ruling 3, docs/internal/engine-rulings.md's
+// indexed-access-parenthetical-convention row). Deduped, since a name can carry more than one
+// registry entry only by (name, subpath) uniqueness, never twice for the same subpath.
+/**
+ * @param {{ name: string, subpath: string }[]} leaks
+ * @param {string} subpath
+ * @returns {string[]}
+ */
+export function leakNamesForSubpath(leaks, subpath) {
+  return [...new Set(leaks.filter((l) => l.subpath === subpath).map((l) => l.name))];
+}
+
+// The real backtick code spans in `text`, in document order. Splitting on the backtick
+// character and taking every odd-indexed piece assumes well-formed alternating pairs (every
+// reference page's own convention: prose never contains a bare backtick), which is what keeps
+// this from bridging across two UNRELATED code spans the way a single greedy `` `[^`]*` ``
+// regex would: two spans separated by ordinary prose that happens to contain a markdown link's
+// `[text](url)` brackets must not read as one indexed-access expression.
+/** @param {string} text */
+function codeSpans(text) {
+  const parts = text.split('`');
+  const spans = [];
+  for (let i = 1; i < parts.length; i += 2) spans.push(parts[i]);
+  return spans;
+}
+
+// Whether `text` carries a code span with at least one NON-EMPTY bracket subscript: the
+// convention's own marker that a consumer reaches an un-importable member via indexed access
+// off a real exported type (`Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`,
+// `NonNullable<ContentFormFailure['usage']>[number]`, and the like). The bracket contents must be
+// non-empty (`[^\]]+`, not `[^\]]*`) so an ordinary array-type suffix (`AdvisoryNotice[]`, empty
+// brackets) never false-matches as an indexed-access marker.
+/** @param {string} text */
+function hasIndexedAccessSpan(text) {
+  return codeSpans(text).some((span) => /\[[^\]]+\]/.test(span));
+}
+
+// The page split into the locality units the parenthetical-required check measures against. A
+// markdown table's rows carry no blank line between them, so each row is its own unit: the same
+// row a printed member and its parenthetical both live on (the Types table's dense Meaning
+// cells). Every other run of text is one unit per blank-line-delimited paragraph, since the
+// established convention (LoginData/ConfirmData, EditorsData) places the parenthetical a few
+// sentences into the same prose paragraph, not necessarily the same line. Treating the whole
+// page as one unit would let an unrelated bracket expression anywhere excuse every leak, which
+// defeats the check; treating every line as its own unit would fail a paragraph whose
+// parenthetical wraps onto a second line, which the wrapped prose convention already does.
+/** @param {string} pageText */
+function localityUnits(pageText) {
+  const units = [];
+  for (const block of pageText.split(/\n{2,}/)) {
+    const lines = block.split('\n').filter((line) => line.length > 0);
+    const isTable = lines.length > 0 && lines.every((line) => line.trimStart().startsWith('|'));
+    if (isTable) units.push(...lines);
+    else units.push(block);
+  }
+  return units;
+}
+
+// The names from `names` that the page prints as a whole-word mention with no indexed-access
+// parenthetical in the same locality unit. A name the page never prints at all is out of scope:
+// ruling 3 never retrofits a parenthetical onto a name absent from the page (that would be
+// introducing a name to hang documentation on, not documenting one already there).
+/**
+ * @param {string[]} names
+ * @param {string} pageText
+ * @returns {string[]}
+ */
+export function missingIndexedAccessParentheticals(names, pageText) {
+  const units = localityUnits(pageText);
+  const offenders = [];
+  for (const name of names) {
+    const nameRe = wholeWordRe(name);
+    if (!nameRe.test(pageText)) continue;
+    const covered = units.some((unit) => nameRe.test(unit) && hasIndexedAccessSpan(unit));
+    if (!covered) offenders.push(name);
+  }
+  return offenders;
+}
+
+// Task 7's props-vs-reference clause (an extension of this gate, not a new script per the plan's
+// tie-break rule): a component's own Props keys, diffed against its reference-page section.
+//
+// A component's per-file dist declaration carries its Props shape under one of two names,
+// depending on how svelte-package generated it: a local `interface Props { ... }` when the
+// component's own script declares one explicitly (the common case, and the one an `extends`
+// composition such as MarkdownEditor's `Props extends StableEditorProps, UnstableEditorProps`
+// still uses), or a synthesized `type $$ComponentProps = { ... }` alias when it does not (a
+// component whose `$props()` destructuring types its shape inline, such as HelpHome and
+// WelcomeView).
+const PROPS_TYPE_NAMES = ['Props', '$$ComponentProps'];
+
+// The Props member names a component's own dist `.svelte.d.ts` declares, resolved through the type
+// checker (`type.getProperties()`) so an `interface Props extends A, B` reports A's and B's
+// members too, not just Props' own declared ones. Null when the file declares neither known Props
+// shape.
+/** @param {string} dtsPath */
+export function componentPropsNames(dtsPath) {
+  const { checker, source } = loadDts(dtsPath);
+  for (const shapeName of PROPS_TYPE_NAMES) {
+    const decl = source.statements.find(
+      (s) => (ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s)) && s.name.text === shapeName,
+    );
+    if (!decl) continue;
+    const type = checker.getTypeAtLocation(decl);
+    return type.getProperties().map((p) => p.name).sort();
+  }
+  return null;
+}
+
+// The doc window for one component's own `### `Name`` section on the components reference page:
+// from its heading to the next h2 or h3 heading, deliberately never stopping at an h4, so a
+// component's own sub-section under an h4 (MarkdownEditor's "wiring props (Unstable API)" table)
+// stays inside its owning component's window rather than falling out of scope. Null when the page
+// carries no such heading for `name`.
+/**
+ * @param {string} name
+ * @param {string} pageText
+ * @returns {string | null}
+ */
+export function componentSectionWindow(name, pageText) {
+  const escaped = name.replace(/[$]/g, '\\$&');
+  const headingRe = new RegExp(`^###\\s+\`${escaped}\`\\s*$`, 'm');
+  const m = headingRe.exec(pageText);
+  if (!m) return null;
+  const after = pageText.slice(m.index + m[0].length);
+  const closer = /^#{2,3}[ \t]/m;
+  const next = closer.exec(after);
+  return m[0] + (next ? after.slice(0, next.index) : after);
+}
+
+// The prop names from `names` that never appear as a whole-word token anywhere in `sectionText`
+// (the owning component's own doc window, not the whole page). Mirrors `missingNames`, scoped per
+// component so an undocumented prop on a page covering many components is attributed to the right
+// one, not lost in the page-wide pool. Known weakness, the same class `missingNames` carries: a
+// whole-word match anywhere in the section counts, including an ordinary prose sentence that
+// happens to name the prop, so a prop mentioned only in passing (never in a Props signature or a
+// dedicated row) still reads as documented.
+/**
+ * @param {string[]} names
+ * @param {string} sectionText
+ * @returns {string[]}
+ */
+export function missingComponentProps(names, sectionText) {
+  return names.filter((name) => !wholeWordRe(name).test(sectionText));
+}
+
+// A Props member that is documented, but PINNED unstable so it never quietly promotes into the
+// component's frozen stable contract even though a plain presence check (missingComponentProps)
+// passes it regardless of which part of the section names it. Ruling 1 / S-10:
+// MarkdownEditor's `spellcheckTest` is a test-only Worker-factory seam that must stay out of
+// `StableEditorProps`. Each entry is checked against the component's own STABLE snippet (see
+// `stableSnippet` below), which must never name the pinned prop.
+/** @type {{ component: string, prop: string, reason: string }[]} */
+export const DOCUMENTED_UNSTABLE_PROPS = [
+  {
+    component: 'MarkdownEditor',
+    prop: 'spellcheckTest',
+    reason:
+      'a test-only Worker-factory seam for the component test harness (the real wasm and ' +
+      'dictionary assets do not load under the vitest browser runner); pinning it here stops it ' +
+      'quietly joining the frozen stable snippet the way an ordinary documented prop would.',
+  },
+];
+
+// Every DOCUMENTED_UNSTABLE_PROPS entry must carry a non-empty reason, the same fail-unless-
+// recorded idiom the narrative-context allowlist uses.
+/** @param {{ component: string, prop: string, reason: string }[]} registry */
+export function assertDocumentedUnstableReasoned(registry) {
+  for (const entry of registry) {
+    if (!entry.reason || !entry.reason.trim()) {
+      throw new Error(`documented-unstable entry for ${entry.component}.${entry.prop} has no reason`);
+    }
+  }
+}
+
+// The component's own stable-contract snippet: the first fenced ```ts/```typescript block inside
+// its section window, the convention every component page's frozen-contract listing opens with
+// (the `let { ... }: { ... } = $props();` destructuring). Empty string when the section carries no
+// such block, so a pinned prop trivially fails to appear in it.
+/** @param {string} sectionText */
+function stableSnippet(sectionText) {
+  return tsFencedBlocks(sectionText)[0] ?? '';
+}
+
+// The DOCUMENTED_UNSTABLE_PROPS entries for `component` whose pinned prop has crept into its own
+// stable snippet, which would silently promote it into the frozen contract the snippet documents.
+/**
+ * @param {string} component
+ * @param {string} sectionText
+ * @param {{ component: string, prop: string, reason: string }[]} [registry]
+ * @returns {string[]}
+ */
+export function promotedUnstableProps(component, sectionText, registry = DOCUMENTED_UNSTABLE_PROPS) {
+  const snippet = stableSnippet(sectionText);
+  return registry
+    .filter((e) => e.component === component && wholeWordRe(e.prop).test(snippet))
+    .map((e) => e.prop);
+}
+
+// One component's props-vs-reference result: `missing` (an undocumented Props key), `promoted` (a
+// documented-unstable pin that crept into the stable snippet), and `noSection` (the page carries no
+// `### `name`` heading at all, so every real prop is trivially missing). Null when the component's
+// dist declaration EXISTS but carries no Props shape (nothing to check); a MISSING declaration
+// throws instead, matching `checkOne`'s own "run npm run package first" for the index-wide case: a
+// missing `.d.ts` means the package has not been built, never that the component has zero props,
+// and a silent null here would read as the latter.
+/**
+ * @param {string} name
+ * @param {string} dtsPath
+ * @param {string} pageText
+ */
+export function checkComponentProps(name, dtsPath, pageText) {
+  if (!existsSync(dtsPath)) throw new Error(`missing ${dtsPath}; run "npm run package" first`);
+  const names = componentPropsNames(dtsPath);
+  if (!names || names.length === 0) return null;
+  const section = componentSectionWindow(name, pageText);
+  if (section === null) {
+    return { component: name, missing: names, promoted: [], noSection: true };
+  }
+  return {
+    component: name,
+    missing: missingComponentProps(names, section),
+    promoted: promotedUnstableProps(name, section),
+    noSection: false,
+  };
+}
+
 // One reference page per importable subpath. `excludeDts` drops a re-exported surface that is
 // documented on its own page: /delivery re-exports all of /delivery/data, so the delivery page
 // documents only its own additions. The /delivery/head entry points at the same delivery.md page,
@@ -316,14 +553,12 @@ export const CONFIG = [
   { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
 ];
 
-// The full, unfiltered real-export set across every covered subpath, not just the one a page
-// documents. A reference page legitimately shows a real name from another subpath for narrative
-// context (core's "Component-author helpers" block declares `cardShell`, `headRow`, and
-// `iconSpan` alongside the root export `glyph`, even though the three live on `/render`), so the
-// reverse check's job is narrower than "is this name exported here": it is "does this name still
-// exist anywhere as a real export", which is what makes it a lock against a renamed or removed
-// name rather than a page-boundary purity check. Built from all of CONFIG regardless of the
-// `--only` filter, so a single-subpath run sees the same pool a full run does.
+// The full, unfiltered real-export set across every covered subpath. This is no longer the pool
+// `staleNames` checks a page against (see `knownNamesByPage` below, the per-page rescope); it
+// survives as the realness check `isAllowlisted` runs a narrative-context exception against, so an
+// allowlisted name that is later renamed or removed everywhere still fails here instead of hiding
+// behind a stale allowlist entry. Built from all of CONFIG regardless of the `--only` filter, so a
+// single-subpath run sees the same pool a full run does.
 /** @param {{ dts: string }[]} entries */
 function globalKnownNames(entries) {
   const known = new Set();
@@ -335,11 +570,96 @@ function globalKnownNames(entries) {
   return known;
 }
 
+// The real-export names a page itself documents, the pool `staleNames` checks that page against.
+// Scoped per PAGE, not per CONFIG entry, because two page files each cover two subpath entries
+// (delivery.md documents both /delivery and /delivery/head; reproductions.md documents both
+// /reproductions and /reproductions/manifest): a name real only on the page's OTHER covered
+// subpath is still that page's own name, not foreign. A name real on some unrelated subpath the
+// page does not cover no longer excuses a stale mention (the union-over-everything pool this
+// replaces let 14 dead rows survive undetected in delivery-data.md, see
+// `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope` row); the
+// deliberate exceptions that remain go in `NARRATIVE_CONTEXT_ALLOWLIST`. Built from all of CONFIG
+// regardless of the `--only` filter, matching `globalKnownNames`.
+/** @param {{ dts: string, page: string, excludeDts?: string }[]} entries */
+function knownNamesByPage(entries) {
+  const byPage = new Map();
+  for (const entry of entries) {
+    const dtsPath = resolve(ROOT, entry.dts);
+    if (!existsSync(dtsPath)) continue;
+    let names = enumerateExports(dtsPath);
+    if (entry.excludeDts) {
+      const excluded = new Set(enumerateExports(resolve(ROOT, entry.excludeDts)));
+      names = names.filter((n) => !excluded.has(n));
+    }
+    if (!byPage.has(entry.page)) byPage.set(entry.page, new Set());
+    for (const n of names) byPage.get(entry.page).add(n);
+  }
+  return byPage;
+}
+
+// A reasoned exception to the per-page pool above: a page may legitimately show a real export
+// from another subpath as narrative context, a claim about where a related helper lives rather
+// than a claim that it lives here. Each entry names its page, the foreign names it shows, and the
+// reason, the same fail-unless-recorded idiom `check:surface`'s leak registry uses, so a carve-out
+// is self-explaining rather than silent.
+/** @type {{ page: string, names: string[], reason: string }[]} */
+export const NARRATIVE_CONTEXT_ALLOWLIST = [
+  {
+    page: 'docs/reference/core.md',
+    names: ['cardShell', 'headRow', 'iconSpan'],
+    reason:
+      "the Component-author helpers section shows the /render hast-building trio beside the " +
+      "root-barrel renderGlyph export, in the alert component's worked build() example. " +
+      'Re-homing is deferred to the chassis pass: engine-rulings.md\'s ' +
+      "f1-return-position-leak-sanction row carries the trio as list (c) Tier 4, chassis-coupled.",
+  },
+];
+
+// Every allowlist entry must carry a non-empty reason: a recorded exception that does not explain
+// itself is a bug in the allowlist, not a silent pass-through.
+/** @param {{ page: string, names: string[], reason: string }[]} allowlist */
+export function assertAllowlistReasoned(allowlist) {
+  for (const entry of allowlist) {
+    if (!entry.reason || !entry.reason.trim()) {
+      throw new Error(
+        `narrative-context allowlist entry for ${entry.page} (${entry.names.join(', ')}) has no reason`,
+      );
+    }
+  }
+}
+
+// Whether `name` on `page` is a recorded narrative-context exception AND still a real export
+// somewhere in the package. The realness check is what keeps the renamed/removed lock intact for
+// an allowlisted name: if `name` is later renamed or removed everywhere, this returns false and
+// the name fails as stale, same as any other dead name.
 /**
- * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} entry
- * @param {Set<string>} knownNames
+ * @param {string} page
+ * @param {string} name
+ * @param {Set<string>} globalNames
+ * @param {{ page: string, names: string[], reason: string }[]} allowlist
  */
-function checkOne(entry, knownNames) {
+function isAllowlisted(page, name, globalNames, allowlist) {
+  return allowlist.some((entry) => entry.page === page && entry.names.includes(name) && globalNames.has(name));
+}
+
+/**
+ * @param {object} options
+ * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} options.entry
+ * @param {Set<string>} options.pageKnownNames the real exports this page documents (own subpath,
+ *   plus any sibling subpath entry that shares the same page)
+ * @param {Set<string>} options.globalKnownNamesSet the full real-export pool, used only to keep
+ *   an allowlisted name honest against a later rename or removal
+ * @param {{ page: string, names: string[], reason: string }[]} [options.allowlist]
+ * @param {string[]} [options.leakNames] the check-surface-leaks names recorded against this
+ *   subpath (see `leakNamesForSubpath`); a printed one with no indexed-access parenthetical fails
+ */
+export function checkOne({
+  entry,
+  pageKnownNames,
+  globalKnownNamesSet,
+  allowlist = NARRATIVE_CONTEXT_ALLOWLIST,
+  leakNames = [],
+}) {
   const dtsPath = resolve(ROOT, entry.dts);
   if (!existsSync(dtsPath)) throw new Error(`missing ${entry.dts}; run "npm run package" first`);
   let names = enumerateExports(dtsPath);
@@ -349,7 +669,15 @@ function checkOne(entry, knownNames) {
   }
   const pagePath = resolve(ROOT, entry.page);
   if (!existsSync(pagePath)) {
-    return { subpath: entry.subpath, page: entry.page, missing: names, untagged: [], stale: [], noPage: true };
+    return {
+      subpath: entry.subpath,
+      page: entry.page,
+      missing: names,
+      untagged: [],
+      stale: [],
+      missingParenthetical: [],
+      noPage: true,
+    };
   }
   const pageText = readFileSync(pagePath, 'utf8');
   const missing = missingNames(names, pageText);
@@ -357,8 +685,11 @@ function checkOne(entry, knownNames) {
   // missing, so the tier check runs over the documented (present) names only.
   const present = names.filter((n) => !missing.includes(n));
   const untagged = untaggedNames(present, pageText);
-  const stale = staleNames([...knownNames], pageText);
-  return { subpath: entry.subpath, page: entry.page, missing, untagged, stale };
+  const stale = staleNames([...pageKnownNames], pageText).filter(
+    (name) => !isAllowlisted(entry.page, name, globalKnownNamesSet, allowlist),
+  );
+  const missingParenthetical = missingIndexedAccessParentheticals(leakNames, pageText);
+  return { subpath: entry.subpath, page: entry.page, missing, untagged, stale, missingParenthetical };
 }
 
 // The CONFIG entries selected by an optional `--only <subpath>` CLI arg, or every entry when
@@ -391,10 +722,19 @@ export function runIfMain(main, moduleUrl) {
 
 function main() {
   const entries = resolveEntries(process.argv[2], CONFIG);
-  const knownNames = globalKnownNames(CONFIG);
+  assertAllowlistReasoned(NARRATIVE_CONTEXT_ALLOWLIST);
+  const pageNames = knownNamesByPage(CONFIG);
+  const globalNames = globalKnownNames(CONFIG);
+  const leaks = loadRegistry();
   let failed = false;
   for (const entry of entries) {
-    const r = checkOne(entry, knownNames);
+    const leakNames = leakNamesForSubpath(leaks, entry.subpath);
+    const r = checkOne({
+      entry,
+      pageKnownNames: pageNames.get(entry.page) ?? new Set(),
+      globalKnownNamesSet: globalNames,
+      leakNames,
+    });
     if (r.noPage) {
       console.error(`MISSING PAGE ${r.page} (${r.subpath})`);
       failed = true;
@@ -405,10 +745,54 @@ function main() {
       console.error(`${r.subpath} (${r.page}): ${r.untagged.length} untagged (no stability tier): ${r.untagged.join(', ')}`);
       failed = true;
     } else if (r.stale.length) {
-      console.error(`${r.subpath} (${r.page}): ${r.stale.length} stale (no longer exported): ${r.stale.join(', ')}`);
+      console.error(
+        `${r.subpath} (${r.page}): ${r.stale.length} stale (not a real export this page covers): ${r.stale.join(', ')}`,
+      );
+      failed = true;
+    } else if (r.missingParenthetical.length) {
+      console.error(
+        `${r.subpath} (${r.page}): ${r.missingParenthetical.length} printed with no indexed-access parenthetical: ${r.missingParenthetical.join(', ')}`,
+      );
       failed = true;
     } else {
       console.log(`OK ${r.subpath} (${r.page})`);
+    }
+  }
+  // The props-vs-reference clause runs once over every exported component, only when the run
+  // covers /components (an `--only` run for another subpath has nothing to check).
+  const componentsEntry = entries.find((e) => e.subpath === '/components');
+  if (componentsEntry) {
+    assertDocumentedUnstableReasoned(DOCUMENTED_UNSTABLE_PROPS);
+    const indexPath = resolve(ROOT, componentsEntry.dts);
+    if (!existsSync(indexPath)) throw new Error(`missing ${componentsEntry.dts}; run "npm run package" first`);
+    const pageText = readFileSync(resolve(ROOT, componentsEntry.page), 'utf8');
+    for (const name of enumerateExports(indexPath)) {
+      const dtsPath = resolve(ROOT, `dist/components/${name}.svelte.d.ts`);
+      // /components exports a component per name (each with a `.svelte.d.ts`), plus a handful of
+      // plain type exports riding the same barrel (EditorApi, say): no matching `.svelte.d.ts`
+      // exists for those, by design, never a build failure. Discriminate on the *source*, not the
+      // dist output: a name with no `src/lib/components/<name>.svelte` is a type export and is
+      // skipped here; a name that IS a real component but is missing its dist declaration (a stale
+      // or partial build) falls through to checkComponentProps's own missing-file throw.
+      if (!existsSync(resolve(ROOT, `src/lib/components/${name}.svelte`))) continue;
+      const r = checkComponentProps(name, dtsPath, pageText);
+      if (!r) continue;
+      if (r.noSection) {
+        console.error(`/components props (${componentsEntry.page}): ${r.component} has no own section on the page`);
+        failed = true;
+      } else if (r.missing.length) {
+        console.error(
+          `/components props (${componentsEntry.page}): ${r.component} ${r.missing.length} undocumented prop(s): ${r.missing.join(', ')}`,
+        );
+        failed = true;
+      } else if (r.promoted.length) {
+        console.error(
+          `/components props (${componentsEntry.page}): ${r.component} documented-unstable prop(s) crept into the stable snippet: ${r.promoted.join(', ')}`,
+        );
+        failed = true;
+      } else {
+        console.log(`OK /components props (${r.component})`);
+      }
     }
   }
   process.exit(failed ? 1 : 0);

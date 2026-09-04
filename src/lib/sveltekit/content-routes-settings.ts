@@ -1,6 +1,8 @@
 // cairn-cms: the tidy settings screen and the tag-vocabulary admin screen, both of which
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
-// shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
+// shared ContentRoutesContext (content-routes-context.ts). createContentRoutesInternal builds
+// that context once per call and passes it to every sibling factory; the public
+// createContentRoutes is only a thin wrapper around it.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import {

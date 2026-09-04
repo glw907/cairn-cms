@@ -281,22 +281,27 @@ export async function resolveChannelSession(
   return row ? { subject: row.subject } : null;
 }
 
+/** What {@link destroyChannelSession} returns: the deleted row's subject and the expiry it carried. */
+export type DestroyedChannelSession = { subject: string; expiresAt: number };
+
 /**
  * Delete a single session by its token hash (logout, confirm's orphan cleanup, and the
- * verify-refused revocation), answering with the subject the deleted row carried, or null when
- * the hash named no row. `RETURNING` keeps this one statement and one round trip. The subject is
- * a roster identity, so a caller logging the deletion derives the channel's own pseudonymous
- * correlation id from it rather than recording it.
+ * verify-refused revocation), answering with the subject and expiry the deleted row carried, or
+ * null when the hash named no row. `RETURNING` keeps this one statement and one round trip. The
+ * subject is a roster identity, so a caller logging the deletion derives the channel's own
+ * pseudonymous correlation id from it rather than recording it. The delete is unconditional, an
+ * expired row is still safe to remove, so the caller reads the returned `expiresAt` against its
+ * own `now` to decide whether the row was still live before emitting a destroyed record.
  */
 export async function destroyChannelSession(
   session: D1DatabaseSession,
   tokenHash: string,
-): Promise<string | null> {
+): Promise<DestroyedChannelSession | null> {
   const row = await session
-    .prepare('DELETE FROM cairn_channel_session WHERE token_hash = ?1 RETURNING subject')
+    .prepare('DELETE FROM cairn_channel_session WHERE token_hash = ?1 RETURNING subject, expires_at')
     .bind(tokenHash)
-    .first<{ subject: string }>();
-  return row?.subject ?? null;
+    .first<{ subject: string; expires_at: number }>();
+  return row ? { subject: row.subject, expiresAt: row.expires_at } : null;
 }
 
 /** Delete every session for a subject (roster removal, and `revokeSessions`). */

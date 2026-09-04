@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { readWranglerConfig } from '../../lib/doctor/wrangler-config.js';
 import { runDoctor } from '../../lib/doctor/run.js';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   configBindings,
   configMediaBucket,
@@ -11,6 +13,9 @@ import {
   configTidyKey,
   roleWiring,
   configNoReferrerBlanket,
+  SITE_CONFIG_PATH,
+  SITE_CONFIG_PATHS,
+  verifySiteConfigPath,
 } from '../../lib/doctor/checks-local.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
 import type { RolesDeclaration } from '../../lib/auth/roles.js';
@@ -429,8 +434,68 @@ describe('config.site-config', () => {
     expect(result.detail).toContain('src/lib/site.config.yaml');
   });
 
+  it('prefers the canonical src/theme location when multiple candidates exist', async () => {
+    const result = await configSiteConfig.run(
+      ctx({ 'site.config.yaml': '- broken\n', 'src/theme/site.config.yaml': GOOD_SITE_CONFIG })
+    );
+    expect(result.status).toBe('pass');
+  });
+
   it('ties to the config.site-config-invalid condition', () => {
     expect(configSiteConfig.conditionId).toBe('config.site-config-invalid');
+  });
+});
+
+describe('SITE_CONFIG_PATH', () => {
+  it('reads its value from the committed site-config-path.json, not a hand-typed literal', () => {
+    const shipped = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../../lib/doctor/site-config-path.json'), 'utf8')
+    ) as { path: string };
+    expect(SITE_CONFIG_PATH).toBe(shipped.path);
+    expect(SITE_CONFIG_PATH).toBe('src/theme/site.config.yaml');
+  });
+
+  it('composes SITE_CONFIG_PATHS as the canonical entry followed by the three legacy candidates', () => {
+    expect(SITE_CONFIG_PATHS).toEqual([
+      SITE_CONFIG_PATH,
+      'site.config.yaml',
+      'src/lib/site.config.yaml',
+      'src/site.config.yaml',
+    ]);
+  });
+
+  it('matches create-cairn-site\'s own committed copy, so a doctor/bake divergence fails a test rather than shipping silently', () => {
+    const bakeCopy = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../../../packages/create-cairn-site/src/site-config-path.json'),
+        'utf8'
+      )
+    ) as { path: string };
+    expect(bakeCopy.path).toBe(SITE_CONFIG_PATH);
+  });
+});
+
+describe('verifySiteConfigPath', () => {
+  it('accepts a plain relative path', () => {
+    expect(verifySiteConfigPath('src/theme/site.config.yaml')).toBe('src/theme/site.config.yaml');
+  });
+
+  it('rejects a traversal-shaped value', () => {
+    expect(() => verifySiteConfigPath('../../etc/passwd')).toThrow(/\.\./);
+    expect(() => verifySiteConfigPath('src/../../etc/passwd')).toThrow(/\.\./);
+  });
+
+  it('rejects a leading slash', () => {
+    expect(() => verifySiteConfigPath('/etc/passwd')).toThrow(/relative/);
+  });
+
+  it('rejects a NUL byte', () => {
+    expect(() => verifySiteConfigPath('site.config.yaml\0')).toThrow(/NUL/);
+  });
+
+  it('rejects a non-string or empty value', () => {
+    expect(() => verifySiteConfigPath(undefined)).toThrow(/non-empty string/);
+    expect(() => verifySiteConfigPath('')).toThrow(/non-empty string/);
   });
 });
 

@@ -225,6 +225,47 @@ reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`, so a sign-
 diagnosable from the logs rather than guessed at. The exception is step 6: a missing or invalid
 session redirects to `/admin/login` without logging.
 
+### The dev-backend flag's two refusals, and what they don't cover
+
+`CAIRN_DEV_BACKEND` is refused in two places, deliberately on different terms, both sourced from
+one shared module so neither the wording, the truthiness rule, nor the deployment witness can drift
+between them. Only `1` and the boolean `true` count as set, in either env source, so a `CAIRN_DEV_BACKEND=true`
+typo reads as unset. Both places read `platform.env` (a Cloudflare Worker var) and `process.env`
+(an adapter-node OS variable), so neither deploy shape escapes the check.
+
+The preceding guard refuses on the flag alone, because it mounts only in a production build; a
+site's own dev branch replaces it entirely rather than running alongside it, so there's no
+legitimate case where the guard sees the flag live at all. `createAuthChannel`'s own actions
+(`request`, `confirm`, `logout`) refuse only when the flag is set **and** the request reaches a
+deployed runtime, because `CAIRN_DEV_BACKEND='1'` is a second-audience dev transport's own enable
+contract (see [Auth channel security
+model](./auth-channel-security-model.md#the-dev-transport-is-not-a-dev-only-risk)): refusing on the
+flag alone there would break every legitimate local dev-backend deployment. Both refusals fire as a
+hard, unconditional throw or response before any other work the surface would otherwise do.
+
+The channel's "deployed runtime" test reads your configured `PUBLIC_ORIGIN` before it reads the
+request. A `PUBLIC_ORIGIN` naming a non-local host settles the question outright, whatever the
+request claims about itself, because `event.url` derives from the client `Host` header everywhere
+except Cloudflare, and a forged `Host: localhost` would otherwise talk the refusal down. The rule
+only ever moves toward refusing: a `PUBLIC_ORIGIN` that names a local host, or that doesn't parse,
+hands the question back to the request's own hostname rather than granting an exemption. Set
+`PUBLIC_ORIGIN` on every deployment. That's what closes the residual, and a deployment that leaves
+it unset still rests on the Host-derived fallback.
+
+State the tripwire's coverage honestly: it catches the flag live in a deployed runtime, on
+whichever of the two surfaces it touches. It can't see a dev-shaped transport a site deploys with
+the flag left unset: `deliver`, `lookup`, and the rest of `createAuthChannel`'s config are opaque
+site functions, so a site that builds a capture-style stand-in without ever setting the flag is
+invisible to both refusals; that residual is exactly what the documented in-body pattern (a
+`deliver` implementation that itself refuses without `ctx.env.CAIRN_DEV_BACKEND === '1'`, the
+showcase's `captureDeliver`) exists to close. And a dev-branch bundle that replaces the guard
+entirely, behind a site's own build-time `__CAIRN_DEV_BUILD__` conditional import, sits outside
+both refusals by construction, since neither one ever runs in that bundle. The artifact-level
+answer for that residual is CI's own dry-run grep: the showcase's e2e workflow runs `wrangler
+deploy --dry-run` against a default build and greps the deployable output for
+`scripts/checks/dev-fold-markers.txt` (which names `devBackendHandle` among other dev-only
+symbols), failing if any marker survives into what Cloudflare would actually receive.
+
 ## Roles, capability, and the access map
 
 An editor's `role` (the string stored in D1) resolves to one of three capabilities, `none`,
@@ -238,15 +279,111 @@ share that one declaration, so a route a session cannot reach does not appear in
 built-in screens': with no map at all it refuses every session, owner included, since an explicit
 call to a gate that found nothing to gate on is a configuration bug.
 
-A site's own form actions authorize the same way, through one shared sequence: the map must carry
-a rule for the target, the session's role must be admitted, and `ownerOnly` stacks on top of both
-rather than standing in for either. [`createSectionAction`](../reference/sveltekit.md#createsectionaction)
-runs it on every call and refuses with `fail(403)`.
-[`adminAction`](../reference/sveltekit.md#adminaction) runs it only when the call sets the `access`
-option, and refuses by throwing `error(403, ...)`; with the option omitted it authorizes nothing,
-which is what every action written before the option existed relies on. Either way the refusal is
-audited through `cairnAuditSink` and logged as `auth.access.denied`, and the response names no
-gate.
+cairn deliberately runs two different postures on that one map, described below: the engine's own
+screens read it permissively, and a site's own POST actions read it fail-closed. Both postures are
+intentional and stay as they are; nothing here changes route behavior.
+
+### An access map is not a whitelist
+
+A declared map narrows only the targets it names. Every screen or concept id the map has no key
+for stays reachable to any editor-capability session, exactly the zero-config behavior a site with
+no map at all gets; only a `none` session is refused everywhere, and the roster screen
+(`editors`) stays owner-only no matter what the map says. [`canReach`](../reference/core.md#canreach-hasaccessrule)
+is the one function that decides this, for both the engine's own route enforcement and the nav's
+own visibility, so the two can never drift apart, and that pairing is easy to misread as "the map
+only affects what's in the sidebar." It also gates real writes. An unmapped concept still lets an
+editor-capability session save, publish, discard, delete, or rename its entries, and mint or
+revoke a preview link for one. An unmapped `media` still lets that session upload, delete,
+bulk-delete, replace, or purge an asset, and propagate its alt text. An unmapped `nav` still lets
+it save the nav layout. An unmapped `settings` or `vocabulary` still lets it save the tidy
+settings or the tag vocabulary.
+
+The site-wide publish (`publishAll`, see
+[`createContentRoutes`](../reference/sveltekit.md#createcontentroutes)) carries the same default
+in its own shape. One request spans every concept, so it has no single target to gate with a
+`requireEngineAccess` call; any editor-capability session can post to it. It filters the pending
+entries it acts on by running `canReach` per entry's own concept id, so a concept the map narrows
+publishes nothing on that session's behalf, but a concept the map never names publishes exactly as
+it would with no map declared at all.
+
+Two editor endpoints gate conditionally, for a related reason. The tidy action and the
+personal-dictionary action that [`createContentRoutes`](../reference/sveltekit.md#createcontentroutes)
+supplies run their access check only when `event.params.concept` is present, since the engine mounts
+both under the entry editor's own concept-parameterized route, where it always is. Mount either one
+on a route that carries no `concept` parameter and the check doesn't run at all, leaving the action
+open to any editor-capability session. Keep both on a concept-parameterized route.
+
+### Recovering whitelist semantics
+
+A site that wants deny-by-default declares a rule for every target: each of its own concept ids,
+plus all four fixed engine screens `validateAccessComposition` enforces (`media`, `vocabulary`,
+`nav`, `settings`). Nothing is left for `canReach`'s permissive default to admit once every target
+the map is asked about carries its own rule:
+
+```ts
+import { defineAccess, type RolesDeclaration } from '@glw907/cairn-cms';
+
+// Your own declared vocabulary, whatever module you keep it in. Pass `undefined` instead if you
+// have not declared one; see "Declare the map" in restrict-admin-access.md.
+declare const roles: RolesDeclaration | undefined;
+
+export const access = defineAccess(roles, {
+  posts: ['editor'],
+  pages: ['editor'],
+  media: ['editor'],
+  vocabulary: ['editor'],
+  nav: ['owner'],
+  settings: ['owner'],
+});
+```
+
+An exhaustive map closes the site-wide publish path's own residual too, since that action's own
+filter runs per concept id: once every concept carries a rule, no concept is left for it to
+publish under the permissive default. Composition also runs a non-throwing check for exactly this
+gap: see [`config.access_unmapped`](../reference/log-events.md) for the startup warning that
+surfaces a map that covers some, but not all, of the required targets.
+
+### `ownerOnly` stacks on the map, and does not replace it
+
+This section states the `ownerOnly` rule in full. Every other page links here rather than restating
+it.
+
+A [`createSectionAction`](../reference/sveltekit.md#createsectionaction) or
+[`adminAction`](../reference/sveltekit.md#adminaction) call's own `ownerOnly` option requires owner
+capability in addition to the map's own rule, never instead of it. It only ever narrows, from "the
+roles this rule admits" to "owner alone," and never turns a denial into an admission:
+
+- A target the map has no rule for at all refuses even an owner-only call, the same no-rule floor
+  the [fail-closed floor](#the-fail-closed-floor-for-a-site-authored-post) applies.
+- For a non-owner session, the map's role list and the owner requirement must both pass, so the
+  option can't widen what the map already admits.
+
+This is a different `ownerOnly` from the cosmetic one a `navLayout` entry carries; see [Restrict
+admin access by role, "ownerOnly stacks on the map, not the
+nav"](./restrict-admin-access.md#owneronly-stacks-on-the-map-not-the-nav) for that contrast and a
+worked example.
+
+### The fail-closed floor for a site-authored POST
+
+The permissive reading above is `canReach`'s own default; it is not the only posture the engine
+runs on one map. `authorizeAdminTarget`, the shared sequence both
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
+[`adminAction`](../reference/sveltekit.md#adminaction)'s opt-in `access` option run, is fail-closed
+at every one of its three gates, checked in this order:
+
+1. No rule at all for the target refuses.
+2. A session whose role is absent from an existing rule refuses. The exception is a session
+   carrying owner capability, which `canReach` admits regardless of the role list.
+3. `ownerOnly` set against a non-owner session refuses.
+
+A target the map has no opinion on is refused here, the opposite of `canReach`'s
+own unmapped-target reading, because this sequence's contract is "the site opted this action into
+the map," the same "opted in and found nothing" refusal `requireAccess` already carries for a
+site's own routes. `createSectionAction` runs it on every call and refuses with `fail(403)`.
+`adminAction` runs it only when the call sets the `access` option, and refuses by throwing
+`error(403, ...)`; with the option omitted it authorizes nothing, which is what every action
+written before the option existed relies on. Either way the refusal is audited through
+`cairnAuditSink` and logged as `auth.access.denied`, and the response names no gate.
 
 ## Response hardening
 

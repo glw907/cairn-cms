@@ -1,21 +1,17 @@
 <!--
 @component
 The `MarkdownEditor` seam (spec §6, seam 5): a thin wrapper over CodeMirror 6 exposing a bindable
-value and cursor-edit callbacks. CodeMirror is client-only, so it mounts after the component does
-through a dynamic import; until then a plain textarea carries the value so the form still submits, and
-the hidden field mirrors the value throughout. The host owns the toolbar and the card chrome, driving
-selection transforms through the registerFormat seam; the design-accurate preview lives in EditPage
-through the adapter's render. Swapping the editor stays a one-file change.
+value and, through the one `registerEditor` grant, the whole buffer-scoped `EditorApi`. CodeMirror is
+client-only, so it mounts after the component does through a dynamic import; until then a plain
+textarea carries the value so the form still submits, and the hidden field mirrors the value
+throughout. The host owns the toolbar and the card chrome, driving selection transforms through
+`EditorApi.format`; the design-accurate preview lives in EditPage through the adapter's render.
+Swapping the editor stays a one-file change.
 -->
-<script lang="ts">
-  import { onMount, onDestroy, getContext } from 'svelte';
-  import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FigureAtImage, type FormatKind, type FormatResult } from './markdown-format.js';
-  import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
-  import { firstImageFile, guardDropTarget } from './client-ingest.js';
-  import { htmlToMarkdown } from './paste-html-to-markdown.js';
+<script module lang="ts">
+  import type { FigureAtImage, FormatKind } from './markdown-format.js';
   import type { MediaLibrary } from '../media/library-entry.js';
   import type { ComponentRegistry } from '../render/registry.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
@@ -26,73 +22,69 @@ through the adapter's render. Swapping the editor stays a one-file change.
     to: number;
   }
 
-  interface Props {
+  /** The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
+   *  editor: every capability the host can drive against the buffer, insertion, selection, the
+   *  view, history, and the tidy/image-placeholder subsystems, as one uniform grant, since the
+   *  host is always EditPage, which always needs the whole surface. */
+  export interface EditorApi {
+    // Insertion: writes directly into the document.
+    /** Inserts text at the cursor; the palette calls it. */
+    insert: (text: string) => void;
+    /** Inserts an inline link at the current selection; the link picker calls it. */
+    insertLink: (href: string, title: string) => void;
+    /** Inserts an inline image at the caret; the media picker and the capture card call it with the
+     *  chosen alt and the full `media:slug.hash` reference. */
+    insertImage: (alt: string, ref: string) => void;
+    /** Overwrites a document span with new text and drops the caret after it; the dialog's Update
+     *  calls it to write an edited block back over its original range. */
+    replaceRange: (from: number, to: number, text: string) => void;
+
+    // Selection: reads or transforms the current selection.
+    /** Returns the selected text; the web link dialog reads it for its Text field's default. */
+    getSelection: () => string;
+    /** Returns the selection's document offsets, or null when the selection is empty (a bare
+     *  caret); the tidy host reads it so a selection tidy maps onto the exact selected span. */
+    getSelectionRange: () => { from: number; to: number } | null;
+    /** Selects a document span, focuses the editor, and scrolls the range into view; the needs-alt
+     *  notice's jump control calls it to land the author on an image that lacks alt text. */
+    selectRange: (from: number, to: number) => void;
+    /** Transforms the current selection by a named format kind (`bold`, `italic`, `h2`, ...); the
+     *  host's toolbar calls it. */
+    format: (kind: FormatKind) => void;
+
+    // View: viewport geometry and focus.
+    /** Returns the caret's viewport coordinates, for the insert popover to anchor to the cursor.
+     *  Null before mount or when the caret has no measurable position. */
+    caretCoords: () => { left: number; right: number; top: number; bottom: number } | null;
+    /** Returns focus to the editor surface; the insert popover calls it on close or Escape. */
+    focus: () => void;
+
+    // History.
+    /** Undoes the last editor transaction; the "Undo tidy" chip calls it to take a whole applied
+     *  tidy back in one move (the apply lands as one history entry). */
+    undo: () => void;
+
+    // Subsystems: composed capability objects rather than plain callbacks.
+    /** The tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and the
+     *  accept/reject state machine through it. The author's original stays in the buffer until an
+     *  accept writes; a reject or reject-all leaves it byte-identical. */
+    tidy: import('./editor-tidy.js').TidyApi;
+    /** The optimistic-placeholder api: the insert popover drives the upload loop through it (begin
+     *  lands a placeholder at the caret, progress moves its bar, resolveTo swaps it for the
+     *  committed image text, cancel removes it leaving the source untouched). */
+    imagePlaceholders: import('./editor-placeholder.js').ImagePlaceholderApi;
+  }
+
+  /** The frozen Extension-API surface: a site mounting `MarkdownEditor` directly can depend on
+   *  these across minors. */
+  export interface StableEditorProps {
     /** The markdown source; bindable so the parent reads edits back. */
     value: string;
     /** The hidden field name the value is mirrored to for form submit. */
     name: string;
-    /** Receives a `(text) => void` that inserts at the cursor; the palette calls it. */
-    registerInsert?: (insert: (text: string) => void) => void;
-    /** Receives a `(href, title) => void` that inserts an inline link; the link picker calls it. */
-    registerInsertLink?: (insert: (href: string, title: string) => void) => void;
-    /** Receives an `(alt, ref) => void` that inserts an inline image at the caret; the media picker
-     *  and the capture card call it with the chosen alt and the full `media:slug.hash` reference. */
-    registerInsertImage?: (insert: (alt: string, ref: string) => void) => void;
-    /** Called with the first image File of a paste or drop onto the surface; the host opens the
-     *  capture card with the bytes. A paste or drop carrying no image falls through untouched. */
-    onImageIngest?: (file: File) => void;
-    /** The picker's human layer per stored asset, keyed by the 16-hex content hash (EditData's
-     *  `mediaLibrary`). The source decoration reads it to render a `media:` token as a thumbnail chip;
-     *  reactive, so a just-uploaded image decorates once it joins the library. Empty by default. */
-    mediaLibrary?: MediaLibrary;
-    /** The published fragment titles the include: source decoration resolves a
-     *  `::include{fragment="id"}` chip's label against, keyed by fragment id (EditData's
-     *  `fragmentTargets`, projected to id -> title). A resolved include line always chips; an id
-     *  absent from this map falls back to naming the chip from the raw id. Empty by default. */
-    fragmentTitles?: import('./editor-include.js').FragmentTitles;
-    /** Receives a `() => { left; right; top; bottom } | null` returning the caret's viewport
-     *  coordinates; the insert popover anchors itself to the cursor from this. Null before mount or
-     *  when the caret has no measurable position. */
-    registerCaretCoords?: (
-      get: () => { left: number; right: number; top: number; bottom: number } | null,
-    ) => void;
-    /** Receives a `() => void` that returns focus to the editor; the insert popover calls it on close
-     *  or Escape. The selection is preserved automatically, since opening the popover only blurs the
-     *  editor and never edits the doc. */
-    registerFocusEditor?: (focus: () => void) => void;
-    /** Receives the optimistic-placeholder api; the insert popover drives the upload loop through it
-     *  (begin lands a placeholder at the caret, progress moves its bar, resolveTo swaps it for the
-     *  committed image text, cancel removes it leaving the source untouched). */
-    registerImagePlaceholders?: (api: import('./editor-placeholder.js').ImagePlaceholderApi) => void;
-    /** Receives a `() => string` returning the selected text; the web link dialog reads it. */
-    registerGetSelection?: (get: () => string) => void;
-    /** Receives a `() => { from, to } | null` returning the selection's document offsets, or null when
-     *  the selection is empty (a bare caret). The tidy host reads it so a selection tidy maps onto the
-     *  exact selected span, never an identical-looking passage earlier in the document. */
-    registerGetSelectionRange?: (get: () => { from: number; to: number } | null) => void;
-    /** Receives the tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and
-     *  the accept/reject state machine through it. The author's original stays in the buffer until an
-     *  accept writes; a reject or reject-all leaves it byte-identical. */
-    registerTidy?: (api: import('./editor-tidy.js').TidyApi) => void;
-    /** Receives a `() => void` that undoes the last editor transaction; the "Undo tidy" chip calls it
-     *  to take the whole applied tidy back in one move (the apply lands as one history entry). */
-    registerUndo?: (undo: () => void) => void;
-    /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
-    registerFormat?: (format: (kind: FormatKind) => void) => void;
-    /** Reports the directive container at the caret (or null when outside any container) whenever
-     *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
-    onComponentAtCaret?: (info: ComponentAtCaret | null) => void;
-    /** Reports the media image at the caret (or null when the caret is not on one) whenever the
-     *  reported value changes; the host opens the figure control over it to wrap, edit, or unwrap a
-     *  `:::figure`. The figure transforms write source through registerReplaceRange. */
-    onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
-    /** Receives a `(from, to, text) => void` that overwrites a document span; the dialog's Update
-     *  calls it to write an edited block back over its original range. */
-    registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
-    /** Receives a `(from, to) => void` that selects a document span, focuses the editor, and scrolls
-     *  the range into view; the needs-alt notice's jump control calls it to land the author on an
-     *  image that lacks alt text. */
-    registerSelectRange?: (select: (from: number, to: number) => void) => void;
+    /** Receives the buffer-scoped `EditorApi` once, on mount; the host drives every editor
+     *  capability (insert, selection, format, undo, tidy, image placeholders, ...) through it. */
+    registerEditor?: (api: EditorApi) => void;
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
      *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
     completionSources?: import('@codemirror/autocomplete').CompletionSource[];
@@ -115,6 +107,31 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  source seeds the spellcheck Worker's personal layer with these at init, so a word another editor
      *  committed answers correct from the first lint. Empty by default (dialect-only). */
     siteDictionary?: ReadonlyArray<string>;
+  }
+
+  /** `EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
+   *  rather than wrapping it, with no stability promise across minors: a site that reaches past
+   *  `EditPage` for one of these should expect it to move or change shape. */
+  export interface UnstableEditorProps {
+    /** Called with the first image File of a paste or drop onto the surface; the host opens the
+     *  capture card with the bytes. A paste or drop carrying no image falls through untouched. */
+    onImageIngest?: (file: File) => void;
+    /** The picker's human layer per stored asset, keyed by the 16-hex content hash (EditData's
+     *  `mediaLibrary`). The source decoration reads it to render a `media:` token as a thumbnail chip;
+     *  reactive, so a just-uploaded image decorates once it joins the library. Empty by default. */
+    mediaLibrary?: MediaLibrary;
+    /** The published fragment titles the include: source decoration resolves a
+     *  `::include{fragment="id"}` chip's label against, keyed by fragment id (EditData's
+     *  `fragmentTargets`, projected to id -> title). A resolved include line always chips; an id
+     *  absent from this map falls back to naming the chip from the raw id. Empty by default. */
+    fragmentTitles?: import('./editor-include.js').FragmentTitles;
+    /** Reports the directive container at the caret (or null when outside any container) whenever
+     *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
+    onComponentAtCaret?: (info: ComponentAtCaret | null) => void;
+    /** Reports the media image at the caret (or null when the caret is not on one) whenever the
+     *  reported value changes; the host opens the figure control over it to wrap, edit, or unwrap a
+     *  `:::figure`. The figure transforms write source through `EditorApi.replaceRange`. */
+    onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
     /** The caller-owned pending personal-dictionary additions. When an author chooses "Add to
      *  dictionary" the lint source adds the lowercased word here (the underline clears at once); the
      *  host (EditPage) commits this set through the dictionaryAdd action at save time and reconciles
@@ -124,7 +141,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  `import.meta.url` and do not load under the vitest browser dev server, so the component test
      *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
      *  When this is absent the production path is untouched: the real `new Worker(...)` and the real
-     *  asset resolution. Never set this outside a test. */
+     *  asset resolution. Never set this outside a test; pinned documented-unstable (see
+     *  `docs/reference/components.md`), never promoted into `StableEditorProps`. */
     spellcheckTest?: {
       createWorker?: () => import('./spellcheck.js').SpellWorker;
       assumeReady?: boolean;
@@ -150,28 +168,27 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  one. Absent, both fall back to the raw directive name with no tooltip, today's behavior. */
     registry?: ComponentRegistry;
   }
+</script>
+
+<script lang="ts">
+  import { onMount, onDestroy, getContext } from 'svelte';
+  import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FormatResult } from './markdown-format.js';
+  import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
+  import { firstImageFile, guardDropTarget } from './client-ingest.js';
+  import { htmlToMarkdown } from './paste-html-to-markdown.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+
+  interface Props extends StableEditorProps, UnstableEditorProps {}
 
   let {
     value = $bindable(),
     name,
-    registerInsert,
-    registerInsertLink,
-    registerInsertImage,
+    registerEditor,
     onImageIngest,
     mediaLibrary = {},
     fragmentTitles = {},
-    registerCaretCoords,
-    registerFocusEditor,
-    registerImagePlaceholders,
-    registerGetSelection,
-    registerGetSelectionRange,
-    registerTidy,
-    registerUndo,
-    registerFormat,
     onComponentAtCaret,
     onMediaImageAtCaret,
-    registerReplaceRange,
-    registerSelectRange,
     completionSources = [],
     focusMode = false,
     typewriter = false,
@@ -789,7 +806,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
             useFor: (name) => registry?.get(name)?.use,
           }),
           // The optimistic image placeholder field: a widget-only decoration the insert popover
-          // drives through the registerImagePlaceholders api. It never writes doc text, so a failed
+          // drives through EditorApi.imagePlaceholders. It never writes doc text, so a failed
           // upload leaves the source untouched (open risk 2). Placed after folding so a placeholder
           // landing inside a directive composes with the rails.
           placeholderMod.cairnImagePlaceholders(),
@@ -919,21 +936,27 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // below hands out a live api, so nothing observes the pre-fold state.
     if (foldOnMount) foldingMod.foldContainersOnLoad(view);
 
-    registerInsert?.(insertAtCursor);
-    registerInsertLink?.(insertLink);
-    registerInsertImage?.(insertImage);
-    registerCaretCoords?.(caretCoords);
-    registerFocusEditor?.(focusEditor);
-    registerImagePlaceholders?.(placeholderMod.imagePlaceholderApi(view));
-    registerGetSelection?.(selectedText);
-    registerGetSelectionRange?.(selectedRange);
-    registerTidy?.(tidyMod.tidyApi(view));
-    registerUndo?.(() => {
-      if (view) commandsMod.undo(view);
+    // The one uniform grant (ruling 1; docs/internal/engine-rulings.md,
+    // `audit-admin-markdowneditor`): every registerEditor caller now receives the full
+    // buffer-scoped EditorApi, where the retired register* props each handed back only the one
+    // callback (or object) that caller wired.
+    registerEditor?.({
+      insert: insertAtCursor,
+      insertLink,
+      getSelection: selectedText,
+      caretCoords,
+      focus,
+      undo: () => {
+        if (view) commandsMod.undo(view);
+      },
+      format: applyFormat,
+      replaceRange,
+      selectRange,
+      insertImage,
+      getSelectionRange: selectedRange,
+      tidy: tidyMod.tidyApi(view),
+      imagePlaceholders: placeholderMod.imagePlaceholderApi(view),
     });
-    registerFormat?.(applyFormat);
-    registerReplaceRange?.(replaceRange);
-    registerSelectRange?.(selectRange);
     // Report the caret's starting container once the editor exists, so a caret that mounts inside
     // a block is known without waiting for the first move.
     if (onComponentAtCaret) reportComponentAtCaret(view.state);
@@ -1168,7 +1191,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
   // Return focus to the editor surface; the popover calls it on close or Escape. The selection is
   // intact because opening the popover only blurred the editor, it never edited the doc.
-  function focusEditor() {
+  function focus() {
     view?.focus();
   }
 

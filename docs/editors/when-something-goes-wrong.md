@@ -41,13 +41,19 @@ through your draft, make sure it still says what you want, and save again.
 but making it live ran into the same kind of conflict above. Nothing is lost. Select
 Publish again.
 
+<!-- vale Microsoft.Quotes = NO -->
+<!-- False positive under Vale 3.19.0: the period sits correctly inside the quote already; -->
+<!-- the rule misreads the comma that follows the bold-close marker as trailing punctuation -->
+<!-- outside the quote. CI's pinned 3.15.1 does not fire here (see .vale.ini's arbiter note). -->
 **"This page links to a page that no longer exists. Remove the broken link and save
 again."**, or, with more than one broken link, **"This page links to pages that no
 longer exist. Remove the broken links and save again."** Either way you'll see a list of
-addresses. A link in your draft points somewhere that doesn't exist on your site, maybe
+addresses.
+A link in your draft points somewhere that doesn't exist on your site, maybe
 because of a typo, or because the page it pointed to was renamed or removed. Each broken
 link in the list has a **Remove link** button beside it. Fix the link yourself in the
 text, or use the button to take it out, then save again.
+<!-- vale Microsoft.Quotes = YES -->
 
 **"Saved. Note: this page links to unpublished pages (their addresses), which will 404
 until published."** Your save went through. One of the pages you linked to exists but
@@ -121,10 +127,10 @@ share a preview link before saving anything. Save the entry, then try again.
 
 ## Signed out partway through something
 
-If you were away for a while and your session ran out, an action you try will tell you:
-for example, sharing a preview link says **"Your session expired. Sign in again to
-share a preview link,"** and adding an image says **"Your session has expired. Please
-sign in again to add an image."** Sign in again and pick up where you left off.
+If you were away for a while and your session ran out, an action you try will tell you.
+Sharing a preview link says **"Your session expired. Sign in again to share a preview
+link."** Adding an image says **"Your session has expired. Please sign in again to add
+an image."** Sign in again and pick up where you left off.
 
 ## An image won't add
 

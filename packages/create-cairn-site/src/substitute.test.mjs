@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { applySubstitutions, hexToOklchHue } from './substitute.mjs';
+import { fileURLToPath } from 'node:url';
+import { applySubstitutions, hexToOklchHue, verifySiteConfigPath } from './substitute.mjs';
 
 const LIGHT_PRIMARY = '  --color-primary: oklch(45% 0.1 248);';
 const LIGHT_CONTENT = '  --color-primary-content: oklch(99% 0.01 248);';
@@ -142,4 +144,43 @@ test('partial drift throws rather than rotating only some declarations', async (
     () => applySubstitutions(dir, { name: 'X', description: '', brandColor: '#0000ff' }),
     /matched 3/,
   );
+});
+
+test('verifySiteConfigPath accepts a plain relative path', () => {
+  assert.equal(verifySiteConfigPath('src/theme/site.config.yaml'), 'src/theme/site.config.yaml');
+});
+
+test('verifySiteConfigPath rejects a traversal-shaped value', () => {
+  assert.throws(() => verifySiteConfigPath('../../etc/passwd'), /\.\./);
+  assert.throws(() => verifySiteConfigPath('src/../../etc/passwd'), /\.\./);
+});
+
+test('verifySiteConfigPath rejects a leading slash', () => {
+  assert.throws(() => verifySiteConfigPath('/etc/passwd'), /relative/);
+});
+
+test('verifySiteConfigPath rejects a NUL byte', () => {
+  assert.throws(() => verifySiteConfigPath('site.config.yaml\0'), /NUL/);
+});
+
+test('verifySiteConfigPath rejects a non-string or empty value', () => {
+  assert.throws(() => verifySiteConfigPath(undefined), /non-empty string/);
+  assert.throws(() => verifySiteConfigPath(''), /non-empty string/);
+});
+
+// The DEFAULT shape ruling 5 sanctions: a generated data file both the doctor and the bake read
+// as data, never a cross-package import (the bake never import()s engine code). One source of
+// truth is proved here, not by a shared module: a synthetic doctor/bake divergence fails this
+// test rather than shipping silently.
+test('the committed site-config-path.json matches the engine doctor\'s own copy', () => {
+  const bakeCopy = JSON.parse(
+    readFileSync(fileURLToPath(new URL('./site-config-path.json', import.meta.url)), 'utf8'),
+  );
+  const engineCopy = JSON.parse(
+    readFileSync(
+      fileURLToPath(new URL('../../../src/lib/doctor/site-config-path.json', import.meta.url)),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(bakeCopy, engineCopy);
 });

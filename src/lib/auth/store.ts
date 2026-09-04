@@ -223,18 +223,23 @@ export async function resolveSession(db: D1Database, id: string, now: number): P
   return row ? toEditor(row) : null;
 }
 
+/** What {@link deleteSession} returns: the deleted row's email and the expiry it carried. */
+export type DeletedSession = { email: string; expiresAt: number };
+
 /**
- * Delete a session (logout), answering with the email the deleted row carried, or null when the
- * id named no row. `RETURNING` keeps this one statement and one round trip, and gives the logout
- * record a subject the caller has no other way to reach: logout is a public admin path, so the
- * guard never resolves an editor onto it.
+ * Delete a session (logout), answering with the email and expiry the deleted row carried, or
+ * null when the id named no row. `RETURNING` keeps this one statement and one round trip, and
+ * gives the logout record a subject the caller has no other way to reach: logout is a public
+ * admin path, so the guard never resolves an editor onto it. The delete is unconditional, an
+ * expired row is still safe to remove, so the caller reads the returned `expiresAt` against its
+ * own `now` to decide whether the row was still live before emitting a destroyed record.
  */
-export async function deleteSession(db: D1Database, id: string): Promise<string | null> {
+export async function deleteSession(db: D1Database, id: string): Promise<DeletedSession | null> {
   const row = await db
-    .prepare('DELETE FROM session WHERE id = ? RETURNING email')
+    .prepare('DELETE FROM session WHERE id = ? RETURNING email, expires_at')
     .bind(id)
-    .first<{ email: string }>();
-  return row?.email ?? null;
+    .first<{ email: string; expires_at: number }>();
+  return row ? { email: row.email, expiresAt: row.expires_at } : null;
 }
 
 /** The full allowlist, sorted by email. */

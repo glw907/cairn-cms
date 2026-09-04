@@ -59,6 +59,18 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
   SvelteKit, Svelte, TypeScript, and Node versions the package promises against and the
   Cloudflare tooling versions its own CI proves, plus the deliberate-floor reasoning behind each.
 
+## Reading indexed-access forms
+
+A member of a documented shape sometimes names a type that carries no export row of its own: it
+is not importable by name from the subpath, yet it still appears structurally, nested inside a
+type the page does document. Every such member carries a parenthetical, beside its row, giving the
+exact expression a consumer types to name the type anyway, by indexed access off the containing
+exported type. `EntrySummary` is one example: it names the element type of `ListData['entries']`,
+so a consumer references it as `Extract<AdminData, { view: 'list' }>['page']['entries'][number]`.
+This is not a second export or an alternate spelling; it is the one way to name a type TypeScript
+lets a consumer reach structurally when the package chooses not to give it its own barrel entry.
+`check:reference` enforces the parenthetical wherever a page prints such a member.
+
 ## Also for site admins
 
 Three of the preceding pages serve a second reader beyond the extending developer: a site admin

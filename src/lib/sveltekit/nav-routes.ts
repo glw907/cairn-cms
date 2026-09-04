@@ -1,6 +1,7 @@
 // The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
-// over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
-// unit-testable against a fetch double riding the event's locals.cairnBackend seam.
+// over the composed runtime, mirroring createContentRoutesInternal (the factory that actually does
+// that closing-over; the public createContentRoutes is a thin wrapper around it), so the read and
+// commit paths are unit-testable against a fetch double riding the event's locals.cairnBackend seam.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import { parseSiteConfig, readMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';

@@ -264,3 +264,68 @@ purge tooling, the exhaustiveness gate form. **Mechanical fixes:** items 3, 5, t
 (the four splits—each plausibly multi-task). **Already settled elsewhere:** the
 `MarkdownEditor` collapse (RULED and landing in internals Task 7; internals-B inherits
 it and does not re-litigate).
+
+---
+
+## Routed at the internals close (2026-09-03)
+
+Five items the internals pass's own execution and review fold surfaced, none scoped or
+fixed there, all verified against the internals branch's own final tree:
+
+- **`EditorApi`'s revocation contract and the single-holder refactor.** The collapsed
+  `registerEditor(api)` grant still backs `EditPage.svelte` with 13 separate holder
+  variables (`EditPage.svelte:1370`, "The 13 EditorApi holders below"), each reset by
+  hand on the entry-key remount; the svelte reviewer's round-B findings (W1/S2) asked
+  for one held-object refactor instead of 13 parallel resets, deferred because it rides
+  the same wiring block the `EditPage` split (docket item 1) already touches. Fold into
+  that split rather than a standalone task.
+- **The `session.expires_at` index asymmetry against the channel schema.** The
+  self-owned auth store's `session` table (`migrations/0000_auth.sql`) carries no index
+  on `expires_at`, only `idx_session_email`; the auth-channel factory's own schema
+  (`migrations-channel/0000_channel.sql`) indexes the equivalent column explicitly
+  (`idx_cairn_channel_session_expires`). The cloudflare-workers reviewer's finding (S8)
+  is unresolved: either the self-owned store's liveness sweep never needed the index
+  (worth stating why) or it is a real gap the two schemas should share.
+- **Static `list-role`'s `lastCompound` tokenizer gaps.** `list-role.ts`'s
+  `lastCompound()` (`:60`) splits a selector's ancestor chain on combinators the
+  internals Task 8 re-grounding did not extend to cover: a newline or tab combinator
+  (only space is handled), and an escaped bracket character appearing outside a quoted
+  attribute value. Neither is reachable by the nine engine lists the task's fixture
+  corpus covers, so it shipped as a known gap rather than a blocking defect.
+  Re-scope when a real selector exercises either shape.
+- **Structural leak-modeling of `/components` for the F-1 rider.** `check-surface-leaks.mjs`
+  (`:233-244`) skips the `/components` subpath entirely on the stated premise that its
+  Svelte-component exports are covered by a different model (Task 7's props gate) and
+  that modeling `/components` itself for leaked type names would require walking
+  component `<script>` blocks the rider's two existing derivations do not reach. The
+  skip's premise, that every `/components` leak class is otherwise caught, is asserted,
+  not proven; if a leak surfaces through `/components` that neither the props gate nor
+  the two-model derivation would catch, the skip's premise needs re-examination before
+  extending the rider to cover it.
+- **`csrfSecure`'s single-source `PUBLIC_ORIGIN` read versus `isDeployedHost`'s dual
+  read.** `src/lib/sveltekit/csrf.ts:66` reads `event.platform?.env?.PUBLIC_ORIGIN`
+  only; `src/lib/dev-flag.ts`'s `isDeployedHost` (landed by the internals pass's
+  review-fold round A) reads both `platform.env` and `process.env` so the tripwire
+  works under adapter-node too. The asymmetry is deliberate for now (`csrfSecure` never
+  ran on adapter-node in a production site), but the two functions now answer a
+  structurally identical question, "is `PUBLIC_ORIGIN` set to a non-local origin,"
+  differently. Reconcile onto one shared read the next time either file is opened.
+
+## Polish-slice inputs (noted at the internals close, 2026-09-03)
+
+Two small items surfaced during the internals close's review fold that belong to the
+polish slice's full-surface sweep, not internals-B:
+
+- **`formatTimestamp`'s accept-set could widen for unambiguous zone-carrying shapes.**
+  Task 13 narrowed the function to the SQLite shape or a zone-carrying ISO pattern
+  (`Z` or a `±hh:mm` offset), passing everything else through raw. A no-seconds
+  variant (`2026-09-03T14:30Z`), a basic-format offset (`+0800` rather than `+08:00`),
+  and a lowercase `z` are all unambiguously zone-carrying but do not match today's
+  pattern, so they pass through raw rather than rendering. Advisory only: no known
+  input produces these shapes today. Widen the accept-set if one does.
+- **The command palette (`CairnAdminShell.svelte`) is missing a live region and roving
+  focus.** The daisyui-a11y reviewer noted the palette's result list has no
+  `aria-live` announcement as results filter and no roving `tabindex`/arrow-key
+  navigation between results, both standard combobox-listbox expectations. Not fixed
+  in this pass (out of scope for the internals task list); carries to polish's
+  full-surface accessibility read.

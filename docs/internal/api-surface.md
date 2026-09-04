@@ -199,14 +199,18 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ConfirmPage`: Component<Props, {}, "">
 - `CsrfField`: Component<Props, {}, "">
 - `DeleteDialog`: Component<Props, { open: () => void }, "">
+- `EditorApi`: { insert: (text: string) => void; insertLink: (href: string, title: string) => void; insertImage: (alt: string, ref: string) => void; replaceRange: (from: number, to: number, text: string) => void; getSelection: () => string; getSelectionRange: () => { from: number; to: number } | null; selectRange: (from: number, to: number) => void; format: (kind: FormatKind) => void; caretCoords: () => { left: number; right: number; top: number; bottom: number } | null; focus: () => void; undo: () => void; tidy: TidyApi; imagePlaceholders: ImagePlaceholderApi }
 - `EditPage`: Component<Props, {}, "">
+- `FormatKind`: "bold" | "italic" | "code" | "strike" | "h2" | "h3" | "quote" | "ul" | "ol" | "task" | "codeblock" | "hr" | "table" | "link"
 - `HelpHome`: Component<$$ComponentProps, {}, "">
+- `ImagePlaceholderApi`: { begin: (objectUrl: string) => number; progress: (id: number, fraction: number) => void; resolveTo: (id: number, alt: string, ref: string) => void; cancel: (id: number) => void }
 - `LoginPage`: Component<Props, {}, "">
 - `ManageEditors`: Component<Props, {}, "">
 - `MarkdownEditor`: Component<Props, {}, "value">
 - `NavTree`: Component<Props, {}, "">
 - `PreviewBanner`: Component<Props, {}, "">
 - `RenameDialog`: Component<Props, { open: () => void }, "">
+- `TidyApi`: { enter: (changes: Change[]) => void; acceptOne: (index: number) => void; rejectOne: (index: number) => void; acceptMany: (indexes: number[]) => void; rejectAll: () => void; exit: () => void }
 - `VocabularyAdmin`: Component<Props, {}, "">
 - `WelcomeView`: Component<$$ComponentProps, {}, "">
 
@@ -522,6 +526,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `previewLoad`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
 - `previewMint`: (runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewMintOutcome>
 - `PreviewMintOutcome`: { outcome: "minted"; token: string; expiresAt: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" } | { outcome: "no-draft" }
+- `previewRevoke`: (runtime: CairnRuntime, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewRevokeOutcome>
+- `PreviewRevokeOutcome`: { outcome: "revoked"; count: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" }
 - `PreviewTokenConfig`: { ttlMs?: number }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }

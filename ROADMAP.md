@@ -303,18 +303,40 @@ The original decision framing, for the record:
     three closure leaks).
   - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
     do), which reopens and then retires `DEFAULT_ROLES`.
-  - **The internals half** (Task 8b, trustworthy verdict; the audit record's internals
-    section itemizes): the ten rewrite-tier findings, led by the five untracked monolith
-    files (`EditPage` 2920 lines, `CairnMediaLibrary` 3159, `content-routes-core` 1690,
-    `audit/rendered.ts` 1015, plus the `MarkdownEditor` 33-prop seam collapsing onto one
-    `registerEditor(api)`); the exhaustiveness idiom (`FieldDescriptor`'s ten
-    permissive-default dispatch sites, proven exploitable by the walk's mutation
-    experiment); the coherence thirteen (enforce the idiom charter with a gate; purge the
-    pass-scoped comment register, 179 process references and 18 consumer-site names; the
-    `ec-*` prefix out of engine-emitted markup; the 827 `as never` test casts; a formatter
-    decision); the newcomer walk's `src/lib` internals map; and the custom-screen content
-    read-seam boundary decision. Mostly consumer-invisible, riding outside the `Consumers
-    must:` window except emitted-markup and rename items.
+  - **internals-B: monoliths** (the follow-on slice, re-filed from the single former
+    "internals half" entry by the internals pass's Task 11, per the ratified two-slice split;
+    planning inputs and every ruling below are recorded in
+    `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`, "Ratified"). Splits
+    the audit's four remaining untracked monolith files — `EditPage.svelte`,
+    `CairnMediaLibrary.svelte`, `content-routes-core.ts`, `audit/rendered.ts` — reconciled to
+    their shipped shape: `MarkdownEditor`'s prop collapse is STRUCK from this list, already
+    landed by the internals pass's Task 7 onto one `registerEditor(api)`, so the old "33-prop"
+    figure no longer describes live work. Three riders scoped to land cheaply while those files
+    are open: the `FieldInput` `ownership_invalid_mutation` fix (`$bindable()` or a register
+    callback, decided at plan time, folded into the `EditPage` split), confirm's
+    destroy-then-create pair as one `db.batch()` (low stakes; attach to any task opening
+    `auth-channel/factory.ts` if cheaper), and the `OfficeList`/`AdminTable` double
+    scroll-container ownership (ruling-first: raise the `OfficeList` outright-retire question
+    before touching it, or defer to polish and ride that outcome). The
+    `media-seed/bin.ts` `readFileUnderCwd` containment assert — the byte-identical twin of the
+    doctor's own, routed here by Task 11's `// WATCH:` comment — rides along too. Two ordering
+    notes the slice inherits: a hand-authored per-file header survives a later split (each split
+    file re-derives its own; Task 6's `content-routes-core` header is not wasted work), and
+    Task 7's `MarkdownEditor` collapse precedes this slice's `EditPage` split (internals-B
+    inherits the collapsed wiring rather than re-deriving it).
+  - **internals-C: coherence** (the second half of the same re-file, sequenced strictly after
+    internals-B so gates and sweeps do not churn under files still being split; same docket).
+    Carries the coherence thirteen (enforce the idiom charter with a gate; purge the pass-scoped
+    comment register, 179 process references and 18 consumer-site names; rename the `ec-*`
+    prefix out of engine-emitted markup to an engine-owned one, a `Consumers must:` event; the
+    827 `as never` test casts; a formatter decision, least-churn default), the exhaustiveness
+    idiom (`FieldDescriptor`'s ten permissive-default dispatch sites, proven exploitable by the
+    walk's mutation experiment; the plan rules the never-idiom mechanism), and the newcomer
+    walk's `src/lib` internals map. The custom-screen content read-seam boundary decision (the
+    former internals-half's last item) is **dropped as unfoundable**, not carried forward as
+    work: no source document and no consumer ask motivates it; reopens on a consumer building a
+    custom admin screen asking for an engine seam to read content. Mostly consumer-invisible,
+    riding outside the `Consumers must:` window except the `ec-*` rename.
   - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
     `examples/showcase` gets its round of improvement against the changed engine, as its own
     pass in this initiative. Its review half is done (14 findings, none rewrite-tier; rank
@@ -2295,6 +2317,28 @@ the named human gates only):**
   was observed going through `POST /zones`, so the branches that path reaches are unproven. Worth
   a real trigger (the first live run against an externally registered domain) rather than a
   standing note.
+
+- **`fixtureCsrf` is a fixed constant with the same shape `fixtureMediaBase` had (docs friction
+  log, conformance pass Task 6, promoted at the internals close 2026-09-03).**
+  `ReproContext.svelte` sets `setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf)` unconditionally
+  from `src/lib/reproductions/fixtures.ts`'s fixed string, with no override prop. Fixture scope
+  only, no live token or reachable auth surface. Trigger: a reproduction needs per-run tokens
+  (a consumer reports needing a non-default CSRF fixture value).
+
+- **The rulings ledger will not scale as one flat read (docs friction log, 2026-08-26, promoted
+  at the internals close 2026-09-03).** `docs/internal/engine-rulings.md` carries ~535 audit
+  entries (~3,970 lines), and `engine-triage`'s first action reads it in full on every dispatch.
+  Trigger: restructure into a slug-indexed summary plus full entries on demand when a
+  consultation's triage cost visibly dominates its token spend on the ledger read.
+
+- **`presetUrl` and `BUILT_IN_PRESETS` have zero production callers (docs friction log,
+  conformance pass Task 14's variants retirement, promoted at the internals close 2026-09-03).**
+  `presetUrl` (`src/lib/media/transform-url.ts`) and `BUILT_IN_PRESETS`
+  (`src/lib/media/config.ts`) are unreferenced anywhere in `src/lib` outside their own
+  declaration and the test suite; neither is re-exported from the `/media` public barrel
+  (`docs/reference/media.md` names `presetUrl` "engine-internal, not public surface"), so
+  removing them is a plain dead-code deletion, confirmed not to touch public surface. Trigger:
+  the next surface-ruling sitting.
 
 ### Platform watch: Cloudflare
 

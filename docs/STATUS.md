@@ -18,20 +18,22 @@ until the polish slice per the amended initiative design. CI on `main` is fully 
 
 ## Immediate next action
 
-**The internals pass awaits Geoff's plan approval.** The plan at
-`docs/superpowers/plans/2026-09-01-internals-pass.md` is twice-reviewed (three-lens round 1
-folded, round-2 engine-triage verification passed, fixes applied): 13 tasks, ceiling 6.5M,
-checkpoints at 4/8/12, workflow mode. **One confirmation item rides the approval: the
-ratified CAIRN_DEV_BACKEND refusal's letter is amended** from "refuse when set" to "refuse
-when set AND non-local" (the flag's `='1'` value is the dev transport's own enable
-contract, so the ruled sense would break the showcase exemplar; both round-1 security and
-round-2 triage verified the amendment executes the ruling's intent). After approval, the
-one remaining pre-dispatch step is reconciling the plan's line anchors against merged
-`main`, then execution starts on a fresh worktree `.claude/worktrees/internals` off `main`
-(from-scratch showcase `npm ci` before trusting any e2e). Resume prompt for a fresh
-session: "In ~/Projects/cairn-cms, invoke cairn-pass and start the internals pass:
-read docs/STATUS.md and the plan, reconcile the plan's anchors against merged main,
-confirm the approval state, then execute per the plan's workflow mode."
+**The internals pass is COMPLETE: all thirteen tasks, the full pass-end ritual, and the
+five-reviewer fan-out's three-round fix fold all landed on branch `internals` (worktree
+`.claude/worktrees/internals`, off `main` at `a5352f0b`).** `npm run check` is 0/0,
+`npm test` exits 0, every CI-only gate is green by name, and a from-scratch showcase
+install/build/e2e (155 Playwright tests) exits 0. Post-mortem appended to
+`docs/superpowers/plans/2026-09-01-internals-pass.md`. The browser test gate now runs
+under an 8G MemoryMax systemd scope (`scripts/test/contained.mjs`, CI falls back to a
+direct spawn); the browser-recycling investigation found one recycled Chromium across
+the whole component project with RSS plateauing near 3.6G, so no config change.
+**Next: PR #47 is open (push-and-PR authorized 2026-09-02); merging it is the next
+action once CI is green.** After merge: internals-B planning per
+`docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (including the
+items routed at the internals close), then internals-C, then chassis, then the final
+polish slice, with ONE release cut after polish. Resume prompt for a fresh session:
+"In ~/Projects/cairn-cms, invoke cairn-pass: confirm PR #47 merged (merge it if CI is
+green), then plan internals-B from the docket per its ratified defaults."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -40,17 +42,20 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b MERGED. Next: internals
-  (immediate next action, above), then internals-B (four monoliths and coherence; filed by
-  the internals plan's Task 11; also carries `FieldInput`'s `ownership_invalid_mutation`
-  fix inside the `EditPage` split, the confirm destroy-then-create `batch()` question, and
-  the OfficeList/AdminTable scroll-container ownership), chassis, then the final **polish**
-  slice (Geoff, 2026-09-01: a full-surface cleanliness-and-beauty sweep, reading the
-  exports as a family, the docs cover to cover, and the rendered admin against the design
-  system, because per-pass beauty reviews read only their own diff; also carries the
-  OfficeList outright-retire question, ruling-first, and the items its hands-forward list
-  in the internals plan names); ONE release cut after polish. The internals plan's task
-  list is the canonical routing record now; this bullet stops restating it.
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b MERGED; internals
+  COMPLETE, PR open (immediate next action, above). Next: internals-B (four monoliths;
+  filed by the internals plan's Task 11; also carries `FieldInput`'s
+  `ownership_invalid_mutation` fix inside the `EditPage` split, the confirm
+  destroy-then-create `batch()` question, and the OfficeList/AdminTable
+  scroll-container ownership, plus the items routed at the internals close), then
+  internals-C (coherence), then chassis, then the final **polish** slice (Geoff,
+  2026-09-01: a full-surface cleanliness-and-beauty sweep, reading the exports as a
+  family, the docs cover to cover, and the rendered admin against the design system,
+  because per-pass beauty reviews read only their own diff; also carries the
+  OfficeList outright-retire question, ruling-first, the internals plan's own
+  hands-forward items, and the internals-B docket's polish-slice inputs); ONE release
+  cut after polish. The internals plan's task list and the internals-B docket are the
+  canonical routing record now; this bullet stops restating them.
   Routed to chassis: the render trio re-homing
   (`cardShell`/`headRow`/`iconSpan`), and the carried showcase hand-mounted
   `+page.server.ts` against generated `./$types`. Standing chassis mandate (Geoff,

@@ -411,6 +411,25 @@ function ownDeclarationText(css: string): string {
 }
 
 /**
+ * A conditional group rule's prelude: applying its block genuinely depends on evaluating a
+ * runtime or capability condition. `@layer` (and `@scope`) are cascade-scoping at-rules, not
+ * conditions: their block always applies, so they never belong in a message reporting a gate
+ * the reader could fail to meet.
+ */
+const CONDITIONAL_GROUP_RULE = /^@(media|supports|container)\b/;
+
+/**
+ * The subset of a declaration's {@link SheetDeclaration.conditions} that are genuinely conditional
+ * group rules (`@media`, `@supports`, `@container`), for a message reporting "only applies under
+ * X". `conditions` itself keeps every enclosing at-rule prelude, `@layer` included: some callers
+ * (`unlayered-font-clobber`) need to know a declaration sits inside a layer, a fact this filtered
+ * view would hide.
+ */
+export function conditionalConditions(conditions: string[]): string[] {
+  return conditions.filter((condition) => CONDITIONAL_GROUP_RULE.test(condition.trim()));
+}
+
+/**
  * Walk a stylesheet's blocks, recursing through groups and collecting the style rules.
  * `baseOffset` is the position, in the top-level string `parseSheet` was called with, that this
  * call's own `css` starts at: a nested `@media` block recurses over its own inner substring

@@ -23,14 +23,14 @@ past this point assumes one of those paths has already produced a working adapte
 
 ## The deep path
 
-- **[Build a site by hand](./build-a-site-by-hand.md)** — every file a working cairn site needs,
+- **[Build a site by hand](./build-a-site-by-hand.md)**—every file a working cairn site needs,
   written from nothing, for a developer who wants to own each one from the start.
 
 ## Building blocks
 
-- **[Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md)** — the GitHub App, the three
+- **[Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md)**—the GitHub App, the three
   bindings, D1 provisioning, for an app that already exists.
-- **[What the scaffold wrote](./what-the-scaffold-wrote.md)** — the generated file map, for a
+- **[What the scaffold wrote](./what-the-scaffold-wrote.md)**—the generated file map, for a
   developer taking over a scaffolded site.
 - **[Define an adapter and schema](./define-an-adapter-and-schema.md)**
 - **[Declare your own concept](./declare-your-own-concept.md)**
@@ -46,12 +46,12 @@ past this point assumes one of those paths has already produced a working adapte
 - **[Add a custom admin screen](./add-a-custom-admin-screen.md)**
 - **[Organize your admin nav](./organize-your-admin-nav.md)**
 - **[Restrict admin access](./restrict-admin-access.md)**
-- **[Add a second audience](./add-a-second-audience.md)** — a second audience's own login and its
+- **[Add a second audience](./add-a-second-audience.md)**—a second audience's own login and its
   own admin area, one journey.
 
 ## Design your site
 
-- **[Design your site](./design-your-site.md)** — own the design and delivery surface, from the
+- **[Design your site](./design-your-site.md)**—own the design and delivery surface, from the
   scaffold's starting theme through your own local iteration.
 
 ## Extend the publishing flow
@@ -79,10 +79,10 @@ own types were renamed at `0.94.0` (`AdminNavEntry` folded into `NavLayoutEntry`
 `1.0`, treat every version bump as a real upgrade to verify, tier or no tier, and read
 [Upgrade cairn](./upgrade-cairn.md) for the actual bump-and-verify steps.
 
-- **[Debug your site](./debug-your-site.md)** — a symptom whose fix is a code change.
+- **[Debug your site](./debug-your-site.md)**—a symptom whose fix is a code change.
 - **[Rotate the GitHub App key](./rotate-the-github-app-key.md)**
-- **[Upgrade cairn](./upgrade-cairn.md)** — bump, run the doctor, read what changed.
-- **[Migration notes](./migration-notes.md)** — the per-version record of what changed.
+- **[Upgrade cairn](./upgrade-cairn.md)**—bump, run the doctor, read what changed.
+- **[Migration notes](./migration-notes.md)**—the per-version record of what changed.
 
 ## Concepts
 

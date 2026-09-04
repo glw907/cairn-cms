@@ -1,6 +1,7 @@
 // cairn-cms: the git-committed personal dictionary's add action (spec 1.6). createDictionaryActions
-// closes over the shared ContentRoutesContext (content-routes-context.ts) built once by
-// createContentRoutes.
+// closes over the shared ContentRoutesContext (content-routes-context.ts), built once per call by
+// createContentRoutesInternal; createContentRoutes, the public entry point, is only a thin wrapper
+// around it.
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';

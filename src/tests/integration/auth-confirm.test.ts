@@ -292,6 +292,21 @@ describe('confirm and logout logging', () => {
     vi.restoreAllMocks();
   });
 
+  it('logs nothing when the presented session id names an already-expired row, so an expired teardown is not counted as a live sign-out', async () => {
+    // The row is still there (unlike the case above), but its own expires_at has already passed;
+    // the delete still removes it, it just must not emit the destroyed record.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-expired', 'ed@x.dev', Date.now() - 1_000, Date.now() - 20_000);
+    const cookies = makeCookies({ [sessionCookieName(true)]: 'sid-expired' });
+    const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await expectRedirect(() => routes.logoutAction(logoutEvent));
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).not.toContain('auth.session.destroyed');
+    vi.restoreAllMocks();
+    expect(await countRows('session')).toBe(0);
+  });
+
   it('deletes the CSRF cookie alongside the session cookie, so a persistent token cannot survive sign-out', async () => {
     const token = await liveToken('ed@x.dev');
     const cookies = makeCookies({ ...pendingSeed(), [csrfCookieName(true)]: 'a-live-csrf-token' });

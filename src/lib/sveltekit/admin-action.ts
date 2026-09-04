@@ -198,6 +198,10 @@ function serializeThrownError(error: unknown): string {
  * reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
  * contract with no database binding stays on `adminAction` itself rather than reaching for that
  * door.
+ *
+ * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
+ * {@link authorizeAdminTarget} rather than falling back to `canReach`'s own permissive nav
+ * reading, since a site-authored POST needs an authorization floor it can rely on absolutely.
  */
 export function adminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,

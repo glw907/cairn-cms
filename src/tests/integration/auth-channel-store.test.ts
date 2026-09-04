@@ -322,15 +322,28 @@ describe('channel sessions', () => {
     expect(await resolveChannelSession(db, 'token-hash-2', now + 5_000)).toBeNull();
   });
 
-  it('destroys a session by token hash and returns the subject the deleted row carried', async () => {
+  it('destroys a session by token hash and returns the subject and expiry the deleted row carried', async () => {
     const now = 16_000_000;
     await createChannelSession(session(), 'token-hash-3', 'subject-1', now, 1_000_000);
-    expect(await destroyChannelSession(session(), 'token-hash-3')).toBe('subject-1');
+    expect(await destroyChannelSession(session(), 'token-hash-3')).toEqual({
+      subject: 'subject-1',
+      expiresAt: now + 1_000_000,
+    });
     expect(await resolveChannelSession(db, 'token-hash-3', now)).toBeNull();
   });
 
   it('returns null when no session row matched, so the caller can skip its record', async () => {
     expect(await destroyChannelSession(session(), 'token-hash-never-existed')).toBeNull();
+  });
+
+  it('destroys an already-expired session unconditionally, still answering its (past) expiry so the caller can tell it was not live', async () => {
+    const mintedAt = 16_500_000;
+    const expiresAt = mintedAt + 1_000;
+    await createChannelSession(session(), 'token-hash-expired', 'subject-1', mintedAt, 1_000);
+    const laterNow = expiresAt + 5_000;
+    const destroyed = await destroyChannelSession(session(), 'token-hash-expired');
+    expect(destroyed).toEqual({ subject: 'subject-1', expiresAt });
+    expect(destroyed?.expiresAt).toBeLessThan(laterNow);
   });
 
   it('revokes every session for a subject', async () => {

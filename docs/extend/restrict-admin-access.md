@@ -99,6 +99,39 @@ Restricting `media` restricts more than the media library screen: the inline ima
 every image-bearing concept's editor calls the same access-gated endpoint, so a role that edits
 one of those concepts also needs `media` reachable, or its picker breaks.
 
+## `ownerOnly` stacks on the map, not the nav
+
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
+[`adminAction`](../reference/sveltekit.md#adminaction) both accept an `ownerOnly` option, unrelated
+to the `ownerOnly` a [`navLayout`](./organize-your-admin-nav.md) entry carries. The nav one is
+cosmetic: it hides a sidebar link from a non-owner session and gates nothing on its own. This one
+is a real authorization check: it requires owner capability *in addition to* the access map's own
+rule for the target, never in place of it. The option only ever narrows, and never widens a denial
+into an admission. [Security model, "`ownerOnly` stacks on the map, and does not replace
+it"](./security-model.md#owneronly-stacks-on-the-map-and-does-not-replace-it) states the two cases
+that follow from that in full.
+
+```ts
+// src/routes/admin/club/payroll/+page.server.ts
+import type { SectionAction } from '@glw907/cairn-cms/sveltekit';
+
+// Built once per section via createSectionAction, elsewhere in your site (see
+// createSectionAction in the reference docs for the full setup).
+declare const sectionAction: SectionAction<unknown, unknown>;
+
+export const actions = {
+  approveRun: sectionAction(async ({ ctx }) => { /* ... */ }, {
+    action: 'approve-run',
+    entity: 'payroll',
+    ownerOnly: true, // requires owner AND a map rule admitting this session for the target
+  }),
+};
+```
+
+See [Security model, "The fail-closed floor for a site-authored
+POST"](./security-model.md#the-fail-closed-floor-for-a-site-authored-post) for the full check order
+`ownerOnly` stacks onto.
+
 ## Hiding is not denying
 
 The [`navLayout`](./organize-your-admin-nav.md) seam reads the same access map for visibility:

@@ -13,7 +13,15 @@ export {
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
-export { previewMint, previewLoad, type PreviewMintOutcome, type PreviewTokenConfig, type PreviewData } from './preview.js';
+export {
+  previewMint,
+  previewRevoke,
+  previewLoad,
+  type PreviewMintOutcome,
+  type PreviewRevokeOutcome,
+  type PreviewTokenConfig,
+  type PreviewData,
+} from './preview.js';
 export { createMediaRoute } from './media-route.js';
 export type {
   AdminShellData,

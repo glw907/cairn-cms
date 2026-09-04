@@ -64,6 +64,9 @@ async function main(): Promise<void> {
   }
 
   const cwd = process.cwd();
+  // WATCH: this is the byte-identical, uncontained twin of doctor/bin.ts's readFileUnderCwd,
+  // routed to internals-B (docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md,
+  // item 5): give this closure the same resolved-path-stays-under-cwd containment assert.
   const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
     try {
       return await readFile(resolve(cwd, relPath), 'utf8');

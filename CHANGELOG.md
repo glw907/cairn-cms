@@ -4,6 +4,17 @@
 
 ### Added
 
+- `previewRevoke` (`/sveltekit`) completes the pair `previewMint` opened: a site that mints a
+  preview link from its own workflow route could not revoke one, since revocation lived only
+  behind the engine's own `previewRevokeAction` route. `previewRevoke(runtime, event, { concept,
+  entryId })` mirrors `previewMint`'s own shape and authorization sequence exactly (the
+  guard-resolved editor, the concept lookup, the concept-scoped access check, the entry-id shape
+  rule, all before the delete), returning a `PreviewRevokeOutcome` discriminated on `revoked` (with
+  the deleted row count), `unknown-concept`, or `invalid-id`; a denied session throws, the way every
+  other engine content surface refuses. `previewRevokeAction` now delegates to it, so the engine's
+  own route and a site's own call log the identical `preview.token.revoked` record from the same
+  chokepoint.
+
 - `ExpandableRow` (`/admin-toolkit`) accepts a `data-cairn-inert-cell` attribute on any element
   inside a summary cell: the row's own click handler now ignores a click whose target resolves
   inside one (`closest('[data-cairn-inert-cell]')`), so a consumer wraps a genuinely interactive
@@ -149,7 +160,91 @@
   naming it; a CI job piping `cairn-manifest`'s output no longer risks a truncated error message.
   Nothing else changes for a caller already passing no arguments or valid flags.
 
+- New standing gate `check:self-use` (internals pass, Task 1): checks every public export for a
+  real call site, in `src/lib` outside its own declaring module or in the showcase, and fails on
+  one with neither and no reasoned entry in the new
+  `scripts/checks/check-self-use-allowlist.json`. An export declared under `src/lib/auth*` or one
+  of `src/lib/sveltekit/{guard,csrf,admin-action,section-action}.ts` is allowlist-only; a showcase
+  call site alone never discharges it there. Discharges R-0's second direction (the ratified,
+  previously unenforced "an export the engine could use and does not is a shape defect" rule) and
+  rehomes the retired `check:dogfood` proposal's underlying mechanism into `scripts/checks/`, its
+  correct home (see `docs/internal/engine-rulings.md`'s `check-self-use` row). Internal tooling
+  only; no consumer action.
+
+- `check:surface` now chains the F-1 leak-class rider (internals pass, Task 2,
+  `scripts/checks/check-surface-leaks.mjs`): derives, every run against the current built surface,
+  a retire-verdicted or absent name still named inside a surviving public export's rendered shape
+  (`AdvisoryAction`, `NavIcon`, `SlotKind`, and 40 others today), and fails on any such leak with no
+  reasoned entry in the new `scripts/checks/check-surface-leaks.json`. See
+  `docs/internal/engine-rulings.md`'s `check-surface-leaks` row for the two-model derivation and the
+  registry's reason grammar. Internal tooling only; no consumer action.
+
+- `check:editor-quotes` gates `docs/editors/when-something-goes-wrong.md`'s own promise that
+  "every message below is quoted exactly as it appears" (internals pass, Task 4): it extracts
+  every bolded double-quoted sentence and fails when no shipped `src/lib` string grounds it, a
+  case a copy edit in a component (`LoginPage.svelte`, `EditPage.svelte`, `refusal-codes.ts`, and
+  so on) used to strand with nothing noticing (`check:prose` scans components, `check:docs` scans
+  links, neither compares one against the other). Grounding tolerates a template's interpolation
+  holes (a ternary word choice, an editor's name) rather than requiring exact equality, so the
+  gate does not fire on a doc quote naming a variable value in its own words. Wired into `npm
+  test` (a unit suite proving the real doc grounds, plus a stranded-copy regression) and into CI.
+  The same pass fixed the 16 genuine spaced em-dash violations `Google.EmDash` flags under Vale
+  3.19.0 in `docs/admin/README.md` and `docs/extend/README.md` (3.15.1, CI's pinned version, has
+  the false negative; the repo's own Google standard wants them unspaced), exempted the one
+  `Microsoft.Quotes` finding on the editors page as a 3.19.0 false positive (the punctuation is
+  already correctly inside the quote), and recorded `.vale.ini`'s new version-arbiter comment:
+  CI's pinned 3.15.1 governs whenever a local Vale disagrees with a green CI run. Internal only;
+  no consumer action.
+
+- `createAuthChannel` (`/auth-channel`) refuses every action (`request`, `confirm`, `logout`) with
+  a hard 503 throw the moment `CAIRN_DEV_BACKEND` is live on a non-local request (internals pass,
+  Task 9, ruling 4 as letter-amended: see `docs/internal/engine-rulings.md`'s
+  `dev-backend-flag-refusal` row). This is a defense-in-depth tripwire alongside the documented
+  in-`deliver`-body refusal pattern ([Auth channel security
+  model](docs/extend/auth-channel-security-model.md#the-dev-transport-is-not-a-dev-only-risk)),
+  never a replacement for it: it catches the flag live in a deployed runtime, but can't see a
+  dev-shaped transport a site deploys with the flag left unset, so a site's own `deliver` still
+  needs its own refusal. `CAIRN_DEV_BACKEND='1'` on a local host (`wrangler dev`, a local preview
+  server) is untouched, since that is the dev transport's own enable contract. Consumers must:
+  nothing, for a site whose local dev already sets `CAIRN_DEV_BACKEND` only on a local host, which
+  every documented pattern already does.
+
+- New log event `auth.channel.salt_unavailable` (internals pass, Task 9): the `logout` action's or
+  `resolveSubject`'s verify-refused-revocation teardown warns when the salt read that would derive
+  `auth.channel.session.destroyed`'s pseudonym faults, carrying `path` (`'logout'` or `'revoke'`)
+  and a scrubbed `error`, never a `correlationId`. The teardown itself still completes; only its
+  own log record is skipped. See [Log events](docs/reference/log-events.md).
+
+- `SITE_CONFIG_PATH` (internals pass, Task 11; discharges `docs/internal/engine-rulings.md`'s
+  `audit-cli-config-site-config-check` WATCH): the doctor's `config.site-config` check and
+  `create-cairn-site`'s `substitute.mjs` now both read the canonical site-config path from a
+  committed data file (`src/lib/doctor/site-config-path.json`, mirrored in
+  `packages/create-cairn-site/src/site-config-path.json`), never from a hand-typed string on
+  either side. Both consumers verify the value's shape before use (relative, no leading `/`, no
+  `..` segment, no NUL byte), and `doctor/bin.ts`'s `readFileUnderCwd` gains a
+  resolved-path-stays-under-cwd containment assert covering every relative read it does, not only
+  this one. Internal tooling and CLI hardening only; no consumer action.
+
 ### Changed
+
+- `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
+  ruling 1: the MarkdownEditor seam collapse) into one `registerEditor?: (api: EditorApi) => void`.
+  `EditorApi` hands the host the full buffer-scoped editing surface on mount: `insert`,
+  `insertLink`, `getSelection`, `caretCoords`, `focus`, `undo`, `format`, `replaceRange`,
+  `selectRange`, `insertImage`, `getSelectionRange`, `tidy` (formerly the `registerTidy` object
+  grant), and `imagePlaceholders` (formerly `registerImagePlaceholders`). Every `registerEditor`
+  caller now receives the whole surface uniformly, where the retired shape handed each caller back
+  only the one callback or object it wired. `spellcheckTest` stays documented-unstable, pinned by
+  a new `check:reference` clause that diffs every exported component's props against its own
+  reference-page section. `EditorApi` is now exported from `/components`, so a caller can annotate
+  the variable it assigns from `registerEditor` (`let editor: EditorApi | null = null`) instead of
+  inferring it structurally. See `docs/reference/components.md`'s `MarkdownEditor` section for the
+  full grammar. Consumers must: replace any `register*` prop passed to `MarkdownEditor` directly
+  (`registerInsert`, `registerInsertLink`, `registerInsertImage`, `registerCaretCoords`,
+  `registerFocusEditor`, `registerImagePlaceholders`, `registerGetSelection`,
+  `registerGetSelectionRange`, `registerTidy`, `registerUndo`, `registerFormat`,
+  `registerReplaceRange`, `registerSelectRange`) with one `registerEditor` callback that reads the
+  matching member off the `EditorApi` it receives.
 
 - The log vocabulary's remaining ten evenness defects close, across every emit site and the
   reference table. Two events rename, four records change shape, one field is dropped, and two
@@ -161,12 +256,15 @@
 
   `auth.session.destroyed` and `auth.channel.session.destroyed` now name their subject.
   `deleteSession` and `destroyChannelSession` both delete with `RETURNING`, one statement and one
-  round trip as before, and answer with the row's own email or subject. The magic-link record
-  carries that email; the channel record never carries the roster subject, only the same
-  pseudonymous `correlationId` the request flow derives from it, and the channel's third teardown
-  path, a session `resolveSubject` revokes when the site's `verify` hook refuses it, now emits the
-  record too instead of revoking silently. Both events fire only when a row was actually
-  destroyed, so a stale cookie naming no row leaves no record.
+  round trip and unconditional as before (an expired row still gets removed), and answer with the
+  row's own email or subject plus its expiry. The magic-link record carries that email; the
+  channel record never carries the roster subject, only the same pseudonymous `correlationId` the
+  request flow derives from it, and the channel's third teardown path, a session `resolveSubject`
+  revokes when the site's `verify` hook refuses it, now emits the record too instead of revoking
+  silently. Both events fire only when a row was actually destroyed AND was still live at the
+  moment of deletion, its `expires_at` in the future: a stale cookie naming no row, or one naming
+  an already-expired row, leaves no record, so the event's meaning stays stable for a site
+  building alerting on it, "a live session ended."
 
   `commit.succeeded` and `commit.failed` stop overloading `concept` with the four non-entry
   surfaces. An entry commit still carries `concept`; a nav, settings, vocabulary, or media commit
@@ -189,8 +287,9 @@
   `publish.address_collision` to `publish.address_collided` in any log filter or alert; read
   `scope` rather than `concept` on a `commit.succeeded`/`commit.failed` for a nav, settings,
   vocabulary, or media commit; expect no `auth.session.destroyed` or
-  `auth.channel.session.destroyed` record when a logout's session id or token names no row, so an
-  alert counting sign-outs now counts real ones only; read `wordCount` rather than `words` on
+  `auth.channel.session.destroyed` record when a logout's session id or token names no row, or
+  names a row that had already expired, so an alert counting sign-outs now counts live ones only;
+  read `wordCount` rather than `words` on
   `dictionary.added` and `dictionary.add_conflict`; stop reading `enabled` on
   `media.resolver_absent`, a field that carried one possible value; and read the stringified throw
   off `error` rather than `reason` on `preview.cleanup_failed`.
@@ -807,16 +906,17 @@
   **Consumers must:** rename `HistoryData.draft.startedAt` to `draft.lastSavedAt`, and
   `RevertFailure`'s `draft_exists.draftStartedAt` to `draftLastSavedAt`.
 
-- `formatTimestamp` (`/admin-toolkit`, slice 4b, Task 3) widens its input domain: it now accepts
-  any Date-parseable timestamp, a SQLite `datetime('now')`-shaped string (unchanged) or a full ISO
-  8601 string carrying its own `Z` suffix or an explicit offset, rather than only the SQLite shape.
-  The `timeZone` zone-pin behavior, the mechanic that keeps a Worker's SSR and a browser's
-  hydration rendering the same text for the same moment, is unchanged and now covers the widened
-  domain too. `CairnHistory`'s hand-rolled `formatVersionDate` is gone; the component now routes
-  every date it renders through this formatter, proving the widened domain on cairn's own screen.
-  `FormatTimestampOptions` is unchanged. **Consumers must:** nothing; a SQLite-shaped string a
-  caller already passes keeps parsing exactly as before, and a caller may now also pass a raw ISO
-  timestamp.
+- `formatTimestamp` (`/admin-toolkit`, slice 4b, Task 3) now accepts exactly two input shapes: a
+  SQLite `datetime('now')`-shaped string (unchanged) or a full ISO 8601 string carrying its own `Z`
+  suffix or an explicit `±hh:mm` offset. Every other shape, including a zone-less near-ISO string,
+  is returned unchanged rather than handed to `new Date()`, which parsed it in the runtime's own
+  local zone and rendered different text for a Worker's SSR and a browser's hydration. The
+  `timeZone` zone-pin behavior, the mechanic that keeps those two renders in step, is unchanged and
+  now covers the zone-carrying ISO shape too. `CairnHistory`'s hand-rolled `formatVersionDate` is
+  gone; the component now routes every date it renders through this formatter. `FormatTimestampOptions`
+  is unchanged. **Consumers must:** supply a zone (`Z` or a `±hh:mm` offset) when passing a
+  near-ISO timestamp to `formatTimestamp`; a zone-less near-ISO string now passes through
+  unformatted, where published `0.96.0` rendered it as UTC.
 
 - `TidyClient` (`/sveltekit`, slice 4b, Task 4; settles `audit-sveltekit-tidyclient` and
   `audit-log-tidy-succeeded`) narrows from the transcribed Anthropic Messages wire shape to a
@@ -958,7 +1058,85 @@
   `createCairnAdmin`'s own un-narrowed return (with the per-item blocking signature, so the retires
   pass does not attempt a deletion that breaks the R4 closure). Internal only; no consumer action.
 
+- `docs/reference/sveltekit.md` and `docs/reference/reproductions.md` gain the indexed-access
+  reference convention (internals pass, Task 5, ruling 3): a rendered shape that prints a member
+  whose own type carries no export row now carries an inline parenthetical, beside the member's
+  row, giving the exact expression a consumer types to reach it by indexed access off the
+  containing exported type (`Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`
+  for `AdvisoryNotice`, `NonNullable<ContentFormFailure['usage']>[number]` for `UsageEntry`, and
+  20 more). `docs/reference/README.md` gains one "Reading indexed-access forms" note stating the
+  convention once. Three sites (`LoginData`, `ConfirmData`, `EditorsData`) drop their prior "or
+  equivalently `Awaited<ReturnType<...>>`" alternate, now that the indexed-access form is the
+  single canonical one, and those two sites plus `ReproInstance` drop the verdict-provenance
+  language ("a sanctioned `NavIcon`-class leak") in favor of the plain "carries no export row of
+  its own" phrasing every site now uses; the history moves to
+  `docs/internal/engine-rulings.md`'s new `indexed-access-parenthetical-convention` row.
+  `scripts/checks/reference-coverage.mjs` extends `check:reference` with the parenthetical-required
+  clause, sourcing its corpus directly from the `check-surface-leaks` registry (Task 2) rather
+  than a hand-maintained list. Internal/docs only; no consumer action.
+
+- `docs/extend/security-model.md` documents the engine's two-posture access model (internals
+  pass, Task 10): a declared access map narrows only the targets it names, so an unmapped concept
+  id or fixed engine screen (`media`, `vocabulary`, `nav`, `settings`), and the site-wide
+  `publishAll` action, stay reachable to every editor-capability session, the same permissive
+  default `canReach` already applied; a site-authored POST through `createSectionAction` or
+  `adminAction`'s opt-in `access` option reads the opposite way and refuses an unmapped target.
+  Behavior is unchanged everywhere; this is a doc and diagnostics change. `validateAccessComposition`
+  gains a non-throwing `config.access_unmapped` warning at composition, naming every concept and
+  fixed screen a site's declared map leaves uncovered, and the four helpers that carry each
+  posture (`canReach`, `requireEngineAccess`, `adminAction`, `createSectionAction`) each gain a
+  one-sentence posture doc-comment. `docs/extend/restrict-admin-access.md` gains the `ownerOnly`
+  stacking section this page cross-links. Consumers must: audit your access map for coverage. A
+  map you believed was a whitelist may have left a screen or concept open; the new
+  `config.access_unmapped` warning names exactly which ones on the next server start, and
+  `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map recipe
+  to close the gap.
+
 ### Fixed
+
+- `cairn-audit`'s `list-role` rule gains a rendered-mode counterpart (internals pass, Task 8),
+  closing the gap the static rule's own coverage note names: daisyUI styles a list item through a
+  descendant selector scoped to the LIST's own class (`.menu :where(li)`, `.breadcrumbs > li`), not
+  the item's own, so a class-less `<li>` under one of those never registered even though its
+  rendered display strips its `list-item` box. The new rendered rule reads each item's actual
+  computed `display` in a live browser instead of a second class-source lookup, whatever selector
+  produced the change, and recommends `role="listitem"` on each affected item alongside
+  `role="list"` on the list per ARIA's owned-elements rule. The nine engine lists the gap named
+  (`CairnAdminShell.svelte`'s breadcrumb, command palette, and nav-item lists; `EditPage.svelte`'s
+  actions menu; `EditorToolbar.svelte`'s more-formatting and device menus;
+  `ComponentInsertDialog.svelte`'s picker list; `EntryPicker.svelte`'s entry list;
+  `DeleteDialog.svelte`'s inbound-links list) all carried the gap and are now fixed in-tree with
+  `role="list"` on the list and `role="listitem"` on each unroled item; an item that already
+  carries its own explicit role (a menu-divider's `role="separator"`) is left alone. The static
+  rule's two adjacent diagnostic-message defects are also fixed: its cause-lookup no longer
+  misattributes a descendant-selector declaration scoped to an ancestor's class (`.menu :where(li)`)
+  to an element merely sharing that class name, and a finding whose cause sits inside an at-rule
+  (a media query) now names that condition in its message instead of dropping it. Both rules run
+  against the engine's own admin surfaces as part of this fix; no other finding surfaced. Internal
+  audit-output change; no consumer action.
+
+- `panel-width` gains a painted text-width measurement for a closed single-value `<select>`, the
+  same paint-not-parse approach `resolveColors` already takes: a closed select's rendered label
+  never grows its own `scrollWidth` past its box no matter how clipped it is, so the rule's
+  existing `scrollWidth`/`clientWidth` comparison read clean on a genuinely clipped select label;
+  it now paints the selected option's text with the select's own computed font and compares it
+  against the box's own available width. Internal audit-output change; no consumer action.
+
+- `check:reference`'s stale-name (reverse) check is now scoped per page (internals pass, Task 3):
+  it used to flag a reference-page name only when NO subpath anywhere in the package exported it, so
+  a page could name a real export of a DIFFERENT subpath as if it were its own and the gate stayed
+  green, exactly how 14 dead rows once survived undetected in `delivery-data.md` until a manual
+  sweep found them (`b065ea51`). The check now compares each page against the real exports THAT PAGE
+  documents (`scripts/checks/reference-coverage.mjs`'s new `knownNamesByPage`), correctly pooling
+  the two pages that cover two subpaths each (`delivery.md`, `reproductions.md`). The rescope
+  surfaces no live drift; `core.md`'s narrative mention of the `/render` trio
+  (`cardShell`/`headRow`/`iconSpan`, re-homing deferred to the chassis pass) sits in prose and in an
+  example block carrying a real import, so none of the check's three candidate carriers ever
+  nominate it. A new reasoned `NARRATIVE_CONTEXT_ALLOWLIST` entry records the trio preemptively, the
+  same fail-unless-recorded idiom `check:surface`'s leak registry uses, so a future edit that moves
+  the trio into a live carrier is carried by a reasoned entry rather than a silent pass. See
+  `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope` row. Internal tooling
+  only; no consumer action.
 
 - `createAuthChannel`'s three cookie deletes now pass their setter's own `secure` flag: `confirm`'s
   clear of the pending nonce cookie, and both of `logout`'s. A cookie jar's `delete` defaults the

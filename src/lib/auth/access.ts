@@ -148,6 +148,10 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
  * function's own unmatched-target floor is nav visibility, not enforcement. Fail-closed route
  * enforcement for an unmatched or ambiguous target is `requireAccess`'s job, via
  * {@link hasAccessRule}, not this function's.
+ *
+ * Posture: permissive by default. A target the map never names stays reachable, because this one
+ * reading gates both an engine screen's own route enforcement and that screen's nav visibility,
+ * and every route relies on the zero-config any-editor floor an unmapped target admits.
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {

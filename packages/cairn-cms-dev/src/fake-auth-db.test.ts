@@ -340,7 +340,7 @@ test("the editor-removal cascade's own delete clears every row that editor minte
 
 // Mirrors the exact SQL src/lib/auth/store.ts's deleteSession builds. The dispatch table throws on
 // an unhandled statement, so logout would break the dev site outright without this handler.
-const DELETE_SESSION = 'DELETE FROM session WHERE id = ? RETURNING email';
+const DELETE_SESSION = 'DELETE FROM session WHERE id = ? RETURNING email, expires_at';
 
 test("logout's session delete answers no row, the signal that skips the destroyed record", async () => {
   const db = createFakeAuthDb();

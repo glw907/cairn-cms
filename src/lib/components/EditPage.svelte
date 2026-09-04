@@ -539,28 +539,30 @@ persistent "?" carries Markdown help, design-arc D2).
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
   const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
+  // The editor holders below are all populated from the one EditorApi registerEditor hands back on
+  // mount (the seam collapse, ruling 1; docs/internal/engine-rulings.md, `audit-admin-markdowneditor`);
+  // each stays a no-op (or null) until then, the same as when each had its own register* prop.
   let insert = $state.raw<(text: string) => void>(() => {});
-  // The editor's range-replace seam, registered by MarkdownEditor on mount; the dialog's Update
-  // routes through it to overwrite an edited block's source span. A no-op until then.
+  // The editor's range-replace seam; the dialog's Update routes through it to overwrite an edited
+  // block's source span.
   let replaceRange = $state.raw<(from: number, to: number, text: string) => void>(() => {});
-  // The editor's select-range seam, registered by MarkdownEditor on mount; the needs-alt notice's
-  // jump control routes through it to land the author on an image that lacks alt. A no-op until then.
+  // The editor's select-range seam; the needs-alt notice's jump control routes through it to land
+  // the author on an image that lacks alt.
   let selectRange = $state.raw<(from: number, to: number) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
-  // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
-  // reads it for the Text field's default.
+  // The editor's current selection; the web link dialog reads it for the Text field's default.
   let getSelection = $state.raw<() => string>(() => '');
-  // The editor's selection range, registered by MarkdownEditor on mount; tidy reads it for the exact
-  // selected span's offset so a selection tidy never maps onto an identical passage earlier in the
-  // document. Returns null when the selection is empty (a bare caret), which reads as document scope.
+  // The editor's selection range; tidy reads it for the exact selected span's offset so a selection
+  // tidy never maps onto an identical passage earlier in the document. Returns null when the
+  // selection is empty (a bare caret), which reads as document scope.
   let getSelectionRange = $state.raw<() => { from: number; to: number } | null>(() => null);
-  // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
+  // The editor's selection transform.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
 
-  // The tidy apply seam, registered by MarkdownEditor on mount; the review surface drives the in-buffer
-  // decorations and the batched apply through it. Null until the editor mounts.
+  // The tidy apply seam (EditorApi.tidy); the review surface drives the in-buffer decorations and
+  // the batched apply through it. Null until the editor mounts.
   let tidyApi = $state.raw<import('./editor-tidy.js').TidyApi | null>(null);
-  // The editor's undo, registered on mount; the Undo-tidy chip calls it. A no-op until then.
+  // The editor's undo; the Undo-tidy chip calls it.
   let undoEditor = $state.raw<() => void>(() => {});
   // The open review's data: the validated change set, the captured original it was diffed against, the
   // scope, and the model. Null when no review is open. The diff positions index `tidyOriginal`, which
@@ -734,8 +736,8 @@ persistent "?" carries Markdown help, design-arc D2).
     tidyAppliedBody = null;
   }
 
-  // The media insert seams, registered by MarkdownEditor on mount, mirroring the range holders
-  // above. The popover drives the optimistic upload loop through them: the caret anchor, the focus
+  // The media insert seams, populated from EditorApi on mount, mirroring the range holders above.
+  // The popover drives the optimistic upload loop through them: the caret anchor, the focus
   // restore, the placeholder api, and the direct-insert path for a picked image. The placeholder
   // api type is referenced inline (import('...').Type), never a static `import type ... from`, so
   // no static edge to the dynamically-imported editor-placeholder module sits in this component
@@ -743,7 +745,7 @@ persistent "?" carries Markdown help, design-arc D2).
   let caretCoords = $state.raw<() => { left: number; right: number; top: number; bottom: number } | null>(
     () => null,
   );
-  let focusEditor = $state.raw<() => void>(() => {});
+  let focus = $state.raw<() => void>(() => {});
   let placeholders = $state.raw<import('./editor-placeholder.js').ImagePlaceholderApi | null>(null);
   let insertImageFn = $state.raw<(alt: string, ref: string) => void>(() => {});
 
@@ -760,7 +762,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // function is always used (the holders start as no-ops and are replaced on mount).
   const editorApi = $derived({
     caretCoords: () => caretCoords(),
-    focusEditor: () => focusEditor(),
+    focus: () => focus(),
     placeholders: placeholders ?? noopPlaceholders,
     insertImage: (alt: string, ref: string) => insertImageFn(alt, ref),
   });
@@ -1365,6 +1367,27 @@ persistent "?" carries Markdown help, design-arc D2).
       revokeBusy = false;
       revokeCount = null;
       revokeError = null;
+      // The 13 EditorApi holders below: the {#key} block this reset backs remounts MarkdownEditor
+      // itself, destroying the outgoing entry's CodeMirror view, but these are plain component
+      // state, untouched by a DOM remount. Without this, every holder keeps pointing at the
+      // destroyed view between the remount and the incoming entry's own async registerEditor call
+      // (MarkdownEditor's onMount awaits a long chain of dynamic imports before it fires), so a
+      // toolbar action clicked in that window would reach dead state instead of doing nothing.
+      // Reset each back to its own declared no-op/null default (mirroring the `let ... = $state.raw(...)`
+      // initializers above), the same value it holds before any editor has ever registered.
+      insert = () => {};
+      replaceRange = () => {};
+      selectRange = () => {};
+      insertLink = () => {};
+      getSelection = () => '';
+      getSelectionRange = () => null;
+      format = () => {};
+      tidyApi = null;
+      undoEditor = () => {};
+      caretCoords = () => null;
+      focus = () => {};
+      placeholders = null;
+      insertImageFn = () => {};
     });
   });
 
@@ -1776,6 +1799,10 @@ persistent "?" carries Markdown help, design-arc D2).
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
         </svg>
       </button>
+      <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
+           display: flex, which strips the implicit list role in WebKit/VoiceOver (cairn-audit's
+           list-role rule, rendered mode). The two menu-divider <li> keep their own role="separator"
+           instead: that role is a deliberate, different reading, not a listitem. -->
       <ul
         bind:this={actionsMenu}
         popover="auto"
@@ -1783,18 +1810,19 @@ persistent "?" carries Markdown help, design-arc D2).
         style="position-anchor:--cairn-edit-actions"
         ontoggle={(e) => (actionsOpen = e.newState === 'open')}
         class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+        role="list"
       >
         <!-- The narrow-width fold: below sm this is the only way to reach Details and the theme
              toggle, mirroring the hidden standalone controls above (Details here) and in
              CairnAdminShell (the theme toggle, folded through the topbar holder). Hidden at sm
              and up, where both controls stand on their own. -->
-        <li class="sm:hidden">
+        <li class="sm:hidden" role="listitem">
           <button type="button" aria-expanded={detailsOpen} onclick={() => pickAction(toggleDetails)}>
             Details
           </button>
         </li>
         {#if themeToggleFold}
-          <li class="sm:hidden">
+          <li class="sm:hidden" role="listitem">
             <button type="button" onclick={() => pickAction(themeToggleFold)}>
               {currentTheme === 'cairn-admin' ? 'Switch to dark mode' : 'Switch to light mode'}
             </button>
@@ -1810,19 +1838,19 @@ persistent "?" carries Markdown help, design-arc D2).
                swap unmounts EditPage, and this popover along with it, as part of that navigation.
                A leave guard that cancels the navigation (an unsaved dirty edit) correctly leaves the
                menu open, since nothing unmounted. -->
-          <li>
+          <li role="listitem">
             <a href={`/admin/${data.conceptId}/${data.id}/history`}>History</a>
           </li>
           <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
         {/if}
         {#if data.pending}
-          <li>
+          <li role="listitem">
             <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
               Discard changes
             </button>
           </li>
         {/if}
-        <li>
+        <li role="listitem">
           <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
             Delete
           </button>
@@ -1944,7 +1972,7 @@ persistent "?" carries Markdown help, design-arc D2).
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul role="list" class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
-        <li class="flex items-center justify-between gap-2">
+        <li class="flex items-center justify-between gap-2" role="listitem">
           <code class="type-meta">{href}</code>
           <button type="button" class="btn btn-xs" onclick={() => removeBrokenLink(href)}>Remove link</button>
         </li>
@@ -1978,7 +2006,7 @@ persistent "?" carries Markdown help, design-arc D2).
       {#if notice.rows.length}
         <ul role="list" class="mt-1 w-full">
           {#each notice.rows as row, i (i)}
-            <li class="flex items-center justify-between gap-2">
+            <li class="flex items-center justify-between gap-2" role="listitem">
               {#if row.rowLabel}
                 <!-- A body needs-alt row labels with its source reference in a code span; a hero row
                      and any future labelled row use a plain label. -->
@@ -2272,22 +2300,24 @@ persistent "?" carries Markdown help, design-arc D2).
           bind:value={body}
           name="body"
           {surface}
-          registerInsert={(fn) => (insert = fn)}
+          registerEditor={(api) => {
+            insert = api.insert;
+            insertLink = api.insertLink;
+            getSelection = api.getSelection;
+            caretCoords = api.caretCoords;
+            focus = api.focus;
+            undoEditor = api.undo;
+            format = api.format;
+            replaceRange = api.replaceRange;
+            selectRange = api.selectRange;
+            insertImageFn = api.insertImage;
+            getSelectionRange = api.getSelectionRange;
+            tidyApi = api.tidy;
+            placeholders = api.imagePlaceholders;
+          }}
           onComponentAtCaret={(info) => (caretComponent = info)}
           onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
-          registerReplaceRange={(fn) => (replaceRange = fn)}
-          registerSelectRange={(fn) => (selectRange = fn)}
-          registerInsertLink={(fn) => (insertLink = fn)}
-          registerGetSelection={(fn) => (getSelection = fn)}
-          registerGetSelectionRange={(fn) => (getSelectionRange = fn)}
-          registerFormat={(fn) => (format = fn)}
-          registerTidy={(api) => (tidyApi = api)}
-          registerUndo={(fn) => (undoEditor = fn)}
           {tidyMode}
-          registerCaretCoords={(fn) => (caretCoords = fn)}
-          registerFocusEditor={(fn) => (focusEditor = fn)}
-          registerImagePlaceholders={(api) => (placeholders = api)}
-          registerInsertImage={(fn) => (insertImageFn = fn)}
           onImageIngest={(file) => mediaPopover?.open('capture', file)}
           onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}

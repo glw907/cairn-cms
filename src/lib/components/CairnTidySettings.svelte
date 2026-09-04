@@ -580,8 +580,8 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         <div class="flex items-center gap-2 type-meta font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not yet available</div>
         <div class="mt-1.5 type-meta leading-relaxed text-muted">Two more conventions aren’t offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they’re reliable enough to trust.</div>
         <ul role="list" class="mt-2 flex flex-col gap-1.5">
-          <li class="flex items-start gap-2 type-meta leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
-          <li class="flex items-start gap-2 type-meta leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
+          <li class="flex items-start gap-2 type-meta leading-snug text-muted" role="listitem"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
+          <li class="flex items-start gap-2 type-meta leading-snug text-muted" role="listitem"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
         </ul>
       </div>
 

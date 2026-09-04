@@ -402,6 +402,10 @@ open edits, not part of the shape itself.
   `mediainsertpopover-export`), which also stays internal, deferred until the `MarkdownEditor` seam
   collapse. The evidenced ASC need was selection and display, which the newly exported
   `MediaPicker` serves.
+- **Progress (internals pass, Task 7, 2026-09-02):** `MediaHeroField` names no `register*` prop
+  itself (its own upload/save-path wiring is untouched by the collapse), so the collapse landing
+  changes nothing about this component's shape or its export case. Re-examined against the
+  executed `EditorApi` shape: no new evidence surfaced.
 - **Reopens on:** a second consumer needing the whole save-path field rather than selection alone.
 - **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
 
@@ -411,9 +415,17 @@ open edits, not part of the shape itself.
   ruling previously lived only as a sub-clause of `mediaherofield-export`. Same objection sustained
   against `MediaHeroField`: it is `MarkdownEditor`/`EditPage` save-path wiring, not a selection
   surface, so publishing it advertises internal composition rather than a seam a consumer needs.
-- **Reopens on:** the `MarkdownEditor` seam collapse, the same reshape tracked at
-  `audit-admin-markdowneditor`, which is where this component's own wiring props are due to be
-  re-examined.
+- **Progress (internals pass, Task 7, 2026-09-02): the reopen trigger fired, re-examined, verdict
+  stands.** The collapse landed: `MarkdownEditor`'s `registerEditor` now hands `EditPage` the full,
+  exported `EditorApi` (13 members). `MediaInsertPopover`'s own `editor` prop still narrows that
+  down to the four members it drives (`caretCoords`, `focusEditor`, `placeholders`,
+  `insertImage`) through `EditPage`'s local wrapper, unchanged by the collapse: the component's
+  composition role is identical, and nothing about the collapse evidences a consumer that needs
+  `MediaInsertPopover` itself rather than the seams it composes. The decline stands.
+- **Reopens on:** a second consumer needing the whole popover composition (not just the seams it
+  drives), evidenced the way `mediaherofield-export`'s condition requires. The earlier "the
+  `MarkdownEditor` seam collapse" trigger is spent: that collapse has now executed and produced no
+  new evidence, so it cannot reopen this row a second time.
 - **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; originally recorded as a sub-clause of `mediaherofield-export` above.
 
 ## isuniqueviolation-cloudflare: `isUniqueViolation` in `/cloudflare`  (defer, 2026-08-26, toolkit-seams pass; recorded 2026-09-01, promoted from the friction log at the 4b conformance pass close since the plan's own intent to record this defer here at pass close was not actually carried out)
@@ -2935,8 +2947,24 @@ when the remediation pass lands.
 ## audit-admin-markdowneditor: `MarkdownEditor`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site mounting the bare CodeMirror surface with its own chrome, supplying controls through registerFormat, gets markdown-aware lint, GFM parsing, the directive rails, and the editor face — reachable no other way.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Shape:** Collapse the roughly twenty Unstable EditPage wiring props into one non-exported internal composition object, publishing only the eleven stable bare-surface props.
+- **Reopens on:** closed. Executed by the internals pass, Task 7 (2026-09-02). The 13 `register*`
+  props (11 per-capability callbacks plus the two object grants, `registerTidy` and
+  `registerImagePlaceholders`) collapsed into one `registerEditor?: (api: EditorApi) => void`;
+  `Props` now reads `extends StableEditorProps, EditPageWiringProps`. `EditorApi` is a real
+  export of `MarkdownEditor.svelte` (not re-exported through the `/components` barrel, the same
+  posture `FormatKind`/`TidyApi`/`ImagePlaceholderApi` already held), documented on
+  `docs/reference/components.md` with its full member grammar. `spellcheckTest` is pinned
+  documented-unstable, enforced by the new `check:reference` props-vs-reference clause.
+- **Usage evidence:** neither the showcase nor any in-repo fixture mounts `MarkdownEditor` directly
+  with a `register*` prop (`grep -rn` across `examples/showcase/src` turns up nothing); every
+  reachable direct-mount caller is a test, migrated in the same task. The breaking `Consumers
+  must:` line in `CHANGELOG.md` names the recovery for the theoretical external direct-mount case
+  the stability tier promises, not an evidenced one.
+- **Shape:** reconciled to the executed shape (ruling 1). The ledger's earlier "roughly twenty
+  Unstable EditPage wiring props into one non-exported internal composition object, publishing
+  only the eleven stable bare-surface props" text undercounted (13 register* props, not
+  "roughly twenty") and mis-scoped the shape (the grant object is a real, documented export, not
+  an internal-only composition). The executed shape is the one in the Verdict line above.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 55.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
@@ -4909,6 +4937,20 @@ when the remediation pass lands.
 - **Shape:** Add `src/theme/site.config.yaml` to `SITE_CONFIG_PATHS` (the path the engine's own scaffolder bakes to, per `create-cairn-site`'s and the showcase's template), and derive the candidate list from the same constant the template bake uses, so the scaffolder and the checker cannot diverge again.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 39.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Amendment (2026-09-02, internals pass, Task 11):** the closure above left the one-source
+  derivation as a `// WATCH:` comment, routed here rather than executed. This is the open half
+  it named. `SITE_CONFIG_PATH` (the canonical `src/theme/site.config.yaml`) now lives in a
+  committed data file, `src/lib/doctor/site-config-path.json`, read as data (never `import()`ed
+  code) by both `checks-local.ts` and `create-cairn-site/src/substitute.mjs`, per ruling 5 of
+  the internals pass's sitting (the sanctioned default: a generated data file both packages
+  read, since the bake never imports engine code into its process). `create-cairn-site` keeps
+  its own committed twin of the JSON rather than a cross-package import; a test proves the two
+  stay in sync. Both consumers verify the value's shape (relative, no leading `/`, no `..`
+  segment, no NUL) before use, and `doctor/bin.ts`'s `readFileUnderCwd` gains a
+  resolved-path-stays-under-cwd containment assert covering this and every other candidate it
+  reads. `media-seed/bin.ts`'s byte-identical, still-uncontained twin is routed forward to
+  internals-B by its own `// WATCH:` comment (see `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`, item 5).
+  This closes the WATCH; the row above stays untouched.
 
 ## audit-cli-type-scale-gap-scale-token-colors-grammar-boundary-static-gr: `type-scale, gap-scale, token-colors, grammar-boundary (static grammar rules)`  (keep, 2026-08-26, any-site audit)
 
@@ -4988,3 +5030,359 @@ when the remediation pass lands.
 - **Shape:** Two evenness defects on the item every consumer touches. (a) `vite/bin.ts:10` used `process.exit(1)` where its three siblings deliberately do not (`doctor/bin.ts:5-7`: "The codes go through `process.exitCode`, never `process.exit`, so a piped stdout flushes the whole report before the process ends", the same note verbatim in `audit/bin.ts` and `media-seed/bin.ts`); a truncated stderr message in a piping CI job left a consumer with a red build and no reason. (b) It read no argv at all, so `--help`, `--verbose`, and `--typo` were all silently accepted and ignored, where the siblings reject unknown flags with a usage line; rides with rank 11's `--help` shape.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 50.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+
+## check-self-use: `check:self-use`, the standing self-use gate for R-0's second direction  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Ratified as a standing gate: `scripts/checks/check-self-use.mjs` walks the
+  public surface `check:surface`'s own `buildSurfaceModel()` derives and, for every export, checks
+  whether the engine itself (`src/lib`, outside the declaring module) or the showcase reaches for
+  it. A zero-caller export not covered by a reasoned allowlist entry
+  (`scripts/checks/check-self-use-allowlist.json`) fails the gate. This discharges both routings
+  named below: `read-from-the-source-rule`'s ratified but unenforced second direction (no gate
+  existed to catch a fifth "an export the engine could use and does not" instance after the four
+  C13 examples closed) and the retired `check:dogfood` proposal's underlying mechanism, rehomed
+  from the cairn-audit product it was wrongly proposed into to a `scripts/checks/*.mjs` engine
+  gate, its correct home.
+- **Reopens on:** closed. Executed by the internals pass, Task 1. A new zero-caller export is not
+  a reopen of this row; it is a new allowlist entry (with its own reason) or a new showcase call
+  site, decided at the time it appears.
+- **Shape:** Two-arm call-site count (in-engine, showcase) per export, STATIC TEXT SCANNING ONLY
+  (never `import()`s a showcase or consumer module). An export declared under `src/lib/auth*` or
+  one of `src/lib/sveltekit/{guard,csrf,admin-action,section-action}.ts` is ALLOWLIST-ONLY: a
+  showcase call site alone never discharges it, enforced in `analyzeExport`'s `authOnly` branch and
+  covered by `src/tests/unit/check-self-use.test.ts`. The failure message states the remedy order
+  (allowlist with reason first, showcase call site second, deletion never suggested by the gate
+  itself). `prepareText` blanks block comments, barrel re-export lines, AND every whole-line `//`
+  comment (a line whose trimmed text starts with `//`) before scanning, so a prose mention of an
+  export's name in its own doc header never counts as a call site; a `//` starting partway through
+  a code line is left alone (a whole line cannot sit inside a string literal, so blanking it risks
+  nothing, but a partial-line strip risks corrupting a string literal that itself contains `//`).
+  The residual gap this narrows to is a name mentioned only in a trailing same-line comment on an
+  otherwise-comment-free line. The allowlist's 86 entries are seeded from each zero-caller export's
+  ledger KEEP row where one exists (cited by slug) and fresh prose (`no-ledger-row: true`) for the
+  remainder, mostly types introduced by a post-audit reshape (the auth-family discriminated
+  results, the `ToolbarDisclosure` attrs trio, `TidyEffort`) with the same anonymous-consumer shape
+  their siblings already carry. Round-2 fix (whole-line-comment blanking): 17 more exports surfaced
+  as zero-caller once whole-line `//` prose stopped counting as usage, five of them auth-path
+  (`AuthChannelConfig`, `SectionActionConfig`, `createSectionAction`, `defineAccess`,
+  `requireAccess`); every one carries a pre-existing ledger KEEP or reshape row with a genuine
+  anonymous-consumer argument, so each got a cited allowlist entry rather than a showcase call
+  site or a filler reason.
+- **Plan-assumption correction:** the internals plan's draft named `presetUrl` and
+  `BUILT_IN_PRESETS` as seeds to allowlist "with the deferral reason." Verified against the built
+  surface (`buildSurfaceModel()`, and `docs/reference/media.md:55`'s own "engine-internal, not
+  public surface" line): neither is exported from any package subpath, so neither is in this
+  gate's domain (public exports only) and neither is allowlisted here; adding a dead entry for a
+  name the gate can never see would be confusing, not discharging. This does not touch the F-1 leak
+  question (Task 2) of whether either name still leaks through a rendered signature elsewhere.
+- **Record:** `read-from-the-source-rule` (this file, line 38) and
+  `audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c` (this file, line 4617),
+  both cited, both left byte-untouched by this row.
+- **Verified:** `npm run check:self-use` (CI, `.github/workflows/test.yml`) and
+  `src/tests/unit/check-self-use.test.ts`.
+
+## check-surface-leaks: the F-1 leak-class rider on `check:surface`  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Ratified as a standing gate, chained from the existing `check:surface`
+  package entry (no new top-level gate name): `scripts/checks/check-surface-leaks.mjs` derives
+  F-1's own predicate ("a retire-verdicted OR ABSENT name still named inside a surviving KEEP
+  export's rendered public shape") against the CURRENT surface every run, never a fixed count, and
+  fails on any leak the derivation finds with no matching entry in
+  `scripts/checks/check-surface-leaks.json`. This is the owner
+  `docs/internal/record/2026-08-30-r4-rederivation.md`'s ratified hybrid ruling (section 7, "the
+  sanction arrives with an owner") and
+  `docs/internal/record/2026-08-30-retires-move-record.md` name explicitly, discharging the manual
+  18-row ledger that document keeps until this rider lands.
+- **Reopens on:** closed. Executed by the internals pass, Task 2. A new leak the derivation surfaces
+  on a later pass is not a reopen of this row; it is a new registry entry (with its own reason),
+  same discipline as `check-self-use`'s allowlist above.
+- **Shape (the two-model derivation, stated join).** The recorded set is the UNION of two
+  independent derivations, keyed by `(name, subpath)`, because the two known proof cases live in
+  different models and neither alone finds both:
+  - **The TYPE-CHECKER model** (`deriveTypeCheckerLeaks`) walks the real TypeScript type graph
+    through the compiler API, from every currently-exported symbol on each subpath's own built
+    `.d.ts` (excluding `/components`, see the stated-limits paragraph below), to a fixed point:
+    union/intersection members (including the pre-flattening `.origin` TypeScript keeps only for
+    display, which is what still names `TidyKeyProbeResult` after `TidyKeyProbeResult | "missing"`
+    flattens to four raw literals), array element types, index signatures, generic type arguments,
+    and call-signature parameter/return types (needed to reach an action's own failure/result
+    types, `DictionaryAddFailure` and its whole family, which sit on a callable member, not an
+    object property). A name is recorded only when it is absent from every subpath's export list
+    AND declared somewhere in `src/lib` (`collectDeclaredTypeNames`, the known-type-universe filter
+    that keeps an ambient library type like `Promise`/`RequestEvent` out of the candidate set
+    without needing a hand-maintained denylist). This is the model that proves `AdvisoryAction`: two
+    hops deep (`EditData.advisories[].actions[]`), invisible to the renderer, which expands exactly
+    one member level (`renderInterface` prints a nested INTERFACE reference as its bare name, never
+    recursing into ITS members), so `AdvisoryAction` never appears in `docs/internal/api-surface.md`
+    text at all once its one-hop carrier `AdvisoryNotice` loses its own top-level row.
+  - **The RENDERER model** (`deriveRendererLeaks`) works over `buildSurfaceModel()`'s already-
+    rendered shape strings, comparing a name's OWN literal-string-union shape (only a shape this
+    distinctive is compared, so an ordinary object or primitive member never false-matches) against
+    every OTHER subpath's rendered members, canonicalized as a set so union-member reordering across
+    subpaths (a real dts-bundling artifact, not a semantic difference) does not defeat the match.
+    This is the model that proves `NavIcon`/`EngineScreenId`: each has its own top-level export row
+    on `/sveltekit`, but root's rolled-up `.d.ts` bundles `NavLayoutEntry.icon`/
+    `NavLayoutEngineRef.screen` with NO surviving symbol reference back to the named alias (an
+    anonymous inlined union), so the type-checker model finds no symbol there to name; the renderer
+    model catches it by comparing the printed TEXT instead. `SlotKind` is the negative control for
+    this asymmetry: unlike `NavIcon`, its declaring module bundles into BOTH subpaths' own `.d.ts`
+    (a real symbol reference survives on each), so the type-checker model finds it directly and the
+    renderer model, which needs a name's OWN export row to read a comparison shape from, never even
+    attempts it (`SlotKind` has no row on any subpath).
+- **Shape (Step 3, the un-verdicted split, RULED not inherited).** The move record hands this rider
+  the decision it declined to make: `DictionaryAddFailure`/`TidyFailure` (r4-rederivation section
+  3(c)) versus `RemoveIndex`/`ValueOf`/`StandardResult` (the move record's "Two written exclusions"
+  bullet) were treated differently by accident of discovery order, both groups structurally
+  identical under F-1's predicate (unexported, never ledger-verdicted, rendered inside a surviving
+  shape). RULED: fold both groups into ONE `standing-unverdicted` class; no rule separates them.
+  Executed narrower than stated, honestly: the derivation's type-checker model finds
+  `DictionaryAddFailure`, `TidyFailure`, and `StandardResult` (all recorded, `standing-unverdicted`),
+  but not `RemoveIndex`/`ValueOf`: both live only inside `InferFieldset`'s unresolved CONDITIONAL
+  and MAPPED type expression (`S extends Fieldset<infer R> ? { [K in keyof RemoveIndex<R> ...] }`),
+  and the compiler's public checker API exposes no clean accessor for a conditional type's own
+  `checkType`/`extendsType`/`trueType`/`falseType` the way it does for a union's `.types`; this is a
+  stated derivation limit (see below), not a decision to exclude `RemoveIndex`/`ValueOf` from the
+  ruled class should a later derivation reach them.
+- **Shape (registry grammar).** Every recorded entry carries exactly one of two reason kinds:
+  `sanctioned-by` (a move-record row, a ledger slug, or both: 27 of the 43 recorded entries, the
+  18-name move-record sanction plus the 8 additional 4b Tier-1 retires Step 0 names, `UsageEntry`,
+  `MediaUploadFailure`, `VocabularySaveFailure`, `SettingsSaveFailure`, `NavSaveFailure`,
+  `DictionaryAddResult`, `TidyResult`, `UploadResult`) or `standing-unverdicted` (a one-line
+  citation: the remaining 16, the Step 3 fold above, `NavIcon`/`EngineScreenId`/`SlotKind` per
+  r4-rederivation section 1, and four names first surfaced by this rider's own derivation with no
+  prior audit history at all: `DatePrefix`, `EditorActionFailure`, `MediaLibrary`, `UsageOrigin`.
+  A leak with neither is a stop-and-rule, enforced by `findLeakViolations`' `hasReason` check
+  (exactly one of the two, never both, never neither); the registry currently derives to 43 entries
+  across 36 distinct names, a MEASURED output, never a hard-coded count.
+- **Stated limits (the rider is a name-keyed guard, not a completeness claim).** Svelte component
+  PROPS sit outside this rider's scope entirely: `/components` exports Svelte components
+  exclusively, and every component's declared type is a generic reference to its own
+  Props/Events/Slots parameters, so walking it structurally reaches every prop's own callback and
+  object types, a different surface with a different owner: Task 7's props gate (`check:reference`'s
+  props-vs-reference clause). `/components` therefore contributes no roots to the type-checker
+  model. Beyond that: an anonymous inline shape (an object literal type with no declared name at
+  all) is invisible by construction, since this rider is name-keyed; a runtime value can diverge
+  from its declared type without either model seeing it (this rider reads static types only); a
+  name reachable only through doc prose or a TSDoc `@link` is out of scope (text, not a type); a
+  `dist`-on-disk deep import outside the `exports` map is out of scope (the package boundary, not
+  the type graph); and, per the Step 3 note above, a name reachable only through an unresolved
+  conditional/mapped type's own internals (`RemoveIndex`, `ValueOf`) is not currently derivable
+  through the compiler's public checker API.
+- **Record:** `docs/internal/record/2026-08-30-r4-rederivation.md` (section 7's hybrid ruling, its
+  addendum, and section 1's three unowned names) and
+  `docs/internal/record/2026-08-30-retires-move-record.md` (the 18-row sanction table and its "Two
+  written exclusions" bullet), both cited throughout, both left byte-untouched by this row.
+- **Verified:** `npm run check:surface` (CI, `.github/workflows/test.yml`, which already runs this
+  entry) and `src/tests/unit/check-surface-leaks.test.ts`, including a failing-first proof against a
+  synthetic unrecorded leak.
+
+## reference-coverage-stale-names-rescope: `staleNames` scoped per page, not per the whole package  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Executed as foundations A's own inheritance note 1 prescribed
+  (`docs/internal/record/2026-08-29-foundations-a-move-set.md:18-25`, echoed as docket item 2 in
+  `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md`): `scripts/checks/reference-coverage.mjs`'s
+  `staleNames` reverse (stale-prose) check used to flag a reference-page name only when NO subpath
+  anywhere in the package exported it, fed by `globalKnownNames()`, the union of every subpath's
+  exports. A page could therefore name a real export of a DIFFERENT subpath as if it were its own
+  and the gate stayed green, exactly how 14 dead Types-table rows (`AccessMap`, `Backend`,
+  `RolesDeclaration`, `Capability`, `MagicLinkMessage`, and nine more) survived undetected in
+  `delivery-data.md` until a manual sweep (`b065ea51`) found and removed them by hand. The gate now
+  checks each page against the real exports THAT PAGE documents, via the new `knownNamesByPage()`,
+  so a foreign name fails there instead of hiding behind an unrelated subpath's export list.
+- **Reopens on:** closed. Executed by the internals pass, Task 3. A future page that legitimately
+  needs to show a real export from another subpath as narrative context is not a reopen of this
+  row; it is a new `NARRATIVE_CONTEXT_ALLOWLIST` entry with its own reason, same discipline as
+  `check-surface-leaks`' registry above.
+- **Shape (the per-PAGE pool, not per-subpath-entry).** Two page files each cover two `CONFIG`
+  entries: `delivery.md` documents both `/delivery` and `/delivery/head`, and `reproductions.md`
+  documents both `/reproductions` and `/reproductions/manifest`. Pooling per CONFIG entry rather
+  than per page would false-positive a name real only on the page's OTHER covered subpath, so
+  `knownNamesByPage()` unions every entry's own exports keyed by `entry.page`, and `checkOne()`
+  checks a page against that union. `globalKnownNames()` (the old pool) survives unchanged, now
+  used only to keep a narrative-context allowlist entry honest: an allowlisted name must still be a
+  real export SOMEWHERE in the package, so a later rename or removal of `cardShell`/`headRow`/
+  `iconSpan` (below) still fails here rather than hiding behind a stale allowlist reason.
+- **Shape (the allowlist, fail-unless-recorded).** Measured against the real `CONFIG`: the whole
+  reference tree, `core.md` included, runs clean with an EMPTY allowlist. `core.md`'s
+  "Component-author helpers" section mentions the `/render` hast-building trio (`cardShell`,
+  `headRow`, `iconSpan`) in prose and in a fenced example that carries a real `import`, so
+  `isSignatureOnlyBlock` rejects that block and none of the three candidate carriers
+  (Types-table row, bare heading, signature-only `declare` block) ever nominates the trio; the
+  rescope surfaces no live drift on this page. `NARRATIVE_CONTEXT_ALLOWLIST` still carries a
+  reasoned entry for the trio, recorded PREEMPTIVELY rather than in response to a firing check: if
+  a later edit moves the trio into a Types-table row or a signature-only block (re-homing onto
+  `/render`'s own page is deferred to the chassis pass; this ledger's
+  `f1-return-position-leak-sanction` row carries the same trio as list (c) Tier 4,
+  chassis-coupled), the move is carried by a reasoned entry rather than a silent pass.
+  `assertAllowlistReasoned()` fails any entry with an empty `reason`, the same fail-unless-recorded
+  idiom `check-surface-leaks`' registry uses above.
+- **Record:** `docs/internal/record/2026-08-29-foundations-a-move-set.md` (inheritance note 1),
+  `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md` (item 2), and commit
+  `b065ea51` (the manual fix the rescope now automates), all cited above.
+- **Verified:** `npm run check:reference` (CI, `.github/workflows/test.yml`) and
+  `src/tests/unit/reference-coverage.test.ts`, including a failing-first proof reconstructing the
+  `delivery-data.md` drift shape against fixture subpaths. The reference tree, including
+  `core.md`, passes with an empty allowlist; the recorded entry is inert against current page
+  text, confirmed by running `staleNames([], coreMdText)` directly.
+
+## indexed-access-parenthetical-convention: the indexed-access reference convention (ruling 3)  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept. Executed per ruling 3 (this file, "The rulings" section): a rendered shape
+  that prints a member whose own type carries no export row now carries an inline parenthetical,
+  beside the member's row, giving the exact expression a consumer types to reach it by indexed
+  access off the containing exported type. One README note
+  (`docs/reference/README.md#reading-indexed-access-forms`) states the convention once; the check
+  clause enforces it wherever it applies.
+- **Reopens on:** closed. Executed by the internals pass, Task 5. A future leak the
+  `check-surface-leaks` rider records against a page this convention already covers inherits the
+  requirement automatically (the check clause reads that registry directly); a future retrofit
+  site outside `/sveltekit` and `/reproductions` is not a reopen of this row, it is the same
+  convention applied to a new page as that page's own leaks accumulate.
+- **Shape (the corpus, derived not counted).** The retrofit's corpus is the `check-surface-leaks`
+  registry's own output (Task 2), filtered to the two subpaths this task's file list covers,
+  `/sveltekit` and `/reproductions` (`core.md` carries no leak recorded against it and is dropped;
+  `/delivery` and `/delivery/data`'s leaks are out of this task's scope, left for a later
+  retrofit): 35 recorded entries across those two subpaths at execution time, of which 25 print
+  the leaked name literally on the page (a member field typed by name, not fully inlined
+  structurally): 21 needed the parenthetical added, and three (`LoginData`, `ConfirmData`,
+  `EditorsData`) plus `ReproInstance` already carried it, needing only the scar-tissue sweep
+  below. The other 10 (`AdvisoryAction`,
+  `DatePrefix`, `EditorActionFailure`, `FragmentTarget`, `LinkTarget`, `MediaLibrary`, `SlotKind`,
+  `StandardResult`, `UsageOrigin`, and `NavConcept` on `/reproductions`) are never printed by name
+  on either page at all (each is absorbed into a fully-expanded inline structural type, or reaches
+  the page only through a nested carrier that itself never surfaces as a bare name), so ruling 3's
+  own rule (a name absent from the page is never retrofitted a parenthetical to hang on) leaves
+  them untouched. `LoginData` and `ConfirmData` needed only the "or equivalently
+  `Awaited<ReturnType<...>>`" alternate removed, per ruling 3's fold note (the canonical form is
+  single).
+- **Shape (the check clause, `reference-coverage.mjs`).** `leakNamesForSubpath` reads
+  `check-surface-leaks.json` (via `check-surface-leaks.mjs`'s newly exported `loadRegistry`, one
+  parse, no duplicated logic) and scopes it to one subpath; `missingIndexedAccessParentheticals`
+  reports a leak name that the page prints with no code-span carrying a non-empty bracket
+  subscript (`['page']`, `[number]`, `[string]`, and the like) in the same locality unit, where a
+  Types-table row is its own unit (no blank line separates table rows, so the whole table would
+  otherwise read as one paragraph and let one row's unrelated bracket expression excuse every
+  other row's missing parenthetical) and a prose paragraph is a blank-line-delimited block
+  (matching where `LoginData`/`ConfirmData`/`EditorsData` already placed theirs, a few sentences
+  into the same paragraph as the printed name). The bracket search reads real backtick code spans
+  (splitting on the backtick character, not a single greedy regex spanning two unrelated spans
+  across intervening prose that happens to contain a markdown link's own `[text](url)` brackets)
+  and requires non-empty bracket contents, so an ordinary array-type suffix (`Foo[]`) never
+  false-matches as the marker. Wired into `checkOne`/`main` as a new failure class alongside
+  `missing`/`untagged`/`stale`, chained on the existing `check:reference` entry (no new script,
+  per the tie-break rule).
+- **Shape (the scar-tissue sweep).** Every touched line's verdict provenance moved here: the
+  `LoginData`/`ConfirmData` and `EditorsData` parentheticals no longer say "the retires pass
+  unexported them, a sanctioned `NavIcon`-class leak"; `reproductions.md:95`'s `ReproInstance`
+  parenthetical no longer carries that clause either. Each now states plainly that the type
+  "carries no export row of its own," the same phrasing every new site in this retrofit uses, and
+  the ledger is the only place the pass/taxonomy history lives (this row, and the rows the
+  scar-tissue text pointed at: `audit-sveltekit-fragmenttarget`, `audit-sveltekit-mediausageinfo`,
+  `audit-sveltekit-navpageoption`, and the F-1 hybrid ruling's own `NavIcon`-class taxonomy in
+  `check-surface-leaks`, above, all byte-untouched by this row).
+- **Resolves:** `audit-sveltekit-usageentry`'s closed row (byte-untouched by this row) states the
+  public recovery, `NonNullable<ContentFormFailure['usage']>[number]`, as the outcome of 4b's
+  retire ruling, but that expression lived only in the ledger and a test until this task: the
+  `sveltekit.md` `ContentFormFailure` row now carries it as the required parenthetical (an add,
+  not a verify, per this task's own scoping note), closing the gap between what the ledger
+  promised and what the page said.
+- **Record:** `docs/internal/record/2026-09-01-internals-planning-inputs/docket.md` (item 7) and
+  "The rulings" (ruling 3), both cited above.
+- **Verified:** `npm run check:reference` (CI, `.github/workflows/test.yml`) and
+  `src/tests/unit/reference-coverage.test.ts`, including unit coverage for
+  `missingIndexedAccessParentheticals`'s locality scoping (a Types-table row is not excused by a
+  different row's marker; an array-type suffix's empty brackets are not mistaken for one) and an
+  integration proof that `sveltekit.md` and `reproductions.md` carry the parenthetical for every
+  name the `check-surface-leaks` registry records against them and prints.
+
+## dev-backend-flag-refusal: `CAIRN_DEV_BACKEND`'s two refusals, on diverging witnesses (ruling 4, letter-amended)  (accept, 2026-09-02, internals pass)
+
+- **Verdict:** accept, executing ruling 4 as letter-amended at the round-1 fold (this file, "The
+  rulings" section, item 4). The docket's original text, "refuse when set," would have broken the
+  engine's own exemplar: `CAIRN_DEV_BACKEND='1'` is the dev transport's ENABLE contract (the
+  showcase capture transport refuses WITHOUT it), so a flag-alone refusal inside
+  `createAuthChannel` would have failed the showcase's own members e2e suite before this task
+  ever ran. The amended, executed predicate is *refuse when the flag is set AND the request is
+  non-local*: `guard.ts` keeps its original flag-alone predicate unchanged (it mounts only in a
+  production build, so there is no legitimate live-flag case for it to admit), and
+  `auth-channel/factory.ts` gains a new, stricter tripwire on the AND-non-local predicate, since
+  one factory instance serves both dev and prod. This executes the ruling's intent, that the flag
+  must never be live in a deployed environment, with a buildable sense.
+- **Reopens on:** a site's documented dev-backend deployment pattern changes shape such that the
+  factory's own `event.url.hostname` is no longer a trustworthy locality witness for it (for
+  example, a proxy or tunnel fronting local dev with a non-local hostname), or a consumer reports
+  the AND-non-local predicate still admitting a genuinely deployed, non-local leak the tripwire
+  was meant to catch.
+- **Shape (the discriminator gate, Step 1).** Both discriminants the amended predicate needs are
+  readable at every one of the factory's per-request entry points (`request`, `confirm`,
+  `logout`): the env flag off `event.platform?.env`, a structural probe since `createAuthChannel`
+  is generic over a site-defined `Env` and carries no guaranteed `CAIRN_DEV_BACKEND` member, and
+  the request host off `event.url.hostname`, always present on every real `CairnEvent`. The
+  discriminator gate therefore ran and took the PRIMARY path (the first-request tripwire), never
+  the sanctioned fallback (documenting today's transport-body pattern as the sole contract): both
+  reads are unconditionally available with no missing-input branch to route around.
+- **Shape (isolate-stable vs. per-request, round-1 review S-2).** Only the env flag observation is
+  cached, once per channel instance (`DevBackendFlagCache`), since a Worker isolate's env vars do
+  not change between requests. The host observation is evaluated fresh on every call and never
+  cached: one isolate can serve `*.workers.dev` and a custom domain interchangeably, so a cached
+  host verdict from an early warm-up request would pin a permissive answer onto later production
+  traffic. A caching scheme that memoized the host half alongside the flag, the naive reading of
+  "a first-request tripwire," would have been unsound for exactly this reason.
+- **Shape (one wording, two witnesses).** `src/lib/auth-channel/dev-flag.ts`, a new internal
+  module, is the one source for the flag name, the refusal message, and the locality predicate;
+  `guard.ts` and `factory.ts` both import it rather than hand-writing a second wording
+  (`read-from-the-source-rule`, above). The two refusals diverge only on witness and status form:
+  `guard.ts` returns a bare 503 `Response` (it runs ahead of SvelteKit's own error machinery in
+  the `handle` hook); `factory.ts` throws SvelteKit's `error(503, ...)`, a hard throw outside
+  either action's own result union, matching the guard's unconditional, checked-first-of-everything
+  form.
+- **Resolves:** `audit-auth-devdelivery`'s closed row (byte-untouched by this row) posed this
+  exact question in its Shape field: "a factory-side CAIRN_DEV_BACKEND refusal is a design
+  question for a later pass (`createAuthChannel` reads no env at construction time, so it cannot
+  observe a per-request value)." This task is that later pass: the factory reads the flag at each
+  per-request entry point instead of at construction, which is what makes the per-request host
+  witness available to pair it with.
+- **Record:** `docs/superpowers/plans/2026-09-01-internals-pass.md`, Task 9, and "The rulings"
+  (ruling 4) and the round-1 review fold (S-1, S-2), both in the same plan file.
+- **Verified:** `src/tests/unit/auth-channel-dev-backend-tripwire.test.ts` (flag set + non-local
+  refuses on `request`/`confirm`/`logout` with a hard throw carrying `guard.ts`'s own message and
+  status; flag set + local host is untouched; flag absent changes nothing; the env observation
+  caches across calls within one instance) and the showcase's members e2e suite (its capture
+  transport requires `CAIRN_DEV_BACKEND='1'` locally, proving the amended, AND-non-local sense
+  breaks no legitimate dev-backend deployment).
+
+## access-semantics-documented-divergence: engine-wide access semantics, documented divergence, no blanket harden (ruling 2)  (accept, 2026-09-03, internals pass)
+
+- **Verdict:** accept, executing ruling 2 (this file, "The rulings" section, item 2) as a docs and
+  diagnostics task, with no route-behavior change. `canReach`'s permissive unmapped-target reading
+  stays the posture for the engine's own screens and nav visibility (a target the map never names
+  stays reachable to any editor-capability session); `authorizeAdminTarget`'s fail-closed reading
+  stays the posture for a site-authored POST through `createSectionAction` or `adminAction`'s
+  opt-in `access` option (an unmapped target refuses). `docs/extend/security-model.md` documents
+  both postures under one section with the round-1 fold's four mandatory points: the map is not a
+  whitelist (naming the unmapped fixed screens and the site-wide `publishAll` action's own
+  residual, and naming the real mutations `canReach` gates, not only nav semantics); the
+  exhaustive-map recovery recipe; the `ownerOnly`-stacks-on-the-map cross-link into
+  `docs/extend/restrict-admin-access.md`; and `authorizeAdminTarget`'s fail-closed contract.
+- **Reopens on:** the new `config.access_unmapped` warning (below) surfaces a real site's own
+  partial map, one that covers some but not all of its concept ids and the four fixed engine
+  screens, in production logs, or a consumer explicitly asks for a hardened, deny-by-default
+  floor. Either is a detectable trigger; the docket's original "real-world exploit evidence"
+  condition is unfalsifiable and is replaced by these two.
+- **Shape (the four helpers' posture doc-comments, Step 2).** `canReach` (`src/lib/auth/access.ts`),
+  `requireEngineAccess` (`src/lib/sveltekit/guard.ts`), `adminAction`
+  (`src/lib/sveltekit/admin-action.ts`), and `createSectionAction`
+  (`src/lib/sveltekit/section-action.ts`) each carry a one-sentence `Posture:` paragraph naming
+  which of the two readings they run and why; no other doc-comment text changed.
+- **Shape (the startup warning, Step 3).** `validateAccessComposition`
+  (`src/lib/sveltekit/admin-nav.ts`) now logs `config.access_unmapped` (warn, non-throwing) once
+  per composition when the map leaves any declared concept id or fixed engine screen without a
+  rule; an href key never counts toward coverage, since it gates a route, not a screen or concept
+  id. The event fires alongside, never instead of, the existing throw-on-bad-key checks, and never
+  blocks composition. `src/lib/log/events.ts` and `docs/reference/log-events.md` carry the new
+  vocabulary entry.
+- **Record:** `docs/superpowers/plans/2026-09-01-internals-pass.md`, Task 10, and "The rulings"
+  (ruling 2).
+- **Verified:** `src/tests/unit/access-composition.test.ts` (the warning fires naming every
+  concept and fixed screen a partial map leaves unmapped, stays silent against an exhaustive map,
+  and an href key never counts toward coverage).

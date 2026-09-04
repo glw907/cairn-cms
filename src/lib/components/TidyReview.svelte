@@ -7,7 +7,7 @@ proposed copy-edit as a git-style diff, one hunk per change, ranked by safety: o
 declared normalization, or a grammar reword) carry the review-this treatment, default to undecided,
 and are NEVER swept by Accept fixes until the author confirms each. That safety property is the spine.
 
-The author's original stays in the editor buffer the whole time; the apply seam (registerTidy) shows
+The author's original stays in the editor buffer the whole time; the apply seam (EditorApi.tidy) shows
 the proposed edits as decorations and writes nothing until Apply. Apply lands the kept hunks in ONE
 batched transaction (one undoable step), so the whole tidy is one move back. Cancel and Reject all
 leave the document byte-identical.

@@ -8,7 +8,7 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
 -->
 <script lang="ts">
   interface Props {
-    /** Insert an inline link at the editor cursor; the editor's registerInsertLink seam. */
+    /** Insert an inline link at the editor cursor; the editor's EditorApi.insertLink seam. */
     insert: (href: string, title: string) => void;
     /** Read the editor's current selection, for the Text field's default. */
     selection?: () => string;

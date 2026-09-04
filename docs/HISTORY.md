@@ -35,14 +35,14 @@ against their source findings and accepted every one. The diff review's own non-
 list, routed forward rather than fixed in this pass: the reset-coverage test's
 declared-state regex misses a generic-comma type annotation, `ShareLinkPanel`'s
 `aria-disabled` busy idiom now contradicts `EditPage`'s own native-`disabled` rule, and
-`content-routes-entry.ts` is the one sibling still doing two jobs at 1,631 lines.
+`content-routes-entry.ts` is the one sibling still doing two jobs at 1,630 lines.
 
 What a later pass would be wrong to rediscover: a pass-end fix round with more than one
 parallel writer needs its own worktree per writer, never one shared worktree between
 them; two of this pass's three fixers ran `git stash` in the same worktree and transiently
 clobbered each other's uncommitted work before either committed (both recovered).
 `content-routes-media.ts` at 1,447 lines is the one file left from the audit's original
-monolith list; `content-routes-entry.ts` is larger at 1,631 lines but was created by this
+monolith list; `content-routes-entry.ts` is larger at 1,630 lines but was created by this
 split, so it enters the next slice as new work rather than carried work. The
 `registerEditor` identity-guarded revocation rests on Svelte memoizing a call expression in
 prop position (`registerEditor={bindEditorGrant()}` compiles to one `$.derived` per mount, so

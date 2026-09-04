@@ -314,7 +314,7 @@ The original decision framing, for the record:
     default), the exhaustiveness idiom (`FieldDescriptor`'s ten permissive-default dispatch
     sites, proven exploitable by the walk's mutation experiment; the plan rules the never-idiom
     mechanism), and the newcomer walk's `src/lib` internals map. Also carries three items
-    internals-B's close routed here: `content-routes-entry.ts` still does two jobs at 1,631
+    internals-B's close routed here: `content-routes-entry.ts` still does two jobs at 1,630
     lines, the create/edit/save/publish half and the delete/rename half, the latter a
     self-contained ~330-line concern with its own reference-index gates, worth a
     `-mutations.ts` sibling; `edit-page-state-reset-coverage.test.ts`'s declared-state regex

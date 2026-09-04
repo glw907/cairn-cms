@@ -5,10 +5,11 @@
 //
 // This module is the composition root: `createContentRoutesInternal` builds the shared
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
-// factories (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the
-// one returned object. Every type this file used to declare inline now lives with the domain that
-// owns it and is re-exported here, so every existing importer (the public `/sveltekit` barrel and
-// the admin components that import this file directly) sees the same names at the same path.
+// factories (content-routes-shell.ts, -list.ts, -entry.ts, -preview.ts, -media.ts, -tidy.ts,
+// -settings.ts, -dictionary.ts) into the one returned object. Every type this file used to declare
+// inline now lives with the domain that owns it and is re-exported here, so every existing
+// importer (the public `/sveltekit` barrel and the admin components that import this file
+// directly) sees the same names at the same path.
 //
 // The factory comes in two: `createContentRoutesInternal`, whose wide shape the single-mount
 // composer drives, and the public `createContentRoutes`, whose declared return is the narrow
@@ -17,7 +18,6 @@
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesConfig } from './content-routes-context.js';
-import { createCoreActions } from './content-routes-core.js';
 import { createShellActions } from './content-routes-shell.js';
 import { createListActions } from './content-routes-list.js';
 import { createEntryActions } from './content-routes-entry.js';
@@ -58,7 +58,6 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const shell = createShellActions(ctx);
   const list = createListActions(ctx);
   const entry = createEntryActions(ctx);
-  const core = createCoreActions(ctx);
   const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -80,13 +79,13 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     saveAction: entry.saveAction,
     publishAction: entry.publishAction,
     publishAllAction: entry.publishAllAction,
-    discardAction: core.discardAction,
-    deleteAction: core.deleteAction,
-    listDeleteAction: core.listDeleteAction,
-    renameAction: core.renameAction,
+    discardAction: entry.discardAction,
+    deleteAction: entry.deleteAction,
+    listDeleteAction: entry.listDeleteAction,
+    renameAction: entry.renameAction,
     previewMintAction: preview.previewMintAction,
     previewRevokeAction: preview.previewRevokeAction,
-    revertAction: core.revertAction,
+    revertAction: entry.revertAction,
     uploadAction: media.uploadAction,
     mediaLibraryUploadAction: media.mediaLibraryUploadAction,
     mediaDeleteAction: media.mediaDeleteAction,

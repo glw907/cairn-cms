@@ -118,7 +118,7 @@ interface CommitLogEntry {
  * (`commit.author`), almost always present and never the top-level `author` (the matched GitHub
  * account, null for a magic-link editor, the common case); the date is `commit.committer.date`,
  * when the commit actually landed on `ref`. A null trailer degrades to an empty name, email, or
- * date rather than throwing; `commitEditorName` (content-routes-core.ts) further degrades an
+ * date rather than throwing; `commitEditorName` (content-routes-entry.ts) further degrades an
  * empty name and email to "unknown" for display.
  */
 export async function fetchCommitLog(

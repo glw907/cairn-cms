@@ -39,7 +39,7 @@ export type InteractionState = 'rest' | 'menu-open' | 'focus-visible' | 'row-exp
  */
 const LOGIN_PAGE_PATH = '/admin/login';
 
-/** The cookie cairn's own admin reads to pick its SSR theme (`content-routes-core.ts`). */
+/** The cookie cairn's own admin reads to pick its SSR theme (`content-routes-shell.ts`). */
 const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
   light: 'cairn-admin',
   dark: 'cairn-admin-dark',

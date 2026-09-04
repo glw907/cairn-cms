@@ -121,19 +121,19 @@ describe('candidatesForFile', () => {
   });
 
   it('does not strand a literal after a same-line comment-lookalike ("//") inside an earlier string', () => {
-    // The content-routes-core.ts monolith split across several content-routes-*.ts siblings
-    // (internals-B). content-routes-shell.ts's `withRefusalCode` still carries the "//" trigger
-    // (a URL literal against 'https://internal.invalid'), and content-routes-entry.ts still
-    // carries the apostrophe trigger (a fragment refusal reading "can't"), but neither sibling
-    // holds both a trigger and one of the two asserted messages, in trigger-before-message order,
-    // on its own: 'An unpublished entry with that address already exists' sits in
-    // content-routes-entry.ts ahead of its own "can't" trigger, and 'Another editor has
-    // unpublished edits referencing this entry' sits in content-routes-core.ts, a file with
-    // neither trigger. So at this commit the per-file trigger-to-message coupling this test was
-    // written to guard is not exercised; reading every content-routes-*.ts sibling into one
-    // candidate pool, the way findStrandedQuotes reads a whole tree below, is what still lets the
-    // assertions pass. Task 4 folding renameAction into content-routes-entry.ts restores the
-    // coupling by placing the rename-conflict message after the "can't" trigger at entry.ts:764.
+    // The former content-routes-core.ts monolith split across several content-routes-*.ts
+    // siblings (internals-B), and Task 4 folded its discard/delete/rename/revert quarter into
+    // content-routes-entry.ts, which already carried the apostrophe trigger (a fragment refusal
+    // reading "can't"). That file now holds both the trigger and, after it, the rename-conflict
+    // message ('Another editor has unpublished edits referencing this entry'), so the per-file
+    // trigger-before-message coupling this test guards is exercised for that pair. The
+    // create-conflict message ('An unpublished entry with that address already exists') still
+    // sits ahead of its own file's "can't" trigger (createAction runs before saveToBranch), so it
+    // stays uncoupled within content-routes-entry.ts alone; content-routes-shell.ts's
+    // `withRefusalCode` carries a separate "//" trigger (a URL literal against
+    // 'https://internal.invalid') with neither asserted message in its own file. Reading every
+    // content-routes-*.ts sibling into one candidate pool, the way findStrandedQuotes reads a
+    // whole tree below, is what lets both assertions pass regardless.
     const files = readdirSync(join(LIB_DIR, 'sveltekit'))
       .filter((name) => name.startsWith('content-routes-') && name.endsWith('.ts'))
       .map((name) => join(LIB_DIR, 'sveltekit', name));

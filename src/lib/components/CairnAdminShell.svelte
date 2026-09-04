@@ -124,7 +124,7 @@ discriminant, not the fields, gates the chrome).
 
   // The attention record for one visible nav href, or undefined when the site's `attention` dep
   // carried none for it (or configured no dep at all). Every href this reads is already filtered
-  // to the visible nav and to a positive count server-side (content-routes-core.ts); the
+  // to the visible nav and to a positive count server-side (content-routes-shell.ts); the
   // non-positive guard here is defense in depth, not the primary filter.
   function attentionFor(href: string): { count: number; label: string } | undefined {
     const entry = shell?.attention[href];

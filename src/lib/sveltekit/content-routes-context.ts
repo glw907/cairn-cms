@@ -1,10 +1,10 @@
 // cairn-cms: the content routes' shared closure context. createContentRoutesContext builds this
 // object once per createContentRoutesInternal call (the backend resolver, the manifest and media-json
 // readers, the commit-failure handlers, the tidy client), and every per-domain sibling module
-// (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) closes over it
-// instead of re-deriving these from `runtime`/`deps` itself. This is the seam a pure closure-lift
-// produces: the domain modules are unchanged in behavior, only in where their shared captures come
-// from.
+// (content-routes-shell.ts, -list.ts, -entry.ts, -preview.ts, -media.ts, -tidy.ts, -settings.ts,
+// -dictionary.ts) closes over it instead of re-deriving these from `runtime`/`deps` itself. This
+// is the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
+// where their shared captures come from.
 import type { ActionFailure } from '@sveltejs/kit';
 import type { Backend } from '../github/backend.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';

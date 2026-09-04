@@ -813,7 +813,7 @@ persistent "?" carries Markdown help, design-arc D2).
 
   // The publish blast-radius line (ratified verdict 5): only a fragment being published carries a
   // count, since publishing any other concept never ripples into another entry's rendered output.
-  // data.inboundLinks already holds this fragment's includers (content-routes-core.ts's editLoad
+  // data.inboundLinks already holds this fragment's includers (content-routes-entry.ts's editLoad
   // reads inboundIncludes for the Fragments concept, the same data the sidebar's own Included in
   // group renders), so this reuses that load rather than a new fetch. It renders in the role="status"
   // notice region below, the same publish-adjacent-awareness recipe the needs-alt notice uses: an

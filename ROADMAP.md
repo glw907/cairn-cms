@@ -1848,23 +1848,23 @@ the named human gates only):**
 - **Pre-existing security findings outside the C2b refusal-channel diff (docs friction log,
   triaged 2026-08-14; found by the C2b review round, security MEDIUM 5 and LOW 9).**
   `editLoad`'s `?new=1` create-dialog seed renders an attacker-crafted query value to a
-  signed-in editor: `content-routes-core.ts:922` still seeds `seededTitle` straight from
+  signed-in editor: `content-routes-entry.ts:519` still seeds `seededTitle` straight from
   `event.url.searchParams.get('title')?.trim()` with no bound, while the sibling `?date=` field
-  right beside it (`:926`) is correctly regex-bounded. Svelte escapes the render, so this is
+  right beside it (`:524`) is correctly regex-bounded. Svelte escapes the render, so this is
   not XSS, but it is a form field and heading rendering arbitrary attacker text to whoever
   clicked a crafted link. Candidate fix: bound `title` the way `date` already is (a length cap
   plus a conservative character class), or move the create dialog's typed title into a
   short-lived server-side hold instead of the URL. Separately, a rename's 409 conflict still
   lists every open branch's `concept/id` with no access check:
-  `content-routes-core.ts:1859-1861`'s conflict-branch index filters only
+  `content-routes-entry.ts:1370-1371`'s conflict-branch index filters only
   `row.origin.kind === 'branch' && row.origin.branch !== ownBranch`, with no `canReach` filter,
-  unlike `publishAllAction`'s own index for the same underlying data (`:1546`), which does
+  unlike `publishAllAction`'s own index for the same underlying data (`:1056`), which does
   filter. A role denied a concept still learns that concept has an in-progress, unpublished
   entry and its id. Candidate fix: filter the conflict-branch index through
   `canReach(runtime.access, editor, row.concept)` the same way `publishAllAction` already does,
   collapsing an unreachable branch to a bare count. Neither is urgent (both pre-existing, low
   and medium severity, no known exploitation), so they file together for whoever next touches
-  `content-routes-core.ts`'s create or rename paths.
+  `content-routes-entry.ts`'s create or rename paths.
 
 - **`create-cairn-site` hardening candidates, re-triaged (docs friction log, triaged
   2026-08-14; the T2 review's unverified tail, re-verified against current code since the
@@ -2017,7 +2017,7 @@ the named human gates only):**
 
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**
-  `ContentFormFailure` (`content-routes-core.ts:393-412`, a flat interface with every field
+  `ContentFormFailure` (`content-routes-shared.ts:37-56`, a flat interface with every field
   optional) models only the content actions' `fail()` payloads; SvelteKit's generated
   `ActionData` unions every action's awaited return regardless of arm,
   and the assignment type-checks today only because every failure-payload field name happens to
@@ -2057,7 +2057,7 @@ the named human gates only):**
   content is validated, warn-not-refuse") lists three things an old version can carry that the
   current schema no longer recognizes: retired frontmatter fields, removed vocabulary values,
   and "links or includes to since-deleted targets." `revertSchemaDrift`
-  (`content-routes-core.ts:397-408`) still builds only the first two into
+  (`content-routes-entry.ts:288-299`) still builds only the first two into
   `retiredContentAdvisory`; a reverted version whose body links or `::include`s a target
   deleted since that version was published gets no warning at revert time, and the dangling
   reference surfaces only at the next build's `verifyReferences` gate or as a live 404 if the
@@ -2271,7 +2271,7 @@ the named human gates only):**
   finding, 2026-07-14 nav-layout pass.
 - **A refused save preserves the body but discards frontmatter field edits (updated with a
   code-verified finding, docs friction log, triaged 2026-08-14; supersedes the 2026-07-03
-  framing below).** `ContentFormFailure` (`content-routes-core.ts:393-412`) carries only
+  framing below).** `ContentFormFailure` (`content-routes-shared.ts:37-56`) carries only
   `error`, `brokenLinks`, and `body` on a refused save, no frontmatter; `EditPage` reseeds the
   body through `form?.body ?? data.body` (`EditPage.svelte:147`), but every frontmatter field
   reloads from the stored record. Converting the save refusal from a `?error=` redirect to

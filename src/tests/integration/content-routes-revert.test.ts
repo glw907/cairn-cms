@@ -141,15 +141,15 @@ describe('revertAction', () => {
     gh.install();
     const routes = createContentRoutes(echoRuntime());
 
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
 
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    const history = await routes.historyLoad(historyEvent(ID));
     expect(history.entries).toHaveLength(2);
     const v1Ref = history.entries[1].ref;
 
     const { location } = await expectRedirect(() =>
-      routes.revertAction(revertEvent(ID, { ref: v1Ref, head: history.head! }) as never),
+      routes.revertAction(revertEvent(ID, { ref: v1Ref, head: history.head! })),
     );
     expect(location).toBe(`/admin/posts/${ID}?saved=1`);
 
@@ -160,7 +160,7 @@ describe('revertAction', () => {
     // Publishing what the edit screen now shows (the reverted content) lands it on main and
     // consumes the branch, the same as any other publish.
     const published = await expectRedirect(() =>
-      routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never),
+      routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })),
     );
     expect(published.location).toBe(`/admin/posts/${ID}?published=1`);
     expect(gh.read('main', ENTRY_PATH)).toContain('version one');
@@ -171,16 +171,16 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     // Another editor already has an open draft on this entry.
     await expectRedirect(() =>
-      routes.saveAction(actionEventAs(OTHER_EDITOR, ID, { title: 'Blocked', body: 'someone else' }) as never),
+      routes.saveAction(actionEventAs(OTHER_EDITOR, ID, { title: 'Blocked', body: 'someone else' })),
     );
 
     const result = (await routes.revertAction(
-      revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }) as never,
+      revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }),
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(409);
     expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Other Editor' });
@@ -191,8 +191,8 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     injectDraftDuringBranchCreate(gh, BRANCH, ENTRY_PATH, {
       content: '---\ntitle: Raced\n---\nraced content',
@@ -200,7 +200,7 @@ describe('revertAction', () => {
     });
 
     const result = (await routes.revertAction(
-      revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }) as never,
+      revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }),
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(409);
     expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Racer' });
@@ -211,8 +211,8 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     injectPublishDuringCreateBranchReread(gh);
 
@@ -221,7 +221,7 @@ describe('revertAction', () => {
     // one this request validated. That must not read back as a conflict: revertAction pins its
     // fail-closed commit to the sha createBranch itself returned, not the stale earlier read.
     const { location } = await expectRedirect(() =>
-      routes.revertAction(revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }) as never),
+      routes.revertAction(revertEvent(ID, { ref: history.entries[0].ref, head: history.head! })),
     );
     expect(location).toBe(`/admin/posts/${ID}?saved=1`);
     expect(gh.read(BRANCH, ENTRY_PATH)).toContain('title: V1');
@@ -231,13 +231,13 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     injectNonConflictCommitFailure(gh, BRANCH);
 
     await expect(
-      routes.revertAction(revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }) as never),
+      routes.revertAction(revertEvent(ID, { ref: history.entries[0].ref, head: history.head! })),
     ).rejects.toThrow(/tree create failed/);
 
     // No orphaned pending branch survives an unexpected, non-conflict commit failure.
@@ -248,15 +248,15 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
     const staleHead = history.head!;
 
     // Someone else published since the history page rendered.
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
 
     const result = (await routes.revertAction(
-      revertEvent(ID, { ref: history.entries[0].ref, head: staleHead }) as never,
+      revertEvent(ID, { ref: history.entries[0].ref, head: staleHead }),
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(409);
     expect(result.data).toEqual({ reason: 'history_stale' });
@@ -266,11 +266,11 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     const result = (await routes.revertAction(
-      revertEvent(ID, { ref: 'sha-does-not-exist', head: history.head! }) as never,
+      revertEvent(ID, { ref: 'sha-does-not-exist', head: history.head! }),
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(404);
     expect(result.data).toEqual({ reason: 'ref_unknown' });
@@ -280,22 +280,22 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
 
     // Delete removes the entry from main, but its own commit still touched the path, so a
     // fresh listCommits read keeps offering it as a version.
-    await expectRedirect(() => routes.deleteAction(actionEvent(ID) as never));
+    await expectRedirect(() => routes.deleteAction(actionEvent(ID)));
     const deleteSha = gh.headSha('main');
 
     // Recreate the entry at the same id, the way an editor might after realizing the delete
     // was a mistake; the recreate commit is what makes the entry, and the earlier delete
     // commit, both visible in the same history window.
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
+    const history = await routes.historyLoad(historyEvent(ID));
     expect(history.entries.some((e) => e.ref === deleteSha)).toBe(true);
 
     const result = (await routes.revertAction(
-      revertEvent(ID, { ref: deleteSha, head: history.head! }) as never,
+      revertEvent(ID, { ref: deleteSha, head: history.head! }),
     )) as unknown as { status: number; data: RevertFailure };
     expect(result.status).toBe(404);
     expect(result.data).toEqual({ reason: 'ref_unknown' });
@@ -311,7 +311,7 @@ describe('revertAction', () => {
           url: 'https://t.example/admin/posts/not-a-valid-id!!/history',
           params: { concept: 'posts', id: 'not-a-valid-id!!' },
           form: { ref: 'sha1', head: 'sha1' },
-        }) as never,
+        }),
       ),
     );
   });
@@ -321,11 +321,11 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    const history = await routes.historyLoad(historyEvent(ID));
     const ref = history.entries[0].ref;
 
-    await expectRedirect(() => routes.revertAction(revertEvent(ID, { ref, head: history.head! }) as never));
+    await expectRedirect(() => routes.revertAction(revertEvent(ID, { ref, head: history.head! })));
 
     const records = infoSpy.mock.calls.map((c) => c[0] as Record<string, unknown>);
     const succeededCount = records.filter((r) => r.event === 'commit.succeeded' && r.branch === BRANCH).length;
@@ -350,20 +350,20 @@ describe('revertAction', () => {
     const v1Fields: NamedField[] = [TITLE_FIELD, { type: 'text', name: 'subtitle', label: 'Subtitle' }];
     const routesV1 = createContentRoutes(echoRuntime({ fields: v1Fields }));
     await expectRedirect(() =>
-      routesV1.publishAction(actionEvent(ID, { title: 'V1', subtitle: 'Old subtitle', body: 'version one' }) as never),
+      routesV1.publishAction(actionEvent(ID, { title: 'V1', subtitle: 'Old subtitle', body: 'version one' })),
     );
 
     // The schema evolves: `subtitle` is retired.
     const routesV2 = createContentRoutes(echoRuntime({ fields: [TITLE_FIELD] }));
-    const history = await routesV2.historyLoad(historyEvent(ID) as never);
+    const history = await routesV2.historyLoad(historyEvent(ID));
     const ref = history.entries[0].ref;
 
     const { location } = await expectRedirect(() =>
-      routesV2.revertAction(revertEvent(ID, { ref, head: history.head! }) as never),
+      routesV2.revertAction(revertEvent(ID, { ref, head: history.head! })),
     );
     expect(location).toBe(`/admin/posts/${ID}?saved=1&revertRetiredFields=subtitle`);
 
-    const editData = await routesV2.editLoad(editEventAt(ID, location) as never);
+    const editData = await routesV2.editLoad(editEventAt(ID, location));
     const notice = editData.advisories.find((a) => a.kind === 'reverted-schema-drift');
     expect(notice?.message).toContain('subtitle');
   });
@@ -383,22 +383,22 @@ describe('revertAction', () => {
     form.append('body', 'version one');
     await expectRedirect(() =>
       routesV1.publishAction(
-        contentEvent({ url: `https://t.example/admin/posts/${ID}`, params: { concept: 'posts', id: ID }, form }) as never,
+        contentEvent({ url: `https://t.example/admin/posts/${ID}`, params: { concept: 'posts', id: ID }, form }),
       ),
     );
 
     // The vocabulary narrows: `legacy` is retired, leaving only `alpha`.
     const routesV2 = createContentRoutes(echoRuntime({ fields, vocabulary: [{ value: 'alpha', label: 'Alpha' }] }));
-    const history = await routesV2.historyLoad(historyEvent(ID) as never);
+    const history = await routesV2.historyLoad(historyEvent(ID));
     const ref = history.entries[0].ref;
 
     const { location } = await expectRedirect(() =>
-      routesV2.revertAction(revertEvent(ID, { ref, head: history.head! }) as never),
+      routesV2.revertAction(revertEvent(ID, { ref, head: history.head! })),
     );
     expect(location).toContain('revertRetiredTags=legacy');
     expect(location).not.toContain('revertRetiredFields');
 
-    const editData = await routesV2.editLoad(editEventAt(ID, location) as never);
+    const editData = await routesV2.editLoad(editEventAt(ID, location));
     const notice = editData.advisories.find((a) => a.kind === 'reverted-schema-drift');
     expect(notice?.message).toContain('legacy');
   });
@@ -413,16 +413,16 @@ describe('revertAction', () => {
     form.append('body', 'version one');
     await expectRedirect(() =>
       routes.publishAction(
-        contentEvent({ url: `https://t.example/admin/posts/${ID}`, params: { concept: 'posts', id: ID }, form }) as never,
+        contentEvent({ url: `https://t.example/admin/posts/${ID}`, params: { concept: 'posts', id: ID }, form }),
       ),
     );
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     // Revert to the version that carries `description`, a builtin frontmatter key `manifestEntryFromFile`
     // and `summarize` both read directly rather than gating on a declared field: never "retired".
     const { location } = await expectRedirect(() =>
-      routes.revertAction(revertEvent(ID, { ref: history.entries[1].ref, head: history.head! }) as never),
+      routes.revertAction(revertEvent(ID, { ref: history.entries[1].ref, head: history.head! })),
     );
     expect(location).toBe(`/admin/posts/${ID}?saved=1`);
   });
@@ -431,12 +431,12 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(echoRuntime());
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
-    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
-    const history = await routes.historyLoad(historyEvent(ID) as never);
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
+    const history = await routes.historyLoad(historyEvent(ID));
 
     const { location } = await expectRedirect(() =>
-      routes.revertAction(revertEvent(ID, { ref: history.entries[1].ref, head: history.head! }) as never),
+      routes.revertAction(revertEvent(ID, { ref: history.entries[1].ref, head: history.head! })),
     );
     expect(location).toBe(`/admin/posts/${ID}?saved=1`);
   });

@@ -214,7 +214,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     const routes = createContentRoutes(runtime());
     const event = uploadEvent({ bytes: PNG }) as unknown as { cookies: unknown };
     event.cookies = undefined;
-    await expect(routes.uploadAction(event as never)).rejects.toThrow(/cookie jar/i);
+    await expect(routes.uploadAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
   });
 
   it('returns fail(401) JSON, not a 303, when locals.cairnEditor is absent', async () => {

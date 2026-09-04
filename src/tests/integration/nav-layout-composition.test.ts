@@ -14,6 +14,7 @@ import { githubApp } from '../../lib/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
+import { testEvent } from '../helpers/test-event.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -78,14 +79,10 @@ function runtime(): CairnRuntime {
 
 /** A driven request for one signed-in role/capability pair. */
 function event(role: string, capability: 'owner' | 'editor' | 'none') {
-  return {
-    url: new URL('https://test.example/admin/posts'),
-    params: {},
-    request: new Request('https://test.example/admin/posts'),
+  return testEvent({
+    url: 'https://test.example/admin/posts',
     locals: { cairnEditor: { email: `${role}@test`, displayName: role, role, capability }, cairnBackend: backend },
-    platform: { env: {} },
-    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
-  };
+  });
 }
 
 /** Every top-level section/entry label in a resolved nav's `items`. */
@@ -107,28 +104,28 @@ describe('navLayout composition: capability, declarative roles, and navFilter ov
       navFilter: (items) => items.filter((item) => item.label !== 'Marker'),
     });
 
-    const owner = await routes.shellLoad(event('owner', 'owner') as never);
+    const owner = await routes.shellLoad(event('owner', 'owner'));
     if (owner.shell.public) throw new Error('expected authed shell');
     // The owner sees the engine door, the roles-gated Club section (owner is listed), and never
     // the Marker section navFilter drops for every session.
     expect(topLabels(owner.shell.nav.items)).toEqual(['Posts', 'Club']);
     await owner.shell.pendingEntries;
 
-    const clubAdmin = await routes.shellLoad(event('club-admin', 'editor') as never);
+    const clubAdmin = await routes.shellLoad(event('club-admin', 'editor'));
     if (clubAdmin.shell.public) throw new Error('expected authed shell');
     // club-admin is an editor-capability role, but its name is in the Club section's roles list,
     // so it sees Club even though it is not owner-capability.
     expect(topLabels(clubAdmin.shell.nav.items)).toEqual(['Posts', 'Club']);
     await clubAdmin.shell.pendingEntries;
 
-    const plainEditor = await routes.shellLoad(event('editor', 'editor') as never);
+    const plainEditor = await routes.shellLoad(event('editor', 'editor'));
     if (plainEditor.shell.public) throw new Error('expected authed shell');
     // A plain editor has the same capability as club-admin, but its role name is absent from the
     // Club section's roles list, so the declarative roles gate (not capability) hides it.
     expect(topLabels(plainEditor.shell.nav.items)).toEqual(['Posts']);
     await plainEditor.shell.pendingEntries;
 
-    const none = await routes.shellLoad(event('volunteer', 'none') as never);
+    const none = await routes.shellLoad(event('volunteer', 'none'));
     if (none.shell.public) throw new Error('expected authed shell');
     // A none-capability session loses the engine door (row 4's capability gate strips every
     // engine screen, wherever it is placed) and the Club section (volunteer is also absent from
@@ -189,15 +186,10 @@ function accessRuntime(): CairnRuntime {
 }
 
 function accessEvent(role: string, capability: 'owner' | 'editor') {
-  const url = 'https://test.example/admin/posts';
-  return {
-    url: new URL(url),
-    params: {},
-    request: new Request(url),
+  return testEvent({
+    url: 'https://test.example/admin/posts',
     locals: { cairnEditor: { email: `${role}@test`, displayName: role, role, capability }, cairnBackend: backend },
-    platform: { env: {} },
-    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
-  };
+  });
 }
 
 describe('navLayout composition: the sidebar derives from the runtime.access authority', () => {
@@ -209,17 +201,17 @@ describe('navLayout composition: the sidebar derives from the runtime.access aut
   it('hides the mapped-away concept door and site entry for a publisher, keeps them for webmaster and owner', async () => {
     const routes = createContentRoutes(accessRuntime());
 
-    const publisher = await routes.shellLoad(accessEvent('publisher', 'editor') as never);
+    const publisher = await routes.shellLoad(accessEvent('publisher', 'editor'));
     if (publisher.shell.public) throw new Error('expected authed shell');
     expect(topLabels(publisher.shell.nav.items)).toEqual(['Posts']);
     await publisher.shell.pendingEntries;
 
-    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor') as never);
+    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
     expect(topLabels(webmaster.shell.nav.items)).toEqual(['Posts', 'Pages', 'Money']);
     await webmaster.shell.pendingEntries;
 
-    const owner = await routes.shellLoad(accessEvent('owner', 'owner') as never);
+    const owner = await routes.shellLoad(accessEvent('owner', 'owner'));
     if (owner.shell.public) throw new Error('expected authed shell');
     expect(topLabels(owner.shell.nav.items)).toEqual(['Posts', 'Pages', 'Money']);
     await owner.shell.pendingEntries;
@@ -244,7 +236,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
     ]);
     const routes = createContentRoutes(accessRuntime(), { attention });
 
-    const publisher = await routes.shellLoad(accessEvent('publisher', 'editor') as never);
+    const publisher = await routes.shellLoad(accessEvent('publisher', 'editor'));
     if (publisher.shell.public) throw new Error('expected authed shell');
     // 'pages' is mapped away from publisher (accessEvent's nav test above), so its item vanishes
     // even though the dep itself returned it unconditionally.
@@ -252,7 +244,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
     expect(attention).toHaveBeenCalledTimes(1);
     await publisher.shell.pendingEntries;
 
-    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor') as never);
+    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
     expect(webmaster.shell.attention).toEqual({
       '/admin/posts': { count: 3, label: 'pending items' },
@@ -270,7 +262,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
     ]);
     const routes = createContentRoutes(accessRuntime(), { attention });
 
-    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor') as never);
+    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
     expect(webmaster.shell.attention).toEqual({});
     expect(attention).toHaveBeenCalledTimes(1);
@@ -284,7 +276,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
     ]);
     const routes = createContentRoutes(accessRuntime(), { attention });
 
-    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor') as never);
+    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
     expect(webmaster.shell.attention).toEqual({ '/admin/posts': { count: 3, label: 'first' } });
   });
@@ -296,7 +288,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
     ]);
     const routes = createContentRoutes(accessRuntime(), { attention });
 
-    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor') as never);
+    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
     expect(webmaster.shell.attention).toEqual({
       '/admin/posts': { count: 3, label: 'pending items' },
@@ -307,7 +299,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
   it('serializes an empty record when no attention dep is configured', async () => {
     const routes = createContentRoutes(accessRuntime());
 
-    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor') as never);
+    const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
     expect(webmaster.shell.attention).toEqual({});
   });

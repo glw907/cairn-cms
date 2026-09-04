@@ -1,7 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
 import {
   collectReachableNames,
@@ -97,10 +99,10 @@ describe('collectReachableNames (the type-checker model)', () => {
 // export (an interface, type alias, or enum with no value side) or a runtime value export (a
 // function, a const, or a Svelte component's `declare const X: Component<...>` default), read
 // off real TypeScript symbol flags rather than asserted in prose. Proven against real dist
-// declarations too: `dist/components/index.d.ts` classifies its four plain-type exports (TidyApi,
-// ImagePlaceholderApi, FormatKind, EditorApi) as `true` and its eighteen component exports as
-// `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever descending
-// into a component's own Props/Events/Slots type graph.
+// declarations too, below: `dist/components/index.d.ts` classifies its four plain-type exports
+// (TidyApi, ImagePlaceholderApi, FormatKind, EditorApi) as `true` and its nineteen component
+// exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
+// descending into a component's own Props/Events/Slots type graph.
 describe('isPlainTypeExport (the /components mechanical split)', () => {
   const tmpFiles: string[] = [];
   afterEach(() => {
@@ -144,6 +146,24 @@ describe('isPlainTypeExport (the /components mechanical split)', () => {
       expect(sym).toBeDefined();
       expect(isPlainTypeExport(sym!)).toBe(false);
     }
+  });
+
+  it('classifies the real dist/components/index.d.ts barrel (4 plain-type, 19 component)', () => {
+    // `npm ci`'s `prepare` hook and CI's own `npm run package` step both build `dist/` ahead of
+    // `npm test`, so a real built barrel is available here without this suite building one itself.
+    const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+    const dtsPath = join(repoRoot, 'dist/components/index.d.ts');
+    const { checker, symbols } = moduleExports(dtsPath);
+    // Mirrors check-surface-leaks.mjs's own `resolveAlias`: `moduleExports` returns barrel-level
+    // symbols, most of which are re-export ALIAS symbols whose Interface/TypeAlias/Value flags
+    // live on the aliased target, not on the alias itself.
+    const resolved = symbols.map((sym) =>
+      sym.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sym) : sym,
+    );
+    const plainTypeNames = resolved.filter((sym) => isPlainTypeExport(sym)).map((sym) => sym.name);
+    const componentNames = resolved.filter((sym) => !isPlainTypeExport(sym)).map((sym) => sym.name);
+    expect(plainTypeNames.sort()).toEqual(['EditorApi', 'FormatKind', 'ImagePlaceholderApi', 'TidyApi']);
+    expect(componentNames).toHaveLength(19);
   });
 });
 

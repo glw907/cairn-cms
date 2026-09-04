@@ -692,7 +692,7 @@ just reachable through property access.
 
 | Name | Stability | Meaning |
 | --- | --- | --- |
-| `TidyApi` | Extension API | The `tidy` member's type, the tidy apply API from the preceding table. |
+| `TidyApi` | Extension API | The `tidy` member's type, the tidy apply API from the preceding table. Its `enter` parameter is a `Change` list, and `Change` carries no export row of its own: a caller that needs its shape reaches it as `Parameters<TidyApi['enter']>[0][number]`. |
 | `ImagePlaceholderApi` | Extension API | The `imagePlaceholders` member's type, the optimistic-placeholder API from the preceding table. |
 | `FormatKind` | Extension API | The `format` member's parameter type, the selection-transform name union. |
 

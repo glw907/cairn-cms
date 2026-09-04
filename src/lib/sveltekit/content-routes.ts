@@ -20,6 +20,7 @@ import type { ContentRoutesConfig } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
 import { createShellActions } from './content-routes-shell.js';
 import { createListActions } from './content-routes-list.js';
+import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
@@ -56,6 +57,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const shell = createShellActions(ctx);
   const list = createListActions(ctx);
   const core = createCoreActions(ctx);
+  const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
   const settings = createSettingsActions(ctx);
@@ -80,8 +82,8 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     deleteAction: core.deleteAction,
     listDeleteAction: core.listDeleteAction,
     renameAction: core.renameAction,
-    previewMintAction: core.previewMintAction,
-    previewRevokeAction: core.previewRevokeAction,
+    previewMintAction: preview.previewMintAction,
+    previewRevokeAction: preview.previewRevokeAction,
     revertAction: core.revertAction,
     uploadAction: media.uploadAction,
     mediaLibraryUploadAction: media.mediaLibraryUploadAction,

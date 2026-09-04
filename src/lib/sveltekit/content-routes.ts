@@ -6,8 +6,11 @@
 // This module is the composition root: `createContentRoutesInternal` builds the shared
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
 // factories (content-routes-shell.ts, -list.ts, -entry.ts, -preview.ts, -media.ts, -tidy.ts,
-// -settings.ts, -dictionary.ts) into the one returned object. Every type this file used to declare
-// inline now lives with the domain that owns it and is re-exported here, so every existing
+// -settings.ts, -dictionary.ts) into the one returned object. content-routes-shared.ts is not one
+// of those factories, only the primitives several of them import (concept and entry-id resolution,
+// the flattened action-failure shape); this file re-exports its `ContentFormFailure` type below
+// alongside the domain types. Every type this file used to declare inline now lives with the
+// domain that owns it and is re-exported here, so every existing
 // importer (the public `/sveltekit` barrel and the admin components that import this file
 // directly) sees the same names at the same path.
 //

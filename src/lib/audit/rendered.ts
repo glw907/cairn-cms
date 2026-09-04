@@ -2,12 +2,15 @@
 // and turn what rules find into the same AuditReport shape the static runner produces. This file
 // holds `runRendered` itself, the loop over every configured page, both themes, and each needed
 // interaction state, plus the redirect-trap refusal only that loop can raise. The rest of the
-// rendered contract lives in ./rendered/ and is re-exported below, so every importer keeps seeing
-// one path: the rule model and the Playwright surface a rule reads from in types.ts, the BASE_URL
-// and Playwright-presence checks in bootstrap.ts, the page+selector+reason allowlist with its
-// staleness check in findings.ts, and in identity.ts the post-hydration page-identity guard that
-// refuses a page whose settled DOM no longer matches what its server response carried, rather than
-// silently measuring whatever it swapped into.
+// rendered contract lives in ./rendered/: the rule model and the Playwright surface a rule reads
+// from in types.ts, the BASE_URL and Playwright-presence checks in bootstrap.ts, the
+// page+selector+reason allowlist with its staleness check in findings.ts, the interaction-state
+// and color-probing surface a rule reads from in page-surface.ts, and in identity.ts the
+// post-hydration page-identity guard that refuses a page whose settled DOM no longer matches what
+// its server response carried, rather than silently measuring whatever it swapped into. What is
+// re-exported below is only the subset an importer outside this file and ./rendered/ actually
+// reaches through this path; everything else in ./rendered/ is imported directly by its own
+// siblings and stays there.
 //
 // One rule the whole harness holds, load-bearing: it never starts a server. BASE_URL (default
 // http://localhost:4173) has to already answer, or the run fails naming the URL it tried. The
@@ -59,20 +62,8 @@ export type {
   ResolvedRenderedFinding,
   Theme,
 } from './rendered/types.js';
-export {
-  deadFinding,
-  identityRefusedFinding,
-  pageIdentityMismatchFinding,
-  positionless,
-  resolveRenderedFindings,
-  staleFinding,
-  stateUnreachableFinding,
-  SURFACED_UNREACHED_STATES,
-  toFinding,
-  unprobeableFinding,
-  unreachedStateFinding,
-} from './rendered/findings.js';
-export { capturePageIdentity, captureSsrIdentity, identitiesMatch, waitForHydrationSettle } from './rendered/identity.js';
+export { resolveRenderedFindings } from './rendered/findings.js';
+export { capturePageIdentity, waitForHydrationSettle } from './rendered/identity.js';
 export { DEFAULT_BASE_URL, resolveBaseUrl, resolveExtraCookies } from './rendered/bootstrap.js';
 export { applyState, ensurePageHelpers, resolveColors } from './rendered/page-surface.js';
 

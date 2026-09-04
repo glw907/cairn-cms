@@ -55,12 +55,13 @@ export async function seedMedia(
 
   for (const item of items) {
     try {
+      // r2Key validates hash and ext before any network call or byte is written:
+      // normalizeManifest already screens the manifest for this shape, but a hostile item
+      // reaching this loop by some other path must still be refused before deps.fetch ever
+      // runs, not merely before deps.writeTempFile.
+      const key = r2Key(item.hash, item.ext);
       const res = await deps.fetch(downloadUrl(from, item), { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // r2Key validates hash and ext before any byte is written: normalizeManifest already
-      // screens the manifest for this shape, but a hostile item reaching this loop by some
-      // other path must still be refused before deps.writeTempFile ever runs, not after.
-      const key = r2Key(item.hash, item.ext);
       const bytes = new Uint8Array(await res.arrayBuffer());
       const file = deps.writeTempFile(`${item.hash}.${item.ext}`, bytes);
       deps.putObject(bucket, key, file, contentTypeForExt(item.ext));

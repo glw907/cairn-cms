@@ -68,12 +68,22 @@ export interface SeedItem {
 }
 
 /**
+ * The shape `slugifyFilename` (`media/naming.ts`) always produces: lowercase alphanumeric runs
+ *  joined by single internal hyphens, no leading or trailing hyphen. `hash` and `ext` are
+ *  screened against `r2Key`'s own grammar; `slug` carries no such check downstream, so it is the
+ *  one field a hostile manifest could otherwise smuggle unscreened into the download URL and the
+ *  failure line printed for it.
+ */
+const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
  * Normalize a parsed `media.json` body (or `null` for a missing file) into the rows this tool
- *  seeds. A row missing `slug`, `hash`, or `ext`, or whose `hash`/`ext` does not satisfy the
- *  same shape `r2Key` requires (`HASH_RE`/`R2_EXT_RE`, `media/naming.ts`), is dropped rather
- *  than failing the whole run, the same per-item tolerance the sync loop itself uses. This is
- *  the earliest choke point: a hostile row (a `hash` or `ext` carrying path-traversal
- *  segments) never reaches the write loop at all.
+ *  seeds. A row missing `slug`, `hash`, or `ext`, whose `slug` does not satisfy the shape
+ *  `slugifyFilename` produces (`SLUG_RE`), or whose `hash`/`ext` does not satisfy the same shape
+ *  `r2Key` requires (`HASH_RE`/`R2_EXT_RE`, `media/naming.ts`), is dropped rather than failing
+ *  the whole run, the same per-item tolerance the sync loop itself uses. This is the earliest
+ *  choke point: a hostile row (a `slug`, `hash`, or `ext` carrying path-traversal segments)
+ *  never reaches the write loop at all.
  */
 export function normalizeManifest(json: unknown): SeedItem[] {
   const manifest = parseMediaManifest(json);
@@ -84,6 +94,7 @@ export function normalizeManifest(json: unknown): SeedItem[] {
       typeof slug === 'string' &&
       typeof hash === 'string' &&
       typeof ext === 'string' &&
+      SLUG_RE.test(slug) &&
       HASH_RE.test(hash) &&
       R2_EXT_RE.test(ext)
     ) {
@@ -91,6 +102,16 @@ export function normalizeManifest(json: unknown): SeedItem[] {
     }
   }
   return items;
+}
+
+/**
+ * Strip C0 control characters and DEL from `s`. Defense in depth for the one printed value the
+ *  bin's failure line carries, a `SeedFailure`'s `slug`: `normalizeManifest` already screens
+ *  every slug it produces against `SLUG_RE`, so this only matters for a caller that reaches the
+ *  print path some other way.
+ */
+export function stripControlChars(s: string): string {
+  return s.replace(/[\x00-\x1f\x7f]/g, '');
 }
 
 /**

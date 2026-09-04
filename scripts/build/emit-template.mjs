@@ -99,6 +99,18 @@ export function isExcluded(rel, exclude) {
 }
 
 /**
+ * True when rel's basename is a local dev-secrets file or a stray build log, at any depth, so
+ * neither has to be named per directory the way alwaysSkip's top-level entries are. Proven gap:
+ * the getting-started docs tell a developer to put GITHUB_APP_PRIVATE_KEY_B64 in `.dev.vars`, and
+ * a stray `showcase-build.log` rode into an emitted tree during review.
+ * @param {string} rel
+ */
+export function isAlwaysSkippedPath(rel) {
+  const base = rel.split(path.sep).pop() ?? rel;
+  return base === '.dev.vars' || base.startsWith('.dev.vars.') || base.endsWith('.log');
+}
+
+/**
  * Emit the template tree.
  * @param {{ from: string, to: string, engineSpec: string, devSpec: string, name?: string }} opts
  *  `from` is the showcase dir, `to` the target dir (must not exist or be empty), and
@@ -109,7 +121,9 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
   const manifest = JSON.parse(await readFile(path.join(from, '.cairn-template.json'), 'utf8'));
   const exclude = manifest.exclude ?? [];
   // node_modules, the build outputs, and the wrangler/playwright caches are all gitignored generated
-  // artifacts; the manifest file itself is consumed by the emitter, not shipped.
+  // artifacts; the manifest file itself is consumed by the emitter, not shipped. These are matched
+  // by top-level name only; a local dev-secrets file or a stray build log can land at any depth, so
+  // isAlwaysSkippedPath matches those by basename instead, below.
   const alwaysSkip = ['node_modules', '.svelte-kit', 'build', '.wrangler', 'test-results', 'playwright-report', '.cairn-template.json'];
   await rm(to, { recursive: true, force: true });
   await mkdir(to, { recursive: true });
@@ -120,6 +134,7 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
       if (rel === '') return true;
       const top = rel.split(path.sep)[0];
       if (alwaysSkip.includes(top)) return false;
+      if (isAlwaysSkippedPath(rel)) return false;
       return !isExcluded(rel, exclude);
     },
   });

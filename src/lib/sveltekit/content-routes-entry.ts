@@ -4,9 +4,8 @@
 // (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every
 // sibling factory; the public createContentRoutes is a thin wrapper around that internal factory.
 //
-// The discard/delete/rename/revert quarter folded in here from content-routes-core.ts at
-// internals-B, which retired that file; a shim stays one line:
-// `export const load = routes.editLoad`.
+// Five of these eleven handlers (discardAction, deleteAction, listDeleteAction, renameAction,
+// revertAction) folded in here from content-routes-core.ts at internals-B, which retired that file.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';

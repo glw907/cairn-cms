@@ -18,6 +18,8 @@ import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesConfig } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
+import { createShellActions } from './content-routes-shell.js';
+import { createListActions } from './content-routes-list.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
@@ -25,15 +27,13 @@ import { createDictionaryActions } from './content-routes-dictionary.js';
 
 export type { ContentRoutesConfig, TidyClient, TidyEffort, AttentionItem } from './content-routes-context.js';
 
-export type {
-  AdminShellData,
-  EntrySummary,
-  ListData,
-  EditData,
-  HelpData,
-  WelcomeData,
-  ContentFormFailure,
-} from './content-routes-core.js';
+export type { AdminShellData, HelpData, WelcomeData } from './content-routes-shell.js';
+
+export type { EntrySummary, ListData } from './content-routes-list.js';
+
+export type { ContentFormFailure } from './content-routes-shared.js';
+
+export type { EditData } from './content-routes-core.js';
 
 export type {
   MediaLibraryData,
@@ -53,16 +53,18 @@ export type { DictionaryAddFailure } from './content-routes-dictionary.js';
  */
 export function createContentRoutesInternal(runtime: CairnRuntime, config: ContentRoutesConfig = {}) {
   const ctx = createContentRoutesContext(runtime, config);
+  const shell = createShellActions(ctx);
+  const list = createListActions(ctx);
   const core = createCoreActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
   const settings = createSettingsActions(ctx);
   const dictionary = createDictionaryActions(ctx);
   return {
-    shellLoad: core.shellLoad,
-    helpLoad: core.helpLoad,
-    indexLoad: core.indexLoad,
-    listLoad: core.listLoad,
+    shellLoad: shell.shellLoad,
+    helpLoad: shell.helpLoad,
+    indexLoad: shell.indexLoad,
+    listLoad: list.listLoad,
     mediaLibraryLoad: media.mediaLibraryLoad,
     settingsLoad: settings.settingsLoad,
     settingsSaveAction: settings.settingsSaveAction,

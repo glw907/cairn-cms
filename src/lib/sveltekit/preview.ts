@@ -16,6 +16,7 @@ import {
   type PreviewTokenRow,
 } from '../auth/preview-store.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
+import { isMissingTableError } from './content-routes-shared.js';
 import { requireDb } from '../env.js';
 import { CairnError } from '../diagnostics/index.js';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
@@ -264,15 +265,6 @@ type PreviewRejectedReason = 'unknown' | 'expired' | 'branch_gone' | 'row_invali
 function rejectPreview(reason: PreviewRejectedReason, fields: Record<string, unknown> = {}): never {
   log.warn('preview.rejected', { reason, ...fields });
   throw error(404, NOT_FOUND_MESSAGE);
-}
-
-/**
- * True for a D1 error whose message names a missing table (SQLite's own "no such table" text).
- *  Mirrors content-routes-core.ts's own local copy; the check is a two-line regex, not worth
- *  sharing across a module boundary for.
- */
-function isMissingTableError(err: unknown): boolean {
-  return /no such table/i.test(String(err));
 }
 
 /** Parse a committed media.json body, degrading a missing or corrupt file to null (an empty manifest). */

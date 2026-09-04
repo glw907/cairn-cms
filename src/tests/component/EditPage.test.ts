@@ -2459,6 +2459,102 @@ describe('EditPage', () => {
     expect(screen.container.querySelector<HTMLInputElement>('input[name="media"]')?.value).toBe('[]');
   });
 
+  // Task 12 (tidy-controller.svelte.ts, figure-editor.svelte.ts): each module owns its own
+  // entryKey-scoped reset now that its state no longer lives on the shell, so this proves the
+  // reset actually fires rather than relying on the {#key} remount to mask a stale value.
+  it("resets tidy-controller's refused-tidy message on an entry hop", async () => {
+    // tidyMessage is read by an `{#if}` INSIDE the {#key entryKey} block, so a remount alone
+    // would not prove much either way: if tidy-controller's own reset did not clear the flag, the
+    // freshly remounted `{#if tidyController.tidyMessage}` would immediately re-render the SAME
+    // "Tidy could not run" dialog for entry B, driven by the still-truthy leftover from entry A's
+    // refusal, without the author ever touching Tidy on entry B. Asserting it is gone catches that.
+    const body = '# Title\n\nA paragraph that is fine.';
+    const spy = vi.fn(async () => ({
+      type: 'basic',
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          type: 'success',
+          status: 200,
+          data: devalueStringify({
+            corrected: '## Title\n\nA paragraph that is fine.',
+            model: 'claude-sonnet-4-6',
+            usage: {},
+          }),
+        }),
+    }) as unknown as Response);
+    vi.stubGlobal('fetch', spy);
+    try {
+      const screen = await render(
+        EditPage,
+        postProps({
+          body,
+          tidy: {
+            enabled: true,
+            model: 'claude-sonnet-4-6',
+            conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+          },
+        }) as never,
+      );
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      const tidyButton = () =>
+        Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+          (b) => b.getAttribute('aria-label') === 'Tidy',
+        );
+      await expect.poll(() => tidyButton()).toBeTruthy();
+      tidyButton()!.click();
+      await expect.poll(() => document.querySelector('[data-testid="tidy-message"]'), { timeout: 8000 }).not.toBeNull();
+
+      // Hop to entry B on the same route (a {#key} remount, not a fresh mount) without ever
+      // dismissing entry A's message dialog.
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toBe('second body');
+      expect(screen.container.querySelector('[data-testid="tidy-message"]')).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("resets figure-editor's open-dialog prefill on an entry hop", async () => {
+    // The figure dialog's <h2> reads figureEditor.figurePrefill?.mode unconditionally (not gated
+    // behind figurePrefill's truthiness the way the form fields are), so a fresh remount's FIRST
+    // render still reflects a stale non-null prefill if figure-editor's own reset never ran, even
+    // though the {#key} block gives entry B a brand-new, closed <dialog> element.
+    const hash = '0123456789abcdef';
+    const screen = await render(
+      EditPage,
+      postProps({ body: `plain prose\n\n:::figure\n![A cat](media:cat.${hash})\n\nA caption.\n:::\n\ntail prose` }),
+    );
+    await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+    // EditPage always folds every component (including a figure directive) on mount, so the image
+    // line renders behind a fold pill until it is activated first (the same recipe the Edit-block
+    // suite's clickLine helper uses).
+    const pill = screen.container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+    if (pill) await userEvent.click(pill);
+    const line = await vi.waitFor(() =>
+      Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+        (l.textContent ?? '').includes('cat'),
+      ),
+    );
+    await userEvent.click(line!);
+    const figureButton = () =>
+      screen.container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"][aria-label*="figure" i]');
+    await expect.poll(() => figureButton()?.getAttribute('aria-label')).toBe('Edit the figure at the cursor');
+    figureButton()!.click();
+    await expect
+      .poll(() => screen.container.querySelector('#cairn-figure-dialog-title')?.textContent?.trim())
+      .toBe('Edit figure');
+
+    // Hop to entry B on the same route.
+    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body');
+    expect(screen.container.querySelector('#cairn-figure-dialog-title')?.textContent?.trim()).toBe('Wrap in a figure');
+  });
+
   it('lets a discard submission through the leave guard', async () => {
     // Capture the beforeunload handler the component registers (a real dispatch on window would
     // unload the test page), the recipe the beforeunload test above uses.

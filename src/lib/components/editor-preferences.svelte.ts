@@ -53,8 +53,10 @@ export function createEditorPreferences() {
     surface = posture;
     localStorage.setItem(surfaceStorageKey, posture);
   }
-  /** Flip zen and persist it. Carries no DOM read or focus move; the host composes those around
-   *  the call (see this module's doc comment). */
+  /**
+   * Flip zen and persist it. Carries no DOM read or focus move; the host composes those around
+   * the call (see this module's doc comment).
+   */
   function setZen(on: boolean) {
     zen = on;
     localStorage.setItem(zenStorageKey, String(on));

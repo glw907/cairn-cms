@@ -50,15 +50,10 @@ persistent "?" carries Markdown help, design-arc D2).
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import TidyReview from './TidyReview.svelte';
   import SparklesIcon from '@lucide/svelte/icons/sparkles';
-  import { validateTidy, TIDY_REJECTION_MESSAGE } from './tidy-validate.js';
-  import type { Change } from './tidy-diff.js';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import {
     findMediaImagesNeedingAlt,
     unwrapCairnLink,
-    unwrapFigure,
-    updateFigure,
-    wrapImageInFigure,
     type FigureAtImage,
     type FigureRole,
     type FormatKind,
@@ -81,6 +76,8 @@ persistent "?" carries Markdown help, design-arc D2).
   import { arbitrateChecked } from './spellcheck.js';
   import type { DiagnosticCounts } from './editor-diagnostics-announcer.js';
   import { createEditorPreferences } from './editor-preferences.svelte.js';
+  import { createTidyController } from './tidy-controller.svelte.js';
+  import { createFigureEditor } from './figure-editor.svelte.js';
   import ShareLinkPanel from './ShareLinkPanel.svelte';
 
   interface Props {
@@ -116,15 +113,15 @@ persistent "?" carries Markdown help, design-arc D2).
 
   let { data, registry, render, icons, form, previewMint = true, spellcheckOverride }: Props = $props();
 
+  // The entry this surface is editing (declared here, above every other reader, so a
+  // `.svelte.ts` module created anywhere below can close over a `getEntryKey` getter without
+  // depending on script order; the same value the entry-hop reset effect further down keys on).
+  const entryKey = $derived(data.conceptId + '/' + data.id);
+
   /** One action row in an advisory notice: an `href` row renders a link, an `onAct` row a button. */
   type AdvisoryRow = { rowLabel?: string; rowCode?: boolean; label: string; href?: string; onAct?: () => void };
   /** A notice ready to render: the server advisory and the client needs-alt notice both map to this. */
   type RenderNotice = { kind: string; message: string; detail?: string; rows: AdvisoryRow[] };
-
-  // The client-side tidy deadline (spec 2.1, Task 14): a slow call becomes a cancel/retry rather than a
-  // hung review. Set above the action's own 30s Worker deadline so the server's retryable fail lands
-  // first when the model is merely slow; this catches a stalled connection past that.
-  const TIDY_CLIENT_TIMEOUT_MS = 45_000;
 
   // The topbar context portal (CairnAdminShell owns the holder). The desk snippet below carries the
   // document's status and action clusters; this effect registers it into the band on mount and
@@ -369,20 +366,11 @@ persistent "?" carries Markdown help, design-arc D2).
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
   // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
-  // landing tab.
+  // landing tab. Preview is read-only, so the insert controls the page renders into the toolbar
+  // disable with the strip's own format buttons; `insertDisabled` below (declared after
+  // `tidyController` exists, since it also reads the module's own tidy-mode flag) is the shared
+  // derivation every insert control reads.
   let mode = $state<'write' | 'preview'>('write');
-  // Preview is read-only, so the insert controls the page renders into the toolbar disable with the
-  // strip's own format buttons. Declared here (above the Edit-block derivations that read it) so it
-  // is in scope before its first use.
-  // Tidy mode disables the toolbar and makes the surface read-only while a review is open. The host
-  // sets it when the review opens and clears it on apply or cancel. Declared here so the insert-disable
-  // derivation below can read it.
-  let tidyMode = $state(false);
-  // The tidy request in-flight flag, so the Tidy control reads busy while a call runs.
-  let tidyBusy = $state(false);
-  // The insert controls disable in Preview (read-only) and while a tidy review is open (the author
-  // cannot edit underneath a pending review, the same posture Preview takes).
-  const insertDisabled = $derived(mode === 'preview' || tidyMode);
   let previewHtml = $state('');
   // True after a render call threw, so the preview pane can say so instead of going blank.
   let previewFailed = $state(false);
@@ -563,184 +551,44 @@ persistent "?" carries Markdown help, design-arc D2).
     editor?.format(kind);
   }
 
-  // The tidy apply seam (EditorApi.tidy); the review surface drives the in-buffer decorations and
-  // the batched apply through it. Null until the editor mounts.
-  const tidyApi = $derived(editor?.tidy ?? null);
-  // The editor's undo; the Undo-tidy chip calls it.
-  function undoEditor() {
-    editor?.undo();
-  }
-  // The open review's data: the validated change set, the captured original it was diffed against, the
-  // scope, and the model. Null when no review is open. The diff positions index `tidyOriginal`, which
-  // for a selection tidy is the FULL document (the changes are offset back before they reach here).
-  let tidyReview = $state.raw<{ changes: Change[]; original: string; model: string } | null>(null);
-  // The error message a refused or failed tidy surfaces. The working state is cancelable through the
-  // AbortController; a validation rejection or an action failure lands here.
-  let tidyMessage = $state<string | null>(null);
-  // The no-op confirmation: a clean result (tidy found nothing to fix) shows "Nothing to fix" and never
-  // opens an empty review. Cleared on the next tidy run.
-  let tidyNoop = $state(false);
-  // The session-level "Undo tidy" affordance: surfaced right after Apply, dismissed on the next edit.
-  let tidyApplied = $state(false);
-  // The in-flight controller, for Cancel and the bounded client timeout.
-  let tidyController: AbortController | null = null;
+  // The tidy request/review/undo flow (spec 2.1, 2.5), out of this shell (tidy-controller.svelte.ts,
+  // Task 12): every read it needs is a getter, since `data` is replaced on a same-route entry hop and
+  // `editor`'s $state.raw grant would lose reactivity if passed by value.
+  const tidyController = createTidyController({
+    getEditor: () => editor,
+    getBody: () => body,
+    getEntryKey: () => entryKey,
+    getConceptId: () => data.conceptId,
+    getId: () => data.id,
+    getTidy: () => data.tidy,
+    getCsrf: () => csrf?.(),
+  });
+  // The insert controls disable in Preview (read-only) and while a tidy review is open (the author
+  // cannot edit underneath a pending review, the same posture Preview takes).
+  const insertDisabled = $derived(mode === 'preview' || tidyController.tidyMode);
 
   // The three tidy status dialogs (working, no-op, message). Each is promoted to the top layer with
   // showModal() the way TidyReview does, so the focus trap, Escape, and inert background come from the
   // platform. The $effect below opens each when its flag flips and closes it when the flag clears; the
-  // {#if} mounts the element, so the ref is set before the effect reads it.
+  // {#if} mounts the element, so the ref is set before the effect reads it. The dialog refs stay here
+  // (a `.svelte.ts` module has no template to bind:this into); tidyController owns only the flags.
   let tidyWorkingDialog = $state<HTMLDialogElement | null>(null);
   let tidyNoopDialog = $state<HTMLDialogElement | null>(null);
   let tidyMessageDialog = $state<HTMLDialogElement | null>(null);
   $effect(() => {
-    if (tidyBusy) tidyWorkingDialog?.showModal();
+    if (tidyController.tidyBusy) tidyWorkingDialog?.showModal();
   });
   $effect(() => {
-    if (tidyNoop) tidyNoopDialog?.showModal();
+    if (tidyController.tidyNoop) tidyNoopDialog?.showModal();
   });
   $effect(() => {
-    if (tidyMessage) tidyMessageDialog?.showModal();
+    if (tidyController.tidyMessage) tidyMessageDialog?.showModal();
   });
 
   // True when tidy is enabled for the site (the developer-tier master switch). Gates the Tidy control.
   // The optional chain mirrors the component's tolerance of a partial data load: a degraded load that
   // omits the tidy block simply reads disabled rather than throwing.
   const tidyEnabled = $derived(data.tidy?.enabled ?? false);
-
-  /** Run tidy (spec 2.1, Task 11) over the whole document or the current selection. The action receives
-   *  only the selected text plus a scope flag; the diff is computed against that text and the changes'
-   *  ranges are offset back into the full document before they reach the apply seam. On success the
-   *  result is validated as a proofread (Task 13); a rejection shows the honest message and writes
-   *  nothing; a clean result shows "Nothing to fix"; otherwise the review opens. */
-  async function runTidy() {
-    if (!tidyEnabled || tidyBusy || tidyMode) return;
-    tidyMessage = null;
-    tidyNoop = false;
-    tidyApplied = false;
-    // Scope: a non-empty selection tidies that range; otherwise the whole body. The offset is where the
-    // selected text begins in the full document, so the diff positions map back. The range seam carries
-    // the exact selection offsets, so a passage that repeats earlier in the body still maps the
-    // corrections onto the actually-selected occurrence. Fall back to the first textual match only when
-    // no range is available (offset 0 keeps document-scope tidy unchanged).
-    const selected = getSelection();
-    const range = getSelectionRange();
-    const useSelection = selected.length > 0;
-    let offset = 0;
-    if (range) {
-      offset = range.from;
-    } else if (useSelection) {
-      offset = Math.max(body.indexOf(selected), 0);
-    }
-    const text = useSelection ? selected : body;
-
-    tidyBusy = true;
-    tidyController = new AbortController();
-    // The bounded client timeout: a slow call becomes a cancel/retry rather than hanging the review.
-    const timer = setTimeout(() => tidyController?.abort(), TIDY_CLIENT_TIMEOUT_MS);
-    try {
-      const outcome = await postFormAction<{ corrected?: unknown; model?: unknown }>(
-        `/admin/${data.conceptId}/${data.id}?/tidy`,
-        {
-          method: 'POST',
-          redirect: 'manual',
-          headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-          body: JSON.stringify({ text, scope: useSelection ? 'selection' : 'document' }),
-          signal: tidyController.signal,
-        },
-      );
-      if (!outcome.ok) {
-        // An abort (Cancel or the client timeout) resolves through the round-trip helper's own
-        // fail-closed catch with no way to tell it apart from a genuine network failure; read the
-        // signal directly so Cancel stays silent instead of showing the generic retry message
-        // below. A response that was actually received (outcome.ok) is processed on its own merits
-        // below regardless of the flag, so a late-arriving success is never discarded.
-        if (tidyController.signal.aborted) {
-          tidyMessage = null;
-          return;
-        }
-        if (outcome.sessionExpired) {
-          tidyMessage = 'Your session expired. Sign in again to tidy.';
-          return;
-        }
-        const failure = outcome.data as { error?: unknown } | undefined;
-        tidyMessage =
-          typeof failure?.error === 'string' && failure.error !== 'csrf'
-            ? failure.error
-            : 'Tidy could not finish. Try again.';
-        return;
-      }
-      const corrected = typeof outcome.data.corrected === 'string' ? outcome.data.corrected : '';
-      const model = typeof outcome.data.model === 'string' ? outcome.data.model : data.tidy.model;
-      if (corrected.length === 0 || corrected === text) {
-        // A clean result: tidy found nothing to fix. Never open an empty review.
-        tidyNoop = true;
-        return;
-      }
-      // Validate the result as a proofread (Task 13). A rejection writes nothing and shows the message.
-      const validation = validateTidy(text, corrected);
-      if (!validation.ok) {
-        tidyMessage = TIDY_REJECTION_MESSAGE;
-        return;
-      }
-      if (validation.changes.length === 0) {
-        tidyNoop = true;
-        return;
-      }
-      // Offset the changes back into the full document (a selection tidy diffs the selected text). The
-      // captured original handed to the review is the full body, so every line label and context row is
-      // computed against the real document.
-      const changes: Change[] = validation.changes.map((c) => ({
-        ...c,
-        from: c.from + offset,
-        to: c.to + offset,
-      }));
-      tidyReview = { changes, original: body, model };
-      tidyMode = true;
-      tidyApi?.enter(changes);
-    } catch {
-      // A throw anywhere in the round trip or the success processing above (a parse failure
-      // unrelated to the network) must not escape as an unhandled rejection out of the untracked
-      // onclick call; fold it into the same retryable message a fetch failure shows.
-      tidyMessage = 'Tidy could not finish. Try again.';
-    } finally {
-      clearTimeout(timer);
-      tidyController = null;
-      tidyBusy = false;
-    }
-  }
-
-  /** Cancel an in-flight tidy: abort the request and clear the working state. The buffer is untouched. */
-  function cancelTidy() {
-    tidyController?.abort();
-    tidyBusy = false;
-    tidyMessage = null;
-  }
-
-  /** Close the review: clear tidy mode and the review data. On apply the "Undo tidy" affordance shows
-   *  until the next edit; on cancel nothing changed. */
-  function closeTidyReview(applied: boolean) {
-    tidyMode = false;
-    tidyReview = null;
-    tidyApplied = applied;
-    // Record the body the apply produced, so the next edit (a different body) dismisses the Undo chip.
-    tidyAppliedBody = applied ? body : null;
-  }
-  // The body snapshot right after Apply; the Undo-tidy chip dismisses once the body diverges from it.
-  let tidyAppliedBody = $state<string | null>(null);
-  $effect(() => {
-    const current = body;
-    if (tidyApplied && tidyAppliedBody !== null && current !== tidyAppliedBody) {
-      tidyApplied = false;
-      tidyAppliedBody = null;
-    }
-  });
-  // Undo the whole applied tidy in one move (ordinary editor Undo of the one batched transaction). The
-  // chip names it so the author knows the whole tidy is one move back.
-  function undoTidy() {
-    undoEditor();
-    tidyApplied = false;
-    tidyAppliedBody = null;
-  }
 
   // The media insert seams, populated from EditorApi on mount, mirroring the range holders above.
   // The popover drives the optimistic upload loop through them: the caret anchor, the focus
@@ -768,8 +616,8 @@ persistent "?" carries Markdown help, design-arc D2).
     cancel: () => {},
   };
 
-  // The editor object the popover drives, delegating through the holders so the latest registered
-  // function is always used (the holders start as no-ops and are replaced on mount).
+  // The editor object the popover drives, delegating through the single `editor` grant so it
+  // reads no-op or its declared default until a live grant exists, then the mounted instance.
   const editorApi = $derived({
     caretCoords: () => caretCoords(),
     focus: () => focus(),
@@ -853,35 +701,19 @@ persistent "?" carries Markdown help, design-arc D2).
   // writes source through the replaceRange seam. The figure dialog is mounted headless below.
   let mediaAtCaret = $state<FigureAtImage | null>(null);
   // The figure control's host <dialog>, opened by the toolbar control. Mounted outside the edit form
-  // (a form nested in a form is invalid HTML), the Edit-block dialog pattern.
+  // (a form nested in a form is invalid HTML), the Edit-block dialog pattern. Kept here, not in
+  // figure-editor.svelte.ts: a `.svelte.ts` module has no template to bind:this a native ref into.
   let figureDialog = $state<HTMLDialogElement | null>(null);
-  // Whether the Figure control is available: a media image sits at the caret and Preview is not
-  // showing (the insert controls disable together with the Write surface). The control is always
-  // rendered (it never mounts on caret move); only its enabled state changes.
-  const figureAvailable = $derived(mediaAtCaret != null && !insertDisabled);
-  // mediaAtCaret survives the tab switch the same way editable does (the Write pane stays mounted
-  // under Preview), so when the caret already sits on an image and Preview is the reason the
-  // control is unavailable, the fallback reason must say so rather than claim no image is there.
-  const figureLabel = $derived(
-    figureAvailable
-      ? mediaAtCaret?.figure
-        ? 'Edit the figure at the cursor'
-        : 'Wrap the image at the cursor in a figure'
-      : mediaAtCaret
-        ? mediaAtCaret.figure
-          ? 'Switch to Write to edit this figure'
-          : 'Switch to Write to wrap this image in a figure'
-        : 'Place the cursor on an image to add a figure',
-  );
-  // Whether the image at the caret is decorative (empty or whitespace-only alt). The token came from
-  // a parsed image node, so the alt is the source between `![` and the closing `]` before `](`. An
-  // empty alt is the needs-alt signal; the figure control surfaces it and the decorative-plus-caption
-  // warning. Derived from the reported token so it tracks the caret.
-  const figureDecorative = $derived.by(() => {
-    if (!mediaAtCaret) return false;
-    const token = body.slice(mediaAtCaret.imageFrom, mediaAtCaret.imageTo);
-    const match = /^!\[([\s\S]*?)\]\(/.exec(token);
-    return (match?.[1] ?? '').trim() === '';
+  // The Figure control's availability, label, decorative read, and open-dialog prefill (out of this
+  // shell, figure-editor.svelte.ts, Task 12). Writes reach the buffer through editor?.replaceRange/
+  // selectRange only; the module never touches figureDialog, so the shell wrappers below still own
+  // showModal()/close() around it.
+  const figureEditor = createFigureEditor({
+    getEditor: () => editor,
+    getMediaAtCaret: () => mediaAtCaret,
+    getBody: () => body,
+    getInsertDisabled: () => insertDisabled,
+    getEntryKey: () => entryKey,
   });
   // A def is actionable for guided edit when it has a schema (the same notion the insert catalog
   // lists by): a template-only def has no form to re-open into. Reuses the dialog's exported
@@ -976,65 +808,23 @@ persistent "?" carries Markdown help, design-arc D2).
     insertDialog?.editComponent(editable.def, values, editable.range);
   }
 
-  // The figure dialog's pre-fill, snapshotted when the control opens so the form never mixes a newer
-  // caret with the values it opened on. Captured from mediaAtCaret at open time: edit mode with the
-  // figure's caption/role when a figure wraps the image, else wrap mode with empty caption and the
-  // measure default. decorative rides the snapshot too. Null while the dialog is closed.
-  let figurePrefill = $state<{
-    mode: 'wrap' | 'edit';
-    caption: string;
-    role: FigureRole | null;
-    decorative: boolean;
-    image: { from: number; to: number };
-    figureRange: { from: number; to: number } | null;
-  } | null>(null);
-
-  // Open the figure control over the media image at the caret. Inert unless a media image sits there
-  // and the Write surface is up, the same gate the toolbar control shows. The snapshot is the source
-  // of truth for the apply handlers, so a caret move while the dialog is open never re-targets it.
+  // Open the figure control over the media image at the caret: prepare the prefill through
+  // figureEditor, then show the dialog it renders from. figureEditor never touches figureDialog
+  // itself (see its doc comment), so the shell composes the DOM call around the state prep, the
+  // same split setZen uses for its own DOM choreography.
   function openFigure() {
-    if (!figureAvailable || !mediaAtCaret) return;
-    const at = mediaAtCaret;
-    figurePrefill = {
-      mode: at.figure ? 'edit' : 'wrap',
-      caption: at.figure?.caption ?? '',
-      role: at.figure?.role ?? null,
-      decorative: figureDecorative,
-      image: { from: at.imageFrom, to: at.imageTo },
-      figureRange: at.figure ? { from: at.figure.from, to: at.figure.to } : null,
-    };
-    figureDialog?.showModal();
+    figureEditor.openFigure();
+    if (figureEditor.figurePrefill) figureDialog?.showModal();
   }
-
-  // Apply the control's choice through the replaceRange seam, then close. Wrap a bare image or update
-  // an existing figure, off the snapshot the dialog opened on. The pure transform owns the source
-  // shape and keeps the media token byte-intact; the preview stays read-only.
+  // Apply the control's choice, then close: figureEditor writes through the editor seam, the shell
+  // closes the dialog (its native `close` event then clears the prefill through onclose below).
   function applyFigure(choice: { caption: string; role: FigureRole | null }) {
-    const pre = figurePrefill;
-    if (!pre) return;
-    const result =
-      pre.mode === 'edit' && pre.figureRange
-        ? updateFigure(body, pre.figureRange, choice.caption, choice.role)
-        : wrapImageInFigure(body, pre.image.from, pre.image.to, choice.caption, choice.role);
-    writeFigureResult(result);
+    figureEditor.applyFigure(choice);
+    figureDialog?.close();
   }
-
-  // Unwrap the figure back to its bare image, then close. Edit mode only (the snapshot carries the
-  // figure range). The bare image token is restored verbatim by the pure transform.
+  // Unwrap the figure back to its bare image, then close, the same split as applyFigure.
   function unwrapFigureAction() {
-    const pre = figurePrefill;
-    if (!pre || !pre.figureRange) return;
-    writeFigureResult(unwrapFigure(body, pre.figureRange));
-  }
-
-  // Write a figure transform's result back to the editor: overwrite the whole doc through the
-  // replaceRange seam, then place the selection the transform chose (the seam alone drops the caret
-  // at the end). replaceRange dispatches the doc change and focuses the surface; selectRange then
-  // dispatches a selection-only transaction, which CodeMirror's history does not record as its own
-  // undoable event, so one undo reverts the whole figure write. Close the dialog last.
-  function writeFigureResult(result: { doc: string; from: number; to: number }) {
-    replaceRange(0, body.length, result.doc);
-    selectRange(result.from, result.to);
+    figureEditor.unwrapFigureAction();
     figureDialog?.close();
   }
 
@@ -1216,14 +1006,13 @@ persistent "?" carries Markdown help, design-arc D2).
     form?.error && !form.brokenLinks?.length && !form.inboundLinks?.length ? form.error : '',
   );
 
-  // The entry this surface is editing. SvelteKit reuses the page component across a same-route
-  // navigation (the delete-refused and broken-link banners link entry to entry), so the per-entry
-  // state seeded at init would survive the hop and show entry A's body over entry B's data with
-  // the dirty indicator armed. When the identity changes, re-seed the state here; the {#key}
-  // block around the template remounts the DOM to match (CodeMirror with its undo history, the
+  // SvelteKit reuses the page component across a same-route navigation (the delete-refused and
+  // broken-link banners link entry to entry), so the per-entry state seeded at init would survive
+  // the hop and show entry A's body over entry B's data with the dirty indicator armed. When
+  // entryKey (declared above, near the props) changes, re-seed the state here; the {#key} block
+  // around the template remounts the DOM to match (CodeMirror with its undo history, the
   // uncontrolled sidebar fields, any open dialog). The leave guard still protects the hop:
   // beforeNavigate runs before the navigation completes, so it reads the old dirty value.
-  const entryKey = $derived(data.conceptId + '/' + data.id);
   let seededKey = untrack(() => entryKey);
   $effect.pre(() => {
     const key = entryKey;
@@ -1248,7 +1037,9 @@ persistent "?" carries Markdown help, design-arc D2).
       // save action's read of it): uploadedRecords is per-entry content, not chrome.
       uploadedRecords = [];
       // ShareLinkPanel owns its own share/revoke state and mounts inside the {#key} block below,
-      // so an entry hop clears it by remount, not by an explicit reset here.
+      // so an entry hop clears it by remount, not by an explicit reset here. tidyController and
+      // figureEditor (both born once, not remounted) own their own entry-key-scoped resets
+      // internally instead, keyed on this same entryKey through their getEntryKey getter.
       // The one EditorApi holder: the {#key} block this reset backs remounts MarkdownEditor
       // itself, destroying the outgoing entry's CodeMirror view. Nulling it here covers the
       // ordinary case; MarkdownEditor's own identity-guarded null delivery on destroy (see
@@ -1264,19 +1055,21 @@ persistent "?" carries Markdown help, design-arc D2).
   // Reset-exempt $state/$state.raw names (verified against this file 2026-09-04): a name here is
   // a deliberate decision the source-enumeration test below treats as accounted for, not a name
   // the reset above silently drops. Three groups: (1) bind:this DOM/component refs, which Svelte
-  // nulls out itself when the {#key} remount destroys the bound node; (2) state that moves out of
-  // EditPage entirely in a later task, owning its own entry-key reset there (Task 12's
-  // tidy-controller.svelte.ts and figure-editor.svelte.ts, Task 13's DetailsPanel.svelte); and (3)
-  // transient UI-only state that is never entry content, either re-reporting itself once the new
-  // editor mounts (a caret position, a diagnostics count, a per-field needs-alt flag) or never
-  // entry-scoped to begin with (a viewport-width match, a preview device pick, a menu's open flag,
-  // an announcer nonce).
+  // nulls out itself when the {#key} remount destroys the bound node (tidyWorkingDialog,
+  // tidyNoopDialog, tidyMessageDialog, and figureDialog are this group: the tidy and figure STATE
+  // that used to sit beside them moved fully into tidy-controller.svelte.ts and
+  // figure-editor.svelte.ts, Task 12, each owning its own entry-key-scoped reset there, so their
+  // names no longer appear in this file's declared list at all); (2) state that moves out of
+  // EditPage entirely in a later task, owning its own entry-key reset there (Task 13's
+  // DetailsPanel.svelte); and (3) transient UI-only state that is never entry content, either
+  // re-reporting itself once the new editor mounts (a caret position, a diagnostics count, a
+  // per-field needs-alt flag) or never entry-scoped to begin with (a viewport-width match, a
+  // preview device pick, a menu's open flag, an announcer nonce).
   //
   // RESET_EXEMPT: editForm, publishButton, discardDialog, editorCard, actionsMenu, detailsTrigger,
   // detailsClose, mediaPopover, webLinkDialog, linkPicker, fragmentPicker, insertDialog,
   // deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
-  // tidyNoopDialog, tidyMessageDialog, tidyMode, tidyBusy, tidyReview, tidyMessage, tidyNoop,
-  // tidyApplied, tidyAppliedBody, editable, editReason, figurePrefill, heroFieldRefs,
+  // tidyNoopDialog, tidyMessageDialog, editable, editReason, heroFieldRefs,
   // heroNeedsAlt, caretComponent, mediaAtCaret, actionsOpen, narrow, device, assertiveNonce,
   // diagnosticsCounts
 
@@ -1623,13 +1416,13 @@ persistent "?" carries Markdown help, design-arc D2).
           {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
           <span>{saveState}</span>
         </span>
-        {#if tidyApplied}
+        {#if tidyController.tidyApplied}
           <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
                edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
                chip names it so the author knows the whole tidy is one move back. -->
           <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 type-meta text-muted" data-testid="tidy-undo-chip">
             <span class="inline-flex items-center gap-1 font-semibold cairn-text-success">Tidy applied</span>
-            <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
+            <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={tidyController.undoTidy}>Undo tidy</button>
           </span>
         {/if}
       </div>
@@ -2121,8 +1914,8 @@ persistent "?" carries Markdown help, design-arc D2).
               class="btn btn-sm btn-ghost gap-1.5"
               aria-label="Tidy"
               title="Tidy: a light copy-edit you review before accepting"
-              disabled={insertDisabled || tidyBusy}
-              onclick={runTidy}
+              disabled={insertDisabled || tidyController.tidyBusy}
+              onclick={tidyController.runTidy}
             >
               <SparklesIcon class="h-4 w-4" aria-hidden="true" />Tidy
             </button>
@@ -2141,11 +1934,11 @@ persistent "?" carries Markdown help, design-arc D2).
           <button
             type="button"
             class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-            class:cursor-not-allowed={!figureAvailable}
+            class:cursor-not-allowed={!figureEditor.figureAvailable}
             aria-haspopup="dialog"
-            aria-label={figureLabel}
-            title={figureLabel}
-            aria-disabled={!figureAvailable}
+            aria-label={figureEditor.figureLabel}
+            title={figureEditor.figureLabel}
+            aria-disabled={!figureEditor.figureAvailable}
             onclick={openFigure}
           >
             <ImageIcon class="h-4 w-4" aria-hidden="true" />
@@ -2192,7 +1985,7 @@ persistent "?" carries Markdown help, design-arc D2).
           registerEditor={bindEditorGrant()}
           onComponentAtCaret={(info) => (caretComponent = info)}
           onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
-          {tidyMode}
+          tidyMode={tidyController.tidyMode}
           onImageIngest={(file) => mediaPopover?.open('capture', file)}
           onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}
@@ -2586,31 +2379,31 @@ persistent "?" carries Markdown help, design-arc D2).
 
 <!-- The figure control's host dialog, mounted headless outside the edit form (the control holds its
      own <form>). The toolbar Figure control opens it through openFigure(), pre-filled from the caret
-     snapshot. The control is keyed on figurePrefill so it remounts fresh per open, seeding its fields
-     from the new caption/role. The native <dialog> gives the focus trap and Escape for free, and the
-     close event (the X, the backdrop, Escape, and the apply path all fire it) clears the snapshot so
-     the host state matches the closed dialog. -->
+     snapshot. The control is keyed on figureEditor.figurePrefill so it remounts fresh per open,
+     seeding its fields from the new caption/role. The native <dialog> gives the focus trap and Escape
+     for free, and the close event (the X, the backdrop, Escape, and the apply path all fire it) clears
+     the snapshot so the host state matches the closed dialog. -->
 <dialog
   class="modal"
   aria-labelledby="cairn-figure-dialog-title"
   bind:this={figureDialog}
-  onclose={() => (figurePrefill = null)}
+  onclose={() => figureEditor.closePrefill()}
 >
   <div class="modal-box max-w-sm">
     <div class="mb-3 flex items-center justify-between">
       <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
         <ImageIcon class="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
-        {figurePrefill?.mode === 'edit' ? 'Edit figure' : 'Wrap in a figure'}
+        {figureEditor.figurePrefill?.mode === 'edit' ? 'Edit figure' : 'Wrap in a figure'}
       </h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => figureDialog?.close()}>✕</button>
     </div>
-    {#if figurePrefill}
-      {#key figurePrefill}
+    {#if figureEditor.figurePrefill}
+      {#key figureEditor.figurePrefill}
         <MediaFigureControl
-          caption={figurePrefill.caption}
-          role={figurePrefill.role}
-          mode={figurePrefill.mode}
-          decorative={figurePrefill.decorative}
+          caption={figureEditor.figurePrefill.caption}
+          role={figureEditor.figurePrefill.role}
+          mode={figureEditor.figurePrefill.mode}
+          decorative={figureEditor.figurePrefill.decorative}
           onapply={applyFigure}
           onunwrap={unwrapFigureAction}
         />
@@ -2639,29 +2432,29 @@ persistent "?" carries Markdown help, design-arc D2).
 
 <!-- The tidy review surface (spec 2.5). Mounted only while a review is open, keyed by the validated
      change set so a fresh review remounts. It drives the in-buffer decorations and the batched apply
-     through tidyApi; the host clears tidy mode on close. -->
-{#if tidyReview && tidyApi}
+     through tidyController.tidyApi; the host clears tidy mode on close. -->
+{#if tidyController.tidyReview && tidyController.tidyApi}
   <TidyReview
-    changes={tidyReview.changes}
-    original={tidyReview.original}
+    changes={tidyController.tidyReview.changes}
+    original={tidyController.tidyReview.original}
     conventions={data.tidy.conventions}
-    model={tidyReview.model}
+    model={tidyController.tidyReview.model}
     title={data.title}
-    api={tidyApi}
-    onclose={closeTidyReview}
+    api={tidyController.tidyApi}
+    onclose={tidyController.closeTidyReview}
     onshow={(from, to) => selectRange(from, to)}
   />
 {/if}
 
 <!-- The tidy working state: a cancelable dialog wired to the real abort (Task 11's AbortController
      plus the bounded client timeout). Shown while the model call is in flight. -->
-{#if tidyBusy}
+{#if tidyController.tidyBusy}
   <dialog
     class="modal"
     aria-labelledby="cairn-tidy-working-title"
     data-testid="tidy-working"
     bind:this={tidyWorkingDialog}
-    onclose={cancelTidy}
+    onclose={tidyController.cancelTidy}
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
@@ -2675,13 +2468,13 @@ persistent "?" carries Markdown help, design-arc D2).
 {/if}
 
 <!-- The no-op confirmation: tidy found nothing to fix. Quiet, never an empty review. -->
-{#if tidyNoop}
+{#if tidyController.tidyNoop}
   <dialog
     class="modal"
     aria-labelledby="cairn-tidy-noop-title"
     data-testid="tidy-noop"
     bind:this={tidyNoopDialog}
-    onclose={() => (tidyNoop = false)}
+    onclose={() => tidyController.dismissNoop()}
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <h2 id="cairn-tidy-noop-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Nothing to fix</h2>
@@ -2692,17 +2485,17 @@ persistent "?" carries Markdown help, design-arc D2).
 {/if}
 
 <!-- A refused, failed, or rejected tidy: the honest message; the document is unchanged. -->
-{#if tidyMessage}
+{#if tidyController.tidyMessage}
   <dialog
     class="modal"
     aria-labelledby="cairn-tidy-message-title"
     data-testid="tidy-message"
     bind:this={tidyMessageDialog}
-    onclose={() => (tidyMessage = null)}
+    onclose={() => tidyController.dismissMessage()}
   >
     <div class="modal-box flex flex-col gap-3">
       <h2 id="cairn-tidy-message-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy could not run</h2>
-      <p class="type-body text-muted">{tidyMessage}</p>
+      <p class="type-body text-muted">{tidyController.tidyMessage}</p>
       <div class="flex justify-end">
         <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyMessageDialog?.close()}>Close</button>
       </div>

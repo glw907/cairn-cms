@@ -972,7 +972,7 @@ Swapping the editor stays a one-file change.
     themeObserver?.disconnect();
     view?.destroy();
     // Revoke the grant unconditionally, even when this instance never reached the mount branch
-    // below (an SSR teardown, or a remount superseded before its own dynamic imports resolved):
+    // above (an SSR teardown, or a remount superseded before its own dynamic imports resolved):
     // a host holding no grant from this instance treats the null as a no-op, per the identity
     // guard documented on the prop above.
     registerEditor?.(null);

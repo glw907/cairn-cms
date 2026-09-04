@@ -42,8 +42,10 @@ describe('FieldInput image arm hero-ref registration', () => {
   // bind:this must stay LOCAL to this component and register itself out through a callback,
   // never mutate a Record prop drilled in from two components up. Svelte's dev-mode
   // ownership_invalid_mutation warning is the observable symptom of getting that wrong; the
-  // harness reproduces the real shape (a `$state`-owned Record passed down), since a plain
-  // object literal (this file's own `shared()`) never trips the ownership check.
+  // harness mounts the image arm through the same registerHeroField callback contract
+  // DetailsPanel uses and asserts the mount logs no such warning. A plain object literal
+  // (this file's own `shared()`) never trips the ownership check, which is why this case
+  // needs the harness rather than a direct render() call.
   it('logs no ownership_invalid_mutation warning when an image field mounts', async () => {
     const warnings: string[] = [];
     const spy = vi.spyOn(console, 'warn').mockImplementation((...args) => {

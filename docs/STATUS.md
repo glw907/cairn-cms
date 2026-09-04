@@ -19,23 +19,19 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**IN FLIGHT (2026-09-04, checkpoint 1 at four tasks): internals-C phase 1 ran** as workflow
-`wf_b71738d3-4f1` (chain-aware `pass-execute-chains.js`, three chains in parallel worktrees
-off `internals-c`; spend 1.57M of the 6.5M ceiling). Ledger: Task 1 ACCEPTED (`d1a0b6a5` on
-`internals-c-chain-q`; a tidy-up commit for three non-blocking findings follows). Task 9
-ACCEPTED after one fix round (`bd6d28c6` + `b3e9118f` on `internals-c-chain-t`). Task 5
-diff ACCEPTED (`67390b70` on `internals-c-chain-r`) but its gate timed out under three
-concurrent full suites, so 6a and 6b were deferred; the gate is rerunning on the idle
-machine and 6a then 6b follow on that chain. Task 8 ESCALATED (`a95c02c5` + `8f8e1940`
-on chain-t): the docs' `cairn.config.ts` location moved to `src/theme/` but four pages
-still import it from `src/lib`; conductor's call (2026-09-04): COMPLETE the migration with
-the scaffold's `$theme/cairn.config.js` spelling, fix dispatched. Lesson: three concurrent
-full gates on this 15 GB / 8-core machine produce load-induced timeouts (load average
-20-30); two is the ceiling. Remaining sequence: merge Q and T into `internals-c`; run
-Tasks 2, 3a, 3b, 4 sequentially in the `internals-c` worktree while chain R runs 6a and
-6b; merge R; then 6c, 7, 10 sequentially; then the pass-end ritual. If a cold session
-finds this line: inspect the chain branches and the run journal before re-dispatching;
-accepted commits merge, unfinished tasks re-run. Never let two writers share one worktree.
+**IN FLIGHT (2026-09-04, checkpoint 2): internals-C mid-pass.** Ledger: Tasks 1, 9, 8, 5
+ACCEPTED (Task 8 after an escalation decided by the conductor, complete the
+`cairn.config.ts` location migration on the scaffold's `$theme/cairn.config.js` spelling,
+plus two fix rounds; Task 5's gate re-proven green on an idle machine). Chains Q and T are
+MERGED into `internals-c` (`78af949d`, `724296c2`). Two workflow runs are live: chain R
+(`internals-c-chain-r`, run `wf_b02e967c-515`) runs 6a then 6b; the main worktree
+`internals-c` (run `wf_abf056a2-cb4`) runs 2, 3a, 3b, 4 sequentially. Then: merge R into
+`internals-c`; run 6c, 7, 10 sequentially there; pass-end ritual; push, PR, merge on green
+CI (authorized). Spend: 1.57M for phase 1 plus about 0.6M of fix and review dispatches, of
+the 6.5M ceiling. Lesson: three concurrent full gates on this 15 GB / 8-core machine cause
+load-induced timeouts; two is the ceiling. If a cold session finds this line: inspect the
+branches and both run journals before re-dispatching; accepted commits merge, unfinished
+tasks re-run. Never let two writers share one worktree.
 
 **Execute internals-C** (audit-remediation slice 7, coherence). The plan is
 `docs/superpowers/plans/2026-09-03-internals-c-pass.md`: 13 tasks, ceiling 6.5M, checkpoints

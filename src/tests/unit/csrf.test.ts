@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   isUnsafeFormRequest,
   originMatches,
@@ -171,6 +171,47 @@ describe('csrfSecure', () => {
       platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
     };
     expect(csrfSecure(event)).toBe(false);
+  });
+});
+
+// The Task 9 reconciliation: `csrfSecure` now consumes the shared `readPublicOrigin` reader
+// (dev-flag.ts) at platform depth only, so a `process.env.PUBLIC_ORIGIN` the runner's own shell
+// happens to export must never leak into this function's answer. Every case stubs
+// `PUBLIC_ORIGIN` on `process.env` so the suite stays deterministic regardless of the runner's
+// shell, and unstubs it afterward so the stub cannot leak into a sibling test file.
+describe('csrfSecure (platform-only depth; process.env must never leak in)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('platform-set PUBLIC_ORIGIN still decides, unchanged, with process.env also set', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'http://process-should-be-ignored.example');
+    const event = {
+      url: new URL('http://site.example/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
+    };
+    expect(csrfSecure(event)).toBe(true);
+  });
+
+  it('a process.env-only PUBLIC_ORIGIN (no platform value) does not flip csrfSecure', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'https://site.example');
+    const event = {
+      url: new URL('http://site.example/admin/login'),
+      platform: { env: {} },
+    };
+    // Platform depth only: with no platform-supplied origin, csrfSecure falls through to its own
+    // non-Secure default rather than consulting process.env, even though a bare `readPublicOrigin`
+    // dual read would have found the stubbed value.
+    expect(csrfSecure(event)).toBe(false);
+  });
+
+  it('the https short-circuit is unchanged with process.env set to an http origin', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'http://process-should-be-ignored.example');
+    const event = {
+      url: new URL('https://site.example/admin/login'),
+      platform: { env: {} },
+    };
+    expect(csrfSecure(event)).toBe(true);
   });
 });
 

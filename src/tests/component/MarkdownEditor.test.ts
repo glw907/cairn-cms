@@ -116,8 +116,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.insert).toBe('function');
@@ -132,8 +132,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.insertLink).toBe('function');
@@ -148,8 +148,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.format).toBe('function');
@@ -157,6 +157,75 @@ describe('MarkdownEditor', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('## start');
+  });
+
+  // Task 11 (the holder collapse): `registerEditor` now delivers `null` once, from the real
+  // `onDestroy` teardown, revoking the mount grant. A host holding one `editor` reference builds
+  // its own identity-guarded handler (EditPage's `bindEditorGrant`); these two tests pin the
+  // exact contract that pattern relies on, using the same recipe directly against real
+  // MarkdownEditor mounts so the guard is proven against the seam itself, not a stand-in.
+  describe('registerEditor null-delivery and identity-guarded revocation', () => {
+    // Mirrors EditPage's own `bindEditorGrant`: one closure per mount, remembering only the api it
+    // personally granted, nulling the shared holder only when that reference is still the one held.
+    function bindGrant(setHeld: (api: EditorApi | null) => void, getHeld: () => EditorApi | null) {
+      let granted: EditorApi | null = null;
+      return (api: EditorApi | null) => {
+        if (api) {
+          granted = api;
+          setHeld(api);
+        } else if (granted && getHeld() === granted) {
+          setHeld(null);
+        }
+      };
+    }
+
+    it('revokes the captured grant (nulls the held reference) on destroy, before a later mount registers', async () => {
+      let held: EditorApi | null = null;
+      const screen = await render(MarkdownEditor, {
+        value: 'start',
+        name: 'body',
+        registerEditor: bindGrant(
+          (api) => (held = api),
+          () => held,
+        ),
+      });
+      await expect.poll(() => held).not.toBeNull();
+      await screen.unmount();
+      expect(held).toBeNull();
+    });
+
+    it('does not let a stale destroy from a superseded mount clobber a newer live grant', async () => {
+      let held: EditorApi | null = null;
+      const setHeld = (api: EditorApi | null) => (held = api);
+      const getHeld = () => held;
+
+      // Mount A, wait for its grant.
+      const a = await render(MarkdownEditor, {
+        value: 'entry A',
+        name: 'body',
+        registerEditor: bindGrant(setHeld, getHeld),
+      });
+      await expect.poll(() => held).not.toBeNull();
+      const grantedByA = held;
+
+      // Mount B (a newer, unrelated instance) and wait for its own grant, superseding A's.
+      const b = await render(MarkdownEditor, {
+        value: 'entry B',
+        name: 'body',
+        registerEditor: bindGrant(setHeld, getHeld),
+      });
+      await expect.poll(() => held).not.toBe(grantedByA);
+      const grantedByB = held;
+
+      // A's destroy arrives after B's mount already registered (the out-of-order case the
+      // identity guard exists for): A's own bound closure only remembers apiA, so its null
+      // delivery must not touch the live apiB grant.
+      await a.unmount();
+      expect(held).toBe(grantedByB);
+
+      await b.unmount();
+      expect(held).toBeNull();
+    });
   });
 
   it('renders no toolbar of its own; the host strip owns the controls', async () => {
@@ -889,8 +958,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: FOLD_DOC,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
@@ -1293,8 +1362,8 @@ describe('MarkdownEditor', () => {
       onComponentAtCaret: (info) => {
         reports.push(info);
       },
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => lineWith(screen.container, 'body line')).toBeTruthy();
@@ -1322,8 +1391,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.replaceRange).toBe('function');
@@ -1342,8 +1411,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.selectRange).toBe('function');
@@ -1364,8 +1433,8 @@ describe('MarkdownEditor', () => {
     await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.selectRange).toBe('function');
@@ -1451,8 +1520,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.insertImage).toBe('function');

@@ -2363,12 +2363,12 @@ describe('EditPage', () => {
       .toBe('');
   });
 
-  // The entry-key reset re-seeds content state on remount, but the 13 EditorApi holders
-  // (insert, format, and the rest) are plain component state, untouched by that reset: between
-  // the {#key} remount and entry B's own MarkdownEditor completing its async registerEditor call
-  // (its onMount awaits a long chain of dynamic imports), every holder still points at entry A's
-  // DESTROYED CodeMirror view. A toolbar action clicked in that window must never reach entry A's
-  // dead view or leak its content into entry B's fresh body.
+  // The entry-key reset re-seeds content state on remount and nulls the one EditorApi holder
+  // (`editor`, Task 11's holder collapse), but between the {#key} remount and entry B's own
+  // MarkdownEditor completing its async registerEditor call (its onMount awaits a long chain of
+  // dynamic imports), a toolbar action clicked in that window must still never reach entry A's
+  // DESTROYED CodeMirror view or leak its content into entry B's fresh body: every consumer reads
+  // through `editor` with an optional chain, so a null holder makes the click a clean no-op.
   it('never lets a toolbar action reach the destroyed prior-entry editor during the remount gap', async () => {
     const screen = await render(EditPage, postProps({ body: 'first body' }));
     await makeDirty(screen);
@@ -2379,10 +2379,10 @@ describe('EditPage', () => {
     try {
       await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
       // Entry B's MarkdownEditor is now parked mid-onMount, awaiting the held spellcheck import,
-      // so registerEditor has not yet reassigned the 13 EditorApi holders away from entry A's.
-      // Pre-fix, `format` still points at entry A's DESTROYED CodeMirror view; post-fix, the
-      // entry-key reset cleared it back to a no-op, so the click below is inert either way it
-      // resolves, but must never throw or write entry A's content into entry B's body.
+      // so registerEditor has not yet delivered its grant: `editor` reads whatever the entry-key
+      // reset (or MarkdownEditor's own identity-guarded destroy revocation) left it as, null
+      // either way, so the click below is inert but must never throw or write entry A's content
+      // into entry B's body.
       const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]');
       expect(() => bold?.click()).not.toThrow();
     } finally {
@@ -2393,6 +2393,70 @@ describe('EditPage', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('second body');
+  });
+
+  // Task 11's measured defect: uploadedRecords was missing from the entry-key reset, so a
+  // same-route link hop carried entry A's accumulated upload records into entry B's save payload
+  // (the merged media library and the hidden `media` form field the save action reads).
+  it('never carries a prior entry\'s uploaded media records into the next entry\'s save payload', async () => {
+    const uploaded: MediaEntry = {
+      hash: 'a1b2c3d4e5f6a7b8',
+      sha256: 'f'.repeat(64),
+      slug: 'seaside',
+      displayName: 'Seaside',
+      originalFilename: 'seaside.png',
+      alt: 'A quiet shore',
+      ext: 'png',
+      contentType: 'image/png',
+      bytes: 256,
+      width: 8,
+      height: 8,
+      createdAt: '2026-06-16T00:00:00.000Z',
+    };
+    vi.mocked(ingest.ingestFile).mockResolvedValue({
+      blob: new Blob([new Uint8Array([1])], { type: 'image/png' }),
+      contentType: 'image/png',
+      width: 8,
+      height: 8,
+    });
+    vi.mocked(ingest.sendUpload).mockResolvedValue({
+      type: 'basic',
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          type: 'success',
+          status: 200,
+          data: devalueStringify({
+            reference: `media:${uploaded.slug}.${uploaded.hash}`,
+            record: uploaded,
+            reused: false,
+            mismatch: false,
+          }),
+        }),
+    } as unknown as Response);
+    const screen = await render(EditPage, postProps({ body: 'first body' }));
+
+    // Drive a real optimistic upload into entry A's uploadedRecords via the toolbar's Insert-media
+    // control, the same recipe the preview-resolution test above uses.
+    await screen.getByRole('button', { name: 'Insert image' }).first().click();
+    const file = new File([new Uint8Array([1])], 'seaside.png', { type: 'image/png' });
+    const fileInput = screen.container.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await screen.getByRole('radio', { name: /describ|write/i }).click();
+    await screen.getByRole('textbox', { name: /alt|description/i }).fill('A quiet shore');
+    const dialog = screen.container.querySelector('[role="dialog"]') as HTMLElement;
+    (dialog.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="media"]')?.value ?? '[]')
+      .not.toBe('[]');
+
+    // Hop to entry B on the same route (a {#key} remount, not a fresh mount). The save payload
+    // entry B would submit must carry none of entry A's records.
+    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body');
+    expect(screen.container.querySelector<HTMLInputElement>('input[name="media"]')?.value).toBe('[]');
   });
 
   it('lets a discard submission through the leave guard', async () => {

@@ -83,8 +83,12 @@ Swapping the editor stays a one-file change.
     /** The hidden field name the value is mirrored to for form submit. */
     name: string;
     /** Receives the buffer-scoped `EditorApi` once, on mount; the host drives every editor
-     *  capability (insert, selection, format, undo, tidy, image placeholders, ...) through it. */
-    registerEditor?: (api: EditorApi) => void;
+     *  capability (insert, selection, format, undo, tidy, image placeholders, ...) through it.
+     *  Delivers `null` once, from the real `onDestroy` teardown, revoking the grant: a host
+     *  holding one `editor` reference should null it out only when the revoked value is the one
+     *  it currently holds (a reference compare), since an out-of-order destroy from a superseded
+     *  `{#key}` instance must never clobber a newer, already-live grant. */
+    registerEditor?: (api: EditorApi | null) => void;
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
      *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
     completionSources?: import('@codemirror/autocomplete').CompletionSource[];
@@ -967,6 +971,11 @@ Swapping the editor stays a one-file change.
   onDestroy(() => {
     themeObserver?.disconnect();
     view?.destroy();
+    // Revoke the grant unconditionally, even when this instance never reached the mount branch
+    // below (an SSR teardown, or a remount superseded before its own dynamic imports resolved):
+    // a host holding no grant from this instance treats the null as a no-op, per the identity
+    // guard documented on the prop above.
+    registerEditor?.(null);
   });
 
   // Reconcile an externally reassigned `value` into the mounted editor. A no-op until `view` exists,

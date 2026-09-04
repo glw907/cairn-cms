@@ -615,7 +615,7 @@ wiring, [documented separately as `Unstable API`](#markdowneditor-wiring-props-u
 let { value = $bindable(), name, registerEditor, completionSources = [], focusMode = false, typewriter = false, surface = 'prose', spellcheck = true, spellcheckDictionary = 'dictionary-en-us.txt', siteDictionary = [] }: {
   value: string;
   name: string;
-  registerEditor?: (api: EditorApi) => void;
+  registerEditor?: (api: EditorApi | null) => void;
   completionSources?: CompletionSource[];
   focusMode?: boolean;
   typewriter?: boolean;
@@ -633,7 +633,11 @@ mirrors to for form submit. `registerEditor` hands the parent the buffer-scoped
 `EditorApi` once, on mount (its member grammar is below): every editor capability (insert, selection, format,
 undo, tidy, image placeholders, and the rest) is a member of that one object, which replaces the
 13 retired `register*` props (11 per-capability callbacks plus the two object grants,
-`registerTidy` and `registerImagePlaceholders`). `completionSources` wires generic CodeMirror
+`registerTidy` and `registerImagePlaceholders`). `registerEditor` also delivers `null` once, from
+the real `onDestroy` teardown, revoking the grant. A host holding one `editor` reference, rather
+than a capability per callback, should null it out only when the revoked value is the one it still
+holds, a reference compare, so an out-of-order destroy from a superseded `{#key}` instance never
+clobbers a newer, already-live grant. `completionSources` wires generic CodeMirror
 autocomplete, such as the internal-link source. `focusMode` fades every paragraph except the
 caret's, and `typewriter` keeps the caret line vertically centered while typing. `surface` picks
 the posture: `prose` (the default) sets a 72ch centered measure at a larger type step, `markup`

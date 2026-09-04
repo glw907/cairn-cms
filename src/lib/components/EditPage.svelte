@@ -34,7 +34,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
-  import MarkdownEditor from './MarkdownEditor.svelte';
+  import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
@@ -498,31 +498,78 @@ persistent "?" carries Markdown help, design-arc D2).
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
   const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
-  // The editor holders below are all populated from the one EditorApi registerEditor hands back on
-  // mount (the seam collapse, ruling 1; docs/internal/engine-rulings.md, `audit-admin-markdowneditor`);
-  // each stays a no-op (or null) until then, the same as when each had its own register* prop.
-  let insert = $state.raw<(text: string) => void>(() => {});
+  // The one holder for the buffer-scoped EditorApi registerEditor hands back on mount (the holder
+  // collapse; docs/internal/engine-rulings.md, `audit-admin-markdowneditor`). Null before the
+  // editor mounts and, identity-guarded, from the moment it is destroyed (see `bindEditorGrant`
+  // below and MarkdownEditor's `registerEditor` doc). Every consumer below reads through it with
+  // an optional chain, so each stays a no-op (or its declared default) until a live grant exists,
+  // the same as when each capability had its own `$state.raw` holder.
+  let editor = $state.raw<EditorApi | null>(null);
+
+  /** Builds one `registerEditor` handler for a single `MarkdownEditor` mount, so revocation stays
+   *  identity-guarded (spec Task 11): `{#key entryKey}` gives every mount its own fresh call to
+   *  this factory (proven non-reactive, so it runs exactly once per mount, never re-invoked for an
+   *  unrelated reactive update on the parent), and the closure it returns remembers only the api
+   *  reference IT granted. On mount it both records that reference and updates the shared holder;
+   *  on the matching destroy's `null` delivery it clears the holder only when `editor` is still
+   *  the exact reference this closure granted (a reference compare), so a stale destroy from a
+   *  superseded instance, arriving after a newer instance has already registered, no-ops instead
+   *  of clobbering the live grant. A destroy with no prior grant (SSR teardown, or a remount torn
+   *  down before its own async mount ever registered) also no-ops, since `granted` stays null. */
+  function bindEditorGrant(): (api: EditorApi | null) => void {
+    let granted: EditorApi | null = null;
+    return (api) => {
+      if (api) {
+        granted = api;
+        editor = api;
+      } else if (granted && editor === granted) {
+        editor = null;
+      }
+    };
+  }
+
+  function insert(text: string) {
+    editor?.insert(text);
+  }
   // The editor's range-replace seam; the dialog's Update routes through it to overwrite an edited
   // block's source span.
-  let replaceRange = $state.raw<(from: number, to: number, text: string) => void>(() => {});
+  function replaceRange(from: number, to: number, text: string) {
+    editor?.replaceRange(from, to, text);
+  }
   // The editor's select-range seam; the needs-alt notice's jump control routes through it to land
   // the author on an image that lacks alt.
-  let selectRange = $state.raw<(from: number, to: number) => void>(() => {});
-  let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
+  function selectRange(from: number, to: number) {
+    editor?.selectRange(from, to);
+  }
+  function insertLink(href: string, title: string) {
+    editor?.insertLink(href, title);
+  }
   // The editor's current selection; the web link dialog reads it for the Text field's default.
-  let getSelection = $state.raw<() => string>(() => '');
+  function getSelection(): string {
+    return editor?.getSelection() ?? '';
+  }
   // The editor's selection range; tidy reads it for the exact selected span's offset so a selection
   // tidy never maps onto an identical passage earlier in the document. Returns null when the
-  // selection is empty (a bare caret), which reads as document scope.
-  let getSelectionRange = $state.raw<() => { from: number; to: number } | null>(() => null);
+  // selection is empty (a bare caret), which reads as document scope. The `?? null` is load-bearing:
+  // a bare `editor?.getSelectionRange()` yields `undefined` while no editor is live, which the
+  // `if (range)` check below in `runTidy` would still treat as absent (falsy), but tidy's own scope
+  // math also reads `range.from` off it directly elsewhere, so the declared return type must stay
+  // the real `null`, never `undefined`.
+  function getSelectionRange(): { from: number; to: number } | null {
+    return editor?.getSelectionRange() ?? null;
+  }
   // The editor's selection transform.
-  let format = $state.raw<(kind: FormatKind) => void>(() => {});
+  function format(kind: FormatKind) {
+    editor?.format(kind);
+  }
 
   // The tidy apply seam (EditorApi.tidy); the review surface drives the in-buffer decorations and
   // the batched apply through it. Null until the editor mounts.
-  let tidyApi = $state.raw<import('./editor-tidy.js').TidyApi | null>(null);
+  const tidyApi = $derived(editor?.tidy ?? null);
   // The editor's undo; the Undo-tidy chip calls it.
-  let undoEditor = $state.raw<() => void>(() => {});
+  function undoEditor() {
+    editor?.undo();
+  }
   // The open review's data: the validated change set, the captured original it was diffed against, the
   // scope, and the model. Null when no review is open. The diff positions index `tidyOriginal`, which
   // for a selection tidy is the FULL document (the changes are offset back before they reach here).
@@ -701,12 +748,16 @@ persistent "?" carries Markdown help, design-arc D2).
   // api type is referenced inline (import('...').Type), never a static `import type ... from`, so
   // no static edge to the dynamically-imported editor-placeholder module sits in this component
   // (the editor-boundary test bars that edge by a textual `from` scan).
-  let caretCoords = $state.raw<() => { left: number; right: number; top: number; bottom: number } | null>(
-    () => null,
-  );
-  let focus = $state.raw<() => void>(() => {});
-  let placeholders = $state.raw<import('./editor-placeholder.js').ImagePlaceholderApi | null>(null);
-  let insertImageFn = $state.raw<(alt: string, ref: string) => void>(() => {});
+  function caretCoords(): { left: number; right: number; top: number; bottom: number } | null {
+    return editor?.caretCoords() ?? null;
+  }
+  function focus() {
+    editor?.focus();
+  }
+  const placeholders = $derived(editor?.imagePlaceholders ?? null);
+  function insertImageFn(alt: string, ref: string) {
+    editor?.insertImage(alt, ref);
+  }
 
   // A no-op placeholder api so the editor object handed to the popover is never null before the
   // editor registers its real one on mount.
@@ -1179,6 +1230,9 @@ persistent "?" carries Markdown help, design-arc D2).
     if (key === seededKey) return;
     seededKey = key;
     untrack(() => {
+      // RESET_BLOCK_START (src/tests/unit/edit-page-state-reset-coverage.test.ts parses this
+      // span's assignment targets against the RESET_EXEMPT list below; every shell $state /
+      // $state.raw name must appear in one list or the other).
       body = form?.body ?? data.body;
       saving = false;
       publishing = false;
@@ -1189,31 +1243,42 @@ persistent "?" carries Markdown help, design-arc D2).
       previewHtml = '';
       previewFailed = false;
       removedLinks = [];
+      // A same-route link hop otherwise carries entry A's accumulated upload records into entry
+      // B's save payload (:1400ish media-library merge, the hidden `media` form field, and the
+      // save action's read of it): uploadedRecords is per-entry content, not chrome.
+      uploadedRecords = [];
       // ShareLinkPanel owns its own share/revoke state and mounts inside the {#key} block below,
       // so an entry hop clears it by remount, not by an explicit reset here.
-      // The 13 EditorApi holders below: the {#key} block this reset backs remounts MarkdownEditor
-      // itself, destroying the outgoing entry's CodeMirror view, but these are plain component
-      // state, untouched by a DOM remount. Without this, every holder keeps pointing at the
-      // destroyed view between the remount and the incoming entry's own async registerEditor call
-      // (MarkdownEditor's onMount awaits a long chain of dynamic imports before it fires), so a
-      // toolbar action clicked in that window would reach dead state instead of doing nothing.
-      // Reset each back to its own declared no-op/null default (mirroring the `let ... = $state.raw(...)`
-      // initializers above), the same value it holds before any editor has ever registered.
-      insert = () => {};
-      replaceRange = () => {};
-      selectRange = () => {};
-      insertLink = () => {};
-      getSelection = () => '';
-      getSelectionRange = () => null;
-      format = () => {};
-      tidyApi = null;
-      undoEditor = () => {};
-      caretCoords = () => null;
-      focus = () => {};
-      placeholders = null;
-      insertImageFn = () => {};
+      // The one EditorApi holder: the {#key} block this reset backs remounts MarkdownEditor
+      // itself, destroying the outgoing entry's CodeMirror view. Nulling it here covers the
+      // ordinary case; MarkdownEditor's own identity-guarded null delivery on destroy (see
+      // `bindEditorGrant` below) is what closes the gap for the case this reset cannot see, a
+      // toolbar action clicked between this remount and the incoming entry's own async
+      // registerEditor call (MarkdownEditor's onMount awaits a long chain of dynamic imports
+      // before it fires).
+      editor = null;
+      // RESET_BLOCK_END
     });
   });
+
+  // Reset-exempt $state/$state.raw names (verified against this file 2026-09-04): a name here is
+  // a deliberate decision the source-enumeration test below treats as accounted for, not a name
+  // the reset above silently drops. Three groups: (1) bind:this DOM/component refs, which Svelte
+  // nulls out itself when the {#key} remount destroys the bound node; (2) state that moves out of
+  // EditPage entirely in a later task, owning its own entry-key reset there (Task 12's
+  // tidy-controller.svelte.ts and figure-editor.svelte.ts, Task 13's DetailsPanel.svelte); and (3)
+  // transient UI-only state that is never entry content, either re-reporting itself once the new
+  // editor mounts (a caret position, a diagnostics count, a per-field needs-alt flag) or never
+  // entry-scoped to begin with (a viewport-width match, a preview device pick, a menu's open flag,
+  // an announcer nonce).
+  //
+  // RESET_EXEMPT: editForm, publishButton, discardDialog, editorCard, actionsMenu, detailsTrigger,
+  // detailsClose, mediaPopover, webLinkDialog, linkPicker, fragmentPicker, insertDialog,
+  // deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
+  // tidyNoopDialog, tidyMessageDialog, tidyMode, tidyBusy, tidyReview, tidyMessage, tidyNoop,
+  // tidyApplied, tidyAppliedBody, editable, editReason, figurePrefill, heroFieldRefs,
+  // heroNeedsAlt, caretComponent, mediaAtCaret, actionsOpen, narrow, device, assertiveNonce,
+  // diagnosticsCounts
 
   // Reads one post-save redirect flag off the search string as a display list. page.url is
   // reactive kit state, so a client-side navigation that swaps the search string re-derives every
@@ -2124,21 +2189,7 @@ persistent "?" carries Markdown help, design-arc D2).
           bind:value={body}
           name="body"
           surface={prefs.surface}
-          registerEditor={(api) => {
-            insert = api.insert;
-            insertLink = api.insertLink;
-            getSelection = api.getSelection;
-            caretCoords = api.caretCoords;
-            focus = api.focus;
-            undoEditor = api.undo;
-            format = api.format;
-            replaceRange = api.replaceRange;
-            selectRange = api.selectRange;
-            insertImageFn = api.insertImage;
-            getSelectionRange = api.getSelectionRange;
-            tidyApi = api.tidy;
-            placeholders = api.imagePlaceholders;
-          }}
+          registerEditor={bindEditorGrant()}
           onComponentAtCaret={(info) => (caretComponent = info)}
           onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
           {tidyMode}

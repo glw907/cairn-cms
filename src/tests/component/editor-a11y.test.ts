@@ -68,8 +68,8 @@ describe('fold-control name stays in sync with an in-place directive rename', ()
     const { container } = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
@@ -117,8 +117,8 @@ describe('a folded container unfolds on an in-place directive rename, revealing 
       value: doc,
       name: 'body',
       registry,
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();

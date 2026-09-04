@@ -887,16 +887,17 @@
   **Consumers must:** rename `HistoryData.draft.startedAt` to `draft.lastSavedAt`, and
   `RevertFailure`'s `draft_exists.draftStartedAt` to `draftLastSavedAt`.
 
-- `formatTimestamp` (`/admin-toolkit`, slice 4b, Task 3) widens its input domain: it now accepts
-  any Date-parseable timestamp, a SQLite `datetime('now')`-shaped string (unchanged) or a full ISO
-  8601 string carrying its own `Z` suffix or an explicit offset, rather than only the SQLite shape.
-  The `timeZone` zone-pin behavior, the mechanic that keeps a Worker's SSR and a browser's
-  hydration rendering the same text for the same moment, is unchanged and now covers the widened
-  domain too. `CairnHistory`'s hand-rolled `formatVersionDate` is gone; the component now routes
-  every date it renders through this formatter, proving the widened domain on cairn's own screen.
-  `FormatTimestampOptions` is unchanged. **Consumers must:** nothing; a SQLite-shaped string a
-  caller already passes keeps parsing exactly as before, and a caller may now also pass a raw ISO
-  timestamp.
+- `formatTimestamp` (`/admin-toolkit`, slice 4b, Task 3) now accepts exactly two input shapes: a
+  SQLite `datetime('now')`-shaped string (unchanged) or a full ISO 8601 string carrying its own `Z`
+  suffix or an explicit `±hh:mm` offset. Every other shape, including a zone-less near-ISO string,
+  is returned unchanged rather than handed to `new Date()`, which parsed it in the runtime's own
+  local zone and rendered different text for a Worker's SSR and a browser's hydration. The
+  `timeZone` zone-pin behavior, the mechanic that keeps those two renders in step, is unchanged and
+  now covers the zone-carrying ISO shape too. `CairnHistory`'s hand-rolled `formatVersionDate` is
+  gone; the component now routes every date it renders through this formatter. `FormatTimestampOptions`
+  is unchanged. **Consumers must:** supply a zone (`Z` or a `±hh:mm` offset) when passing a
+  near-ISO timestamp to `formatTimestamp`; a zone-less near-ISO string now passes through
+  unformatted, where published `0.96.0` rendered it as UTC.
 
 - `TidyClient` (`/sveltekit`, slice 4b, Task 4; settles `audit-sveltekit-tidyclient` and
   `audit-log-tidy-succeeded`) narrows from the transcribed Anthropic Messages wire shape to a

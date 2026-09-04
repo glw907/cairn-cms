@@ -680,10 +680,11 @@ not a plain read.
 The table carries `id`, `actor`, `action`, `entity`, `entity_id`, `detail`, and a `created_at` the
 database populates as an ISO 8601 UTC string (`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`), a column
 read by a human in a query, not by the engine.
-[`formatTimestamp`](./admin-toolkit.md#formattimestamp) doesn't apply to this column: it expects
-the space-separated `"YYYY-MM-DD HH:MM:SS"` shape SQLite's `datetime('now')` produces, and swaps
-in the `T` and `Z` itself. This column's value already carries both, so render it directly;
-`new Date(createdAt)` already reads it correctly as UTC.
+[`formatTimestamp`](./admin-toolkit.md#formattimestamp) applies directly to this column: the value
+already carries its own `Z` suffix, the full ISO 8601 shape `formatTimestamp` parses as-is, distinct
+from the space-separated `"YYYY-MM-DD HH:MM:SS"` shape it reads for SQLite's own `datetime('now')`
+output. `new Date(createdAt)` also reads it correctly as UTC, for a screen that renders the value
+without `formatTimestamp`'s locale and time-zone formatting.
 
 `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly, not optionally: an
 optional parameter would make the shortest call the one that silently drops the insert when the

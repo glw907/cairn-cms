@@ -84,6 +84,11 @@ The release step sets the version number at the cut and renames this section to 
   `strAttr(ctx, key)` with `ctx.attr(key)`.
 - **`HistoryData.draft.startedAt` renames to `lastSavedAt`, and `RevertFailure`'s
   `draft_exists.draftStartedAt` renames to `draftLastSavedAt`.** Rename both field reads.
+- **`formatTimestamp` (`/admin-toolkit`) now accepts only two input shapes**: a SQLite
+  `datetime('now')`-shaped string and a full ISO 8601 string carrying its own `Z` suffix or an
+  explicit `±hh:mm` offset. Supply a zone (`Z` or a `±hh:mm` offset) on any near-ISO timestamp
+  passed to `formatTimestamp`; a zone-less near-ISO string now passes through unformatted, where
+  published `0.96.0` rendered it as UTC.
 - **`cairn-audit`'s five rendered-mode harness failure ids move to a dot-namespace.**
   `rendered-allowlist-stale`, `rendered-allowlist-unprobeable`, `rendered-allowlist-dead`,
   `rendered-page-identity-mismatch`, and `rendered-state-unreachable` become

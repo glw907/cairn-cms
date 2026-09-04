@@ -110,6 +110,27 @@ function shapeTypeOf(checker, sym) {
   return checker.getTypeOfSymbolAtLocation(sym, decl);
 }
 
+// Whether an already alias-resolved symbol is a plain type-only export (an interface or a type
+// alias, erased at compile time) rather than a value export: a function, a const, an enum (which
+// compiles to a real runtime object, so its symbol carries a value side too, `RegularEnum` being
+// part of `SymbolFlags.Value`), or a Svelte component. `svelte-package` emits a component's
+// default export as `declare const X: Component<Props, Events, Slots>`, which TypeScript's symbol
+// still marks with a type-alias-shaped flag alongside its variable flag, so `isType` alone cannot
+// tell a component from a bare `export type`; the `Value` flag is what actually distinguishes them
+// (present on every runtime-importable export, absent on a type-only one), and this is the same
+// isType-and-not-`Value` test `shapeTypeOf` above already applies to choose which type carries an
+// export's own shape. F-1's `/components` clause uses this to derive its root set mechanically off
+// the real barrel, rather than asserting the split in prose.
+/**
+ * @param {import('typescript').Symbol} sym
+ * @returns {boolean}
+ */
+export function isPlainTypeExport(sym) {
+  const isType = (sym.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Enum)) !== 0;
+  const isValue = (sym.flags & ts.SymbolFlags.Value) !== 0;
+  return isType && !isValue;
+}
+
 // A traversal depth cap, well past any real nesting this surface reaches (the deepest known
 // chain, `MediaAltPreviewPlan` -> `MediaAltPreviewEntry` -> `AltPlacement`, is two hops); the cap
 // exists only to bound a runaway if the visited-set cycle guard below ever misses a recursive
@@ -230,23 +251,37 @@ export function deriveTypeCheckerLeaks(model, universe) {
   /** @type {{ name: string, subpath: string, model: 'type-checker' }[]} */
   const leaks = [];
   for (const entry of surfaceSubpaths()) {
-    // `/components` exports Svelte components (MarkdownEditor, EditPage, ...) plus a handful of
-    // enumerated editor-grant types riding the same barrel (TidyApi, ImagePlaceholderApi,
-    // FormatKind, EditorApi): those types are exported by name, so `check:reference` already
-    // covers their coverage and stability tagging, rather than needing leak modeling here. A
-    // component's declared type is a generic reference to its own Props/Events/Slots parameters,
-    // and walking those reaches every prop's type, including a component's own internal callback
-    // and object props; component props are outside this rider's scope by design (Task 7's props
-    // gate is the answer for that surface; see the ledger row's stated-limits paragraph), so this
-    // subpath contributes no roots here. Structurally modeling `/components` itself (walking
-    // component prop types the way this rider walks a plain module's exports) is routed to
-    // internals-C, not answered by this skip.
-    if (entry.subpath === '/components') continue;
     const dtsPath = resolve(ROOT, entry.dts);
     if (!existsSync(dtsPath)) continue;
     const { checker, symbols } = moduleExports(dtsPath);
     if (symbols.length === 0) continue;
-    const rootTypes = symbols.map((sym) => shapeTypeOf(checker, resolveAlias(checker, sym)));
+    // `/components` mixes runtime Svelte component exports (MarkdownEditor, EditPage, ...) with a
+    // handful of plain type exports riding the same barrel (TidyApi, ImagePlaceholderApi,
+    // FormatKind, EditorApi). The split is read mechanically off the dist declarations via
+    // `isPlainTypeExport`, not asserted in prose: only the plain-type exports feed the walk below,
+    // so a genuine leak reachable only through one of them (as `Change`, buried inside `TidyApi`,
+    // in fact is; see the registry entry) is caught the same way it would be on any other subpath.
+    //
+    // A component's own declared type is a generic reference to its Props/Events/Slots parameters,
+    // and walking those would reach every prop's type, including a component's own internal
+    // callback and object props. That is an ACCEPTED LIMITATION, stated as one rather than fixed
+    // here: component prop types stay invisible to this rider. The concrete blocked shape is the
+    // two-model structure itself, neither of which reaches a prop: the type-checker model starts
+    // from each subpath's own EXPORTED symbols' declared types, and a component's declared type
+    // (`Component<Props, Events, Slots>`) never surfaces `Props`' own member types through that
+    // walk the way an interface's members do, because the generic's type ARGUMENTS are Props
+    // itself, not a property of it; the renderer model never attempts `/components` at all, since
+    // it compares literal-union shapes across `buildSurfaceModel()`'s per-export renderings, and a
+    // component's rendered shape is the opaque `Component<Props, ...>` string, not an expanded
+    // object. Structurally modeling component props (walking each component's own Props type
+    // argument) would need a third model this rider does not build; Task 7's props gate is the
+    // answer for that surface instead (see the ledger row's stated-limits paragraph).
+    const rootSymbols =
+      entry.subpath === '/components'
+        ? symbols.filter((sym) => isPlainTypeExport(resolveAlias(checker, sym)))
+        : symbols;
+    if (rootSymbols.length === 0) continue;
+    const rootTypes = rootSymbols.map((sym) => shapeTypeOf(checker, resolveAlias(checker, sym)));
     const reachable = collectReachableNames(checker, rootTypes, distDir);
     for (const name of [...reachable].sort()) {
       if (!universe.has(name)) continue;

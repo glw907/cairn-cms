@@ -17,7 +17,7 @@ Every delivery route reads through one typed index, built once from your raw mar
 ```ts
 // src/lib/content.ts
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 const postsRaw = import.meta.glob('/src/content/posts/*.md', {
   query: '?raw',
@@ -49,7 +49,7 @@ committed config rather than branching `ORIGIN` on an environment variable.
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN } from '$lib/content.js';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const prerender = true;
 
@@ -86,7 +86,7 @@ export const match: ParamMatcher = (param) => param.endsWith('.md');
 // src/routes/(site)/[...path=md]/+server.ts
 import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN } from '$lib/content.js';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const prerender = true;
 
@@ -152,7 +152,7 @@ Each has a pure builder plus a responder that wraps it in a `Response`:
 // src/routes/feed.xml/+server.ts
 import { rssResponse, createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, posts, ORIGIN } from '$lib/content.js';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const prerender = true;
 

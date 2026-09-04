@@ -76,7 +76,7 @@ The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all serv
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn, siteConfig } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const prerender = true;
 

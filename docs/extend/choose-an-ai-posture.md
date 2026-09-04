@@ -9,7 +9,7 @@ Set `aiPosture` on your adapter:
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the aiPosture member -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
@@ -24,7 +24,7 @@ Declaring the field alone changes no bytes. `robotsResponse` reads its posture f
 ```ts
 // src/routes/robots.txt/+server.ts
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
-import { cairn } from '$lib/cairn.config.js';
+import { cairn } from '$theme/cairn.config.js';
 import { ORIGIN } from '$lib/content.js';
 
 export const GET = () =>

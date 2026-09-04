@@ -127,7 +127,9 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 
 - `src/lib/`: the shipped library. Public entry points are package subpaths, each with a
   matching page in `docs/reference/`; a directory without a reference page is internal.
-  `npm run check:surface` gates the public surface.
+  `npm run check:surface` gates the public surface. For the directory-by-directory public/internal
+  split, the admin request flow, and the rest of the tree's internal structure, see
+  [`docs/internal/src-lib-map.md`](docs/internal/src-lib-map.md).
 - `src/tests/`: the vitest projects (`unit/`, `integration/`, `component/`) plus `fixtures/`.
   `lab/` holds engine apparatus that supports development and must never ship in the package.
 - `scripts/`: helpers shared by the three groups below sit at the root.

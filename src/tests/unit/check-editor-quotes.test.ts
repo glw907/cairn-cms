@@ -122,16 +122,18 @@ describe('candidatesForFile', () => {
 
   it('does not strand a literal after a same-line comment-lookalike ("//") inside an earlier string', () => {
     // The content-routes-core.ts monolith split across several content-routes-*.ts siblings
-    // (internals-B), so the two patterns this test guards against now live on different files:
-    // content-routes-shell.ts's `withRefusalCode` builds a URL against 'https://internal.invalid',
-    // and content-routes-entry.ts's fragment refusal carries an apostrophe inside a later
-    // double-quoted string ("can't"). A comment strip with no notion of "inside a string" deletes
-    // from that string's "//" to end of line, and an independent per-quote-type regex pass on top
-    // of that misreads the apostrophe as opening a single-quoted literal, each swallowing
-    // everything up to the next unrelated quote character anywhere later in the file. Reading
-    // every content-routes-*.ts sibling in one pass, the way findStrandedQuotes reads a whole tree
-    // below, keeps this test proving the extraction survives both bugs against real content
-    // rather than a path that happens to hold neither pattern any more.
+    // (internals-B). content-routes-shell.ts's `withRefusalCode` still carries the "//" trigger
+    // (a URL literal against 'https://internal.invalid'), and content-routes-entry.ts still
+    // carries the apostrophe trigger (a fragment refusal reading "can't"), but neither sibling
+    // holds both a trigger and one of the two asserted messages, in trigger-before-message order,
+    // on its own: 'An unpublished entry with that address already exists' sits in
+    // content-routes-entry.ts ahead of its own "can't" trigger, and 'Another editor has
+    // unpublished edits referencing this entry' sits in content-routes-core.ts, a file with
+    // neither trigger. So at this commit the per-file trigger-to-message coupling this test was
+    // written to guard is not exercised; reading every content-routes-*.ts sibling into one
+    // candidate pool, the way findStrandedQuotes reads a whole tree below, is what still lets the
+    // assertions pass. Task 4 folding renameAction into content-routes-entry.ts restores the
+    // coupling by placing the rename-conflict message after the "can't" trigger at entry.ts:764.
     const files = readdirSync(join(LIB_DIR, 'sveltekit'))
       .filter((name) => name.startsWith('content-routes-') && name.endsWith('.ts'))
       .map((name) => join(LIB_DIR, 'sveltekit', name));

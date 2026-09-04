@@ -19,19 +19,35 @@ green); the window holds until the polish slice per the amended initiative desig
 
 ## Immediate next action
 
-**IN FLIGHT (2026-09-04 ~00:45): internals-B workflow `wf_6c0135ff-1b5` COMPLETED.**
-Task ledger: 1-9 ACCEPTED and committed on their chain branches
-(`internals-b-chain-a`: tasks 1-4; `-b`: 5-6; `-c`: 7-9). Tasks 10 and 14 escalated on
-gate-contention only (five concurrent full suites oversubscribed the box; both diffs
-reviewer-verified correct, left UNCOMMITTED in `-chain-d` / `-chain-e`); conductor ruling:
-re-run gates quiesced and commit, chain E first (plus its missing read-path test), then
-chain D task 10, then run tasks 11-13 sequentially through the implementer chain in
-`-chain-d`. Then merge all five chain branches into `internals-b` (pass worktree), run the
-cairn-pass ritual there, push, PR, merge on green CI; then reconcile and execute
-internals-C per the paragraph below. Guards armed (inhibitors to 09:00, battery watchdog,
-runaway guard). A crash-resuming session: verify chain branch commits with `git log`,
-verify uncommitted trees in chain-d/e before touching them, re-arm the FULL guard set
-(`~/.claude/docs/unattended-work-guards.md`).
+**INTERNALS-B: all 14 tasks ACCEPTED and merged to branch `internals-b`** (worktree
+`.claude/worktrees/internals-b`; session closed 2026-09-04 morning for a CLI update, mid
+pass-end ritual). Ledger: chains A-E all landed through the implementer/diff-reviewer
+chain (2 fix rounds total in the task phase); chain merges `0211da99` + `c6310117`;
+simplifier `eaaafbe4`; eleven named gates ALL PASS on the merged branch (the six CI-only
+plus cm-internals/docs/package/editor-quotes); from-scratch showcase consumer build OK;
+five-reviewer fan-out DONE (svelte, a11y, workers, security, cleanliness), no blocking
+architectural findings; consolidated fix-now findings split across three fixers, of which
+TWO ARE COMMITTED (`ee446bd3` media-dialog a11y+comments, `eb26bf1c` media-seed
+hardening + audit/content-routes comment fixes) and ONE (EditPage-family: tidy
+supersession guard, hero-dereg identity guard, bindEditorGrant harness test, reset-gate
+widening to the two controllers, needs-alt reveal, ShareLinkPanel a11y, comment fixes)
+was STILL RUNNING at close. **Resume step 1: inspect the worktree** - if that fixer
+committed (look for a commit after `eb26bf1c` touching EditPage/ShareLinkPanel/
+tidy-controller), verify via a diff-review dispatch; if it left uncommitted residue,
+`git checkout -- .` back to clean and re-dispatch its finding list (recorded in full in
+the pass plan's post-mortem inputs; the findings are the five reviewer reports).
+CAUTION: two fixers ran `git stash` in the shared worktree and transiently clobbered
+each other (both recovered); never let parallel writers share one worktree again.
+**Remaining ritual:** final full gate + eleven gates on the settled tree; one re-review
+of the fixer commits; docs dimension (CHANGELOG internals-B block, ROADMAP: remove the
+shipped internals-B entry and the FieldInput ownership bug at :889, record
+`content-routes-media.ts` 1,447 lines as the remaining tracked monolith, file the
+route-forward reviewer notes to internals-C/polish tiers), post-mortem into the plan
+file, HISTORY entry, STATUS rewrite; commit, push `internals-b`, PR, merge on green CI
+(authorization recorded below). Then reconcile internals-C's anchors against merged main
+and execute it per the paragraph below. Resume prompt: "In ~/Projects/cairn-cms, invoke
+cairn-pass and resume the internals-B pass-end ritual per docs/STATUS.md's in-flight
+entry (worktree .claude/worktrees/internals-b), then proceed to internals-C."
 
 **Execute internals-B, then internals-C, in one overnight run. BOTH PLANS ARE APPROVED
 (Geoff, 2026-09-03 evening, via the approval-gate question) with FULL overnight git

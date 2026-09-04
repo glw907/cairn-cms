@@ -16,21 +16,58 @@
 // "harmonize" the two import styles, they serve different trees on purpose.
 import { renderedRules } from './rules/rendered/index.js';
 import type { PaintLayer, Rgba } from './color.js';
-import type { AuditConfig, RenderedAllowlistEntry } from './config.js';
-import type { AuditReport, Finding, Tier } from './types.js';
+import type { AuditConfig } from './config.js';
+import type { AuditReport, Finding } from './types.js';
+import {
+  pageIdentityMismatchFinding,
+  resolveRenderedFindings,
+  stateUnreachableFinding,
+  SURFACED_UNREACHED_STATES,
+} from './rendered/findings.js';
+import { capturePageIdentity, captureSsrIdentity, identitiesMatch, waitForHydrationSettle } from './rendered/identity.js';
+import type {
+  InteractionState,
+  PageIdentity,
+  PlaywrightModule,
+  RenderedDeps,
+  RenderedFinding,
+  RenderedPage,
+  RenderedPageVisit,
+  RenderedRule,
+  ResolvedRenderedFinding,
+  Theme,
+} from './rendered/types.js';
 
-/** The theme every rendered page is captured under. Both run for every page, unconditionally. */
-export type Theme = 'light' | 'dark';
-
-/**
- * A DOM state a rendered rule reads from, beyond a page's own rest render. The runner captures only
- * the states the REGISTERED rules actually declare (see {@link RenderedRule.states}), so a rule that
- * only needs `'rest'` never pays for a menu-open pass nobody asked for. `row-expanded` clicks the
- * first `ExpandableRow` summary trigger it finds, the precedent `menu-open` set for a real
- * interaction state; a page that carries no `ExpandableRow` cannot reach it, same as a page with no
- * menu trigger cannot reach `menu-open`.
- */
-export type InteractionState = 'rest' | 'menu-open' | 'focus-visible' | 'row-expanded';
+export type {
+  CairnAuditPageHelpers,
+  InteractionState,
+  PageIdentity,
+  PlaywrightModule,
+  RenderedBrowser,
+  RenderedContext,
+  RenderedDeps,
+  RenderedFinding,
+  RenderedPage,
+  RenderedPageVisit,
+  RenderedRule,
+  RenderedRuleContext,
+  ResolvedRenderedFinding,
+  Theme,
+} from './rendered/types.js';
+export {
+  deadFinding,
+  identityRefusedFinding,
+  pageIdentityMismatchFinding,
+  positionless,
+  resolveRenderedFindings,
+  staleFinding,
+  stateUnreachableFinding,
+  SURFACED_UNREACHED_STATES,
+  toFinding,
+  unprobeableFinding,
+  unreachedStateFinding,
+} from './rendered/findings.js';
+export { capturePageIdentity, captureSsrIdentity, identitiesMatch, waitForHydrationSettle } from './rendered/identity.js';
 
 /**
  * The login route every admin path redirects to when no session cookie is present. The
@@ -44,490 +81,6 @@ const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
   light: 'cairn-admin',
   dark: 'cairn-admin-dark',
 };
-
-// The structural slice of Playwright's API this module drives. Typed narrowly rather than imported
-// from the `playwright` package: Playwright is a dynamic import from whichever tree this file
-// executes in, so its exact installed version and type shape are not guaranteed, the same reasoning
-// that governs carta-md's dynamic import elsewhere in this codebase.
-
-/**
- * The live browser page a rendered rule reads from. Viewport control is part of the surface rather
- * than a rule's private cast: two v1 rules (`touch-targets`, `viewport-overflow`) check a floor
- * that is only meaningful at a stated width, and both independently reached past a narrower
- * interface to Playwright's own method, which is the signal that the width belongs here.
- */
-export interface RenderedPage {
-  goto(url: string, options?: { waitUntil?: string; timeout?: number }): Promise<{ status(): number } | null>;
-  evaluate<T, Arg = undefined>(fn: (arg: Arg) => T, arg?: Arg): Promise<T>;
-  keyboard: { press(key: string): Promise<void> };
-  /** The page's current viewport, or `null` when it inherits the context's. */
-  viewportSize(): { width: number; height: number } | null;
-  setViewportSize(size: { width: number; height: number }): Promise<void>;
-  close(): Promise<void>;
-}
-
-/** One browser context: one theme and cookie jar, several pages drawn from it. */
-export interface RenderedContext {
-  addCookies(cookies: { name: string; value: string; url: string }[]): Promise<void>;
-  newPage(): Promise<RenderedPage>;
-  close(): Promise<void>;
-}
-
-/** The launched browser instance. */
-export interface RenderedBrowser {
-  /**
-   * `javaScriptEnabled: false` is the page-identity guard's own option: a context opened with it
-   * never runs the page's own scripts, so `evaluate` reads back whatever the server actually sent,
-   * with no race against hydration. Playwright still serves `evaluate` through its own runtime
-   * binding regardless of the flag, so a page opened this way is otherwise ordinary.
-   */
-  newContext(options?: { colorScheme?: Theme; javaScriptEnabled?: boolean }): Promise<RenderedContext>;
-  close(): Promise<void>;
-}
-
-/** The shape `import('playwright')` resolves to, narrowed to what this module calls. */
-export interface PlaywrightModule {
-  chromium: { launch(): Promise<RenderedBrowser> };
-}
-
-/** What one rendered rule may read: the live page, already in its declared interaction state. */
-export interface RenderedRuleContext {
-  page: RenderedPage;
-  /** The route this page was navigated to, e.g. `/admin/posts`. What the allowlist's `page` matches. */
-  pagePath: string;
-  theme: Theme;
-  state: InteractionState;
-  config: AuditConfig;
-}
-
-/**
- * One rendered rule's raw verdict about one element. `selector` is the same signature idiom the
- * graduating live probes use today (a tag plus a handful of classes, or whatever a rule's own DOM
- * walk names the element): it is what the page+selector+reason allowlist matches against, since a
- * live-page finding has no source line a suppression comment could sit beside.
- */
-export interface RenderedFinding {
-  ruleId: string;
-  tier: Tier;
-  selector: string;
-  message: string;
-  /**
-   * Why this finding is exempt, when a rule holds a ratified exception the two suppression idioms
-   * cannot express: a design token every recipe shares, on every page, which no page+selector
-   * allowlist entry names and no source-positioned directive can reach. On an ADVISORY finding,
-   * present means suppressed, so the text is what the report prints in place of a justification a
-   * reader could look up, and it states the ruling, the measurement, and the token it turns on.
-   *
-   * On an `error`-tier finding it is refused: {@link resolveRenderedFindings} keeps the finding in
-   * the gating list and prints the refusal beside it. Unlike the allowlist, which is a config file
-   * the consumer owns and reviews, and unlike a source directive, which shows up in a diff, this
-   * reason is written by the engine, applies to every page automatically, and is discoverable only
-   * by reading the suppressed block. A one-line way to quiet a gate is not a thing to leave lying
-   * around, and the symmetry is deliberate: {@link unprobeableFinding} forces itself advisory so no
-   * suppression can turn a non-gating rule into a gating one, and this forces the other direction.
-   *
-   * The alternative a rule reaches for first is `continue`, and that is the defect this field
-   * exists to make impossible: `border-contrast`'s ratified hairline silenced 135 findings against
-   * cairn's own admin while the report said `0 suppressed`. An engine whose premise is that silent
-   * green is the enemy counts its own exceptions.
-   */
-  exemption?: string;
-}
-
-/** A rendered rule: an id, a tier, the interaction states it needs, and a pure-per-state check. */
-export interface RenderedRule {
-  id: string;
-  tier: Tier;
-  /**
-   * Interaction states this rule reads from. Defaults to `['rest']` when omitted, so a rule that
-   * never mentions the field costs the run nothing beyond the rest-state pass every rule shares.
-   */
-  states?: InteractionState[];
-  check(ctx: RenderedRuleContext): Promise<RenderedFinding[]>;
-}
-
-/** A `RenderedFinding` resolved with the page, theme, and state it was raised under. */
-export interface ResolvedRenderedFinding extends RenderedFinding {
-  page: string;
-  theme: Theme;
-  state: InteractionState;
-}
-
-/** One page's worth of allowlist bookkeeping: which named selectors were actually seen there. */
-export interface RenderedPageVisit {
-  page: string;
-  /**
-   * Selectors an allowlist entry named for this page that matched at least one element, in any
-   * theme or state the run visited. Only the selectors an allowlist entry names are probed; this is
-   * not a survey of the whole page.
-   */
-  selectorsSeen: Set<string>;
-  /**
-   * Selectors the browser refused to parse, so no staleness verdict is possible either way.
-   * Optional: a caller assembling a visit by hand (a unit test, a consumer driving the resolver
-   * directly) has nothing to record here.
-   */
-  selectorsUnprobeable?: Set<string>;
-  /**
-   * Interaction states the run declared but could not put this page into, so the rules that read
-   * only those states never ran here. A page with no popup trigger cannot reach `menu-open`, which
-   * is ordinary rather than an error, and it means this page's findings are a SUBSET of what a full
-   * run would raise. {@link deadFinding} needs that, since "nothing raised a finding for it" is
-   * only true of what the run reached.
-   */
-  statesUnreached?: Set<InteractionState>;
-  /**
-   * The page-identity guard refused this page: its post-hydration DOM did not match its SSR
-   * identity, so no rule ever ran here and no selector was ever probed. An allowlist entry naming
-   * this page cannot be told stale from dead on that evidence, only withheld, the same reasoning
-   * {@link statesUnreached} carries one layer in.
-   */
-  identityRefused?: boolean;
-}
-
-const STALE_ALLOWLIST_RULE_ID = 'rendered.allowlist-stale';
-const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered.allowlist-unprobeable';
-const DEAD_ALLOWLIST_RULE_ID = 'rendered.allowlist-dead';
-const PAGE_IDENTITY_RULE_ID = 'rendered.page-identity-mismatch';
-const STATE_UNREACHABLE_RULE_ID = 'rendered.state-unreachable';
-
-/**
- * States whose unreachability gets its own report line, on top of {@link RenderedPageVisit.statesUnreached}
- * already recording it for the allowlist path. `menu-open` is deliberately absent: most admin pages
- * carry no menu trigger, and giving every one of those its own advisory line would drown the report
- * in noise nobody asked for; that stays the pre-existing, silent skip. `row-expanded` is different
- * because the whole reason it exists is `panel-width`'s motivating half, and a reader of a clean
- * report needs to know the panel half never got a chance to run on a page with no `ExpandableRow`,
- * rather than reading silence as "no panel defects here."
- */
-const SURFACED_UNREACHED_STATES = new Set<InteractionState>(['row-expanded']);
-
-/**
- * The finding raised once per page when a state in {@link SURFACED_UNREACHED_STATES} was declared by
- * a registered rule but never reached there. Advisory: an ordinary page that carries no matching
- * component (no `ExpandableRow`, here) is not a defect, only a rule that ran on a subset of what a
- * fuller page set would cover.
- */
-function stateUnreachableFinding(pagePath: string, state: InteractionState): Finding {
-  return positionless({
-    ruleId: STATE_UNREACHABLE_RULE_ID,
-    tier: 'advisory',
-    file: pagePath,
-    message:
-      `the ${state} interaction state was never reached on this page, so a rule that reads only that ` +
-      `state raised nothing here. That is expected on a page carrying no matching trigger, not a clean ` +
-      `verdict from the rule itself.`,
-  });
-}
-
-/**
- * A rendered finding in the report's own `Finding` shape. A live page carries no source text, so
- * every position is zero; this is the one place that fact is written down.
- */
-function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' | 'message'>): Finding {
-  return { ...finding, line: 0, start: 0, end: 0 };
-}
-
-/**
- * A rendered finding in the report's `Finding` shape. `exemptionHonored` is false for a rule-declared
- * exemption this resolver refused, which prints as a refusal rather than as an exemption: a reader
- * of a gating line needs to know a rule asked for silence and did not get it, and printing
- * `(exempt: ...)` beside a finding that gates would be a report contradicting itself.
- */
-function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true, allowlisted = false): Finding {
-  // The exemption rides in the message rather than in a field of its own on `Finding`, because
-  // the report's whole job with a suppressed line is to print it: an allowlisted finding's reason
-  // lives in the config a reader can open, and a rule's own exception has no such file.
-  let note = '';
-  if (rf.exemption !== undefined) {
-    if (exemptionHonored) {
-      note = ` (exempt: ${rf.exemption})`;
-    } else if (allowlisted) {
-      // A refused exemption on a finding the ALLOWLIST then suppressed used to print "refused
-      // because an error-tier finding gates" from under the report's `Suppressed:` header, which is
-      // the report contradicting itself, the one thing this function exists to prevent. Where the
-      // line actually ends up decides which sentence it carries.
-      note = ` (the allowlist suppressed this; the rule's own exemption was refused, since an error-tier finding gates: ${rf.exemption})`;
-    } else {
-      note = ` (the rule claimed an exemption, refused because an error-tier finding gates: ${rf.exemption})`;
-    }
-  }
-  return positionless({
-    ruleId: rf.ruleId,
-    tier: rf.tier,
-    file: `${rf.page} [${rf.theme}, ${rf.state}]`,
-    message: `${rf.selector}: ${rf.message}${note}`,
-  });
-}
-
-function staleFinding(entry: RenderedAllowlistEntry, tier: Tier): Finding {
-  return positionless({
-    ruleId: STALE_ALLOWLIST_RULE_ID,
-    tier,
-    file: entry.page,
-    message:
-      `the rendered allowlist names ${entry.selector} on ${entry.page}, but nothing there matched it in ` +
-      `any captured theme or state. A stale entry is how a real finding disappears: fix the selector or ` +
-      `remove the entry. (reason on file: ${entry.reason})`,
-  });
-}
-
-/**
- * The finding an allowlist entry raises when the browser could not parse its selector at all. A
- * refused selector is not evidence of staleness, so reporting it as one both misnames the problem
- * and, because the staleness finding gates, lets an ADVISORY rule reach the exit code: an
- * adversarial pass demonstrated exactly that, allowlisting an advisory finding whose selector
- * carried a Tailwind variant class (`div.flex.lg:ml-56`) and getting `exit 1`. This one is
- * advisory, so no suppression a developer writes can turn a non-gating rule into a gating one.
- */
-function unprobeableFinding(entry: RenderedAllowlistEntry): Finding {
-  return positionless({
-    ruleId: UNPROBEABLE_ALLOWLIST_RULE_ID,
-    tier: 'advisory',
-    file: entry.page,
-    message:
-      `the rendered allowlist names ${entry.selector} on ${entry.page}, but the browser refused to parse it ` +
-      `as a CSS selector, so neither a match nor a staleness verdict is possible. Escape the selector ` +
-      `(CSS.escape covers Tailwind's \`:\` and \`[]\` class syntax) so the entry can be checked. ` +
-      `(reason on file: ${entry.reason})`,
-  });
-}
-
-/**
- * The finding an allowlist entry raises when its selector still matches an element but no rule
- * raised anything for it. The staleness check keys on the SELECTOR, so a fix that removed the
- * finding while the element stayed put leaves an entry that suppresses nothing and can never be
- * reported: it reads as a legitimate exemption forever, and the next real finding on that selector
- * disappears into it. `suppress.ts` calls the static twin of this a dead directive and errors on it
- * for the same reason. Tiered like the staleness finding, so a dead entry covering an advisory rule
- * cannot become the path by which a non-gating rule reaches the exit code.
- */
-function deadFinding(entry: RenderedAllowlistEntry, tier: Tier): Finding {
-  return positionless({
-    ruleId: DEAD_ALLOWLIST_RULE_ID,
-    tier,
-    file: entry.page,
-    message:
-      `the rendered allowlist names ${entry.selector} on ${entry.page}, and it still matches an element, but ` +
-      `nothing there raised a finding for it in any captured theme or state, so the entry suppresses nothing. ` +
-      `An exemption that has outlived its finding is where the next real one goes to hide: remove the entry. ` +
-      `(reason on file: ${entry.reason})`,
-  });
-}
-
-/**
- * The finding an allowlist entry raises when its selector still matches but the run could not reach
- * every interaction state the rules declare, so "nothing raised a finding for it" is a claim about
- * an incomplete run rather than about the page. Advisory and worded as a withheld verdict, because
- * the remedy {@link deadFinding} prescribes, removing the entry, is the WRONG move here: the next
- * run that does reach the state would then gate on the real finding the entry covers.
- *
- * `runRendered` produces exactly this subset on any page with no popup trigger, which the default
- * page list includes, so the gating verdict had to be conditional on coverage rather than on the
- * caller doing something unusual.
- */
-function unreachedStateFinding(entry: RenderedAllowlistEntry, unreached: InteractionState[]): Finding {
-  return positionless({
-    ruleId: DEAD_ALLOWLIST_RULE_ID,
-    tier: 'advisory',
-    file: entry.page,
-    message:
-      `the rendered allowlist names ${entry.selector} on ${entry.page}, and it still matches an element, but ` +
-      `nothing raised a finding for it in what this run reached. The run never reached ${unreached.join(', ')} ` +
-      `on that page, so whether the entry is dead cannot be decided here: check it against a page that reaches ` +
-      `that state before removing it. (reason on file: ${entry.reason})`,
-  });
-}
-
-/**
- * The finding an allowlist entry raises when the page-identity guard refused its named page
- * entirely: no rule ran and no selector was ever probed, so stale and dead are both the wrong
- * verdict, only withheld. Advisory for the same reason {@link unreachedStateFinding} is: the remedy
- * a stale or dead finding prescribes, removing the entry, is wrong here too, since the entry may
- * still be exactly right once the route's hydration is fixed. It reuses the dead-allowlist rule id
- * anyway, the same reuse {@link unreachedStateFinding} makes, so a consumer filtering on the
- * allowlist-hygiene ids still sees it; the advisory tier and the wording carry the withholding.
- */
-function identityRefusedFinding(entry: RenderedAllowlistEntry): Finding {
-  return positionless({
-    ruleId: DEAD_ALLOWLIST_RULE_ID,
-    tier: 'advisory',
-    file: entry.page,
-    message:
-      `the rendered allowlist names ${entry.selector} on ${entry.page}, but the page-identity guard refused to ` +
-      `audit that route in this run (see the rendered.page-identity-mismatch finding), so whether the entry is ` +
-      `stale or dead cannot be decided here. (reason on file: ${entry.reason})`,
-  });
-}
-
-/**
- * What a route's identity looks like to the post-hydration guard: enough to say whether the DOM that
- * settles after hydration still belongs to the page that was navigated to. Generic across any route
- * cairn or a consumer might serve, including a consumer's own custom route and the shell-less login
- * page: neither carries cairn-only markup, and both still produce one, `landmark` simply reading null
- * where no `<main>`/`[role="main"]` region exists on either side.
- */
-export interface PageIdentity {
-  title: string;
-  landmark: string | null;
-}
-
-/**
- * Runs inside the page, on both the no-JS SSR capture and the settled hydrated capture, so its
- * result means the same thing on either side of {@link identitiesMatch}. Self-contained: no
- * references outside its own body, the same discipline {@link resolveColorsInPage} follows, since
- * Playwright serializes it by source.
- */
-function capturePageIdentity(): PageIdentity {
-  const main = document.querySelector('main, [role="main"]');
-  let landmark: string | null = null;
-  if (main) {
-    const tag = main.tagName.toLowerCase();
-    const id = main.id ? `#${CSS.escape(main.id)}` : '';
-    const heading = main.querySelector('h1, h2, h3, legend');
-    const headingText = (heading?.textContent ?? '').trim().slice(0, 80);
-    landmark = `${tag}${id}::${headingText}`;
-  }
-  return { title: document.title.trim(), landmark };
-}
-
-/**
- * Whether two {@link PageIdentity} captures describe the same page. Absence of a landmark on both
- * sides, the login page, a consumer route with no `<main>`, counts as agreement: `landmark: null` on
- * both is not itself evidence of a swap, only a page that never carried one.
- */
-function identitiesMatch(a: PageIdentity, b: PageIdentity): boolean {
-  return a.title === b.title && a.landmark === b.landmark;
-}
-
-/**
- * A settle window after hydration, run inside the page so the wait costs one round trip rather than
- * a Node-side timeout blocking the whole run. Self-contained for the same reason
- * {@link capturePageIdentity} is: Playwright serializes it by source.
- */
-function waitForHydrationSettle(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())), 300);
-  });
-}
-
-/**
- * Capture a route's SSR identity: what the server actually sent, before any client script has a
- * chance to run. A dedicated context with JavaScript disabled is the only way to guarantee that;
- * reading it from the same context immediately after `goto` resolves already races the client
- * bundle, which is the exact race the ASC hydrated-404 defect exploited (the harness measured a page
- * that had already swapped chrome before it ever looked). Playwright still serves `evaluate` calls
- * through the page's own runtime binding regardless of `javaScriptEnabled`, so
- * {@link capturePageIdentity} is unchanged between this capture and the hydrated one.
- */
-async function captureSsrIdentity(
-  browser: RenderedBrowser,
-  theme: Theme,
-  baseUrl: string,
-  pagePath: string,
-  cookies: { name: string; value: string; url: string }[]
-): Promise<PageIdentity> {
-  const context = await browser.newContext({ colorScheme: theme, javaScriptEnabled: false });
-  try {
-    await context.addCookies(cookies);
-    const page = await context.newPage();
-    try {
-      await page.goto(`${baseUrl}${pagePath}`, { waitUntil: 'load', timeout: 45_000 });
-      return await page.evaluate(capturePageIdentity);
-    } finally {
-      await page.close();
-    }
-  } finally {
-    await context.close();
-  }
-}
-
-/**
- * The finding the runner raises when a page's post-hydration DOM no longer matches the identity its
- * SSR response carried: a named harness finding, not a rule finding, since no rule ever got to look
- * at this page. Error tier: an admin route that hydrates into unrelated chrome is a real defect, not
- * a compositional judgment a rule might reasonably differ on, and a harness that reported clean here
- * anyway is the trust failure this guard exists to close (the two ASC edit desks were measured this
- * way, silently, for 58 findings against the wrong page).
- */
-function pageIdentityMismatchFinding(pagePath: string, theme: Theme, ssr: PageIdentity, hydrated: PageIdentity): Finding {
-  const describe = (identity: PageIdentity) =>
-    `"${identity.title}"${identity.landmark ? ` (landmark ${identity.landmark})` : ''}`;
-  return positionless({
-    ruleId: PAGE_IDENTITY_RULE_ID,
-    tier: 'error',
-    file: `${pagePath} [${theme}]`,
-    message:
-      `${pagePath} served ${describe(ssr)} from the server, but settled into ${describe(hydrated)} after ` +
-      `hydration. The rules never ran here: this route is reported unmeasurable rather than audited under the ` +
-      `wrong page's identity. Fix the client-side mismatch, or drop the route from rendered.pages if it ` +
-      `genuinely cannot render stably.`,
-  });
-}
-
-/**
- * Resolve raw rendered findings against the allowlist: an exact page+selector match suppresses, and
- * every allowlist entry that never matched anything the run actually visited becomes its own
- * finding rather than silently doing nothing. An entry whose selector the browser refused to parse
- * is reported separately and advisory, since "unreadable" is a different claim from "stale" (see
- * {@link unprobeableFinding}), and an entry that still matches an element while suppressing nothing
- * is reported as dead (see {@link deadFinding}).
- *
- * An ADVISORY rule may also exempt its own finding by giving it a reason
- * ({@link RenderedFinding.exemption}), which suppresses it here rather than inside the rule. The
- * routing is deliberately the same one the allowlist takes: an exception is a finding that was
- * raised, counted, and printed, never a branch a rule took before constructing one. On an
- * `error`-tier finding the reason is refused and the finding still gates, so no rule can write
- * itself out of the exit code.
- *
- * A stale entry is reported at the tier of the rule it names, which `ruleTiers` supplies, and at
- * `error` when it names none. Without that, suppressing an ADVISORY finding gated the build the
- * moment its selector churned, which is the one path by which a non-gating rule could reach the
- * exit code.
- *
- * This is a pure function over already-collected data, so the allowlist contract is testable
- * without a browser.
- */
-export function resolveRenderedFindings(
-  raw: ResolvedRenderedFinding[],
-  visits: RenderedPageVisit[],
-  allowlist: RenderedAllowlistEntry[],
-  ruleTiers: Map<string, Tier> = new Map()
-): { findings: Finding[]; suppressed: Finding[] } {
-  const findings: Finding[] = [];
-  const suppressed: Finding[] = [];
-  const spent = new Set<RenderedAllowlistEntry>();
-  for (const rf of raw) {
-    // EVERY matching entry is spent, not just the first. Marking one left a duplicated row, an
-    // ordinary result of a hand edit or a config merge, falling into the dead branch and gating the
-    // build with a message asserting nothing raised a finding for that selector, one line under the
-    // finding that had just been raised and suppressed for it.
-    const matches = allowlist.filter((candidate) => candidate.page === rf.page && candidate.selector === rf.selector);
-    for (const entry of matches) spent.add(entry);
-    const allowlisted = matches.length > 0;
-    const selfExempt = rf.exemption !== undefined && rf.tier !== 'error';
-    const destination = allowlisted || selfExempt ? suppressed : findings;
-    destination.push(toFinding(rf, selfExempt, allowlisted));
-  }
-  for (const entry of allowlist) {
-    if (spent.has(entry)) continue;
-    const visit = visits.find((candidate) => candidate.page === entry.page);
-    if (visit?.identityRefused) {
-      findings.push(identityRefusedFinding(entry));
-      continue;
-    }
-    const tier = (entry.rule === undefined ? undefined : ruleTiers.get(entry.rule)) ?? 'error';
-    if (visit?.selectorsSeen.has(entry.selector)) {
-      const unreached = [...(visit.statesUnreached ?? [])].sort();
-      findings.push(unreached.length > 0 ? unreachedStateFinding(entry, unreached) : deadFinding(entry, tier));
-      continue;
-    }
-    findings.push(
-      visit?.selectorsUnprobeable?.has(entry.selector) ? unprobeableFinding(entry) : staleFinding(entry, tier)
-    );
-  }
-  return { findings, suppressed };
-}
 
 /** The preview server address a rendered run targets absent `BASE_URL`. */
 export const DEFAULT_BASE_URL = 'http://localhost:4173';
@@ -609,14 +162,6 @@ async function loadPlaywrightModule(loader: () => Promise<PlaywrightModule>): Pr
   } catch {
     throw new Error('Playwright is not installed. Run: npm i -D playwright && npx playwright install chromium');
   }
-}
-
-/** Everything a rendered run may substitute for testability. Every field defaults to the real thing. */
-export interface RenderedDeps {
-  /** Whether BASE_URL answers; defaults to a real `fetch`. */
-  isReachable?: (url: string) => Promise<boolean>;
-  /** Loads Playwright; defaults to a dynamic import of the caller's own install. */
-  loadPlaywright?: () => Promise<PlaywrightModule>;
 }
 
 /**
@@ -771,41 +316,6 @@ function probeSelectors(selectors: string[]): ('matched' | 'absent' | 'unprobeab
       return 'unprobeable';
     }
   });
-}
-
-/**
- * The measurement helpers every rendered rule shares, installed on the page rather than closed
- * over. A function handed to `page.evaluate` is serialized by source and cannot reference anything
- * outside its own body, which is why five rules each grew their own copy of "is this visible" and
- * "name this element"; the copies then drifted, and an adversarial pass demonstrated the drift as
- * shipped defects (an `sr-only` heading counted as a rendered heading, an unescaped Tailwind class
- * signature that no `querySelectorAll` could parse). Installing one implementation on `window` and
- * calling it from inside each rule's own evaluate keeps the definition single without reintroducing
- * the closure the serializer forbids.
- */
-export interface CairnAuditPageHelpers {
-  /**
-   * A valid CSS selector naming `el`: its tag, its id, and up to four of its classes, every
-   * identifier escaped. Tailwind's own class syntax (`lg:ml-56`, `max-w-[30%]`) is not a legal
-   * identifier unescaped, and an unescaped signature throws inside `querySelectorAll`.
-   */
-  signature(el: Element): string;
-  /**
-   * Whether `el` renders to a sighted user: it and every ancestor pass `display`, `visibility`,
-   * and cumulative `opacity`, it is not inside a screen-reader-only container, and it occupies a
-   * box (measured through a Range, so `display: contents` and inline text still count).
-   */
-  isVisible(el: Element): boolean;
-  /** Whether `el` carries the visually-hidden recipe (a clipped 1px box), on its own or by ancestry. */
-  isScreenReaderOnly(el: Element): boolean;
-  /** `el`'s own paint layer, then each ancestor's up to the document root. */
-  paintLayers(el: Element): PaintLayer[];
-  /** The color the browser paints where nothing in the document ever paints, as a CSS string. */
-  canvasColor(): string;
-}
-
-declare global {
-  var __cairnAudit: CairnAuditPageHelpers | undefined;
 }
 
 /**

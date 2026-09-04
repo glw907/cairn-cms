@@ -7,7 +7,7 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
-## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits)
+## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits), branch pushed for PR
 
 Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-b-pass.md` (worktree
 `internals-b`, off `main` at `c95ff02d`). All fourteen tasks across five independent chains
@@ -23,10 +23,11 @@ check` 0/0, 374 files / 4,927 tests plus 78 files / 1,354 component tests exit 0
 CI-only gate green by name.
 
 What the gate caught: the five-reviewer fan-out (svelte, daisyui-a11y, cloudflare-workers,
-web-auth-security, cleanliness) found no blocking architectural defect, but did find four
+web-auth-security, cleanliness) found no blocking architectural defect, but did find five
 blocking a11y items in the extracted media dialogs (a live region mounting together with
-its first content instead of present-and-empty, focus dropped on a step flip, a tabbable
-invisible file input), a comment-accuracy defect class in the split's own headers (a
+its first content instead of present-and-empty, focus dropped on a step flip, an unbound
+initial-focus ref, a tabbable invisible file input, and an unguarded Escape during an
+in-flight upload), a comment-accuracy defect class in the split's own headers (a
 re-export block claiming an importer that did not exist, a doc describing the wrong
 function, a stale enumeration), and a write-before-validate ordering bug in `media-seed`.
 All folded into three fixer commits; a fresh-context Opus `diff-reviewer` re-read all three
@@ -40,9 +41,11 @@ What a later pass would be wrong to rediscover: a pass-end fix round with more t
 parallel writer needs its own worktree per writer, never one shared worktree between
 them; two of this pass's three fixers ran `git stash` in the same worktree and transiently
 clobbered each other's uncommitted work before either committed (both recovered).
-`content-routes-media.ts` at 1,447 lines is now the one remaining tracked monolith. The
+`content-routes-media.ts` at 1,447 lines is the one file left from the audit's original
+monolith list; `content-routes-entry.ts` is larger at 1,631 lines but was created by this
+split, so it enters the next slice as new work rather than carried work. The
 `registerEditor` identity-guarded revocation rests on Svelte memoizing a call expression in
-prop position (`register={bindEditorGrant()}` compiles to one `$.derived` per mount, so
+prop position (`registerEditor={bindEditorGrant()}` compiles to one `$.derived` per mount, so
 `onMount` and `onDestroy` see the same closure); that assumption is now pinned by a re-key
 harness test (`MarkdownEditor.test.ts`), not left resting on a comment alone. Budget:
 ceiling 8M; spend unrecorded, since the session running the final fixer and gate sweep was

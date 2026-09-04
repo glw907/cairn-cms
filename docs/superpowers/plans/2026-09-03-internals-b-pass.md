@@ -684,10 +684,10 @@ conductor verified the warm tree was the fixer's completed work, ran the two lin
 gates that had not yet run (`check:comments`, `check:cm-internals`) green, and committed the
 tree as `c8551988` rather than re-dispatching work already proven done.
 
-**Budgets scored.** Ceiling: 8M tokens. Spend: not captured before the session that ran
-Chain D's fixer and the final gate sweep was killed by the CLI update; no figure is
-recorded, and the gap is itself a process defect for the next pass to close: checkpoint
-token spend at every fixer dispatch, not just the four-task interval. Human
+**Budgets scored.** Ceiling: 8M tokens. Spend: not captured. The session running Chain D's
+fixer and the final gate sweep was killed by the CLI update before a figure was read. The
+gap is a process defect for the next pass to close by checkpointing spend at every fixer
+dispatch, not only at the four-task interval. Human
 interaction points: two. The combined plan-approval question on 2026-09-03 evening (which
 also carried the overnight git authorization for both internals-B and internals-C), and the
 resume instruction that restarted the session after the CLI-update kill. Zero questions

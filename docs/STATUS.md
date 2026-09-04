@@ -19,6 +19,20 @@ green); the window holds until the polish slice per the amended initiative desig
 
 ## Immediate next action
 
+**IN FLIGHT (2026-09-03 overnight session): internals-B is executing** as workflow
+`wf_6c0135ff-1b5` (script `pass-execute-chains.js`, five parallel chains in five worktrees:
+`.claude/worktrees/internals-b-chain-{a..e}` on branches `internals-b-chain-{a..e}`, tasks
+A:1-4, B:5-6, C:7-9, D:10-13, E:14; pass worktree `.claude/worktrees/internals-b`, branch
+`internals-b`, merges the chains before the ritual). Guards armed: both sleep inhibitors to
+09:00, battery watchdog, runaway guard on the workflow transcript dir. A cold session
+resuming after a crash: re-arm the FULL guard set
+(`~/.claude/docs/unattended-work-guards.md`), check the chain branches for committed task
+work (`git log internals-b-chain-a` etc.), and resume with
+`Workflow({scriptPath: "<scratchpad>/pass-execute-chains.js", resumeFromRunId:
+"wf_6c0135ff-1b5"})` or re-dispatch the remaining tasks per the plan; then merge chains
+into `internals-b`, run the cairn-pass ritual, push, PR, merge on green CI; then
+reconcile and execute internals-C per the paragraph below.
+
 **Execute internals-B, then internals-C, in one overnight run. BOTH PLANS ARE APPROVED
 (Geoff, 2026-09-03 evening, via the approval-gate question) with FULL overnight git
 authorization: for each pass in order, push the branch, open the PR, and merge on green

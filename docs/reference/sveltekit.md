@@ -1817,7 +1817,7 @@ accessible noun for the count ("pending requests"), joined into the entry's acce
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the attention function -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 import { db } from './club/db.js';
 
@@ -1889,7 +1889,7 @@ Stability tier: Extension API.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the editor.publishActions member -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({

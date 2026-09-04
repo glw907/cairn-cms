@@ -201,12 +201,12 @@ description: The first entry in a hand-built site.
 This is the body. It's plain markdown.
 ```
 
-Declare the concept, the render pipeline, and the adapter in `src/lib/cairn.config.ts`. The
+Declare the concept, the render pipeline, and the adapter in `src/theme/cairn.config.ts`. The
 `backend` and `email` values matter only once you deploy for real, in Milestone 5; for now the
 dev backend intercepts every request before either one connects, so placeholders are fine:
 
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import {
   defineAdapter,
   defineConcept,
@@ -459,7 +459,7 @@ export default defineConfig(({ command }) => ({
       /* ... */
     }),
     cairnManifest({
-      configModule: '/src/lib/cairn.config.ts',
+      configModule: '/src/theme/cairn.config.ts',
       content: { posts: '/src/content/posts/*.md' },
       manifestPath: '/src/content/.cairn/index.json',
     }),

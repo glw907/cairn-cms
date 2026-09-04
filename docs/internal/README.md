@@ -63,6 +63,9 @@ subdirectories, each of which keeps its own filing rule and its own index.
   carries toward the harvest pass.
 - [`public-design-system.md`](public-design-system.md): Waymark, cairn's public reading theme,
   the public counterpart to the admin's Warm Stone.
+- [`src-lib-map.md`](src-lib-map.md): the contributor and agent map of `src/lib`, the
+  public/internal split per directory, the admin request flow, and the rest of the tree's
+  internal structure that `CONTRIBUTING.md`'s Repository map does not cover.
 - [`what-cairn-is-and-is-not.md`](what-cairn-is-and-is-not.md): the internal scope charter, the
   fuller why behind CLAUDE.md's `## What cairn is`.
 

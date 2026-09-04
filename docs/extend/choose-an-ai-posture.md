@@ -9,7 +9,7 @@ Set `aiPosture` on your adapter:
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the aiPosture member -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({

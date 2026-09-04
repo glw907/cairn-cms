@@ -38,8 +38,10 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
     /** The entry id (the upload action's route param). */
     id: string;
     /** Registers a leaf's hero-field ref (or `null` on teardown) with the host, keyed by the
-     *  prefixed name; forwarded straight through to each leaf, same as `onuploaded`. */
-    registerHeroField: (name: string, ref: MediaHeroField | null) => void;
+     *  prefixed name; forwarded straight through to each leaf, same as `onuploaded`. On
+     *  teardown a third argument carries the exact instance this leaf granted, so the host
+     *  deletes its map entry only when it still holds that same instance. */
+    registerHeroField: (name: string, ref: MediaHeroField | null, owned?: MediaHeroField | null) => void;
     /** Called with the server-owned record on a successful upload, so the host merges it. */
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */

@@ -23,7 +23,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   import IconPicker from './IconPicker.svelte';
   import { isClosedMultiselect } from '../content/frontmatter.js';
   import type { ImageValue, NamedField } from '../content/types.js';
-  import type { TextareaField, NumberField, SelectField, MultiselectField } from '../content/fields.js';
+  import type { TextareaField, NumberField, SelectField, MultiselectField, FieldDescriptor } from '../content/fields.js';
   import type { IconSet } from '../render/glyph.js';
   import type { LinkTarget } from '../content/manifest.js';
   import type { MediaEntry } from '../media/manifest.js';
@@ -171,6 +171,38 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   // if it might schedule publishing, so this reassures the editor that the date is metadata and that
   // publishing is the separate, deliberate step. A field-level description overrides it.
   const DATE_PUBLISH_HINT = 'Sets the date for this post. Publishing is a separate step you choose.';
+
+  /**
+   * Type-only exhaustiveness proof for the template's `{#if field.type === ...}` chain below. The
+   *  chain's final `{:else}` stays a runtime fallback (an icon field with no `icons` prop reaches
+   *  it too, since that branch's extra `&& icons` guard narrows no type away), so the compiler
+   *  cannot prove the chain exhaustive from the template alone; this function lists every
+   *  `FieldDescriptor` arm as its own case so a sixteenth arm fails `npm run check` here, before it
+   *  silently renders through the generic fallback. Never called: the compile-time check is its
+   *  only purpose.
+   */
+  function assertFieldInputArmsExhaustive(kind: FieldDescriptor['type']): void {
+    switch (kind) {
+      case 'textarea':
+      case 'number':
+      case 'select':
+      case 'date':
+      case 'boolean':
+      case 'multiselect':
+      case 'image':
+      case 'reference':
+      case 'array':
+      case 'object':
+      case 'icon':
+      case 'text':
+      case 'url':
+      case 'email':
+      case 'datetime':
+        return;
+      default:
+        kind satisfies never;
+    }
+  }
 </script>
 
 {#snippet fieldHint(hintName: string, text: string)}

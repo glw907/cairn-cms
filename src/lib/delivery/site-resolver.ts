@@ -166,6 +166,8 @@ export function resolveReferences(
   for (const field of descriptor.fields) {
     const isSingle = field.type === 'reference';
     const isArray = field.type === 'array' && field.item.type === 'reference';
+    // Deliberate no-op for every other FieldDescriptor arm: only a reference or array(reference)
+    // field has a resolvable target, so any other type skips this field with no entry.
     if (!isSingle && !isArray) continue;
     const fieldEdges = edges.filter((edge) => edge.field === field.name);
     const hits: ResolvedReference[] = [];

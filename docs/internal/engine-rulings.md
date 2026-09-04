@@ -5388,3 +5388,38 @@ when the remediation pass lands.
 - **Verified:** `src/tests/unit/access-composition.test.ts` (the warning fires naming every
   concept and fixed screen a partial map leaves unmapped, stays silent against an exhaustive map,
   and an href key never counts toward coverage).
+
+## exhaustiveness-mechanism: type-level exhaustiveness over FieldDescriptor's five dispatchers  (accept, 2026-09-04, internals-C pass)
+
+- **Verdict:** accept. `FieldDescriptor` is a closed 15-arm union (`content/fields.ts:122-137`)
+  originating in site config, so exhaustiveness is a type-level guard, not a runtime fail-closed
+  check. The five dispatch sites (`frontmatter.ts`'s `decodeField` and `frontmatterFromForm`,
+  `fieldset.ts`'s `validateField`, `FieldInput.svelte`, `ComponentForm.svelte`) each turn every
+  arm the union carries into an explicit case with its existing behavior, then close the gap: the
+  three `.ts` dispatchers end in `default: unreachable(field, '<site>')` (the new
+  `content/unreachable.ts`), and the two templates keep their generic-input `{:else}` as a runtime
+  fallback (a throw there would escape the `adminAction` wrapper and brick the edit screen) while
+  gaining a script-block `satisfies never` proof that mirrors the arm list. This differs in
+  posture from `render/registry.ts:234`'s fail-closed input check: these five dispatchers run over
+  already-validated descriptor values a site config declares, not free-form author input, so a
+  type-checked closed union is the correct guard, not a second runtime throw. `decodeField`'s
+  reference and array cases are the one asymmetry worth naming: `fieldset.ts`'s
+  `checkContainerNesting` forbids both as a nested leaf at declaration time, but that guard is
+  structural, not type-level, so those two cases fold into the same trimmed-string reading the
+  arm already had under the old default, rather than routing to `unreachable()`, which would turn
+  a future gap in that guard into a save-breaking crash instead of the trimmed-string fallback a
+  hand-built or future caller gets today.
+- **Any-site case:** a site adds a sixteenth field type, or a typo lands on an existing
+  constructor call site, and gets no signal beyond a helper inside a test file whose message
+  names neither the union nor the dispatch sites still to fix (the any-site audit's own
+  `RatingField` walk, `int-coherence.md` finding 6). The type-level guard now fails `npm run
+  check` at all five sites instead, before the field silently commits through a generic string
+  fallback.
+- **Reopens on:** a sixth dispatch site is added over `FieldDescriptor` without the guard.
+- **Record:** [int-coherence.md, finding 6](record/2026-08-26-any-site-audit/int-coherence.md);
+  [2026-09-03 internals-C pass](../superpowers/plans/2026-09-03-internals-c-pass.md), Task 1.
+- **Verified:** `content/unreachable.test.ts`; the five dispatch sites' characterization suites
+  (`content-frontmatter.test.ts`, `fieldset-validate.test.ts`, `fields-icon.test.ts`,
+  `field-input.test.ts`, `ComponentForm.test.ts`), byte-stable across the rewrite; the sixteenth-arm
+  mutation check (a scratch arm added to the union fails `npm run check` at all five sites, then
+  reverted).

@@ -37,6 +37,9 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
   const concept = $derived.by(() => {
     if (field.type === 'array') return (field.item as ReferenceField).concept;
     if (field.type === 'reference') return field.concept;
+    // Deliberate no-op for every other FieldDescriptor arm: FieldInput only ever mounts this
+    // component for a reference or array(reference) field, so no other type reaches here in
+    // practice, and an unresolvable concept degrades to an empty scope rather than a crash.
     return '';
   });
 

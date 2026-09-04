@@ -227,3 +227,63 @@ describe('ComponentForm submit label', () => {
     await expect.element(screen.getByRole('button', { name: /^insert$/i })).not.toBeInTheDocument();
   });
 });
+
+// Characterization of every FieldDescriptor arm this dispatcher branches on. select and boolean
+// are covered above; this fills in the rest, one arm each. multiselect/image/object/reference/array
+// never reach a real component attribute (checkComponentAttributes rejects them at defineComponent),
+// so those five bypass defineComponent to exercise the same generic fallback the type checker still
+// has to cover.
+describe('ComponentForm attribute-arm dispatch (characterization: every FieldDescriptor arm)', () => {
+  it('renders the generic fallback input for text, number, url, email, date, and datetime, each with its matching HTML input type', async () => {
+    const def = defineComponent({
+      ...base, name: 'kinds', label: 'Kinds',
+      attributes: {
+        title: fields.text({ label: 'Title' }),
+        count: fields.number({ label: 'Count' }),
+        site: fields.url({ label: 'Site' }),
+        contact: fields.email({ label: 'Contact' }),
+        day: fields.date({ label: 'Day' }),
+        when: fields.datetime({ label: 'When' }),
+      },
+    });
+    const screen = await render(ComponentForm, { def, onInsert: () => {} } as never);
+    const typeOf = (label: string) => (screen.getByLabelText(label).element() as HTMLInputElement).type;
+    expect(typeOf('Title')).toBe('text');
+    expect(typeOf('Count')).toBe('number');
+    expect(typeOf('Site')).toBe('url');
+    expect(typeOf('Contact')).toBe('email');
+    expect(typeOf('Day')).toBe('date');
+    expect(typeOf('When')).toBe('datetime-local');
+  });
+
+  it('renders the icon picker radiogroup when an icon set is supplied, and the generic fallback text input otherwise', async () => {
+    const def = defineComponent({
+      ...base, name: 'glyph', label: 'Glyph',
+      attributes: { glyph: fields.icon({ label: 'Glyph' }) },
+    });
+    const withIcons = await render(ComponentForm, { def, icons: { leaf: 'M1 1h2' }, onInsert: () => {} } as never);
+    await expect.element(withIcons.getByRole('radiogroup', { name: 'Glyph' })).toBeInTheDocument();
+    await withIcons.unmount();
+
+    const withoutIcons = await render(ComponentForm, { def, onInsert: () => {} } as never);
+    expect((withoutIcons.getByLabelText('Glyph').element() as HTMLInputElement).type).toBe('text');
+    expect(withoutIcons.container.querySelector('[role="radiogroup"]')).toBeNull();
+  });
+
+  it('renders the generic fallback text input for a multiselect, image, object, reference, or array attribute, since a component attribute is never one of those in practice', async () => {
+    const def: ComponentDef = {
+      ...base, name: 'unusual', label: 'Unusual',
+      attributes: {
+        tags: fields.multiselect({ label: 'Tags' }),
+        photo: fields.image({ label: 'Photo' }),
+        meta: fields.object({ label: 'Meta', fields: {} }),
+        author: fields.reference({ label: 'Author', concept: 'pages' }),
+        related: fields.array(fields.text({ label: 'Item' }), { label: 'Related' }),
+      },
+    };
+    const screen = await render(ComponentForm, { def, onInsert: () => {} } as never);
+    for (const label of ['Tags', 'Photo', 'Meta', 'Author', 'Related']) {
+      expect((screen.getByLabelText(label).element() as HTMLInputElement).type).toBe('text');
+    }
+  });
+});

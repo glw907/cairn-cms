@@ -152,11 +152,41 @@ describe('normalizeManifest', () => {
 
   it('drops a row missing slug, hash, or ext instead of failing the whole run', () => {
     const manifest = {
-      a: { hash: 'a', slug: 'ok', ext: 'webp' },
-      b: { hash: 'b', ext: 'webp' },
-      c: { hash: 'c', slug: 'no-ext' },
+      a: { hash: 'aaaaaaaaaaaaaaaa', slug: 'ok', ext: 'webp' },
+      b: { hash: 'bbbbbbbbbbbbbbbb', ext: 'webp' },
+      c: { hash: 'cccccccccccccccc', slug: 'no-ext' },
     };
-    expect(normalizeManifest(manifest)).toEqual([{ slug: 'ok', hash: 'a', ext: 'webp' }]);
+    expect(normalizeManifest(manifest)).toEqual([{ slug: 'ok', hash: 'aaaaaaaaaaaaaaaa', ext: 'webp' }]);
+  });
+
+  // The security lens's blocking find: a manifest row whose hash or ext is shaped like a path
+  // traversal must never reach seedMedia's write loop at all, the earliest choke point available.
+  it('drops a row whose hash is shaped like a path traversal', () => {
+    const manifest = {
+      evil: { hash: '../../evil', slug: 'x', ext: 'webp' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose ext is shaped like a path traversal', () => {
+    const manifest = {
+      evil: { hash: 'aaaaaaaaaaaaaaaa', slug: 'x', ext: '../../evil' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose hash is not 16 lowercase hex chars', () => {
+    const manifest = {
+      short: { hash: 'abc', slug: 'x', ext: 'webp' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose ext is not a short alphanumeric', () => {
+    const manifest = {
+      bad: { hash: 'aaaaaaaaaaaaaaaa', slug: 'x', ext: 'toolongext' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
   });
 });
 
@@ -243,6 +273,38 @@ describe('readR2Buckets', () => {
     await expect(readR2Buckets(readFileFrom({ 'wrangler.jsonc': '{ not json' }))).rejects.toThrow(
       /did not parse/
     );
+  });
+});
+
+// bin.ts's own readFileUnderCwd (:73-79), the internals-B docket item 5 WATCH discharge: its
+// three call sites (wrangler.jsonc, wrangler.toml, the media manifest) are all hardcoded
+// literals, so no caller today ever hands it a traversal-shaped relPath. The assert is defense
+// in depth "regardless of where relPath came from" (its own comment), matching doctor/bin.ts's
+// containment shape. bin.ts self-executes main() via a top-level await on import, so the closure
+// is not independently importable; this forces a traversal-shaped relPath through the real
+// closure by mocking readR2Buckets, the one function bin.ts hands readFileUnderCwd to as a
+// callback, to call it with a hostile relPath instead of its own literal ones. The refusal
+// rejects the whole bin module's evaluation, since nothing in main() catches it.
+describe('bin.ts readFileUnderCwd containment', () => {
+  it('refuses a relPath that resolves outside the project directory, naming it with the media-seed prefix', async () => {
+    vi.resetModules();
+    const originalArgv = process.argv;
+    process.argv = [process.execPath, 'bin.js', '--from', 'https://example.com'];
+    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+      readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
+        await readFile('../outside.json');
+        return null;
+      },
+    }));
+    try {
+      await expect(import('../../lib/media-seed/bin.js')).rejects.toThrow(
+        'cairn-media-seed: refusing to read outside the project directory: ../outside.json'
+      );
+    } finally {
+      process.argv = originalArgv;
+      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.resetModules();
+    }
   });
 });
 
@@ -341,6 +403,34 @@ describe('seedMedia', () => {
     const first = await seedMedia(items, 'https://example.com', {}, 'site-media', deps);
     const second = await seedMedia(items, 'https://example.com', {}, 'site-media', makeDeps());
     expect(first).toEqual(second);
+  });
+
+  // The security lens's blocking find, defense in depth for a caller that reaches seedMedia
+  // without going through normalizeManifest's screen: a hostile hash or ext must be refused
+  // BEFORE any byte is written, never after. This fails on HEAD, where writeTempFile runs before
+  // r2Key's validation.
+  it('refuses a hostile hash before writing any byte, never calling writeTempFile', async () => {
+    const hostile: SeedItem[] = [{ slug: 'evil', hash: '../../evil', ext: 'webp' }];
+    const deps = makeDeps();
+    const result = await seedMedia(hostile, 'https://example.com', {}, 'site-media', deps);
+    expect(result).toEqual({
+      total: 1,
+      ok: 0,
+      failed: 1,
+      failures: [{ slug: 'evil', message: expect.stringContaining('hash') }],
+    });
+    expect(deps.written).toEqual([]);
+    expect(deps.put).toEqual([]);
+  });
+
+  it('refuses a hostile ext before writing any byte, never calling writeTempFile', async () => {
+    const hostile: SeedItem[] = [{ slug: 'evil', hash: 'aa11223344556677', ext: '../../evil' }];
+    const deps = makeDeps();
+    const result = await seedMedia(hostile, 'https://example.com', {}, 'site-media', deps);
+    expect(result.ok).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(deps.written).toEqual([]);
+    expect(deps.put).toEqual([]);
   });
 });
 

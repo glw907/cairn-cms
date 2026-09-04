@@ -22,3 +22,9 @@ CREATE TABLE session (
 
 CREATE INDEX idx_magic_token_email ON magic_token (email);
 CREATE INDEX idx_session_email ON session (email);
+
+-- No index on session.expires_at: the login sweep (auth/store.ts's createSession) scans it on
+-- every login, but an editor roster is small enough that a full-table scan is negligible, and
+-- adding the index later is a hand-applied migration a consumer runs themselves
+-- (docs/extend/upgrade-cairn.md), not worth asking for at this scale. Reopen if editor rosters
+-- stop being small.

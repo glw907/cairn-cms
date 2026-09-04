@@ -200,6 +200,10 @@ export async function createSession(
 ): Promise<void> {
   await db.batch([
     // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
+    // No index on session.expires_at backs this scan: an editor roster is small enough that a
+    // full-table scan here is negligible, and adding the index later is a hand-applied
+    // migration a consumer runs themselves (docs/extend/upgrade-cairn.md), not worth asking
+    // for at this scale. Reopen if editor rosters stop being small.
     db.prepare('DELETE FROM session WHERE expires_at <= ?').bind(now),
     db
       .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')

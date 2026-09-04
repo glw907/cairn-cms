@@ -8,7 +8,7 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { readR2Buckets } from '../doctor/wrangler-config.js';
 import { normalizeManifest, parseArgs, resolveBucket, USAGE } from './assemble.js';
 import { seedMedia } from './run.js';
@@ -21,6 +21,12 @@ function realDeps(cwd: string): SeedDeps {
     fetch: globalThis.fetch,
     writeTempFile(name, bytes) {
       const file = join(dir, name);
+      // join() does not contain: a name built from a hostile manifest hash/ext (enough ".."
+      // segments) walks the result outside dir. normalizeManifest already screens the manifest
+      // before an item reaches here; this is defense in depth for a caller that does not.
+      if (file !== dir && !file.startsWith(dir + sep)) {
+        throw new Error(`cairn-media-seed: refusing to write outside the temp directory: ${name}`);
+      }
       writeFileSync(file, bytes);
       return file;
     },
@@ -64,12 +70,15 @@ async function main(): Promise<void> {
   }
 
   const cwd = process.cwd();
-  // WATCH: this is the byte-identical, uncontained twin of doctor/bin.ts's readFileUnderCwd,
-  // routed to internals-B (docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md,
-  // item 5): give this closure the same resolved-path-stays-under-cwd containment assert.
   const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
+    // resolve() does not contain: a relPath carrying enough ".." segments walks the result
+    // outside cwd, so every read is checked against cwd regardless of where relPath came from.
+    const resolved = resolve(cwd, relPath);
+    if (resolved !== cwd && !resolved.startsWith(cwd + sep)) {
+      throw new Error(`cairn-media-seed: refusing to read outside the project directory: ${relPath}`);
+    }
     try {
-      return await readFile(resolve(cwd, relPath), 'utf8');
+      return await readFile(resolved, 'utf8');
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
       throw err;

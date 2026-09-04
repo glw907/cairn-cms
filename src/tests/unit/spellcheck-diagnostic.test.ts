@@ -1,5 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildSpellDiagnostic } from '../../lib/components/spellcheck.js';
+import type { EditorView } from '@codemirror/view';
+
+/** A dispatch-only stand-in for the CodeMirror view every action.apply receives; this suite
+ *  asserts only the dispatched transaction, never a real view's rendering. The mock is returned
+ *  alongside the cast view so an assertion reads it with its own type intact. */
+function fakeView(): { view: EditorView; dispatch: ReturnType<typeof vi.fn> } {
+  const dispatch = vi.fn();
+  return { view: { dispatch } as unknown as EditorView, dispatch };
+}
 
 // The diagnostic builder is the pure-ish seam Task 5 exposes: given a misspelled word, its range,
 // the ranked suggestions, and the two callbacks (add to dictionary, ignore), it produces the
@@ -53,11 +62,11 @@ describe('buildSpellDiagnostic: the correction popover contract', () => {
       onIgnoreWord: vi.fn(),
     });
     const action = (diagnostic.actions ?? [])[0]!;
-    const view = { dispatch: vi.fn() };
+    const { view, dispatch } = fakeView();
     // The apply receives the diagnostic's current position (CodeMirror passes from/to).
-    action.apply(view as never, range.from, range.to);
-    expect(view.dispatch).toHaveBeenCalledTimes(1);
-    expect(view.dispatch).toHaveBeenCalledWith({
+    action.apply(view, range.from, range.to);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
       changes: { from: range.from, to: range.to, insert: 'colour' },
     });
   });
@@ -67,9 +76,9 @@ describe('buildSpellDiagnostic: the correction popover contract', () => {
     const onIgnoreWord = vi.fn();
     const diagnostic = buildSpellDiagnostic('colur', range, [], { onAddWord, onIgnoreWord });
     const actions = diagnostic.actions ?? [];
-    const view = { dispatch: vi.fn() };
-    actions.find((a) => a.name === 'Add to dictionary')!.apply(view as never, range.from, range.to);
-    actions.find((a) => a.name === 'Ignore')!.apply(view as never, range.from, range.to);
+    const { view } = fakeView();
+    actions.find((a) => a.name === 'Add to dictionary')!.apply(view, range.from, range.to);
+    actions.find((a) => a.name === 'Ignore')!.apply(view, range.from, range.to);
     expect(onAddWord).toHaveBeenCalledWith('colur');
     expect(onIgnoreWord).toHaveBeenCalledWith('colur');
   });

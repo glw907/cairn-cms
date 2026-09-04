@@ -56,7 +56,7 @@ describe('saveAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' })),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
 
@@ -90,7 +90,7 @@ describe('saveAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' })),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     // The branch carries the new content; main still serves the old file and the old manifest row.
@@ -104,7 +104,7 @@ describe('saveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: false, errors: { title: 'Title is required' } })));
     const result = (await routes.saveAction(
-      saveEvent('2026-05-x', { title: '', body: 'b' }) as never,
+      saveEvent('2026-05-x', { title: '', body: 'b' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/Title/);
@@ -121,7 +121,7 @@ describe('saveAction', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    await expect(routes.saveAction(saveEvent('Bad Id!', { title: 'x', body: 'b' }) as never)).rejects.toMatchObject({ status: 400 });
+    await expect(routes.saveAction(saveEvent('Bad Id!', { title: 'x', body: 'b' }))).rejects.toMatchObject({ status: 400 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -141,7 +141,7 @@ describe('saveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const result = (await routes.saveAction(
-      saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never,
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/changed since/i);
@@ -155,7 +155,7 @@ describe('saveAction', () => {
     const calls = commitFetch(null); // empty manifest: nothing to resolve against
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const result = (await routes.saveAction(
-      saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/1 missing page/i);
@@ -170,7 +170,7 @@ describe('saveAction', () => {
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const syncBackend = makeGithubBackend(REPO, () => 'sync-token');
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }, syncBackend) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }, syncBackend)),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: Hi');
@@ -185,7 +185,7 @@ describe('saveAction', () => {
     commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' })),
     );
     expect(location).toMatch(/saved=1/);
     expect(location).toMatch(/draft/i);
@@ -200,7 +200,7 @@ describe('saveAction', () => {
     commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' })),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     expect(location).not.toMatch(/drafts=/);
@@ -213,7 +213,7 @@ describe('saveAction', () => {
     const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' })),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(true);
@@ -229,7 +229,7 @@ describe('saveAction', () => {
     commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }));
     } catch {
       // swallow the success redirect
     }
@@ -253,7 +253,7 @@ describe('saveAction', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
+    await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }));
     const reasons = warnSpy.mock.calls.map((c) => (c[0] as { event?: string; reason?: string }));
     expect(reasons.some((r) => r.event === 'commit.failed' && r.reason === 'conflict')).toBe(true);
     vi.restoreAllMocks();
@@ -275,7 +275,7 @@ describe('saveAction', () => {
       throw e;
     }));
     const result = (await routes.saveAction(
-      saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never,
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/changed since/i);
@@ -306,7 +306,7 @@ describe('saveAction taxonomy enforcement', () => {
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' })),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
@@ -319,7 +319,7 @@ describe('saveAction taxonomy enforcement', () => {
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
     const result = (await routes.saveAction(
-      saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never,
+      saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }),
     )) as unknown as { status: number; data: { error: string; body: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/brandnew/i);
@@ -343,7 +343,7 @@ describe('saveAction taxonomy enforcement', () => {
     form.append('topics', 'legacy');
     form.append('body', 'fresh body');
     const event = contentEvent({ url: 'https://t.example/admin/posts/2026-05-hi', params: { concept: 'posts', id: '2026-05-hi' }, form });
-    const { location } = await expectRedirect(() => routes.saveAction(event as never));
+    const { location } = await expectRedirect(() => routes.saveAction(event));
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
     expect(saved).toContain('legacy');
@@ -355,7 +355,7 @@ describe('saveAction taxonomy enforcement', () => {
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([]));
     const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' }) as never),
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' })),
     );
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
@@ -385,7 +385,7 @@ describe('saveAction belt-and-braces date guard', () => {
     gh.install();
     const routes = createContentRoutes(datedRuntime());
     const result = (await routes.saveAction(
-      saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never,
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }),
     )) as unknown as { status: number; data: { error: string; body: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/Pick a date/i);

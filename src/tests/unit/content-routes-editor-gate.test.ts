@@ -6,27 +6,26 @@
 import { describe, it, expect } from 'vitest';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime } from './_content-harness.js';
+import { testEvent } from '../helpers/test-event.js';
 
 /** A none-capability editor, the shape the guard produces for a role outside the site's declared
  *  vocabulary or one explicitly mapped to `none` (e.g. an ASC-shaped instructor with no `home`). */
-const NONE_EDITOR = { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' };
+const NONE_EDITOR = { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' as const };
 
 /** A minimal event for a none-capability session; params/body are irrelevant since requireEditor
  *  refuses before either function reads them. */
 function noneEvent(params: Record<string, string> = {}) {
-  return {
-    url: new URL('https://test.example/admin/posts'),
+  return testEvent({
+    url: 'https://test.example/admin/posts',
     params,
-    request: new Request('https://test.example/admin/posts'),
     locals: { cairnEditor: NONE_EDITOR },
-    platform: { env: {} },
-  };
+  });
 }
 
 describe('the none contract: engine content surfaces refuse a none-capability session with 403', () => {
   it('listLoad refuses with 403', async () => {
     const routes = createContentRoutes(runtime());
-    await expect(routes.listLoad(noneEvent({ concept: 'posts' }) as never)).rejects.toMatchObject({
+    await expect(routes.listLoad(noneEvent({ concept: 'posts' }))).rejects.toMatchObject({
       status: 403,
     });
   });
@@ -34,26 +33,26 @@ describe('the none contract: engine content surfaces refuse a none-capability se
   it('saveAction refuses with 403', async () => {
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.saveAction(noneEvent({ concept: 'posts', id: '2026-05-01-hello' }) as never),
+      routes.saveAction(noneEvent({ concept: 'posts', id: '2026-05-01-hello' })),
     ).rejects.toMatchObject({ status: 403 });
   });
 
   it('editLoad refuses with 403', async () => {
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.editLoad(noneEvent({ concept: 'posts', id: '2026-05-01-hello' }) as never),
+      routes.editLoad(noneEvent({ concept: 'posts', id: '2026-05-01-hello' })),
     ).rejects.toMatchObject({ status: 403 });
   });
 
   it('createAction refuses with 403', async () => {
     const routes = createContentRoutes(runtime());
-    await expect(routes.createAction(noneEvent({ concept: 'posts' }) as never)).rejects.toMatchObject({
+    await expect(routes.createAction(noneEvent({ concept: 'posts' }))).rejects.toMatchObject({
       status: 403,
     });
   });
 
   it('publishAllAction refuses with 403', async () => {
     const routes = createContentRoutes(runtime());
-    await expect(routes.publishAllAction(noneEvent() as never)).rejects.toMatchObject({ status: 403 });
+    await expect(routes.publishAllAction(noneEvent())).rejects.toMatchObject({ status: 403 });
   });
 });

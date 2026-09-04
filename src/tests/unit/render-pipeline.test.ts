@@ -70,7 +70,7 @@ describe('createRenderer', () => {
           label: '',
           description: '',
           hydrate: true,
-          attributes: { from: { type: 'text', label: 'From' } as never, rate: { type: 'number', label: 'Rate' } as never },
+          attributes: { from: { type: 'text', label: 'From' }, rate: { type: 'number', label: 'Rate' } },
           build: () => h('p', { className: ['fallback'] }, ['1 mi = 1.609 km']),
         },
       ],

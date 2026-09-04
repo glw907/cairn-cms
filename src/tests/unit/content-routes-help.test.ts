@@ -64,7 +64,7 @@ describe('helpLoad', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest(ONE_PUBLISHED_POST) } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.helpLoad(event() as never);
+    const result = await routes.helpLoad(event());
 
     // One published post completes the write and publish steps; no page leaves the third open.
     expect(result.gettingStarted.wrotePost).toBe(true);
@@ -86,7 +86,7 @@ describe('helpLoad', () => {
     const failingBackend = makeGithubBackend(REPO, async () => {
       throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     });
-    const result = await routes.helpLoad(event(failingBackend) as never);
+    const result = await routes.helpLoad(event(failingBackend));
 
     expect(result.gettingStarted).toEqual({
       wrotePost: false,

@@ -54,7 +54,7 @@ describe('deleteAction', () => {
     });
     const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const result = (await routes.deleteAction(deleteEvent('2026-05-hi') as never)) as unknown as {
+    const result = (await routes.deleteAction(deleteEvent('2026-05-hi'))) as unknown as {
       status: number; data: { error: string; inboundLinks: { id: string }[]; id: string };
     };
     expect(result.status).toBe(409);
@@ -74,7 +74,7 @@ describe('deleteAction', () => {
     });
     const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi') as never));
+    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi')));
     expect(location).toBe('/admin/posts');
     const treeReq = calls.find((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))!;
     const treeBody = JSON.parse(String(treeReq.init!.body)) as { tree: { path: string; sha: string | null; content?: string }[] };
@@ -94,7 +94,7 @@ describe('deleteAction', () => {
     commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
-      await routes.deleteAction(deleteEvent('2026-05-hi') as never);
+      await routes.deleteAction(deleteEvent('2026-05-hi'));
     } catch {
       // swallow the success redirect
     }
@@ -120,7 +120,7 @@ describe('deleteAction with a pending branch', () => {
     gh.createBranch('cairn/posts/2026-05-hi', 'main');
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi') as never));
+    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi')));
     expect(location).toBe('/admin/posts');
     expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(false);
     expect(gh.read('main', ENTRY_PATH)).toBeNull();
@@ -150,7 +150,7 @@ describe('deleteAction with a pending branch', () => {
       return double(input, init);
     });
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const result = (await routes.deleteAction(deleteEvent('2026-05-hi') as never)) as unknown as {
+    const result = (await routes.deleteAction(deleteEvent('2026-05-hi'))) as unknown as {
       status: number;
       data: { error: string; inboundLinks: unknown[]; id: string };
     };
@@ -170,7 +170,7 @@ describe('deleteAction with a pending branch', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi') as never));
+    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi')));
     expect(location).toBe('/admin/posts');
     expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(false);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);

@@ -50,7 +50,7 @@ function ctx(over: Partial<DoctorContext> = {}): DoctorContext {
     cwd: '/site',
     fetch: (() => {
       throw new Error('unexpected fetch');
-    }) as never,
+    }),
     readFile: async () => null,
     ...over,
   };

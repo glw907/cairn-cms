@@ -60,7 +60,7 @@ describe('dictionaryAdd transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.dictionaryAddAction(addEvent({ word: 'cairn' }, { csrf: 'wrong' }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ word: 'cairn' }, { csrf: 'wrong' }));
     expect(result).toMatchObject({ status: 403 });
     expect((result as unknown as { data: DictionaryAddFailure }).data.error).toBe('csrf');
     expect(commitCount(gh)).toBe(0);
@@ -70,7 +70,7 @@ describe('dictionaryAdd transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.dictionaryAddAction(addEvent({ word: 'two words' }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ word: 'two words' }));
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
@@ -79,7 +79,7 @@ describe('dictionaryAdd transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.dictionaryAddAction(addEvent({ word: 'good\nevil' }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ word: 'good\nevil' }));
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
@@ -90,7 +90,7 @@ describe('dictionaryAdd transport gates', () => {
     const routes = createContentRoutes(runtime());
     const event = addEvent({ word: 'cairn' }) as unknown as { cookies: unknown };
     event.cookies = undefined;
-    await expect(routes.dictionaryAddAction(event as never)).rejects.toThrow(/cookie jar/i);
+    await expect(routes.dictionaryAddAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
     expect(commitCount(gh)).toBe(0);
   });
 });
@@ -101,7 +101,7 @@ describe('dictionaryAdd read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
     // The committed file is the canonical sorted set.
@@ -113,7 +113,7 @@ describe('dictionaryAdd read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['cairn']);
     expect(commitCount(gh)).toBe(1);
     expect(parseDictionary(gh.read('main', DICT_PATH))).toEqual(['cairn']);
@@ -125,7 +125,7 @@ describe('dictionaryAdd read-modify-write', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
     // Case-insensitive: "cairn" collapses onto the existing "Cairn".
-    const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'Cairn']);
     expect(commitCount(gh)).toBe(0);
   });
@@ -135,7 +135,7 @@ describe('dictionaryAdd read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
   });
@@ -145,7 +145,7 @@ describe('dictionaryAdd read-modify-write', () => {
     gh.install();
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }) as never);
+    await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }));
     const added = infoSpy.mock.calls
       .map((c) => c[0] as Record<string, unknown>)
       .filter((r) => r.event === 'dictionary.added');
@@ -208,7 +208,7 @@ describe('dictionaryAdd SHA-guarded retry', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const routes = createContentRoutes(runtime());
-    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }))) as unknown as DictionaryAddResult;
     // The retry's re-merge keeps the concurrent "newword" and adds "beta": order-independent convergence.
     expect(result.words).toEqual(['alpha', 'beta', 'newword']);
     expect(parseDictionary(file)).toEqual(['alpha', 'beta', 'newword']);
@@ -242,7 +242,7 @@ describe('dictionaryAdd second-conflict give-up', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const routes = createContentRoutes(runtime());
-    const result = await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }));
     expect(result).toMatchObject({ status: 409 });
     const conflicts = warnSpy.mock.calls
       .map((c) => c[0] as Record<string, unknown>)

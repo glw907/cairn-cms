@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { normalizePublishActions, resolvePublishActions } from '../../lib/sveltekit/publish-actions.js';
+import { postsConcept } from './_content-harness.js';
 
-const concepts = [{ id: 'posts', label: 'Posts' }, { id: 'club', label: 'Club' }] as never;
+const concepts = [postsConcept({ id: 'posts', label: 'Posts' }), postsConcept({ id: 'club', label: 'Club' })];
 
 describe('normalizePublishActions: validates a publish-actions config at construction', () => {
   it('returns an empty list when the site declares none', () => {

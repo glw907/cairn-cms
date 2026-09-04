@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
+import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
 function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
@@ -39,7 +40,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    const data = await routes.navLoad(loadEvent() as never);
+    const data = await routes.navLoad(loadEvent());
     expect(data.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
     expect(data.tree).toEqual([{ label: 'Home', url: '/' }]);
     expect(data.pages).toEqual([{ label: 'about', url: '/about' }]);
@@ -52,7 +53,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    const data = await routes.navLoad(loadEvent() as never);
+    const data = await routes.navLoad(loadEvent());
     expect(data.tree).toEqual([]);
   });
 
@@ -62,7 +63,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    const data = await routes.navLoad(loadEvent('?error=You+have+been+signed+out') as never);
+    const data = await routes.navLoad(loadEvent('?error=You+have+been+signed+out'));
     expect(data).not.toHaveProperty('error');
   });
 
@@ -74,7 +75,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    const data = await routes.navLoad(loadEvent() as never);
+    const data = await routes.navLoad(loadEvent());
     expect(data.tree).toEqual([]);
   });
 
@@ -86,7 +87,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    await routes.navLoad(loadEvent() as never);
+    await routes.navLoad(loadEvent());
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; conditionId?: string; scope?: string; error?: string },
     );
@@ -108,7 +109,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    await routes.navLoad(loadEvent() as never);
+    await routes.navLoad(loadEvent());
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
@@ -118,24 +119,21 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes(runtime(NAV));
-    const data = await routes.navLoad(loadEvent('?saved=1') as never);
+    const data = await routes.navLoad(loadEvent('?saved=1'));
     expect(data.saved).toBe(true);
   });
 
   it('404s when no navMenu is configured', async () => {
     const routes = createNavRoutes(runtime(undefined));
-    await expect(routes.navLoad(loadEvent() as never)).rejects.toMatchObject({ status: 404 });
+    await expect(routes.navLoad(loadEvent())).rejects.toMatchObject({ status: 404 });
   });
 
   it('refuses a none-capability session with 403 (the nav editor is an engine admin-mutation surface)', async () => {
     const routes = createNavRoutes(runtime(NAV));
-    const event = {
-      url: new URL('https://t.example/admin/nav'),
-      params: {},
-      request: new Request('https://t.example/admin/nav'),
+    const event = testEvent({
+      url: 'https://t.example/admin/nav',
       locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
-      platform: { env: {} },
-    };
-    await expect(routes.navLoad(event as never)).rejects.toMatchObject({ status: 403 });
+    });
+    await expect(routes.navLoad(event)).rejects.toMatchObject({ status: 403 });
   });
 });

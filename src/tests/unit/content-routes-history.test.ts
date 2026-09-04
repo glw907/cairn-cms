@@ -7,6 +7,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import { runtime, postsConcept, contentEvent } from './_content-harness.js';
+import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend, BackendCommit } from '../../lib/github/backend.js';
 
@@ -73,7 +74,7 @@ describe('historyLoad', () => {
   it('reads the entry file at the same path editLoad derives, on the default branch', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [commitAt(0)] });
     const routes = createContentRoutes(runtime());
-    await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(backend.calls[0]).toEqual({ path: ENTRY_PATH, ref: 'main', limit: 25 });
   });
 
@@ -81,7 +82,7 @@ describe('historyLoad', () => {
     const commits = Array.from({ length: 25 }, (_, i) => commitAt(i));
     const backend = fakeHistoryBackend({ mainCommits: commits });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries).toHaveLength(25);
     expect(data.entries[0].ref).toBe('sha-0');
     expect(data.entries[24].ref).toBe('sha-24');
@@ -92,7 +93,7 @@ describe('historyLoad', () => {
     const commits = Array.from({ length: 26 }, (_, i) => commitAt(i));
     const backend = fakeHistoryBackend({ mainCommits: commits });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries).toHaveLength(25);
     expect(data.truncated).toBe(true);
     expect(data.entries.map((e) => e.ref)).not.toContain('sha-25');
@@ -106,14 +107,14 @@ describe('historyLoad', () => {
     ];
     const backend = fakeHistoryBackend({ mainCommits: commits });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries.map((e) => e.editor)).toEqual(['Jamie Rivera', 'no-name@t', 'unknown']);
   });
 
   it('leaves draft null when the entry has no pending branch', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [commitAt(0)] });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.draft).toBeNull();
   });
 
@@ -126,14 +127,14 @@ describe('historyLoad', () => {
       },
     });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.draft).toEqual({ editor: 'Ed Editor', lastSavedAt: '2026-06-01T00:00:00Z' });
   });
 
   it('404s a deleted entry even though its commit log survives in git', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [commitAt(0), commitAt(1)], mainFile: null });
     const routes = createContentRoutes(runtime());
-    await expect(routes.historyLoad(historyEvent('2026-05-hello', backend) as never)).rejects.toMatchObject({
+    await expect(routes.historyLoad(historyEvent('2026-05-hello', backend))).rejects.toMatchObject({
       status: 404,
     });
   });
@@ -144,7 +145,7 @@ describe('historyLoad', () => {
       branchHeads: { main: 'sha-main-head' },
     });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.head).toBe('sha-main-head');
   });
 
@@ -158,7 +159,7 @@ describe('historyLoad', () => {
       },
     });
     const routes = createContentRoutes(runtime());
-    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries).toEqual([]);
     expect(data.truncated).toBe(false);
     expect(data.draft).toEqual({ editor: 'Ed Editor', lastSavedAt: '2026-06-01T00:00:00Z' });
@@ -182,15 +183,11 @@ describe('historyLoad access-map denial', () => {
   // narrower `'owner' | 'editor'` role literal, so this builds the event shape directly, the
   // same way access-map-route-enforcement.test.ts does for the same reason.
   function pagesEvent(id: string, backend: Backend) {
-    const url = `https://t.example/admin/pages/${id}/history`;
-    return {
-      url: new URL(url),
+    return testEvent({
+      url: `https://t.example/admin/pages/${id}/history`,
       params: { concept: 'pages', id },
-      request: new Request(url),
       locals: { cairnEditor: { email: 'p@t', displayName: 'Publisher', role: 'publisher', capability: 'editor' }, cairnBackend: backend },
-      platform: { env: {} },
-      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
-    };
+    });
   }
 
   async function statusOf(promise: Promise<unknown>): Promise<number | null> {
@@ -205,8 +202,8 @@ describe('historyLoad access-map denial', () => {
   it('403s an editor mapped away from the concept, the same refusal editLoad gives', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [] });
     const routes = createContentRoutes(accessRuntime());
-    const historyStatus = await statusOf(routes.historyLoad(pagesEvent('2026-05-hi', backend) as never));
-    const editStatus = await statusOf(routes.editLoad(pagesEvent('2026-05-hi', backend) as never));
+    const historyStatus = await statusOf(routes.historyLoad(pagesEvent('2026-05-hi', backend)));
+    const editStatus = await statusOf(routes.editLoad(pagesEvent('2026-05-hi', backend)));
     expect(historyStatus).toBe(403);
     expect(historyStatus).toBe(editStatus);
   });

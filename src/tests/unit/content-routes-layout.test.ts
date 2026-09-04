@@ -3,6 +3,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
+import { testEvent } from '../helpers/test-event.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import type { AccessMap } from '../../lib/auth/access.js';
@@ -134,7 +135,7 @@ describe('shellLoad', () => {
 
   it('returns nav concepts, the user, the active path, and owner capability for an authed path', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
@@ -159,7 +160,7 @@ describe('shellLoad', () => {
 
   it('issues a CSRF token in the shell data', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.csrf.length).toBeGreaterThan(0);
     expect(shell.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
@@ -182,12 +183,12 @@ describe('shellLoad', () => {
       platform: { env: {} },
       setHeaders: () => {},
     };
-    await expect(routes.shellLoad(noCookiesEvent as never)).rejects.toThrow();
+    await expect(routes.shellLoad(noCookiesEvent as never)).rejects.toThrow(); // idioms-allow: as-never  simulates an untyped caller that omits the required cookies field
   });
 
   it('denies the manage-editors capability to an editor', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellLoad(event('/admin/pages', 'editor', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/pages', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(screenIds(shell.nav.items)).not.toContain('editors');
     await shell.pendingEntries;
@@ -195,18 +196,14 @@ describe('shellLoad', () => {
 
   it('admits a none-capability session (the none contract): the shell stays reachable so a shell-mounted custom route is admitted, unlike the engine content and roster surfaces', async () => {
     const routes = createContentRoutes(runtime());
-    const noneEvent = {
-      url: new URL('https://test.example/admin/posts'),
-      params: {},
-      request: new Request('https://test.example/admin/posts'),
+    const noneEvent = testEvent({
+      url: 'https://test.example/admin/posts',
       locals: {
         cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
         cairnBackend: quickFailBackend(),
       },
-      platform: { env: {} },
-      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
-    };
-    const { shell } = await routes.shellLoad(noneEvent as never);
+    });
+    const { shell } = await routes.shellLoad(noneEvent);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.user.email).toBe('inst@test');
     // A none-capability session carries no engine concept nav (every route it links to refuses a
@@ -230,18 +227,16 @@ describe('shellLoad', () => {
       throw new Error('listBranches should not be called for a none-capability session');
     });
     const routes = createContentRoutes(runtime());
-    const noneEvent = {
-      url: new URL('https://test.example/admin/posts'),
-      params: {},
-      request: new Request('https://test.example/admin/posts'),
+    const noneEvent = testEvent({
+      url: 'https://test.example/admin/posts',
       locals: {
         cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
-        cairnBackend: { listBranches },
+        // A none-capability session must never reach the backend at all (the assertion below), so
+        // a listBranches-only stub is enough; the full Backend contract is unexercised.
+        cairnBackend: { listBranches } as unknown as Backend,
       },
-      platform: { env: {} },
-      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
-    };
-    const { shell } = await routes.shellLoad(noneEvent as never);
+    });
+    const { shell } = await routes.shellLoad(noneEvent);
     if (shell.public) throw new Error('expected authed shell');
     expect(await shell.pendingEntries).toEqual([]);
     expect(listBranches).not.toHaveBeenCalled();
@@ -251,7 +246,7 @@ describe('shellLoad', () => {
     const rt = runtimeWithRoles();
     const routes = createContentRoutes(rt);
     const { shell } = await routes.shellLoad(
-      customRoleEvent('/admin/posts', 'club-admin', 'owner', quickFailBackend()) as never,
+      customRoleEvent('/admin/posts', 'club-admin', 'owner', quickFailBackend()),
     );
     if (shell.public) throw new Error('expected authed shell');
     expect(screenIds(shell.nav.items)).toContain('editors');
@@ -262,7 +257,7 @@ describe('shellLoad', () => {
   it('exposes the nav label when a navMenu is configured', async () => {
     const rt = runtime();
     rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-    const { shell } = await createContentRoutes(rt).shellLoad(event('/admin/nav', 'editor', quickFailBackend()) as never);
+    const { shell } = await createContentRoutes(rt).shellLoad(event('/admin/nav', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(findScreen(shell.nav.items, 'nav')?.label).toBe('Primary nav');
     await shell.pendingEntries;
@@ -271,7 +266,7 @@ describe('shellLoad', () => {
   it('returns a bare public payload for a login path and never resolves the backend', async () => {
     const spy = vi.spyOn(backend, 'listBranches');
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellLoad(event('/admin/login', null) as never);
+    const { shell } = await routes.shellLoad(event('/admin/login', null));
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
     expect(shell.siteName).toBe('Test Site');
@@ -291,7 +286,7 @@ describe('shellLoad', () => {
         eventBackend: backend,
         env: {},
         cookies: { get: (name) => (name === 'cairn-admin-theme' ? 'cairn-admin-dark' : undefined), set: () => {}, delete: () => {} },
-      }) as never,
+      }),
     );
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
@@ -305,7 +300,7 @@ describe('shellLoad', () => {
     gh.createBranch('cairn/oops', 'main'); // malformed: no entry id, dropped by the parser
     gh.install();
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner'));
     if (shell.public) throw new Error('expected authed shell');
     // pendingEntries is a streamed promise, resolved here for the assertion.
     expect(typeof shell.pendingEntries.then).toBe('function');
@@ -322,7 +317,7 @@ describe('shellLoad', () => {
     gh.createBranch('cairn/posts/a%2fb', 'main'); // percent-escaped id fails the slug rule
     gh.install();
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner'));
     if (shell.public) throw new Error('expected authed shell');
     expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
   });
@@ -335,7 +330,7 @@ describe('shellLoad', () => {
       // and never carries PEM material, which the redaction assertion below pins.
       throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     });
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', failingBackend) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', failingBackend));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user.email).toBe('e@test');
@@ -411,7 +406,7 @@ describe('shellLoad: navFilter', () => {
     const rt = runtime();
     rt.navLayout = NAV_LAYOUT_WITH_SECTION;
     const routes = createContentRoutes(rt);
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.nav).toEqual(expectedNav('editor'));
     await shell.pendingEntries;
@@ -423,7 +418,7 @@ describe('shellLoad: navFilter', () => {
     const routes = createContentRoutes(rt, {
       navFilter: (items) => items.filter((item) => item.label !== 'Club'),
     });
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     const expected = expectedNav('editor');
     expect(shell.nav).toEqual({
@@ -442,7 +437,7 @@ describe('shellLoad: navFilter', () => {
         return items.filter((item) => item.label === 'Standalone');
       },
     });
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     const expected = expectedNav('editor');
     expect(shell.nav).toEqual({
@@ -464,7 +459,7 @@ describe('shellLoad: navFilter', () => {
         return items;
       },
     });
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()));
     // Exact equality proves navFilter saw the whole resolved arrangement: the loose concept and
     // engine nodes, the loose Standalone entry, plus the Club section.
     expect(received).toEqual(expectedNav('owner').items);
@@ -476,7 +471,7 @@ describe('shellLoad: navFilter', () => {
     const rt = runtime();
     rt.navLayout = NAV_LAYOUT_WITH_SECTION;
     const routes = createContentRoutes(rt, { navFilter: () => [] });
-    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()) as never);
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.nav.items).toEqual([]);
     // fallback never passes through navFilter: it is engine-only and already gated.
@@ -505,12 +500,12 @@ describe('shellLoad: the access map filters pendingEntries and concepts', () => 
 
     // 'pages' is mapped away from publisher (webmaster-only), so the restricted role's pending
     // list excludes its draft while keeping its own reachable concept's draft.
-    const publisher = await routes.shellLoad(customRoleEvent('/admin/posts', 'publisher', 'editor') as never);
+    const publisher = await routes.shellLoad(customRoleEvent('/admin/posts', 'publisher', 'editor'));
     if (publisher.shell.public) throw new Error('expected authed shell');
     expect(await publisher.shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
 
     // Owner capability bypasses the map entirely, so it still sees every pending draft.
-    const owner = await routes.shellLoad(customRoleEvent('/admin/posts', 'owner', 'owner') as never);
+    const owner = await routes.shellLoad(customRoleEvent('/admin/posts', 'owner', 'owner'));
     if (owner.shell.public) throw new Error('expected authed shell');
     expect(await owner.shell.pendingEntries).toEqual([
       { concept: 'pages', id: 'about' },
@@ -522,14 +517,14 @@ describe('shellLoad: the access map filters pendingEntries and concepts', () => 
     const routes = createContentRoutes(runtimeWithAccess());
 
     const publisher = await routes.shellLoad(
-      customRoleEvent('/admin/posts', 'publisher', 'editor', quickFailBackend()) as never,
+      customRoleEvent('/admin/posts', 'publisher', 'editor', quickFailBackend()),
     );
     if (publisher.shell.public) throw new Error('expected authed shell');
     expect(publisher.shell.concepts).toEqual([{ id: 'posts', label: 'Posts' }]);
     await publisher.shell.pendingEntries;
 
     const owner = await routes.shellLoad(
-      customRoleEvent('/admin/posts', 'owner', 'owner', quickFailBackend()) as never,
+      customRoleEvent('/admin/posts', 'owner', 'owner', quickFailBackend()),
     );
     if (owner.shell.public) throw new Error('expected authed shell');
     expect(owner.shell.concepts).toEqual([
@@ -540,7 +535,7 @@ describe('shellLoad: the access map filters pendingEntries and concepts', () => 
 
     // Zero-config: a site declaring no access map keeps today's unfiltered behavior.
     const unmapped = createContentRoutes(runtime());
-    const { shell } = await unmapped.shellLoad(event('/admin/posts', 'editor', quickFailBackend()) as never);
+    const { shell } = await unmapped.shellLoad(event('/admin/posts', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.concepts).toEqual([
       { id: 'posts', label: 'Posts' },
@@ -603,7 +598,7 @@ describe('indexLoad', () => {
     const routes = createContentRoutes(runtimeWithRoles());
     const e = customRoleEvent('/admin', 'instructor', 'none');
     try {
-      routes.indexLoad(e as never);
+      routes.indexLoad(e);
       throw new Error('expected a redirect');
     } catch (err) {
       expect((err as { status: number; location: string }).status).toBe(303);
@@ -623,7 +618,7 @@ describe('indexLoad', () => {
     const routes = createContentRoutes({ ...runtime(), roles: rolesWithQueryHome });
     const e = customRoleEvent('/admin?error=publish_conflict', 'instructor', 'none');
     try {
-      routes.indexLoad(e as never);
+      routes.indexLoad(e);
       throw new Error('expected a redirect');
     } catch (err) {
       const location = (err as { status: number; location: string }).location;
@@ -634,7 +629,7 @@ describe('indexLoad', () => {
   it('lands a none-capability role with no declared home on the welcome view, not a redirect', () => {
     const routes = createContentRoutes(runtimeWithRoles());
     const e = customRoleEvent('/admin', 'volunteer', 'none');
-    expect(routes.indexLoad(e as never)).toEqual({
+    expect(routes.indexLoad(e)).toEqual({
       view: 'welcome',
       page: { displayName: 'Inst', siteName: 'Test Site' },
     });
@@ -650,7 +645,7 @@ describe('indexLoad', () => {
     const flippedRoutes = createContentRoutes(rt);
     const publisherEvent = customRoleEvent('/admin', 'publisher', 'editor');
     try {
-      flippedRoutes.indexLoad(publisherEvent as never);
+      flippedRoutes.indexLoad(publisherEvent);
       throw new Error('expected a redirect');
     } catch (err) {
       expect((err as { status: number; location: string }).status).toBe(307);
@@ -660,7 +655,7 @@ describe('indexLoad', () => {
     // A role that can reach the site-wide first concept (pages, for webmaster) still lands there.
     const webmasterEvent = customRoleEvent('/admin', 'webmaster', 'editor');
     try {
-      flippedRoutes.indexLoad(webmasterEvent as never);
+      flippedRoutes.indexLoad(webmasterEvent);
       throw new Error('expected a redirect');
     } catch (err) {
       expect((err as { location: string }).location).toBe('/admin/pages');

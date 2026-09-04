@@ -39,7 +39,7 @@ describe('rehypeDispatch', () => {
       children: [h('div', { dataPrimitive: 'card' }, [h('h2', ['Title']), h('p', ['Body'])])],
     } as Root;
     rehypeDispatch(reg)(tree);
-    const section = tree.children[0] as never as {
+    const section = tree.children[0] as {
       tagName: string;
       children: { children: { properties: { className: string[] } }[] }[];
     };
@@ -59,8 +59,8 @@ describe('rehypeDispatch', () => {
       ],
     } as Root;
     rehypeDispatch(reg)(tree);
-    const first = tree.children[0] as never as { properties: { dataRise?: string } };
-    const second = tree.children[2] as never as { properties: { dataRise?: string } };
+    const first = tree.children[0] as { properties: { dataRise?: string } };
+    const second = tree.children[2] as { properties: { dataRise?: string } };
     // The index counts primitives only, so the interleaved <p> does not bump it.
     expect(first.properties.dataRise).toBe('0');
     expect(second.properties.dataRise).toBe('1');
@@ -80,8 +80,8 @@ describe('rehypeDispatch', () => {
         description: '',
         hydrate: true,
         attributes: {
-          from: { type: 'text', label: 'From' } as never,
-          rate: { type: 'number', label: 'Rate' } as never,
+          from: { type: 'text', label: 'From' },
+          rate: { type: 'number', label: 'Rate' },
         },
         build: () => h('p', { className: ['fallback'] }, ['1 mi = 1.609 km']),
       },
@@ -90,7 +90,7 @@ describe('rehypeDispatch', () => {
         label: '',
         description: '',
         hydrate: 'visible',
-        attributes: { active: { type: 'text', label: 'Active' } as never },
+        attributes: { active: { type: 'text', label: 'Active' } },
         build: () => h('div', { className: ['fallback'] }, ['tab']),
       },
     ],

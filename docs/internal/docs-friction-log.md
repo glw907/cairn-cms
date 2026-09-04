@@ -22,67 +22,11 @@ clearings.
 
 ## Live findings
 
-- **`fixtureCsrf` is a fixed constant with the same shape `fixtureMediaBase` had** (`contributor`,
-  2026-09-01, conformance pass Task 6, SEC-N-11). `ReproContext.svelte` sets
-  `setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf)` unconditionally from
-  `src/lib/reproductions/fixtures.ts`'s fixed string, with no override prop, the same class of
-  hardcode `fixtureMediaBase` was before this task reshaped it into a `mediaBase` prop. Fixture
-  scope only (no live token, no auth surface reachable from a reproduction), and predates this
-  pass, so it is filed rather than acted on. Candidate fix, if a consuming site ever needs to vary
-  it: the same shape, a `csrf?: string` prop on `ReproContext` defaulting to the current fixture
-  value. Trigger: a consumer reports needing a non-default CSRF fixture value, or a future audit
-  round reaches this constant.
-
-- **The rulings ledger will not scale as one flat read** (`contributor`, 2026-08-26). The
-  any-site audit appended 535 entries to `docs/internal/engine-rulings.md` (~3,970 lines),
-  and `engine-triage`'s first action reads it in full on every dispatch. Fine for now under
-  the thoroughness ruling; when a consultation's triage cost starts being dominated by the
-  ledger read, split the audit section into a slug-indexed summary the agent greps plus the
-  full entries on demand. Trigger: the first consultation where the triage's ledger read
-  visibly dominates its token spend.
-
-- **The ASC CSRF 403 incidents: the named mechanisms are closed, residue is now diagnosable**
-  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round; mechanisms closed, watch open,
-  2026-08-29, csrf-hardening pass). The toolkit-seams pass's `CsrfField` reset-blanking theory did not hold (verified in
-  Chromium: a hidden `<input>`'s `value` setter IS its own `defaultValue` setter, so nothing
-  desyncs the two). The csrf-hardening pass closed every named mechanism the strongest
-  candidate and its siblings pointed at: the CSRF cookie now sets `SameSite=Lax` explicitly
-  instead of `Strict`, so a magic-link confirm-load top-level navigation no longer withholds
-  the cookie and re-mints it, invalidating every other open admin tab's already-rendered form;
-  the cookie's `Max-Age` now matches the session's lifetime and re-anchors on every issue
-  instead of expiring on its own shorter timer; `secure` and the cookie name now derive from
-  one `PUBLIC_ORIGIN`-aware `csrfSecure(event)` helper (falling back to the request protocol
-  for a local-host request or an absent/unparseable `PUBLIC_ORIGIN`) instead of the bare
-  per-request `event.url.protocol`, closing the two-names-blind-to-each-other class;
-  `content-routes-core.ts`'s empty-token fallback (`csrf: event.cookies ? issueCsrfToken(...) :
-  ''`) is deleted, so a form can no longer render permanently unable to pass the guard with no
-  readable cause.
-
-  Any residue is now diagnosable: the guard's `reason: 'csrf'` record and
-  `admin.action.csrf_rejected` both carry `detail: 'no-cookie' | 'no-witness' | 'mismatch' |
-  'unparseable-body'` and `witness: 'header' | 'field'`, so a real incident's own logs
-  distinguish "the cookie never arrived" from "the submitted token is stale" from "the field
-  was silently swapped for the header witness" instead of one undifferentiated 403, with no
-  token material, prefix, or length ever logged.
-
-  Known post-fix behavior, not a defect: a browser holding an old `Strict` cookie from before
-  the deploy re-mints exactly once as it ages out, then behaves as any freshly-issued cookie
-  does. The other known residual is concurrent first loads: two cookie-less admin loads racing
-  in one browser each mint their own token, the later `Set-Cookie` wins, and the tab holding the
-  losing value 403s once as `detail: 'mismatch'`, `witness: 'field'`. A post-deploy record of
-  exactly that shape is this residual, not a new mechanism; only a record that does not fit it
-  reopens the entry. WATCH posture: this entry leaves the log when a post-deploy consumer incident either
-  stops recurring, or produces a discriminated record that names a mechanism this pass did not
-  already close.
-
-- **`presetUrl` and `BUILT_IN_PRESETS` have zero production callers after the conformance pass's
-  Task 14 variants retirement** (`contributor`, 2026-09-01, the 4b close). `presetUrl`
-  (`src/lib/media/transform-url.ts`) and `BUILT_IN_PRESETS` (`src/lib/media/config.ts`) are
-  unreferenced anywhere in `src/lib` outside their own declaration and the test suite;
-  `presetUrl` is still on the public surface, so pruning it is a surface change and a ruling
-  matter, not a plain dead-code deletion. Filed to `ROADMAP.md` rather than acted on here.
-  Trigger: the next surface-ruling sitting, or the internals-B slice of the any-site audit
-  remediation initiative.
+None open. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
+section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified
+shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
+`fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS`
+all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
 ## Tombstones (decided, do not resurface)
 
@@ -108,10 +52,10 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-- **contributor:** `ROADMAP.md`'s "Platform watch: Cloudflare" heading text is a machine key, not
-  just a title: the `cairn Cloudflare capability review (monthly)` cloud routine (created
-  2026-08-22) reads the list by that exact heading, so renaming the heading requires updating the
-  routine in the same change.
+None open. The internals-pass whole-log triage (2026-09-03) deleted the one entry this
+section carried, "`ROADMAP.md`'s Platform watch heading text is a machine key": it
+duplicates the trigger already stated inline in `ROADMAP.md`'s own "Platform watch:
+Cloudflare" heading, so it added no information this file's copy did not.
 
 ## Clearings
 
@@ -140,6 +84,7 @@ history holds every pruned entry in full.
 | 2026-09-01 | the 4b conformance pass's whole-log sweep | `StatusChip`'s `outline`-register border-contrast gap verified already covered: the general `border-contrast` rendered rule (pre-existing, `border-contrast.ts`) geometrically resolves any rendered border's real computed color, `currentColor` inheritance included, against its true surroundings, so it already catches the "outline chip inside a muted-ink ancestor" case the finding asked for a new rule to build |
 | 2026-09-01 | the 4b conformance pass's whole-log sweep | the showcase chip-blindness finding folded into the existing "showcase visual suite... corpus gap" entry in `ROADMAP.md`'s Now tier as a second instance of the same gap; `cairn-text-error` and `MediaPicker`'s empty-state `<li>` findings, having no other home, promoted whole to `ROADMAP.md`'s Next tier; `list-role`'s and `panel-width`'s own already-recorded routing to the any-site audit remediation initiative (confirmed by the harvest-detection pass's post-mortem) is why those two entries are deleted rather than re-filed; `AdminTable`'s scroll-wrapper finding folded as a refinement into the pre-existing "Three admin-toolkit accessibility gaps" `ROADMAP.md` entry (filed 2026-08-18, predating this finding) |
 | 2026-09-02 | the internals pass Task 4 | the editors-page quote-drift finding shipped: `check:editor-quotes` extracts every bolded double-quoted sentence from `docs/editors/when-something-goes-wrong.md` and fails when no shipped `src/lib` string grounds it, wired into `npm test` and CI |
+| 2026-09-03 | the internals pass's whole-log sweep | the ASC CSRF entry deleted (every named mechanism verified shipped; the residual WATCH moved to `docs/STATUS.md`'s active watches); the Platform-watch-heading entry deleted as a duplicate of `ROADMAP.md`'s own inline trigger; `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` promoted whole to `ROADMAP.md`'s Later tier with their triggers |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

@@ -18,23 +18,18 @@ until the polish slice per the amended initiative design. CI on `main` is fully 
 
 ## Immediate next action
 
-**The internals pass is TWELVE of THIRTEEN tasks complete; execution paused deliberately
-(2026-09-03 ~14:45) for a machine reboot that activates the new zram config.** Chunks
-one, two, and three (Tasks 1-12) are all committed and review-accepted on branch
-`internals` (worktree `.claude/worktrees/internals`), pushed to origin. Remaining: Task
-13 (record honesty: destroyed-row liveness + formatTimestamp contract), then the full
-`cairn-pass` pass-end ritual: code-simplifier, reviewer fan-out (svelte on Task 7,
-daisyui-a11y on Task 8, web-auth-security on 9/10/12/13, cloudflare-workers on 13, plus
-the standing cleanliness review), the SIX CI-only gates by name, from-scratch consumer
-proof, whole-log friction triage, STATUS/HISTORY/ROADMAP, post-mortem with both budgets
-scored, then push + open the PR (Geoff authorized push-and-PR 2026-09-02). Layer-3 OOM
-containment (MemoryMax scope on the browser gate in package.json) and the vitest
-browser-recycling investigation land at the pass close. Approval state: pass approved
-2026-09-02 with the CAIRN_DEV_BACKEND letter amendment; the B/C split is ratified and
-already executed into ROADMAP by Task 11. Resume prompt for a fresh session: "In
-~/Projects/cairn-cms, invoke cairn-pass and resume the internals pass: read docs/STATUS.md
-on the internals worktree, dispatch Task 13 per the plan's workflow mode, then run the
-pass-end ritual. Re-arm the FULL guard set first (unattended-work-guards.md)."
+**The internals pass is COMPLETE: all thirteen tasks, the full pass-end ritual, and the
+five-reviewer fan-out's three-round fix fold all landed on branch `internals` (worktree
+`.claude/worktrees/internals`, off `main` at `a5352f0b`).** `npm run check` is 0/0,
+`npm test` exits 0, every CI-only gate is green by name, and a from-scratch showcase
+install/build/e2e (155 Playwright tests) exits 0. Post-mortem appended to
+`docs/superpowers/plans/2026-09-01-internals-pass.md`. A MemoryMax containment fix on
+the browser test gate plus a vitest browser-recycling investigation lands at the close.
+**Next: the branch is being pushed and its PR opened (Geoff authorized push-and-PR
+2026-09-02).** After merge: internals-B planning per
+`docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (including the
+items routed at the internals close), then internals-C, then chassis, then the final
+polish slice, with ONE release cut after polish.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -43,17 +38,20 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b MERGED. Next: internals
-  (immediate next action, above), then internals-B (four monoliths and coherence; filed by
-  the internals plan's Task 11; also carries `FieldInput`'s `ownership_invalid_mutation`
-  fix inside the `EditPage` split, the confirm destroy-then-create `batch()` question, and
-  the OfficeList/AdminTable scroll-container ownership), chassis, then the final **polish**
-  slice (Geoff, 2026-09-01: a full-surface cleanliness-and-beauty sweep, reading the
-  exports as a family, the docs cover to cover, and the rendered admin against the design
-  system, because per-pass beauty reviews read only their own diff; also carries the
-  OfficeList outright-retire question, ruling-first, and the items its hands-forward list
-  in the internals plan names); ONE release cut after polish. The internals plan's task
-  list is the canonical routing record now; this bullet stops restating it.
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b MERGED; internals
+  COMPLETE, PR open (immediate next action, above). Next: internals-B (four monoliths;
+  filed by the internals plan's Task 11; also carries `FieldInput`'s
+  `ownership_invalid_mutation` fix inside the `EditPage` split, the confirm
+  destroy-then-create `batch()` question, and the OfficeList/AdminTable
+  scroll-container ownership, plus the items routed at the internals close), then
+  internals-C (coherence), then chassis, then the final **polish** slice (Geoff,
+  2026-09-01: a full-surface cleanliness-and-beauty sweep, reading the exports as a
+  family, the docs cover to cover, and the rendered admin against the design system,
+  because per-pass beauty reviews read only their own diff; also carries the
+  OfficeList outright-retire question, ruling-first, the internals plan's own
+  hands-forward items, and the internals-B docket's polish-slice inputs); ONE release
+  cut after polish. The internals plan's task list and the internals-B docket are the
+  canonical routing record now; this bullet stops restating them.
   Routed to chassis: the render trio re-homing
   (`cardShell`/`headRow`/`iconSpan`), and the carried showcase hand-mounted
   `+page.server.ts` against generated `./$types`. Standing chassis mandate (Geoff,

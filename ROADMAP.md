@@ -2318,6 +2318,28 @@ the named human gates only):**
   a real trigger (the first live run against an externally registered domain) rather than a
   standing note.
 
+- **`fixtureCsrf` is a fixed constant with the same shape `fixtureMediaBase` had (docs friction
+  log, conformance pass Task 6, promoted at the internals close 2026-09-03).**
+  `ReproContext.svelte` sets `setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf)` unconditionally
+  from `src/lib/reproductions/fixtures.ts`'s fixed string, with no override prop. Fixture scope
+  only, no live token or reachable auth surface. Trigger: a reproduction needs per-run tokens
+  (a consumer reports needing a non-default CSRF fixture value).
+
+- **The rulings ledger will not scale as one flat read (docs friction log, 2026-08-26, promoted
+  at the internals close 2026-09-03).** `docs/internal/engine-rulings.md` carries ~535 audit
+  entries (~3,970 lines), and `engine-triage`'s first action reads it in full on every dispatch.
+  Trigger: restructure into a slug-indexed summary plus full entries on demand when a
+  consultation's triage cost visibly dominates its token spend on the ledger read.
+
+- **`presetUrl` and `BUILT_IN_PRESETS` have zero production callers (docs friction log,
+  conformance pass Task 14's variants retirement, promoted at the internals close 2026-09-03).**
+  `presetUrl` (`src/lib/media/transform-url.ts`) and `BUILT_IN_PRESETS`
+  (`src/lib/media/config.ts`) are unreferenced anywhere in `src/lib` outside their own
+  declaration and the test suite; neither is re-exported from the `/media` public barrel
+  (`docs/reference/media.md` names `presetUrl` "engine-internal, not public surface"), so
+  removing them is a plain dead-code deletion, confirmed not to touch public surface. Trigger:
+  the next surface-ruling sitting.
+
 ### Platform watch: Cloudflare
 
 This is a tracked list of Cloudflare platform features cairn has evaluated and judged not to

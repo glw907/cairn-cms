@@ -7,6 +7,50 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-09-03: internals pass complete (audit-remediation slice), branch pushed for PR
+
+Plan and post-mortem: `docs/superpowers/plans/2026-09-01-internals-pass.md` (worktree
+`internals`, off `main` at `a5352f0b`). All thirteen tasks landed through the
+implementer/diff-reviewer/gate chain: the standing gates (`check:self-use`, the F-1
+leak-class rider on `check:surface`, the `staleNames` per-subpath rescope, the
+`check:editor-quotes` tripwire and vale reconciliation), the `MarkdownEditor` seam
+collapse onto one `registerEditor(api)` prop and its `EditorApi`, the `list-role`/
+`panel-width` audit-rule re-groundings, the indexed-access reference convention, the
+`CAIRN_DEV_BACKEND` refuse-on-set-AND-non-local tripwire, the access-semantics
+two-posture documentation, the `SITE_CONFIG_PATH` engine-owned data-file convention,
+the six stale module-header fixes, the `previewRevoke` export half, and Task 13's
+destroyed-row liveness plus the `formatTimestamp` two-shape contract. Final state:
+`npm run check` 0/0, `npm test` exit 0, every CI-only gate green by name, and a
+from-scratch showcase install/build/e2e (155 Playwright tests) exit 0. A MemoryMax
+containment fix on the browser test gate plus a vitest browser-recycling investigation
+lands at the close.
+
+What the gate caught: `check:snippets` found three problems in the access-model docs,
+fixed in the same pass (`7604e2b3`). The five-reviewer fan-out (svelte, daisyui-a11y,
+web-auth-security, cloudflare-workers, plus the standing cleanliness lens) produced a
+three-round fix fold: round A reworked the `CAIRN_DEV_BACKEND` tripwire against the
+security findings (a fail-open cache-latch bug, a dual env-source read, a
+`PUBLIC_ORIGIN`-first locality discriminator through a new shared `isDeployedHost`);
+round B folded 21 items across the audit rules, gate coherence, and the `EditorApi`
+surface; round C answered an independent verifier's escalation, a regression in the
+`existsSync` pre-filter that a green gate run had missed, fixed with a source-file
+discriminator in both the gate and its test.
+
+What a later pass would be wrong to rediscover: the dev-backend tripwire's threat
+model is Host-header spoofability off Cloudflare, which is why `PUBLIC_ORIGIN`-first
+locality is the fix, the same shape `csrfSecure` already used; the F-1 leak rider's
+`/components` skip rests on the premise that the subpath's exports are structurally
+enumerable elsewhere, and that premise now has its own resolution recorded in the
+rider's own comments rather than left implicit; a type-only barrel re-export of a
+DYNAMIC_ONLY editor module trips `editor-boundary.test.ts` unless the test exempts
+`export type`/`import type` forms. Budget: ceiling 6.5M; chunk one's checkpoint
+estimated 1.5-2M, chunks two and three ran unmetered, and the close session's
+subagent spend alone sums to roughly 2.5M, landing an estimated 5-5.5M total under
+ceiling with the metering gap itself recorded as a process defect. Interaction
+points: plan approval plus the `CAIRN_DEV_BACKEND` letter-amendment confirmation (one
+combined event); a deliberate reboot pause; zero questions during the close session's
+fully autonomous review fold.
+
 ## 2026-09-02: conformance pass merged (audit-remediation slice 4b), PR #46, CI green
 
 Plan and post-mortem: `docs/superpowers/plans/2026-09-01-conformance-pass.md` (worktree

@@ -1,7 +1,10 @@
 // The doctor's local-config checks: the wrangler bindings, the observability sink, the
 // svelte.config CSRF handoff, the site-config validation, the public origin, and the blanket
-// no-referrer trap. Every read goes through the injected ctx.readFile, so the tests pass
-// fixtures and the bin passes node:fs.
+// no-referrer trap. Every read a CHECK performs goes through the injected ctx.readFile, so the
+// tests pass fixtures and the bin passes node:fs. One read sits outside that rule: the shipped
+// site-config-path.json is read eagerly with readFileSync at module load, since a corrupt data
+// file is a build-time defect that should throw on import rather than degrade one check (the
+// posture audit/norms.ts takes on its own JSON; see readCanonicalSiteConfigPath below).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { fail, info, pass, skip, unchecked } from './types.js';

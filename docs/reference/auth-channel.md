@@ -134,6 +134,18 @@ take the bare `CairnEvent`, so your own session helper can declare `(event: Cair
 outside a request, from a roster-archive path, a cron trigger, or a queue consumer that has a `db`
 and no event to resolve one from.
 
+All three actions carry one refusal that isn't in their result unions. When `CAIRN_DEV_BACKEND` is
+set and the request reaches a deployed runtime, `request`, `confirm`, and `logout` each throw a
+SvelteKit `HttpError` with status 503 before touching a row, minting a code, or calling your
+`deliver`. It's a throw rather than an `{error: ...}` result because no result union carries a wire
+code for a polluted environment, so SvelteKit renders your error page instead of returning to the
+form. The flag is read from both `platform.env` and `process.env`. "Deployed" reads the configured
+`PUBLIC_ORIGIN` first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
+set. Local development with the flag set is untouched, which is what lets a dev transport use the
+flag as its own enable contract. See [the security
+model](../extend/security-model.md#the-dev-backend-flags-two-refusals-and-what-they-dont-cover) for
+the full rule and what it doesn't cover.
+
 ## Config obligations
 
 Three config fields carry correctness obligations the factory cannot itself verify. `normalize`

@@ -2,6 +2,7 @@
 // back the guard's two rules and the loads that issue the double-submit token. See
 // docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md.
 import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
+import { isLocalHost } from '../dev-flag.js';
 import type { CairnEvent, CookieJar } from './types.js';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -11,28 +12,18 @@ const FORM_CONTENT_TYPES = new Set([
   'text/plain',
 ]);
 
-// Mirrors guard.ts's own isLocalHost (duplicated, not imported: guard.ts already imports this
-// module, so importing back would be circular, and auth-channel/factory.ts's own copy already
-// documents the same tradeoff). The audit's coherence-thirteen tracks collapsing every copy onto
-// one export in a later pass; keep this list in sync with guard.ts by hand until then.
+// `isLocalHost` is imported, not copied. It used to be duplicated here because guard.ts imports
+// this module and importing back would be circular; the shared module is a leaf that imports
+// nothing, so the cycle no longer exists and the audit's coherence-thirteen collapse is done.
 //
-// What this copy decides, which is not what guard.ts's copy decides: under csrfSecure's monotonic
-// rule the hostname is consulted only for a NON-https request, where it chooses between the bare
-// dev cookie and the PUBLIC_ORIGIN branch. On an https request the hostname is never consulted at
-// all, so it cannot weaken a cookie the browser is already receiving over TLS. On a non-https
-// request the client-supplied Host header does still select the bare name over the PUBLIC_ORIGIN
-// answer, but that is not attacker-reachable through a victim's own browser, which derives Host
-// from the URL it is actually visiting.
-function isLocalHost(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '0.0.0.0' ||
-    hostname === '::1' ||
-    hostname === '[::1]' ||
-    hostname.endsWith('.localhost')
-  );
-}
+// What this call site decides, which is not what the dev-backend tripwire's own call decides:
+// under csrfSecure's monotonic rule the hostname is consulted only for a NON-https request, where
+// it chooses between the bare dev cookie and the PUBLIC_ORIGIN branch. On an https request the
+// hostname is never consulted at all, so it cannot weaken a cookie the browser is already
+// receiving over TLS. On a non-https request the client-supplied Host header does still select the
+// bare name over the PUBLIC_ORIGIN answer, but that is not attacker-reachable through a victim's
+// own browser, which derives Host from the URL it is actually visiting. That is why this stays on
+// the bare hostname predicate rather than `isDeployedHost`.
 
 /**
  * The platform slice every CSRF cookie decision reads, declared once so the four helpers below
@@ -58,7 +49,7 @@ type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
  * non-Secure thirty-day cookie a sibling subdomain is then free to overwrite, defeating the
  * double-submit compare.
  *
- * Only a non-https request consults anything further. A local host (guard.ts's own `isLocalHost`
+ * Only a non-https request consults anything further. A local host (the shared `isLocalHost`
  * list) keeps the bare name, since `__Host-` requires Secure unconditionally and local dev has no
  * TLS to set it with. Otherwise `PUBLIC_ORIGIN` decides, when configured and parseable as a URL,
  * which is what lets a deployment behind upstream TLS termination mint the cookie the browser

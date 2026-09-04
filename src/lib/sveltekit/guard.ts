@@ -10,7 +10,12 @@ import { renderConditionResponse, REASON_CONDITION } from './condition-response.
 import { log } from '../log/index.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
 import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
-import { CAIRN_DEV_BACKEND_FLAG, CAIRN_DEV_BACKEND_MESSAGE, isLocalHost } from '../auth-channel/dev-flag.js';
+import {
+  CAIRN_DEV_BACKEND_FLAG,
+  CAIRN_DEV_BACKEND_MESSAGE,
+  isDevBackendFlagSet,
+  isLocalHost,
+} from '../dev-flag.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
@@ -79,13 +84,14 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
     // production build (the dev branch replaces it entirely rather than running alongside it), so
     // there is no legitimate live-flag case for this handler to admit (Task 9, ruling 4).
-    // `auth-channel/factory.ts` carries the flag's OTHER refusal, on a stricter set-AND-non-local
-    // predicate, since one factory instance serves both dev and prod; both import the flag name
-    // and message from `dev-flag.ts` so the two never drift onto different wording.
+    // `auth-channel/factory.ts` carries the flag's OTHER refusal, on a narrower set-AND-deployed
+    // predicate, since one factory instance serves both dev and prod; both import the flag name,
+    // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto
+    // different wording or a different reading of the same value.
     const platformFlag = event.platform?.env?.[CAIRN_DEV_BACKEND_FLAG];
     const processFlag =
       typeof process !== 'undefined' ? process.env?.[CAIRN_DEV_BACKEND_FLAG] : undefined;
-    if (platformFlag === '1' || platformFlag === true || processFlag === '1') {
+    if (isDevBackendFlagSet(platformFlag) || isDevBackendFlagSet(processFlag)) {
       log.error('guard.rejected', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
     }

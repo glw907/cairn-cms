@@ -13,7 +13,13 @@ import { error, isHttpError, isRedirect } from '@sveltejs/kit';
 import { cookieName, generateToken, hashToken } from '../auth/crypto.js';
 import { originMatches } from '../sveltekit/csrf.js';
 import { log } from '../log/index.js';
-import { CAIRN_DEV_BACKEND_FLAG, CAIRN_DEV_BACKEND_MESSAGE, isLocalHost } from './dev-flag.js';
+import {
+  CAIRN_DEV_BACKEND_FLAG,
+  CAIRN_DEV_BACKEND_MESSAGE,
+  isDeployedHost,
+  isDevBackendFlagSet,
+  isLocalHost,
+} from '../dev-flag.js';
 import {
   verifySchema,
   readSalt,
@@ -73,7 +79,13 @@ function assertOriginAndScheme<Env>(event: CairnEvent<Env>): void {
   }
 }
 
-/** The dev-backend flag's cached env observation, one per `createAuthChannel` instance (isolate-stable; never re-read once checked). */
+/**
+ * The dev-backend flag's cached `platform.env` observation, one per `createAuthChannel` instance.
+ * `checked` latches only on a DEFINITE observation, meaning a request that actually carried a
+ * platform env to read. A runtime with no platform at all (a unit-test event, a warm-up call that
+ * arrives before the adapter attaches one) leaves the cache untouched, so it cannot pin an unset
+ * verdict onto every later request for the isolate's life and disarm the tripwire for good.
+ */
 interface DevBackendFlagCache {
   checked: boolean;
   set: boolean;
@@ -85,23 +97,35 @@ interface DevBackendFlagCache {
  * ENABLE contract (the showcase capture transport, and the documented transport-body pattern
  * this tripwire backs up, both refuse WITHOUT it), so refusing on the flag alone, the way
  * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
- * refuses only when the flag is set AND the request is non-local: the flag observation is
- * isolate-stable (a Worker isolate's env vars do not change between requests) and cached once
- * per channel instance; the host observation is evaluated fresh on every call, never cached,
- * since one isolate can serve `*.workers.dev` and a custom domain interchangeably, so a cached
- * host verdict from an early warm-up request would pin a permissive answer onto later production
- * traffic (round-1 review S-2). The refusal is a hard throw, not a member of either action's own
- * result union, matching `guard.ts`'s own unconditional form; it fires before any print, store,
- * or network call, mirroring `assertOriginAndScheme`'s own contract.
- * @throws HttpError 503 when the flag is live on a non-local host.
+ * refuses only when the flag is set AND the request is deployed.
+ *
+ * Both env sources are read, matching `guard.ts`: a Cloudflare Worker var lands on
+ * `platform.env`, an adapter-node OS var on `process.env` (the documented
+ * `CAIRN_DEV_BACKEND=1 npm run dev` form). Only the `platform.env` half is cached, and only once
+ * a request has actually carried a platform env to read, since that is the half a Worker isolate
+ * fixes for its lifetime. `process.env` is re-read on every call, which costs nothing and keeps
+ * an adapter-node deployment (where `platform` is always absent) inside the tripwire.
+ *
+ * The deployment witness is evaluated fresh on every call, never cached, since one isolate can
+ * serve `*.workers.dev` and a custom domain interchangeably, so a cached verdict from an early
+ * warm-up request would pin a permissive answer onto later production traffic (round-1 review
+ * S-2). {@link isDeployedHost}, not the bare request hostname, is what answers it, so a forged
+ * `Host: localhost` cannot talk a configured deployment out of refusing.
+ *
+ * The refusal is a hard throw, not a member of either action's own result union, matching
+ * `guard.ts`'s own unconditional form; it fires before any print, store, or network call,
+ * mirroring `assertOriginAndScheme`'s own contract.
+ * @throws HttpError 503 when the flag is live on a deployed host.
  */
-function assertNoDevBackendLeak<Env>(env: Env | undefined, event: CairnEvent<Env>, cache: DevBackendFlagCache): void {
-  if (!cache.checked) {
-    const raw = (env as Record<string, unknown> | undefined)?.[CAIRN_DEV_BACKEND_FLAG];
-    cache.set = raw === '1' || raw === true;
+function assertNoDevBackendLeak<Env>(event: CairnEvent<Env>, cache: DevBackendFlagCache): void {
+  const platformEnv = event.platform?.env as Record<string, unknown> | undefined;
+  if (!cache.checked && platformEnv !== undefined) {
+    cache.set = isDevBackendFlagSet(platformEnv[CAIRN_DEV_BACKEND_FLAG]);
     cache.checked = true;
   }
-  if (cache.set && !isLocalHost(event.url.hostname)) {
+  const fromProcess = typeof process !== 'undefined' ? process.env?.[CAIRN_DEV_BACKEND_FLAG] : undefined;
+  const live = cache.set || isDevBackendFlagSet(fromProcess);
+  if (live && isDeployedHost(event)) {
     throw error(503, CAIRN_DEV_BACKEND_MESSAGE);
   }
 }
@@ -166,12 +190,25 @@ function scrubDeliverError(err: unknown, contact: string): string {
 }
 
 /**
- * Cap a thrown salt-fault error for logging, the same length cap `scrubDeliverError` applies. No
- * contact redaction is needed here: `resolveSalt`'s own faults are D1 read/write errors, never a
- * delivery provider's response, so there is nothing contact-shaped to strip.
+ * Any run of 32 or more hex characters, which is the shape of the identity salt (`provisionSalt`
+ * mints 32 random bytes, hex encoded, so 64 characters) and of every hash this channel derives
+ * from it. The floor sits at 32 rather than 64 so a truncated or half-printed value is caught too;
+ * nothing else this channel can throw is hex-shaped for that long.
+ */
+const HEX_RUN = /[0-9a-fA-F]{32,}/g;
+
+/**
+ * Scrub a thrown salt-fault error for logging: redact anything salt-shaped, then apply the same
+ * length cap `scrubDeliverError` uses. No contact redaction is needed here, since `resolveSalt`'s
+ * own faults are D1 read/write errors rather than a delivery provider's response.
+ *
+ * The redaction is not theoretical. `provisionSalt` binds the freshly minted salt as a SQL
+ * parameter, and a driver error shape that echoes its bindings would put the salt itself into a
+ * log record, which deanonymizes every `correlationId` this channel has ever emitted. Redact
+ * before the cap, so the cap cannot be what a leak depends on.
  */
 function scrubSaltError(err: unknown): string {
-  return String(err).slice(0, 300);
+  return String(err).replace(HEX_RUN, '[redacted]').slice(0, 300);
 }
 
 /**
@@ -638,7 +675,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    */
   async function requestAction(event: ChannelEvent<Env>): Promise<ChannelRequestResult> {
     // Step 0: the dev-backend leak tripwire, ahead of everything else this action does.
-    assertNoDevBackendLeak(event.platform?.env, event, devBackendFlagCache);
+    assertNoDevBackendLeak(event, devBackendFlagCache);
 
     // Step 1: origin and scheme.
     assertOriginAndScheme(event);
@@ -863,7 +900,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    */
   async function confirmAction(event: ChannelEvent<Env>): Promise<ChannelConfirmResult> {
     // Step 0: the dev-backend leak tripwire, identical discipline to requestAction.
-    assertNoDevBackendLeak(event.platform?.env, event, devBackendFlagCache);
+    assertNoDevBackendLeak(event, devBackendFlagCache);
 
     // Step 1: origin and scheme, identical discipline to requestAction.
     assertOriginAndScheme(event);
@@ -996,9 +1033,12 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       // which need not be the subject this confirm just proved, so pairing the two identities in
       // one record would silently link them. It fires only when a row was actually destroyed and
       // was still live (its `expiresAt` in the future); the delete itself stays unconditional
-      // either way.
+      // either way. The liveness compare reads the clock here rather than reusing this action's
+      // own `now`, which was captured several D1 round trips earlier: a row that expired during
+      // those round trips is expired, and `auth-routes.ts`'s own destroyed-session compare reads
+      // `Date.now()` at the same point for the same reason.
       const destroyed = await destroyChannelSession(session, await hashToken(existingSessionToken));
-      if (destroyed !== null && destroyed.expiresAt > now) {
+      if (destroyed !== null && destroyed.expiresAt > Date.now()) {
         log.info('auth.channel.session.destroyed', { correlationId });
       }
     }
@@ -1023,7 +1063,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * best-effort deletes the session row named by the incoming session cookie.
    */
   async function logoutAction(event: CairnEvent<Env>): Promise<{ ok: true }> {
-    assertNoDevBackendLeak(event.platform?.env, event, devBackendFlagCache);
+    assertNoDevBackendLeak(event, devBackendFlagCache);
     assertOriginAndScheme(event);
 
     const secure = event.url.protocol === 'https:';
@@ -1091,9 +1131,14 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         // never the earlier `resolved.subject` read: both name the same row (the DELETE matches
         // on the identical tokenHash, the row's primary key), but the RETURNING value is the
         // provable one, not an assumption that the read and the delete still agree.
+        //
+        // The liveness compare reads the clock rather than reusing this function's `now`, which
+        // `resolveChannelSession` has already filtered the row against: reusing it would make the
+        // compare tautologically true and record a destroyed session that had in fact expired
+        // during the verify hook and the delete.
         const revokeSession = database.withSession('first-primary');
         const destroyed = await destroyChannelSession(revokeSession, tokenHash);
-        if (destroyed !== null && destroyed.expiresAt > now) {
+        if (destroyed !== null && destroyed.expiresAt > Date.now()) {
           await logSessionDestroyed(revokeSession, destroyed.subject, 'revoke');
         }
         return null;

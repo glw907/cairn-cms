@@ -114,6 +114,12 @@ admission.
 
 ```ts
 // src/routes/admin/club/payroll/+page.server.ts
+import type { SectionAction } from '@glw907/cairn-cms/sveltekit';
+
+// Built once per section via createSectionAction, elsewhere in your site (see
+// createSectionAction in the reference docs for the full setup).
+declare const sectionAction: SectionAction<unknown, unknown>;
+
 export const actions = {
   approveRun: sectionAction(async ({ ctx }) => { /* ... */ }, {
     action: 'approve-run',

@@ -301,6 +301,12 @@ plus all four fixed engine screens `validateAccessComposition` enforces (`media`
 the map is asked about carries its own rule:
 
 ```ts
+import { defineAccess, type RolesDeclaration } from '@glw907/cairn-cms';
+
+// Your own declared vocabulary, whatever module you keep it in. Pass `undefined` instead if you
+// have not declared one; see "Declare the map" in restrict-admin-access.md.
+declare const roles: RolesDeclaration | undefined;
+
 export const access = defineAccess(roles, {
   posts: ['editor'],
   pages: ['editor'],

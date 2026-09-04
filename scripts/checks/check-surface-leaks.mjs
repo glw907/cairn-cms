@@ -372,6 +372,13 @@ export function deriveRendererLeaks(model) {
  * @typedef {{ name: string, subpath: string, model: string, 'sanctioned-by'?: string, 'standing-unverdicted'?: string }} RegistryEntry
  */
 
+// The (name, subpath) identity a derived leak and a registry entry are matched on. The NUL
+// separator cannot occur in either half, so the join is unambiguous.
+/** @param {{ name: string, subpath: string }} leak @returns {string} */
+function leakKey(leak) {
+  return `${leak.name}\0${leak.subpath}`;
+}
+
 /**
  * The full derivation: the type-checker model's clause plus the renderer model's per-subpath
  * clause, deduplicated by (name, subpath).
@@ -382,10 +389,9 @@ export function deriveLeaks(model) {
   const universe = knownTypeUniverse();
   /** @type {Map<string, DerivedLeak>} */
   const byKey = new Map();
-  for (const leak of deriveTypeCheckerLeaks(model, universe)) byKey.set(`${leak.name}\0${leak.subpath}`, leak);
+  for (const leak of deriveTypeCheckerLeaks(model, universe)) byKey.set(leakKey(leak), leak);
   for (const leak of deriveRendererLeaks(model)) {
-    const key = `${leak.name}\0${leak.subpath}`;
-    if (!byKey.has(key)) byKey.set(key, leak);
+    if (!byKey.has(leakKey(leak))) byKey.set(leakKey(leak), leak);
   }
   return [...byKey.values()].sort(
     (a, b) => a.name.localeCompare(b.name) || a.subpath.localeCompare(b.subpath),
@@ -412,11 +418,11 @@ export function findLeakViolations(derived, registry) {
   };
   const unreasoned = registry.filter((e) => !hasReason(e));
   /** @type {Set<string>} */
-  const recordedKeys = new Set(registry.filter(hasReason).map((e) => `${e.name}\0${e.subpath}`));
+  const recordedKeys = new Set(registry.filter(hasReason).map(leakKey));
   /** @type {Set<string>} */
-  const derivedKeys = new Set(derived.map((d) => `${d.name}\0${d.subpath}`));
-  const unrecorded = derived.filter((d) => !recordedKeys.has(`${d.name}\0${d.subpath}`));
-  const stale = registry.filter((e) => hasReason(e) && !derivedKeys.has(`${e.name}\0${e.subpath}`));
+  const derivedKeys = new Set(derived.map(leakKey));
+  const unrecorded = derived.filter((d) => !recordedKeys.has(leakKey(d)));
+  const stale = registry.filter((e) => hasReason(e) && !derivedKeys.has(leakKey(e)));
   return unrecorded.length || stale.length || unreasoned.length
     ? { ok: false, unrecorded, stale, unreasoned }
     : { ok: true };

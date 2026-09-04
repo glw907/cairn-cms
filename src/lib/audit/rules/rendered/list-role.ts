@@ -82,16 +82,22 @@ export const listRoleRendered: RenderedRule = {
     await ensurePageHelpers(ctx.page);
     const violations = await ctx.page.evaluate(findListRoleViolations);
     return violations.map((violation) => {
-      const itemNote =
-        violation.listitemCandidates.length > 0
-          ? ` Add role="listitem" to ${violation.listitemCandidates.length === 1 ? 'it' : `each of the ${violation.listitemCandidates.length} affected items`} too (${violation.listitemCandidates.join(', ')}), since role="list" requires listitem-owned children (ARIA's owned-elements rule) and their own implicit role is exposed to the same rendering-engine risk this rule guards the list against.`
-          : '';
+      const candidates = violation.listitemCandidates;
+      let itemNote = '';
+      if (candidates.length > 0) {
+        const target = candidates.length === 1 ? 'it' : `each of the ${candidates.length} affected items`;
+        itemNote =
+          ` Add role="listitem" to ${target} too (${candidates.join(', ')}), since role="list" requires ` +
+          `listitem-owned children (ARIA's owned-elements rule) and their own implicit role is exposed to the ` +
+          `same rendering-engine risk this rule guards the list against.`;
+      }
+      const subject = violation.changedCount === 1 ? 'an item renders' : `${violation.changedCount} items render`;
       return {
         ruleId: 'list-role',
         tier: 'error',
         selector: violation.listSelector,
         message:
-          `${violation.changedCount === 1 ? 'an item renders' : `${violation.changedCount} items render`} at ` +
+          `${subject} at ` +
           `display: ${violation.displayValue} instead of list-item, reached through a descendant selector on ` +
           `an ancestor's class rather than the item's own, and a marker-suppressed <ul>/<ol> with no role ` +
           `attribute stops being announced as a list in WebKit/VoiceOver; add role="list" to restore the list ` +

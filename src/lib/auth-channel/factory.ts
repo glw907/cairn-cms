@@ -73,6 +73,12 @@ function assertOriginAndScheme<Env>(event: CairnEvent<Env>): void {
   }
 }
 
+/** The dev-backend flag's cached env observation, one per `createAuthChannel` instance (isolate-stable; never re-read once checked). */
+interface DevBackendFlagCache {
+  checked: boolean;
+  set: boolean;
+}
+
 /**
  * Step 0 of every action, ahead even of {@link assertOriginAndScheme}: the dev-backend leak
  * tripwire (Task 9, ruling 4 as letter-amended). `CAIRN_DEV_BACKEND` is the dev transport's own
@@ -98,12 +104,6 @@ function assertNoDevBackendLeak<Env>(env: Env | undefined, event: CairnEvent<Env
   if (cache.set && !isLocalHost(event.url.hostname)) {
     throw error(503, CAIRN_DEV_BACKEND_MESSAGE);
   }
-}
-
-/** The dev-backend flag's cached env observation, one per `createAuthChannel` instance (isolate-stable; never re-read once checked). */
-interface DevBackendFlagCache {
-  checked: boolean;
-  set: boolean;
 }
 
 /**

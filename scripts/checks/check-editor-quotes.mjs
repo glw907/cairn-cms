@@ -20,11 +20,13 @@
 // markup text nodes and the quoted/template string literals in `<script>` and plain `.ts`
 // modules) rather than a curated list of "known message files": a message moving to a new
 // component should not need this gate's own source edited to keep tracking it.
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walk } from '../walk-files.mjs';
+import { repoRoot } from '../repo-root.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const ROOT = repoRoot(import.meta.url);
 const DOC_PATH = join(ROOT, 'docs/editors/when-something-goes-wrong.md');
 const LIB_DIR = join(ROOT, 'src/lib');
 
@@ -32,22 +34,6 @@ const LIB_DIR = join(ROOT, 'src/lib');
 // empty Svelte control-flow tag like `{#if x}` extracts as an all-wildcard "candidate" otherwise,
 // which would vacuously ground any quote at all).
 const MIN_LITERAL_LENGTH = 8;
-
-/**
- * Recursively collect every file under `dir` whose name ends with one of `exts`.
- * @param {string} dir
- * @param {string[]} exts
- * @returns {string[]}
- */
-function walkExts(dir, exts) {
-  const out = [];
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) out.push(...walkExts(full, exts));
-    else if (exts.some((ext) => name.endsWith(ext))) out.push(full);
-  }
-  return out;
-}
 
 /**
  * Fold whitespace runs (including newlines) to a single space, lowercase, and strip every
@@ -235,7 +221,7 @@ export function findStrandedQuotes(markdown, candidates) {
 
 function main() {
   const markdown = readFileSync(DOC_PATH, 'utf8');
-  const files = walkExts(LIB_DIR, ['.svelte', '.ts']);
+  const files = walk(LIB_DIR, (name) => name.endsWith('.svelte') || name.endsWith('.ts'));
   const candidates = files.flatMap(candidatesForFile);
   const stranded = findStrandedQuotes(markdown, candidates);
   if (stranded.length === 0) {

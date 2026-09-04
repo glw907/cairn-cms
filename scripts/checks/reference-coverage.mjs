@@ -46,16 +46,22 @@ export function enumerateExports(dtsPath) {
     .sort();
 }
 
+// A whole-word matcher for one export or prop name: the name itself, bounded on both sides by a
+// non-identifier character. `$` is the one name character that also means something to the regex
+// engine, so it is the only one escaped.
+/** @param {string} name @returns {RegExp} */
+function wholeWordRe(name) {
+  const escaped = name.replace(/[$]/g, '\\$&');
+  return new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`);
+}
+
 // The names from `names` that do not appear as a whole-word token in the page text.
 /**
  * @param {string[]} names
  * @param {string} pageText
  */
 export function missingNames(names, pageText) {
-  return names.filter((/** @type {string} */ name) => {
-    const escaped = name.replace(/[$]/g, '\\$&');
-    return !new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(pageText);
-  });
+  return names.filter((/** @type {string} */ name) => !wholeWordRe(name).test(pageText));
 }
 
 // The stability-tier token the marker carries, recognized in two forms: the inline
@@ -365,8 +371,7 @@ export function missingIndexedAccessParentheticals(names, pageText) {
   const units = localityUnits(pageText);
   const offenders = [];
   for (const name of names) {
-    const escaped = name.replace(/[$]/g, '\\$&');
-    const nameRe = new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`);
+    const nameRe = wholeWordRe(name);
     if (!nameRe.test(pageText)) continue;
     const covered = units.some((unit) => nameRe.test(unit) && hasIndexedAccessSpan(unit));
     if (!covered) offenders.push(name);
@@ -435,10 +440,7 @@ export function componentSectionWindow(name, pageText) {
  * @returns {string[]}
  */
 export function missingComponentProps(names, sectionText) {
-  return names.filter((name) => {
-    const escaped = name.replace(/[$]/g, '\\$&');
-    return !new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(sectionText);
-  });
+  return names.filter((name) => !wholeWordRe(name).test(sectionText));
 }
 
 // A Props member that is documented, but PINNED unstable so it never quietly promotes into the
@@ -490,11 +492,7 @@ function stableSnippet(sectionText) {
 export function promotedUnstableProps(component, sectionText, registry = DOCUMENTED_UNSTABLE_PROPS) {
   const snippet = stableSnippet(sectionText);
   return registry
-    .filter((e) => e.component === component)
-    .filter((e) => {
-      const escaped = e.prop.replace(/[$]/g, '\\$&');
-      return new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(snippet);
-    })
+    .filter((e) => e.component === component && wholeWordRe(e.prop).test(snippet))
     .map((e) => e.prop);
 }
 

@@ -240,7 +240,7 @@ export function deriveTypeCheckerLeaks(model, universe) {
     // gate is the answer for that surface; see the ledger row's stated-limits paragraph), so this
     // subpath contributes no roots here. Structurally modeling `/components` itself (walking
     // component prop types the way this rider walks a plain module's exports) is routed to
-    // internals-B, not answered by this skip.
+    // internals-C, not answered by this skip.
     if (entry.subpath === '/components') continue;
     const dtsPath = resolve(ROOT, entry.dts);
     if (!existsSync(dtsPath)) continue;

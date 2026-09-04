@@ -2,6 +2,7 @@
 // derivation, and the bucket-name resolution, all pure functions so the bin stays a thin
 // wrapper, the same split cairn-doctor's assemble.ts uses.
 import { parseMediaManifest } from '../media/manifest.js';
+import { HASH_RE, R2_EXT_RE } from '../media/naming.js';
 import type { R2BucketEntry } from '../doctor/wrangler-config.js';
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
@@ -68,15 +69,24 @@ export interface SeedItem {
 
 /**
  * Normalize a parsed `media.json` body (or `null` for a missing file) into the rows this tool
- *  seeds. A row missing `slug`, `hash`, or `ext` is dropped rather than failing the whole run,
- *  the same per-item tolerance the sync loop itself uses.
+ *  seeds. A row missing `slug`, `hash`, or `ext`, or whose `hash`/`ext` does not satisfy the
+ *  same shape `r2Key` requires (`HASH_RE`/`R2_EXT_RE`, `media/naming.ts`), is dropped rather
+ *  than failing the whole run, the same per-item tolerance the sync loop itself uses. This is
+ *  the earliest choke point: a hostile row (a `hash` or `ext` carrying path-traversal
+ *  segments) never reaches the write loop at all.
  */
 export function normalizeManifest(json: unknown): SeedItem[] {
   const manifest = parseMediaManifest(json);
   const items: SeedItem[] = [];
   for (const entry of Object.values(manifest)) {
     const { slug, hash, ext } = entry as { slug?: unknown; hash?: unknown; ext?: unknown };
-    if (typeof slug === 'string' && typeof hash === 'string' && typeof ext === 'string') {
+    if (
+      typeof slug === 'string' &&
+      typeof hash === 'string' &&
+      typeof ext === 'string' &&
+      HASH_RE.test(hash) &&
+      R2_EXT_RE.test(ext)
+    ) {
       items.push({ slug, hash, ext });
     }
   }

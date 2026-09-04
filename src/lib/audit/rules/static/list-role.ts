@@ -57,6 +57,13 @@ function hasRoleAttribute(node: SourceNode): boolean {
  * element that happens to carry the class "menu" itself, so a cause-lookup keyed on "does this
  * class appear anywhere in the selector text" would misattribute this declaration to that element.
  */
+// WATCH: this tokenizer has two known gaps, both requiring an actual selector that exercises
+// the shape to trip: (1) a newline or tab combinator ("`.menu\n  li`", a valid CSS descendant
+// combinator this loop's `ch === ' '` check does not recognize as whitespace) reads as part of
+// the compound instead of splitting it; (2) an escaped bracket or paren outside a quoted string
+// (`\[`, `\(`) is not shielded the way the quote-aware scan shields one inside `"..."`/`'...'`,
+// so it would wrongly open or close a depth-tracked group. Neither has a live trigger in this
+// codebase's compiled selectors today; fix when one appears.
 function lastCompound(selector: string): string {
   let depth = 0;
   let start = 0;

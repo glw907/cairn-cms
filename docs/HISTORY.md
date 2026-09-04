@@ -21,9 +21,11 @@ two-posture documentation, the `SITE_CONFIG_PATH` engine-owned data-file convent
 the six stale module-header fixes, the `previewRevoke` export half, and Task 13's
 destroyed-row liveness plus the `formatTimestamp` two-shape contract. Final state:
 `npm run check` 0/0, `npm test` exit 0, every CI-only gate green by name, and a
-from-scratch showcase install/build/e2e (155 Playwright tests) exit 0. A MemoryMax
-containment fix on the browser test gate plus a vitest browser-recycling investigation
-lands at the close.
+from-scratch showcase install/build/e2e (155 Playwright tests) exit 0. The close also
+landed the browser test gate under an 8G MemoryMax systemd scope (`30cf36a3`,
+`scripts/test/contained.mjs`, direct-spawn fallback where no user manager exists); the
+browser-recycling investigation measured one recycled Chromium across all 78 component
+files with summed RSS plateauing near 3.6G, so no vitest config change was needed.
 
 What the gate caught: `check:snippets` found three problems in the access-model docs,
 fixed in the same pass (`7604e2b3`). The five-reviewer fan-out (svelte, daisyui-a11y,

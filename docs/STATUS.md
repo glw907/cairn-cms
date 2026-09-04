@@ -23,8 +23,10 @@ five-reviewer fan-out's three-round fix fold all landed on branch `internals` (w
 `.claude/worktrees/internals`, off `main` at `a5352f0b`).** `npm run check` is 0/0,
 `npm test` exits 0, every CI-only gate is green by name, and a from-scratch showcase
 install/build/e2e (155 Playwright tests) exits 0. Post-mortem appended to
-`docs/superpowers/plans/2026-09-01-internals-pass.md`. A MemoryMax containment fix on
-the browser test gate plus a vitest browser-recycling investigation lands at the close.
+`docs/superpowers/plans/2026-09-01-internals-pass.md`. The browser test gate now runs
+under an 8G MemoryMax systemd scope (`scripts/test/contained.mjs`, CI falls back to a
+direct spawn); the browser-recycling investigation found one recycled Chromium across
+the whole component project with RSS plateauing near 3.6G, so no config change.
 **Next: the branch is being pushed and its PR opened (Geoff authorized push-and-PR
 2026-09-02).** After merge: internals-B planning per
 `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (including the

@@ -1,7 +1,7 @@
 <!--
 @component
 The Media Library's upload dialog: a standard modal `<dialog>`, NO light dismiss (no
-`method="dialog"` backdrop form, matching the Replace/Alt siblings) — a backdrop click does
+`method="dialog"` backdrop form, matching the Replace/Alt siblings): a backdrop click does
 nothing, and only Escape or the Cancel button closes it. It hosts `MediaCaptureCard` on a
 chosen or dropped file; a typed ingest/upload failure or an expired session shows the Replace
 flow's retry-card treatment without losing the file. It relies on the native `<dialog>` role

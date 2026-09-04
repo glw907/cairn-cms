@@ -52,8 +52,11 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
     conceptId: string;
     /** The entry id (the upload action's route param). */
     id: string;
-    /** The host's hero-field refs, keyed by the prefixed `name` so two rows do not collide. */
-    heroFieldRefs: Record<string, MediaHeroField>;
+    /** Registers a row's hero-field ref (or `null` on teardown) with the host, keyed by the
+     *  prefixed name; forwarded straight through to each row, same as `onuploaded`. On
+     *  teardown a third argument carries the exact instance this row granted, so the host
+     *  deletes its map entry only when it still holds that same instance. */
+    registerHeroField: (name: string, ref: MediaHeroField | null, owned?: MediaHeroField | null) => void;
     /** Called with the server-owned record on a successful upload, so the host merges it. */
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */
@@ -71,7 +74,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
     mediaLibrary,
     conceptId,
     id,
-    heroFieldRefs,
+    registerHeroField,
     onuploaded,
     onheroneedsalt,
     icons,
@@ -270,7 +273,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
                   {mediaLibrary}
                   {conceptId}
                   {id}
-                  {heroFieldRefs}
+                  {registerHeroField}
                   {onuploaded}
                   {onheroneedsalt}
                   {icons}
@@ -285,7 +288,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
                   {mediaLibrary}
                   {conceptId}
                   {id}
-                  {heroFieldRefs}
+                  {registerHeroField}
                   {onuploaded}
                   {onheroneedsalt}
                   {icons}

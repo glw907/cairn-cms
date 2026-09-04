@@ -115,7 +115,7 @@ function findScreen(nodes: ResolvedLayoutNode[], screen: string): { label: strin
 }
 
 // A sync-throwing backend for a shellLoad test that never installs a GitHub double. The
-// shell's `pendingEntries` probe (content-routes-core.ts) is intentionally fire-and-forget, so a
+// shell's `pendingEntries` probe (content-routes-shell.ts) is intentionally fire-and-forget, so a
 // test that resolves it against the real `backend` (a real fetch, a fake token) leaves that
 // fetch running past the test's own return; on a loaded CI worker the eventual 401 and its
 // `console.warn` land after the test file's teardown and can crash the run with a pending

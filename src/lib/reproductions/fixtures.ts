@@ -18,7 +18,7 @@
 import { defineFieldset } from '../content/fieldset.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
-import type { EntrySummary } from '../sveltekit/content-routes-core.js';
+import type { EntrySummary } from '../sveltekit/content-routes-list.js';
 import type { HistoryData } from '../sveltekit/types.js';
 import type { MediaLibraryData, MediaUsageInfo } from '../sveltekit/content-routes-media.js';
 import type { MediaLibraryEntry } from '../media/library-entry.js';

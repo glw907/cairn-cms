@@ -29,7 +29,7 @@ function listEvent(params: Record<string, string>, search = '', eventBackend?: B
 afterEach(() => vi.restoreAllMocks());
 
 // A sync-throwing backend for a shellLoad test that never installs a GitHub double. The
-// shell's `pendingEntries` probe (content-routes-core.ts) is intentionally fire-and-forget, so a
+// shell's `pendingEntries` probe (content-routes-shell.ts) is intentionally fire-and-forget, so a
 // test that resolves it against a real backend (a real fetch, a fake token) leaves that fetch
 // running past the test's own return; the eventual 401 and its `console.warn` can land after the
 // test file's own teardown, and on a loaded CI worker that has crashed the run with a pending

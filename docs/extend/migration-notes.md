@@ -103,6 +103,14 @@ The release step sets the version number at the cut and renames this section to 
   that `OfficeList` renders its header band through `PageHeader`. Rename the prop; expect the
   office header to adopt `PageHeader`'s rhythm (`mb-10`, `gap-0.5`, `type-meta`) in place of
   `OfficeList`'s former `mb-6`/`gap-0`/`type-body`.
+- **`MarkdownEditor`'s `registerEditor` now also delivers `null` once, from its real `onDestroy`
+  teardown, revoking the mount grant.** A host holding one `editor` reference from a direct
+  `MarkdownEditor` mount whose `registerEditor` callback assumed it was only ever called with a
+  live `EditorApi` should narrow the parameter (`(api) => { if (!api) return; ... }`) before
+  taking this release; the type widens to `EditorApi | null`. The revocation is identity-guarded
+  (a host nulls its reference only when the revoked value is the one it still holds), so an
+  out-of-order destroy from a superseded `{#key}` instance can never clobber a newer, already-live
+  grant.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

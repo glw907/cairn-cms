@@ -50,10 +50,10 @@ const MAX_SLUG = 80;
  * A 16-character lowercase hex content-hash prefix, the bare-hash reference form. A slug that
  *  matches this shape would collide with `media:<hash>`, so slugifyFilename screens it.
  */
-const HASH_RE = /^[0-9a-f]{16}$/;
+export const HASH_RE = /^[0-9a-f]{16}$/;
 
 /** A short alphanumeric extension (no dot), the only shape r2Key accepts, for example `webp`. */
-const R2_EXT_RE = /^[a-z0-9]{1,5}$/;
+export const R2_EXT_RE = /^[a-z0-9]{1,5}$/;
 
 // A Uint8Array's generic buffer type no longer satisfies Web Crypto's BufferSource under strict lib
 // types, since the backing buffer may be a SharedArrayBuffer; slice the bytes into a plain

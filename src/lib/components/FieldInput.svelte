@@ -46,8 +46,14 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     conceptId: string;
     /** The entry id (the upload action's route param). */
     id: string;
-    /** The host's hero-field refs, keyed by the prefixed `name` so two rows do not collide. */
-    heroFieldRefs: Record<string, MediaHeroField>;
+    /** Registers this instance's hero-field ref (or `null` on teardown) with the host, keyed by
+     *  the prefixed `name` so two rows do not collide. On teardown a third argument carries the
+     *  exact instance this component granted, so the host deletes its map entry only when it
+     *  still holds that same instance (two rows swapping index-derived names on the same render
+     *  must never let one row's teardown drop the other row's live ref). The host owns the ref
+     *  map; this component only ever reports its own ref through the callback, never mutates a
+     *  shared map by reference. */
+    registerHeroField: (name: string, ref: MediaHeroField | null, owned?: MediaHeroField | null) => void;
     /** Called with the server-owned record on a successful upload, so the host merges it. */
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */
@@ -71,7 +77,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     mediaLibrary,
     conceptId,
     id,
-    heroFieldRefs,
+    registerHeroField,
     onuploaded,
     onheroneedsalt,
     icons,
@@ -89,6 +95,29 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     return rawName.replace(/[^A-Za-z0-9_-]+/g, '-');
   }
   const hintBase = $derived(hintId(name));
+
+  // The image arm's hero-field ref, LOCAL to this component (never a mutated prop): an effect
+  // reports it out through registerHeroField on mount and change, then reports null on teardown,
+  // so the host's ref map is written only by its own owner (the fix for the ownership_invalid_
+  // mutation warning a shared bind:this target used to log). Scoped to the image arm: every
+  // other arm never mounts MediaHeroField, so heroRef stays null and the effect is a no-op.
+  // $state.raw: the whole component instance is replaced wholesale on each bind:this update,
+  // never mutated in place, so fine-grained reactivity buys nothing here.
+  let heroRef = $state.raw<MediaHeroField | null>(null);
+  $effect(() => {
+    if (field.type !== 'image') return;
+    // Snapshot the key AND the ref at registration time: RepeatableField keys rows by row.id
+    // while the prefixed name embeds the row's index, so a preceding row's deletion or reorder
+    // can change `name` for a surviving row, or hand a NEW row the OLD row's key, before this
+    // effect's teardown runs. Reading `name` or `heroRef` fresh at teardown would deregister the
+    // wrong key or report the wrong instance; the closure must deregister the same key with the
+    // same instance it registered, so the host can tell its own teardown apart from a newer
+    // row's already-live registration under the same key.
+    const key = name;
+    const owned = heroRef;
+    registerHeroField(key, owned);
+    return () => registerHeroField(key, null, owned);
+  });
 
   // The closed taxonomy picker's checkboxes, for the required group's honest validity signal.
   let multiselectFieldset = $state<HTMLFieldSetElement | null>(null);
@@ -268,10 +297,8 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   </label>
 {:else if field.type === 'image'}
   {@const heroValue = frontmatter[field.name] as ImageValue | undefined}
-  <!-- The ownership_invalid_mutation warning this logs is benign: the parent owns the $state
-       proxy and mutates it by reference, and the hero-alt focus flow reads the same prefixed key. -->
   <MediaHeroField
-    bind:this={heroFieldRefs[name]}
+    bind:this={heroRef}
     field={{ name, label: field.label }}
     value={heroValue}
     decorative={heroValue?.decorative ?? false}
@@ -288,9 +315,9 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else if field.type === 'array' && field.item.type === 'reference'}
   <ReferenceField {field} value={(frontmatter[field.name] ?? []) as string[]} {targets} ondirty={markFieldsDirty} />
 {:else if field.type === 'object'}
-  <ObjectGroupField {field} {name} frontmatter={(frontmatter[field.name] ?? {}) as Record<string, unknown>} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
+  <ObjectGroupField {field} {name} frontmatter={(frontmatter[field.name] ?? {}) as Record<string, unknown>} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {registerHeroField} {targets} {onuploaded} {onheroneedsalt} {icons} />
 {:else if field.type === 'array' && field.item.type !== 'reference'}
-  <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
+  <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {registerHeroField} {targets} {onuploaded} {onheroneedsalt} {icons} />
 {:else if field.type === 'icon' && icons}
   <div class="flex flex-col gap-1">
     <span class="type-body font-medium">{field.label}</span>

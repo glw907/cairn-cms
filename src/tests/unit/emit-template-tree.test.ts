@@ -7,11 +7,11 @@
 // with exactly the expected d1_databases membership, and that the manifest's own exclude list
 // still points at real paths.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { readFile, mkdtemp, rm, readdir } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join, relative } from 'node:path';
-import { emitTemplate } from '../../../scripts/build/emit-template.mjs';
+import { emitTemplate, isAlwaysSkippedPath } from '../../../scripts/build/emit-template.mjs';
 import { walk } from '../../../scripts/walk-files.mjs';
 
 const ROOT = resolve(__dirname, '../../..');
@@ -137,6 +137,68 @@ describe('the emitted template tree', () => {
     const text = await readFile(join(emittedTo, 'wrangler.jsonc'), 'utf8');
     const config = parseJsonc(text);
     expect(config.secrets).toBeUndefined();
+  });
+});
+
+describe('isAlwaysSkippedPath', () => {
+  it('matches a top-level .dev.vars file', () => {
+    expect(isAlwaysSkippedPath('.dev.vars')).toBe(true);
+  });
+
+  it('matches a .dev.vars variant at any depth', () => {
+    expect(isAlwaysSkippedPath('some/nested/dir/.dev.vars.local')).toBe(true);
+  });
+
+  it('matches a stray build log at any depth', () => {
+    expect(isAlwaysSkippedPath('showcase-build.log')).toBe(true);
+    expect(isAlwaysSkippedPath('nested/dir/npm-debug.log')).toBe(true);
+  });
+
+  it('leaves an ordinary file alone', () => {
+    expect(isAlwaysSkippedPath('src/routes/+page.svelte')).toBe(false);
+    expect(isAlwaysSkippedPath('.dev.varsx')).toBe(false);
+  });
+});
+
+// The security lens's blocking find: docs tell developers to put GITHUB_APP_PRIVATE_KEY_B64 in
+// .dev.vars, and a stray showcase-build.log rode into an emitted tree during review. A synthetic
+// `from` proves the emitter drops both without needing to plant a real secrets file in the
+// showcase fixture itself.
+describe('emitTemplate drops local dev secrets and stray build logs', () => {
+  let from: string;
+  let to: string;
+
+  beforeAll(async () => {
+    from = await mkdtemp(join(tmpdir(), 'cairn-emit-template-src-'));
+    await writeFile(join(from, '.cairn-template.json'), JSON.stringify({ exclude: [] }));
+    await writeFile(join(from, 'package.json'), JSON.stringify({ name: 'from-fixture' }));
+    await writeFile(join(from, '.dev.vars'), 'GITHUB_APP_PRIVATE_KEY_B64=secret\n');
+    await writeFile(join(from, '.dev.vars.local'), 'ANOTHER_SECRET=x\n');
+    await writeFile(join(from, 'showcase-build.log'), 'a stray build log\n');
+    await mkdir(join(from, 'nested'), { recursive: true });
+    await writeFile(join(from, 'nested', 'npm-debug.log'), 'a nested build log\n');
+    await writeFile(join(from, 'keep.txt'), 'kept\n');
+
+    to = await mkdtemp(join(tmpdir(), 'cairn-emit-template-out-'));
+    await emitTemplate({
+      from,
+      to,
+      engineSpec: 'file:/tmp/does-not-exist-cairn-cms.tgz',
+      devSpec: 'file:/tmp/does-not-exist-cairn-cms-dev.tgz',
+    });
+  });
+
+  afterAll(async () => {
+    await rm(from, { recursive: true, force: true });
+    await rm(to, { recursive: true, force: true });
+  });
+
+  it('drops .dev.vars, its variants, and every build log, keeping an ordinary file', () => {
+    expect(existsSync(join(to, '.dev.vars'))).toBe(false);
+    expect(existsSync(join(to, '.dev.vars.local'))).toBe(false);
+    expect(existsSync(join(to, 'showcase-build.log'))).toBe(false);
+    expect(existsSync(join(to, 'nested', 'npm-debug.log'))).toBe(false);
+    expect(existsSync(join(to, 'keep.txt'))).toBe(true);
   });
 });
 

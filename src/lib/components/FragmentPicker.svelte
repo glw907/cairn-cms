@@ -10,7 +10,7 @@ withhold. A null fragmentTargets (nothing here can include one) hides the trigge
 dialog at all.
 -->
 <script lang="ts">
-  import type { FragmentTarget } from '../sveltekit/content-routes-core.js';
+  import type { FragmentTarget } from '../sveltekit/content-routes-entry.js';
   import type { LinkTarget } from '../content/manifest.js';
   import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
   import EntryPicker from './EntryPicker.svelte';

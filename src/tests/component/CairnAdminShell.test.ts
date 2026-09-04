@@ -16,7 +16,7 @@ const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 // The authed shell payload. pendingEntries is a streamed promise now, so a default resolves to null
 // (GitHub unreachable, so the publish-all action hides); the pending-count tests pass a resolved
 // array override. A none-capability payload gets no concepts and no manage-editors capability, the
-// same shape shellLoad itself produces (content-routes-core.ts), so the harness accepts a
+// same shape shellLoad itself produces (content-routes-shell.ts), so the harness accepts a
 // pre-shaped none payload through the `capability` override rather than reconstructing that shape.
 // `nav` is built through the same `resolveNavLayout` shellLoad calls for an undeclared navLayout, so
 // a fixture always carries exactly the zero-config default arrangement production would produce.
@@ -75,7 +75,7 @@ function flatLayoutWith(
 }
 
 // A shell payload built from a declared navLayout tree, resolved the same way shellLoad resolves
-// one for real (content-routes-core.ts): the fixture always carries exactly what the resolver would
+// one for real (content-routes-shell.ts): the fixture always carries exactly what the resolver would
 // produce for the given declaration, capability, and role.
 function dataWithLayout(
   layout: NavLayout,

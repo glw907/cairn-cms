@@ -1,10 +1,28 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditorRekeyHarness from './_MarkdownEditorRekeyHarness.svelte';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+
+// A controllable gate on the spellcheck module, the LAST of MarkdownEditor's own chained dynamic
+// imports before its onMount calls registerEditor (the same seam EditPage.test.ts gates). Defaults
+// open (already resolved) so every ordinary mount in this file proceeds immediately; the re-key
+// test below holds it shut to force a real window between an outgoing mount's onDestroy and an
+// incoming mount's own registerEditor call. `vi.hoisted` is required (not a bare top-level `let`):
+// the browser mocker reconstructs a `vi.mock` factory in isolation and cannot close over an
+// ordinary file-scope binding.
+const spellcheckGate = vi.hoisted(() => ({ promise: Promise.resolve() as Promise<void> }));
+vi.mock('../../lib/components/spellcheck.js', async (importOriginal) => {
+  await spellcheckGate.promise;
+  return importOriginal();
+});
+
+// The first CodeMirror mount in the file pays the one-time cold-start of the editor's dynamic
+// imports (the other mount-polling assertions in this file absorb it with the same timeout).
+const COLD_START = { timeout: 20000 };
 
 // Reads the hidden form mirror so a test asserts what the form would submit.
 const hiddenValue = (container: Element) =>
@@ -116,8 +134,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.insert).toBe('function');
@@ -132,8 +150,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.insertLink).toBe('function');
@@ -148,8 +166,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.format).toBe('function');
@@ -157,6 +175,111 @@ describe('MarkdownEditor', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('## start');
+  });
+
+  // Task 11 (the holder collapse): `registerEditor` now delivers `null` once, from the real
+  // `onDestroy` teardown, revoking the mount grant. A host holding one `editor` reference builds
+  // its own identity-guarded handler (EditPage's `bindEditorGrant`); these two tests pin the
+  // exact contract that pattern relies on, using the same recipe directly against real
+  // MarkdownEditor mounts so the guard is proven against the seam itself, not a stand-in.
+  describe('registerEditor null-delivery and identity-guarded revocation', () => {
+    // Mirrors EditPage's own `bindEditorGrant`: one closure per mount, remembering only the api it
+    // personally granted, nulling the shared holder only when that reference is still the one held.
+    function bindGrant(setHeld: (api: EditorApi | null) => void, getHeld: () => EditorApi | null) {
+      let granted: EditorApi | null = null;
+      return (api: EditorApi | null) => {
+        if (api) {
+          granted = api;
+          setHeld(api);
+        } else if (granted && getHeld() === granted) {
+          setHeld(null);
+        }
+      };
+    }
+
+    it('revokes the captured grant (nulls the held reference) on destroy, before a later mount registers', async () => {
+      let held: EditorApi | null = null;
+      const screen = await render(MarkdownEditor, {
+        value: 'start',
+        name: 'body',
+        registerEditor: bindGrant(
+          (api) => (held = api),
+          () => held,
+        ),
+      });
+      await expect.poll(() => held).not.toBeNull();
+      await screen.unmount();
+      expect(held).toBeNull();
+    });
+
+    it('does not let a stale destroy from a superseded mount clobber a newer live grant', async () => {
+      let held: EditorApi | null = null;
+      const setHeld = (api: EditorApi | null) => (held = api);
+      const getHeld = () => held;
+
+      // Mount A, wait for its grant.
+      const a = await render(MarkdownEditor, {
+        value: 'entry A',
+        name: 'body',
+        registerEditor: bindGrant(setHeld, getHeld),
+      });
+      await expect.poll(() => held).not.toBeNull();
+      const grantedByA = held;
+
+      // Mount B (a newer, unrelated instance) and wait for its own grant, superseding A's.
+      const b = await render(MarkdownEditor, {
+        value: 'entry B',
+        name: 'body',
+        registerEditor: bindGrant(setHeld, getHeld),
+      });
+      await expect.poll(() => held).not.toBe(grantedByA);
+      const grantedByB = held;
+
+      // A's destroy arrives after B's mount already registered (the out-of-order case the
+      // identity guard exists for): A's own bound closure only remembers apiA, so its null
+      // delivery must not touch the live apiB grant.
+      await a.unmount();
+      expect(held).toBe(grantedByB);
+
+      await b.unmount();
+      expect(held).toBeNull();
+    });
+
+    it('nulls the holder on a real {#key k} re-key, pinning the bindEditorGrant() memoization EditPage relies on', async () => {
+      // Unlike the two tests above (which call bindGrant() from the test itself, over two separate
+      // render() calls with no component boundary between the closure and the mount), this exercises
+      // the literal shape EditPage actually writes: `{#key k}<MarkdownEditor
+      // registerEditor={bindEditorGrant()} />{/key}`, through a real Svelte component. The assumption
+      // being pinned is that Svelte evaluates `bindEditorGrant()` once per `{#key}` instance rather
+      // than re-invoking it on some unrelated re-render, so the closure that registers a grant is the
+      // same one MarkdownEditor's onDestroy later calls to revoke it.
+      let held: EditorApi | null = null;
+      const screen = await render(MarkdownEditorRekeyHarness, {
+        k: 'entry-a',
+        onheld: (api) => (held = api),
+      });
+      await expect.poll(() => held, COLD_START).not.toBeNull();
+
+      // Hold the incoming instance's own mount open behind the spellcheck import, so the window
+      // between the outgoing instance's synchronous onDestroy and the incoming instance's own
+      // registerEditor call is wide enough to observe reliably.
+      let releaseGate: () => void = () => {};
+      spellcheckGate.promise = new Promise((resolve) => {
+        releaseGate = resolve;
+      });
+      try {
+        await screen.rerender({ k: 'entry-b', onheld: (api) => (held = api) });
+        // The outgoing instance's onDestroy has already fired as part of the {#key} remount; the
+        // incoming instance is parked mid-onMount, so nothing has re-registered yet. A holder still
+        // pointing at the outgoing instance's api here would mean bindEditorGrant() was re-invoked
+        // (or its closure discarded) somewhere between grant and revoke, breaking the identity guard.
+        expect(held).toBeNull();
+      } finally {
+        releaseGate();
+      }
+      // Once entry B's own mount completes, it re-registers through its own fresh closure.
+      await expect.poll(() => held, COLD_START).not.toBeNull();
+    });
   });
 
   it('renders no toolbar of its own; the host strip owns the controls', async () => {
@@ -889,8 +1012,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: FOLD_DOC,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
@@ -1293,8 +1416,8 @@ describe('MarkdownEditor', () => {
       onComponentAtCaret: (info) => {
         reports.push(info);
       },
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => lineWith(screen.container, 'body line')).toBeTruthy();
@@ -1322,8 +1445,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.replaceRange).toBe('function');
@@ -1342,8 +1465,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.selectRange).toBe('function');
@@ -1364,8 +1487,8 @@ describe('MarkdownEditor', () => {
     await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.selectRange).toBe('function');
@@ -1451,8 +1574,8 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
-      registerEditor: (a: EditorApi) => {
-        api = a;
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
       },
     });
     await expect.poll(() => typeof api?.insertImage).toBe('function');

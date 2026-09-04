@@ -1,171 +1,68 @@
-// cairn-cms: the core content-entry loads and actions (the admin shell payload, the Help home, the
-// concept list, and the create/edit/save/publish/discard/delete/rename cycle for a single entry).
-// createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts), which
-// createContentRoutesInternal builds once and passes to every sibling factory; the public
-// createContentRoutes is a thin wrapper around that internal factory. A shim stays one line:
-// `export const load = routes.editLoad`.
+// cairn-cms: the whole per-entry cycle (createAction, editLoad, historyLoad, saveAction,
+// publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction,
+// revertAction). createEntryActions closes over the shared ContentRoutesContext
+// (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every
+// sibling factory; the public createContentRoutes is a thin wrapper around that internal factory.
+//
+// Five of these eleven handlers (discardAction, deleteAction, listDeleteAction, renameAction,
+// revertAction) folded in here from content-routes-core.ts at internals-B, which retired that file.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { extractIncludes, rewriteIncludeDirective } from '../content/includes.js';
 import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
-import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
+import { frontmatterFromForm, formValues, parseMarkdown, serializeMarkdown } from '../content/frontmatter.js';
 import { initialValues } from '../content/fieldset.js';
 import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
 import { resolveAllowed, closeTaxonomyField, enforceTaxonomy, unlistedTags } from '../content/taxonomy-enforce.js';
-import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, asDate, entryIdentity } from '../content/identity.js';
 import { permalinkUsesDateToken } from '../content/url-policy.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import type { Backend } from '../github/backend.js';
 import type { FileChange } from '../github/repo.js';
-import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, stampFirstPublish, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type ManifestEntry, type LinkTarget, type InboundLink } from '../content/manifest.js';
-import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
-import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
-import { DEFAULT_MEDIA_BASE } from '../components/media-base-context.js';
+import { PENDING_PREFIX, pendingBranch } from '../content/pending.js';
+import {
+  manifestEntryFromFile,
+  parseManifest,
+  serializeManifest,
+  stampFirstPublish,
+  upsertEntry,
+  removeEntry,
+  inboundLinks,
+  inboundReferences,
+  inboundIncludes,
+  type Manifest,
+  type ManifestEntry,
+  type LinkTarget,
+  type InboundLink,
+} from '../content/manifest.js';
 import { isConflict, isBranchExists } from '../github/types.js';
 import { logCommitFailed } from './commit-log.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { keyKnownUnhealthy } from './tidy-key-health.js';
-import { resolveRefusalCode, refusalMessage, type RefusalCode } from './refusal-codes.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
-import type { UsageEntry } from '../media/usage.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
-import { issueCsrfToken } from './csrf.js';
-import { requireSession, requireEditor, requireEngineAccess, isPublicAdminPath } from './guard.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
 import { canReach } from '../auth/access.js';
-import { resolveNavLayout, type ResolvedNavLayout, type ResolvedLayoutChild } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
-import { roleHome, type Capability } from '../auth/roles.js';
-import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
+import type { ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
-import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
+import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './types.js';
-import { requireDb, requireOrigin } from '../env.js';
-import { deletePreviewTokens } from '../auth/preview-store.js';
-import { previewMint, previewRevoke, type PreviewMintOutcome, type PreviewRevokeOutcome } from './preview.js';
-import { CairnError } from '../diagnostics/index.js';
-
-/**
- * A sidebar concept entry: just enough to render the nav without shipping validators to the
- * client. Module-internal (the retires pass, Task 2 retired its export, a sanctioned
- * NavIcon-class leak); a consumer reads it structurally as
- * `Extract<AdminShellData, { public: false }>['concepts'][number]`.
- */
-interface NavConcept {
-  id: string;
-  label: string;
-}
-
-/**
- * The shared admin shell's data, produced by `shellLoad` and consumed by the CairnAdminShell
- *  component through `/admin/+layout.svelte`. A discriminated union: a public (login/auth) path
- *  carries only the site name and the resolved theme (the cookie is not auth-bearing, so a
- *  signed-out visitor's theme choice still applies) and renders bare; an authed path carries the
- *  full admin payload, the site identity, the signed-in editor, the one resolved nav tree, the
- *  active path, the CSRF token, and the streamed pending entries, and streams the pending-publish
- *  set as a deferred promise so a custom route and the login page never block on a GitHub
- *  round-trip up front.
- */
-export type AdminShellData =
-  | { public: true; siteName: string; theme: 'cairn-admin' | 'cairn-admin-dark' }
-  | {
-      public: false;
-      siteName: string;
-      user: { displayName: string; email: string; role: string; capability: Capability };
-      concepts: NavConcept[];
-      /**
-       * The site's whole arranged, filtered sidebar for this request: a declared `navLayout`
-       *  resolved and gated (engine capability, `ownerOnly`, declarative `roles`), or, absent one,
-       *  today's default arrangement synthesized through the same resolver, then narrowed further
-       *  by the site's own `deps.navFilter` when configured.
-       */
-      nav: ResolvedNavLayout;
-      pathname: string;
-      /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
-      theme: 'cairn-admin' | 'cairn-admin-dark';
-      /**
-       * The nav group labels the user has collapsed, decoded from the persisted cookie. Null
-       *  when no cookie exists yet (the shell then seeds from each section's declared
-       *  `collapsed: true` default); an array, including an empty one, means the cookie exists
-       *  and its decoded set wins entirely, even over a declared default, in both directions.
-       */
-      collapsedNav: string[] | null;
-      /** The session's CSRF double-submit token, handed to descendant forms through context. */
-      csrf: string;
-      /**
-       * Every entry with unpublished edits (a `cairn/` ref), streamed so the shell never blocks on
-       *  GitHub. Resolves to null when GitHub is unreachable, so the topbar hides the publish-all
-       *  action rather than lying.
-       */
-      pendingEntries: Promise<{ concept: string; id: string }[] | null>;
-      /**
-       * Per-session pending-work counts from the site's own `deps.attention`, keyed by the visible
-       *  nav href they decorate; an entry absent from the resolved-and-filtered `nav` (an engine
-       *  door or a site entry alike) never appears here, so a count cannot leak to a role that
-       *  cannot see it. Empty when the site configures no dep.
-       */
-      attention: Record<string, { count: number; label: string }>;
-      /**
-       * The delivery base every descendant media surface composes its thumbnail `src` under, resolved
-       *  from the runtime's `assets.publicBase` when media is on, or the `/media` default otherwise.
-       *  `CairnAdminShell` hands this down through the media-base context, so a site whose media lives
-       *  at a non-default path gets working thumbnails without every reader threading the base itself.
-       */
-      mediaBase: string;
-    };
-
-/** One row in a concept's list view. */
-export interface EntrySummary {
-  id: string;
-  title: string;
-  date: string | null;
-  draft: boolean;
-  /** Publish state derived from the ref set: live as-is, live with pending edits, or branch-only. */
-  status: 'published' | 'edited' | 'new';
-  /**
-   * The row's one-line summary: the manifest's indexed excerpt for a published row, the branch
-   *  frontmatter/body excerpt for a pending one, and null when neither yields text.
-   */
-  summary: string | null;
-}
-
-/** The concept list view's data. */
-export interface ListData {
-  conceptId: string;
-  label: string;
-  /**
-   * The singular noun for the create affordances ("New post"); from the descriptor, which defaults
-   *  it to `label`.
-   */
-  singular: string;
-  /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
-  dated: boolean;
-  /**
-   * Whether this concept is routable (`concept.routing.routable`), for the create form: a
-   *  non-routable concept (the Fragments concept) has no permalink, so the form asks for a name
-   *  rather than an address, matching the edit screen's own treatment.
-   */
-  routable: boolean;
-  entries: EntrySummary[];
-  /** A listing failure degrades to an inline message rather than a thrown 500. */
-  error: string | null;
-  /**
-   * A publish-all bounce's engine copy, resolved server-side from a `?error=` code through
-   *  {@link resolveRefusalCode} (`refusal-codes.ts`); an unrecognized value resolves to `null`, so
-   *  a crafted query never reaches this field.
-   */
-  formError: string | null;
-  /** The entry count from a publish-all redirect (`?publishedAll=`), for the list page's flash. */
-  publishedAll: number | null;
-}
+import {
+  conceptOf,
+  requireEntryFromParams,
+  clearPreviewTokens,
+  manifestRow,
+  pendingEntryOf,
+  type ContentFormFailure,
+} from './content-routes-shared.js';
 
 /**
  * One published fragment: enough for the picker's listing and the preview's include resolution.
@@ -291,28 +188,6 @@ export interface EditData {
 }
 
 /**
- * The Help home's data: the derived getting-started progress, the full markdown reference (the
- *  component curates by group), and the support hand-off. `composeRuntime` defaults an unset
- *  adapter `supportContact` to cairn's hosted help, so this reaches the view unset only through a
- *  caller that bypasses that composition; an explicitly empty string renders no hand-off.
- */
-export interface HelpData {
-  gettingStarted: GettingStarted;
-  reference: MarkdownReferenceRow[];
-  supportContact?: string;
-}
-
-/**
- * The welcome view's data: the calm, minimal screen a none-capability role with no declared `home`
- *  lands on at the admin root (spec section 4). Carries just enough for the greeting; the sign-out
- *  control already lives in the shell chrome.
- */
-export interface WelcomeData {
-  displayName: string;
-  siteName: string;
-}
-
-/**
  * A blocked save or publish: `fail(400)` when the body links to a target absent from main.
  *  Module-internal (`convention-internal-sibling-comment`): the conventions pass flattened its
  *  fields into {@link ContentFormFailure}, the exported carrier every action's `form` prop reads,
@@ -329,8 +204,18 @@ interface SaveFailure {
 }
 
 /**
+ * A refused create: `fail(400)` on a bad slug or missing date, `fail(409)` on an address
+ *  collision. Module-internal (`convention-internal-sibling-comment`): flattened into
+ *  {@link ContentFormFailure}; stays only as a `satisfies` validation shape.
+ */
+interface CreateFailure {
+  /** The one-line human summary every content action failure carries. */
+  error: string;
+}
+
+/**
  * A refused delete: `fail(409)` while other entries still link to (or include) this one. Stays
- *  module-exported (`convention-internal-sibling-comment`), unlike its four siblings here, because
+ *  module-exported (`convention-internal-sibling-comment`), unlike its siblings here, because
  *  `reproductions/stories/publish.ts` imports it directly for the `publish/refusal-banner` fixture;
  *  every route action still reads the flattened, publicly exported {@link ContentFormFailure}.
  */
@@ -360,60 +245,6 @@ interface RenameFailure {
 }
 
 /**
- * A refused create: `fail(400)` on a bad slug or missing date, `fail(409)` on an address
- *  collision. Module-internal (`convention-internal-sibling-comment`): flattened into
- *  {@link ContentFormFailure}; stays only as a `satisfies` validation shape.
- */
-interface CreateFailure {
-  /** The one-line human summary every content action failure carries. */
-  error: string;
-}
-
-/**
- * A refused preview mint or revoke: `fail(400)` when a mint's entry carries no pending draft to
- *  share, or `fail(500)` when `AUTH_DB` is missing the `preview_tokens` table
- *  (migrations/0003_preview.sql not yet applied), an actionable message naming the fix rather
- *  than a raw D1 error. Both `previewMintAction` and `previewRevokeAction` answer the missing-
- *  table case with this same shape, since an upgraded, non-adopting site still ships the share
- *  affordance to every editor. Module-internal (`convention-internal-sibling-comment`): flattened
- *  into {@link ContentFormFailure}; stays only as a `satisfies` validation shape.
- */
-interface PreviewMintFailure {
-  /** The one-line human summary the edit screen's share panel shows on a refused mint or revoke. */
-  error: string;
-}
-
-/**
- * What a route's single `form` export presents to a view component: whichever content action
- *  last failed, merged with every field optional. `error` is always set on a failure; the richer
- *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
- *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
- *  refusal without a second type. One flat interface (the conventions pass,
- *  `audit-sveltekit-contentformfailure`): every field optional, replacing the earlier
- *  `Partial<>` intersection over the eleven now-module-internal arm shapes.
- */
-export interface ContentFormFailure {
-  /** The one-line human summary every content action failure carries. */
-  error?: string;
-  /** The cairn tokens that resolve to no entry, set by a blocked `saveAction`/`publishAction`. */
-  brokenLinks?: string[];
-  /** The author's edited markdown, set by a blocked `saveAction`/`publishAction` so the editor reseeds with the unsaved work. */
-  body?: string;
-  /** The entries whose bodies link to (or include) the refused one, set by a blocked `deleteAction`/`listDeleteAction`. */
-  inboundLinks?: InboundLink[];
-  /** Which gate refused a blocked delete, set by `deleteAction`/`listDeleteAction`. Absent reads as `'link'`. */
-  inboundKind?: 'link' | 'include';
-  /** The refused entry's id, set by a blocked `deleteAction`/`listDeleteAction` so a list view marks the right row. */
-  id?: string;
-  /** The refused asset's content hash, set by a blocked media delete, update, replace, or alt-propagate action. */
-  hash?: string;
-  /** The where-used rows, set by a blocked media delete or replace action. */
-  usage?: UsageEntry[];
-  /** The distinct-entry count behind a media refusal, set by a blocked media delete or replace action. */
-  foundIn?: number;
-}
-
-/**
  * Resolve the effective preview for one concept: its `byConcept` override wins per key, with
  *  nullish coalescing so an override key that is present but undefined keeps the top-level value.
  *  Stylesheets are always shared, and the `byConcept` map never reaches the client.
@@ -431,7 +262,7 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
 /**
  * The bad-slug refusal, naming what the form asked for. A non-routable concept's create and rename
  *  forms ask for a Name, so telling its author to fix an "address" names a thing the entry does not
- *  have and the form never showed them.
+ *  have and the form never showed them. Shared by `createAction` and `renameAction`.
  */
 function invalidIdMessage(concept: ConceptDescriptor): string {
   const noun = concept.routing.routable ? 'address' : 'name';
@@ -439,19 +270,11 @@ function invalidIdMessage(concept: ConceptDescriptor): string {
 }
 
 /**
- * The row a manifest already holds for one entry, absent when it holds none, matched on the same
- *  concept+id identity `upsertEntry` uses. The publish and rename paths read it for the fields a
- *  re-derived row cannot carry, `publishedAt` above all.
- */
-function manifestRow(manifest: Manifest, conceptId: string, id: string): ManifestEntry | undefined {
-  return manifest.entries.find((e) => e.concept === conceptId && e.id === id);
-}
-
-/**
  * The frontmatter keys every entry carries regardless of the site's own declared fields: the
  * engine reads these directly (`manifestEntryFromFile`, the list-row summarizer) rather than
  * gating them on a `NamedField`, so they are never "retired" even when a concept declares no
  * field of the same name. `description` feeds `deriveExcerpt` in both readers the same way.
+ * Shared by `revertSchemaDrift`.
  */
 const BUILTIN_FRONTMATTER_KEYS = new Set(['title', 'date', 'draft', 'description']);
 
@@ -505,399 +328,101 @@ function commaListParam(url: URL, name: string): string[] {
   return (url.searchParams.get(name) ?? '').split(',').filter(Boolean);
 }
 
-/** Look up the concept named by the `[concept]` route param, or a 404. */
-function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
-  const concept = findConcept(runtime.concepts, params.concept ?? '');
-  if (!concept) throw error(404, `Unknown content type: ${params.concept ?? ''}`);
-  return concept;
+/**
+ * The most recent publishes `historyLoad` reads; a module constant, not a site config knob
+ * (the spec's plan-time call). `listCommits` is asked for one more than this, so the extra
+ * probe row sets `truncated` without a second read and is never itself rendered. Shared by
+ * `revertAction`'s own membership check.
+ */
+const HISTORY_LIMIT = 25;
+
+/**
+ * Render what git recorded for a commit's author, degrading name to email to "unknown": the
+ * default branch's log can hold commits made outside cairn (a direct edit, a migration), so
+ * this never assumes a cairn editor produced the row.
+ */
+function commitEditorName(author: { name: string; email: string }): string {
+  return author.name.trim() || author.email.trim() || 'unknown';
 }
 
 /**
- * The shared preamble for a single-entry action addressed by the `[id]` route param:
- *  authenticate, resolve the concept, and validate the id. Confines the id to the slug rule
- *  before any commit path is built from it (the App token can write anywhere in the repo), so a
- *  malformed id is rejected before touching GitHub. Shared by save, publish, discard, the
- *  editor's own delete, and rename; the concept list's delete reads its id from the posted form
- *  instead, a different shape left to validate inline.
+ * Who holds the open draft on `branch` and since when: `branchHead` answers a sha and never
+ * metadata, so the author and date come from a one-row `listCommits` at the branch. Prefers the
+ * row whose sha matches the branch head exactly; when the head commit itself did not touch this
+ * file, falls back to the newest commit on the branch that did (for an ordinary draft, that is
+ * simply the last save). Null when the branch has no head, or when no commit on the branch ever
+ * touched the file. Shared by `historyLoad`'s synthetic draft row and `draftExistsFailure`'s
+ * revert-collision refusal, so a refused revert names the same person the history screen shows.
  */
-function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
-  const editor = requireEditor(event);
-  const concept = conceptOf(runtime, event.params);
-  requireEngineAccess(runtime.access, editor, concept.id);
-  const id = event.params.id ?? '';
-  if (!isValidId(id)) throw error(400, 'Invalid entry id');
-  return { editor, concept, id };
-}
-
-/** True for a D1 error whose message names a missing table (SQLite's own "no such table" text). */
-function isMissingTableError(err: unknown): boolean {
-  return /no such table/i.test(String(err));
-}
-
-/**
- * Best-effort clear of every preview-token row for one entry, called after delete, discard, and
- *  rename (keyed to the OLD id, since a rename changes the entry's address). Two-tier failure
- *  handling: a missing `AUTH_DB` binding (a `CairnError` whose `conditionId` is
- *  `config.bindings-missing`, the same narrowing `media-route.ts` uses) or a missing
- *  `preview_tokens` table (a "no such table" D1 error) are the normal state for a site that has
- *  not adopted the preview feature yet, since the migration is additive, so both are silent: a
- *  site with neither loses no existing delete/rename/discard behavior over a table or binding it
- *  may never need. Any OTHER failure (a transient D1 fault on a MIGRATED site with live tokens) is
- *  still swallowed, since the primary action has already committed (or, for discard, proceeds
- *  regardless) by the time this runs and failing it outright would be worse, but it logs
- *  `preview.cleanup_failed` so a stale row, the exact id-reuse collision this cleanup exists to
- *  close, is not silently invisible to an operator. The logged `error` is the failure's stringified
- *  message; a store-level delete keyed by concept and id carries no token, so this cannot leak
- *  one. Publish deliberately never calls this: the ended page needs the row to outlive the branch,
- *  a stated coupling, not an oversight.
- */
-async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor, id: string): Promise<void> {
-  try {
-    const db = requireDb(event.platform?.env ?? {});
-    await deletePreviewTokens(db, concept.id, id);
-  } catch (err) {
-    if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;
-    if (isMissingTableError(err)) return;
-    log.warn('preview.cleanup_failed', { concept: concept.id, id, error: String(err) });
-  }
+async function draftFromBranchHead(
+  backend: Backend,
+  path: string,
+  branch: string,
+  headSha: string | null,
+): Promise<HistoryData['draft']> {
+  if (headSha === null) return null;
+  const branchCommits = await backend.listCommits(path, branch, 1);
+  const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
+  return head ? { editor: commitEditorName(head.author), lastSavedAt: head.date } : null;
 }
 
 /**
- * The actionable refusal both `previewMintAction` and `previewRevokeAction` answer when
- *  `AUTH_DB` is missing the `preview_tokens` table (migrations/0003_preview.sql not yet applied),
- *  naming the fix rather than surfacing a raw D1 error.
+ * The held outcome of a validated save: everything publish needs to copy the same markdown
+ *  to main without re-reading the branch. `branchSha` is the branch commit saveToBranch just
+ *  made, the guard for the post-publish branch delete; `manifest` is main's manifest with
+ *  this entry's row upserted from the new markdown (the same last-writer-wins manifest race
+ *  as delete and rename applies, caught by the build's fail-closed backstop).
  */
-function missingPreviewTableFailure(): ActionFailure<ContentFormFailure> {
-  return fail(500, {
-    error: 'The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again.',
-  } satisfies PreviewMintFailure);
+interface SaveHold {
+  path: string;
+  markdown: string;
+  /**
+   * The posted body alone, frontmatter stripped: publish's own conflict reseeds SaveFailure.body
+   *  from this rather than the frontmatter-bearing `markdown`, mirroring what the editor typed.
+   */
+  body: string;
+  branch: string;
+  branchSha: string;
+  manifest: Manifest;
+  /** This entry's row as re-derived from the posted markdown, the one `manifest` holds upserted. */
+  row: ManifestEntry;
+  /**
+   * The row that one replaced, read off main's manifest before the upsert. Absent for a
+   *  never-published entry. Publish reads both to decide the first-publish stamp, which needs the
+   *  old and the new draft state in scope; save ignores them, since a save commits no manifest.
+   */
+  priorRow?: ManifestEntry;
+  /** The draft-target tokens the body links to, for save's warning query. */
+  draftLinks: string[];
+  /** The absent-or-draft reference targets, for save's non-blocking reference warning. */
+  referenceWarnings: string[];
+  /** The backend this save resolved, so publish reuses it without a second resolve. */
+  backend: Backend;
+  /**
+   * The merged media.json change this save committed to the branch, when media is on and the
+   *  post carried records. Publish reuses it verbatim so the main commit promotes the exact same
+   *  merged content (decision 1: the default-branch base is read once, here, not re-merged at
+   *  publish). Absent when media is off or no records were posted.
+   */
+  mediaChange?: FileChange;
 }
 
 /**
- * Build the core content loads and actions (the admin shell payload, Help, the concept list, and
- *  the per-entry create/edit/save/publish/discard/delete/rename cycle), closed over the shared
- *  content-routes context.
+ * A save refusal's payload: the one-line summary over an empty broken-link list, reseeding the
+ *  posted body so the editor re-renders with the unsaved work intact. The broken-link list is
+ *  empty on every refusal but the link guard's own, which builds its payload with the tokens it
+ *  found.
  */
-export function createCoreActions(ctx: ContentRoutesContext) {
+function saveRefusal(message: string, body: string): SaveFailure {
+  return { error: message, brokenLinks: [], body };
+}
+
+/**
+ * Build the whole per-entry cycle, closed over the shared content-routes context: create, edit,
+ *  history, save, publish, discard, delete, rename, and revert.
+ */
+export function createEntryActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
-
-  /**
-   * The pending entry a `cairn/` ref names, or null for a ref the engine must ignore: a
-   *  malformed name, an id that fails the slug rule (entry paths are built from it, so this is
-   *  the path confinement), or a concept this site does not configure. Every ref consumer
-   *  (the layout count, the list view, publish-all) applies this one predicate, so a stray
-   *  hand-pushed ref cannot inflate a count it can never clear or reach a contents read.
-   */
-  function pendingEntryOf(name: string): { concept: ConceptDescriptor; id: string } | null {
-    const ref = parsePendingBranch(name);
-    if (!ref || !isValidId(ref.id)) return null;
-    const concept = findConcept(runtime.concepts, ref.concept);
-    return concept ? { concept, id: ref.id } : null;
-  }
-
-  /**
-   * The shared admin shell's payload for one request, served through `/admin/+layout.server.ts`.
-   *  A public (login/auth) path returns the bare `{ public: true }` shape and never resolves the
-   *  backend, so the login page pays no GitHub round-trip. An authed path derives the nav, user,
-   *  theme, and CSRF token synchronously, then streams the pending-publish set: `pendingEntries` is
-   *  an unawaited promise, so the shell renders before the GitHub listing returns and a custom route
-   *  never blocks on it. A synchronous token-mint throw, a network failure, or a non-ok response all
-   *  degrade the promise to null, so the topbar hides the publish-all action rather than showing a
-   *  wrong count. `nav` is awaited up front (never streamed): `resolveNavLayout` arranges and gates
-   *  the declared (or default) tree first, then the site's `deps.navFilter`, if configured, narrows
-   *  that already-gated `items` set, fresh every request.
-   */
-  async function shellLoad(event: CairnEvent): Promise<{ shell: AdminShellData }> {
-    // The theme cookie carries no auth, so a public (login/auth) path reads and honors it too:
-    // a signed-out visitor's dark-mode pick should not revert to light the moment they sign out.
-    const cookieTheme = event.cookies?.get('cairn-admin-theme');
-    const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
-    if (isPublicAdminPath(event.url.pathname)) {
-      return { shell: { public: true, siteName: runtime.siteName, theme } };
-    }
-    const editor = requireSession(event);
-    // `undefined` means no cookie was ever set (seed from the declared defaults); any other
-    // value, including the empty string a visitor produces by reopening every declared-collapsed
-    // section, means the cookie exists and its decoded set (however empty) wins outright. Do not
-    // collapse this to a truthiness check: an empty string is a present, meaningful cookie value.
-    const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
-    const collapsedNav =
-      cookieCollapsed === undefined
-        ? null
-        : cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean);
-    // A none-capability session sees no publish surface (every engine content route already 403s
-    // it, and the shell's "Publish site (N)" action has nothing for it to act on), so the count is
-    // not theirs to read: skip the backend listing entirely rather than streaming a real pending
-    // count into a dead button. resolveBackend can throw synchronously (the token mint), which a
-    // bare `.catch()` would miss; deferring the resolve into a Promise.resolve().then turns a sync
-    // throw into a caught rejection that degrades to null, the fail-safe the shell needs so a token
-    // or network failure hides the publish-all action rather than throwing the whole shell.
-    const pendingEntries =
-      editor.capability === 'none'
-        ? Promise.resolve([] as { concept: string; id: string }[])
-        : Promise.resolve()
-            .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
-            .then((names) =>
-              // Filter by canReach, the same access authority publishAllAction applies to its
-              // batch, so a restricted role never receives a denied id and the "Publish site (N)"
-              // count never counts an entry publishAllAction would skip.
-              names.flatMap((name) => {
-                const entry = pendingEntryOf(name);
-                if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
-                return [{ concept: entry.concept.id, id: entry.id }];
-              }),
-            )
-            .catch((err): { concept: string; id: string }[] | null => {
-              log.warn('github.unreachable', { scope: 'shell', error: String(err) });
-              return null;
-            });
-    // The whole arranged sidebar for this request: a declared navLayout resolves and gates as
-    // written (engine capability, ownerOnly, declarative roles), or, absent one, the resolver
-    // synthesizes today's default arrangement through the same code path, so the two can never
-    // drift. The site's own navFilter, if configured, then narrows the arranged items only;
-    // fallback is engine-only and already gated, so it never passes through that seam.
-    const capability = editor.capability;
-    const resolved = resolveNavLayout({
-      layout: runtime.navLayout,
-      concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label, routing: c.routing })),
-      navMenuLabel: runtime.navMenu?.label ?? null,
-      access: runtime.access,
-      editor,
-    });
-    const nav: ResolvedNavLayout = ctx.deps.navFilter
-      ? { ...resolved, items: await ctx.deps.navFilter(resolved.items, { editor, event }) }
-      : resolved;
-    // The site's own attention dep, awaited exactly once (after nav resolution and navFilter, both
-    // of which already ran above), then filtered against the same resolved-and-filtered visible
-    // href set so a count can never leak past a nav entry the session cannot see: an unreachable
-    // queue's item is dropped before any rendering or summing.
-    const attentionRaw: AttentionItem[] = ctx.deps.attention ? await ctx.deps.attention({ editor, event }) : [];
-    const visibleHrefs = collectVisibleHrefs(nav);
-    const attention: Record<string, { count: number; label: string }> = {};
-    for (const item of attentionRaw) {
-      if (item.count <= 0) continue;
-      if (!visibleHrefs.has(item.href)) continue;
-      if (item.href in attention) continue; // first wins; a later duplicate is silently dropped
-      attention[item.href] = { count: item.count, label: item.label?.trim() || 'pending items' };
-    }
-    return {
-      shell: {
-        public: false,
-        siteName: runtime.siteName,
-        user: { displayName: editor.displayName, email: editor.email, role: editor.role, capability },
-        concepts:
-          capability === 'none'
-            ? []
-            : runtime.concepts
-                .filter((c) => canReach(runtime.access, editor, c.id))
-                .map((c) => ({ id: c.id, label: c.label })),
-        nav,
-        pathname: event.url.pathname,
-        theme,
-        collapsedNav,
-        // No fallback: cookies is required on CairnEvent, so the only caller that can reach a
-        // missing jar here is an untyped one, and that caller should fail loudly rather than get
-        // back a silent empty token that leaves every form permanently 403 with no readable cause.
-        csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
-        pendingEntries,
-        attention,
-        mediaBase: runtime.resolvedAssets.enabled ? runtime.resolvedAssets.publicBase : DEFAULT_MEDIA_BASE,
-      },
-    };
-  }
-
-  /**
-   * Every href a resolved nav renders as a clickable entry: each top-level child (a site entry or
-   *  an engine door), each section's children, and the trailing `fallback` group of engine screens
-   *  the tree never referenced (still rendered in the shell's foot slot, so still visible). The
-   *  attention filter reads this set so a count never survives against an href the session cannot
-   *  actually see.
-   */
-  function collectVisibleHrefs(nav: ResolvedNavLayout): Set<string> {
-    const hrefs = new Set<string>();
-    const visit = (child: ResolvedLayoutChild) => hrefs.add(child.href);
-    for (const node of nav.items) {
-      if ('children' in node) {
-        for (const child of node.children) visit(child);
-      } else {
-        visit(node);
-      }
-    }
-    for (const child of nav.fallback) visit(child);
-    return hrefs;
-  }
-
-  /**
-   * Load the Help home: the getting-started progress derived from the committed manifest and the open
-   *  pending branches, the markdown reference, and the runtime's support contact. A GitHub failure
-   *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same GitHub fail-safe the shell uses.
-   */
-  async function helpLoad(event: CairnEvent): Promise<HelpData> {
-    requireEditor(event);
-    let manifest = emptyManifest();
-    let pending: { concept: string; id: string }[] = [];
-    try {
-      const backend = ctx.resolveBackend(event);
-      manifest = await ctx.readManifest(backend);
-      const names = await backend.listBranches(PENDING_PREFIX);
-      pending = names.flatMap((name) => {
-        const entry = pendingEntryOf(name);
-        return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
-      });
-    } catch (err) {
-      log.warn('github.unreachable', { scope: 'help', error: String(err) });
-    }
-    return {
-      gettingStarted: deriveGettingStarted(manifest, pending),
-      reference: markdownReference,
-      supportContact: runtime.supportContact,
-    };
-  }
-
-  /**
-   * Append a resolved refusal code to a redirect target as `error=`, merging into any query the
-   *  target already carries (a declared `home` may have one, e.g. `/admin/dash?tab=1`) rather than
-   *  appending a second bare `?`, which would parse into the existing key's value and swallow the
-   *  code (`/admin/dash?tab=1?error=expired` reads as `tab=1?error=expired`, not two params).
-   */
-  function withRefusalCode(path: string, code: RefusalCode | null): string {
-    if (!code) return path;
-    const url = new URL(path, 'https://internal.invalid');
-    url.searchParams.set('error', code);
-    return `${url.pathname}${url.search}`;
-  }
-
-  /**
-   * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
-   *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
-   *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
-   *  dead-end redirect. A direct GET here can carry a `?error=` (an attacker-crafted link, or a
-   *  bookmark), so the relay only ever forwards a code {@link resolveRefusalCode} recognizes and
-   *  drops anything else, keeping the bounded vocabulary intact through the redirect.
-   */
-  function indexLoad(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
-    const editor = requireSession(event);
-    const bounced = resolveRefusalCode(event.url.searchParams.get('error'));
-    const home = roleHome(runtime.roles, editor.role);
-    if (home) {
-      throw redirect(303, withRefusalCode(home, bounced));
-    }
-    if (editor.capability !== 'none') {
-      // The first concept the session can reach, not the site-wide first: a role mapped away
-      // from that one would otherwise land on a 403 dead-end.
-      const first = runtime.concepts.find((c) => canReach(runtime.access, editor, c.id));
-      if (!first) throw error(404, 'No content types configured');
-      throw redirect(307, withRefusalCode(`/admin/${first.id}`, bounced));
-    }
-    return { view: 'welcome', page: { displayName: editor.displayName, siteName: runtime.siteName } };
-  }
-
-  /**
-   * Read a file's frontmatter for its list row, degrading to the id on any read failure. The
-   *  repo defaults to main; a pending entry (edited or branch-only) passes its pending branch.
-   */
-  async function summarize(
-    file: { id: string; path: string },
-    backend: Backend,
-    status: EntrySummary['status'],
-    ref = backend.defaultBranch,
-  ): Promise<EntrySummary> {
-    try {
-      const raw = await backend.readFile(file.path, ref);
-      if (raw === null) return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };
-      const { frontmatter, body } = parseMarkdown(raw);
-      const title = asString(frontmatter.title) ?? file.id;
-      const date = dateInputValue(frontmatter.date) || null;
-      // Normalize an empty excerpt to null, so a pending row matches EntrySummary's `string | null`
-      // contract (the published builder already coalesces with `?? null`).
-      const summary = deriveExcerpt(body, { description: asString(frontmatter.description) }) || null;
-      return { id: file.id, title, date, draft: frontmatter.draft === true, status, summary };
-    } catch {
-      return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };
-    }
-  }
-
-  /**
-   * Read an entry's list row from its pending branch, so a pending title or draft change shows
-   *  in the list instead of reading as a lost save. summarize degrades a failed or empty read to
-   *  an id-only row, so a ghost ref still lists.
-   */
-  function pendingRow(concept: ConceptDescriptor, id: string, status: EntrySummary['status'], backend: Backend): Promise<EntrySummary> {
-    return summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, backend, status, pendingBranch(concept.id, id));
-  }
-
-  /**
-   * The per-file crawl, kept only for a repo with no committed manifest yet: list main's files
-   *  and read each one for its row, with edited and new rows reading branch-first.
-   */
-  async function crawlEntries(concept: ConceptDescriptor, pendingIds: Set<string>, backend: Backend): Promise<EntrySummary[]> {
-    const files = await backend.readEntries(concept.dir, backend.defaultBranch);
-    const entries = await Promise.all(
-      files.map((f) => (pendingIds.has(f.id) ? pendingRow(concept, f.id, 'edited', backend) : summarize(f, backend, 'published'))),
-    );
-    // A ref with no main file is a never-published entry; its row reads from its branch.
-    const listed = new Set(files.map((f) => f.id));
-    const newRows = await Promise.all(
-      [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', backend)),
-    );
-    return [...entries, ...newRows];
-  }
-
-  /**
-   * List a concept's entries with their publish status. Published rows project straight from
-   *  main's manifest, which publish, delete, and rename keep atomically in sync with main, so
-   *  the listing costs one manifest read plus one branch read per pending entry rather than one
-   *  read per file. A manifest row with a pending ref is `edited` and reads branch-first; a ref
-   *  with no manifest row appends a `new` row read from its branch. A listing failure degrades
-   *  to an inline error, not a thrown 500.
-   */
-  async function listLoad(event: CairnEvent): Promise<ListData> {
-    const editor = requireEditor(event);
-    const concept = conceptOf(runtime, event.params);
-    requireEngineAccess(runtime.access, editor, concept.id);
-    const refusalCode = resolveRefusalCode(event.url.searchParams.get('error'));
-    const formError = refusalCode ? refusalMessage(refusalCode) : null;
-    const publishedAllRaw = event.url.searchParams.get('publishedAll');
-    const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
-    const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, routable: concept.routing.routable, formError, publishedAll };
-    const backend = ctx.resolveBackend(event);
-    try {
-      const [manifestRaw, refs] = await Promise.all([
-        backend.readFile(runtime.manifestPath, backend.defaultBranch),
-        backend.listBranches(`${PENDING_PREFIX}${concept.id}/`),
-      ]);
-      const pendingIds = new Set(
-        refs.flatMap((name) => {
-          const entry = pendingEntryOf(name);
-          return entry && entry.concept.id === concept.id ? [entry.id] : [];
-        }),
-      );
-      // A repo with no committed manifest yet (a fresh site before its first publish) falls back
-      // to the crawl; a manifest that parses but is empty is trusted as-is.
-      if (manifestRaw === null) {
-        return { ...base, entries: await crawlEntries(concept, pendingIds, backend), error: null };
-      }
-      // Newest id first, the same order the crawl's file listing produced.
-      const rows = parseManifest(manifestRaw)
-        .entries.filter((e) => e.concept === concept.id)
-        .sort((a, b) => b.id.localeCompare(a.id));
-      const entries = await Promise.all(
-        rows.map((e) =>
-          pendingIds.has(e.id)
-            ? pendingRow(concept, e.id, 'edited', backend)
-            : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const, summary: e.summary ?? null },
-        ),
-      );
-      const listed = new Set(rows.map((e) => e.id));
-      const newRows = await Promise.all(
-        [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', backend)),
-      );
-      return { ...base, entries: [...entries, ...newRows], error: null };
-    } catch {
-      return { ...base, entries: [], error: 'Could not load this content type from GitHub.' };
-    }
-  }
-
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const editor = requireEditor(event);
@@ -1178,43 +703,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * The most recent publishes `historyLoad` reads; a module constant, not a site config knob
-   * (the spec's plan-time call). `listCommits` is asked for one more than this, so the extra
-   * probe row sets `truncated` without a second read and is never itself rendered.
-   */
-  const HISTORY_LIMIT = 25;
-
-  /**
-   * Render what git recorded for a commit's author, degrading name to email to "unknown": the
-   * default branch's log can hold commits made outside cairn (a direct edit, a migration), so
-   * this never assumes a cairn editor produced the row.
-   */
-  function commitEditorName(author: { name: string; email: string }): string {
-    return author.name.trim() || author.email.trim() || 'unknown';
-  }
-
-  /**
-   * Who holds the open draft on `branch` and since when: `branchHead` answers a sha and never
-   * metadata, so the author and date come from a one-row `listCommits` at the branch. Prefers the
-   * row whose sha matches the branch head exactly; when the head commit itself did not touch this
-   * file, falls back to the newest commit on the branch that did (for an ordinary draft, that is
-   * simply the last save). Null when the branch has no head, or when no commit on the branch ever
-   * touched the file. Shared by `historyLoad`'s synthetic draft row and `revertAction`'s collision
-   * refusal, so a refused revert names the same person the history screen shows.
-   */
-  async function draftFromBranchHead(
-    backend: Backend,
-    path: string,
-    branch: string,
-    headSha: string | null,
-  ): Promise<HistoryData['draft']> {
-    if (headSha === null) return null;
-    const branchCommits = await backend.listCommits(path, branch, 1);
-    const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
-    return head ? { editor: commitEditorName(head.author), lastSavedAt: head.date } : null;
-  }
-
-  /**
    * Load one entry's publish history (spec "Part 1: entry history"): the default branch's
    * bounded commit log for the entry's file, plus a synthetic draft row when a pending branch
    * exists. Guarded exactly as `editLoad`: `requireEngineAccess` covers authentication and the
@@ -1250,57 +738,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     }));
     const draft = await draftFromBranchHead(backend, path, branch, headSha);
     return { entries, draft, truncated, head: mainHead };
-  }
-
-  /**
-   * The held outcome of a validated save: everything publish needs to copy the same markdown
-   *  to main without re-reading the branch. `branchSha` is the branch commit saveToBranch just
-   *  made, the guard for the post-publish branch delete; `manifest` is main's manifest with
-   *  this entry's row upserted from the new markdown (the same last-writer-wins manifest race
-   *  as delete and rename applies, caught by the build's fail-closed backstop).
-   */
-  interface SaveHold {
-    path: string;
-    markdown: string;
-    /**
-     * The posted body alone, frontmatter stripped: publish's own conflict reseeds SaveFailure.body
-     *  from this rather than the frontmatter-bearing `markdown`, mirroring what the editor typed.
-     */
-    body: string;
-    branch: string;
-    branchSha: string;
-    manifest: Manifest;
-    /** This entry's row as re-derived from the posted markdown, the one `manifest` holds upserted. */
-    row: ManifestEntry;
-    /**
-     * The row that one replaced, read off main's manifest before the upsert. Absent for a
-     *  never-published entry. Publish reads both to decide the first-publish stamp, which needs the
-     *  old and the new draft state in scope; save ignores them, since a save commits no manifest.
-     */
-    priorRow?: ManifestEntry;
-    /** The draft-target tokens the body links to, for save's warning query. */
-    draftLinks: string[];
-    /** The absent-or-draft reference targets, for save's non-blocking reference warning. */
-    referenceWarnings: string[];
-    /** The backend this save resolved, so publish reuses it without a second resolve. */
-    backend: Backend;
-    /**
-     * The merged media.json change this save committed to the branch, when media is on and the
-     *  post carried records. Publish reuses it verbatim so the main commit promotes the exact same
-     *  merged content (decision 1: the default-branch base is read once, here, not re-merged at
-     *  publish). Absent when media is off or no records were posted.
-     */
-    mediaChange?: FileChange;
-  }
-
-  /**
-   * A save refusal's payload: the one-line summary over an empty broken-link list, reseeding the
-   *  posted body so the editor re-renders with the unsaved work intact. The broken-link list is
-   *  empty on every refusal but the link guard's own, which builds its payload with the tokens it
-   *  found.
-   */
-  function saveRefusal(message: string, body: string): SaveFailure {
-    return { error: message, brokenLinks: [], body };
   }
 
   /**
@@ -1614,7 +1051,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // one at a time through the concept's own publish action.
     const names = await backend.listBranches(PENDING_PREFIX);
     const pending = names.flatMap((name) => {
-      const entry = pendingEntryOf(name);
+      const entry = pendingEntryOf(runtime, name);
       if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
       return [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }];
     });
@@ -1842,8 +1279,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     }
     // The entry is gone from both main and its branch; any outstanding preview link would 404 on
     // its own (branch_gone), but clearing here closes the id-reuse window instead of leaving it to
-    // that natural expiry. Deliberately run for both success exits above, and only from inside this
-    // shared core, so the list-initiated delete (listDeleteAction) cannot bypass it.
+    // that natural expiry. Deliberately run for both success exits above: both delete paths route
+    // through deleteEntry, the sole delete-path caller of clearPreviewTokens, so the list-initiated
+    // delete (listDeleteAction) cannot bypass it.
     await clearPreviewTokens(event, concept, id);
     throw redirect(303, `/admin/${concept.id}`);
   }
@@ -2051,102 +1489,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Mint a public preview link for an entry's pending draft (spec part 3, "Public preview for a
-   *  non-editor"). This action is the route half of `previewMint` (preview.ts): it names the
-   *  target from the route's own params and dresses each outcome in the refusal this screen
-   *  speaks, while the entry-scoped authorization, the draft check, the token hygiene, and the
-   *  `preview.token.minted` log all live in `previewMint` itself, so the engine's own route and a
-   *  site's custom mint run the identical sequence and log the identical event.
-   *
-   *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
-   *  affordance can show and copy it in place. Refuses on the page when the entry carries no
-   *  pending draft (there is nothing to share) or when `AUTH_DB` is missing the `preview_tokens`
-   *  table, naming the migration to apply rather than surfacing a raw D1 error.
-   */
-  async function previewMintAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> {
-    const env = event.platform?.env ?? {};
-    const conceptId = event.params.concept ?? '';
-    const id = event.params.id ?? '';
-
-    // previewMint runs its own authorization sequence first (requireEditor, then
-    // requireEngineAccess against the target concept), so a refused editor's outcome reaches them
-    // before requireOrigin's site-misconfiguration throw ever runs. requireOrigin only guards the
-    // URL this action addresses on success, so it waits until a mint actually succeeds. The trade:
-    // a site with no PUBLIC_ORIGIN configured still lets previewMint write the preview-token row
-    // before requireOrigin throws, so that row sits unreachable (no URL was ever returned to share
-    // it) until its own TTL expires it, rather than the misconfiguration being caught up front.
-    let result: PreviewMintOutcome;
-    try {
-      result = await previewMint(runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
-    } catch (err) {
-      if (isMissingTableError(err)) return missingPreviewTableFailure();
-      throw err;
-    }
-
-    switch (result.outcome) {
-      // The target came from the route's params, so a bad target is a bad address: both answer
-      // exactly what `requireEntryFromParams` answers for the same fault on every other action.
-      case 'unknown-concept':
-        throw error(404, `Unknown content type: ${conceptId}`);
-      case 'invalid-id':
-        throw error(400, 'Invalid entry id');
-      case 'no-draft':
-        return fail(400, {
-          error: 'This entry has no unpublished draft to share. Save an edit first.',
-        } satisfies PreviewMintFailure);
-    }
-
-    const origin = requireOrigin(env);
-
-    // The response body carries the bearer credential (the token, inside the URL); never let a
-    // shared cache or intermediary retain it.
-    event.setHeaders({ 'cache-control': 'no-store' });
-    // Built from the configured origin, never event.url.origin (host-header-controlled on
-    // Cloudflare): the token is never interpolated into anything but this return value, so it can
-    // never reach an error message.
-    return { url: `${origin}/preview/${result.token}`, expiresAt: result.expiresAt };
-  }
-
-  /**
-   * Revoke every outstanding preview link for an entry: one delete by concept and id, the
-   *  mis-shared-link remedy. This action is the route half of `previewRevoke` (preview.ts): it
-   *  names the target from the route's own params and dresses each outcome in the refusal this
-   *  screen speaks, while the entry-scoped authorization, the delete, and the
-   *  `preview.token.revoked` log all live in `previewRevoke` itself, so the engine's own route and
-   *  a site's custom revoke run the identical sequence and log the identical event. Idempotent:
-   *  revoking with no minted links succeeds with a count of zero. The engine ships this affordance
-   *  to every upgraded site's edit screen regardless of adoption, so a missing `preview_tokens`
-   *  table answers the same actionable refusal minting does, naming the migration, rather than a
-   *  raw D1 error.
-   */
-  async function previewRevokeAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { count: number }> {
-    const conceptId = event.params.concept ?? '';
-    const id = event.params.id ?? '';
-
-    // previewRevoke runs its own authorization sequence first (requireEditor, then
-    // requireEngineAccess against the target concept), the same ordering previewMint runs, so a
-    // refused editor's outcome reaches them before any D1 read.
-    let result: PreviewRevokeOutcome;
-    try {
-      result = await previewRevoke(runtime, event, { concept: conceptId, entryId: id });
-    } catch (err) {
-      if (isMissingTableError(err)) return missingPreviewTableFailure();
-      throw err;
-    }
-
-    switch (result.outcome) {
-      // The target came from the route's params, so a bad target is a bad address: both answer
-      // exactly what `requireEntryFromParams` answers for the same fault on every other action.
-      case 'unknown-concept':
-        throw error(404, `Unknown content type: ${conceptId}`);
-      case 'invalid-id':
-        throw error(400, 'Invalid entry id');
-    }
-
-    return { count: result.count };
-  }
-
-  /**
    * The revert collision refusal (spec "Part 2: revert"): a pending branch already blocks this
    * entry, from either entry point (`revertAction`'s own fast pre-check, or `createBranch`'s
    * authoritative collision under a race). Re-reads the blocking draft through
@@ -2273,10 +1615,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   return {
-    shellLoad,
-    helpLoad,
-    indexLoad,
-    listLoad,
     createAction,
     editLoad,
     historyLoad,
@@ -2287,8 +1625,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     deleteAction,
     listDeleteAction,
     renameAction,
-    previewMintAction,
-    previewRevokeAction,
     revertAction,
   };
 }

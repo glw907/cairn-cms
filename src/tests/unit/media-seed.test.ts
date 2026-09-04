@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { existsSync, mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import {
   parseArgs,
   normalizeManifest,
@@ -12,6 +12,7 @@ import {
   seedMedia,
 } from '../../lib/media-seed/index.js';
 import type { MediaSeedArgs, SeedDeps, SeedItem } from '../../lib/media-seed/index.js';
+import { stripControlChars } from '../../lib/media-seed/assemble.js';
 import { readR2Buckets } from '../../lib/doctor/wrangler-config.js';
 
 /** Narrows `parseArgs`' union return, since the `--help` shape never carries `headers`/`from`. */
@@ -152,11 +153,72 @@ describe('normalizeManifest', () => {
 
   it('drops a row missing slug, hash, or ext instead of failing the whole run', () => {
     const manifest = {
-      a: { hash: 'a', slug: 'ok', ext: 'webp' },
-      b: { hash: 'b', ext: 'webp' },
-      c: { hash: 'c', slug: 'no-ext' },
+      a: { hash: 'aaaaaaaaaaaaaaaa', slug: 'ok', ext: 'webp' },
+      b: { hash: 'bbbbbbbbbbbbbbbb', ext: 'webp' },
+      c: { hash: 'cccccccccccccccc', slug: 'no-ext' },
     };
-    expect(normalizeManifest(manifest)).toEqual([{ slug: 'ok', hash: 'a', ext: 'webp' }]);
+    expect(normalizeManifest(manifest)).toEqual([{ slug: 'ok', hash: 'aaaaaaaaaaaaaaaa', ext: 'webp' }]);
+  });
+
+  // The security lens's blocking find: a manifest row whose hash or ext is shaped like a path
+  // traversal must never reach seedMedia's write loop at all, the earliest choke point available.
+  it('drops a row whose hash is shaped like a path traversal', () => {
+    const manifest = {
+      evil: { hash: '../../evil', slug: 'x', ext: 'webp' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose ext is shaped like a path traversal', () => {
+    const manifest = {
+      evil: { hash: 'aaaaaaaaaaaaaaaa', slug: 'x', ext: '../../evil' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose hash is not 16 lowercase hex chars', () => {
+    const manifest = {
+      short: { hash: 'abc', slug: 'x', ext: 'webp' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose ext is not a short alphanumeric', () => {
+    const manifest = {
+      bad: { hash: 'aaaaaaaaaaaaaaaa', slug: 'x', ext: 'toolongext' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  // The security lens's blocking find: slug was the one field r2Key never validates, and it is
+  // interpolated straight into the credentialed download URL and the printed failure line.
+  it('drops a row whose slug is shaped like a path traversal', () => {
+    const manifest = {
+      evil: { hash: 'aaaaaaaaaaaaaaaa', slug: '../../evil', ext: 'webp' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+
+  it('drops a row whose slug carries an uppercase or non-hyphen-joined shape slugifyFilename never produces', () => {
+    const manifest = {
+      a: { hash: 'aaaaaaaaaaaaaaaa', slug: 'Sunset', ext: 'webp' },
+      b: { hash: 'bbbbbbbbbbbbbbbb', slug: '-leading-hyphen', ext: 'webp' },
+      c: { hash: 'cccccccccccccccc', slug: 'trailing-hyphen-', ext: 'webp' },
+      d: { hash: 'dddddddddddddddd', slug: 'double--hyphen', ext: 'webp' },
+    };
+    expect(normalizeManifest(manifest)).toEqual([]);
+  });
+});
+
+describe('stripControlChars', () => {
+  it('leaves an ordinary slug unchanged', () => {
+    expect(stripControlChars('sunset')).toBe('sunset');
+  });
+
+  // Defense in depth for the bin's printed failure line: a hostile slug reaching this far must
+  // not be able to forge terminal escape sequences or extra output lines.
+  it('strips C0 control characters and DEL, control chars never reaching the printed line', () => {
+    expect(stripControlChars('evil\x1b[31mred\x1b[0m\x07\x7f')).toBe('evil[31mred[0m');
   });
 });
 
@@ -243,6 +305,102 @@ describe('readR2Buckets', () => {
     await expect(readR2Buckets(readFileFrom({ 'wrangler.jsonc': '{ not json' }))).rejects.toThrow(
       /did not parse/
     );
+  });
+});
+
+// bin.ts's own readFileUnderCwd (:73-79), the internals-B docket item 5 WATCH discharge: its
+// three call sites (wrangler.jsonc, wrangler.toml, the media manifest) are all hardcoded
+// literals, so no caller today ever hands it a traversal-shaped relPath. The assert is defense
+// in depth "regardless of where relPath came from" (its own comment), matching doctor/bin.ts's
+// containment shape. bin.ts self-executes main() via a top-level await on import, so the closure
+// is not independently importable; this forces a traversal-shaped relPath through the real
+// closure by mocking readR2Buckets, the one function bin.ts hands readFileUnderCwd to as a
+// callback, to call it with a hostile relPath instead of its own literal ones. The refusal
+// rejects the whole bin module's evaluation, since nothing in main() catches it.
+describe('bin.ts readFileUnderCwd containment', () => {
+  it('refuses a relPath that resolves outside the project directory, naming it with the media-seed prefix', async () => {
+    vi.resetModules();
+    const originalArgv = process.argv;
+    process.argv = [process.execPath, 'bin.js', '--from', 'https://example.com'];
+    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+      readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
+        await readFile('../outside.json');
+        return null;
+      },
+    }));
+    try {
+      await expect(import('../../lib/media-seed/bin.js')).rejects.toThrow(
+        'cairn-media-seed: refusing to read outside the project directory: ../outside.json'
+      );
+    } finally {
+      process.argv = originalArgv;
+      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.resetModules();
+    }
+  });
+});
+
+// The security lens's blocking find: a textual prefix compare alone is defeated by a symlink
+// planted between the nominal path and its real, on-disk location, both for a read under cwd and
+// a write under the run's own temp dir. Each closure gets its own escape here, proving the
+// realpath-based check that was added on top of the textual one.
+describe('bin.ts readFileUnderCwd symlink escape', () => {
+  it('refuses to read through a symlink under cwd that resolves outside it', async () => {
+    vi.resetModules();
+    const originalArgv = process.argv;
+    process.argv = [process.execPath, 'bin.js', '--from', 'https://example.com'];
+    const cwd = process.cwd();
+    const outside = mkdtempSync(join(tmpdir(), 'cairn-media-seed-escape-'));
+    writeFileSync(join(outside, 'secret.txt'), 'nope');
+    const linkName = `cairn-media-seed-symlink-escape-${process.pid}`;
+    const linkPath = join(cwd, linkName);
+    symlinkSync(outside, linkPath, 'dir');
+    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+      readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
+        await readFile(`${linkName}/secret.txt`);
+        return null;
+      },
+    }));
+    try {
+      await expect(import('../../lib/media-seed/bin.js')).rejects.toThrow(
+        `cairn-media-seed: refusing to read outside the project directory: ${linkName}/secret.txt`
+      );
+    } finally {
+      process.argv = originalArgv;
+      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.resetModules();
+      rmSync(linkPath, { force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('bin.ts realDeps.writeTempFile symlink escape', () => {
+  it('refuses to write through a symlink planted inside the run temp dir that resolves outside it', async () => {
+    vi.resetModules();
+    // --help short-circuits main() before it ever touches process.exitCode, so importing the
+    // module for its realDeps export never pollutes this test run's own exit code.
+    const originalArgv = process.argv;
+    process.argv = [process.execPath, 'bin.js', '--help'];
+    let realDeps: (typeof import('../../lib/media-seed/bin.js'))['realDeps'];
+    try {
+      ({ realDeps } = await import('../../lib/media-seed/bin.js'));
+    } finally {
+      process.argv = originalArgv;
+    }
+    const deps = realDeps(process.cwd());
+    const probe = deps.writeTempFile('probe.txt', new Uint8Array([1]));
+    const dir = dirname(probe);
+    const outside = mkdtempSync(join(tmpdir(), 'cairn-media-seed-escape-'));
+    try {
+      symlinkSync(outside, join(dir, 'escape'), 'dir');
+      expect(() => deps.writeTempFile('escape/evil.bin', new Uint8Array([2]))).toThrow(
+        'cairn-media-seed: refusing to write outside the temp directory: escape/evil.bin'
+      );
+    } finally {
+      deps.cleanup();
+      rmSync(outside, { recursive: true, force: true });
+    }
   });
 });
 
@@ -341,6 +499,36 @@ describe('seedMedia', () => {
     const first = await seedMedia(items, 'https://example.com', {}, 'site-media', deps);
     const second = await seedMedia(items, 'https://example.com', {}, 'site-media', makeDeps());
     expect(first).toEqual(second);
+  });
+
+  // The security lens's blocking find, defense in depth for a caller that reaches seedMedia
+  // without going through normalizeManifest's screen: a hostile hash or ext must be refused
+  // BEFORE any network call or byte is written, never after. This fails on HEAD, where
+  // deps.fetch and writeTempFile both run before r2Key's validation.
+  it('refuses a hostile hash before writing any byte, never calling fetch or writeTempFile', async () => {
+    const hostile: SeedItem[] = [{ slug: 'evil', hash: '../../evil', ext: 'webp' }];
+    const deps = makeDeps();
+    const result = await seedMedia(hostile, 'https://example.com', {}, 'site-media', deps);
+    expect(result).toEqual({
+      total: 1,
+      ok: 0,
+      failed: 1,
+      failures: [{ slug: 'evil', message: expect.stringContaining('hash') }],
+    });
+    expect(deps.fetch).not.toHaveBeenCalled();
+    expect(deps.written).toEqual([]);
+    expect(deps.put).toEqual([]);
+  });
+
+  it('refuses a hostile ext before writing any byte, never calling fetch or writeTempFile', async () => {
+    const hostile: SeedItem[] = [{ slug: 'evil', hash: 'aa11223344556677', ext: '../../evil' }];
+    const deps = makeDeps();
+    const result = await seedMedia(hostile, 'https://example.com', {}, 'site-media', deps);
+    expect(result.ok).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(deps.fetch).not.toHaveBeenCalled();
+    expect(deps.written).toEqual([]);
+    expect(deps.put).toEqual([]);
   });
 });
 

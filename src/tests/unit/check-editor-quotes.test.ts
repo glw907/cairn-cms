@@ -121,15 +121,23 @@ describe('candidatesForFile', () => {
   });
 
   it('does not strand a literal after a same-line comment-lookalike ("//") inside an earlier string', () => {
-    // `content-routes-core.ts` builds a URL against 'https://internal.invalid' well before the
-    // two messages this test checks for. A comment strip with no notion of "inside a string"
-    // deletes from that string's "//" to end of line, and an independent per-quote-type regex
-    // pass on top of that misreads an apostrophe inside a later double-quoted string ("can't")
-    // as opening a single-quoted literal, each swallowing everything up to the next unrelated
-    // quote character anywhere later in the file. Both bugs strand real messages with nothing
-    // between them and the doc's own copy of the same text.
-    const file = join(LIB_DIR, 'sveltekit/content-routes-core.ts');
-    const candidates = candidatesForFile(file);
+    // The former content-routes-core.ts monolith split across several content-routes-*.ts
+    // siblings (internals-B), and Task 4 folded its discard/delete/rename/revert quarter into
+    // content-routes-entry.ts, which already carried the apostrophe trigger (a fragment refusal
+    // reading "can't"). That file now holds both the trigger and, after it, the rename-conflict
+    // message ('Another editor has unpublished edits referencing this entry'), so the per-file
+    // trigger-before-message coupling this test guards is exercised for that pair. The
+    // create-conflict message ('An unpublished entry with that address already exists') still
+    // sits ahead of its own file's "can't" trigger (createAction runs before saveToBranch), so it
+    // stays uncoupled within content-routes-entry.ts alone; content-routes-shell.ts's
+    // `withRefusalCode` carries a separate "//" trigger (a URL literal against
+    // 'https://internal.invalid') with neither asserted message in its own file. Reading every
+    // content-routes-*.ts sibling into one candidate pool, the way findStrandedQuotes reads a
+    // whole tree below, is what lets both assertions pass regardless.
+    const files = readdirSync(join(LIB_DIR, 'sveltekit'))
+      .filter((name) => name.startsWith('content-routes-') && name.endsWith('.ts'))
+      .map((name) => join(LIB_DIR, 'sveltekit', name));
+    const candidates = files.flatMap(candidatesForFile);
     expect(
       candidates.some((c) => c.includes('An unpublished entry with that address already exists')),
     ).toBe(true);

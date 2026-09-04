@@ -305,13 +305,29 @@ describe('resolveExtraCookies (the CAIRN_AUDIT_COOKIES contract)', () => {
     expect(resolveExtraCookies('cairn_empty=')).toEqual([{ name: 'cairn_empty', value: '' }]);
   });
 
-  it('throws naming CAIRN_AUDIT_COOKIES and the entry when a segment carries no =', () => {
-    expect(() => resolveExtraCookies('not-a-cookie')).toThrow(/CAIRN_AUDIT_COOKIES/);
-    expect(() => resolveExtraCookies('not-a-cookie')).toThrow(/not-a-cookie/);
+  // A malformed entry is exactly the shape most likely to BE a mistyped session cookie, so neither
+  // branch below may echo the raw entry (or the value it half-parsed) back into the thrown message;
+  // each reports the entry's position among the `;`-separated list instead. Round-2 triage: the two
+  // branches differ (no "=" at all vs. an empty name before one), so each gets its own case.
+  it('throws naming CAIRN_AUDIT_COOKIES and the position, never the entry, when a segment carries no =', () => {
+    expect(() => resolveExtraCookies('sekrit-session-value-without-an-equals')).toThrow(/CAIRN_AUDIT_COOKIES/);
+    expect(() => resolveExtraCookies('sekrit-session-value-without-an-equals')).toThrow(/position 1/);
+    expect(() => resolveExtraCookies('sekrit-session-value-without-an-equals')).not.toThrow(
+      /sekrit-session-value-without-an-equals/
+    );
   });
 
-  it('throws when the name is empty after trimming', () => {
-    expect(() => resolveExtraCookies('=onlyavalue')).toThrow(/CAIRN_AUDIT_COOKIES/);
+  it('throws naming CAIRN_AUDIT_COOKIES and the position, never the value, when the name is empty', () => {
+    expect(() => resolveExtraCookies('=very-secret-cookie-value')).toThrow(/CAIRN_AUDIT_COOKIES/);
+    expect(() => resolveExtraCookies('=very-secret-cookie-value')).toThrow(/position 1/);
+    expect(() => resolveExtraCookies('=very-secret-cookie-value')).not.toThrow(/very-secret-cookie-value/);
+  });
+
+  it('reports the position of the SECOND entry when the first is well-formed', () => {
+    expect(() => resolveExtraCookies('cairn_session=abc123; =leaked-second-value')).toThrow(/position 2/);
+    expect(() => resolveExtraCookies('cairn_session=abc123; =leaked-second-value')).not.toThrow(
+      /leaked-second-value/
+    );
   });
 
   // The run owns cairn-admin-theme per browser context (one context per theme); a caller override

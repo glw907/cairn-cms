@@ -5,10 +5,14 @@
 //
 // This module is the composition root: `createContentRoutesInternal` builds the shared
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
-// factories (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the
-// one returned object. Every type this file used to declare inline now lives with the domain that
-// owns it and is re-exported here, so every existing importer (the public `/sveltekit` barrel and
-// the admin components that import this file directly) sees the same names at the same path.
+// factories (content-routes-shell.ts, -list.ts, -entry.ts, -preview.ts, -media.ts, -tidy.ts,
+// -settings.ts, -dictionary.ts) into the one returned object. content-routes-shared.ts is not one
+// of those factories, only the primitives several of them import (concept and entry-id resolution,
+// the flattened action-failure shape); this file re-exports its `ContentFormFailure` type below
+// alongside the domain types. Every type this file used to declare inline now lives with the
+// domain that owns it and is re-exported here, so every existing
+// importer (the public `/sveltekit` barrel and the admin components that import this file
+// directly) sees the same names at the same path.
 //
 // The factory comes in two: `createContentRoutesInternal`, whose wide shape the single-mount
 // composer drives, and the public `createContentRoutes`, whose declared return is the narrow
@@ -17,7 +21,10 @@
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesConfig } from './content-routes-context.js';
-import { createCoreActions } from './content-routes-core.js';
+import { createShellActions } from './content-routes-shell.js';
+import { createListActions } from './content-routes-list.js';
+import { createEntryActions } from './content-routes-entry.js';
+import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
@@ -25,15 +32,13 @@ import { createDictionaryActions } from './content-routes-dictionary.js';
 
 export type { ContentRoutesConfig, TidyClient, TidyEffort, AttentionItem } from './content-routes-context.js';
 
-export type {
-  AdminShellData,
-  EntrySummary,
-  ListData,
-  EditData,
-  HelpData,
-  WelcomeData,
-  ContentFormFailure,
-} from './content-routes-core.js';
+export type { AdminShellData, HelpData, WelcomeData } from './content-routes-shell.js';
+
+export type { EntrySummary, ListData } from './content-routes-list.js';
+
+export type { ContentFormFailure } from './content-routes-shared.js';
+
+export type { EditData } from './content-routes-entry.js';
 
 export type {
   MediaLibraryData,
@@ -53,34 +58,37 @@ export type { DictionaryAddFailure } from './content-routes-dictionary.js';
  */
 export function createContentRoutesInternal(runtime: CairnRuntime, config: ContentRoutesConfig = {}) {
   const ctx = createContentRoutesContext(runtime, config);
-  const core = createCoreActions(ctx);
+  const shell = createShellActions(ctx);
+  const list = createListActions(ctx);
+  const entry = createEntryActions(ctx);
+  const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
   const settings = createSettingsActions(ctx);
   const dictionary = createDictionaryActions(ctx);
   return {
-    shellLoad: core.shellLoad,
-    helpLoad: core.helpLoad,
-    indexLoad: core.indexLoad,
-    listLoad: core.listLoad,
+    shellLoad: shell.shellLoad,
+    helpLoad: shell.helpLoad,
+    indexLoad: shell.indexLoad,
+    listLoad: list.listLoad,
     mediaLibraryLoad: media.mediaLibraryLoad,
     settingsLoad: settings.settingsLoad,
     settingsSaveAction: settings.settingsSaveAction,
     vocabularyLoad: settings.vocabularyLoad,
     vocabularySaveAction: settings.vocabularySaveAction,
-    createAction: core.createAction,
-    editLoad: core.editLoad,
-    historyLoad: core.historyLoad,
-    saveAction: core.saveAction,
-    publishAction: core.publishAction,
-    publishAllAction: core.publishAllAction,
-    discardAction: core.discardAction,
-    deleteAction: core.deleteAction,
-    listDeleteAction: core.listDeleteAction,
-    renameAction: core.renameAction,
-    previewMintAction: core.previewMintAction,
-    previewRevokeAction: core.previewRevokeAction,
-    revertAction: core.revertAction,
+    createAction: entry.createAction,
+    editLoad: entry.editLoad,
+    historyLoad: entry.historyLoad,
+    saveAction: entry.saveAction,
+    publishAction: entry.publishAction,
+    publishAllAction: entry.publishAllAction,
+    discardAction: entry.discardAction,
+    deleteAction: entry.deleteAction,
+    listDeleteAction: entry.listDeleteAction,
+    renameAction: entry.renameAction,
+    previewMintAction: preview.previewMintAction,
+    previewRevokeAction: preview.previewRevokeAction,
+    revertAction: entry.revertAction,
     uploadAction: media.uploadAction,
     mediaLibraryUploadAction: media.mediaLibraryUploadAction,
     mediaDeleteAction: media.mediaDeleteAction,

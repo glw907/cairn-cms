@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import FragmentPicker from '../../lib/components/FragmentPicker.svelte';
-import type { FragmentTarget } from '../../lib/sveltekit/content-routes-core.js';
+import type { FragmentTarget } from '../../lib/sveltekit/content-routes-entry.js';
 
 const targets: FragmentTarget[] = [
   { id: 'welcome', title: 'Welcome banner', body: 'Welcome body.' },

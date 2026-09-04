@@ -723,6 +723,7 @@ when the remediation pass lands.
 
 - **Verdict:** retire. Decisive reason is false: ('owner').home is undefined in JS, not a crash. roles.ts:94-102 is one ternary, and content-routes-core.ts:721-735 shows roleHome is only the first of three branches in the landing policy, so a site copying it gets no policy. Zero importers; same class as DEFAULT_ROLES.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the root barrel (`src/lib/index.ts`); `roleHome` stays exported from `auth/roles.ts`, since `content-routes-core.ts` still calls it internally for the `/admin` landing policy.
+- **Note (internals-B, Task 4):** the still-calls-it-internally fact above is now historical; `content-routes-core.ts` retired at internals-B, and the `/admin` landing policy caller moved to `content-routes-entry.ts`.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 21; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md) (verdict overturned there).
 
@@ -1747,6 +1748,7 @@ when the remediation pass lands.
 
 - **Verdict:** retire. None. { id; title; body } feeds the editor's fragment picker; a site mounting CairnEntryEditor passes data whole.
 - **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content-routes-core.ts` (`FragmentPicker.svelte` imports it directly); its re-export dropped from `content-routes.ts` and its barrel line from `sveltekit/index.ts`. Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
+- **Note (internals-B, Task 4):** the stays-in-`content-routes-core.ts` fact above is now historical; that file retired at internals-B, and the export moved to `content-routes-entry.ts`, still imported directly by `FragmentPicker.svelte`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 34.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 

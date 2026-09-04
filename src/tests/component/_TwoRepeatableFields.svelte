@@ -29,7 +29,7 @@ other. The harness forwards the same pass-through props each container caller th
     mediaLibrary: {},
     conceptId: 'posts',
     id: '2026-05-hello',
-    heroFieldRefs: {},
+    registerHeroField: () => {},
     onuploaded: () => {},
     onheroneedsalt: () => {},
   };

@@ -12,7 +12,7 @@
 // ./stories/*.ts, one module per task (A4 auth, A5a editor, A5b publish, A6a media, A6b the rest),
 // and this file's `stories` array grows by concatenation as each group lands.
 import type { Component } from 'svelte';
-import type { AdminShellData } from '../sveltekit/content-routes-core.js';
+import type { AdminShellData } from '../sveltekit/content-routes-shell.js';
 import { authStories } from './stories/auth.js';
 import { editorStories } from './stories/editor.js';
 import { mediaStories } from './stories/media.js';

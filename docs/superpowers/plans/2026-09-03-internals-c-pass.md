@@ -30,8 +30,9 @@ shared reader is adopted at platform depth only, with the divergence documented)
 
 **Spec:** `docs/internal/record/2026-08-26-any-site-audit/int-coherence.md` (the thirteen,
 :70-379), `int-walk-newcomer.md`, the internals-B docket's ratified defaults (3, 4, 5) and
-routed-at-close items; anchors verified 2026-09-03 against `ed586ee0` and re-verified at
-dispatch against post-B `main`.
+routed-at-close items; anchors verified 2026-09-03 against `ed586ee0`, re-verified
+2026-09-04 against the post-internals-B tree (branch `internals-b` at its merge
+candidate).
 
 **Token ceiling:** 6.5M (13 tasks; re-rated at the fold from 5.5M/10 after the sweep
 restructuring). **Checkpoint interval:** every four tasks (checkpoints at 4, 8, 12).
@@ -46,7 +47,7 @@ any e2e.
   `FieldDescriptor` is a closed 15-arm union (`content/fields.ts:122-137`) originating in
   site config, so exhaustiveness is TYPE-LEVEL. The five dispatch defaults are NOT dead
   ends — each is a reachable generic fallback absorbing the arms the explicit cases skip
-  (e.g. `frontmatter.ts:52-56` handles text, textarea, number-as-string, url, email,
+  (e.g. `frontmatter.ts:53-57` handles text, textarea, number-as-string, url, email,
   date, datetime; replacing it with a throw is data loss on save). The change is
   therefore enumerate-then-guard: make every absorbed arm an explicit case with its
   current behavior, and only the true remainder hits the guard. Template render paths
@@ -67,9 +68,10 @@ any e2e.
   list. No `[class*=]` selectors exist anywhere, admin re-declarations are
   Svelte-scoped, and the preview iframe is `srcdoc`-sandboxed, so exact-match semantics
   make the shared namespace safe.
-- **`as never` (docket sizing):** full retirement — 862 casts / 91 files, minus Task 5's
-  five heaviest (263), leaves 599 across 86 files, swept as three independent
-  per-directory tasks.
+- **`as never` (docket sizing):** full retirement — 881 casts / 91 files (re-verified
+  2026-09-04 against the post-B tree; `grep -ro "as never" src/tests --include="*.ts"`,
+  was 862 at the 2026-09-03 verification), minus Task 5's five heaviest (273), leaves 608
+  across 86 files, swept as three independent per-directory tasks.
 - **Recorded drops from the thirteen's other halves (round-2 triage: docket item 10
   demands the full re-enumeration land or drop, never fade):** (a) the `$app/state`
   plain-object test stub (finding 9's third half) → polish, reopen on a reactivity bug
@@ -87,9 +89,9 @@ any e2e.
   consumes the shared reader at PLATFORM depth only, preserving: the doctor probe's
   external cross-check invariant (`check-probe.ts:50-58` — the cookie name must derive
   from the probed origin's own scheme, never a separately-resolved PUBLIC_ORIGIN), the
-  csrf unit suite's determinism (`csrf.test.ts:135-142` would flip on any machine with
+  csrf unit suite's determinism (`csrf.test.ts:135-143` would flip on any machine with
   the var exported), LAN-dev http hosts (a process-env https origin would mint a Secure
-  cookie the browser drops — the permanent-403 class `csrf.test.ts:174-177` closed), and
+  cookie the browser drops — the permanent-403 class `csrf.test.ts:177-178` closed), and
   live sessions on TLS-terminated deploys (the shared `secure` input renames BOTH
   cookies, `auth/crypto.ts:13-27`). The monotonicity fact worth recording: platform-env
   is read first and https requests short-circuit `true`, so no fallback could ever
@@ -118,10 +120,10 @@ any e2e.
 **Files:**
 - Create: `src/lib/content/unreachable.ts` (co-located with the union it guards — not a
   seventh loose root file) + unit test
-- Modify: `src/lib/content/frontmatter.ts` (`decodeField` default :52-56;
+- Modify: `src/lib/content/frontmatter.ts` (`decodeField` default :53-57;
   `frontmatterFromForm` default :152-155), `src/lib/content/fieldset.ts`
   (`validateField`'s `default:` at **:294-304** — the earlier :253-259 cite was the
-  pre-switch coercion), `src/lib/components/FieldInput.svelte` (`{:else}` :312),
+  pre-switch coercion), `src/lib/components/FieldInput.svelte` (`{:else}` :339),
   `src/lib/components/ComponentForm.svelte` (dispatch `{:else}` :267), one-line
   deliberate-no-op notes at the four partial sites (`content/references.ts:55-58`,
   `delivery/site-resolver.ts:167-168`, `components/ReferenceField.svelte:38-39`, the
@@ -218,7 +220,7 @@ files; `check:idioms` green including over its own file.
   **Must-preserve (security lens): `src/lib/sveltekit/admin-action.ts:6-11`** — it
   matches the purge patterns AND states the CSRF defense-in-depth architecture (the
   guard verifies the double-submit token on every unsafe `/admin/**` POST before any
-  route code; the inline check at :236 is defense-in-depth, not the sole gate). The
+  route code; the inline check at :239 is defense-in-depth, not the sole gate). The
   reworded comment must preserve the guard's primacy and the DiD framing in substance.
   General rule for the whole purge: no comment stating a security invariant is deleted;
   invariants survive rewording.
@@ -268,7 +270,7 @@ rule matches by shape with no private hostname in the rule data; gate green.
   `ec-*` hits; `check:template` runs in CI and fails on divergence — re-emit, never
   hand-edit), `CHANGELOG.md`, `docs/extend/migration-notes.md`,
   `docs/internal/engine-rulings.md` (appended annotations on `audit-render-iconspan`
-  :3905-3916 and `audit-render-headrow` :3918-3929 — round-2 triage: these are OPEN
+  :3907-3918 and `audit-render-headrow` :3920-3931 — round-2 triage: these are OPEN
   rulings whose execution is owned by the CHASSIS pass, not history rows; the annotation
   states the class vocabulary those helpers bake was renamed here, so the chassis
   re-homing re-teaches `cairn-*` names)
@@ -309,9 +311,11 @@ headers the ten `render/*.ts` files Task 4 edits two of).
 **Files:**
 - Create: **`src/tests/helpers/test-event.ts`** exporting **`testEvent`** (path and name
   pinned; Task 6 consumes them verbatim) + its unit test
-- Modify: the five heaviest cast files (`component/CairnMediaLibrary.test.ts` 73,
+- Modify: the five heaviest cast files (`component/CairnMediaLibrary.test.ts` 83,
   `unit/cairn-admin-actions.test.ts` 51, `integration/content-routes-revert.test.ts` 50,
-  `unit/content-routes-edit.test.ts` 47, `integration/content-routes-preview.test.ts` 42)
+  `unit/content-routes-edit.test.ts` 47, `integration/content-routes-preview.test.ts` 42;
+  re-verified 2026-09-04 with `grep -c "as never" <file>`, the `CairnMediaLibrary.test.ts`
+  count moved from 73 to 83 post-B, the other four unchanged)
 
 **Interfaces:**
 - Produces: `testEvent(overrides?)` returning a real `CairnEvent`-shaped value (params,
@@ -319,12 +323,14 @@ headers the ten `render/*.ts` files Task 4 edits two of).
   no `any`. Its doc comment states the erasure hazard it replaces.
 
 - [ ] **Step 1:** inventory the five files' cast shapes; build + test the builder.
-- [ ] **Step 2:** convert the five files (263 casts); suites green with assertions
+- [ ] **Step 2:** convert the five files (273 casts); suites green with assertions
   unweakened (diff-reviewer checks deleted casts took no assertions with them).
 - [ ] **Step 3 (the test-infra rider round-2 surfaced from audit finding 9's other
-  half):** enable `unstubGlobals: true` in the vitest config (87 `vi.stubGlobal` sites
-  currently pair with `vi.restoreAllMocks`, which does NOT restore globals — a live
-  cross-test leakage hazard); run the full suite and fix any test that was silently
+  half):** enable `unstubGlobals: true` in the vitest config (116 `vi.stubGlobal` sites
+  across 30 files, re-verified 2026-09-04 with `grep -ro "vi.stubGlobal" src/tests
+  --include="*.ts" | wc -l` against the post-B tree, up from 87 at the 2026-09-03
+  verification; currently pair with `vi.restoreAllMocks`, which does NOT restore globals
+  — a live cross-test leakage hazard); run the full suite and fix any test that was silently
   depending on a leaked stub. Test-first in the sense that the config flip IS the test:
   a suite green under `unstubGlobals` proves the leakage is gone. Full gate; commit.
 
@@ -355,11 +361,27 @@ file sets are disjoint by directory.
 **Files:**
 - Modify: the ~12 contradicted headers (int-coherence.md :163-182; `admin-icons.ts`
   exemplar), the 10 headerless `render/*.ts` files (M1 headers written from the post-B
-  code), the 34 duplication-precedent comments (:107-120), the `logCommitFailed`
-  call-style unification (post-B home of the old `content-routes-core.ts:1672`/`:2249`
-  sites; verified safe — `ctx.logCommitFailed` is a bare re-export of the module
-  function, `content-routes-context.ts:420` → `commit-log.ts:33` — preserve `:1672`'s
-  third argument `'publish.failed'`, which selects the event name)
+  code), the duplication-precedent comments (:107-120 lists the table; see the
+  reconciliation note below on the live count), the `logCommitFailed` call-style
+  unification (post-B home of the old `content-routes-core.ts:1672`/`:2249` sites: the
+  `'publish.failed'` `ctx.logCommitFailed` call is now `content-routes-entry.ts:1109`,
+  and the bare `logCommitFailed(commitFields, err)` revert call is now
+  `content-routes-entry.ts:1591`; verified safe — `ctx.logCommitFailed` is a bare
+  re-export of the module function, `content-routes-context.ts:420` → `commit-log.ts:33`
+  — preserve `content-routes-entry.ts:1109`'s third argument `'publish.failed'`, which
+  selects the event name)
+
+> Reconciliation note (2026-09-04): int-coherence.md's own grep for the
+> duplication-precedent pattern (`grep -rniE '(mirrors|duplicated here|rather than
+> imported|not worth sharing|same duplication)' src/lib examples/showcase/src`) returned
+> 34 hits at audit time and returns 77 on the post-B tree. Spot-checking the new hits
+> shows most are ordinary "mirrors X's approach" prose in module and function headers
+> added by B's split (a normal way to describe a sibling's shape), not the self-licensing
+> "duplicated here rather than imported" citation chain finding 2 describes. Step 1
+> should re-run the grep and triage each hit against the finding's actual pattern (a
+> comment that licenses bypassing a named shared helper) rather than assume the table at
+> :107-120 is still exhaustive; the twelve-row table itself is unchanged and still the
+> primary work list.
 
 - [ ] **Step 1:** re-enumerate both lists against the post-B tree; lying headers become
   true (fix the header, not the code; a header mismatch revealing a real defect goes to
@@ -414,7 +436,7 @@ matches the export map mechanically; nothing new ships under `src/lib`.
   shared reader **at platform depth only, via an explicit
   `depth: 'platform-only'` option on the reader** — round-2 triage struck the
   empty-object-floor form: `readPublicOrigin` falls through to `process.env`
-  UNCONDITIONALLY when the platform read yields nothing (`dev-flag.ts:58-67`), so an
+  UNCONDITIONALLY when the platform read yields nothing (`dev-flag.ts:58-66`), so an
   empty-object argument suppresses nothing; only the option form is structural. NO
   behavior change (the header's ruled input carries the four reasons: probe invariant,
   suite determinism, LAN-dev cookies, session invalidation). Both functions' docs record

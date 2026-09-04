@@ -1,7 +1,7 @@
 // cairn-cms: previewMint, the public entry point for issuing a preview link, and previewLoad, the
 // public entry point for serving one (spec part 3, "Public preview for a non-editor"). previewMint
 // carries the engine's own entry-scoped authorization itself, so every path to a minted token runs
-// the same check the previewMint admin action (content-routes-core.ts) runs, and a caller reaching
+// the same check the previewMint admin action (content-routes-preview.ts) runs, and a caller reaching
 // it from its own workflow route owns nothing beyond signing the editor in. previewLoad is the
 // mint's counterpart: it needs no authorization at all, since the token itself is the credential,
 // and it never reads locals.cairnEditor or locals.cairnAccess.
@@ -16,6 +16,7 @@ import {
   type PreviewTokenRow,
 } from '../auth/preview-store.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
+import { isMissingTableError } from './content-routes-shared.js';
 import { requireDb } from '../env.js';
 import { CairnError } from '../diagnostics/index.js';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
@@ -266,15 +267,6 @@ function rejectPreview(reason: PreviewRejectedReason, fields: Record<string, unk
   throw error(404, NOT_FOUND_MESSAGE);
 }
 
-/**
- * True for a D1 error whose message names a missing table (SQLite's own "no such table" text).
- *  Mirrors content-routes-core.ts's own local copy; the check is a two-line regex, not worth
- *  sharing across a module boundary for.
- */
-function isMissingTableError(err: unknown): boolean {
-  return /no such table/i.test(String(err));
-}
-
 /** Parse a committed media.json body, degrading a missing or corrupt file to null (an empty manifest). */
 function safeParseJson(raw: string | null): unknown {
   if (raw === null) return null;
@@ -297,7 +289,7 @@ interface PreviewResolvers {
 
 /**
  * Build the preview's marking link/fragment resolvers and its request-time media resolver, mirroring
- *  `editLoad`'s own build (content-routes-core.ts) so the admin preview and the public preview agree
+ *  `editLoad`'s own build (content-routes-entry.ts) so the admin preview and the public preview agree
  *  on what a draft can reach. `manifest` is the default branch's manifest, with the draft's own
  *  re-derived row already upserted by the caller when previewing a draft; the ended page passes the
  *  plain default-branch manifest, since the previewed entry's own row already lives there.

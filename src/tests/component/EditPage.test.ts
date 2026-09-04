@@ -2363,12 +2363,12 @@ describe('EditPage', () => {
       .toBe('');
   });
 
-  // The entry-key reset re-seeds content state on remount, but the 13 EditorApi holders
-  // (insert, format, and the rest) are plain component state, untouched by that reset: between
-  // the {#key} remount and entry B's own MarkdownEditor completing its async registerEditor call
-  // (its onMount awaits a long chain of dynamic imports), every holder still points at entry A's
-  // DESTROYED CodeMirror view. A toolbar action clicked in that window must never reach entry A's
-  // dead view or leak its content into entry B's fresh body.
+  // The entry-key reset re-seeds content state on remount and nulls the one EditorApi holder
+  // (`editor`, Task 11's holder collapse), but between the {#key} remount and entry B's own
+  // MarkdownEditor completing its async registerEditor call (its onMount awaits a long chain of
+  // dynamic imports), a toolbar action clicked in that window must still never reach entry A's
+  // DESTROYED CodeMirror view or leak its content into entry B's fresh body: every consumer reads
+  // through `editor` with an optional chain, so a null holder makes the click a clean no-op.
   it('never lets a toolbar action reach the destroyed prior-entry editor during the remount gap', async () => {
     const screen = await render(EditPage, postProps({ body: 'first body' }));
     await makeDirty(screen);
@@ -2379,10 +2379,10 @@ describe('EditPage', () => {
     try {
       await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
       // Entry B's MarkdownEditor is now parked mid-onMount, awaiting the held spellcheck import,
-      // so registerEditor has not yet reassigned the 13 EditorApi holders away from entry A's.
-      // Pre-fix, `format` still points at entry A's DESTROYED CodeMirror view; post-fix, the
-      // entry-key reset cleared it back to a no-op, so the click below is inert either way it
-      // resolves, but must never throw or write entry A's content into entry B's body.
+      // so registerEditor has not yet delivered its grant: `editor` reads whatever the entry-key
+      // reset (or MarkdownEditor's own identity-guarded destroy revocation) left it as, null
+      // either way, so the click below is inert but must never throw or write entry A's content
+      // into entry B's body.
       const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]');
       expect(() => bold?.click()).not.toThrow();
     } finally {
@@ -2393,6 +2393,262 @@ describe('EditPage', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('second body');
+  });
+
+  // Task 11's measured defect: uploadedRecords was missing from the entry-key reset, so a
+  // same-route link hop carried entry A's accumulated upload records into entry B's save payload
+  // (the merged media library and the hidden `media` form field the save action reads).
+  it('never carries a prior entry\'s uploaded media records into the next entry\'s save payload', async () => {
+    const uploaded: MediaEntry = {
+      hash: 'a1b2c3d4e5f6a7b8',
+      sha256: 'f'.repeat(64),
+      slug: 'seaside',
+      displayName: 'Seaside',
+      originalFilename: 'seaside.png',
+      alt: 'A quiet shore',
+      ext: 'png',
+      contentType: 'image/png',
+      bytes: 256,
+      width: 8,
+      height: 8,
+      createdAt: '2026-06-16T00:00:00.000Z',
+    };
+    vi.mocked(ingest.ingestFile).mockResolvedValue({
+      blob: new Blob([new Uint8Array([1])], { type: 'image/png' }),
+      contentType: 'image/png',
+      width: 8,
+      height: 8,
+    });
+    vi.mocked(ingest.sendUpload).mockResolvedValue({
+      type: 'basic',
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          type: 'success',
+          status: 200,
+          data: devalueStringify({
+            reference: `media:${uploaded.slug}.${uploaded.hash}`,
+            record: uploaded,
+            reused: false,
+            mismatch: false,
+          }),
+        }),
+    } as unknown as Response);
+    const screen = await render(EditPage, postProps({ body: 'first body' }));
+
+    // Drive a real optimistic upload into entry A's uploadedRecords via the toolbar's Insert-media
+    // control, the same recipe the preview-resolution test above uses.
+    await screen.getByRole('button', { name: 'Insert image' }).first().click();
+    const file = new File([new Uint8Array([1])], 'seaside.png', { type: 'image/png' });
+    const fileInput = screen.container.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await screen.getByRole('radio', { name: /describ|write/i }).click();
+    await screen.getByRole('textbox', { name: /alt|description/i }).fill('A quiet shore');
+    const dialog = screen.container.querySelector('[role="dialog"]') as HTMLElement;
+    (dialog.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="media"]')?.value ?? '[]')
+      .not.toBe('[]');
+
+    // Hop to entry B on the same route (a {#key} remount, not a fresh mount). The save payload
+    // entry B would submit must carry none of entry A's records.
+    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body');
+    expect(screen.container.querySelector<HTMLInputElement>('input[name="media"]')?.value).toBe('[]');
+  });
+
+  // Task 12 (tidy-controller.svelte.ts, figure-editor.svelte.ts): each module owns its own
+  // entryKey-scoped reset now that its state no longer lives on the shell, so this proves the
+  // reset actually fires rather than relying on the {#key} remount to mask a stale value.
+  it("resets tidy-controller's refused-tidy message on an entry hop", async () => {
+    // tidyMessage is read by an `{#if}` INSIDE the {#key entryKey} block, so a remount alone
+    // would not prove much either way: if tidy-controller's own reset did not clear the flag, the
+    // freshly remounted `{#if tidyController.tidyMessage}` would immediately re-render the SAME
+    // "Tidy could not run" dialog for entry B, driven by the still-truthy leftover from entry A's
+    // refusal, without the author ever touching Tidy on entry B. Asserting it is gone catches that.
+    const body = '# Title\n\nA paragraph that is fine.';
+    const spy = vi.fn(async () => ({
+      type: 'basic',
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          type: 'success',
+          status: 200,
+          data: devalueStringify({
+            corrected: '## Title\n\nA paragraph that is fine.',
+            model: 'claude-sonnet-4-6',
+            usage: {},
+          }),
+        }),
+    }) as unknown as Response);
+    vi.stubGlobal('fetch', spy);
+    try {
+      const screen = await render(
+        EditPage,
+        postProps({
+          body,
+          tidy: {
+            enabled: true,
+            model: 'claude-sonnet-4-6',
+            conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+          },
+        }) as never,
+      );
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      const tidyButton = () =>
+        Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+          (b) => b.getAttribute('aria-label') === 'Tidy',
+        );
+      await expect.poll(() => tidyButton()).toBeTruthy();
+      tidyButton()!.click();
+      await expect.poll(() => document.querySelector('[data-testid="tidy-message"]'), { timeout: 8000 }).not.toBeNull();
+
+      // Hop to entry B on the same route (a {#key} remount, not a fresh mount) without ever
+      // dismissing entry A's message dialog.
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toBe('second body');
+      expect(screen.container.querySelector('[data-testid="tidy-message"]')).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not surface a stale tidy error on the new entry when an entry hop aborts an in-flight tidy', async () => {
+    // Diff-review finding on Task 12: runTidy captured only the module-level `controller` and
+    // re-read it unguarded after its await. The entry-hop reset ($effect.pre above, keyed on
+    // entryKey) aborts and nulls that SAME `controller` while a tidy call for the outgoing entry
+    // is still in flight; the resumed continuation then dereferenced `controller.signal` on a
+    // null, threw, and the outer catch folded that TypeError into the same generic retry message
+    // a real failure shows, setting it AFTER the reset had already cleared it to null. The result
+    // popped entry A's tidy-error dialog over entry B's freshly-hopped-to state.
+    const body = '# Title\n\nA paragraph that is fine.';
+    let rejectFetch!: (err: unknown) => void;
+    const pendingFetch = new Promise<Response>((_resolve, reject) => {
+      rejectFetch = reject;
+    });
+    const spy = vi.fn((_url: string, init?: RequestInit) => {
+      // A real fetch rejects with an AbortError once its signal fires; the entry-hop reset's
+      // controller.abort() call below drives this the same way.
+      init?.signal?.addEventListener('abort', () => rejectFetch(new DOMException('Aborted', 'AbortError')));
+      return pendingFetch;
+    });
+    vi.stubGlobal('fetch', spy);
+    try {
+      const screen = await render(
+        EditPage,
+        postProps({
+          body,
+          tidy: {
+            enabled: true,
+            model: 'claude-sonnet-4-6',
+            conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+          },
+        }) as never,
+      );
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      const tidyButton = () =>
+        Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+          (b) => b.getAttribute('aria-label') === 'Tidy',
+        );
+      await expect.poll(() => tidyButton()).toBeTruthy();
+      tidyButton()!.click();
+      // Wait for the tidy call to actually start (the fetch mock invoked, its signal wired) before
+      // hopping, so the hop's abort lands on a real in-flight request rather than racing ahead of it.
+      await expect.poll(() => spy.mock.calls.length).toBeGreaterThan(0);
+
+      // Hop to entry B on the same route while entry A's tidy call is still pending.
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toBe('second body');
+      // Give the aborted fetch's rejection a turn to resolve through postFormAction's catch and
+      // back into runTidy's own catch/finally before asserting nothing surfaced.
+      await expect
+        .poll(() => screen.container.querySelector('[data-testid="tidy-message"]'), { timeout: 2000 })
+        .toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("resets figure-editor's open-dialog prefill on an entry hop", async () => {
+    // The figure dialog's <h2> reads figureEditor.figurePrefill?.mode unconditionally (not gated
+    // behind figurePrefill's truthiness the way the form fields are), so a fresh remount's FIRST
+    // render still reflects a stale non-null prefill if figure-editor's own reset never ran, even
+    // though the {#key} block gives entry B a brand-new, closed <dialog> element.
+    const hash = '0123456789abcdef';
+    const screen = await render(
+      EditPage,
+      postProps({ body: `plain prose\n\n:::figure\n![A cat](media:cat.${hash})\n\nA caption.\n:::\n\ntail prose` }),
+    );
+    await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+    // EditPage always folds every component (including a figure directive) on mount, so the image
+    // line renders behind a fold pill until it is activated first (the same recipe the Edit-block
+    // suite's clickLine helper uses).
+    const pill = screen.container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+    if (pill) await userEvent.click(pill);
+    const line = await vi.waitFor(() =>
+      Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+        (l.textContent ?? '').includes('cat'),
+      ),
+    );
+    await userEvent.click(line!);
+    const figureButton = () =>
+      screen.container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"][aria-label*="figure" i]');
+    await expect.poll(() => figureButton()?.getAttribute('aria-label')).toBe('Edit the figure at the cursor');
+    figureButton()!.click();
+    await expect
+      .poll(() => screen.container.querySelector('#cairn-figure-dialog-title')?.textContent?.trim())
+      .toBe('Edit figure');
+
+    // Hop to entry B on the same route.
+    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body');
+    expect(screen.container.querySelector('#cairn-figure-dialog-title')?.textContent?.trim()).toBe('Wrap in a figure');
+  });
+
+  it('resets mediaAtCaret on an entry hop so the Figure control does not keep pointing at the old entry', async () => {
+    // Diff-review finding on Task 12: caretComponent/mediaAtCaret are shell-owned state written
+    // straight from MarkdownEditor's onComponentAtCaret/onMediaImageAtCaret callbacks, which fire
+    // only when the reported identity CHANGES from the last one seen (starting at null per
+    // instance). Entry B's caret below never lands on any component or image, so neither callback
+    // fires for entry B, and without an explicit reset the Figure control would keep showing
+    // entry A's "Edit the figure at the cursor" label as enabled over entry B's plain body: a
+    // content-corruption path (applying entry A's figure edit into entry B's buffer).
+    const hash = '0123456789abcdef';
+    const screen = await render(
+      EditPage,
+      postProps({ body: `plain prose\n\n:::figure\n![A cat](media:cat.${hash})\n\nA caption.\n:::\n\ntail prose` }),
+    );
+    await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+    const pill = screen.container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+    if (pill) await userEvent.click(pill);
+    const line = await vi.waitFor(() =>
+      Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+        (l.textContent ?? '').includes('cat'),
+      ),
+    );
+    await userEvent.click(line!);
+    const figureButton = () =>
+      screen.container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"][aria-label*="figure" i]');
+    await expect.poll(() => figureButton()?.getAttribute('aria-label')).toBe('Edit the figure at the cursor');
+    expect(figureButton()?.getAttribute('aria-disabled')).toBe('false');
+
+    // Hop to entry B, a plain body with no component or image anywhere in it.
+    await screen.rerender(postProps({ body: 'second body, no image at all', id: '2026-06-other', slug: 'other' }) as never);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body, no image at all');
+    await expect
+      .poll(() => figureButton()?.getAttribute('aria-label'))
+      .toBe('Place the cursor on an image to add a figure');
+    expect(figureButton()?.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('lets a discard submission through the leave guard', async () => {
@@ -3109,6 +3365,41 @@ describe('EditPage', () => {
         'Tidy could not finish. Try again.',
       );
       expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
+      vi.unstubAllGlobals();
+    });
+
+    it('discards a stale SUCCESS response when an entry hop lands while the tidy call is still in flight', async () => {
+      // Round-2 review finding: runTidy's success branch (open the review, call
+      // getEditor()?.tidy.enter(changes)) ran unguarded after the await, unlike the failure and
+      // finally paths 221e382d already guarded. An entry-hop reset aborts and nulls
+      // tidy-controller's own `controller`, but abort() alone does not guarantee the awaited
+      // fetch actually rejects (a stub, or a real race where the body has already fully arrived);
+      // deferredTidyFetch below models exactly that by never observing the AbortSignal at all, so
+      // only the supersession guard - never the abort - can stop entry A's review from opening
+      // over entry B's editor.
+      const original = 'We can accomodate the crowd.';
+      const corrected = 'We can accommodate the crowd.';
+      const deferred = deferredTidyFetch();
+      const screen = await render(EditPage, tidyProps({ body: original }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      const working = () => document.querySelector<HTMLDialogElement>('[data-testid="tidy-working"]');
+      await expect.poll(working, { timeout: 8000 }).not.toBeNull();
+
+      // Hop to entry B on the same route while entry A's tidy call is still pending; the reset
+      // aborts and nulls the shared controller, but the deferred fetch below has not settled yet.
+      await screen.rerender(tidyProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toBe('second body');
+
+      // Now let entry A's stale request resolve as a genuine, validated, non-noop change: the
+      // only thing left that could stop it from opening over entry B is the supersession guard.
+      deferred.resolveSuccess(corrected);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
+      expect(screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value).toBe('second body');
       vi.unstubAllGlobals();
     });
   });

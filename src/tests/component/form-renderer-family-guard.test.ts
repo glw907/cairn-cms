@@ -22,7 +22,7 @@ const shared = () => ({
   mediaLibrary: {},
   conceptId: 'posts',
   id: '2026-05-hello',
-  heroFieldRefs: {},
+  registerHeroField: () => {},
   onuploaded: () => {},
   onheroneedsalt: () => {},
 });

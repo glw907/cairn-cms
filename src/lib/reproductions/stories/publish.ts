@@ -14,7 +14,7 @@ import ConceptList from '../../components/ConceptList.svelte';
 import EditPage from '../../components/EditPage.svelte';
 import WelcomeView from '../../components/WelcomeView.svelte';
 import type { InboundLink } from '../../content/manifest.js';
-import type { DeleteRefusal } from '../../sveltekit/content-routes-core.js';
+import type { DeleteRefusal } from '../../sveltekit/content-routes-entry.js';
 import { fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
 import { clickWhenPresent, conceptListData, editPageProps, settleEditingSurface, waitFor } from './support.js';

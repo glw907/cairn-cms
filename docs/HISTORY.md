@@ -7,6 +7,49 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits)
+
+Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-b-pass.md` (worktree
+`internals-b`, off `main` at `c95ff02d`). All fourteen tasks across five independent chains
+landed through the implementer/diff-reviewer/gate chain: `content-routes-core.ts` retired
+into five siblings behind the unchanged `content-routes.ts` composition root;
+`audit/rendered.ts` became a directory barrel; `CairnMediaLibrary.svelte` shed five dialogs
+into their own components; `EditPage.svelte` collapsed its 13 `EditorApi` holders onto one
+identity-guarded `editor` grant (`registerEditor` now delivers `null` on destroy) and shed
+`ShareLinkPanel`, `DetailsPanel`, and three `.svelte.ts` controllers; `FieldInput`'s
+`ownership_invalid_mutation` warning is fixed; and `cairn-media-seed`'s read and write
+containment now resolves symlinks and validates before any fetch. Final state: `npm run
+check` 0/0, 374 files / 4,927 tests plus 78 files / 1,354 component tests exit 0, every
+CI-only gate green by name.
+
+What the gate caught: the five-reviewer fan-out (svelte, daisyui-a11y, cloudflare-workers,
+web-auth-security, cleanliness) found no blocking architectural defect, but did find four
+blocking a11y items in the extracted media dialogs (a live region mounting together with
+its first content instead of present-and-empty, focus dropped on a step flip, a tabbable
+invisible file input), a comment-accuracy defect class in the split's own headers (a
+re-export block claiming an importer that did not exist, a doc describing the wrong
+function, a stale enumeration), and a write-before-validate ordering bug in `media-seed`.
+All folded into three fixer commits; a fresh-context Opus `diff-reviewer` re-read all three
+against their source findings and accepted every one. The diff review's own non-blocking
+list, routed forward rather than fixed in this pass: the reset-coverage test's
+declared-state regex misses a generic-comma type annotation, `ShareLinkPanel`'s
+`aria-disabled` busy idiom now contradicts `EditPage`'s own native-`disabled` rule, and
+`content-routes-entry.ts` is the one sibling still doing two jobs at 1,631 lines.
+
+What a later pass would be wrong to rediscover: a pass-end fix round with more than one
+parallel writer needs its own worktree per writer, never one shared worktree between
+them; two of this pass's three fixers ran `git stash` in the same worktree and transiently
+clobbered each other's uncommitted work before either committed (both recovered).
+`content-routes-media.ts` at 1,447 lines is now the one remaining tracked monolith. The
+`registerEditor` identity-guarded revocation rests on Svelte memoizing a call expression in
+prop position (`register={bindEditorGrant()}` compiles to one `$.derived` per mount, so
+`onMount` and `onDestroy` see the same closure); that assumption is now pinned by a re-key
+harness test (`MarkdownEditor.test.ts`), not left resting on a comment alone. Budget:
+ceiling 8M; spend unrecorded, since the session running the final fixer and gate sweep was
+killed mid-ritual by a CLI update before a spend figure was captured. Interaction points:
+two (the combined plan-approval question, 2026-09-03 evening; the resume instruction after
+the CLI-update kill).
+
 ## 2026-09-03: internals pass complete (audit-remediation slice), branch pushed for PR
 
 Plan and post-mortem: `docs/superpowers/plans/2026-09-01-internals-pass.md` (worktree

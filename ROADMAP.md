@@ -303,44 +303,48 @@ The original decision framing, for the record:
     three closure leaks).
   - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
     do), which reopens and then retires `DEFAULT_ROLES`.
-  - **internals-B: monoliths** (the follow-on slice, re-filed from the single former
-    "internals half" entry by the internals pass's Task 11, per the ratified two-slice split;
-    planning inputs and every ruling below are recorded in
-    `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`, "Ratified"). Splits
-    the audit's four remaining untracked monolith files — `EditPage.svelte`,
-    `CairnMediaLibrary.svelte`, `content-routes-core.ts`, `audit/rendered.ts` — reconciled to
-    their shipped shape: `MarkdownEditor`'s prop collapse is STRUCK from this list, already
-    landed by the internals pass's Task 7 onto one `registerEditor(api)`, so the old "33-prop"
-    figure no longer describes live work. Three riders scoped to land cheaply while those files
-    are open: the `FieldInput` `ownership_invalid_mutation` fix (`$bindable()` or a register
-    callback, decided at plan time, folded into the `EditPage` split), confirm's
-    destroy-then-create pair as one `db.batch()` (low stakes; attach to any task opening
-    `auth-channel/factory.ts` if cheaper), and the `OfficeList`/`AdminTable` double
-    scroll-container ownership (ruling-first: raise the `OfficeList` outright-retire question
-    before touching it, or defer to polish and ride that outcome). The
-    `media-seed/bin.ts` `readFileUnderCwd` containment assert — the byte-identical twin of the
-    doctor's own, routed here by Task 11's `// WATCH:` comment — rides along too. Two ordering
-    notes the slice inherits: a hand-authored per-file header survives a later split (each split
-    file re-derives its own; Task 6's `content-routes-core` header is not wasted work), and
-    Task 7's `MarkdownEditor` collapse precedes this slice's `EditPage` split (internals-B
-    inherits the collapsed wiring rather than re-deriving it).
-  - **internals-C: coherence** (the second half of the same re-file, sequenced strictly after
-    internals-B so gates and sweeps do not churn under files still being split; same docket).
-    Carries the coherence thirteen (enforce the idiom charter with a gate; purge the pass-scoped
-    comment register, 179 process references and 18 consumer-site names; rename the `ec-*`
-    prefix out of engine-emitted markup to an engine-owned one, a `Consumers must:` event; the
-    827 `as never` test casts; a formatter decision, least-churn default), the exhaustiveness
-    idiom (`FieldDescriptor`'s ten permissive-default dispatch sites, proven exploitable by the
-    walk's mutation experiment; the plan rules the never-idiom mechanism), and the newcomer
-    walk's `src/lib` internals map. The custom-screen content read-seam boundary decision (the
-    former internals-half's last item) is **dropped as unfoundable**, not carried forward as
-    work: no source document and no consumer ask motivates it; reopens on a consumer building a
-    custom admin screen asking for an engine seam to read content. Mostly consumer-invisible,
-    riding outside the `Consumers must:` window except the `ec-*` rename.
+  - **internals-C: coherence** (next; internals-B split four of the audit's five untracked
+    monolith files—`EditPage.svelte`, `CairnMediaLibrary.svelte`, `content-routes-core.ts`
+    (retired, its actions folded across five siblings), `audit/rendered.ts`—behind unchanged
+    public surfaces, landed 2026-09-04; `content-routes-media.ts` at 1,447 lines is the
+    remaining tracked monolith). Carries the coherence thirteen (enforce the idiom charter with
+    a gate; purge the pass-scoped comment register, 179 process references and 18 consumer-site
+    names; rename the `ec-*` prefix out of engine-emitted markup to an engine-owned one, a
+    `Consumers must:` event; the 827 `as never` test casts; a formatter decision, least-churn
+    default), the exhaustiveness idiom (`FieldDescriptor`'s ten permissive-default dispatch
+    sites, proven exploitable by the walk's mutation experiment; the plan rules the never-idiom
+    mechanism), and the newcomer walk's `src/lib` internals map. Also carries three items
+    internals-B's close routed here: `content-routes-entry.ts` still does two jobs at 1,631
+    lines, the create/edit/save/publish half and the delete/rename half, the latter a
+    self-contained ~330-line concern with its own reference-index gates, worth a
+    `-mutations.ts` sibling; `edit-page-state-reset-coverage.test.ts`'s declared-state regex
+    cannot match a type annotation containing a generic comma (`let x: Record<string, boolean>
+    = $state({})`), so such a declaration silently escapes the gate; and the
+    `ctx.logCommitFailed` call-style note joins the header sweep (preserve `:1672`'s
+    `'publish.failed'` argument, verified safe to unify, `commit-log.ts:33`). The custom-screen
+    content read-seam boundary decision (the former internals-half's last item) is **dropped as
+    unfoundable**, not carried forward as work: no source document and no consumer ask
+    motivates it; reopens on a consumer building a custom admin screen asking for an engine
+    seam to read content. Mostly consumer-invisible, riding outside the `Consumers must:`
+    window except the `ec-*` rename.
   - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
     `examples/showcase` gets its round of improvement against the changed engine, as its own
     pass in this initiative. Its review half is done (14 findings, none rewrite-tier; rank
     1 is the never-executing paginated archive and its permanent build-gate exception).
+    Internals-B's own close routes one more item here: the showcase exemplar half of audit
+    finding 8.
+  - **The polish slice**: routed items from internals-B's close, filed here so a later pass
+    does not have to rediscover them. A ruling on `ShareLinkPanel`'s busy-button idiom against
+    `EditPage`'s own rule: `ShareLinkPanel`'s share/revoke buttons use `aria-disabled` for busy
+    state, while `EditPage.svelte` (~:1573) reserves native `disabled` for busy as its one
+    sanctioned case, so the two idioms now read as contradictory in-repo and the polish slice's
+    design-system read should settle which one the family adopts. The `OfficeList`/`AdminTable`
+    double scroll-container ownership question, ruling-first: raise the `OfficeList`
+    outright-retire question before touching the scroll containers, since
+    `audit-admin-officelist` is a CLOSED reshape row (`engine-rulings.md:2660-2666`, executed by
+    4b, `Reopens on: closed`), so an outright retire there is a new proposal against a closed
+    row, not a reopen. A `formatTimestamp` (`/admin-toolkit`) widening. The command palette's
+    own live region.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -885,14 +889,6 @@ the named human gates only):**
   miles on the frozen contract. Sequenced after the Waymark starter component set (rebuilding
   from a template whose components are still landing would test the wrong artifact); the design
   review can interleave, with the two re-expressions as its field evidence.
-
-- **FieldInput mutates EditPage's `$state` through a plain prop (`ownership_invalid_mutation` on
-  every mount).** `src/lib/components/FieldInput.svelte:274` binds `bind:this={heroFieldRefs[name]}`
-  on a non-`$bindable` prop that is `EditPage.svelte:777`'s `$state` proxy, passed straight through
-  at `EditPage.svelte:2516`. Svelte logs `ownership_invalid_mutation` on essentially every `EditPage`
-  mount in the component suite. Fix is `$bindable()` on `FieldInput`'s `heroFieldRefs` prop plus
-  `bind:heroFieldRefs` at the `EditPage.svelte:2516` call site, or a `registerHeroField` callback
-  prop instead of the raw record. Pre-existing, not newest-toolchain's.
 
 ## Next
 

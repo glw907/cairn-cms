@@ -117,16 +117,16 @@ from-scratch showcase `npm ci` before trusting any e2e.
   `const manifestRow`; the shared export must not be imported there without renaming one.
   Record the collision in the shared module's doc comment.
 
-- [ ] **Step 1:** create `content-routes-shared.ts`; parameterize `pendingEntryOf`; update
+- [x] **Step 1:** create `content-routes-shared.ts`; parameterize `pendingEntryOf`; update
   the four call sites. **The `clearPreviewTokens` containment comment moves and is
   REWRITTEN** (security lens): the current text (:1843-1847) claims file scope as the
   containment ("only from inside this shared core"); the true invariant after the split is
   "both delete paths route through `deleteEntry`, the sole delete-path caller" — write
   that, since a lie here gets 'corrected' wrong by internals-C's header sweep.
-- [ ] **Step 2:** create the shell and list modules per the multi-action idiom (destructure
+- [x] **Step 2:** create the shell and list modules per the multi-action idiom (destructure
   `const { runtime } = ctx;`); wire the composition root; repoint the type re-exports;
   collapse preview.ts's predicate duplicate.
-- [ ] **Step 3:** targeted suites (`content-routes-*`, `env-genericity`,
+- [x] **Step 3:** targeted suites (`content-routes-*`, `env-genericity`,
   `retires-task2-sanctioned-leak-replacements`, `content-routes-hand-mount`), full gate,
   `check:surface` unchanged. Commit.
 
@@ -146,9 +146,9 @@ exactly one `isMissingTableError` definition remains in `src/lib`.
   (:2066-2108, :2122-2147) with `missingPreviewTableFailure` (:570-574) as a local helper;
   internal type `PreviewMintFailure` moves.
 
-- [ ] **Step 1:** create the module per the small-module idiom (fully-qualified `ctx.*`);
+- [x] **Step 1:** create the module per the small-module idiom (fully-qualified `ctx.*`);
   move both actions; wire the composition root.
-- [ ] **Step 2:** targeted preview suites, full gate, surface unchanged. Commit.
+- [x] **Step 2:** targeted preview suites, full gate, surface unchanged. Commit.
 
 **Acceptance criteria (security lens, replacing the impossible "byte-identical"):** bodies
 identical modulo `runtime` → `ctx.runtime`; **authorization order unchanged** — the mint
@@ -184,9 +184,9 @@ standalone `previewRevoke`.
   `HistoryData` move; the reproductions/test type importers repoint per name.
 - Consumes: everything `content-routes-shared.ts` exports.
 
-- [ ] **Step 1:** create the module (destructured `runtime`); move the six actions and the
+- [x] **Step 1:** create the module (destructured `runtime`); move the six actions and the
   helpers; repoint the type importers whose names moved in this half.
-- [ ] **Step 2:** targeted suites (`content-routes-edit`, `content-routes-preview`
+- [x] **Step 2:** targeted suites (`content-routes-edit`, `content-routes-preview`
   integration, `FragmentPicker`), full gate, surface unchanged. Commit.
 
 **Acceptance criteria:** guard preambles byte-identical per action — `createAction`,
@@ -214,12 +214,12 @@ no re-export of `FragmentTarget` appears in `content-routes.ts`.
   the same retires ruling, is NOT re-exported through `content-routes.ts`;
   `stories/publish.ts` repoints directly.
 
-- [ ] **Step 1:** move the five actions and helpers; delete core.ts; repoint the remaining
+- [x] **Step 1:** move the five actions and helpers; delete core.ts; repoint the remaining
   importers; generalize the editor-quotes test path list. Append a one-line annotation to
   the two ledger rows whose FACTS the delete falsifies (`engine-rulings.md:725` "still
   calls it internally", `:1749` "stays in `content-routes-core.ts`"): the module became
   `content-routes-entry.ts` at internals-B — annotate, never rewrite the rows.
-- [ ] **Step 2:** full content-routes suite plus `check:editor-quotes`, `check:docs`, full
+- [x] **Step 2:** full content-routes suite plus `check:editor-quotes`, `check:docs`, full
   gate, surface unchanged. Commit.
 
 **Acceptance criteria:** guard preambles byte-identical — `discardAction`, `deleteAction`,
@@ -258,8 +258,8 @@ their historical mentions untouched.
   compile with zero import changes; `color.ts:13`'s type-only `RenderedFinding` import
   unchanged.
 
-- [ ] **Step 1:** create the three modules; move verbatim; re-export from `rendered.ts`.
-- [ ] **Step 2:** run the three resolver-sensitive suites (`advisory-refutations`,
+- [x] **Step 1:** create the three modules; move verbatim; re-export from `rendered.ts`.
+- [x] **Step 2:** run the three resolver-sensitive suites (`advisory-refutations`,
   `gate-refutations`, `rulings.border-contrast`) plus `audit/rendered.test.ts`; full gate.
   Commit.
 
@@ -285,12 +285,12 @@ their historical mentions untouched.
   `name === ''` branch (:584) reports position only, never the value. Test-first, one
   case per branch.
 
-- [ ] **Step 1:** write the failing redaction test (a malformed entry's value must not
+- [x] **Step 1:** write the failing redaction test (a malformed entry's value must not
   appear in the thrown message).
-- [ ] **Step 2:** create both modules (the redaction landing in `bootstrap.ts`); shrink
+- [x] **Step 2:** create both modules (the redaction landing in `bootstrap.ts`); shrink
   `rendered.ts`; M1 headers on both new modules naming the page-evaluate discipline where
   it applies.
-- [ ] **Step 3:** `panel-width.test.ts`, the norms-bands browser suite, full gate. Commit.
+- [x] **Step 3:** `panel-width.test.ts`, the norms-bands browser suite, full gate. Commit.
 
 **Acceptance criteria:** `rendered.ts` ≤ 450 lines including re-exports (grounding lens
 measured ~384 expected; the old "~300" was wrong); every rule and test file untouched
@@ -331,11 +331,11 @@ cookie parser.
   the pure fact helpers (:145-156, :836-848) taking `data` explicitly. The shell's `csrf`
   `getContext` hoists from :333 to the script top.
 
-- [ ] **Step 1:** write the failing Escape test (an open dialog rendered by a child
+- [x] **Step 1:** write the failing Escape test (an open dialog rendered by a child
   component must still claim Escape; the named-ref implementation cannot see it); land
   the scoped-query switch; green.
-- [ ] **Step 2:** hoist helpers and csrf; extract orphan tools; suite green.
-- [ ] **Step 3:** extract bulk-delete with its prop/callback contract; full gate. Commit.
+- [x] **Step 2:** hoist helpers and csrf; extract orphan tools; suite green.
+- [x] **Step 3:** extract bulk-delete with its prop/callback contract; full gate. Commit.
 
 **Acceptance criteria:** Escape and selection-clear behavior identical to HEAD for every
 dialog, open or closed, before and after extraction (the scoped query is the mechanism);
@@ -353,7 +353,7 @@ dialog markups byte-identical in their new homes; the shell declares no orphan/b
   :715-835 minus hoisted helpers, markup :2310-2572); each exposes `open(asset)`/`close()`
   and `onapplied`.
 
-- [ ] **Step 1:** extract replace; suite green. **Step 2:** extract alt-fill; full gate;
+- [x] **Step 1:** extract replace; suite green. **Step 2:** extract alt-fill; full gate;
   commit.
 
 **Acceptance criteria:** the slide-over triggers (:1937, :1947) open both; pinned-asset
@@ -371,7 +371,7 @@ semantics unchanged; markup byte-identical.
   `onPageDragover`/`onPageDrop` for the shell's `<svelte:window>` (stays in the shell
   beside `onWindowKeydown`) and `openUpload()` for the three trigger sites.
 
-- [ ] **Step 1:** extract; wire the triggers and window handlers; component suite; full
+- [x] **Step 1:** extract; wire the triggers and window handlers; component suite; full
   gate. Commit.
 
 **Acceptance criteria:** all three trigger sites open it; drag-drop still stands down
@@ -410,7 +410,7 @@ while any dialog is open (`libraryDropBusy` :623 unchanged); shell script under 
   already the only `body` writer outside init and the reset; the figure cluster writes
   through `replaceRange`, so there was no second direct writer to unify).
 
-- [ ] **Step 1:** extract the share panel inside the key block; share suite green with
+- [x] **Step 1:** extract the share panel inside the key block; share suite green with
   assertions unchanged. **Step 2:** extract the preference state module; pref-isolation
   suite green; full gate. Commit.
 
@@ -473,14 +473,14 @@ string appears in any new file; `check:cm-internals` (run by name — it is in n
   declarations and fails when any name is neither in the reset nor in an explicit
   commented exempt list — so the distributed-reset design cannot silently drop state.
 
-- [ ] **Step 1:** write the failing revocation test: navigating the entry key revokes the
+- [x] **Step 1:** write the failing revocation test: navigating the entry key revokes the
   captured grant (nulled) before the new mount registers, AND a stale revocation (an old
   api reference delivered after a newer grant) does NOT clobber the newer grant.
-- [ ] **Step 2:** land null delivery + identity guard in `MarkdownEditor`; land the single
+- [x] **Step 2:** land null delivery + identity guard in `MarkdownEditor`; land the single
   holder and the 13 consumer rewrites per the table; migrate the reset; green — including
   the internals pass's existing stale-view regression test and the tidy selection-mapping
   suite (which pins the `?? null` row).
-- [ ] **Step 3:** update `components.md`'s contract (delivery on mount, identity-guarded
+- [x] **Step 3:** update `components.md`'s contract (delivery on mount, identity-guarded
   null on destroy), extend the unpublished CHANGELOG entry in place, run
   `check:reference:signatures`; regenerate the surface snapshot only if `check:surface`
   reports drift. Full gate. Commit.
@@ -506,7 +506,7 @@ signatures gates green.
   callbacks at :2318-2319) and writes through `editor?.replaceRange`/`selectRange`.
   Each module owns its `entryKey`-scoped reset at birth.
 
-- [ ] **Step 1:** extract tidy with the getter seam; tidy suites green (including the
+- [x] **Step 1:** extract tidy with the getter seam; tidy suites green (including the
   selection-mapping cases). **Step 2:** extract figure editing; figure/caret suites green;
   entry-switch suite extended to assert both modules' state resets on entry hop; full
   gate. Commit.
@@ -546,10 +546,10 @@ covers both new resets.
   forwarding the callback as they forward `onuploaded`/`onheroneedsalt`. The
   benign-warning comment (:271-272) is deleted with the mutation it excused.
 
-- [ ] **Step 1:** failing test — mounting the fields tree with an image field logs no
+- [x] **Step 1:** failing test — mounting the fields tree with an image field logs no
   `ownership_invalid_mutation` warning (it currently does).
-- [ ] **Step 2:** land the callback and prop removal through the three components; green.
-- [ ] **Step 3:** extract `DetailsPanel` owning the ref map with its own entry-key reset;
+- [x] **Step 2:** land the callback and prop removal through the three components; green.
+- [x] **Step 3:** extract `DetailsPanel` owning the ref map with its own entry-key reset;
   wire `focusHeroAlt` and the two forwarded callbacks; full gate. Commit.
 
 **Acceptance criteria:** zero ownership warnings across the component suite; needs-alt
@@ -573,18 +573,18 @@ jump focuses the right input; the `heroFieldRefs` name exists in exactly one fil
 
 **Interfaces:** none new.
 
-- [ ] **Step 1 (the security lens's blocking find — the WRITE path):** failing test: a
+- [x] **Step 1 (the security lens's blocking find — the WRITE path):** failing test: a
   manifest row with `hash: "../../evil"` (or a hostile `ext`) must be refused BEFORE any
   byte is written. Fix by validating first — apply `HASH_RE`/`R2_EXT_RE` (the `r2Key`
   rules, `media/naming.ts:113-119`) in `normalizeManifest` so a hostile row never reaches
   the write, AND give `writeTempFile` (`bin.ts:22-26`) the same
   resolved-path-stays-under-base assert as defense in depth. The current order (write at
   `run.ts:61`, validate at :62) is the defect.
-- [ ] **Step 2 (the read path):** failing test, then the three-line containment assert on
+- [x] **Step 2 (the read path):** failing test, then the three-line containment assert on
   `readFileUnderCwd` (`bin.ts:70-77`), matching `doctor/bin.ts:58-71`'s shape with
   media-seed's OWN error prefix (contract-identical, not byte-identical — the doctor's
   message names `cairn-doctor`); delete the discharged `// WATCH:` (:67-69).
-- [ ] **Step 3:** add the `// WATCH:` on `static/list-role.ts`'s `lastCompound` (~:60)
+- [x] **Step 3:** add the `// WATCH:` on `static/list-role.ts`'s `lastCompound` (~:60)
   recording the two tokenizer gaps (newline/tab combinators; escaped brackets outside
   quotes) and their trigger (a real selector exercising either shape) — the routed item
   the previous draft dropped (hygiene lens). Correct `check-surface-leaks.mjs:242-244`'s
@@ -624,3 +624,71 @@ budgets scored.
 - **Polish:** the OfficeList ruling + scroll rider; `formatTimestamp` widening; the
   command palette live region.
 - **Release:** the window holds; ONE cut after polish.
+
+## Post-mortem
+
+**What was built.** Chain A retired `content-routes-core.ts` (2,294 lines) into five siblings,
+`content-routes-shared.ts`, `content-routes-shell.ts`, `content-routes-list.ts`,
+`content-routes-preview.ts`, and `content-routes-entry.ts` (which also absorbed the
+delete/rename/revert mutation family), with `content-routes.ts` staying the unchanged
+composition root. Chain B split `audit/rendered.ts` (1,124 lines) into a directory,
+shrinking the barrel to 289 lines over `audit/rendered/{types,findings,identity,bootstrap,
+page-surface}.ts`. Chain C pulled five dialogs out of `CairnMediaLibrary.svelte` (3,169 to
+1,261 lines): `MediaOrphanTools`, `MediaBulkDeleteDialog`, `MediaReplaceDialog`,
+`MediaAltFillDialog`, `MediaUploadDialog`, plus a shared `media-library-helpers.ts`. Chain D
+collapsed `EditPage.svelte`'s 13 `EditorApi` holders onto one identity-guarded `editor` grant
+and extracted `ShareLinkPanel.svelte`, `DetailsPanel.svelte`, `editor-preferences.svelte.ts`,
+`tidy-controller.svelte.ts`, and `figure-editor.svelte.ts` (2,952 to 2,575 lines), and fixed
+`FieldInput`'s `ownership_invalid_mutation` warning by replacing its `bind:this` prop with a
+`registerHeroField` callback. Chain E hardened `cairn-media-seed`'s read and write
+containment (symlink resolution, pre-fetch hash/ext/slug validation), discharged the routed
+`// WATCH:` comments, and recorded the accepted `session.expires_at` index asymmetry.
+
+**What was verified.** Every chain task cleared its own gate through the
+implementer/diff-reviewer/gate chain before its commit. At pass end, on the settled tree
+(`c8551988`): `npm run check` (0/0), `npm test` (374 files / 4,927 tests in the unit and
+integration projects, 78 files / 1,354 tests in the component project, exit 0), and every
+CI-only gate green by name (`check:comments`, `check:reference`, `check:reference:signatures`,
+`check:surface`, `check:snippets`, `check:transcripts`, `check:symbols`, `check:cm-internals`,
+`check:docs`, `check:package`, `check:editor-quotes`). The `svelte-reviewer` fan-out
+also ran a from-scratch `npm run package` plus an `examples/showcase` production build
+(confirmed proving this worktree's engine, not a stale symlinked one) and a compiler probe
+settling the `registerEditor` memoization question ahead of the identity-guard finding
+below. The five-reviewer fan-out (`svelte-reviewer`, `daisyui-a11y-reviewer`,
+`cloudflare-workers-reviewer`, `web-auth-security-reviewer`, the standing
+cleanliness-and-beauty lens) found no blocking architectural defect, and their fix-now
+findings folded into three parallel fixer commits (`ee446bd3` media-dialog a11y, `eb26bf1c`
+media-seed hardening and comment corrections, `c8551988` the EditPage-family findings). A
+fresh-context `diff-reviewer` (Opus) then read all three fixer commits against their source
+findings and accepted every one, confirming no em dash landed on any added line and that
+each fixer stayed inside its assigned file list.
+
+**Decisions locked in**, recorded here since none had a natural home elsewhere in the plan:
+`eb26bf1c` exported `realDeps` from `media-seed/bin.ts` (an internal barrel, no package
+subpath reaches it) so the symlink-escape test can drive it, and added an exported,
+not-re-exported `stripControlChars` to `assemble.ts`. `c8551988` moved
+`tidy-controller.svelte.ts`'s `controller?.abort(); controller = null;` to after the
+`$state` resets, so the reset-coverage fence encloses only `$state` names (behavior
+unchanged inside the synchronous `untrack`); chose `COPIED_RESET_MS = 2000` for the
+share-URL copy confirmation; and reveals the details panel with a bare
+`flushSync(() => (detailsOpen = true))` rather than `openDetails()`, so the panel's
+close-button focus does not fight the alt-field focus the needs-alt jump delivers.
+
+**What went wrong.** Two of the three parallel fixer dispatches ran `git stash` inside the
+one shared worktree and transiently clobbered each other's uncommitted work; both were
+caught and recovered before commit, but the near-miss is the reason a later pass-end split
+across multiple writers must give each its own worktree, never a shared one. Separately, the
+third fixer's own session died at exit 137 mid-ritual (a CLI update landed under it) after
+its targeted suites had already passed 368/368 and `npm run check` had already read 0/0; the
+conductor verified the warm tree was the fixer's completed work, ran the two lint-family
+gates that had not yet run (`check:comments`, `check:cm-internals`) green, and committed the
+tree as `c8551988` rather than re-dispatching work already proven done.
+
+**Budgets scored.** Ceiling: 8M tokens. Spend: not captured before the session that ran
+Chain D's fixer and the final gate sweep was killed by the CLI update; no figure is
+recorded, and the gap is itself a process defect for the next pass to close: checkpoint
+token spend at every fixer dispatch, not just the four-task interval. Human
+interaction points: two. The combined plan-approval question on 2026-09-03 evening (which
+also carried the overnight git authorization for both internals-B and internals-C), and the
+resume instruction that restarted the session after the CLI-update kill. Zero questions
+during chain execution or the review fold itself.

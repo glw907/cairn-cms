@@ -247,7 +247,7 @@
   `registerReplaceRange`, `registerSelectRange`) with one `registerEditor` callback that reads the
   matching member off the `EditorApi` it receives.
 
-  Internals pass, Task 11 extends the same seam: `registerEditor` now also delivers `null` once,
+  The internals-B pass, Task 11 extends the same seam: `registerEditor` now also delivers `null` once,
   from the real `onDestroy` teardown, revoking the mount grant. `EditPage` itself collapses its own
   13 per-capability holders (each populated from one member of the `registerEditor` grant) into one
   `editor` reference, read through an optional chain at every call site, and builds an
@@ -1019,6 +1019,23 @@
   `rendered-*` to `rendered.*`; a build filtering or alerting on the old ids by name stops
   matching once this ships.
 
+- The internals-B pass splits the four monolith files the any-site audit flagged, behind
+  unchanged public surfaces. `content-routes-core.ts` (2,294 lines) retires; its actions now live
+  across `content-routes-shared.ts`, `content-routes-shell.ts`, `content-routes-list.ts`,
+  `content-routes-preview.ts`, and `content-routes-entry.ts` (which also carries the
+  delete/rename/revert family), with the unchanged `content-routes.ts` staying the composition
+  root. `audit/rendered.ts` (1,124 lines) shrinks to 289 lines and becomes a barrel over
+  `audit/rendered/{types,findings,identity,bootstrap,page-surface}.ts`. `CairnMediaLibrary.svelte`
+  (3,169 lines) shrinks to 1,261 lines; five dialogs move out as their own components
+  (`MediaOrphanTools`, `MediaBulkDeleteDialog`, `MediaReplaceDialog`, `MediaAltFillDialog`,
+  `MediaUploadDialog`) alongside a shared `media-library-helpers.ts`. `EditPage.svelte`
+  (2,952 lines) shrinks to 2,575 lines; `ShareLinkPanel.svelte` and `DetailsPanel.svelte` extract
+  as components, and `editor-preferences.svelte.ts`, `tidy-controller.svelte.ts`, and
+  `figure-editor.svelte.ts` extract as `.svelte.ts` modules; none of the nine new files sits on
+  the public `/components` barrel. `content-routes-media.ts` at 1,447 lines is the one remaining
+  tracked monolith, carried to the next slice. Internal only; no consumer action beyond the
+  `registerEditor` change recorded above.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
@@ -1355,6 +1372,48 @@
   no-op; a site needing a size beyond the four built-ins builds the Cloudflare Images transform
   URL directly against Cloudflare's own `/cdn-cgi/image/<options>/<path>` format, since cairn's own
   URL builder (`variantUrl`/`presetUrl`) was never exported from any public subpath.
+
+- The Media Library dialogs extracted this pass (`MediaReplaceDialog`, `MediaAltFillDialog`,
+  `MediaOrphanTools`, `MediaUploadDialog`, and `MediaBulkDeleteDialog`) fix several accessibility
+  gaps a review of the extraction found. The `sr-only` live regions in `MediaReplaceDialog`,
+  `MediaAltFillDialog`, and `MediaOrphanTools` now mount unconditionally with their dialog,
+  present and empty, instead of mounting together with their first content or unmounting on a
+  step change; assistive tech does not reliably observe a region that appears together with its
+  content (WCAG 4.1.3). Focus now moves to the step or phase heading on `MediaReplaceDialog`'s
+  upload-to-review flip and on every `MediaOrphanTools` phase change, since the previous focus
+  holder unmounts with the step (WCAG 2.4.3). `MediaAltFillDialog`'s Cancel button is now bound to
+  the ref its `open()` call already tried to focus, so the documented initial-focus target is a
+  real element. The hidden file inputs in `MediaReplaceDialog` and `MediaUploadDialog` are now
+  `tabindex="-1"` and `aria-hidden="true"`, so tabbing through the dialog no longer lands on an
+  invisible control (WCAG 2.4.7). Escape during an in-flight upload in `MediaReplaceDialog` and
+  `MediaUploadDialog` is now guarded the same way `MediaBulkDeleteDialog` and `MediaOrphanTools`
+  already guard it, so a dismissed dialog can no longer strand a later upload failure with nowhere
+  to report it. Consumers must: nothing; these five components are internal to
+  `CairnMediaLibrary`.
+
+- `FieldInput` no longer mutates `EditPage`'s hero-field ref map directly through a `bind:this`
+  prop, which raised Svelte's `ownership_invalid_mutation` warning on nearly every mount carrying
+  an image field. `FieldInput`, and the `ObjectGroupField`/`RepeatableField` ancestors that
+  forward the callback, now call `registerHeroField` on mount, change, and teardown
+  instead, snapshotting the field's own key and ref at registration so a sibling row's reorder or
+  deletion can't deregister the wrong entry. Consumers must: nothing; `heroFieldRefs` was never
+  public surface.
+
+- `cairn-media-seed` validates a manifest row's `hash` and `ext` before the network fetch, not
+  after: a malformed row is now refused before its download rather than after, closing the window
+  where an unvalidated value reached the request URL. `slug` is now screened against the shape
+  `slugifyFilename` produces before it reaches the download URL or a printed failure line, and a
+  printed slug has its control characters stripped as defense in depth. The write-temp-file and
+  read-under-cwd containment checks in `media-seed/bin.ts` now resolve symlinks before comparing
+  the resolved path against the working directory, closing the gap a purely textual prefix check
+  left open. Internal CLI hardening only; no consumer action.
+
+- The template emitter (`cairn create`'s scaffold step) now skips `.dev.vars`, its numbered or
+  dotted variants, and any `*.log` file at any depth, alongside its existing skip list.
+  `.dev.vars` is where the docs tell a developer to put `GITHUB_APP_PRIVATE_KEY_B64` and other
+  secrets, and a stray build log had already been observed riding into an emitted template tree.
+  Consumers must: nothing; a site scaffolded before this fix should confirm its own `.dev.vars`
+  never landed in a shared template.
 
 ## 0.96.0
 

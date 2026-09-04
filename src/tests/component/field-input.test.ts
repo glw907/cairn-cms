@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import FieldInput from '../../lib/components/FieldInput.svelte';
+import FieldInputHeroRefHarness from './_FieldInputHeroRefHarness.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 
 // The shared pass-through props a container caller threads down. The reference targets and the media
@@ -13,7 +14,7 @@ function shared() {
     mediaLibrary: {},
     conceptId: 'posts',
     id: '2026-05-hello',
-    heroFieldRefs: {},
+    registerHeroField: () => {},
     onuploaded: () => {},
     onheroneedsalt: () => {},
   };
@@ -33,6 +34,24 @@ describe('FieldInput name-prefix contract', () => {
     await render(FieldInput, { field, name: 'gallery.0', frontmatter: {}, ...shared() });
     const src = document.querySelector('input[name="gallery.0.src"]');
     expect(src).not.toBeNull();
+  });
+});
+
+describe('FieldInput image arm hero-ref registration', () => {
+  // The parent (DetailsPanel, once extracted) owns the hero-ref map; the image arm's own
+  // bind:this must stay LOCAL to this component and register itself out through a callback,
+  // never mutate a Record prop drilled in from two components up. Svelte's dev-mode
+  // ownership_invalid_mutation warning is the observable symptom of getting that wrong; the
+  // harness reproduces the real shape (a `$state`-owned Record passed down), since a plain
+  // object literal (this file's own `shared()`) never trips the ownership check.
+  it('logs no ownership_invalid_mutation warning when an image field mounts', async () => {
+    const warnings: string[] = [];
+    const spy = vi.spyOn(console, 'warn').mockImplementation((...args) => {
+      warnings.push(args.join(' '));
+    });
+    await render(FieldInputHeroRefHarness);
+    spy.mockRestore();
+    expect(warnings.some((w) => w.includes('ownership_invalid_mutation'))).toBe(false);
   });
 });
 

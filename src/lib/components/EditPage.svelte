@@ -41,8 +41,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import FragmentPicker from './FragmentPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import MediaInsertPopover from './MediaInsertPopover.svelte';
-  import FieldInput from './FieldInput.svelte';
-  import type MediaHeroField from './MediaHeroField.svelte';
+  import DetailsPanel from './DetailsPanel.svelte';
   import MediaFigureControl from './MediaFigureControl.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
@@ -628,14 +627,16 @@ persistent "?" carries Markdown help, design-arc D2).
   // The headless media insert popover, opened from the toolbar control, paste, or drop.
   let mediaPopover = $state<MediaInsertPopover | null>(null);
 
-  // The rendered hero fields' refs (for the needs-alt notice's "Add alt text" action, which focuses
-  // the field's own alt input) and their reported needs-alt signals, keyed by field name. A hero is
-  // a frontmatter value with no body offset, so its needs-alt signal comes from the field, not the
-  // body scanner (findMediaImagesNeedingAlt), and its remediation focuses the alt input, never a
-  // source range (selectRange). The records are keyed by field name; `data.fields` is static for the
-  // page's lifetime, so a key never goes stale (no per-key cleanup on unmount is needed).
-  let heroFieldRefs = $state<Record<string, MediaHeroField>>({});
+  // DetailsPanel owns the hero fields' refs (for the needs-alt notice's "Add alt text" action,
+  // exposed as focusHeroAlt); this holds only their reported needs-alt signals, keyed by field
+  // name. A hero is a frontmatter value with no body offset, so its needs-alt signal comes from
+  // the field, not the body scanner (findMediaImagesNeedingAlt), and its remediation focuses the
+  // alt input, never a source range (selectRange). The records are keyed by field name;
+  // `data.fields` is static for the page's lifetime, so a key never goes stale (no per-key
+  // cleanup on unmount is needed).
   let heroNeedsAlt = $state<Record<string, boolean>>({});
+  // DetailsPanel.svelte's focusHeroAlt/registerHeroField pair, bound below.
+  let detailsPanel = $state<DetailsPanel | null>(null);
 
   // The server-owned records from each successful upload this session. They ride the save form as
   // the hidden `media` field, so the save action merges them into media.json.
@@ -976,7 +977,7 @@ persistent "?" carries Markdown help, design-arc D2).
               ...heroRows.map((hero) => ({
                 rowLabel: hero.label,
                 label: 'Add alt text',
-                onAct: () => heroFieldRefs[hero.name]?.focusAlt(),
+                onAct: () => detailsPanel?.focusHeroAlt(hero.name),
               })),
             ],
           },
@@ -1066,14 +1067,15 @@ persistent "?" carries Markdown help, design-arc D2).
 
   // Reset-exempt $state/$state.raw names (verified against this file 2026-09-04): a name here is
   // a deliberate decision the source-enumeration test below treats as accounted for, not a name
-  // the reset above silently drops. Three groups: (1) bind:this DOM/component refs, which Svelte
+  // the reset above silently drops. Two groups: (1) bind:this DOM/component refs, which Svelte
   // nulls out itself when the {#key} remount destroys the bound node (tidyWorkingDialog,
   // tidyNoopDialog, tidyMessageDialog, and figureDialog are this group: the tidy and figure STATE
   // that used to sit beside them moved fully into tidy-controller.svelte.ts and
   // figure-editor.svelte.ts, Task 12, each owning its own entry-key-scoped reset there, so their
-  // names no longer appear in this file's declared list at all); (2) state that moves out of
-  // EditPage entirely in a later task, owning its own entry-key reset there (Task 13's
-  // DetailsPanel.svelte); and (3) transient UI-only state that is never entry content and never
+  // names no longer appear in this file's declared list at all; detailsPanel joins this group the
+  // same way, Task 13: heroFieldRefs moved fully into DetailsPanel.svelte, which resets by remount
+  // since it mounts inside the {#key entryKey} block below, so its name is also gone from this
+  // file's declared list); and (2) transient UI-only state that is never entry content and never
   // caret-derived, either re-reporting itself independently of the caret (a diagnostics count, a
   // per-field needs-alt flag) or never entry-scoped to begin with (a viewport-width match, a
   // preview device pick, a menu's open flag, an announcer nonce). caretComponent, mediaAtCaret,
@@ -1086,7 +1088,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // RESET_EXEMPT: editForm, publishButton, discardDialog, editorCard, actionsMenu, detailsTrigger,
   // detailsClose, mediaPopover, webLinkDialog, linkPicker, fragmentPicker, insertDialog,
   // deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
-  // tidyNoopDialog, tidyMessageDialog, heroFieldRefs,
+  // tidyNoopDialog, tidyMessageDialog, detailsPanel,
   // heroNeedsAlt, actionsOpen, narrow, device, assertiveNonce,
   // diagnosticsCounts
 
@@ -2216,29 +2218,20 @@ persistent "?" carries Markdown help, design-arc D2).
     <!-- Three labeled groups. Each group is its own fieldset so its eyebrow is a real legend that
          screen readers announce with the fields it holds. -->
     <div class="flex flex-col gap-section">
-      {#if detailFields.length}
-      <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
-      <!-- The panel header already shows the "Details" eyebrow, so this group's legend stays for
-           the screen-reader grouping but hides visually, the way the mockup carries it once. -->
-      <legend class="sr-only">Details</legend>
-      {#each detailFields as field (field.name)}
-        <FieldInput
-          {field}
-          frontmatter={data.frontmatter}
-          targets={data.linkTargets}
-          markFieldsDirty={markFieldsDirty}
-          mediaLibrary={mediaLibrary}
-          conceptId={data.conceptId}
-          id={data.id}
-          heroFieldRefs={heroFieldRefs}
-          onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
-          onheroneedsalt={(name, n) => (heroNeedsAlt = { ...heroNeedsAlt, [name]: n })}
-          {icons}
-          orphanTags={data.orphanTags}
-        />
-      {/each}
-      </fieldset>
-      {/if}
+      <DetailsPanel
+        bind:this={detailsPanel}
+        fields={detailFields}
+        frontmatter={data.frontmatter}
+        targets={data.linkTargets}
+        markFieldsDirty={markFieldsDirty}
+        mediaLibrary={mediaLibrary}
+        conceptId={data.conceptId}
+        id={data.id}
+        onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
+        onheroneedsalt={(name, n) => (heroNeedsAlt = { ...heroNeedsAlt, [name]: n })}
+        {icons}
+        orphanTags={data.orphanTags}
+      />
       {#if draftField}
       <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
       <legend class={eyebrowClass}>Visibility</legend>

@@ -19,6 +19,18 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
+**IN FLIGHT (2026-09-04, checkpoint 0): internals-C phase 1 is executing** as workflow run
+`wf_b71738d3-4f1` (script: the chain-aware `pass-execute-chains.js` variant, saved in the
+session scratchpad and recorded in the run's journal). Phase 1 runs three chains in parallel,
+each in its own worktree off `internals-c`: Q = Task 1 (`internals-c-chain-q`); T = Task 9
+then Task 8 (`internals-c-chain-t`); R = Task 5 then 6a then 6b (`internals-c-chain-r`).
+Phase 2 runs after the three chains merge into `internals-c`, sequentially in that worktree:
+Tasks 2, 3a, 3b, 4, 6c, 7, 10 (the idiom and comment sweeps contend with every other task's
+files, so they follow). If a cold session finds this line: inspect the chain branches for
+commits and the run's `journal.jsonl` before re-dispatching anything; a chain with accepted
+commits merges, an unfinished chain re-runs its remaining tasks only. Never let two writers
+share one worktree.
+
 **Execute internals-C** (audit-remediation slice 7, coherence). The plan is
 `docs/superpowers/plans/2026-09-03-internals-c-pass.md`: 13 tasks, ceiling 6.5M, checkpoints
 4/8/12, workflow mode with explicit per-task dependencies, worktree

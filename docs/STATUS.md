@@ -19,21 +19,28 @@ green); the window holds until the polish slice per the amended initiative desig
 
 ## Immediate next action
 
-**Plan the internals-B pass.** The internals pass merged 2026-09-03 (`c54645d5`, PR #47,
-all CI green; post-mortem in `docs/superpowers/plans/2026-09-01-internals-pass.md`; its
-worktree and branch are removed). Planning inputs are ratified and compiled in
-`docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`: the four
-monolith splits (`EditPage` absorbs the `FieldInput` ownership fix and inherits Task 7's
-collapsed wiring), the ratified defaults, and the items routed at the internals close
-(EditorApi revocation contract, `/components` structural leak modeling, the
-`session.expires_at` index asymmetry, `csrfSecure`'s PUBLIC_ORIGIN source asymmetry,
-`lastCompound` tokenizer gaps, the media-seed containment helper). The plan gets the
-standard three-lens adversarial review before the approval gate, then executes on a
-fresh worktree off `main`. After internals-B: internals-C (coherence), chassis, polish,
-ONE release cut after polish. Resume prompt for a fresh session: "In
-~/Projects/cairn-cms, invoke cairn-pass and plan the internals-B pass: read
-docs/STATUS.md and the internals-B docket, brainstorm the open decisions, author the
-plan, run the three-lens review, then stop at the approval gate."
+**Execute internals-B, then internals-C, in one overnight run. BOTH PLANS ARE APPROVED
+(Geoff, 2026-09-03 evening, via the approval-gate question) with FULL overnight git
+authorization: for each pass in order, push the branch, open the PR, and merge on green
+CI.** The plans are twice-reviewed (three-lens round 1 and round-2 engine-triage
+verification, both folded):
+`docs/superpowers/plans/2026-09-03-internals-b-pass.md` (15 tasks, ceiling 8M,
+checkpoints 4/8/12, workflow mode, five independent chains, worktree
+`.claude/worktrees/internals-b` off `main`) and
+`docs/superpowers/plans/2026-09-03-internals-c-pass.md` (13 tasks, ceiling 6.5M,
+checkpoints 4/8/12, workflow mode, worktree `.claude/worktrees/internals-c` off POST-B
+`main`; its anchors MUST be reconciled against post-B main before dispatch, since the B
+splits move files C sweeps). The serial seam is B's merge; everything inside each pass
+parallelizes per its plan. Arm the FULL guard set before dispatching
+(`~/.claude/docs/unattended-work-guards.md`: both sleep inhibitors held to ~09:00, the
+battery watchdog, the workflow runaway guard). On any blocker, stop, WIP-commit, write
+STATUS with the resume state. After C: chassis, then polish, ONE release cut after
+polish. Resume prompt for the overnight session: "In ~/Projects/cairn-cms, invoke
+cairn-pass and execute the approved internals-B plan
+(docs/superpowers/plans/2026-09-03-internals-b-pass.md) per its workflow mode: re-arm
+the full guard set, run the pass and its full ritual, push, PR, merge on green CI; then
+reconcile the internals-C plan's anchors against merged main and execute it the same
+way. Both approvals and the git authorization are recorded in this STATUS entry."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

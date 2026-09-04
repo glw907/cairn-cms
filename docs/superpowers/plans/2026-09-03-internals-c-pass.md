@@ -3,353 +3,435 @@
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via
 > `~/.claude/workflows/pass-execute.js`. Steps use checkbox syntax for tracking.
-> **Runs only after internals-B merges** (ratified ordering: gates and sweeps must not
-> churn under files being split). Reconcile every anchor against post-B `main` at
-> dispatch; the B splits move several files this plan sweeps.
+> **Runs only after internals-B merges** (ratified ordering). Reconcile every anchor
+> against post-B `main` at dispatch; the B splits move several files this plan sweeps.
+> Round-1 three-lens review folded 2026-09-03; the two findings that reshaped this plan:
+> the harness parallelizes TASKS, not steps (so the big sweeps are now split into
+> independent tasks), and two "mechanical" sweeps were behavioral (the exit-idiom
+> conversion is control flow; the exhaustiveness targets are reachable generic fallbacks).
 
-**Goal:** land the coherence layer the any-site audit proved missing: a compile-time
-exhaustiveness idiom over `FieldDescriptor`, an enforcing idiom gate (indentation, exit
-idiom, comment register), the `ec-*` → engine-owned prefix rename, the `as never`
-test-cast retirement, truthful module headers, the public/internal boundary signal with
-the newcomer internals map, and the two reconciliations routed at the internals close
-(`csrfSecure`'s origin read, the F-1 `/components` premise).
+**Goal:** land the coherence layer the any-site audit proved missing: type-level
+exhaustiveness over `FieldDescriptor` without changing any arm's behavior, an enforcing
+`check:idioms` gate born green, the `ec-*` → `cairn-*` emitted-class rename, the
+`as never` test-cast retirement, truthful module headers, the internals map with the
+public/internal boundary marked, and the two reconciliations routed at the internals
+close.
 
-**Architecture:** coherence work is sweeps plus one new gate. The gate (`check:idioms`)
-enforces only machine-checkable rules and lands AFTER each sweep makes the tree conform,
-so it never ships red. Behavioral surface changes are exactly two: the `ec-*` class rename
-(a `Consumers must:` event in the already-batching window) and `csrfSecure`'s widened
-origin read (documented, doctor-probe semantics preserved deliberately).
+**Architecture:** coherence work is sweeps plus one new gate. Each gate rule lands in the
+same task as the sweep that makes the tree conform, with a stated self-exclusion for the
+gate's own rule literals, so the gate is born green including on itself. Behavioral
+surface change is exactly ONE: the `ec-*` class rename (a `Consumers must:` event in the
+already-batching window). The csrf reconciliation deliberately changes NO behavior (the
+review showed the process-env fallback would break the doctor probe's cross-check, flip
+Secure cookies on LAN dev hosts, and invalidate sessions on TLS-terminated deploys — the
+shared reader is adopted at platform depth only, with the divergence documented).
 
-**Tech stack:** TypeScript, Svelte 5, the repo's `scripts/checks/*` gate estate, vitest.
+**Tech stack:** TypeScript, Svelte 5, `scripts/checks/*` gate estate, vitest.
 
 **Spec:** `docs/internal/record/2026-08-26-any-site-audit/int-coherence.md` (the thirteen,
-lines 70-379), `int-walk-newcomer.md` (the map's ten asks), the internals-B docket's
-ratified defaults (3, 4, 5) and routed-at-close items, all verified 2026-09-03; anchors
-against `ed586ee0` pre-B and re-verified at dispatch.
+:70-379), `int-walk-newcomer.md`, the internals-B docket's ratified defaults (3, 4, 5) and
+routed-at-close items; anchors verified 2026-09-03 against `ed586ee0` and re-verified at
+dispatch against post-B `main`.
 
-**Token ceiling:** 5.5M. **Checkpoint interval:** every four tasks (checkpoints at 4, 8).
-**Execution:** workflow mode; independence marked per task. **Worktree:**
+**Token ceiling:** 6.5M (13 tasks; re-rated at the fold from 5.5M/10 after the sweep
+restructuring). **Checkpoint interval:** every four tasks (checkpoints at 4, 8, 12).
+**Execution:** workflow mode; dependencies are explicit per task — `check:idioms` (Task 2)
+precedes every task that adds a rule to it (3a, 3b, 6c). **Worktree:**
 `.claude/worktrees/internals-c` off post-B `main`, from-scratch showcase `npm ci` before
 any e2e.
 
 ## Ruled inputs (recorded; no task re-derives them)
 
-- **Exhaustiveness (ratified default 5, mechanism ruled here from the recon):**
-  `FieldDescriptor` is a closed 15-arm union (`content/fields.ts:122-137`) whose values
-  originate in site config through the engine's own `fields.*` constructors, so the guard
-  is compile-time: a shared `unreachable(value: never): never` helper that throws if ever
-  reached. The five full dispatchers close on it; the four partial/implicit sites keep
-  their silent-skip semantics with a one-line note each (closing them would distort
-  deliberate no-ops; recon tiered them as lower risk). `render/registry.ts:234` is the
-  existing fail-closed exemplar the ledger row cites.
-- **Formatter (ratified default 4, measured):** 2-space indentation is the dominant
-  practice (354 of 381 files, ~97.9%); the eight tab-indented stragglers are enumerated in
-  Task 2. Enforcement is the measured thing only — indentation — via `check:idioms`.
-  Wholesale formatter adoption (Prettier) is explicitly out of scope: it would reformat
-  wrapping across the whole tree, the opposite of the ratified least-churn default.
-- **`ec-*` (ratified default 3):** rename to the engine-owned `cairn-*` namespace the
-  engine already declares for its other emitted tokens (`render/highlight.ts:15` states
-  the contract: engine owns class names, site owns colors). One `Consumers must:` line.
-- **`as never` (docket sizing: large but mechanical):** full retirement, not a ratchet —
-  862 casts across 91 test files at last count, replaced by a typed test-event builder;
-  the sweep parallelizes per file under workflow mode.
+- **Exhaustiveness (ratified default 5; mechanism ruled here, honesty from the review):**
+  `FieldDescriptor` is a closed 15-arm union (`content/fields.ts:122-137`) originating in
+  site config, so exhaustiveness is TYPE-LEVEL. The five dispatch defaults are NOT dead
+  ends — each is a reachable generic fallback absorbing the arms the explicit cases skip
+  (e.g. `frontmatter.ts:52-56` handles text, textarea, number-as-string, url, email,
+  date, datetime; replacing it with a throw is data loss on save). The change is
+  therefore enumerate-then-guard: make every absorbed arm an explicit case with its
+  current behavior, and only the true remainder hits the guard. Template render paths
+  keep a runtime generic fallback (a throw there escapes the `adminAction` wrapper,
+  `cairn-admin.ts:189-196`, and bricks the edit screen); their exhaustiveness is
+  type-only. `render/registry.ts:234` stays the fail-closed exemplar for INPUT
+  validation; these five are dispatchers over already-validated values, a different
+  posture, and the ledger row records both.
+- **Formatter (ratified default 4, measured):** 2-space dominates (354/381 files); the
+  eight tab stragglers are enumerated in Task 2. Enforcement is indentation only;
+  Prettier adoption is out of scope (whole-tree rewrap is the opposite of least-churn).
+- **`ec-*` (ratified default 3):** rename to `cairn-*`. The namespace REALITY (security
+  lens): `cairn-*` is a SHARED namespace — the admin sheet already owns ~60 `cairn-*`
+  classes (`cairn-type-*`, `cairn-chip-*`, ...) and `cairn-icon-label` sits one hyphen
+  from the new `cairn-icon`. The documented rule is therefore registration, not
+  partition: emitted-markup classes are enumerated in `render.md`, admin-sheet classes
+  live in the admin design system, and a new name on either side checks the other's
+  list. No `[class*=]` selectors exist anywhere, admin re-declarations are
+  Svelte-scoped, and the preview iframe is `srcdoc`-sandboxed, so exact-match semantics
+  make the shared namespace safe.
+- **`as never` (docket sizing):** full retirement — 862 casts / 91 files, minus Task 5's
+  five heaviest (263), leaves 599 across 86 files, swept as three independent
+  per-directory tasks.
+- **csrf reconciliation (routed at close; review-ruled):** ONE shared
+  `readPublicOrigin` with TWO documented consultation depths. `isDeployedHost` keeps
+  the dual read (the tripwire is inert on adapter-node without it); `csrfSecure`
+  consumes the shared reader at PLATFORM depth only, preserving: the doctor probe's
+  external cross-check invariant (`check-probe.ts:50-58` — the cookie name must derive
+  from the probed origin's own scheme, never a separately-resolved PUBLIC_ORIGIN), the
+  csrf unit suite's determinism (`csrf.test.ts:135-142` would flip on any machine with
+  the var exported), LAN-dev http hosts (a process-env https origin would mint a Secure
+  cookie the browser drops — the permanent-403 class `csrf.test.ts:174-177` closed), and
+  live sessions on TLS-terminated deploys (the shared `secure` input renames BOTH
+  cookies, `auth/crypto.ts:13-27`). The monotonicity fact worth recording: platform-env
+  is read first and https requests short-circuit `true`, so no fallback could ever
+  DOWNGRADE Secure; the divergence is consultation depth, not direction.
 
 ## Global constraints
 
-- `check:surface` unchanged except Task 9's stated regeneration (if the leak-model change
-  moves the snapshot); no public export added or removed anywhere except as Task 4 states.
-- Sweeps rewrite comments and whitespace, never code behavior; any task step that changes
-  behavior says so and is test-first.
-- New gate rules land in the same task as the sweep that makes the tree conform: the gate
-  is born green.
-- TSDoc/comment standards throughout; every touched header ends the pass true.
-- The six CI-only gates by name at pass end; the internals-B lesson list applies (a green
-  local ritual is not CI; run the six by name).
+- `check:surface` unchanged except Task 9's conditional regeneration; no public export
+  added or removed except as Task 4 states.
+- Sweeps rewrite comments and whitespace, never code behavior; any behavioral step says
+  so and is test-first (Task 1 and Task 2 are behavioral by this definition and are
+  written that way).
+- Gate rules land with their conforming sweep; each new rule states its self-exclusion
+  (the gate's own file assembles its rule literals so it cannot match itself, and gate
+  fixtures live under `scripts/checks/fixtures/`, outside every rule's scope).
+- No comment stating a security invariant is deleted or weakened by any sweep; the named
+  must-preserve list rides Task 3a.
+- The six CI-only gates BY NAME at pass end: `check:comments`,
+  `check:reference:signatures`, `check:surface`, `check:snippets`, `check:transcripts`,
+  `check:symbols` — plus the newborn `check:idioms` and `check:cm-internals`.
 
 ---
 
-### Task 1: The exhaustiveness idiom (independent)
+### Task 1: Exhaustiveness — enumerate, then guard (independent)
 
 **Files:**
-- Create: `src/lib/unreachable.ts` (internal, exported from no subpath), plus its unit test
-- Modify: `src/lib/content/frontmatter.ts` (`decodeField` default ~:53,
-  `frontmatterFromForm` default ~:151), `src/lib/content/fieldset.ts` (`validateField`'s
-  fall-through, ~:253-259), `src/lib/components/FieldInput.svelte` (the `{:else}` at ~:311),
-  `src/lib/components/ComponentForm.svelte` (the `{:else}` at ~:272), and one-line notes at
-  the four partial sites (`content/references.ts:55-58`, `delivery/site-resolver.ts:167-168`,
-  `components/ReferenceField.svelte:38-39`, the `required || boolean` carve-outs at
-  `ComponentInsertDialog.svelte:126` / `ComponentForm.svelte:154`)
-- Modify: `docs/internal/engine-rulings.md` (the mechanism ruling row)
+- Create: `src/lib/content/unreachable.ts` (co-located with the union it guards — not a
+  seventh loose root file) + unit test
+- Modify: `src/lib/content/frontmatter.ts` (`decodeField` default :52-56;
+  `frontmatterFromForm` default :152-155), `src/lib/content/fieldset.ts`
+  (`validateField`'s `default:` at **:294-304** — the earlier :253-259 cite was the
+  pre-switch coercion), `src/lib/components/FieldInput.svelte` (`{:else}` :312),
+  `src/lib/components/ComponentForm.svelte` (dispatch `{:else}` :267), one-line
+  deliberate-no-op notes at the four partial sites (`content/references.ts:55-58`,
+  `delivery/site-resolver.ts:167-168`, `components/ReferenceField.svelte:38-39`, the
+  `required || boolean` carve-outs), `docs/internal/engine-rulings.md` (the ruling row)
 
 **Interfaces:**
-- Produces: `unreachable(value: never, context?: string): never` — throws
-  `cairn: unreachable <context> arm` if ever reached at runtime; its real job is the
-  compile error when a sixteenth `FieldDescriptor` arm forgets a dispatcher.
+- Produces: `unreachable(value: never, context: string): never`.
 
-- [ ] **Step 1:** write the helper and its test (a deliberately widened value throws; the
-  type-level contract is pinned with a `@ts-expect-error` case).
-- [ ] **Step 2:** close the five dispatchers. The template `{:else}` branches become
-  explicit final arms over the remaining union members with `unreachable` guarding the
-  true dead end — the currently-reachable generic-input rendering for the arms the chain
-  does not name must remain byte-identical in output (enumerate the unhandled arms
-  explicitly rather than guessing; the compiler names them).
-- [ ] **Step 3:** run the field-rendering component suites and the frontmatter/fieldset
-  unit suites; mutation check: add a scratch sixteenth arm locally, confirm `npm run check`
-  fails at every dispatcher, revert (this is the audit's own experiment, now failing
-  closed).
-- [ ] **Step 4:** record the ledger row; full gate; commit.
+- [ ] **Step 1 (characterization first):** for each of the five dispatchers, write or
+  extend tests covering ALL 15 arms at that site, pinning today's output per arm —
+  including every arm the generic default currently absorbs. This is the safety net the
+  review demanded; it must be green on HEAD before any dispatcher changes.
+- [ ] **Step 2:** rewrite each dispatcher: every absorbed arm becomes an explicit case
+  with its current behavior (the compiler enumerates them once the default is removed);
+  the `.ts` dispatchers end in `default: unreachable(field, '<site>')`; the two template
+  `{:else}` branches KEEP their generic-input rendering as the final explicit arm list's
+  fallback and gain type-only exhaustiveness (a `satisfies never` assertion in the
+  script block, outside the render path).
+- [ ] **Step 3:** the characterization suite passes UNCHANGED post-rewrite (the
+  acceptance test of zero behavior change). Then the mutation check: add a scratch
+  sixteenth arm locally, confirm `npm run check` fails at all five sites, revert.
+- [ ] **Step 4:** ledger row (type-level mechanism, the validated-value posture vs
+  registry.ts's input posture, the template-fallback exception); partial-site notes;
+  full gate; commit.
 
-**Acceptance criteria:** the audit's half-added-arm experiment can no longer pass the
-gate; zero behavior change across the 15 real arms (suite-proven); the four partial sites
-carry their deliberate-no-op notes.
+**Acceptance criteria:** the characterization tests are byte-stable across the rewrite;
+the sixteenth-arm experiment fails closed at all five sites; no runtime throw is
+reachable for any real arm; the four partial sites carry their notes.
 
-### Task 2: `check:idioms` — indentation, exit idiom, gate identity (independent)
+### Task 2: `check:idioms` born green — indentation, exit idiom, gate identity (independent)
 
 **Files:**
-- Create: `scripts/checks/check-idioms.mjs` + unit test beside the sibling gate tests
-- Modify: the eight tab-indented files (`src/lib/components/{tidy-diff,tidy-validate,tidy-categorize,chrome-guard,editor-tidy}.ts`,
-  `src/lib/sveltekit/tidy-prompt.ts`, `src/lib/diagnostics/{conditions,error}.ts`),
-  the twelve `process.exit(1)` gate scripts (converge on `process.exitCode = 1`, the
-  ledger-backed idiom the internals pass already applied to its own gates), gate output
-  strings that spell their own identity inconsistently (the audit's four-spellings
-  finding, int-coherence.md :312-329), `.editorconfig` (header comment becomes true),
-  `package.json` (`check:idioms` wired into `check` and CI)
+- Create: `scripts/checks/check-idioms.mjs` + tests + fixtures under
+  `scripts/checks/fixtures/idioms/`
+- Modify: the eight tab-indented files
+  (`src/lib/components/{tidy-diff,tidy-validate,tidy-categorize,chrome-guard,editor-tidy}.ts`,
+  `src/lib/sveltekit/tidy-prompt.ts`, `src/lib/diagnostics/{conditions,error}.ts`);
+  **the 18 files / ~40 sites in `scripts/checks/` calling `process.exit(`** (the earlier
+  "twelve" undercounted; grounding lens enumerated); gate self-identity output
+  spellings; `.editorconfig` (claim becomes true); `package.json` + CI wiring
 
 **Interfaces:**
-- Produces: `check:idioms` with three rules at birth — leading-tab indentation banned in
-  `src/lib` + `scripts` (`*.ts`/`*.svelte`/`*.mjs`), `process.exit(` banned in
-  `scripts/checks/*.mjs` (the exitCode idiom), and a gate self-identity check (each
-  `check-*.mjs` names itself in output by its script name, one spelling). The
-  `{ ok } | { ok: false }` verdict shape and `formatViolations` conventions copied from
-  `check-self-use.mjs`. Task 3 extends it; the rule list is data, not hardcoded prose.
+- Produces: `check:idioms` with three rules — leading-tab indentation banned in
+  `src/lib` + `scripts` (`*.ts`/`*.svelte`/`*.mjs`); `process.exit(` banned in
+  `scripts/checks/*.mjs` (both rules share that scope; the earlier draft's split scoping
+  left three non-`check-` gates half-covered); one self-identity spelling per gate.
+  Self-exclusion stated in the gate: its rule literals are assembled
+  (`'process.' + 'exit('`), and `scripts/checks/fixtures/` is outside scope.
 
-- [ ] **Step 1:** write the gate + tests (fixture trees for each rule, red and green).
-- [ ] **Step 2:** sweep the eight files to 2-space (whitespace-only diffs; verify with
-  `git diff -w` empty), the twelve exits, the identity spellings; the gate goes green on
-  the real tree.
-- [ ] **Step 3:** wire into `package.json` and CI; full gate; commit.
+- [ ] **Step 1 (the conversion is control flow, not an exit code — security lens):**
+  enumerate and classify every `process.exit(` site: (a) failure exits →
+  `process.exitCode = 1` PLUS a `return`/flow guard wherever the exit was doing
+  early-return duty — `check-package-files.mjs:365-405` has SIX such early exits whose
+  naive conversion falls through to a final "OK" line, silently disabling the gate that
+  holds the tarball's worker/browser export condition; (b) distinct codes preserved —
+  `check-readiness.mjs:72` keeps exit code 2 AND gains a flow guard (the next statement
+  `await import(distPath)` throws on the just-proven-absent file);
+  `reference-coverage.mjs`'s exit 2 likewise; (c) `process.exit(failed ? 1 : 0)`
+  ternaries and success short-circuits (`check-admin-prose.mjs:247`,
+  `check-cm-internals.mjs:69`, `check-dev-package.mjs:64`, `check-snippets.mjs:434`,
+  `check-consumers.mjs:67`, `check-chassis-boundary.mjs:141`) each get the
+  flow-preserving form.
+- [ ] **Step 2 (proof per converted gate):** for each converted gate, run it once against
+  a fixture that makes it FAIL and confirm a red exit code — the acceptance the review
+  demanded, since "no `process.exit(` remains" is satisfied perfectly by a silently
+  disabled gate.
+- [ ] **Step 3:** the indentation sweep (verify `git diff -w` is empty), the identity
+  spellings, `.editorconfig`; write and wire the gate; born green on the real tree.
+  Full gate; commit.
 
-**Acceptance criteria:** `check:idioms` green; `git diff -w` empty for the indentation
-sweep; `.editorconfig`'s enforcement claim is now backed by a gate; no
-`process.exit(` remains under `scripts/checks/`.
+**Acceptance criteria:** every converted gate proven red-on-failure by fixture;
+`check-readiness` still distinguishes exit 2; `git diff -w` empty for the indentation
+files; `check:idioms` green including over its own file.
 
-### Task 3: The comment-register purge (independent; large mechanical sweep)
-
-**Files:**
-- Modify: every `src/lib` file carrying pass-scoped process references (~179 `Plan NN` /
-  `Task N` / pass-name citations), `docs/superpowers/` pointers (19), or private
-  consumer-site names (18) in comments — re-enumerate at dispatch; the counts are
-  2026-08-26 audit figures
-- Modify: `scripts/checks/check-idioms.mjs` (the register rules land once the tree is clean)
-
-**Interfaces:** none new; comment rewrites only.
-
-- [ ] **Step 1:** enumerate the current hits (the audit's three patterns; int-coherence.md
-  :189-209); partition: a comment whose rationale survives without the process citation is
-  reworded to state the rationale (or cite a ledger slug — the durable form the internals
-  pass established); a comment that is ONLY a process citation is deleted; consumer-site
-  names become generic descriptions ("a consuming site's member area"), never named sites.
-- [ ] **Step 2:** sweep in parallel per directory under workflow mode; `npm run
-  check:comments` green throughout.
-- [ ] **Step 3:** add the three register rules to `check:idioms` (ban `docs/superpowers/`
-  paths in `src/lib` comments; ban the process-reference patterns; ban the known consumer
-  hostnames); gate born green; full gate; commit.
-
-**Acceptance criteria:** zero process-scoped references, superpowers pointers, or consumer
-names in `src/lib` comments; every rewritten comment still states a true rationale
-(spot-verified by the diff-reviewer against the code); the gate holds the line.
-
-### Task 4: `ec-*` → `cairn-*` (independent; the pass's one consumer-facing rename)
+### Task 3a: Comment-register purge, half one (depends on Task 2)
 
 **Files:**
-- Modify: `src/lib/render/glyph.ts` and `src/lib/render/rehype-dispatch.ts` (the two
-  emission sites), the three admin components re-declaring the classes locally
-  (`ComponentInsertDialog.svelte`, `IconPicker.svelte`, `MediaPicker.svelte`),
-  `docs/reference/render.md` (the documented `ec-icon` contract plus newly documenting the
-  full emitted-class list), `examples/showcase/src/**/prose.css` (the ten `ec-*` selector
-  rules), the e2e locator that keys on one, `CHANGELOG.md`, `docs/extend/migration-notes.md`
-- Test: render unit suites; the showcase visual suite via CI
+- Modify: `src/lib/sveltekit/`, `src/lib/auth*/`, `src/lib/content/`,
+  `src/lib/delivery/` comment sites carrying pass-scoped process references,
+  `docs/superpowers/` pointers, or consumer-site names (re-enumerate at dispatch; the
+  audit counted 179 + 19 + 18 across all of `src/lib`)
+
+**Interfaces:** none new.
+
+- [ ] **Step 1:** enumerate this half's hits. Partition per the ruled scheme: rationale
+  survives → reword to the rationale (or a ledger slug); citation-only → delete;
+  consumer names → generic descriptions.
+  **Must-preserve (security lens): `src/lib/sveltekit/admin-action.ts:6-11`** — it
+  matches the purge patterns AND states the CSRF defense-in-depth architecture (the
+  guard verifies the double-submit token on every unsafe `/admin/**` POST before any
+  route code; the inline check at :236 is defense-in-depth, not the sole gate). The
+  reworded comment must preserve the guard's primacy and the DiD framing in substance.
+  General rule for the whole purge: no comment stating a security invariant is deleted;
+  invariants survive rewording.
+- [ ] **Step 2:** sweep; `npm run check:comments` green; full gate; commit.
+
+**Acceptance criteria:** zero purge-pattern hits in this half's directories; every
+rewritten comment still true against the code (diff-reviewer verifies a sample);
+`admin-action.ts`'s DiD statement intact in substance.
+
+### Task 3b: Comment-register purge, half two, and the register rules (depends on 2 and 3a)
+
+**Files:**
+- Modify: the remaining `src/lib` directories (`components/`, `audit/`, `render/`,
+  `media*/`, `doctor/`, `log/`, root files); `scripts/checks/check-idioms.mjs`
+
+**Interfaces:**
+- Produces: three register rules in `check:idioms`, scoped to `src/lib` comments (kept in
+  this gate, not the ESLint plugin, deliberately: ESLint does not parse `.svelte`, and
+  the register must hold uniformly across `.ts` and `.svelte` — the leaner-home question
+  the review raised, answered in the gate's header): ban `docs/superpowers/` paths; ban
+  the pass-scoped process-reference patterns; ban consumer-site hostnames **by shape**
+  (a bare production hostname literal in a comment), NOT by enumerating the private
+  hostnames into a public repo's gate file (security lens).
+
+- [ ] **Step 1:** sweep this half under the same partition and must-preserve rules.
+- [ ] **Step 2:** land the three rules (fixtures under `scripts/checks/fixtures/idioms/`);
+  born green; full gate; commit.
+
+**Acceptance criteria:** zero purge-pattern hits across all of `src/lib`; the hostname
+rule matches by shape with no private hostname in the rule data; gate green.
+
+### Task 4: `ec-*` → `cairn-*` (independent; the pass's one consumer-facing change)
+
+**Files:**
+- Modify: `src/lib/render/glyph.ts`, `src/lib/render/rehype-dispatch.ts` (emission),
+  `src/lib/components/ComponentInsertDialog.svelte:486`, `IconPicker.svelte:107`,
+  `MediaPicker.svelte:274` (scoped re-declarations), `docs/reference/render.md`,
+  **`examples/showcase/src/chassis/prose.css`** (the exact chassis path — this is a
+  CHASSIS change, the seed every theme copy descends from, gated by
+  `check:chassis-boundary` and read by `check-public-tokens.mjs`), the e2e locator,
+  `src/tests/unit/__snapshots__/render-pipeline-snapshot.test.ts.snap` (regenerated),
+  `src/tests/component/ComponentInsertDialog.test.ts` (keys on the classes),
+  `CHANGELOG.md`, `docs/extend/migration-notes.md`, `docs/internal/engine-rulings.md`
+  (an appended renamed-at-internals-C annotation on the two rows naming `ec-head`/
+  `ec-icon` — annotate, never rewrite history rows)
 
 **Interfaces:**
 - Produces: emitted classes `cairn-head`, `cairn-icon`, `cairn-icon-secondary`,
-  `cairn-glyph`, `cairn-grid` (the five, re-inventoried at dispatch — the audit's 18-site
-  figure is directionally right, recount before citing). The namespace rule lands in
-  `render.md`: engine-emitted public markup uses `cairn-*`; `toolkit-*` stays
-  admin-internal and undocumented.
+  `cairn-glyph`, `cairn-grid`. `render.md` documents the full emitted list and the
+  REGISTRATION rule from the header ruling (shared `cairn-*` namespace, two registered
+  sides), explicitly noting `cairn-icon-label` is an admin-sheet neighbor, not an
+  emitted class.
 
-- [ ] **Step 1:** write the failing render tests asserting the new class names on the
-  glyph/head/grid fixtures.
-- [ ] **Step 2:** rename at the two emission sites and the three local re-declarations;
-  green.
-- [ ] **Step 3:** sweep the showcase selectors and the e2e locator; document the full class
-  list and namespace rule in `render.md`; CHANGELOG entry with the `Consumers must:` line
-  (sites styling `ec-*` selectors rename them to `cairn-*`; the old names emit nothing);
-  migration-notes entry. Full gate; commit.
+- [ ] **Step 1:** failing render tests asserting the new names; rename at the emission
+  sites and scoped re-declarations; snapshot regenerated; green.
+- [ ] **Step 2:** chassis selectors, e2e locator, `ComponentInsertDialog.test.ts`; docs
+  (`render.md`, CHANGELOG with the `Consumers must:` line naming the five exact old →
+  new selectors AND the chassis propagation path — the four production sites carry
+  `ec-*` in their own chassis copies and queue the rename in their own passes;
+  migration-notes; ledger annotations). Full gate including `check:chassis-boundary`
+  and `check:public-tokens` by name; commit.
 
-**Acceptance criteria:** `grep -rn 'ec-' src/lib examples/showcase docs/reference` returns
-no emitted-class hits (allowlist unrelated matches explicitly); the showcase renders
-identically (CI visual suite green); the `Consumers must:` line names the exact selectors.
+**Acceptance criteria:** `grep -rEn '\bec-(icon|icon-secondary|glyph|head|grid)\b'` over
+the tree (excluding `docs/internal/history`, `docs/internal/record`,
+`docs/superpowers`, and the annotated ledger rows) returns nothing; showcase CI visual
+suite green; the namespace rule as documented matches the ruled registration form.
 
-### Task 5: The typed test-event builder (independent; feeds Task 6)
+### Task 5: The typed test-event builder (independent)
 
 **Files:**
-- Create: `src/tests/helpers/test-event.ts` (or the tests' existing helper home — match
-  `_setup.ts` conventions) + its own unit test
+- Create: **`src/tests/helpers/test-event.ts`** exporting **`testEvent`** (path and name
+  pinned; Task 6 consumes them verbatim) + its unit test
 - Modify: the five heaviest cast files (`component/CairnMediaLibrary.test.ts` 73,
   `unit/cairn-admin-actions.test.ts` 51, `integration/content-routes-revert.test.ts` 50,
   `unit/content-routes-edit.test.ts` 47, `integration/content-routes-preview.test.ts` 42)
 
 **Interfaces:**
-- Produces: a builder producing real `CairnEvent`-shaped values without type erasure —
-  design it from what the five files actually fake (params, locals, platform.env, request,
-  cookies); partial overrides typed with `Partial`/`satisfies`, never `as never`. Task 6
-  relies on its exact exported name and signature; pin them in this task's test.
+- Produces: `testEvent(overrides?)` returning a real `CairnEvent`-shaped value (params,
+  locals, platform.env, request, cookies) with typed partial overrides — no `as never`,
+  no `any`. Its doc comment states the erasure hazard it replaces.
 
-- [ ] **Step 1:** inventory the cast shapes in the five files; write the builder + test.
-- [ ] **Step 2:** convert the five files (263 casts); suites green; full gate; commit.
-
-**Acceptance criteria:** zero `as never` in the five files; no test's assertions weakened
-(the diff-reviewer checks deleted casts did not take assertions with them); the builder's
-doc comment states the erasure hazard it replaces.
-
-### Task 6: The `as never` retirement sweep (depends on Task 5)
-
-**Files:**
-- Modify: the remaining ~86 test files (re-count at dispatch; post-B paths differ)
-- Modify: `scripts/checks/check-idioms.mjs` (ban `as never` under `src/tests` once zero)
-
-**Interfaces:** consumes Task 5's builder verbatim.
-
-- [ ] **Step 1:** sweep per file in parallel under workflow mode, each conversion running
-  its own file's suite.
-- [ ] **Step 2:** confirm repo-wide zero; add the gate rule (born green); full gate; commit.
-
-**Acceptance criteria:** `grep -rn "as never" src/tests` returns nothing; the full suite
-count is unchanged or higher (no test deleted to dodge a conversion); `check:idioms` holds
-it at zero.
-
-### Task 7: Truthful headers and the self-licensing duplication comments (after Tasks 3; shares files)
-
-**Files:**
-- Modify: the ~12 headers stating something the code contradicts (int-coherence.md
-  :163-182; `admin-icons.ts` is the exemplar), the 10 headerless `render/` files (M1
-  headers written), the 34 duplication-precedent comments (:107-120), plus the
-  `ctx.logCommitFailed` call-style note handed forward by internals-B Task 3
-
-**Interfaces:** none new.
-
-- [ ] **Step 1:** re-enumerate both lists against the post-B tree; for each lying header,
-  make it true (fix the header, never the code, unless the mismatch reveals a one-line
-  defect — then flag to the conductor rather than fixing silently).
-- [ ] **Step 2:** for each duplication-precedent comment: if the duplication is a ruled
-  exception, cite the ledger slug; if it is unruled and the collapse is one import line,
-  collapse it; otherwise reword to state the actual tradeoff without citing a sibling copy
-  as license. Unify the two `logCommitFailed` call styles onto one (pick the module import;
-  it is the majority).
-- [ ] **Step 3:** `render/` gets its ten M1 headers (each stating the module's contract,
-  written from the code as it is post-B). Full gate; commit.
-
-**Acceptance criteria:** every header in the touched set states something the code does;
-no comment cites "the sibling does this too" as its only rationale; `render/` is fully
-headered.
-
-### Task 8: The boundary signal and the newcomer internals map (after B; independent of 1-7)
-
-**Files:**
-- Create: `src/lib/README.md` (the internals map)
-- Modify: the four docs disagreeing on `cairn.config.ts`'s location (re-enumerate; the walk
-  names `src/lib/` in two published pages vs `src/theme/` everywhere real),
-  `CONTRIBUTING.md` (points at the map), `docs/internal/docs-friction-log.md` if writing
-  surfaces design friction
-
-**Interfaces:** none; documentation.
-
-- [ ] **Step 1:** write the map to the walk's ten asks (int-walk-newcomer.md): the ~23
-  directories mapped to subsystems with the 13-public/10-internal split MARKED per
-  directory; the request flow traced in code (`cairn-admin.ts` → `admin-dispatch.ts` →
-  `guard.ts` → `content-routes.ts`, the walk's own praised path); the five loose root
-  files placed; the post-B `content-routes-*` sibling pattern explained; where `/render`
-  symbols are defined vs re-exported; "where would I add a field type" answered by
-  pointing at Task 1's now-enforced dispatcher list.
-- [ ] **Step 2:** fix the config-location disagreement in all four docs (the scaffold's
-  `src/theme/` is the truth); `check:docs` green.
-- [ ] **Step 3:** run the register/prose review the repo applies to internal docs; full
+- [ ] **Step 1:** inventory the five files' cast shapes; build + test the builder.
+- [ ] **Step 2:** convert the five files (263 casts); suites green with assertions
+  unweakened (diff-reviewer checks deleted casts took no assertions with them); full
   gate; commit.
 
-**Acceptance criteria:** a newcomer following README → map answers the walk's six
-orienting questions without grep; every named doc agrees on `src/theme/cairn.config.ts`;
-the public/internal marking matches `package.json`'s real export map (derive, don't
-assert).
+**Acceptance criteria:** zero `as never` in the five files; suite counts unchanged or
+higher; builder name/path exactly as pinned.
+
+### Tasks 6a / 6b / 6c: The `as never` retirement, three independent sweeps (each depends on Task 5; 6c also on Task 2)
+
+**Files:** 6a: `src/tests/unit/` remainder. 6b: `src/tests/integration/` remainder.
+6c: `src/tests/component/` remainder + `scripts/checks/check-idioms.mjs` (the rule).
+
+**Interfaces:** consume `testEvent` verbatim.
+
+- [ ] **Step 1 (each):** sweep the directory's files, each conversion running its own
+  file's suite.
+- [ ] **Step 2 (6c only, last to land):** repo-wide zero confirmed; the gate rule bans
+  `as never` under `src/tests` with a per-line escape hatch
+  (`// idioms-allow: as-never — <reason>`) for deliberate negative-path tests that feed
+  a runtime guard an off-union value (hygiene lens: an absolute-zero grep leaves no room
+  for exactly the tests Task 1 writes); born green. Full gate per task; commit each.
+
+**Acceptance criteria:** `grep -rn "as never" src/tests` returns only annotated lines
+(target: zero unannotated); suite counts monotonically non-decreasing; the three tasks'
+file sets are disjoint by directory.
+
+### Task 7: Truthful headers and self-licensing duplication comments (depends on 3a/3b; shares files)
+
+**Files:**
+- Modify: the ~12 contradicted headers (int-coherence.md :163-182; `admin-icons.ts`
+  exemplar), the 10 headerless `render/*.ts` files (M1 headers written from the post-B
+  code), the 34 duplication-precedent comments (:107-120), the `logCommitFailed`
+  call-style unification (post-B home of the old `content-routes-core.ts:1672`/`:2249`
+  sites; verified safe — `ctx.logCommitFailed` is a bare re-export of the module
+  function, `content-routes-context.ts:420` → `commit-log.ts:33` — preserve `:1672`'s
+  third argument `'publish.failed'`, which selects the event name)
+
+- [ ] **Step 1:** re-enumerate both lists against the post-B tree; lying headers become
+  true (fix the header, not the code; a header mismatch revealing a real defect goes to
+  the conductor, never a silent fix).
+- [ ] **Step 2:** duplication comments: ruled exception → cite the slug; unruled and
+  one-import-line collapsible → collapse; otherwise reword to the actual tradeoff.
+  Unify `logCommitFailed` onto the module-import style.
+- [ ] **Step 3:** `render/`'s ten M1 headers; full gate; commit.
+
+**Acceptance criteria:** every touched header states something the code does; no comment
+cites a sibling copy as sole license; `render/` fully headered; the `'publish.failed'`
+argument intact.
+
+### Task 8: The internals map and the boundary signal (independent of 1-7; after B)
+
+**Files:**
+- Create: **`docs/internal/src-lib-map.md`** (NOT `src/lib/README.md` — `svelte-package`
+  copies non-source `src/lib` files into `dist`, so a contributor map would ship in the
+  public tarball; hygiene lens caught this and `check:package` would not)
+- Modify: `CONTRIBUTING.md` and the repo `README.md` dev section (pointers), the four
+  docs disagreeing on `cairn.config.ts`'s location (the scaffold's `src/theme/` is
+  truth), `docs/internal/docs-friction-log.md` if writing surfaces friction
+
+- [ ] **Step 1:** write the map to the walk's ten asks: the ~23 `src/lib` directories
+  mapped to subsystems with the public/internal split MARKED per directory (derived from
+  `package.json`'s real export map, not asserted); the request flow traced
+  (`cairn-admin.ts` → `admin-dispatch.ts` → `guard.ts` → `content-routes.ts`); the five
+  loose root files placed (now six with `dev-flag.ts`; explain each); the post-B
+  `content-routes-*` sibling pattern; `/render` definition vs re-export homes;
+  "where would I add a field type" answered by Task 1's now-enforced dispatcher list.
+- [ ] **Step 2:** the config-location fix in all four docs; `check:docs` green; register
+  review; full gate; commit.
+
+**Acceptance criteria:** the walk's six orienting questions answerable from the map
+without grep; all four docs agree on `src/theme/cairn.config.ts`; the boundary marking
+matches the export map mechanically; nothing new ships under `src/lib`.
 
 ### Task 9: The two routed reconciliations (independent)
 
 **Files:**
-- Modify: `src/lib/dev-flag.ts` (export `readPublicOrigin`), `src/lib/sveltekit/csrf.ts`
-  (:34, :63-75), `scripts/checks/check-surface-leaks.mjs` (:233-244 skip premise),
-  `docs/reference/` pages if the csrf behavior note warrants it
-- Test: csrf unit suites (new cases first), check-surface-leaks unit suite
+- Modify: `src/lib/dev-flag.ts:58` (**`readPublicOrigin` already exists with the dual
+  read — the change is exporting it**, grounding lens), `src/lib/sveltekit/csrf.ts:34,
+  63-75`, `scripts/checks/check-surface-leaks.mjs:233-244`
+- Test: csrf unit suite (new cases), check-surface-leaks unit suite
 
 **Interfaces:**
-- Produces: `readPublicOrigin(env: unknown): string | undefined` exported from
-  `dev-flag.ts`; `csrfSecure` consumes it, gaining the `process.env` fallback
-  DELIBERATELY: the doctor probe path (`csrf.ts:59-61`, calls with no platform) now reads
-  a dev machine's `process.env.PUBLIC_ORIGIN` when set, which makes the probe match the
-  deployment instead of silently differing — state this in the function docs and the
-  probe's comment as intended, not incidental.
-- The F-1 `/components` skip: derive the subpath's type-export list from the components
-  barrel + dist declarations mechanically (the enumerated-exports premise becomes verified
-  by the gate itself instead of asserted in prose), or, if the derivation proves
-  structurally unreachable in this gate's two models, record WHY in the comment with the
-  concrete blocked shape and keep the skip — either outcome updates the comment the
-  internals pass left pointing here.
+- Produces: `readPublicOrigin(platformEnv: unknown): string | undefined` exported (real
+  signature; the dual read stays as-is for `isDeployedHost`). `csrfSecure` consumes the
+  shared reader **at platform depth only** — mechanically, it calls
+  `readPublicOrigin(event.platform?.env ?? {})` with an empty-object floor so the
+  process-env fallback can never engage from this call site, or the reader gains an
+  explicit `depth: 'platform-only'` option; either form is acceptable if the
+  suppression is structural, not conventional. NO behavior change (the header's ruled
+  input carries the four reasons: probe invariant, suite determinism, LAN-dev cookies,
+  session invalidation). Both functions' docs record the two depths and the
+  monotonicity fact (platform-first + https short-circuit ⇒ no fallback can downgrade
+  Secure).
+- The F-1 `/components` skip (`check-surface-leaks.mjs:233-244`): derive the subpath's
+  type-export list mechanically from the components barrel + dist declarations so the
+  enumerated-exports premise is gate-verified; if the two-model structure genuinely
+  cannot reach it, record WHY with the concrete blocked shape AND record the accepted
+  limitation explicitly (component-prop-only types stay invisible to the leak gate —
+  security lens: an accepted limitation, stated as one, not as a comment fix). The
+  routing pointer was corrected to internals-C by B Task 14.
 
-- [ ] **Step 1:** csrf: failing tests for the two new source paths (platform-first,
-  process fallback, local-origin fallback to hostname); land the shared read; existing
-  csrf suite green unchanged.
-- [ ] **Step 2:** the leak-model derivation (or its recorded impossibility); gate suite
-  green; surface snapshot regenerated only if the model change moves it. Full gate; commit.
+- [ ] **Step 1:** csrf tests FIRST, environment-stubbed (`vi.stubEnv('PUBLIC_ORIGIN')`
+  around every case so the suite is deterministic regardless of the runner's shell):
+  platform-set behavior unchanged; platform-unset + process-set does NOT flip
+  `csrfSecure` (the depth suppression pinned); https short-circuit unchanged. Land the
+  export and the platform-depth consumption; the existing suite green UNCHANGED (now a
+  true criterion).
+- [ ] **Step 2:** the leak-model derivation or its recorded limitation; gate suite
+  green; snapshot regenerated only if moved. Full gate; commit.
 
-**Acceptance criteria:** one function answers "is PUBLIC_ORIGIN a non-local origin"
-everywhere; the doctor probe's behavior change is documented at both sites; the
-`/components` skip comment no longer asserts an unverified premise.
+**Acceptance criteria:** one shared reader; `csrfSecure`'s observable behavior identical
+on every input (suite-proven, env-stubbed); the doctor probe untouched and its
+cross-check test (`doctor-check-probe.test.ts:118`) unchanged; the `/components` premise
+either gate-verified or recorded as an accepted limitation.
 
-### Task 10: Exemplar-tier drift, the fifth monolith line, and records (last)
+### Task 10: Exemplar drift, the monolith line, records (last)
 
 **Files:**
-- Modify: the `createSectionAction` docs (verify current call-site count — the audit
-  measured zero non-test callers; either the extend arm repositions it as the sanctioned
-  shape with a worked example that the chassis pass will realize in the showcase, or it is
-  demoted with a ledger note — decide from what the docs claim TODAY, and route the
-  showcase half to chassis inputs either way), `ROADMAP.md` (`content-routes-media.ts`,
-  1,414 lines, recorded as the remaining tracked monolith; the coherence items shipped
-  here leave the tiers), the chassis-inputs record (the showcase exemplar item)
+- Modify: the `createSectionAction` docs (verify the call-site count — the audit
+  measured zero non-test callers; reposition or demote per what the docs claim TODAY,
+  and route the showcase half to chassis inputs either way), `ROADMAP.md`
+  (`content-routes-media.ts` at **1,447** lines recorded as the remaining tracked
+  monolith; shipped coherence items leave the tiers), the chassis-inputs record
 
-**Interfaces:** none; documentation and routing.
+- [ ] **Step 1:** the `createSectionAction` verification and doc fix; chassis routing.
+- [ ] **Step 2:** ROADMAP; full gate; commit.
 
-- [ ] **Step 1:** the `createSectionAction` verification and doc fix; the chassis routing
-  line.
-- [ ] **Step 2:** ROADMAP updates; full gate; commit.
-
-**Acceptance criteria:** the docs teach the shape the engine actually sanctions; ROADMAP's
-monolith accounting matches the tree; chassis inputs carry the showcase half explicitly.
+**Acceptance criteria:** docs teach the sanctioned shape; ROADMAP's monolith accounting
+matches the tree; chassis inputs carry the showcase half.
 
 ---
 
 ## Pass-end ritual (cairn-pass; not a numbered task)
 
-Code-simplifier; reviewer fan-out — `svelte-reviewer` (Tasks 1's template arms, 4's
-components), `web-auth-security-reviewer` (Task 9's csrf change — mandatory), the standing
-cleanliness-and-beauty review, `daisyui-a11y-reviewer` only if Task 4's rename touched
-rendered semantics (it should not); the six CI-only gates by name plus the newborn
-`check:idioms`; from-scratch consumer proof (Task 4's rename is the consumer-visible
-change the e2e must see); whole-log friction triage; STATUS/HISTORY/ROADMAP; post-mortem
-here; both budgets scored.
+Code-simplifier; reviewer fan-out — `svelte-reviewer` (Task 1's template arms, Task 4's
+components), `web-auth-security-reviewer` (Task 9 AND Task 3a's must-preserve sweep —
+mandatory), the standing cleanliness-and-beauty review, `daisyui-a11y-reviewer` only if
+Task 4 touched rendered semantics (it must not); the six CI-only gates BY NAME
+(`check:comments`, `check:reference:signatures`, `check:surface`, `check:snippets`,
+`check:transcripts`, `check:symbols`) plus `check:idioms`, `check:cm-internals`,
+`check:chassis-boundary`, `check:public-tokens`; from-scratch consumer proof (Task 4's
+rename is what the e2e must see); whole-log friction triage; STATUS/HISTORY/ROADMAP;
+post-mortem here; both budgets scored.
 
 ## What this pass hands forward
 
-- **Chassis:** the showcase exemplar realization (Task 10's routing); the standing chassis
-  mandate applies in full.
-- **Polish:** unchanged list (OfficeList ruling + scroll rider, `formatTimestamp`
-  widening, palette live region) plus whatever the sweeps surface.
-- **Release:** the window holds; ONE cut after polish, now carrying this pass's two
-  `Consumers must:` lines (`ec-*` rename; the formatTimestamp line from internals).
+- **Chassis:** the showcase exemplar realization; the standing chassis mandate in full;
+  the four consumer sites' chassis-copy `ec-*` renames ride their own site passes.
+- **Polish:** unchanged list plus whatever the sweeps surface.
+- **Release:** the window holds; ONE cut after polish, carrying this pass's
+  `Consumers must:` line (`ec-*`) and internals' `formatTimestamp` line.

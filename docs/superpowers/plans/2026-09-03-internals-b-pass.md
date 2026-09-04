@@ -3,491 +3,588 @@
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via
 > `~/.claude/workflows/pass-execute.js`. Steps use checkbox syntax for tracking.
+> Round-1 three-lens review folded 2026-09-03 (grounding, security, hygiene-and-sizing);
+> the fold notes below each carry their lens finding where the reasoning matters.
 
 **Goal:** split the four ratified monoliths (`EditPage.svelte`, `CairnMediaLibrary.svelte`,
 `content-routes-core.ts`, `audit/rendered.ts`) into focused units behind unchanged public
 surfaces, absorbing the riders that live on the same lines: the `FieldInput`
 `ownership_invalid_mutation` fix, the `EditorApi` single-holder refactor and revocation
-contract, and the media-seed containment assert.
+contract, and the media-seed containment (read AND write paths — the review found the
+write path open).
 
 **Architecture:** every split preserves the existing import surface. `content-routes-core`
-becomes five sibling modules behind the unchanged `content-routes.ts` composition root;
-`audit/rendered.ts` becomes a directory whose old path stays the barrel so 16 rule files and
-20 test files keep their imports; the two Svelte monoliths extract child components and
-`.svelte.ts` modules that stay OUT of the components barrel (internal children, not new
-public surface). The one deliberate seam change is `registerEditor` delivering `null` on
-editor destroy, free while the window is unpublished.
+becomes six sibling modules behind the unchanged `content-routes.ts` composition root;
+`audit/rendered.ts` becomes a directory whose old path stays the barrel so 17 rule files and
+23 test files keep their imports; the two Svelte monoliths extract child components and
+`.svelte.ts` modules that stay OUT of the components barrel. In Chain D the holder collapse
+lands BEFORE the extractions, so each extracted unit is born consuming the single `editor`
+grant and owning its own entry-key reset (review fold: this removes planned rework and
+splits the largest task). The one deliberate seam change is `registerEditor` delivering
+`null` on editor destroy, identity-guarded, free while the window is unpublished.
 
-**Tech stack:** Svelte 5 runes, SvelteKit 2, TypeScript, vitest (unit/integration/component),
-the repo's gate estate.
+**Tech stack:** Svelte 5 runes, SvelteKit 2, TypeScript, vitest, the repo's gate estate.
 
-**Spec:** `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (the
-ratified defaults and the routed-at-close section) plus the recon evidence in this plan's
-task anchors, all verified against `main` @ `ed586ee0` on 2026-09-03.
+**Spec:** `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (ratified
+defaults and routed-at-close) plus the recon and review evidence in this plan's anchors,
+verified against `main` @ `ed586ee0`/`1d42a5d6` on 2026-09-03.
 
-**Token ceiling:** 7.5M. **Checkpoint interval:** every four tasks (checkpoints at 4, 8, 12).
-**Execution:** workflow mode; the five chains marked below are mutually independent.
-**Worktree:** `.claude/worktrees/internals-b` off `main`, from-scratch showcase `npm ci`
-before trusting any e2e.
+**Token ceiling:** 8M (15 tasks; re-rated at the round-1 fold from 7.5M/13 after the two
+task splits). **Checkpoint interval:** every four tasks (checkpoints at 4, 8, 12).
+**Execution:** workflow mode; the five chains below are mutually independent; tasks within
+a chain are sequential. **Worktree:** `.claude/worktrees/internals-b` off `main`,
+from-scratch showcase `npm ci` before trusting any e2e.
 
 ## Ruled drops and deferrals (recorded here so no task re-derives them)
 
-- **Docket item 3 (confirm's destroy-then-create as one `db.batch()`) is DROPPED.**
-  Recon falsified the "attach if cheaper" premise: `destroyChannelSession`'s
+- **Docket item 3 (confirm's destroy-then-create as one `db.batch()`) is DROPPED.** The
+  "attach if cheaper" premise is falsified: `destroyChannelSession`'s
   `DELETE ... RETURNING` + `.first()` shape is not batchable as written, no call site in
-  the codebase reads a per-statement result back out of a `db.batch()`, and batching would
-  erase the deliberate fresh-clock liveness read the internals pass documented at
-  `factory.ts:1037-1040`. Atomicity buys nothing here: a failure between the two statements
-  leaves no orphan (the old row is already gone; confirm re-runs mint fresh). The pass-end
-  records close the docket item with this rationale.
-- **The `session.expires_at` index asymmetry is DOCUMENTED, not migrated.** A new migration
-  is a hand-applied consumer action (`docs/extend/upgrade-cairn.md:31-36`), and the sweep it
-  would speed (`auth/store.ts:203`, run per login) scans an editor-roster-sized table the
-  Workers review already measured as negligible. Task 13 states the accepted asymmetry at
-  the sweep site; the channel schema indexes because member counts can be large.
-- **Docket item 4 (OfficeList/AdminTable double scroll container) DEFERS to polish**, riding
-  the OfficeList outright-retire ruling (ratified default 6: no internals-B effort on a
-  component polish may retire). `viewport-overflow.ts:18-24`'s special case is built around
-  the pair; unwinding it before the retire ruling would be churn either way that ruling goes.
+  the codebase reads a per-statement result back out of a `db.batch()` (`auth-channel/
+  store.ts:410` is the only session batch and is fire-and-forget), and batching would erase
+  the deliberate fresh-clock liveness read documented at `factory.ts:1037-1040`.
+  `auth/store.ts:290-303` already records a precedent for deliberately keeping a statement
+  outside a batch. Atomicity buys nothing: a failure between the statements leaves no
+  orphan. Reopen trigger: a real consistency defect traced to the gap.
+- **The `session.expires_at` index asymmetry is DOCUMENTED, not migrated.** A migration is
+  a hand-applied consumer action (`docs/extend/upgrade-cairn.md:31-36`) for a per-login
+  scan over an editor-roster-sized table already measured negligible. Task 14 states the
+  asymmetry at the sweep site. Reopen trigger: editor rosters stop being small.
+- **Docket item 4 (OfficeList/AdminTable double scroll container) DEFERS to polish**,
+  riding the OfficeList retire ruling (ratified default 6). `viewport-overflow.ts:18-24`'s
+  special case is built around the pair; unwinding it before the ruling is churn either way.
+- **Docket item 12 (custom-screen read-seam boundary) was DROPPED as unfoundable at the
+  2026-09-02 sitting** (ratified outcome 1). Listed here because this section is where a
+  future reader looks for the pass's drops; the docket carries the reopen trigger (a
+  consumer building a custom admin screen asks for an engine content-read seam).
 
 ## Global constraints
 
-- **No public-surface change** except the `registerEditor` null-delivery contract (Task 12)
+- **No public-surface change** except the `registerEditor` null-delivery contract (Task 11)
   and its `EditorApi` doc updates. `npm run check:surface` stays green with an UNCHANGED
-  snapshot on every task except Task 12 (which regenerates and commits it).
-- **New files stay out of the components barrel.** `components-barrel.test.ts` and the
-  barrel-prune tests assert membership; extracted children are internal imports only.
-- Every new module carries the sibling-idiom header (one line naming the concern, then the
-  shared-context boilerplate for `content-routes-*`; M1-style headers elsewhere), TSDoc
-  comments at the repo bar, no em dashes in comments.
-- Splits move code verbatim wherever behavior is not named as changing: a moved function's
-  body is byte-identical unless a task step says otherwise. The diff-reviewer holds each
-  task to that.
-- Behavior-changing steps are test-first; pure moves rely on the existing suites staying
-  green plus the targeted no-regression runs each task names.
-- Full gate per task (`npm run check` 0/0, `npm test` exit 0) via the implementer chain;
-  the six CI-only gates by name at pass end.
-- Anchors below were verified against `ed586ee0`; if `main` has advanced at dispatch,
-  reconcile anchors first (the internals pass's own pre-dispatch step).
+  snapshot on every task; Task 11 regenerates only if the snapshot actually moves (the
+  surface file records structural types by name without module homes, so it may not).
+- **New files stay out of the components barrel** (the barrel-prune tests assert a fixed
+  name list against `dist/components/index.d.ts`; internal children are imports only).
+- Every new module carries the sibling-idiom header; TSDoc at the repo bar; no em dashes
+  in comments.
+- **Moves are verbatim wherever behavior is not named as changing**, with one systematic
+  exception the diff-reviewer applies everywhere: a closure-scoped `runtime` reference
+  becomes `ctx.runtime` where the target module's idiom requires it, and that substitution
+  is the ONLY tolerated body change in a move step.
+- **Authorization order is pinned, not assumed** (security lens): every task moving a
+  load or action carries an explicit guard-preamble acceptance criterion; a reviewer
+  rejects a move that reorders, merges, or "tidies" a guard.
+- Behavior-changing steps are test-first; pure moves rely on existing suites plus the
+  targeted runs each task names.
+- Full gate per task via the implementer chain; at pass end the six CI-only gates BY NAME:
+  `check:comments`, `check:reference:signatures`, `check:surface`, `check:snippets`,
+  `check:transcripts`, `check:symbols`.
+- Anchors verified against `ed586ee0` (`1d42a5d6` differs only by the plan docs); if
+  `main` has advanced at dispatch, reconcile anchors first.
 
 ---
 
-## Chain A: content-routes-core → five siblings (Tasks 1-3, sequential within the chain)
+## Chain A: content-routes-core → six siblings (Tasks 1-4, sequential)
 
 ### Task 1: Extract `content-routes-shared.ts`, `content-routes-shell.ts`, `content-routes-list.ts`
 
 **Files:**
-- Create: `src/lib/sveltekit/content-routes-shared.ts`, `src/lib/sveltekit/content-routes-shell.ts`,
-  `src/lib/sveltekit/content-routes-list.ts`
-- Modify: `src/lib/sveltekit/content-routes-core.ts` (remove moved spans),
-  `src/lib/sveltekit/content-routes.ts` (composition root :54-97 gains
-  `createShellActions(ctx)` / `createListActions(ctx)`; type re-export block :36-43 repoints)
-- Test: existing suites; no new test files (pure moves)
+- Create: `src/lib/sveltekit/content-routes-shared.ts`, `content-routes-shell.ts`,
+  `content-routes-list.ts`
+- Modify: `content-routes-core.ts` (remove moved spans), `content-routes.ts` (composition
+  :54-97 gains `createShellActions`/`createListActions`; type re-export block repoints),
+  `src/lib/sveltekit/preview.ts:274` (its private `isMissingTableError` duplicate collapses
+  onto the shared export after verifying the two implementations are textually identical)
+- Test: existing suites (pure moves)
 
 **Interfaces:**
 - Produces: `content-routes-shared.ts` exporting `conceptOf`, `requireEntryFromParams`,
   `isMissingTableError`, `clearPreviewTokens`, `manifestRow` (moved verbatim from core
-  :421-574 Tier A) plus `pendingEntryOf(runtime, ...)` lifted from closure scope (:591-596)
-  to a module-level helper taking `runtime` as its first parameter, exactly as `conceptOf`
-  already does. `ContentFormFailure` moves here (single home; core re-imports until Task 3
-  deletes it).
-- Produces: `createShellActions(ctx)` returning `{ shellLoad, helpLoad, indexLoad }`
-  (core :610-707, :735-755, :778-793) with local pure helpers `collectVisibleHrefs`
-  (:716-728) and `withRefusalCode` (:763-768); types `AdminShellData`, `HelpData`,
-  `WelcomeData`, internal `NavConcept` move with it.
-- Produces: `createListActions(ctx)` returning `{ listLoad }` (:854-899) with local helpers
-  `summarize` (:799-818), `pendingRow` (:825-827), `crawlEntries` (:833-844); types
-  `EntrySummary`, `ListData` move with it.
+  :421-574) plus `pendingEntryOf(runtime, ...)` lifted from closure scope (:591-596) to
+  take `runtime` as its first parameter; its FOUR closure call sites (:645, :744, :871,
+  :1617) updated. `ContentFormFailure` moves here (single home).
+- Produces: `createShellActions(ctx)` → `{ shellLoad, helpLoad, indexLoad }` (:610-707,
+  :735-755, :778-793) with `collectVisibleHrefs` (:716-728), `withRefusalCode` (:763-768);
+  types `AdminShellData`, `HelpData`, `WelcomeData`, internal `NavConcept` move with it.
+- Produces: `createListActions(ctx)` → `{ listLoad }` (:854-899) with `summarize`
+  (:799-818), `pendingRow` (:825-827), `crawlEntries` (:833-844); types `EntrySummary`,
+  `ListData`.
+- **Name-collision note (security lens):** `content-routes-media.ts:1350` has a local
+  `const manifestRow`; the shared export must not be imported there without renaming one.
+  Record the collision in the shared module's doc comment.
 
-- [ ] **Step 1:** create `content-routes-shared.ts` with the six helpers plus
-  `ContentFormFailure`, each moved verbatim; `pendingEntryOf` gains the `runtime` parameter
-  and its three closure call sites in core are updated to pass it.
-- [ ] **Step 2:** create the shell and list modules per the sibling idiom (multi-action
-  modules destructure `const { runtime } = ctx;`, per the codebase's own rule of thumb);
-  wire both into `createContentRoutesInternal`; repoint the type re-exports so every
-  existing `import type ... from './content-routes-core.js'` consumer resolves unchanged
-  through `content-routes.ts`.
-- [ ] **Step 3:** run the targeted suites (`content-routes-*.test.ts`, `env-genericity`,
-  `retires-task2-sanctioned-leak-replacements`, `content-routes-hand-mount`), then the full
-  gate. `npm run check:surface` must be unchanged.
-- [ ] **Step 4:** commit.
+- [ ] **Step 1:** create `content-routes-shared.ts`; parameterize `pendingEntryOf`; update
+  the four call sites. **The `clearPreviewTokens` containment comment moves and is
+  REWRITTEN** (security lens): the current text (:1843-1847) claims file scope as the
+  containment ("only from inside this shared core"); the true invariant after the split is
+  "both delete paths route through `deleteEntry`, the sole delete-path caller" — write
+  that, since a lie here gets 'corrected' wrong by internals-C's header sweep.
+- [ ] **Step 2:** create the shell and list modules per the multi-action idiom (destructure
+  `const { runtime } = ctx;`); wire the composition root; repoint the type re-exports;
+  collapse preview.ts's predicate duplicate.
+- [ ] **Step 3:** targeted suites (`content-routes-*`, `env-genericity`,
+  `retires-task2-sanctioned-leak-replacements`, `content-routes-hand-mount`), full gate,
+  `check:surface` unchanged. Commit.
 
-**Acceptance criteria:** core.ts no longer contains the moved spans; the four type-only test
-importers and the reproductions fixtures compile unchanged; the public `ContentRoutes` type
-is untouched; all moved bodies byte-identical except `pendingEntryOf`'s parameterization.
+**Acceptance criteria:** moved bodies verbatim except `pendingEntryOf`'s parameterization
+and the sanctioned `runtime`→`ctx.runtime` substitutions; every existing importer compiles
+unchanged; `shellLoad`/`helpLoad`/`indexLoad`/`listLoad` guard preambles byte-identical;
+exactly one `isMissingTableError` definition remains in `src/lib`.
 
 ### Task 2: Extract `content-routes-preview.ts`
 
 **Files:**
 - Create: `src/lib/sveltekit/content-routes-preview.ts`
-- Modify: `content-routes-core.ts`, `content-routes.ts` (composition + type re-exports)
+- Modify: `content-routes-core.ts`, `content-routes.ts`
 
 **Interfaces:**
-- Produces: `createPreviewActions(ctx)` returning `{ previewMintAction, previewRevokeAction }`
-  (core :2066-2108, :2122-2147) with `missingPreviewTableFailure` (:570-574) moved in as a
-  local helper (its only two consumers live here); internal type `PreviewMintFailure` moves.
-- Consumes: `isMissingTableError` from `content-routes-shared.ts` (Task 1).
+- Produces: `createPreviewActions(ctx)` → `{ previewMintAction, previewRevokeAction }`
+  (:2066-2108, :2122-2147) with `missingPreviewTableFailure` (:570-574) as a local helper;
+  internal type `PreviewMintFailure` moves.
 
-- [ ] **Step 1:** create the module per the small-module idiom (fully-qualified `ctx.*`, no
-  destructure — the two-action rule the siblings already follow); move both actions
-  verbatim; wire the composition root.
-- [ ] **Step 2:** targeted preview suites (`content-routes-preview.test.ts` and the
-  preview-store integration tests), full gate, surface unchanged. Commit.
+- [ ] **Step 1:** create the module per the small-module idiom (fully-qualified `ctx.*`);
+  move both actions; wire the composition root.
+- [ ] **Step 2:** targeted preview suites, full gate, surface unchanged. Commit.
 
-**Acceptance criteria:** both actions byte-identical; `previewRevokeAction` still routes
-through `preview.ts`'s standalone `previewRevoke` (the Task-12-of-internals shape); the
-route-level 404/400 refusals unchanged.
+**Acceptance criteria (security lens, replacing the impossible "byte-identical"):** bodies
+identical modulo `runtime` → `ctx.runtime`; **authorization order unchanged** — the mint
+path still runs `previewMint`'s internal authorization before anything else and the origin
+requirement at the site the comments at :2071-2077/:2126-2128 describe; the
+`unknown-concept` (404), `invalid-id` (400), and `no-draft` (400) refusal shapes and
+status codes unchanged; `previewRevokeAction` still routes through `preview.ts`'s
+standalone `previewRevoke`.
 
-### Task 3: `content-routes-entry.ts` and the death of `content-routes-core.ts`
+### Task 3: `content-routes-entry.ts` — the load/save/publish family
 
 **Files:**
 - Create: `src/lib/sveltekit/content-routes-entry.ts`
-- Delete: `src/lib/sveltekit/content-routes-core.ts`
-- Modify: `content-routes.ts`, `src/tests/unit/check-editor-quotes.test.ts:131` (the
-  source-text scan hardcodes the core path; generalize it to glob every
-  `content-routes-*.ts` sibling so the scanned strings follow the code)
+- Modify: `content-routes-core.ts`, `content-routes.ts`,
+  `src/lib/components/FragmentPicker.svelte:13` (repoints its `FragmentTarget` type import
+  at the new sibling), `src/tests/component/FragmentPicker.test.ts:4`,
+  `src/tests/unit/env-genericity.test.ts:21`,
+  `src/tests/unit/retires-task2-sanctioned-leak-replacements.test.ts:13`,
+  `src/tests/unit/content-routes-hand-mount.test.ts:23`,
+  `src/lib/reproductions/{fixtures.ts:21,index.ts:15,ReproContext.svelte:57,stories/support.ts:8}`
 
 **Interfaces:**
-- Produces: `createEntryActions(ctx)` returning the eleven lifecycle exports (`createAction`,
-  `editLoad`, `historyLoad`, `saveAction`, `publishAction`, `publishAllAction`,
-  `discardAction`, `deleteAction`, `listDeleteAction`, `renameAction`, `revertAction`; core
-  :902-2273) with local helpers `commitEditorName`, `draftFromBranchHead`, `saveRefusal`,
-  `saveToBranch`, `deleteEntry`, `draftExistsFailure` and the entry-only Tier-A helpers
-  (`resolvePreview`, `invalidIdMessage`, `revertSchemaDrift`, `retiredContentAdvisory`,
-  `commaListParam`, `BUILTIN_FRONTMATTER_KEYS`) moved in.
+- Produces: `createEntryActions(ctx)` opening with `{ createAction, editLoad, historyLoad,
+  saveAction, publishAction, publishAllAction }` (:902-948, :951-1178, :1223-1253,
+  :1495-1505, :1515-1591, :1604-1701) plus helpers `commitEditorName` (:1192-1194),
+  `draftFromBranchHead` (:1205-1215), `saveRefusal` (:1302-1304), `saveToBranch`
+  (:1314-1489, ctx-coupled), and the entry-only Tier-A helpers (`resolvePreview`,
+  `invalidIdMessage`, `retiredContentAdvisory`, `commaListParam`,
+  `BUILTIN_FRONTMATTER_KEYS`). Type `FragmentTarget` moves here; **it is deliberately NOT
+  re-exported through `content-routes.ts`** — the retires ruling
+  (`engine-rulings.md:1749`) dropped that re-export by design, so `FragmentPicker.svelte`
+  and its test repoint at `./content-routes-entry.js` directly. Types `EditData`,
+  `HistoryData` move; the reproductions/test type importers repoint per name.
 - Consumes: everything `content-routes-shared.ts` exports.
 
-- [ ] **Step 1:** create the module (destructured `runtime`, per the multi-action rule);
-  move the eleven actions and helpers verbatim; note and do NOT "fix" the pre-existing
-  `ctx.logCommitFailed` vs bare `logCommitFailed` call-style inconsistency
-  (:1672 vs :2249) — record it for the internals-C header sweep instead.
-- [ ] **Step 2:** delete core.ts; repoint `content-routes.ts`'s remaining imports and type
-  re-exports; generalize the editor-quotes test's path list.
-- [ ] **Step 3:** full targeted content-routes suite plus `check:editor-quotes`, full gate,
-  surface unchanged. Commit.
+- [ ] **Step 1:** create the module (destructured `runtime`); move the six actions and the
+  helpers; repoint the type importers whose names moved in this half.
+- [ ] **Step 2:** targeted suites (`content-routes-edit`, `content-routes-preview`
+  integration, `FragmentPicker`), full gate, surface unchanged. Commit.
 
-**Acceptance criteria:** no file named `content-routes-core.ts` remains; every doc or comment
-naming it is updated (grep the tree); `content-routes.ts` is the only composition change;
-all 17 original exports reachable exactly as before.
+**Acceptance criteria:** guard preambles byte-identical per action — `createAction`,
+`editLoad`, `historyLoad` keep their inline `requireEditor` → `conceptOf` →
+`requireEngineAccess` → `isValidId` shapes (:903-911, :952-956, :1224-1228); `saveAction`
+and `publishAction` keep `requireEntryFromParams` (:1496, :1516); **`publishAllAction`
+keeps its per-entry `canReach` (:1605, :1618) and gains no single `requireEngineAccess`**;
+no re-export of `FragmentTarget` appears in `content-routes.ts`.
+
+### Task 4: The mutation family and the death of `content-routes-core.ts`
+
+**Files:**
+- Modify: `content-routes-entry.ts` (gains the mutation family), `content-routes.ts`
+- Delete: `content-routes-core.ts`
+- Modify: `src/lib/reproductions/stories/publish.ts:17` (repoints `DeleteRefusal`),
+  `src/tests/unit/check-editor-quotes.test.ts:131` (generalize the hardcoded core path to
+  glob every `content-routes-*.ts` sibling), `vitest.config.ts:113` (the one live config
+  reference)
+
+**Interfaces:**
+- Produces: `createEntryActions` completes with `{ discardAction, deleteAction,
+  listDeleteAction, renameAction, revertAction }` (:1707-1724, :1852-1855, :1858-1866,
+  :1874-2051, :2182-2273) plus `deleteEntry` (:1733-1849), `draftExistsFailure`
+  (:2158-2165), `revertSchemaDrift` (:464-475). Type `DeleteRefusal` moves here and, per
+  the same retires ruling, is NOT re-exported through `content-routes.ts`;
+  `stories/publish.ts` repoints directly.
+
+- [ ] **Step 1:** move the five actions and helpers; delete core.ts; repoint the remaining
+  importers; generalize the editor-quotes test path list.
+- [ ] **Step 2:** full content-routes suite plus `check:editor-quotes`, `check:docs`, full
+  gate, surface unchanged. Commit.
+
+**Acceptance criteria:** guard preambles byte-identical — `discardAction`, `deleteAction`,
+`renameAction`, `revertAction` keep `requireEntryFromParams` (:1708, :1853, :1875, :2183);
+**`listDeleteAction` continues to read its entry id from the FORM BODY, not
+`event.params`** (:1858-1866; the docstring at :519-521 warns exactly against absorbing it
+into `requireEntryFromParams` — an implementer must not "tidy" it); both delete paths
+still route through `deleteEntry`, the sole delete-path caller of `clearPreviewTokens`;
+no file named `content-routes-core.ts` remains; **stale-name criterion scoped to live
+references only** (grounding lens): `src/lib`, `src/tests`, `vitest.config.ts`,
+`ROADMAP.md` — CHANGELOG history, closed ledger rows, and `docs/internal/record/` keep
+their historical mentions untouched.
 
 ---
 
-## Chain B: audit/rendered.ts → directory (Tasks 4-5, sequential within the chain)
+## Chain B: audit/rendered.ts → directory (Tasks 5-6, sequential)
 
-### Task 4: `audit/rendered/` — types, findings, identity
+### Task 5: `audit/rendered/` — types, findings, identity
 
 **Files:**
-- Create: `src/lib/audit/rendered/types.ts`, `src/lib/audit/rendered/findings.ts`,
-  `src/lib/audit/rendered/identity.ts`
-- Modify: `src/lib/audit/rendered.ts` (re-export the moved names; keep everything else)
+- Create: `src/lib/audit/rendered/types.ts`, `findings.ts`, `identity.ts`
+- Modify: `src/lib/audit/rendered.ts` (re-exports the moved names)
 
 **Interfaces:**
-- Produces: `types.ts` holding every interface (`RenderedPage`, `RenderedContext`,
-  `RenderedBrowser`, `PlaywrightModule`, `RenderedRuleContext`, `RenderedFinding`,
-  `RenderedRule`, `ResolvedRenderedFinding`, `RenderedPageVisit`, `InteractionState`,
-  `Theme`, `PageIdentity`, `RenderedDeps`, `CairnAuditPageHelpers`) — no logic.
-  `findings.ts` holding the finding-builders (rendered.ts :211-353, :453-466), the five
-  rule-id consts, `SURFACED_UNREACHED_STATES`, `positionless`, and `resolveRenderedFindings`
-  (:491-530). `identity.ts` holding `capturePageIdentity`, `identitiesMatch`,
-  `waitForHydrationSettle`, `captureSsrIdentity` (:363-448); it imports `positionless` and
-  `pageIdentityMismatchFinding` stays in `findings.ts` (the arrows run types ← findings ←
-  identity, never backward).
-- **Preserved contract:** `rendered.ts` re-exports every moved name, so `color.ts:13`'s
-  type-only import of `RenderedFinding`, all 16 rule files, and all 20 test files compile
-  with zero import changes.
+- Produces: `types.ts` holding every interface — including `PageIdentity` (:370),
+  `RenderedDeps` (:615), and `CairnAuditPageHelpers` (:786), which are EXTRACTED FROM
+  WITHIN ranges later tasks move (grounding lens: they sit inside the identity/bootstrap/
+  page-surface spans; pull them into types.ts here and leave the logic behind).
+  `findings.ts` holds the finding-builders (:211-353, :453-466), the five rule-id consts,
+  `SURFACED_UNREACHED_STATES`, `positionless`, `resolveRenderedFindings` (:491-530).
+  `identity.ts` holds `capturePageIdentity`, `identitiesMatch`, `waitForHydrationSettle`,
+  `captureSsrIdentity` (:363-448); arrows run types ← findings ← identity only.
+- **Preserved contract:** `rendered.ts` re-exports every moved name — types AND the three
+  value imports rules use (`ensurePageHelpers`, `resolveColors`, **and `applyState`**,
+  which `panel-width.test.ts` imports) — so all **17** rule files and **23** test files
+  compile with zero import changes; `color.ts:13`'s type-only `RenderedFinding` import
+  unchanged.
 
-- [ ] **Step 1:** create the three modules, move verbatim, re-export from `rendered.ts`.
-- [ ] **Step 2:** run the three resolver-sensitive suites the recon named
-  (`advisory-refutations`, `gate-refutations`, `rulings.border-contrast`) plus
-  `audit/rendered.test.ts`, then the full gate. Commit.
+- [ ] **Step 1:** create the three modules; move verbatim; re-export from `rendered.ts`.
+- [ ] **Step 2:** run the three resolver-sensitive suites (`advisory-refutations`,
+  `gate-refutations`, `rulings.border-contrast`) plus `audit/rendered.test.ts`; full gate.
+  Commit.
 
 **Acceptance criteria:** zero changes under `src/lib/audit/rules/` and `src/tests/`; the
-type-only cycle with `color.ts` unchanged in direction.
+`color.ts` type cycle unchanged in direction.
 
-### Task 5: `bootstrap.ts`, `page-surface.ts`, and the orchestrator remainder
+### Task 6: `bootstrap.ts`, `page-surface.ts`, and the orchestrator remainder
 
 **Files:**
-- Create: `src/lib/audit/rendered/bootstrap.ts`, `src/lib/audit/rendered/page-surface.ts`
-- Modify: `src/lib/audit/rendered.ts` (now: `runRendered` + `redirectTrapRefusal` + the
-  barrel re-exports, nothing else)
+- Create: `src/lib/audit/rendered/bootstrap.ts`, `page-surface.ts`
+- Modify: `src/lib/audit/rendered.ts`
+- Test: a new unit case for the redaction fix below
 
 **Interfaces:**
-- Produces: `bootstrap.ts` (`defaultIsReachable`, `resolveBaseUrl`, `resolveExtraCookies`,
-  `defaultLoadPlaywright`, `loadPlaywrightModule`, `DEFAULT_BASE_URL`; :532-620) and
-  `page-surface.ts` (`neededStates`, `applyState` with the menu-open/row-expanded
-  machinery, `resolveColors`, `resolveColorsInPage`, `probeSelectors`,
-  `installPageHelpers`, `ensurePageHelpers`; :626-916). Rules keep importing
-  `ensurePageHelpers`/`resolveColors` as values from `../../rendered.js` via the barrel.
-- Consumes: Task 4's modules.
+- Produces: `bootstrap.ts` (:532-620 logic) and `page-surface.ts` (:626-916 logic, the
+  menu-open/row-expanded state machinery included), with `rendered.ts` shrinking to
+  `runRendered` + `redirectTrapRefusal` + the barrel re-exports.
+- **One deliberate behavior fix rides the move (security lens):** `resolveExtraCookies`
+  (:572-593) currently interpolates a malformed `CAIRN_AUDIT_COOKIES` entry — cookie VALUE
+  included — into its thrown error, so a session value lands in a CI log. During the move,
+  the message redacts the value (name and position only). Test-first.
 
-- [ ] **Step 1:** create both modules, move verbatim; `rendered.ts` shrinks to the
-  orchestrator plus re-exports; give each new module its M1 header naming the "runs via
-  `page.evaluate`, self-contained by source" discipline where it applies.
-- [ ] **Step 2:** run `panel-width.test.ts` (the one test importing `applyState` directly)
-  plus the norms-bands browser suite, full gate. Commit.
+- [ ] **Step 1:** write the failing redaction test (a malformed entry's value must not
+  appear in the thrown message).
+- [ ] **Step 2:** create both modules (the redaction landing in `bootstrap.ts`); shrink
+  `rendered.ts`; M1 headers on both new modules naming the page-evaluate discipline where
+  it applies.
+- [ ] **Step 3:** `panel-width.test.ts`, the norms-bands browser suite, full gate. Commit.
 
-**Acceptance criteria:** `rendered.ts` is under ~300 lines; every rule and test file
-untouched; `npm run test:component` unaffected.
+**Acceptance criteria:** `rendered.ts` ≤ 450 lines including re-exports (grounding lens
+measured ~384 expected; the old "~300" was wrong); every rule and test file untouched
+except the new redaction test; no cookie value reachable in any thrown message from the
+cookie parser.
 
 ---
 
-## Chain C: CairnMediaLibrary dialog extractions (Tasks 6-8, sequential within the chain)
+## Chain C: CairnMediaLibrary dialog extractions (Tasks 7-9, sequential)
 
-### Task 6: Orphan tools and bulk-delete dialogs out; helpers hoisted
-
-**Files:**
-- Create: `src/lib/components/MediaOrphanTools.svelte`,
-  `src/lib/components/MediaBulkDeleteDialog.svelte`,
-  `src/lib/components/media-library-helpers.ts`
-- Modify: `src/lib/components/CairnMediaLibrary.svelte`
-- Test: `src/tests/component/CairnMediaLibrary.test.ts` (mounting paths only where selectors
-  changed; assertions unchanged)
-
-**Interfaces:**
-- Produces: `MediaOrphanTools.svelte` owning the orphan scan/purge cluster (script
-  :1158-1339, markup :2812-3105) — fully self-contained per recon; it re-fetches `csrf` via
-  its own `getContext` and exposes `open()`; the trigger button stays in the shell toolbar.
-  `MediaBulkDeleteDialog.svelte` owning script :1040-1157 + markup :2581-2803, receiving
-  `hashes: string[]` (pinned at open), `assets`, a `usageCount(hash)` helper import, and an
-  `onfinished: () => void` callback the shell wires to `clearSelection`.
-  `media-library-helpers.ts` holding the pure fact helpers (`usageCount`, `needsAlt`,
-  `usageEntries`-family; script :145-156, :836-848) as plain exported functions taking
-  `data` explicitly.
-- Also in this task: hoist the `csrf` `getContext` call from :333 to the top of the shell's
-  script (it serves seven flows and lands in children by their own `getContext`).
-
-- [ ] **Step 1:** hoist helpers and `csrf`; extract the orphan component (the zero-coupling
-  cut first); component suite green.
-- [ ] **Step 2:** extract the bulk-delete dialog with its prop/callback contract; verify the
-  sticky action bar still opens it and `clearSelection` fires on finish; full gate. Commit.
-
-**Acceptance criteria:** both dialog markups byte-identical inside their new homes (ARIA
-contracts and danger-register comments travel intact); the shell no longer declares any
-orphan/bulk state; `CairnMediaLibrary.test.ts` passes with at most selector-path edits.
-
-### Task 7: Replace and alt-fill dialogs out
+### Task 7: The Escape scope switch, then orphan tools and bulk-delete out
 
 **Files:**
-- Create: `src/lib/components/MediaReplaceDialog.svelte`,
-  `src/lib/components/MediaAltFillDialog.svelte`
-- Modify: `CairnMediaLibrary.svelte`; component tests as above
+- Create: `src/lib/components/MediaOrphanTools.svelte`, `MediaBulkDeleteDialog.svelte`,
+  `media-library-helpers.ts`
+- Modify: `CairnMediaLibrary.svelte`
+- Test: `src/tests/component/CairnMediaLibrary.test.ts`
 
 **Interfaces:**
-- Produces: each dialog receives the pinned `asset` (the shell passes `selected` at open),
-  re-fetches `csrf`, and owns its full preview/apply cycle (replace: script :327-560, markup
-  :2053-2301; alt-fill: script :715-836 minus the hoisted where-used helpers, markup
-  :2310-2572); each exposes `open(asset)`/`close()` and an `onapplied` callback for the
-  shell's `invalidateAll` path.
+- Produces (Step 1, BEFORE any extraction — grounding lens: Tasks as previously ordered
+  broke `onWindowKeydown`'s six named dialog refs two tasks before fixing them):
+  `onWindowKeydown` (:288-290) drops the named refs for a query **scoped to the
+  component's own root element** (`rootEl.querySelector('dialog[open]')` off a
+  `bind:this` container ref), NOT `document`-wide (security lens: a document query lets
+  the admin shell's palette dialog suppress the library's Escape-to-close). All six
+  library dialogs live inside the component subtree, so scoped matching preserves today's
+  semantics exactly, including after extraction.
+- Produces: `MediaOrphanTools.svelte` (script :1158-1332 — the cluster ends at :1332, not
+  :1339; `brokenWhereUsed` stays in the shell — markup :2812-3105), self-contained,
+  own-`getContext` csrf, exposing `open()`; `MediaBulkDeleteDialog.svelte` (script
+  :1040-1157, markup :2581-2803) taking `hashes`, `assets`, the `usageCount` helper
+  import, and `onfinished` wired to `clearSelection`. `media-library-helpers.ts` holds
+  the pure fact helpers (:145-156, :836-848) taking `data` explicitly. The shell's `csrf`
+  `getContext` hoists from :333 to the script top.
+
+- [ ] **Step 1:** write the failing Escape test (an open dialog rendered by a child
+  component must still claim Escape; the named-ref implementation cannot see it); land
+  the scoped-query switch; green.
+- [ ] **Step 2:** hoist helpers and csrf; extract orphan tools; suite green.
+- [ ] **Step 3:** extract bulk-delete with its prop/callback contract; full gate. Commit.
+
+**Acceptance criteria:** Escape and selection-clear behavior identical to HEAD for every
+dialog, open or closed, before and after extraction (the scoped query is the mechanism);
+dialog markups byte-identical in their new homes; the shell declares no orphan/bulk state.
+
+### Task 8: Replace and alt-fill dialogs out
+
+**Files:**
+- Create: `src/lib/components/MediaReplaceDialog.svelte`, `MediaAltFillDialog.svelte`
+- Modify: `CairnMediaLibrary.svelte`; component tests
+
+**Interfaces:**
+- Produces: each dialog takes the pinned `asset` at open, re-fetches `csrf`, owns its
+  preview/apply cycle (replace: script :327-560, markup :2053-2301; alt-fill: script
+  :715-835 minus hoisted helpers, markup :2310-2572); each exposes `open(asset)`/`close()`
+  and `onapplied`.
 
 - [ ] **Step 1:** extract replace; suite green. **Step 2:** extract alt-fill; full gate;
   commit.
 
-**Acceptance criteria:** the slide-over's trigger buttons (:1937/:1947) still open both;
-pinned-asset semantics unchanged (opening pins, closing clears); markup byte-identical.
+**Acceptance criteria:** the slide-over triggers (:1937, :1947) open both; pinned-asset
+semantics unchanged; markup byte-identical.
 
-### Task 8: Upload dialog, drag-drop wiring, and the Escape-handling switch
+### Task 9: Upload dialog and drag-drop wiring
 
 **Files:**
 - Create: `src/lib/components/MediaUploadDialog.svelte`
 - Modify: `CairnMediaLibrary.svelte`; component tests
 
 **Interfaces:**
-- Produces: the upload dialog (script :561-715, markup :3113-3158 plus the hidden input)
-  exporting `onPageDragover`/`onPageDrop` handlers for the shell's `<svelte:window>` (which
-  stays in the shell beside `onWindowKeydown`) and an `openUpload()` the three trigger sites
-  (header snippet, empty state, toolbar) call.
-- **Behavior change (test-first):** `onWindowKeydown` (:288) stops reading `.open` off six
-  named dialog refs and instead uses `document.querySelector('dialog[open]')`, the idiom
-  `libraryDropBusy` (:623) already uses — extracted children no longer expose refs.
+- Produces: the upload dialog (script :561-714, dialog markup :3113-3158, the hidden
+  `<input>` currently at :1438 in the shell's top-level template) exporting
+  `onPageDragover`/`onPageDrop` for the shell's `<svelte:window>` (stays in the shell
+  beside `onWindowKeydown`) and `openUpload()` for the three trigger sites.
 
-- [ ] **Step 1:** write the failing test for Escape handling with an extracted dialog open
-  (the named-ref path cannot see it); implement the querySelector switch; green.
-- [ ] **Step 2:** extract the upload dialog and wire the three triggers and the window
-  handlers; full gate. Commit.
+- [ ] **Step 1:** extract; wire the triggers and window handlers; component suite; full
+  gate. Commit.
 
-**Acceptance criteria:** Escape claimed by any open dialog exactly as before; drag-drop
-suppressed while any dialog is open; the shell's `<svelte:window>` line owns both handler
-sets; shell script is now under ~700 lines.
+**Acceptance criteria:** all three trigger sites open it; drag-drop still stands down
+while any dialog is open (`libraryDropBusy` :623 unchanged); shell script under 700 lines
+(a hard number; the recon's cluster arithmetic supports it).
 
 ---
 
-## Chain D: EditPage extractions, the holder collapse, and the FieldInput fix (Tasks 9-12, sequential within the chain)
+## Chain D: EditPage — collapse first, then extractions (Tasks 10-13, sequential)
 
-### Task 9: ShareLinkPanel, broken-links banner, editor-preference module
-
-**Files:**
-- Create: `src/lib/components/ShareLinkPanel.svelte`,
-  `src/lib/components/editor-preferences.svelte.ts`
-- Modify: `src/lib/components/EditPage.svelte`
-- Test: `edit-page-preview-share.test.ts`, `editor-pref-isolation.test.ts` (paths/harness
-  only; assertions unchanged)
-
-**Interfaces:**
-- Produces: `ShareLinkPanel.svelte` owning script :1118-1246 and its markup block, taking
-  `conceptId`, `entryId`, `csrf`, `previewMint` — the recon's cleanest cut, zero holder
-  coupling. `editor-preferences.svelte.ts` owning the localStorage-backed toggles
-  (:401-537) as a rune module; `setZen`'s DOM reach into `editorCard` becomes a
-  `focusEditorSurface: () => void` callback the shell passes in (the shell keeps
-  `editorCard`).
-- The broken-links cluster (:1248-1262) stays in the shell this task but its direct
-  `body = next` write is promoted onto a single `setBody(next: string)` shell function that
-  the figure cluster's holder path and this cluster both route through (one write path, so
-  the entry-key reset and tidy's reads never race a second idiom).
-
-- [ ] **Step 1:** extract the share panel; share suite green. **Step 2:** extract the
-  preferences module with the callback seam; pref-isolation suite green. **Step 3:**
-  introduce `setBody` and route both writers through it; full gate. Commit.
-
-**Acceptance criteria:** share/revoke flows behave identically (counts, errors, copied
-state); zen focus still lands in the CodeMirror content; exactly one code path assigns
-`body` outside the reset.
-
-### Task 10: TidyController and FigureEditor out
+### Task 10: ShareLinkPanel and the editor-preference module
 
 **Files:**
-- Create: `src/lib/components/tidy-controller.svelte.ts`,
-  `src/lib/components/figure-editor.svelte.ts`
+- Create: `src/lib/components/ShareLinkPanel.svelte`, `editor-preferences.svelte.ts`
 - Modify: `EditPage.svelte`
-- Test: tidy-review and figure-related component suites
+- Test: `edit-page-preview-share.test.ts`, `editor-pref-isolation.test.ts`
 
 **Interfaces:**
-- Produces: `tidy-controller.svelte.ts` owning :562-737 (runTidy/cancel/close/applied/undo,
-  the three status-dialog effects) plus the tidy dialog markup staying in the shell template
-  but driven by the controller's exported state. The controller exposes `tidyMode` and
-  `tidyBusy`; the shell's `insertDisabled` derives from `mode` plus the controller's
-  exported `tidyMode` (resolving the recon's straddle). It consumes the `editor` grant's
-  tidy members via the holder the shell passes (post-Task-12 this becomes `editor.tidy`
-  etc.; this task takes the four current holders as parameters).
-  `figure-editor.svelte.ts` owning :839-1029 with `caretComponent`/`mediaAtCaret` passed in
-  as `$state` the shell still writes from the `MarkdownEditor` callbacks (:2318-2319), and
-  writes routed through `setBody`/the range holders.
+- Produces: `ShareLinkPanel.svelte` owning script **:1118-1238** (grounding lens:
+  :1240-1246 is `pickAction`, which closes over the shell's `actionsMenu` ref and STAYS)
+  plus its markup block, taking `conceptId`, `entryId`, `csrf`, `previewMint`.
+  **The panel mounts inside `{#key entryKey}`** (security lens: the minted preview URL is
+  a bearer credential whose scoping today rests on the entry-key remount; the mount
+  placement preserves it structurally until Task 11's per-unit resets), and
+  `edit-page-preview-share.test.ts:230`'s entry-hop clearing assertions are UNCHANGED —
+  harness edits only.
+- Produces: `editor-preferences.svelte.ts` owning the storage-backed toggle STATE from
+  :401-537. **`setZen`'s DOM choreography stays in the shell** (grounding lens: the
+  `.cm-editor` containment read at :502 must precede the `zen` flip, then `flushSync()`,
+  then the `.cm-content` focus at :510 — and `check:cm-internals`, a CI-only gate with a
+  file-enumerated allowlist, fails any new components file mentioning `.cm-`; keeping the
+  choreography in `EditPage.svelte`, already allowlisted, avoids both hazards). The module
+  exposes state and setters; the shell's `setZen` consumes them and keeps the DOM reads.
+- The broken-links cluster (:1248-1262) stays in the shell UNCHANGED — the prior plan's
+  `setBody` unification step is dropped (grounding lens: `removeBrokenLink` at :1259 is
+  already the only `body` writer outside init and the reset; the figure cluster writes
+  through `replaceRange`, so there was no second direct writer to unify).
 
-- [ ] **Step 1:** extract tidy; tidy suites green. **Step 2:** extract figure editing;
-  figure/caret suites green; full gate. Commit.
+- [ ] **Step 1:** extract the share panel inside the key block; share suite green with
+  assertions unchanged. **Step 2:** extract the preference state module; pref-isolation
+  suite green; full gate. Commit.
 
-**Acceptance criteria:** `insertDisabled` truth-table unchanged (preview mode or tidy mode
-disables); tidy undo and applied-body flows identical; figure apply/unwrap writes produce
-byte-identical bodies on the existing fixtures.
+**Acceptance criteria:** share/revoke flows identical; the entry-hop clearing test passes
+with its original assertions; zen focus still lands in CodeMirror content; no `.cm-`
+string appears in any new file; `check:cm-internals` (run by name — it is in neither
+`npm run check` nor `npm test`) passes.
 
-### Task 11: DetailsPanel owns the hero refs; the `registerHeroField` fix
+### Task 11: The holder collapse and the identity-guarded revocation seam
+
+**Files:**
+- Modify: `EditPage.svelte`, `MarkdownEditor.svelte`, `docs/reference/components.md`,
+  `CHANGELOG.md`; `docs/internal/api-surface.md` only if the snapshot moves
+- Test: component suites capturing the grant; a new failing test first
+
+**Interfaces:**
+- **Produces (seam change, unpublished window):**
+  `registerEditor?: (api: EditorApi | null) => void`. `MarkdownEditor` delivers the api on
+  mount (:2303-2317 receiving side) and delivers `null` from `onDestroy` — the real
+  destroy path is **:967-970** (grounding lens; the previously cited :959-962 is inside
+  the grant object literal). **The revocation is identity-guarded** (security lens): the
+  host nulls its holder only when the revoked api IS the one it currently holds (reference
+  compare), so an out-of-order destroy-after-mount under `{#key}` cannot clobber a live
+  grant; and the null delivery is a no-op when no grant was delivered (SSR teardown).
+- EditPage replaces the 13 `$state.raw` holders (:545-560, :564-566, :745-750), the reset
+  block (:1378-1390), and the fan-out callback with one
+  `let editor = $state.raw<EditorApi | null>(null)`. **Every consumer rewrite follows this
+  13-row default table (security lens — the `getSelectionRange` row is the one that
+  silently corrupts a tidied body if missed):**
+
+  | member | current default | rewritten expression |
+  |---|---|---|
+  | `insert` | no-op | `editor?.insert(...)` |
+  | `replaceRange` | no-op | `editor?.replaceRange(...)` |
+  | `selectRange` | no-op | `editor?.selectRange(...)` |
+  | `insertLink` | no-op | `editor?.insertLink(...)` |
+  | `getSelection` | `() => ''` | `editor?.getSelection() ?? ''` |
+  | `getSelectionRange` | `() => null` | `editor?.getSelectionRange() ?? null` |
+  | `format` | no-op | `editor?.format(...)` |
+  | `tidyApi` | `null` | `editor?.tidy ?? null` |
+  | `undoEditor` | no-op | `editor?.undo()` |
+  | `caretCoords` | `null`-ish holder | `editor?.caretCoords ?? null` |
+  | `focus` | no-op | `editor?.focus()` |
+  | `placeholders` | `null` | `editor?.imagePlaceholders ?? null` |
+  | `insertImageFn` | no-op | `editor?.insertImage(...)` |
+
+  (`?? null` on `getSelectionRange` is mandatory: bare `editor?.getSelectionRange()`
+  yields `undefined`, `if (range)` at :621 treats it as absent, and tidy falls into the
+  fuzzy `body.indexOf` mapping the range seam exists to avoid — corrections then land on
+  an earlier identical passage and publish.)
+- The shell's entry-key reset shrinks to `editor = null` plus shell-owned slots; the
+  extracted units from Tasks 10/12/13 own their `entryKey`-scoped resets as they are born.
+
+- [ ] **Step 1:** write the failing revocation test: navigating the entry key revokes the
+  captured grant (nulled) before the new mount registers, AND a stale revocation (an old
+  api reference delivered after a newer grant) does NOT clobber the newer grant.
+- [ ] **Step 2:** land null delivery + identity guard in `MarkdownEditor`; land the single
+  holder and the 13 consumer rewrites per the table; migrate the reset; green — including
+  the internals pass's existing stale-view regression test and the tidy selection-mapping
+  suite (which pins the `?? null` row).
+- [ ] **Step 3:** update `components.md`'s contract (delivery on mount, identity-guarded
+  null on destroy), extend the unpublished CHANGELOG entry in place, run
+  `check:reference:signatures`; regenerate the surface snapshot only if `check:surface`
+  reports drift. Full gate. Commit.
+
+**Acceptance criteria:** exactly one holder; the 13-row table realized verbatim (the
+diff-reviewer checks each row); revocation identity-guarded and SSR-safe; docs and
+signatures gates green.
+
+### Task 12: TidyController and FigureEditor out (consuming `editor`)
+
+**Files:**
+- Create: `src/lib/components/tidy-controller.svelte.ts`, `figure-editor.svelte.ts`
+- Modify: `EditPage.svelte`
+- Test: tidy-review and figure component suites
+
+**Interfaces:**
+- Produces: `tidy-controller.svelte.ts` owning :562-737's logic, taking **a getter**
+  `getEditor: () => EditorApi | null` (grounding lens: `$state.raw` values passed by value
+  into a `.svelte.ts` module lose reactivity; getters are the load-bearing form), exposing
+  `tidyMode`/`tidyBusy`; the shell derives `insertDisabled` from `mode` plus the exported
+  `tidyMode`. `figure-editor.svelte.ts` owning :839-1029's logic with getters for
+  `caretComponent`/`mediaAtCaret` (written by the shell from the `MarkdownEditor`
+  callbacks at :2318-2319) and writes through `editor?.replaceRange`/`selectRange`.
+  Each module owns its `entryKey`-scoped reset at birth.
+
+- [ ] **Step 1:** extract tidy with the getter seam; tidy suites green (including the
+  selection-mapping cases). **Step 2:** extract figure editing; figure/caret suites green;
+  entry-switch suite extended to assert both modules' state resets on entry hop; full
+  gate. Commit.
+
+**Acceptance criteria:** `insertDisabled` truth-table unchanged; tidy undo/applied flows
+identical; figure writes byte-identical on fixtures; the extended entry-switch test
+covers both new resets.
+
+### Task 13: DetailsPanel owns the hero refs; the `registerHeroField` fix
 
 **Files:**
 - Create: `src/lib/components/DetailsPanel.svelte`
-- Modify: `EditPage.svelte`, `src/lib/components/FieldInput.svelte`,
-  `src/lib/components/ObjectGroupField.svelte`, `src/lib/components/RepeatableField.svelte`
-- Test: `edit-page-v2-fields.test.ts`, `reference-field.test.ts`, plus a new failing test
-  first for the warning
+- Modify: `EditPage.svelte`, `FieldInput.svelte`, `ObjectGroupField.svelte`,
+  `RepeatableField.svelte`
+- Test: `edit-page-v2-fields.test.ts`, `reference-field.test.ts`, a new failing test first
 
 **Interfaces:**
 - Produces: `DetailsPanel.svelte` owning the Details fieldset markup (~:2531-2620), the
-  `<FieldInput>` loop, and LOCAL ownership of `heroFieldRefs`/`heroNeedsAlt`/
-  `uploadedRecords`; it exposes `focusHeroAlt(name: string)` for the needs-alt notice's
-  jump action (EditPage :1309 currently reaches into the ref map directly).
-- **The ratified FieldInput fix, callback shape** (docket default 2; recon recommendation):
-  `FieldInput` gains `registerHeroField: (name: string, ref: MediaHeroField | null) => void`
-  beside its existing `onuploaded`/`onheroneedsalt` callbacks; the
-  `bind:this={heroFieldRefs[name]}` write at `FieldInput.svelte:274` and its
-  benign-warning comment (:271-272) are deleted; `ObjectGroupField`/`RepeatableField`
-  forward the callback exactly as they forward the existing two.
+  `<FieldInput>` loop, and local ownership of `heroFieldRefs`/`heroNeedsAlt`/
+  `uploadedRecords`; exposes `focusHeroAlt(name)` for the needs-alt notice (:1309).
+- **The ratified callback fix, realized precisely (grounding lens: `bind:this` cannot
+  simply be "deleted"):** `FieldInput` keeps a LOCAL `bind:this` on `MediaHeroField`
+  (:274) and adds an effect calling `registerHeroField(name, ref)` on mount/change and
+  `registerHeroField(name, null)` on teardown; the `heroFieldRefs` PROP is removed from
+  all three components' interfaces (`FieldInput.svelte:50,74,291,293`,
+  `ObjectGroupField.svelte:41,59,91`, `RepeatableField.svelte:56,74,273,288`), each
+  forwarding the callback as they forward `onuploaded`/`onheroneedsalt`. The
+  benign-warning comment (:271-272) is deleted with the mutation it excused.
 
-- [ ] **Step 1:** write the failing test asserting no `ownership_invalid_mutation` warning
-  is logged when mounting the fields tree with an image field (the current code warns).
-- [ ] **Step 2:** land the callback through the three field components; green.
-- [ ] **Step 3:** extract `DetailsPanel` owning the map; wire `focusHeroAlt`; the
-  needs-alt notice and `markFieldsDirty` paths verified; full gate. Commit.
+- [ ] **Step 1:** failing test — mounting the fields tree with an image field logs no
+  `ownership_invalid_mutation` warning (it currently does).
+- [ ] **Step 2:** land the callback and prop removal through the three components; green.
+- [ ] **Step 3:** extract `DetailsPanel` owning the map with its own entry-key reset; wire
+  `focusHeroAlt`; full gate. Commit.
 
-**Acceptance criteria:** zero Svelte ownership warnings across the component suite; the
-needs-alt jump still focuses the right hero alt input; `heroFieldRefs` is declared in
-exactly one file.
-
-### Task 12: One `editor` holder, per-unit resets, and the revocation contract
-
-**Files:**
-- Modify: `EditPage.svelte`, `src/lib/components/MarkdownEditor.svelte`,
-  `docs/reference/components.md`, `CHANGELOG.md`, `docs/internal/api-surface.md`
-  (regenerated), `src/tests/component/` suites that capture the grant
-- Test: a new failing test first for null delivery
-
-**Interfaces:**
-- **Produces (seam change, unpublished window):** `registerEditor?: (api: EditorApi | null) => void`.
-  `MarkdownEditor` delivers the api on mount as today and delivers `null` from its destroy
-  path (:959-962), closing the svelte-review W1 stale-grant window at the source.
-- EditPage replaces the 13 `$state.raw` holders (:545-560, :564-566, :745-750), the reset
-  block (:1378-1390), and the fan-out callback (:2303-2317) with one
-  `let editor = $state.raw<EditorApi | null>(null)`; every consumer site reads
-  `editor?.member` (tidy :619-627/:693/:734, figure :1025-1028, notices :1304, shortcuts
-  :1576-1595, the `editorApi` derived :763-768 collapses away). The Task 10/11 extractions
-  take `editor` (or a getter) instead of individual holders.
-- The monolithic entry-key reset (:1348-1392) shrinks to shell-owned state only
-  (`editor = null` plus the shell's own slots); each extracted unit from Tasks 9-11 owns an
-  `$effect.pre` keyed on the same `entryKey` for its own state, so reset responsibility
-  lives with the state it resets.
-
-- [ ] **Step 1:** write the failing test: destroy the editor (navigate the entry key) and
-  assert the grant is revoked (the captured api reference is nulled) before the new mount
-  registers.
-- [ ] **Step 2:** land null delivery in `MarkdownEditor`; land the single holder and
-  consumer rewrites in EditPage; migrate the per-unit resets; green.
-- [ ] **Step 3:** update `components.md`'s `EditorApi`/`registerEditor` contract (delivery
-  on mount, null on destroy), CHANGELOG (extend the unpublished `registerEditor` entry in
-  place — the window is unreleased, one entry), regenerate the surface snapshot
-  (`npm run check:surface -- --update`), run `check:reference:signatures`; full gate. Commit.
-
-**Acceptance criteria:** exactly one holder; no consumer touches a stale view between
-remount and re-registration (the internals-pass regression test still passes and the new
-revocation test pins the null); the reference page and TSDoc state the null contract; the
-13-holder comment vocabulary is gone from the tree.
+**Acceptance criteria:** zero ownership warnings across the component suite; needs-alt
+jump focuses the right input; the `heroFieldRefs` name exists in exactly one file.
 
 ---
 
 ## Chain E: standalone riders
 
-### Task 13: media-seed containment; the `expires_at` asymmetry statement
+### Task 14: Media-seed containment (read AND write), the WATCH discharges, the asymmetry statement
 
 **Files:**
-- Modify: `src/lib/media-seed/bin.ts:67-77`, `src/lib/auth/store.ts` (comment at the sweep,
-  :203), `migrations/0000_auth.sql` (comment beside the index block, :24)
-- Test: `src/tests/unit/` beside media-seed's existing coverage
+- Modify: `src/lib/media-seed/bin.ts:22-26,67-77`, `src/lib/media-seed/run.ts:61-62`,
+  `src/lib/media-seed/assemble.ts:74-81`, `src/lib/auth/store.ts:202-203`,
+  `migrations/0000_auth.sql:23-24`, `src/lib/audit/rules/static/list-role.ts` (~:60, a
+  `// WATCH:` comment), `scripts/checks/check-surface-leaks.mjs:242-244` (one word)
+- Test: beside media-seed's existing coverage, failing tests first
 
-**Interfaces:** none produced; mechanical.
+**Interfaces:** none new.
 
-- [ ] **Step 1:** write the failing test: `media-seed`'s `readFileUnderCwd` refuses a path
-  that resolves outside cwd (mirror the doctor's existing test shape).
-- [ ] **Step 2:** land the same three-line resolved-path-stays-under-base assert
-  `doctor/bin.ts:58-71` carries; delete the `// WATCH:` comment (:67-69) it discharges.
-- [ ] **Step 3:** add the accepted-asymmetry statement at the auth sweep site and schema
-  (why `session.expires_at` carries no index while the channel schema's does: roster-sized
-  table, per-login scan measured negligible, an index migration is a hand-applied consumer
-  action not worth the cost; reopen trigger: editor rosters stop being small). Full gate;
-  commit.
+- [ ] **Step 1 (the security lens's blocking find — the WRITE path):** failing test: a
+  manifest row with `hash: "../../evil"` (or a hostile `ext`) must be refused BEFORE any
+  byte is written. Fix by validating first — apply `HASH_RE`/`R2_EXT_RE` (the `r2Key`
+  rules, `media/naming.ts:113-119`) in `normalizeManifest` so a hostile row never reaches
+  the write, AND give `writeTempFile` (`bin.ts:22-26`) the same
+  resolved-path-stays-under-base assert as defense in depth. The current order (write at
+  `run.ts:61`, validate at :62) is the defect.
+- [ ] **Step 2 (the read path):** failing test, then the three-line containment assert on
+  `readFileUnderCwd` (`bin.ts:70-77`), matching `doctor/bin.ts:58-71`'s shape with
+  media-seed's OWN error prefix (contract-identical, not byte-identical — the doctor's
+  message names `cairn-doctor`); delete the discharged `// WATCH:` (:67-69).
+- [ ] **Step 3:** add the `// WATCH:` on `static/list-role.ts`'s `lastCompound` (~:60)
+  recording the two tokenizer gaps (newline/tab combinators; escaped brackets outside
+  quotes) and their trigger (a real selector exercising either shape) — the routed item
+  the previous draft dropped (hygiene lens). Correct `check-surface-leaks.mjs:242-244`'s
+  routing pointer from "internals-B" to "internals-C" (that is where the modeling task
+  landed). Add the accepted-asymmetry statement at the auth sweep site and schema (why no
+  `expires_at` index: roster-sized table, negligible scan, migrations are hand-applied
+  consumer actions; reopen: rosters stop being small). Full gate; commit.
 
-**Acceptance criteria:** the two `readFileUnderCwd` closures are behavior-identical; no
-`WATCH` comment remains for either discharged item; the asymmetry rationale is greppable at
-both sites.
+**Acceptance criteria:** the traversal tests fail on HEAD's behavior and pass after; no
+write occurs for a refused manifest row; both `readFileUnderCwd` closures
+contract-identical with distinct prefixes; no discharged WATCH remains and the lastCompound
+WATCH exists; the leak-gate pointer names internals-C.
 
 ---
 
 ## Pass-end ritual (cairn-pass; not a numbered task)
 
-Code-simplifier over the pass diff; reviewer fan-out — `svelte-reviewer` (Chains C and D:
-the extractions, the reset migration, the null contract), `daisyui-a11y-reviewer` (the four
-extracted dialogs' ARIA contracts and the Escape switch), `cloudflare-workers-reviewer`
-(Chain A: the routes moves), `web-auth-security-reviewer` (Chain A moves touching
-auth-adjacent load/actions plus Task 13), plus the standing cleanliness-and-beauty review;
-fix rounds per the chain discipline; the six CI-only gates by name; from-scratch consumer
-proof (the showcase exercises EditPage and the media library end-to-end — this is the real
-gate on the two Svelte splits); whole-log friction triage; STATUS/HISTORY/ROADMAP (ROADMAP's
-monolith line updates: four split, `content-routes-media.ts` at 1,414 lines becomes the
-recorded remaining monolith with its own line); post-mortem here; both budgets scored.
+Code-simplifier over the pass diff; reviewer fan-out — `svelte-reviewer` (Chains C, D),
+`daisyui-a11y-reviewer` (the four extracted dialogs, the Escape scoping),
+`cloudflare-workers-reviewer` (Chain A), `web-auth-security-reviewer` (Chain A, Chain B's
+cookie-parser redaction, Chain D's seam, Task 14 — mandatory), the standing
+cleanliness-and-beauty review; fix rounds per the chain discipline; the six CI-only gates
+BY NAME (`check:comments`, `check:reference:signatures`, `check:surface`,
+`check:snippets`, `check:transcripts`, `check:symbols`) **plus `check:cm-internals`** (CI-only,
+outside both `npm run check` and `npm test`); from-scratch consumer proof (the showcase
+exercises EditPage and the media library end-to-end); whole-log friction triage;
+STATUS/HISTORY/ROADMAP (the monolith line: four split; `content-routes-media.ts` at
+**1,447** lines recorded as the remaining tracked monolith); post-mortem here; both
+budgets scored.
 
 ## What this pass hands forward
 
-- **internals-C (next):** the coherence slice per the ratified split — its plan is authored
-  and rides the same approval sitting as this one. The Task 3 note (the
-  `ctx.logCommitFailed` call-style inconsistency) joins its lying-headers sweep inputs.
-- **Chassis:** the showcase exemplar-tier half of the audit's finding 8 (the custom-screen
-  shape); the render trio re-homing (standing).
-- **Polish:** the OfficeList retire ruling and, riding it, the scroll-container item
-  (deferred above); `formatTimestamp` accept-set widening; the command palette live region
-  (standing).
-- **Release:** the window still holds; ONE cut after polish.
+- **internals-C (next, same approval sitting):** the coherence slice; the
+  `ctx.logCommitFailed` call-style note joins its header sweep (preserve `:1672`'s
+  `'publish.failed'` argument — verified safe to unify, `commit-log.ts:33`).
+- **Chassis:** the showcase exemplar half of audit finding 8; the render trio re-homing.
+- **Polish:** the OfficeList ruling + scroll rider; `formatTimestamp` widening; the
+  command palette live region.
+- **Release:** the window holds; ONE cut after polish.

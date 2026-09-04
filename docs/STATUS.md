@@ -19,19 +19,19 @@ green); the window holds until the polish slice per the amended initiative desig
 
 ## Immediate next action
 
-**IN FLIGHT (2026-09-03 overnight session): internals-B is executing** as workflow
-`wf_6c0135ff-1b5` (script `pass-execute-chains.js`, five parallel chains in five worktrees:
-`.claude/worktrees/internals-b-chain-{a..e}` on branches `internals-b-chain-{a..e}`, tasks
-A:1-4, B:5-6, C:7-9, D:10-13, E:14; pass worktree `.claude/worktrees/internals-b`, branch
-`internals-b`, merges the chains before the ritual). Guards armed: both sleep inhibitors to
-09:00, battery watchdog, runaway guard on the workflow transcript dir. A cold session
-resuming after a crash: re-arm the FULL guard set
-(`~/.claude/docs/unattended-work-guards.md`), check the chain branches for committed task
-work (`git log internals-b-chain-a` etc.), and resume with
-`Workflow({scriptPath: "<scratchpad>/pass-execute-chains.js", resumeFromRunId:
-"wf_6c0135ff-1b5"})` or re-dispatch the remaining tasks per the plan; then merge chains
-into `internals-b`, run the cairn-pass ritual, push, PR, merge on green CI; then
-reconcile and execute internals-C per the paragraph below.
+**IN FLIGHT (2026-09-04 ~00:45): internals-B workflow `wf_6c0135ff-1b5` COMPLETED.**
+Task ledger: 1-9 ACCEPTED and committed on their chain branches
+(`internals-b-chain-a`: tasks 1-4; `-b`: 5-6; `-c`: 7-9). Tasks 10 and 14 escalated on
+gate-contention only (five concurrent full suites oversubscribed the box; both diffs
+reviewer-verified correct, left UNCOMMITTED in `-chain-d` / `-chain-e`); conductor ruling:
+re-run gates quiesced and commit, chain E first (plus its missing read-path test), then
+chain D task 10, then run tasks 11-13 sequentially through the implementer chain in
+`-chain-d`. Then merge all five chain branches into `internals-b` (pass worktree), run the
+cairn-pass ritual there, push, PR, merge on green CI; then reconcile and execute
+internals-C per the paragraph below. Guards armed (inhibitors to 09:00, battery watchdog,
+runaway guard). A crash-resuming session: verify chain branch commits with `git log`,
+verify uncommitted trees in chain-d/e before touching them, re-arm the FULL guard set
+(`~/.claude/docs/unattended-work-guards.md`).
 
 **Execute internals-B, then internals-C, in one overnight run. BOTH PLANS ARE APPROVED
 (Geoff, 2026-09-03 evening, via the approval-gate question) with FULL overnight git

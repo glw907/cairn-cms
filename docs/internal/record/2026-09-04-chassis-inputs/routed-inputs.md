@@ -276,10 +276,10 @@ in the repo exercises the hand-mount path against generated `./$types`; a hand-m
 >   worked example, so its deletion requires the chassis re-homing, `emit:template`
 >   re-bake, and guide rewrite in the same change. The chassis pass (slice 6) owns the
 >   re-homing, the re-emit, the guide rewrite, and then the deletion.
-> - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md),
->   rank 2; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM
+> - **Record:** [rank-render-build-tooling.md](../2026-08-26-any-site-audit/rank-render-build-tooling.md),
+>   rank 2; [r4-rederivation](../2026-08-30-r4-rederivation.md), section 7 (ADDENDUM
 >   RULINGS).
-> - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md)."
+> - **Verified:** [verify-render-build-tooling.md](../2026-08-26-any-site-audit/verify-render-build-tooling.md)."
 
 **`audit-render-headrow` row, in full (`:3920-3931`):**
 
@@ -294,10 +294,10 @@ in the repo exercises the hand-mount path against generated `./$types`; a hand-m
 >   worked example, so its deletion requires the chassis re-homing, `emit:template`
 >   re-bake, and guide rewrite in the same change. The chassis pass (slice 6) owns the
 >   re-homing, the re-emit, the guide rewrite, and then the deletion.
-> - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md),
->   rank 3; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM
+> - **Record:** [rank-render-build-tooling.md](../2026-08-26-any-site-audit/rank-render-build-tooling.md),
+>   rank 3; [r4-rederivation](../2026-08-30-r4-rederivation.md), section 7 (ADDENDUM
 >   RULINGS).
-> - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md)."
+> - **Verified:** [verify-render-build-tooling.md](../2026-08-26-any-site-audit/verify-render-build-tooling.md)."
 
 **The sibling `audit-render-cardshell` row (`:3894-3905`)** carries the identical
 "chassis pass (slice 6) owns the re-homing" language and is the third member of the

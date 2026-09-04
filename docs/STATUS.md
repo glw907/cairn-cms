@@ -55,6 +55,18 @@ writers share one worktree.** Two of three parallel pass-end fixers ran `git sta
 shared `internals-b` worktree and transiently clobbered each other. Give each parallel
 writer its own worktree (the chain worktrees did this correctly), or serialize.
 
+**QUEUED AFTER INTERNALS-C (Geoff, 2026-09-04): chassis-A, added to this run.** Spec
+`docs/superpowers/specs/2026-09-04-chassis-passes-design.md` (brainstormed and ratified
+2026-09-04, revised after a three-lens review banked at
+`docs/internal/record/2026-09-04-chassis-inputs/`); plan
+`docs/superpowers/plans/2026-09-04-chassis-a-pass.md` (12 sequential tasks, ceiling 6.5M,
+checkpoints 4/8/12, worktree `.claude/worktrees/chassis-a` off post-C `main`; its own
+three-lens review is folded before dispatch). Geoff's "add this work to the existing
+workflow" is the approval and carries the same authorization: push, PR, merge on green CI.
+Sequence: internals-C ritual and merge; reconcile chassis-A's anchors and its Task 10
+conditional against merged main; execute chassis-A the same way. Chassis-B's plan is
+authored after A lands (spec section "Chassis-B").
+
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
 no consumer repo is ahead of origin, so the sheets are pushed. 907-life is eleven releases

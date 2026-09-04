@@ -82,6 +82,11 @@ export function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true, 
   });
 }
 
+/**
+ * The finding an allowlist entry raises when nothing in the run ever matched its selector at all,
+ * in any theme or state. The plainest of the four allowlist-hygiene verdicts; see
+ * {@link unprobeableFinding}, {@link deadFinding}, and {@link unreachedStateFinding} for the other three.
+ */
 export function staleFinding(entry: RenderedAllowlistEntry, tier: Tier): Finding {
   return positionless({
     ruleId: STALE_ALLOWLIST_RULE_ID,

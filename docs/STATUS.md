@@ -10,30 +10,30 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries EIGHT
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries NINE
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
-(slice 1), foundations A (2a), foundations B (2b), retires (3), conventions (4a, PR #43), and
-conformance (4b, merged 2026-09-02 at `12330d71`, PR #46, all CI green); the window holds
-until the polish slice per the amended initiative design. CI on `main` is fully green.
+(slice 1), foundations A (2a), foundations B (2b), retires (3), conventions (4a, PR #43),
+conformance (4b, PR #46), and internals (5, merged 2026-09-03 at `c54645d5`, PR #47, all CI
+green); the window holds until the polish slice per the amended initiative design. CI on
+`main` is fully green.
 
 ## Immediate next action
 
-**The internals pass is COMPLETE: all thirteen tasks, the full pass-end ritual, and the
-five-reviewer fan-out's three-round fix fold all landed on branch `internals` (worktree
-`.claude/worktrees/internals`, off `main` at `a5352f0b`).** `npm run check` is 0/0,
-`npm test` exits 0, every CI-only gate is green by name, and a from-scratch showcase
-install/build/e2e (155 Playwright tests) exits 0. Post-mortem appended to
-`docs/superpowers/plans/2026-09-01-internals-pass.md`. The browser test gate now runs
-under an 8G MemoryMax systemd scope (`scripts/test/contained.mjs`, CI falls back to a
-direct spawn); the browser-recycling investigation found one recycled Chromium across
-the whole component project with RSS plateauing near 3.6G, so no config change.
-**Next: PR #47 is open (push-and-PR authorized 2026-09-02); merging it is the next
-action once CI is green.** After merge: internals-B planning per
-`docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md` (including the
-items routed at the internals close), then internals-C, then chassis, then the final
-polish slice, with ONE release cut after polish. Resume prompt for a fresh session:
-"In ~/Projects/cairn-cms, invoke cairn-pass: confirm PR #47 merged (merge it if CI is
-green), then plan internals-B from the docket per its ratified defaults."
+**Plan the internals-B pass.** The internals pass merged 2026-09-03 (`c54645d5`, PR #47,
+all CI green; post-mortem in `docs/superpowers/plans/2026-09-01-internals-pass.md`; its
+worktree and branch are removed). Planning inputs are ratified and compiled in
+`docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`: the four
+monolith splits (`EditPage` absorbs the `FieldInput` ownership fix and inherits Task 7's
+collapsed wiring), the ratified defaults, and the items routed at the internals close
+(EditorApi revocation contract, `/components` structural leak modeling, the
+`session.expires_at` index asymmetry, `csrfSecure`'s PUBLIC_ORIGIN source asymmetry,
+`lastCompound` tokenizer gaps, the media-seed containment helper). The plan gets the
+standard three-lens adversarial review before the approval gate, then executes on a
+fresh worktree off `main`. After internals-B: internals-C (coherence), chassis, polish,
+ONE release cut after polish. Resume prompt for a fresh session: "In
+~/Projects/cairn-cms, invoke cairn-pass and plan the internals-B pass: read
+docs/STATUS.md and the internals-B docket, brainstorm the open decisions, author the
+plan, run the three-lens review, then stop at the approval gate."
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

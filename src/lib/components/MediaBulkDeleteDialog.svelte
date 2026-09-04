@@ -160,13 +160,6 @@ moment so a background re-render never shifts the dry-run.
   }
 </script>
 
-<!-- The bulk-delete alertdialog: a native modal <dialog> (native focus trap + Escape), NO light
-     dismiss. The confirm IS the dry-run (the skip-and-report split), so there is no separate preview
-     step. A git-tracked removal is reversible, so the register is danger-OUTLINE with a plain confirm
-     and no typed gate, carrying the git-revert reassurance. Apply posts every selected hash to
-     ?/mediaBulkDelete; the server re-checks each one strictly and the itemized summary reports the
-     outcome (succeeded / skipped-with-reason / failed-with-reason). The recheck runs at execution, so
-     there is no review-time tick implying the gate passed. -->
 <dialog
   bind:this={bulkDialog}
   data-testid="cairn-bulk-dialog"

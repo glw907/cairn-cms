@@ -36,7 +36,8 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   } from './admin-icons.js';
 
   interface Props {
-    /** Called just before the apply form's full-page POST navigates away. */
+    /** Called just before the apply form's full-page POST navigates away. Deliberately unwired by
+     *  the host today; the prop stays for a future host that needs the pre-navigate signal. */
     onapplied?: () => void;
   }
 
@@ -171,13 +172,6 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   }
 </script>
 
-<!-- The Push-alt review dialog: a native modal <dialog> (native focus trap + Escape), NO light dismiss.
-     Alt fill is reversible and frequent (never the alertdialog register) with NO typed-slug gate;
-     apply is always enabled. It relies on the native <dialog> role and aria-labelledby, with no
-     redundant role or aria-modal (the Replace dialog's role="alertdialog" is the deliberate outlier,
-     stated explicitly because it changes the semantics). The review step lists three buckets
-     (will-fill always applied, customized behind one opt-in, decorative-skipped reported); the blocked
-     step is the fail-closed surface (no apply form). -->
 <dialog
   bind:this={altDialog}
   data-testid="cairn-alt-dialog"
@@ -186,6 +180,15 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   aria-describedby="cairn-ml-alt-sub"
   oncancel={closeAltDialog}
 >
+  <!-- The polite live region renders unconditionally (present and empty from mount), so when the
+       review step's moving total first appears it is announced; a region conditionally mounted WITH
+       its first content, or one that unmounts on the review -> blocked flip, is not reliably observed
+       by assistive tech (WCAG 4.1.3). -->
+  <div class="sr-only" role="status" aria-live="polite">
+    {#if altAsset && altStep === 'review'}
+      Now writing alt to {altTotal} {altTotal === 1 ? 'placement' : 'placements'}.{altOverwrite && altCounts.customized > 0 ? ` ${altCounts.willFill} filled, ${altCounts.customized} overwritten.` : ''}
+    {/if}
+  </div>
   {#if altAsset}
     {@const asset = altAsset}
     <div class="modal-box max-w-xl">
@@ -387,11 +390,6 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
           </div>
         </div>
 
-        <!-- The polite live region announces the moving committed total when the opt-in toggles. -->
-        <div class="sr-only" role="status" aria-live="polite">
-          Now writing alt to {altTotal} {altTotal === 1 ? 'placement' : 'placements'}.{altOverwrite && altCounts.customized > 0 ? ` ${altCounts.willFill} filled, ${altCounts.customized} overwritten.` : ''}
-        </div>
-
         <form method="POST" action="?/mediaAltPropagate" onsubmit={() => onapplied?.()} class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
           <CsrfField />
           <input type="hidden" name="hash" value={asset.hash} />
@@ -401,7 +399,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
           <span class="mr-auto inline-flex items-center gap-1.5 type-meta text-muted">
             <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
           </span>
-          <button type="button" class="btn btn-sm" onclick={closeAltDialog}>Cancel</button>
+          <button bind:this={altCancelButton} type="button" class="btn btn-sm" onclick={closeAltDialog}>Cancel</button>
           <button type="submit" class="btn btn-sm btn-primary">
             <CheckIcon class="h-4 w-4" aria-hidden="true" />
             {#if altOverwrite && altCounts.customized > 0}

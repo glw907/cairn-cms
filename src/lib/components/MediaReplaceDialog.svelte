@@ -65,7 +65,8 @@ full-page POST to `?/mediaReplace` navigates away.
     formatBytes: (bytes: number) => string;
     /** The shared section-heading class, the same token the host's own headings use. */
     headerLabel: string;
-    /** Called just before the apply form's full-page POST navigates away. */
+    /** Called just before the apply form's full-page POST navigates away. Deliberately unwired by
+     *  the host today; the prop stays for a future host that needs the pre-navigate signal. */
     onapplied?: () => void;
   }
 
@@ -93,6 +94,9 @@ full-page POST to `?/mediaReplace` navigates away.
   let replaceOrigin: HTMLElement | null = null;
   // The Cancel control, the destructive-confirm initial focus.
   let replaceCancelButton = $state<HTMLButtonElement | null>(null);
+  // The step title, focused on the upload -> review/blocked flip: the bound Cancel that held focus
+  // unmounts with the upload step, so without an explicit move focus drops to <body>.
+  let replaceTitle = $state<HTMLElement | null>(null);
   let replaceFileInput = $state<HTMLInputElement | null>(null);
   let replaceStep = $state<ReplaceStep>('upload');
   let replaceUpload = $state<ReplaceUpload>({ kind: 'idle' });
@@ -139,6 +143,16 @@ full-page POST to `?/mediaReplace` navigates away.
   }
   /** Close the dialog exactly as Cancel or Escape would. */
   export function close() {
+    closeReplaceDialog();
+  }
+  // Escape (the dialog's cancel event) must not abandon an in-flight upload: while the new file is
+  // being ingested and sent the close is suppressed, matching MediaBulkDeleteDialog's onBulkCancel and
+  // MediaOrphanTools' onOrphanCancel; in every other state Escape closes normally.
+  function onReplaceCancel(e: Event) {
+    if (replaceUpload.kind === 'working') {
+      e.preventDefault();
+      return;
+    }
     closeReplaceDialog();
   }
 
@@ -241,6 +255,9 @@ full-page POST to `?/mediaReplace` navigates away.
       replaceFailure = null;
       replaceConfirmInput = '';
       replaceStep = 'review';
+      // The upload step's Cancel (the prior focus holder) unmounts with the step flip, so focus is
+      // moved explicitly to the new step's title rather than dropping to <body>.
+      void tick().then(() => replaceTitle?.focus());
     } else {
       // The fail-closed landing: an unverifiable usage read, an unreachable preview, or an unparseable
       // body all route to the blocked step. A parsed failure carries the branch-naming error when the
@@ -249,6 +266,7 @@ full-page POST to `?/mediaReplace` navigates away.
       replaceFailure = failure ?? { error: '', hash, usage: [], foundIn: 0 };
       replacePlan = null;
       replaceStep = 'blocked';
+      void tick().then(() => replaceTitle?.focus());
     }
   }
 
@@ -320,10 +338,6 @@ full-page POST to `?/mediaReplace` navigates away.
   });
 </script>
 
-<!-- The Replace alertdialog: a native modal <dialog> (native focus trap + Escape), NO light dismiss.
-     A replace repoints a content hash and can break a draft, so it carries role="alertdialog", the
-     danger register, and a typed-slug gate. Step one is the quiet upload; step two is the impact review
-     gated behind the typed slug; the blocked step is the fail-closed surface (no apply button). -->
 <dialog
   bind:this={replaceDialog}
   data-testid="cairn-replace-dialog"
@@ -332,8 +346,17 @@ full-page POST to `?/mediaReplace` navigates away.
   aria-modal="true"
   aria-labelledby="cairn-ml-replace-title"
   aria-describedby="cairn-ml-replace-sub"
-  oncancel={closeReplaceDialog}
+  oncancel={onReplaceCancel}
 >
+  <!-- The polite live region renders unconditionally (present and empty from mount), so when the
+       review step's impact sentence first appears it is announced; a region conditionally mounted
+       WITH its first content is not reliably observed by assistive tech (WCAG 4.1.3). role="status"
+       matches the Push-alt live region: the stronger, more portable form. -->
+  <div class="sr-only" role="status" aria-live="polite">
+    {#if replaceAsset && replaceStep === 'review'}
+      Replace {replaceAsset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}.{replaceBranchNote}
+    {/if}
+  </div>
   {#if replaceAsset}
     {@const asset = replaceAsset}
     <div class="modal-box max-w-xl">
@@ -342,7 +365,7 @@ full-page POST to `?/mediaReplace` navigates away.
           {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" />{:else}<RefreshCwIcon class="h-5 w-5" />{/if}
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-replace-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
+          <h2 bind:this={replaceTitle} tabindex="-1" id="cairn-ml-replace-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">
             {#if replaceStep === 'review'}
               Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}
             {:else if replaceStep === 'blocked'}
@@ -411,6 +434,8 @@ full-page POST to `?/mediaReplace` navigates away.
                 accept="image/*"
                 class="sr-only"
                 aria-label="Choose a new image to replace this asset"
+                tabindex="-1"
+                aria-hidden="true"
                 onchange={onReplaceFileChosen}
               />
             </div>
@@ -507,12 +532,6 @@ full-page POST to `?/mediaReplace` navigates away.
             <label class="type-body" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
             <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={replaceConfirmInput} />
           </div>
-        </div>
-
-        <!-- A polite live region mirrors the footer impact for a screen reader on the review step. The
-             role="status" matches the Push-alt live region: the stronger, more portable form. -->
-        <div class="sr-only" role="status" aria-live="polite">
-          Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}.{replaceBranchNote}
         </div>
 
         <form method="POST" action="?/mediaReplace" onsubmit={() => onapplied?.()} class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">

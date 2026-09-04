@@ -85,6 +85,16 @@ the new asset appears.
     uploadStatus = { kind: 'idle' };
     uploadOrigin = refocusDialogOrigin(uploadOrigin);
   }
+  // Escape (the dialog's cancel event) must not abandon an in-flight upload: while the file is being
+  // ingested and sent the close is suppressed, matching MediaBulkDeleteDialog's onBulkCancel and
+  // MediaOrphanTools' onOrphanCancel; in every other status Escape closes normally.
+  function onLibraryCancel(e: Event) {
+    if (uploadStatus.kind === 'working') {
+      e.preventDefault();
+      return;
+    }
+    closeLibraryUpload();
+  }
   /** Open the native file chooser through the hidden input, called by the header and empty-state
    *  Upload buttons. A programmatic .click() does not focus its target, so the origin is captured
    *  explicitly by the caller and passed here, exactly as MediaReplaceDialog's open() does. */
@@ -211,6 +221,7 @@ the new asset appears.
   class="sr-only"
   aria-label="Upload an image"
   tabindex="-1"
+  aria-hidden="true"
   onchange={onUploadFileChosen}
 />
 
@@ -220,7 +231,7 @@ the new asset appears.
   class="modal"
   aria-labelledby="cairn-ml-upload-title"
   aria-describedby="cairn-ml-upload-sub"
-  oncancel={closeLibraryUpload}
+  oncancel={onLibraryCancel}
 >
   {#if uploadCaptureFile}
     <div class="modal-box max-w-md">

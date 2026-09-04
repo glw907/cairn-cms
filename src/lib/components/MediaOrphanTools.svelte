@@ -142,12 +142,16 @@ restores there on close.
       orphanScan = outcome.data;
       orphanKeys = new Set<string>();
       orphanPhase = 'result';
+      // Each phase renders its own h2, so the prior one's focus does not carry over; move focus
+      // explicitly so a screen reader is carried to the new surface (the delete summary's own recipe).
+      void tick().then(() => orphanTitle?.focus());
     } else {
       // A network throw and a parsed failure both block the scan; a network throw carries no data, so
       // orphanBlockedError falls back to '' and the surface shows its own framing with no server message.
       const failure = outcome.data as MediaBulkFailure | undefined;
       orphanBlockedError = failure?.error ?? '';
       orphanPhase = 'blocked';
+      void tick().then(() => orphanTitle?.focus());
     }
   }
 
@@ -172,11 +176,13 @@ restores there on close.
     orphanConfirmInput = '';
     orphanPurgeError = '';
     orphanPurging = true;
+    void tick().then(() => orphanTitle?.focus());
   }
   function cancelOrphanPurge() {
     orphanPurging = false;
     orphanConfirmInput = '';
     orphanPurgeError = '';
+    void tick().then(() => orphanTitle?.focus());
   }
 
   // The purge: POST ?/mediaOrphanPurge with each selected key as a repeated `key` field plus `confirm` set to
@@ -200,6 +206,7 @@ restores there on close.
     if (outcome.ok) {
       orphanPurgeResult = outcome.data;
       orphanPurging = false;
+      void tick().then(() => orphanTitle?.focus());
     } else {
       const failure = outcome.data as MediaBulkFailure | undefined;
       orphanPurgeError = failure?.error ?? 'The purge could not be completed. Please try again.';
@@ -207,13 +214,6 @@ restores there on close.
   }
 </script>
 
-<!-- The on-demand orphan scan surface: a native modal <dialog> (native focus trap + Escape), NO light
-     dismiss. The result is the two-section dry-run, the loading state, and the detection-time blocked
-     surface. The irreversible byte purge lives inside this dialog only, kept structurally apart from
-     the reversible bulk delete: a separate selection Set of R2 keys, a solid-danger Purge, and a
-     typed-count confirm. It relies on the native <dialog> role and aria-labelledby, with no redundant
-     role or aria-modal: the scan itself changes nothing, and the irreversible step is gated behind
-     the typed confirm below. -->
 <dialog
   bind:this={orphanDialog}
   data-testid="cairn-orphan-dialog"
@@ -223,6 +223,14 @@ restores there on close.
   oncancel={onOrphanCancel}
 >
   <div class="modal-box max-w-2xl">
+    <!-- The polite live region renders unconditionally (present and empty from mount), so the purge
+         confirm's warning sentence is announced when it first appears; a region conditionally mounted
+         WITH its first content is not reliably observed by assistive tech (WCAG 4.1.3). -->
+    <div class="sr-only" role="status" aria-live="polite">
+      {#if orphanPhase === 'result' && orphanPurging}
+        Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}. This cannot be undone.
+      {/if}
+    </div>
     {#if orphanPhase === 'scanning'}
       <!-- LOADING: a polite live region announces the scan is running. The scan is far heavier than the
            loaded index (an R2 list plus a cross-branch reconcile), so it is on demand, never instant. -->
@@ -382,7 +390,6 @@ restores there on close.
           </button>
         </div>
       </div>
-      <div class="sr-only" aria-live="polite">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}. This cannot be undone.</div>
     {:else if orphanPhase === 'result' && orphanScan}
       <!-- THE TWO-SECTION RESULT: an "Orphaned files" purge surface and a read-only "Broken references"
            data-integrity readout. -->

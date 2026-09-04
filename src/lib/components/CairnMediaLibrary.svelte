@@ -271,10 +271,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // closes (today's behavior); else a non-empty selection is cleared. The search box keeps its own
   // native Escape-to-clear: the selection clear fires only when focus is NOT in the search input.
   //
-  // The open-dialog check is scoped to THIS component's own subtree (rootEl), not document-wide. Some
-  // of the six dialogs it must see now render from a child component (MediaOrphanTools,
-  // MediaBulkDeleteDialog), so a check by named ref cannot reach them; a rootEl-scoped query still
-  // finds them, since a child mounts inline into the parent's DOM subtree. A document-wide query would
+  // The open-dialog check is scoped to THIS component's own subtree (rootEl), not document-wide. Five
+  // of the six dialogs it must see now render from a child component (MediaReplaceDialog,
+  // MediaAltFillDialog, MediaBulkDeleteDialog, MediaOrphanTools, MediaUploadDialog; only deleteDialog
+  // is host-owned), so a check by named ref cannot reach them; a rootEl-scoped query still finds them,
+  // since a child mounts inline into the parent's DOM subtree. A document-wide query would
   // overreach the other way: the admin shell also owns a dialog (the command palette), and a library
   // Escape must never stand down because a wholly unrelated dialog elsewhere on the page happens to be
   // open. MediaUploadDialog's libraryDropBusy makes the opposite call on purpose for a different
@@ -325,7 +326,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // onPageDragover/onPageDrop onto this component's own <svelte:window>.
 
   // --- the where-used overlay the slide-over and the dialog read, grouped published-then-branch,
-  // over media-library-helpers.ts's pure functions (shared with the extracted orphan tools) ---
+  // over media-library-helpers.ts's pure functions (shared with MediaBulkDeleteDialog's usageCount) ---
   function usageEntries(hash: string): UsageEntry[] {
     return usageEntriesOf(data.usage, hash);
   }

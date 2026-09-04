@@ -1787,4 +1787,181 @@ describe('CairnMediaLibrary orphan scan surface', () => {
     expect(brokenSection.querySelector('input[type="checkbox"]')).toBeNull();
     expect([...brokenSection.querySelectorAll('button')].some((b) => /purge|delete/i.test(b.textContent ?? ''))).toBe(false);
   });
+
+  it('mounts the purge confirm live region unconditionally, present and empty before the confirm phase', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 200, text: async () => successBody(SCAN) }) as unknown as Response),
+    );
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    findButton(screen).click();
+    const dialog = scanDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/orphaned files/i);
+    // A region conditionally mounted WITH its first content is not reliably announced (WCAG 4.1.3);
+    // this one must already exist, empty, before the purge confirm phase ever renders.
+    const live = [...dialog.querySelectorAll('[role="status"][aria-live="polite"]')].find(
+      (el) => (el.textContent ?? '').trim() === '',
+    );
+    expect(live).toBeTruthy();
+  });
+});
+
+// --- pass-end review fixes: the live-region hoists (WCAG 4.1.3) and the upload in-flight
+// oncancel guards on MediaReplaceDialog and MediaUploadDialog ---
+describe('CairnMediaLibrary Replace review live region hoist', () => {
+  it('mounts the polite live region on the upload step, before the review step ever renders', async () => {
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openReplace(screen, /first-light/);
+    // Still on the upload step (no preview has resolved), yet the region already exists, empty.
+    expect(dialog.textContent ?? '').not.toMatch(/replace first-light in/i);
+    const live = [...dialog.querySelectorAll('[role="status"][aria-live="polite"]')].find(
+      (el) => (el.textContent ?? '').trim() === '',
+    );
+    expect(live).toBeTruthy();
+  });
+
+  it('keeps the same live region mounted (not recreated) across the upload -> blocked flip', async () => {
+    stubUpload(newRecord());
+    stubPreviewFetch(failureBody({ error: '', hash: DESCRIBED_USED.hash, usage: [], foundIn: 0 }));
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/replace is on hold/i);
+    // The region survives the step flip to blocked (it never mounts-with-content nor unmounts).
+    const live = [...dialog.querySelectorAll('[role="status"][aria-live="polite"]')].find(
+      (el) => (el.textContent ?? '').trim() === '',
+    );
+    expect(live).toBeTruthy();
+  });
+});
+
+describe('CairnMediaLibrary Replace hidden file input', () => {
+  it('is out of the tab order and hidden from the accessibility tree (it is only ever .click()ed)', async () => {
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openReplace(screen, /first-light/);
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput.getAttribute('tabindex')).toBe('-1');
+    expect(fileInput.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('CairnMediaLibrary Replace upload in-flight cancel guard', () => {
+  it('suppresses Escape while uploading, then closes normally once the upload settles', async () => {
+    let resolveIngest: (v: Awaited<ReturnType<typeof ingest.ingestFile>>) => void = () => {};
+    vi.mocked(ingest.ingestFile).mockReturnValue(
+      new Promise((r) => {
+        resolveIngest = r;
+      }),
+    );
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openReplace(screen, /first-light/);
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([PNG_BYTES], 'first-light-v2.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/preparing the new file/i);
+
+    const workingCancel = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(workingCancel);
+    expect(workingCancel.defaultPrevented).toBe(true);
+    expect(dialog.open).toBe(true);
+
+    // Let the upload settle to idle (the review step), then Escape closes as normal.
+    stubPreviewFetch(successBody(REPLACE_PLAN));
+    vi.mocked(ingest.sendUpload).mockResolvedValue({
+      type: 'basic',
+      status: 200,
+      text: async () =>
+        successBody({ reference: 'media:first-light.b42e0d51aaaa0000', record: newRecord(), reused: false, mismatch: false }),
+    } as unknown as Response);
+    resolveIngest({
+      blob: new Blob([PNG_BYTES], { type: 'image/png' }),
+      contentType: 'image/png',
+      width: 1,
+      height: 1,
+    });
+    await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
+
+    const idleCancel = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(idleCancel);
+    await expect.poll(() => dialog.open).toBe(false);
+  });
+});
+
+describe('CairnMediaLibrary Push-alt Cancel binding', () => {
+  it('focuses the review-step Cancel button on open (the bound control, not a dangling ref)', async () => {
+    stubPreviewFetch(successBody(ALT_PLAN));
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openPushAlt(screen, /first-light/);
+    const cancel = [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
+    await expect.poll(() => document.activeElement).toBe(cancel);
+  });
+});
+
+describe('CairnMediaLibrary Push-alt review live region hoist', () => {
+  it('keeps the live region mounted (not unmounted) across the review -> blocked flip', async () => {
+    stubPreviewFetch(failureBody({ error: '' }));
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openPushAlt(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/push alt is on hold/i);
+    // The region that announced the review step's moving total is still present, just empty, rather
+    // than having unmounted along with the review markup (WCAG 4.1.3).
+    const live = [...dialog.querySelectorAll('[role="status"][aria-live="polite"]')].find(
+      (el) => (el.textContent ?? '').trim() === '',
+    );
+    expect(live).toBeTruthy();
+  });
+});
+
+describe('CairnMediaLibrary Upload dialog hidden file input and in-flight cancel guard', () => {
+  it('hides the shared file input from the accessibility tree', async () => {
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    const fileInput = screen.container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput.getAttribute('tabindex')).toBe('-1');
+    expect(fileInput.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('suppresses Escape while the capture upload is in flight, then closes normally once it settles', async () => {
+    let resolveIngest: (v: Awaited<ReturnType<typeof ingest.ingestFile>>) => void = () => {};
+    vi.mocked(ingest.ingestFile).mockReturnValue(
+      new Promise((r) => {
+        resolveIngest = r;
+      }),
+    );
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
+    await screen.getByRole('button', { name: /^upload$/i }).click();
+    const fileInput = screen.container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([PNG_BYTES], 'meadow.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    const dialog = screen.container.querySelector('[data-testid="cairn-library-upload-dialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+
+    // Fill the capture card's name, then submit to enter the working upload state.
+    const nameInput = dialog.querySelector('input') as HTMLInputElement;
+    nameInput.value = 'Meadow';
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    const submit = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.getAttribute('type') === 'submit')!;
+    submit.click();
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/uploading/i);
+
+    const workingCancel = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(workingCancel);
+    expect(workingCancel.defaultPrevented).toBe(true);
+    expect(dialog.open).toBe(true);
+
+    // Let the upload settle (a generic failure is enough to reach an idle, non-working status).
+    resolveIngest({
+      blob: new Blob([PNG_BYTES], { type: 'image/png' }),
+      contentType: 'image/png',
+      width: 1,
+      height: 1,
+    });
+    vi.mocked(ingest.sendUpload).mockRejectedValue(new Error('network down'));
+    await expect.poll(() => dialog.querySelector('[role="alert"]')).not.toBeNull();
+
+    const idleCancel = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(idleCancel);
+    await expect.poll(() => dialog.open).toBe(false);
+  });
 });

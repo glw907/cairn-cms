@@ -9,6 +9,7 @@ import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 import { datetimeInputValue, dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import { isValidId } from './ids.js';
+import { unreachable } from './unreachable.js';
 import { log } from '../log/index.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
@@ -291,18 +292,23 @@ function validateField(
       if (!isValidId(text)) return { issues: [{ path, message: `${label} is not a valid reference` }] };
       return { value: text, issues: [] };
     }
-    default: {
-      // text, textarea, datetime: a trimmed non-empty string. text and textarea also enforce the
-      // string-length and pattern constraints (v1 parity); datetime stays a plain string for now,
-      // since its bounds are out of scope this pass and v1 has no datetime equivalent to match.
-      if (field.type === 'text' || field.type === 'textarea') {
-        const lengthError = stringLengthError(text, field, label);
-        if (lengthError != null) return { issues: [{ path, message: lengthError }] };
-        const formatError = patternError(text, patterns.get(key), label);
-        if (formatError != null) return { issues: [{ path, message: formatError }] };
-      }
+    // text and textarea also enforce the string-length and pattern constraints (v1 parity);
+    // datetime and icon stay a plain string for now, since datetime's bounds are out of scope
+    // this pass (v1 has no datetime equivalent to match) and icon's value is a glyph name, not a
+    // format the site constrains.
+    case 'text':
+    case 'textarea': {
+      const lengthError = stringLengthError(text, field, label);
+      if (lengthError != null) return { issues: [{ path, message: lengthError }] };
+      const formatError = patternError(text, patterns.get(key), label);
+      if (formatError != null) return { issues: [{ path, message: formatError }] };
       return { value: text, issues: [] };
     }
+    case 'datetime':
+    case 'icon':
+      return { value: text, issues: [] };
+    default:
+      return unreachable(field, 'fieldset.validateField');
   }
 }
 

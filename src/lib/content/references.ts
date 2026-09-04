@@ -52,6 +52,8 @@ export function extractReferenceEdges(
   };
   for (const field of fields) {
     const value = frontmatter[field.name];
+    // Deliberate no-op for every other FieldDescriptor arm: only a reference or array(reference)
+    // field ever declares a typed edge, so any other type contributes no edge and falls through.
     if (field.type === 'reference') {
       push(field.name, field.concept, referenceIdFromValue(value));
     } else if (field.type === 'array' && field.item.type === 'reference') {

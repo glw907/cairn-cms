@@ -85,6 +85,24 @@ describe('fieldset parsed-YAML input symmetry', () => {
   });
 });
 
+// `validateField`'s default arm absorbs text, textarea, datetime, and icon (the only four arms
+// left once boolean/multiselect/image/object/array are handled by their own `if` and
+// number/select/url/email/date/reference by their own `case`). text/textarea are covered above and
+// icon in fields-icon.test.ts; this pins datetime, the one arm with no dedicated test anywhere.
+describe('fieldset datetime field (default-arm absorption)', () => {
+  const fs = defineFieldset({ when: fields.datetime({ label: 'When' }) });
+  it('validates a plain string as-is and drops an empty optional', () => {
+    expect(fs.validate({ when: '2026-06-26T14:30' }, '')).toEqual({ ok: true, data: { when: '2026-06-26T14:30' } });
+    expect(fs.validate({}, '')).toEqual({ ok: true, data: {} });
+  });
+  it('fails a required, empty datetime', () => {
+    const req = defineFieldset({ when: fields.datetime({ label: 'When', required: true }) });
+    const r = req.validate({}, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors).toEqual({ when: 'When is required' });
+  });
+});
+
 describe('fieldset multiselect lone scalar', () => {
   const fs = defineFieldset({ tags: fields.multiselect({ label: 'Tags' }) });
   const req = defineFieldset({ tags: fields.multiselect({ label: 'Tags', required: true }) });

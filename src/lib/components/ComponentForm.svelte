@@ -14,6 +14,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   import { previewValues, type ComponentDef, type ComponentValues } from '../render/registry.js';
   import { buildComponentInsert } from '../render/component-insert.js';
   import type { IconSet } from '../render/glyph.js';
+  import type { FieldDescriptor } from '../content/fields.js';
   import IconPicker from './IconPicker.svelte';
 
   interface Props {
@@ -145,12 +146,49 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     }
   }
 
+  /**
+   * Type-only exhaustiveness proof for the template's `{#if field.type === ...}` chain over an
+   *  attribute below. The chain's final `{:else}` stays a runtime fallback (an icon attribute with
+   *  no `icons` prop reaches it too, since that branch's extra `&& icons` guard narrows no type
+   *  away), so the compiler cannot prove the chain exhaustive from the template alone; this
+   *  function lists every `FieldDescriptor` arm as its own case so a sixteenth arm fails `npm run
+   *  check` here. multiselect, image, object, reference, and array never reach a real component
+   *  attribute (`checkComponentAttributes` rejects them at `defineComponent`), but `def.attributes`
+   *  is still typed over the full union, so this proof covers them too. Never called: the
+   *  compile-time check is its only purpose. Deliberately unused; keep it despite looking like
+   *  dead code.
+   */
+  function assertComponentFormArmsExhaustive(kind: FieldDescriptor['type']): void {
+    switch (kind) {
+      case 'boolean':
+      case 'select':
+      case 'icon':
+      case 'text':
+      case 'textarea':
+      case 'number':
+      case 'url':
+      case 'email':
+      case 'date':
+      case 'datetime':
+      case 'multiselect':
+      case 'image':
+      case 'object':
+      case 'reference':
+      case 'array':
+        return;
+      default:
+        kind satisfies never;
+    }
+  }
+
   // A required attribute is unmet only for a text/select/icon field left empty; a boolean is always
   // met (its false is a real choice). A required slot is unmet when its string is empty or its
   // repeatable list has no non-empty item. This drives the asterisk-marked fields, the disabled
   // Insert, and (through the bound `incomplete`) the dialog's incomplete preview state.
   const incompleteState = $derived.by(() => {
     for (const [name, field] of attributes) {
+      // Deliberate no-op for the non-boolean unmet decision: only `boolean` is skipped here,
+      // since it is the one ATTRIBUTE_TYPES member whose false is a real, non-empty choice.
       if (!field.required || field.type === 'boolean') continue;
       if (asString(name) === '') return true;
     }

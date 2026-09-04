@@ -123,6 +123,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     if (!picked || !formValues) return [] as string[];
     const out: string[] = [];
     for (const [name, field] of Object.entries(picked.attributes ?? {})) {
+      // Deliberate no-op for the non-boolean checked/unmet decision: only `boolean` is skipped
+      // here, since it is the one ATTRIBUTE_TYPES member whose false is a real, non-empty choice.
       if (!field.required || field.type === 'boolean') continue;
       const v = formValues.attributes[name];
       // A scalar attribute always carries a label; the `?? name` only satisfies the union type, whose

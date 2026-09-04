@@ -1,0 +1,13 @@
+import { describe, it, expect } from 'vitest';
+import { unreachable } from '../../lib/content/unreachable.js';
+
+describe('unreachable', () => {
+  it('throws a cairn-prefixed error naming the context and the offending value', () => {
+    // A real caller only ever reaches this line once every union arm is handled, so the argument
+    // is `never` at the type level; a test proving the runtime half of the guard must defeat that
+    // proof with a cast, the same as a stray `as never` would in production.
+    expect(() => unreachable('bogus' as never, 'test.context')).toThrow(
+      'cairn: unreachable arm in test.context: "bogus"',
+    );
+  });
+});

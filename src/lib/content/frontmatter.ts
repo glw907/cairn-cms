@@ -6,6 +6,7 @@ import matter from 'gray-matter';
 import type { ImageValue, NamedField } from './types.js';
 import type { FieldDescriptor } from './fields.js';
 import { coerceStringList } from './coerce.js';
+import { unreachable } from './unreachable.js';
 
 /**
  * True when a multiselect field is a closed checkbox group: it declares an options vocabulary and is
@@ -50,11 +51,28 @@ function decodeField(name: string, field: FieldDescriptor, form: FormData): unkn
       }
       return Object.keys(obj).length > 0 ? obj : undefined;
     }
-    default: {
-      // text, textarea, number-as-string, url, email, date, datetime: a trimmed non-empty string.
+    // text, textarea, number-as-string, url, email, date, datetime, icon: a trimmed non-empty
+    // string. reference and array are declaration-time forbidden as an object leaf or array item
+    // (fieldset.ts's checkContainerNesting), so a real fieldset never routes either arm here, but
+    // that guard is structural, not type-level; this arm's trimmed-string reading is what they get
+    // if a caller ever bypasses the guard, rather than an unreachable() throw that would turn a
+    // future gap in it into a save-breaking crash.
+    case 'text':
+    case 'textarea':
+    case 'number':
+    case 'select':
+    case 'url':
+    case 'email':
+    case 'date':
+    case 'datetime':
+    case 'icon':
+    case 'reference':
+    case 'array': {
       const s = String(form.get(name) ?? '').trim();
       return s === '' ? undefined : s;
     }
+    default:
+      return unreachable(field, 'frontmatter.decodeField');
   }
 }
 
@@ -149,10 +167,22 @@ export function frontmatterFromForm(
         if (obj !== undefined) data[field.name] = obj;
         break;
       }
-      default:
-        // FormData.get returns null for an absent field; normalize to an empty string so
-        // a caller reading a text value never gets null.
+      // text, textarea, number, select, url, email, date, datetime, icon: every top-level type
+      // with no dedicated case reads as a plain scalar. FormData.get returns null for an absent
+      // field; normalize to an empty string so a caller reading a text value never gets null.
+      case 'text':
+      case 'textarea':
+      case 'number':
+      case 'select':
+      case 'url':
+      case 'email':
+      case 'date':
+      case 'datetime':
+      case 'icon':
         data[field.name] = form.get(field.name) ?? '';
+        break;
+      default:
+        unreachable(field, 'frontmatter.frontmatterFromForm');
     }
   }
   return data;

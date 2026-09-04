@@ -433,7 +433,10 @@ export function componentSectionWindow(name, pageText) {
 // The prop names from `names` that never appear as a whole-word token anywhere in `sectionText`
 // (the owning component's own doc window, not the whole page). Mirrors `missingNames`, scoped per
 // component so an undocumented prop on a page covering many components is attributed to the right
-// one, not lost in the page-wide pool.
+// one, not lost in the page-wide pool. Known weakness, the same class `missingNames` carries: a
+// whole-word match anywhere in the section counts, including an ordinary prose sentence that
+// happens to name the prop, so a prop mentioned only in passing (never in a Props signature or a
+// dedicated row) still reads as documented.
 /**
  * @param {string[]} names
  * @param {string} sectionText
@@ -499,14 +502,17 @@ export function promotedUnstableProps(component, sectionText, registry = DOCUMEN
 // One component's props-vs-reference result: `missing` (an undocumented Props key), `promoted` (a
 // documented-unstable pin that crept into the stable snippet), and `noSection` (the page carries no
 // `### `name`` heading at all, so every real prop is trivially missing). Null when the component's
-// dist declaration carries no Props shape (nothing to check).
+// dist declaration EXISTS but carries no Props shape (nothing to check); a MISSING declaration
+// throws instead, matching `checkOne`'s own "run npm run package first" for the index-wide case: a
+// missing `.d.ts` means the package has not been built, never that the component has zero props,
+// and a silent null here would read as the latter.
 /**
  * @param {string} name
  * @param {string} dtsPath
  * @param {string} pageText
  */
 export function checkComponentProps(name, dtsPath, pageText) {
-  if (!existsSync(dtsPath)) return null;
+  if (!existsSync(dtsPath)) throw new Error(`missing ${dtsPath}; run "npm run package" first`);
   const names = componentPropsNames(dtsPath);
   if (!names || names.length === 0) return null;
   const section = componentSectionWindow(name, pageText);
@@ -637,22 +643,23 @@ function isAllowlisted(page, name, globalNames, allowlist) {
 }
 
 /**
- * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} entry
- * @param {Set<string>} pageKnownNames the real exports this page documents (own subpath, plus any
- *   sibling subpath entry that shares the same page)
- * @param {Set<string>} globalKnownNamesSet the full real-export pool, used only to keep an
- *   allowlisted name honest against a later rename or removal
- * @param {{ page: string, names: string[], reason: string }[]} [allowlist]
- * @param {string[]} [leakNames] the check-surface-leaks names recorded against this subpath
- *   (see `leakNamesForSubpath`); a printed one with no indexed-access parenthetical fails
+ * @param {object} options
+ * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} options.entry
+ * @param {Set<string>} options.pageKnownNames the real exports this page documents (own subpath,
+ *   plus any sibling subpath entry that shares the same page)
+ * @param {Set<string>} options.globalKnownNamesSet the full real-export pool, used only to keep
+ *   an allowlisted name honest against a later rename or removal
+ * @param {{ page: string, names: string[], reason: string }[]} [options.allowlist]
+ * @param {string[]} [options.leakNames] the check-surface-leaks names recorded against this
+ *   subpath (see `leakNamesForSubpath`); a printed one with no indexed-access parenthetical fails
  */
-export function checkOne(
+export function checkOne({
   entry,
   pageKnownNames,
   globalKnownNamesSet,
   allowlist = NARRATIVE_CONTEXT_ALLOWLIST,
   leakNames = [],
-) {
+}) {
   const dtsPath = resolve(ROOT, entry.dts);
   if (!existsSync(dtsPath)) throw new Error(`missing ${entry.dts}; run "npm run package" first`);
   let names = enumerateExports(dtsPath);
@@ -722,7 +729,12 @@ function main() {
   let failed = false;
   for (const entry of entries) {
     const leakNames = leakNamesForSubpath(leaks, entry.subpath);
-    const r = checkOne(entry, pageNames.get(entry.page) ?? new Set(), globalNames, NARRATIVE_CONTEXT_ALLOWLIST, leakNames);
+    const r = checkOne({
+      entry,
+      pageKnownNames: pageNames.get(entry.page) ?? new Set(),
+      globalKnownNamesSet: globalNames,
+      leakNames,
+    });
     if (r.noPage) {
       console.error(`MISSING PAGE ${r.page} (${r.subpath})`);
       failed = true;
@@ -756,6 +768,12 @@ function main() {
     const pageText = readFileSync(resolve(ROOT, componentsEntry.page), 'utf8');
     for (const name of enumerateExports(indexPath)) {
       const dtsPath = resolve(ROOT, `dist/components/${name}.svelte.d.ts`);
+      // /components exports a component per name (each with a `.svelte.d.ts`), plus a handful of
+      // plain type exports riding the same barrel (EditorApi, say): no matching `.svelte.d.ts`
+      // exists for those, by design, never a build failure, so they are skipped here rather than
+      // reaching checkComponentProps's own missing-file throw (which guards a genuine component
+      // whose dist declaration should exist and does not).
+      if (!existsSync(dtsPath)) continue;
       const r = checkComponentProps(name, dtsPath, pageText);
       if (!r) continue;
       if (r.noSection) {

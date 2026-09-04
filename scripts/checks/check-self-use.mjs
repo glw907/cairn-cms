@@ -224,43 +224,68 @@ function loadAllowlist() {
 }
 
 /**
- * The gate's verdict: every zero-caller export not covered by a reasoned allowlist entry.
+ * The gate's verdict: every zero-caller export not covered by a reasoned allowlist entry, plus
+ * every allowlist entry that names an export but carries no reason. An empty reason still counts
+ * as absent for coverage purposes (matching the historical behavior), but the entry ITSELF is now
+ * its own violation class, matching check-surface-leaks.mjs's `unreasoned` shape, rather than
+ * silently dropping the entry and reporting its export as "carries no allowlist entry" at all,
+ * which is false: it carries one, the entry is just missing its reason.
  * @param {ReturnType<typeof analyzeExport>[]} analysis
  * @param {AllowlistEntry[]} entries
- * @returns {{ ok: true } | { ok: false, unlisted: ReturnType<typeof analyzeExport>[] }}
+ * @returns {{ ok: true } | { ok: false, unlisted: ReturnType<typeof analyzeExport>[], unreasoned: AllowlistEntry[] }}
  */
 export function findViolations(analysis, entries) {
   /** @type {Set<string>} */
-  const allowed = new Set();
+  const reasoned = new Set();
+  /** @type {Set<string>} */
+  const named = new Set();
+  /** @type {AllowlistEntry[]} */
+  const unreasoned = [];
   for (const entry of entries) {
-    if (entry.name && typeof entry.reason === 'string' && entry.reason.trim().length > 0) {
-      allowed.add(entry.name);
+    if (!entry.name) continue;
+    named.add(entry.name);
+    if (typeof entry.reason === 'string' && entry.reason.trim().length > 0) {
+      reasoned.add(entry.name);
+    } else {
+      unreasoned.push(entry);
     }
   }
-  const unlisted = analysis.filter((a) => !a.hasCallers && !allowed.has(a.name));
-  return unlisted.length === 0 ? { ok: true } : { ok: false, unlisted };
+  const unlisted = analysis.filter((a) => !a.hasCallers && !reasoned.has(a.name) && !named.has(a.name));
+  return unlisted.length === 0 && unreasoned.length === 0 ? { ok: true } : { ok: false, unlisted, unreasoned };
 }
 
 /**
- * Format the gate's failure message: the remedy order (allowlist first, showcase call site
- * second, deletion never suggested here), naming each unlisted export and whether the
- * showcase remedy is even available to it.
- * @param {ReturnType<typeof analyzeExport>[]} unlisted
+ * Format the gate's failure message: every unlisted export (the remedy order: allowlist first,
+ * showcase call site second, deletion never suggested here) and every unreasoned allowlist entry
+ * (the remedy: give it a reason).
+ * @param {{ unlisted: ReturnType<typeof analyzeExport>[], unreasoned: AllowlistEntry[] }} violations
  * @returns {string}
  */
-export function formatViolations(unlisted) {
-  const lines = [
-    'check-self-use: the following public exports have zero call sites in src/lib outside their',
-    'own module and zero showcase call sites, and carry no allowlist entry. Remedy order: (1) add',
-    'a reasoned entry to scripts/checks/check-self-use-allowlist.json, citing the ledger KEEP row',
-    'if one exists; (2) failing that, give it a real showcase call site (refused for auth/security',
-    "paths below, see the gate's own header); this gate never suggests deletion as its own remedy.",
-    '',
-  ];
-  for (const a of unlisted) {
-    const where = a.ownFiles.length ? a.ownFiles.join(', ') : '(no declaring file found)';
-    const remedy = a.authOnly ? 'allowlist-only (auth/security path)' : 'allowlist or showcase call site';
-    lines.push(`  - ${a.name} (declared: ${where}) — ${remedy}`);
+export function formatViolations({ unlisted, unreasoned }) {
+  const lines = [];
+  if (unlisted.length) {
+    lines.push(
+      'check-self-use: the following public exports have zero call sites in src/lib outside their',
+      'own module and zero showcase call sites, and carry no allowlist entry. Remedy order: (1) add',
+      'a reasoned entry to scripts/checks/check-self-use-allowlist.json, citing the ledger KEEP row',
+      'if one exists; (2) failing that, give it a real showcase call site (refused for auth/security',
+      "paths below, see the gate's own header); this gate never suggests deletion as its own remedy.",
+      '',
+    );
+    for (const a of unlisted) {
+      const where = a.ownFiles.length ? a.ownFiles.join(', ') : '(no declaring file found)';
+      const remedy = a.authOnly ? 'allowlist-only (auth/security path)' : 'allowlist or showcase call site';
+      lines.push(`  - ${a.name} (declared: ${where}): ${remedy}`);
+    }
+  }
+  if (unreasoned.length) {
+    if (lines.length) lines.push('');
+    lines.push(
+      'check-self-use: the following allowlist entries carry no reason (an empty reason is treated',
+      'as absent coverage, but the entry is now its own violation rather than a silent drop). Add a',
+      'non-empty reason to each:',
+    );
+    for (const e of unreasoned) lines.push(`  ~ ${e.name}`);
   }
   return lines.join('\n');
 }
@@ -272,10 +297,10 @@ function main() {
   const result = findViolations(analysis, entries);
   if (result.ok) {
     console.log(`check-self-use OK (${analysis.length} public exports, ${entries.length} allowlisted)`);
-    process.exit(0);
+    return;
   }
-  console.error(formatViolations(result.unlisted));
-  process.exit(1);
+  console.error(formatViolations(result));
+  process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

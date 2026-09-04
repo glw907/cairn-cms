@@ -198,7 +198,7 @@ describe('findViolations / formatViolations (the failing-first proof)', () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected a failure');
     expect(result.unlisted.map((u) => u.name)).toEqual(['Orphan']);
-    const message = formatViolations(result.unlisted);
+    const message = formatViolations(result);
     expect(message).toContain('Orphan');
     expect(message).toContain('allowlist');
     expect(message).toContain('showcase call site');
@@ -212,9 +212,20 @@ describe('findViolations / formatViolations (the failing-first proof)', () => {
     expect(greenRun.ok).toBe(true);
   });
 
-  it('rejects an allowlist entry with no reason, treating it as absent', () => {
+  // An unreasoned entry is its own violation class (round B): it no longer makes the export it
+  // names read as "carries no allowlist entry", which is false, and the gate no longer silently
+  // drops it either. Both `unlisted` and `unreasoned` are checked directly, since a bug that
+  // regressed one into the other would still leave `result.ok` false and hide behind it.
+  it('treats an unreasoned allowlist entry as its own violation, not a false "no entry" report', () => {
     const result = findViolations([zeroCaller], [{ name: 'Orphan', reason: '' }]);
     expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected a failure');
+    expect(result.unlisted).toEqual([]);
+    expect(result.unreasoned.map((e) => e.name)).toEqual(['Orphan']);
+    const message = formatViolations(result);
+    expect(message).toContain('Orphan');
+    expect(message).toContain('carry no reason');
+    expect(message).not.toContain('carry no allowlist entry');
   });
 
   it("marks an auth-only export's remedy as allowlist-only in the failure message", () => {
@@ -222,7 +233,7 @@ describe('findViolations / formatViolations (the failing-first proof)', () => {
     const result = findViolations([authZero], []);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected a failure');
-    const message = formatViolations(result.unlisted);
+    const message = formatViolations(result);
     expect(message).toContain('SecretOrphan');
     expect(message).toContain('allowlist-only (auth/security path)');
   });

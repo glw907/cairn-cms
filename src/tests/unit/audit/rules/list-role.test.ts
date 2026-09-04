@@ -178,4 +178,59 @@ describe('list-role', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('only under @media (prefers-color-scheme: dark)');
   });
+
+  // @layer is a cascade-scoping at-rule, not a condition: its block always applies, so naming it
+  // as an "only under" gate would be false. Filtered out entirely here, leaving no suffix at all.
+  it('never names @layer as a condition, since a layer always applies', () => {
+    const sheet = parseSheet('@layer components { .list-none { list-style-type: none; } }');
+    const findings = listRole.check({
+      files: [component('<ul class="list-none"><li>One</li></ul>\n')],
+      sheet,
+      config: resolveConfig('/site', null, () => true),
+      cssFiles: [],
+    });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).not.toContain('@layer');
+    expect(findings[0].message).not.toContain('only under');
+  });
+
+  // A declaration nested in both a layer and a media query keeps the media query in its message
+  // (the real condition) while still dropping the layer (never a condition at all).
+  it('keeps the media condition but drops the enclosing @layer from the same declaration', () => {
+    const sheet = parseSheet(
+      '@layer components { @media (min-width: 40rem) { .list-none { list-style-type: none; } } }'
+    );
+    const findings = listRole.check({
+      files: [component('<ul class="list-none"><li>One</li></ul>\n')],
+      sheet,
+      config: resolveConfig('/site', null, () => true),
+      cssFiles: [],
+    });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('only under @media (min-width: 40rem)');
+    expect(findings[0].message).not.toContain('@layer');
+  });
+
+  // The item-level remedy, aligned with the rendered rule's own: when the cause is an item's own
+  // display change, the message also recommends role="listitem" on the affected items, grounded in
+  // the same HTML-AAM parent-relationship hedge the rendered rule carries.
+  it('recommends role="listitem" too when the cause is an item display change, matching the rendered rule', () => {
+    const findings = check(component('<ul class="list"><li class="list-row">One</li></ul>\n'));
+    expect(findings[0].message).toContain('role="listitem"');
+    expect(findings[0].message).toContain("HTML-AAM's implicit li-to-listitem mapping");
+  });
+
+  // The own-marker-suppressor cause never adds the item-level remedy: no item display changed, so
+  // there is no item to recommend role="listitem" on.
+  it('does not recommend role="listitem" when the cause is the list\'s own marker suppression', () => {
+    const findings = check(component('<ul class="list-none"><li>One</li></ul>\n'));
+    expect(findings[0].message).not.toContain('role="listitem"');
+  });
+
+  // HTML-AAM maps <menu> to role list too, and daisyUI styles chrome (breadcrumbs, menus) with it.
+  it('flags a marker-suppressed <menu> the same way it flags a <ul>', () => {
+    const findings = check(component('<menu class="list-none"><li>One</li></menu>\n'));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('<menu>');
+  });
 });

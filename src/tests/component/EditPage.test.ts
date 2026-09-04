@@ -36,6 +36,17 @@ vi.mock('../../lib/render/component-grammar.js', async () => {
   );
   return { ...actual, componentRoundTripSafety: vi.fn(actual.componentRoundTripSafety) };
 });
+// A controllable gate on the spellcheck module, the LAST of MarkdownEditor's own chained dynamic
+// imports before its onMount calls registerEditor. Defaults open (already resolved) so every
+// ordinary mount in this file proceeds immediately; the entry-key-reset test below holds it shut
+// to reproduce the real gap between a {#key} remount and the new entry's own registerEditor call.
+// `vi.hoisted` is required here (not a bare top-level `let`): the browser mocker reconstructs a
+// `vi.mock` factory in isolation and cannot close over an ordinary file-scope binding.
+const spellcheckGate = vi.hoisted(() => ({ promise: Promise.resolve() as Promise<void> }));
+vi.mock('../../lib/components/spellcheck.js', async (importOriginal) => {
+  await spellcheckGate.promise;
+  return importOriginal();
+});
 // EditPage's lifecycle controls (Save, Publish, the status badge, the overflow) render into the
 // one header band through the topbar context portal, not in a header of their own. This harness
 // mounts EditPage joined to that band the way CairnAdmin/CairnAdminShell do, so a standalone render
@@ -2350,6 +2361,38 @@ describe('EditPage', () => {
     await expect
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
       .toBe('');
+  });
+
+  // The entry-key reset re-seeds content state on remount, but the 13 EditorApi holders
+  // (insert, format, and the rest) are plain component state, untouched by that reset: between
+  // the {#key} remount and entry B's own MarkdownEditor completing its async registerEditor call
+  // (its onMount awaits a long chain of dynamic imports), every holder still points at entry A's
+  // DESTROYED CodeMirror view. A toolbar action clicked in that window must never reach entry A's
+  // dead view or leak its content into entry B's fresh body.
+  it('never lets a toolbar action reach the destroyed prior-entry editor during the remount gap', async () => {
+    const screen = await render(EditPage, postProps({ body: 'first body' }));
+    await makeDirty(screen);
+    let releaseGate: () => void = () => {};
+    spellcheckGate.promise = new Promise((resolve) => {
+      releaseGate = resolve;
+    });
+    try {
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
+      // Entry B's MarkdownEditor is now parked mid-onMount, awaiting the held spellcheck import,
+      // so registerEditor has not yet reassigned the 13 EditorApi holders away from entry A's.
+      // Pre-fix, `format` still points at entry A's DESTROYED CodeMirror view; post-fix, the
+      // entry-key reset cleared it back to a no-op, so the click below is inert either way it
+      // resolves, but must never throw or write entry A's content into entry B's body.
+      const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]');
+      expect(() => bold?.click()).not.toThrow();
+    } finally {
+      releaseGate();
+    }
+    // Once entry B's own editor fully registers, its body carries only what entry B was seeded
+    // with; the click above must not have leaked entry A's stale view content onto it.
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body');
   });
 
   it('lets a discard submission through the leave guard', async () => {

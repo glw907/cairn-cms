@@ -86,7 +86,7 @@ const insertPanel: ReproStory = {
     library: libraryByHash,
     editor: {
       caretCoords: () => null,
-      focusEditor: () => {},
+      focus: () => {},
       placeholders: {
         begin: () => 0,
         progress: () => {},

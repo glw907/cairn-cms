@@ -93,7 +93,8 @@ interface DevBackendFlagCache {
 
 /**
  * Step 0 of every action, ahead even of {@link assertOriginAndScheme}: the dev-backend leak
- * tripwire (Task 9, ruling 4 as letter-amended). `CAIRN_DEV_BACKEND` is the dev transport's own
+ * tripwire (Task 9, ruling 4 as letter-amended; docs/internal/engine-rulings.md,
+ * `dev-backend-flag-refusal`). `CAIRN_DEV_BACKEND` is the dev transport's own
  * ENABLE contract (the showcase capture transport, and the documented transport-body pattern
  * this tripwire backs up, both refuse WITHOUT it), so refusing on the flag alone, the way
  * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
@@ -1076,7 +1077,6 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     event.cookies.delete(pendingCookie, { path: '/', secure });
 
     if (token) {
-      const now = Date.now();
       const session = await resolveVerifiedSession(event.platform?.env);
       if (session) {
         const destroyed = await destroyChannelSession(session, await hashToken(token));
@@ -1084,7 +1084,10 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         // session cookie, one whose db is unavailable, one whose cookie names no row, and one
         // whose row had already expired all destroy nothing worth recording (log-events.md's
         // logout row states this condition). The delete itself stays unconditional either way.
-        if (destroyed !== null && destroyed.expiresAt > now) {
+        // `Date.now()` reads fresh here, matching the confirm and revoke sites: a `now` captured
+        // before the awaits above (resolveVerifiedSession, destroyChannelSession, hashToken) would
+        // compare against a stale clock, which could misjudge a row that expired during the wait.
+        if (destroyed !== null && destroyed.expiresAt > Date.now()) {
           await logSessionDestroyed(session, destroyed.subject, 'logout');
         }
       }

@@ -83,7 +83,8 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // define named at each call site), so a set flag signals a polluted environment; refuse loudly.
     // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
     // production build (the dev branch replaces it entirely rather than running alongside it), so
-    // there is no legitimate live-flag case for this handler to admit (Task 9, ruling 4).
+    // there is no legitimate live-flag case for this handler to admit (Task 9, ruling 4;
+    // docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
     // `auth-channel/factory.ts` carries the flag's OTHER refusal, on a narrower set-AND-deployed
     // predicate, since one factory instance serves both dev and prod; both import the flag name,
     // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto

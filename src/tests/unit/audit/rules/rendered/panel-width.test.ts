@@ -260,6 +260,91 @@ describe('panel-width against a real browser', () => {
     expect(findings).toEqual([]);
   });
 
+  // Round B, `size` gating: a `<select size="4">` (not multiple) renders as a listbox too, laying
+  // its options out as real child boxes rather than a closed dropdown, so it must use the ordinary
+  // scrollWidth path (proven above by select[multiple]) rather than the closed-select painted-text
+  // measurement, which only applies to the single-line dropdown rendering.
+  it('fires on a select[size] listbox the same way it fires on select[multiple]', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <select size="4" style="width:120px;height:60px">
+             <option selected>A very long option label that keeps going and going</option>
+             <option>Short</option>
+           </select>
+         </div>`
+      )
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].message).toContain('select');
+  });
+
+  // Round B, letter-spacing: the painted-text measurement must add letter-spacing between glyphs,
+  // since `measureText` alone reports a plain string's width and ignores it entirely, understating
+  // how wide the label actually paints.
+  it('fires on a closed select whose label only overflows once letter-spacing is added', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <select style="width:110px;letter-spacing:6px">
+             <option selected>Ten chars.</option>
+           </select>
+         </div>`
+      )
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].message).toContain('select');
+  });
+
+  // Round B, text-transform: uppercase: the measurement must paint the transformed string, since
+  // the browser renders the label in caps and a lowercase measurement understates its true width.
+  it('fires on a closed select whose label only overflows once uppercased', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <select style="width:110px;text-transform:uppercase">
+             <option selected>wide wide wide label</option>
+           </select>
+         </div>`
+      )
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].message).toContain('select');
+  });
+
+  // Round B, the failed-parse guard: when `ctx.font` silently rejects the assembled shorthand (a
+  // broken canvas, simulated here by pinning the prototype's `font` property), the closed-select
+  // measurement must SKIP rather than report a false clean, and it must not swallow an unrelated,
+  // independently-measured violation elsewhere in the same row.
+  it('skips the closed-select measurement when ctx.font fails to take, without losing another violation in the row', async () => {
+    const brokenFontScript = `<script>
+      Object.defineProperty(CanvasRenderingContext2D.prototype, 'font', {
+        configurable: true,
+        get() { return '10px sans-serif'; },
+        set() {},
+      });
+    </script>`;
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `${brokenFontScript}
+         <div class="panel-content" style="padding:1rem">
+           <select style="width:80px">
+             <option selected>A very long option label that keeps going and going and going</option>
+           </select>
+           <span style="white-space:nowrap;display:inline-block;width:40px;overflow-x:hidden">A long unbreakable value that keeps going</span>
+         </div>`
+      )
+    );
+    // Checked at both 390 and 320, so the span's own overflow can report once per width; none of
+    // those findings ever names the select, which the broken canvas made unmeasurable.
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => !finding.message.includes('select'))).toBe(true);
+  });
+
   // The deliberate-truncation false positive: the house `truncate` idiom (`text-overflow: ellipsis`
   // paired with a clipping `overflow-x`) is a sanctioned reading, not a defect, symmetric with the
   // deliberately-scrollable-descendant exemption above.

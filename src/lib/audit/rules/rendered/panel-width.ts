@@ -96,8 +96,9 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
 
   // A closed single-value `<select>`'s rendered label never grows its own `scrollWidth` past its
   // box no matter how long the option text is (measured directly, Chromium 151), so the raw
-  // `scrollWidth > clientWidth` test above can never see it clip: it only ever catches a
-  // `select[multiple]` listbox, whose options lay out as real child boxes and DO grow `scrollWidth`.
+  // `scrollWidth > clientWidth` test above can never see it clip: it only ever catches a listbox
+  // rendering, `select[multiple]` or a plain select with `size` above 1, either of which lays its
+  // options out as real child boxes that DO grow `scrollWidth`.
   // Closing the closed-select gap needs a different measurement, painting the selected option's own
   // text with the select's own computed font and comparing it against the box's available width,
   // the same paint-not-parse precedent `resolveColors` (`rendered.ts`) already takes for a
@@ -105,22 +106,34 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
   // horizontal padding, not a hand-picked chrome allowance: daisyUI's `.select select` recipe
   // reserves the arrow's own room there (`padding-inline: .75rem 1.75rem`), so a themed select's
   // measurement already accounts for it, and a bare unthemed select simply gets a smaller margin of
-  // error rather than a wrong answer.
+  // error rather than a wrong answer. The painted text carries `letter-spacing` (`ctx.letterSpacing`,
+  // a real property the plain `measureText` width otherwise ignores) and `text-transform: uppercase`
+  // (the measured string itself is uppercased first, since the rendered glyphs are), both of which
+  // change how wide the label actually paints.
   // `select` carries no DOM lib type of its own here (this file, like the rest of the audit
   // package, type-checks with no `dom` lib entry, so a rule's own page-side code stays generic
   // `Element` throughout); the two members `Element` itself doesn't carry, `options` and
   // `selectedIndex`, are read through a narrow structural cast rather than pulling in
   // `HTMLSelectElement` and everything it drags with it.
+  //
+  // Returns `Number.NaN` when the measurement itself is unreliable: no 2D context, or the font
+  // shorthand `ctx.font` silently rejected (a rejected assignment leaves the property at whatever
+  // it already held, so the caller would otherwise measure against the WRONG font and could report
+  // a false clean). The caller skips a `NaN` element entirely rather than treating it as a clean 0.
   function closedSelectOverflowPx(el: Element): number {
     const select = el as Element & { options: { item(index: number): { text: string } | null }; selectedIndex: number };
     const selected = select.options.item(select.selectedIndex);
-    const text = selected ? selected.text : '';
+    let text = selected ? selected.text : '';
     if (!text) return 0;
     const canvas = document.createElement('canvas');
     const measureCtx = canvas.getContext('2d');
-    if (!measureCtx) return 0;
+    if (!measureCtx) return Number.NaN;
     const style = getComputedStyle(el);
+    if (style.textTransform === 'uppercase') text = text.toUpperCase();
+    const beforeFont = measureCtx.font;
     measureCtx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    if (measureCtx.font === beforeFont) return Number.NaN;
+    measureCtx.letterSpacing = style.letterSpacing;
     const painted = measureCtx.measureText(text).width;
     const available = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
     return painted - available;
@@ -156,12 +169,15 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
       // scroll region) or outside it (the table wrapper's own sanctioned scroll).
       if (scrolls(el) || isAbsorbed(el) || isExempt(el)) continue;
       // A closed single-value select's own scrollWidth can never see its clipped label (its own
-      // header comment above); every other element, including a select[multiple] listbox, keeps
-      // the ordinary scrollWidth/clientWidth measurement.
+      // header comment above); a `select[multiple]` and a `select[size]` above 1 both render as a
+      // listbox instead, laying out their options as real child boxes that DO grow scrollWidth, so
+      // both keep the ordinary scrollWidth/clientWidth measurement alongside every other element.
+      const select = el as Element & { multiple: boolean; size: number };
       const overflowPx =
-        el.tagName === 'SELECT' && !(el as Element & { multiple: boolean }).multiple
+        el.tagName === 'SELECT' && !select.multiple && select.size <= 1
           ? closedSelectOverflowPx(el)
           : el.scrollWidth - el.clientWidth;
+      if (Number.isNaN(overflowPx)) continue;
       if (overflowPx > 1 && (!worst || overflowPx > worst.overflowPx)) worst = { el, overflowPx };
     }
     if (worst) {

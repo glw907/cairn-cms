@@ -6,7 +6,8 @@
 // refusing), and `sveltekit/csrf.ts` (which reads only the local-host predicate). A divergent
 // second wording would violate the read-from-the-source rule this pass's own Task 1 enforces;
 // the two flag refusals diverge on WITNESS, never on message, and each states why where it fires
-// (Task 9, ruling 4 as letter-amended: refuse when the flag is set AND the request is deployed).
+// (Task 9, ruling 4 as letter-amended: refuse when the flag is set AND the request is deployed;
+// docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
 //
 // It sits at the lib root rather than under `auth-channel/`, where it started, because its
 // consumers now span `sveltekit/` and `auth-channel/`. It imports nothing, so any module can read

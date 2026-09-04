@@ -19,11 +19,14 @@
 // closed by the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's
 // actual computed `display` in a live browser instead of a second class-source lookup here; this
 // static half stays the cheap, no-browser-required first pass.
-import { selectorClassNames, splitSelectorList } from '../../sheet.js';
+import { conditionalConditions, selectorClassNames, splitSelectorList } from '../../sheet.js';
 import type { ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
 
-const LIST_TAGS = new Set(['ul', 'ol']);
+// HTML-AAM maps `<menu>` to role `list` too (daisyUI styles breadcrumbs and other chrome with it),
+// so a `<menu>` whose marker or item display is suppressed is exposed to the same WebKit/VoiceOver
+// risk as a `<ul>`/`<ol>`.
+const LIST_TAGS = new Set(['ul', 'ol', 'menu']);
 const LIST_STYLE_PROPERTY = /^list-style(-type)?$/;
 const LIST_ITEM_DISPLAY = 'list-item';
 const COMBINATOR_CHARS = new Set(['>', '+', '~']);
@@ -174,13 +177,17 @@ function itemsByList(file: ParsedComponent, lists: SourceNode[]): Map<SourceNode
 }
 
 /**
- * A `CauseMatch`'s at-rule conditions, rendered for the finding message. Dropping this from the
- * message reads as an unconditional cause ("this class always suppresses the marker") when the
- * declaration may only apply under a media query or another at-rule the class is nested inside;
- * a reader chasing the wrong condition cannot reproduce or fix what the message claims.
+ * A `CauseMatch`'s conditional group rules (`@media`, `@supports`, `@container`), rendered for the
+ * finding message. Dropping this from the message reads as an unconditional cause ("this class
+ * always suppresses the marker") when the declaration may only apply under a media query the class
+ * is nested inside; a reader chasing the wrong condition cannot reproduce or fix what the message
+ * claims. `@layer` is filtered out by {@link conditionalConditions}: a layer always applies, so
+ * naming it here would print a false gate (`only under @layer components`) the reader can neither
+ * satisfy nor fail.
  */
 function conditionSuffix(conditions: string[]): string {
-  return conditions.length > 0 ? `, only under ${conditions.join(' / ')}` : '';
+  const groups = conditionalConditions(conditions);
+  return groups.length > 0 ? `, only under ${groups.join(' / ')}` : '';
 }
 
 export const listRole: StaticRule = {
@@ -200,6 +207,7 @@ export const listRole: StaticRule = {
 
         const ownSuppressor = ownMarkerSuppressor(ctx, classesOf(file, list.start));
         let cause: string;
+        let itemNote = '';
         if (ownSuppressor) {
           cause = `its own class "${ownSuppressor.name}" resolves to a list-style-removing declaration${conditionSuffix(ownSuppressor.conditions)}`;
         } else {
@@ -208,6 +216,15 @@ export const listRole: StaticRule = {
             .find((value) => value !== undefined);
           if (!hit) continue;
           cause = `an item's class "${hit.name}" resolves to "display: ${hit.value}"${conditionSuffix(hit.conditions)}`;
+          // Aligned with the rendered rule's own item-level remedy: HTML-AAM maps <li> to listitem
+          // by its parent relationship (a direct child of <ul>/<ol>, or of an element with
+          // role="list"), a mapping this exact display change already disrupts, so an explicit role
+          // on the item is the defensive fix rather than relying on that mapping alone.
+          itemNote =
+            ` Add role="listitem" to each item whose "${hit.name}" class causes this too: ` +
+            "HTML-AAM's implicit li-to-listitem mapping depends on the parent relationship, which " +
+            'this exact display change already disrupts, so an explicit role is the defensive fix ' +
+            'rather than relying on that mapping alone.';
         }
 
         findings.push({
@@ -220,7 +237,7 @@ export const listRole: StaticRule = {
           message:
             `<${list.name}> suppresses its own marker: ${cause}, and a marker-suppressed <ul>/<ol> ` +
             'with no role attribute stops being announced as a list in WebKit/VoiceOver; add ' +
-            'role="list" to restore the list semantics (WCAG 1.3.1)',
+            `role="list" to restore the list semantics (WCAG 1.3.1).${itemNote}`,
         });
       }
     }

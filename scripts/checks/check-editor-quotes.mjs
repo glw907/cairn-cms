@@ -128,6 +128,12 @@ export function extractDocQuotes(markdown) {
  * swallowing everything up to the next unrelated apostrophe anywhere later in the file. Scanning
  * once with explicit state (in a string, and which quote character closes it) never misreads
  * either.
+ *
+ * Residual gap, undefended here: a regex literal containing a quote character (`/can't/`,
+ * `/[^"]/`) is not its own tracked state, so the scan reads the quote or apostrophe inside it as
+ * opening a new string literal, corrupting everything parsed after it in the file. `src/lib`
+ * carries few regex literals with an embedded quote today, so this has not yet mis-scanned a real
+ * file, but a future one could.
  * @param {string} src
  * @returns {string[]}
  */
@@ -236,4 +242,4 @@ function main() {
   process.exitCode = 1;
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

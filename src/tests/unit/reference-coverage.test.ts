@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import {
   enumerateExports,
   missingNames,
@@ -223,31 +223,31 @@ describe('checkOne (per-subpath stale-name rescope)', () => {
   const globalKnownNames = new Set(['fromA', 'fromB']); // fromB is still real, just elsewhere
 
   it('fails a page that names a foreign subpath export the old global pool let pass', () => {
-    const result = checkOne(entryA, pageKnownNames, globalKnownNames, []);
+    const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalKnownNames, allowlist: [] });
     expect(result.stale).toEqual(['fromB']);
   });
 
   it('runs clean once the foreign row is removed (the real fix, not an allowlist)', () => {
-    const result = checkOne(entryAFixed, pageKnownNames, globalKnownNames, []);
+    const result = checkOne({ entry: entryAFixed, pageKnownNames, globalKnownNamesSet: globalKnownNames, allowlist: [] });
     expect(result.stale).toEqual([]);
   });
 
   it('excuses an allowlisted foreign name that is still a real export somewhere', () => {
     const allowlist = [{ page: pageA, names: ['fromB'], reason: 'narrative context, see /b.' }];
-    const result = checkOne(entryA, pageKnownNames, globalKnownNames, allowlist);
+    const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalKnownNames, allowlist });
     expect(result.stale).toEqual([]);
   });
 
   it('does not excuse an allowlisted name outside its own page', () => {
     const allowlist = [{ page: fixture('some-other-page.md'), names: ['fromB'], reason: 'wrong page.' }];
-    const result = checkOne(entryA, pageKnownNames, globalKnownNames, allowlist);
+    const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalKnownNames, allowlist });
     expect(result.stale).toEqual(['fromB']);
   });
 
   it('keeps the renamed/removed lock even for an allowlisted name: a name real nowhere still fails', () => {
     const allowlist = [{ page: pageA, names: ['fromB'], reason: 'narrative context, see /b.' }];
     const globalWithoutFromB = new Set(['fromA']); // fromB renamed or removed everywhere
-    const result = checkOne(entryA, pageKnownNames, globalWithoutFromB, allowlist);
+    const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalWithoutFromB, allowlist });
     expect(result.stale).toEqual(['fromB']);
   });
 
@@ -258,8 +258,23 @@ describe('checkOne (per-subpath stale-name rescope)', () => {
     // subpaths' own exports, since both document the same page (delivery.md and
     // reproductions.md's own real shape).
     const sharedPoolFromMain = new Set(['fromA', 'fromB']);
-    const result = checkOne(entryOnSharedPage, sharedPoolFromMain, globalKnownNames, []);
+    const result = checkOne({
+      entry: entryOnSharedPage,
+      pageKnownNames: sharedPoolFromMain,
+      globalKnownNamesSet: globalKnownNames,
+      allowlist: [],
+    });
     expect(result.stale).toEqual([]);
+  });
+
+  // The dropped ceremony (round B): checkOne is an options object now, so a caller omitting
+  // `allowlist` gets NARRATIVE_CONTEXT_ALLOWLIST, the same default the old positional signature
+  // carried; this proves the default still applies rather than becoming `undefined`.
+  it('defaults allowlist to NARRATIVE_CONTEXT_ALLOWLIST when omitted', () => {
+    const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalKnownNames });
+    // fromB is foreign to entryA's page and NOT covered by the real narrative-context allowlist
+    // (which only excuses cardShell/headRow/iconSpan on core.md), so it still reports as stale.
+    expect(result.stale).toEqual(['fromB']);
   });
 });
 
@@ -353,7 +368,13 @@ describe('the indexed-access retrofit is complete on its two target pages (Task 
     const entry = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: fixture('rescope-page-a.md') };
     const pageKnownNames = new Set(['fromA']);
     const globalKnownNames = new Set(['fromA', 'fromB']);
-    const result = checkOne(entry, pageKnownNames, globalKnownNames, [], ['fromB']);
+    const result = checkOne({
+      entry,
+      pageKnownNames,
+      globalKnownNamesSet: globalKnownNames,
+      allowlist: [],
+      leakNames: ['fromB'],
+    });
     expect(result.missingParenthetical).toEqual(['fromB']);
   });
 
@@ -361,7 +382,13 @@ describe('the indexed-access retrofit is complete on its two target pages (Task 
     const entry = { subpath: '/a', dts: fixture('rescope-a.d.ts'), page: fixture('rescope-page-a.md') };
     const pageKnownNames = new Set(['fromA']);
     const globalKnownNames = new Set(['fromA', 'fromB']);
-    const result = checkOne(entry, pageKnownNames, globalKnownNames, [], []);
+    const result = checkOne({
+      entry,
+      pageKnownNames,
+      globalKnownNamesSet: globalKnownNames,
+      allowlist: [],
+      leakNames: [],
+    });
     expect(result.missingParenthetical).toEqual([]);
   });
 });
@@ -395,7 +422,7 @@ describe('componentPropsNames (Task 7, the props-vs-reference clause)', () => {
   });
 
   it('resolves inherited members through an `extends` composition, not just Props\' own', () => {
-    // Mirrors MarkdownEditor's `interface Props extends StableEditorProps, EditPageWiringProps`:
+    // Mirrors MarkdownEditor's `interface Props extends StableEditorProps, UnstableEditorProps`:
     // Props itself declares no members, so a naive AST scan of only its own body would find none.
     expect(componentPropsNames(fixture('component-props-extends.d.ts'))).toEqual([
       'registerEditor',
@@ -509,6 +536,14 @@ describe('checkComponentProps (composed)', () => {
     expect(componentPropsNames(fixture('rescope-a.d.ts'))).toBeNull();
     expect(checkComponentProps('fromA', fixture('rescope-a.d.ts'), pageText)).toBeNull();
   });
+
+  // Round B: a MISSING declaration must throw, matching checkOne's own "run npm run package
+  // first" for the index-wide case, rather than reading as "this component genuinely has zero
+  // props" the way the existing-but-shapeless fixture above legitimately does.
+  it('throws when the declaration file itself is missing, rather than returning null', () => {
+    const missingPath = fixture('does-not-exist.d.ts');
+    expect(() => checkComponentProps('Ghost', missingPath, pageText)).toThrow(/run "npm run package" first/);
+  });
 });
 
 describe('the props gate is clean on the real /components surface (Task 7)', () => {
@@ -523,7 +558,12 @@ describe('the props gate is clean on the real /components surface (Task 7)', () 
     () => {
       const names = enumerateExports(indexPath);
       expect(names.length).toBeGreaterThan(10); // a corpus sanity floor, never a hard-coded list
+      // /components also carries a plain type export or two (EditorApi) with no matching
+      // `.svelte.d.ts`, by design; checkComponentProps now throws on a genuinely missing
+      // declaration (round B), so this corpus is pre-filtered to real component exports the same
+      // way main() is, rather than relying on a null return to skip a non-component name.
       const offenders = names
+        .filter((name) => existsSync(resolve(ROOT, `dist/components/${name}.svelte.d.ts`)))
         .map((name) => checkComponentProps(name, resolve(ROOT, `dist/components/${name}.svelte.d.ts`), pageText))
         .filter((r): r is NonNullable<typeof r> => r !== null)
         .filter((r) => r.noSection || r.missing.length > 0 || r.promoted.length > 0);

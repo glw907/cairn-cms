@@ -34,7 +34,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
-  import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
+  import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
@@ -745,7 +745,7 @@ persistent "?" carries Markdown help, design-arc D2).
   let caretCoords = $state.raw<() => { left: number; right: number; top: number; bottom: number } | null>(
     () => null,
   );
-  let focusEditor = $state.raw<() => void>(() => {});
+  let focus = $state.raw<() => void>(() => {});
   let placeholders = $state.raw<import('./editor-placeholder.js').ImagePlaceholderApi | null>(null);
   let insertImageFn = $state.raw<(alt: string, ref: string) => void>(() => {});
 
@@ -762,7 +762,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // function is always used (the holders start as no-ops and are replaced on mount).
   const editorApi = $derived({
     caretCoords: () => caretCoords(),
-    focusEditor: () => focusEditor(),
+    focus: () => focus(),
     placeholders: placeholders ?? noopPlaceholders,
     insertImage: (alt: string, ref: string) => insertImageFn(alt, ref),
   });
@@ -1367,6 +1367,27 @@ persistent "?" carries Markdown help, design-arc D2).
       revokeBusy = false;
       revokeCount = null;
       revokeError = null;
+      // The 13 EditorApi holders below: the {#key} block this reset backs remounts MarkdownEditor
+      // itself, destroying the outgoing entry's CodeMirror view, but these are plain component
+      // state, untouched by a DOM remount. Without this, every holder keeps pointing at the
+      // destroyed view between the remount and the incoming entry's own async registerEditor call
+      // (MarkdownEditor's onMount awaits a long chain of dynamic imports before it fires), so a
+      // toolbar action clicked in that window would reach dead state instead of doing nothing.
+      // Reset each back to its own declared no-op/null default (mirroring the `let ... = $state.raw(...)`
+      // initializers above), the same value it holds before any editor has ever registered.
+      insert = () => {};
+      replaceRange = () => {};
+      selectRange = () => {};
+      insertLink = () => {};
+      getSelection = () => '';
+      getSelectionRange = () => null;
+      format = () => {};
+      tidyApi = null;
+      undoEditor = () => {};
+      caretCoords = () => null;
+      focus = () => {};
+      placeholders = null;
+      insertImageFn = () => {};
     });
   });
 
@@ -1951,7 +1972,7 @@ persistent "?" carries Markdown help, design-arc D2).
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul role="list" class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
-        <li class="flex items-center justify-between gap-2">
+        <li class="flex items-center justify-between gap-2" role="listitem">
           <code class="type-meta">{href}</code>
           <button type="button" class="btn btn-xs" onclick={() => removeBrokenLink(href)}>Remove link</button>
         </li>
@@ -1985,7 +2006,7 @@ persistent "?" carries Markdown help, design-arc D2).
       {#if notice.rows.length}
         <ul role="list" class="mt-1 w-full">
           {#each notice.rows as row, i (i)}
-            <li class="flex items-center justify-between gap-2">
+            <li class="flex items-center justify-between gap-2" role="listitem">
               {#if row.rowLabel}
                 <!-- A body needs-alt row labels with its source reference in a code span; a hero row
                      and any future labelled row use a plain label. -->
@@ -2279,12 +2300,12 @@ persistent "?" carries Markdown help, design-arc D2).
           bind:value={body}
           name="body"
           {surface}
-          registerEditor={(api: EditorApi) => {
+          registerEditor={(api) => {
             insert = api.insert;
             insertLink = api.insertLink;
             getSelection = api.getSelection;
             caretCoords = api.caretCoords;
-            focusEditor = api.focusEditor;
+            focus = api.focus;
             undoEditor = api.undo;
             format = api.format;
             replaceRange = api.replaceRange;

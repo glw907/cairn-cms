@@ -23,41 +23,48 @@ Swapping the editor stays a one-file change.
   }
 
   /** The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
-   *  editor. It replaces the retired 13 `register*` props (11 per-capability callbacks plus the two
-   *  object grants, `registerTidy` and `registerImagePlaceholders`, now `tidy` and
-   *  `imagePlaceholders`): a caller that used to wire only the one or two callbacks it needed now
-   *  receives the full surface uniformly, since the host is always EditPage, which always needed
-   *  the whole thing anyway. */
+   *  editor: every capability the host can drive against the buffer, insertion, selection, the
+   *  view, history, and the tidy/image-placeholder subsystems, as one uniform grant, since the
+   *  host is always EditPage, which always needs the whole surface. */
   export interface EditorApi {
+    // Insertion: writes directly into the document.
     /** Inserts text at the cursor; the palette calls it. */
     insert: (text: string) => void;
     /** Inserts an inline link at the current selection; the link picker calls it. */
     insertLink: (href: string, title: string) => void;
+    /** Inserts an inline image at the caret; the media picker and the capture card call it with the
+     *  chosen alt and the full `media:slug.hash` reference. */
+    insertImage: (alt: string, ref: string) => void;
+    /** Overwrites a document span with new text and drops the caret after it; the dialog's Update
+     *  calls it to write an edited block back over its original range. */
+    replaceRange: (from: number, to: number, text: string) => void;
+
+    // Selection: reads or transforms the current selection.
     /** Returns the selected text; the web link dialog reads it for its Text field's default. */
     getSelection: () => string;
+    /** Returns the selection's document offsets, or null when the selection is empty (a bare
+     *  caret); the tidy host reads it so a selection tidy maps onto the exact selected span. */
+    getSelectionRange: () => { from: number; to: number } | null;
+    /** Selects a document span, focuses the editor, and scrolls the range into view; the needs-alt
+     *  notice's jump control calls it to land the author on an image that lacks alt text. */
+    selectRange: (from: number, to: number) => void;
+    /** Transforms the current selection by a named format kind (`bold`, `italic`, `h2`, ...); the
+     *  host's toolbar calls it. */
+    format: (kind: FormatKind) => void;
+
+    // View: viewport geometry and focus.
     /** Returns the caret's viewport coordinates, for the insert popover to anchor to the cursor.
      *  Null before mount or when the caret has no measurable position. */
     caretCoords: () => { left: number; right: number; top: number; bottom: number } | null;
     /** Returns focus to the editor surface; the insert popover calls it on close or Escape. */
-    focusEditor: () => void;
+    focus: () => void;
+
+    // History.
     /** Undoes the last editor transaction; the "Undo tidy" chip calls it to take a whole applied
      *  tidy back in one move (the apply lands as one history entry). */
     undo: () => void;
-    /** Transforms the current selection by a named format kind (`bold`, `italic`, `h2`, ...); the
-     *  host's toolbar calls it. */
-    format: (kind: FormatKind) => void;
-    /** Overwrites a document span with new text and drops the caret after it; the dialog's Update
-     *  calls it to write an edited block back over its original range. */
-    replaceRange: (from: number, to: number, text: string) => void;
-    /** Selects a document span, focuses the editor, and scrolls the range into view; the needs-alt
-     *  notice's jump control calls it to land the author on an image that lacks alt text. */
-    selectRange: (from: number, to: number) => void;
-    /** Inserts an inline image at the caret; the media picker and the capture card call it with the
-     *  chosen alt and the full `media:slug.hash` reference. */
-    insertImage: (alt: string, ref: string) => void;
-    /** Returns the selection's document offsets, or null when the selection is empty (a bare
-     *  caret); the tidy host reads it so a selection tidy maps onto the exact selected span. */
-    getSelectionRange: () => { from: number; to: number } | null;
+
+    // Subsystems: composed capability objects rather than plain callbacks.
     /** The tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and the
      *  accept/reject state machine through it. The author's original stays in the buffer until an
      *  accept writes; a reject or reject-all leaves it byte-identical. */
@@ -105,7 +112,7 @@ Swapping the editor stays a one-file change.
   /** `EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
    *  rather than wrapping it, with no stability promise across minors: a site that reaches past
    *  `EditPage` for one of these should expect it to move or change shape. */
-  export interface EditPageWiringProps {
+  export interface UnstableEditorProps {
     /** Called with the first image File of a paste or drop onto the surface; the host opens the
      *  capture card with the bytes. A paste or drop carrying no image falls through untouched. */
     onImageIngest?: (file: File) => void;
@@ -171,7 +178,7 @@ Swapping the editor stays a one-file change.
   import { htmlToMarkdown } from './paste-html-to-markdown.js';
   import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
 
-  interface Props extends StableEditorProps, EditPageWiringProps {}
+  interface Props extends StableEditorProps, UnstableEditorProps {}
 
   let {
     value = $bindable(),
@@ -929,7 +936,8 @@ Swapping the editor stays a one-file change.
     // below hands out a live api, so nothing observes the pre-fold state.
     if (foldOnMount) foldingMod.foldContainersOnLoad(view);
 
-    // The one uniform grant (ruling 1): every registerEditor caller now receives the full
+    // The one uniform grant (ruling 1; docs/internal/engine-rulings.md,
+    // `audit-admin-markdowneditor`): every registerEditor caller now receives the full
     // buffer-scoped EditorApi, where the retired register* props each handed back only the one
     // callback (or object) that caller wired.
     registerEditor?.({
@@ -937,7 +945,7 @@ Swapping the editor stays a one-file change.
       insertLink,
       getSelection: selectedText,
       caretCoords,
-      focusEditor,
+      focus,
       undo: () => {
         if (view) commandsMod.undo(view);
       },
@@ -1183,7 +1191,7 @@ Swapping the editor stays a one-file change.
 
   // Return focus to the editor surface; the popover calls it on close or Escape. The selection is
   // intact because opening the popover only blurred the editor, it never edited the doc.
-  function focusEditor() {
+  function focus() {
     view?.focus();
   }
 

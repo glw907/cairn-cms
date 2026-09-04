@@ -179,6 +179,23 @@
   `docs/internal/engine-rulings.md`'s `check-surface-leaks` row for the two-model derivation and the
   registry's reason grammar. Internal tooling only; no consumer action.
 
+- `check:editor-quotes` gates `docs/editors/when-something-goes-wrong.md`'s own promise that
+  "every message below is quoted exactly as it appears" (internals pass, Task 4): it extracts
+  every bolded double-quoted sentence and fails when no shipped `src/lib` string grounds it, a
+  case a copy edit in a component (`LoginPage.svelte`, `EditPage.svelte`, `refusal-codes.ts`, and
+  so on) used to strand with nothing noticing (`check:prose` scans components, `check:docs` scans
+  links, neither compares one against the other). Grounding tolerates a template's interpolation
+  holes (a ternary word choice, an editor's name) rather than requiring exact equality, so the
+  gate does not fire on a doc quote naming a variable value in its own words. Wired into `npm
+  test` (a unit suite proving the real doc grounds, plus a stranded-copy regression) and into CI.
+  The same pass fixed the 16 genuine spaced em-dash violations `Google.EmDash` flags under Vale
+  3.19.0 in `docs/admin/README.md` and `docs/extend/README.md` (3.15.1, CI's pinned version, has
+  the false negative; the repo's own Google standard wants them unspaced), exempted the one
+  `Microsoft.Quotes` finding on the editors page as a 3.19.0 false positive (the punctuation is
+  already correctly inside the quote), and recorded `.vale.ini`'s new version-arbiter comment:
+  CI's pinned 3.15.1 governs whenever a local Vale disagrees with a green CI run. Internal only;
+  no consumer action.
+
 - `createAuthChannel` (`/auth-channel`) refuses every action (`request`, `confirm`, `logout`) with
   a hard 503 throw the moment `CAIRN_DEV_BACKEND` is live on a non-local request (internals pass,
   Task 9, ruling 4 as letter-amended: see `docs/internal/engine-rulings.md`'s
@@ -213,13 +230,15 @@
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
   ruling 1: the MarkdownEditor seam collapse) into one `registerEditor?: (api: EditorApi) => void`.
   `EditorApi` hands the host the full buffer-scoped editing surface on mount: `insert`,
-  `insertLink`, `getSelection`, `caretCoords`, `focusEditor`, `undo`, `format`, `replaceRange`,
+  `insertLink`, `getSelection`, `caretCoords`, `focus`, `undo`, `format`, `replaceRange`,
   `selectRange`, `insertImage`, `getSelectionRange`, `tidy` (formerly the `registerTidy` object
   grant), and `imagePlaceholders` (formerly `registerImagePlaceholders`). Every `registerEditor`
   caller now receives the whole surface uniformly, where the retired shape handed each caller back
   only the one callback or object it wired. `spellcheckTest` stays documented-unstable, pinned by
   a new `check:reference` clause that diffs every exported component's props against its own
-  reference-page section. See `docs/reference/components.md`'s `MarkdownEditor` section for the
+  reference-page section. `EditorApi` is now exported from `/components`, so a caller can annotate
+  the variable it assigns from `registerEditor` (`let editor: EditorApi | null = null`) instead of
+  inferring it structurally. See `docs/reference/components.md`'s `MarkdownEditor` section for the
   full grammar. Consumers must: replace any `register*` prop passed to `MarkdownEditor` directly
   (`registerInsert`, `registerInsertLink`, `registerInsertImage`, `registerCaretCoords`,
   `registerFocusEditor`, `registerImagePlaceholders`, `registerGetSelection`,
@@ -1039,23 +1058,6 @@
   `createCairnAdmin`'s own un-narrowed return (with the per-item blocking signature, so the retires
   pass does not attempt a deletion that breaks the R4 closure). Internal only; no consumer action.
 
-- `check:editor-quotes` gates `docs/editors/when-something-goes-wrong.md`'s own promise that
-  "every message below is quoted exactly as it appears" (internals pass, Task 4): it extracts
-  every bolded double-quoted sentence and fails when no shipped `src/lib` string grounds it, a
-  case a copy edit in a component (`LoginPage.svelte`, `EditPage.svelte`, `refusal-codes.ts`, and
-  so on) used to strand with nothing noticing (`check:prose` scans components, `check:docs` scans
-  links, neither compares one against the other). Grounding tolerates a template's interpolation
-  holes (a ternary word choice, an editor's name) rather than requiring exact equality, so the
-  gate does not fire on a doc quote naming a variable value in its own words. Wired into `npm
-  test` (a unit suite proving the real doc grounds, plus a stranded-copy regression) and into CI.
-  The same pass fixed the 16 genuine spaced em-dash violations `Google.EmDash` flags under Vale
-  3.19.0 in `docs/admin/README.md` and `docs/extend/README.md` (3.15.1, CI's pinned version, has
-  the false negative; the repo's own Google standard wants them unspaced), exempted the one
-  `Microsoft.Quotes` finding on the editors page as a 3.19.0 false positive (the punctuation is
-  already correctly inside the quote), and recorded `.vale.ini`'s new version-arbiter comment:
-  CI's pinned 3.15.1 governs whenever a local Vale disagrees with a green CI run. Internal only;
-  no consumer action.
-
 - `docs/reference/sveltekit.md` and `docs/reference/reproductions.md` gain the indexed-access
   reference convention (internals pass, Task 5, ruling 3): a rendered shape that prints a member
   whose own type carries no export row now carries an inline parenthetical, beside the member's
@@ -1109,14 +1111,16 @@
   rule's two adjacent diagnostic-message defects are also fixed: its cause-lookup no longer
   misattributes a descendant-selector declaration scoped to an ancestor's class (`.menu :where(li)`)
   to an element merely sharing that class name, and a finding whose cause sits inside an at-rule
-  (a media query) now names that condition in its message instead of dropping it. `panel-width`
-  gains a painted text-width measurement for a closed single-value `<select>`, the same paint-not-
-  parse approach `resolveColors` already takes: a closed select's rendered label never grows its
-  own `scrollWidth` past its box no matter how clipped it is, so the rule's existing
-  `scrollWidth`/`clientWidth` comparison read clean on a genuinely clipped select label; it now
-  paints the selected option's text with the select's own computed font and compares it against the
-  box's own available width. Both rules run against the engine's own admin surfaces as part of this
-  fix; no other finding surfaced. Internal audit-output change; no consumer action.
+  (a media query) now names that condition in its message instead of dropping it. Both rules run
+  against the engine's own admin surfaces as part of this fix; no other finding surfaced. Internal
+  audit-output change; no consumer action.
+
+- `panel-width` gains a painted text-width measurement for a closed single-value `<select>`, the
+  same paint-not-parse approach `resolveColors` already takes: a closed select's rendered label
+  never grows its own `scrollWidth` past its box no matter how clipped it is, so the rule's
+  existing `scrollWidth`/`clientWidth` comparison read clean on a genuinely clipped select label;
+  it now paints the selected option's text with the select's own computed font and compares it
+  against the box's own available width. Internal audit-output change; no consumer action.
 
 - `check:reference`'s stale-name (reverse) check is now scoped per page (internals pass, Task 3):
   it used to flag a reference-page name only when NO subpath anywhere in the package exported it, so

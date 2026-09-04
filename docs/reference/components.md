@@ -673,7 +673,7 @@ anyway.
 | `insertLink` | `(href: string, title: string) => void` | Inserts an inline link at the current selection. |
 | `getSelection` | `() => string` | Returns the selected text. |
 | `caretCoords` | `() => { left: number; right: number; top: number; bottom: number } \| null` | Returns the caret's viewport coordinates, or `null` before mount or when unmeasurable. |
-| `focusEditor` | `() => void` | Returns focus to the editor surface. |
+| `focus` | `() => void` | Returns focus to the editor surface. |
 | `undo` | `() => void` | Undoes the last editor transaction. |
 | `format` | `(kind: FormatKind) => void` | Applies a named selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`. |
 | `replaceRange` | `(from: number, to: number, text: string) => void` | Overwrites a document span with new text and drops the caret after it. |

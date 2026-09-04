@@ -20,7 +20,7 @@ export { default as HelpHome } from './HelpHome.svelte';
 export { default as EditPage } from './EditPage.svelte';
 export { default as CairnHistory } from './CairnHistory.svelte';
 export { default as ManageEditors } from './ManageEditors.svelte';
-export { default as MarkdownEditor } from './MarkdownEditor.svelte';
+export { default as MarkdownEditor, type EditorApi } from './MarkdownEditor.svelte';
 export { default as NavTree } from './NavTree.svelte';
 export { default as DeleteDialog } from './DeleteDialog.svelte';
 export { default as RenameDialog } from './RenameDialog.svelte';

@@ -70,7 +70,7 @@ describe('list-role (rendered) against a real browser', () => {
     expect(findings[0].message).toContain('display: flex');
   });
 
-  // ARIA's owned-elements rule: role="list" requires listitem-owned children, and this rule
+  // HTML-AAM's implicit li-to-listitem mapping depends on the parent relationship, and this rule
   // recommends role="listitem" on each item whose own computed display already strips its
   // list-item box, since that item is exposed to the same rendering-engine risk the list itself is.
   it("recommends role=\"listitem\" on the affected items alongside role=\"list\" on the list", async () => {
@@ -131,7 +131,43 @@ describe('list-role (rendered) against a real browser', () => {
     expect(findings[0].selector).toContain('menu');
   });
 
-  it('declares no special interaction state, so it runs at rest like the harness default', () => {
-    expect(listRoleRendered.states).toBeUndefined();
+  it('declares rest and menu-open, so it reaches lists that mount only inside an opened dialog or popover', () => {
+    expect(listRoleRendered.states).toEqual(['rest', 'menu-open']);
+  });
+
+  // The measured-fact rewording (round B): the message states what the check actually measures
+  // (the computed display) and offers the descendant selector as the likely, not asserted, source.
+  it('names the descendant selector as a likely cause, not an asserted one', async () => {
+    const findings = await findingsFor('<ul class="menu"><li>One</li></ul>');
+    expect(findings[0].message).toContain('display: flex');
+    expect(findings[0].message).toContain('likely cause');
+    expect(findings[0].message).not.toContain('reached through a descendant selector');
+  });
+
+  // The softened hedge (round B): HTML-AAM's parent-relationship mapping, not ARIA's "requires"
+  // framing, and the same core clause the static rule's own item-level remedy carries.
+  it('grounds the listitem remedy in the HTML-AAM parent-relationship mapping, not a "requires" claim', async () => {
+    const findings = await findingsFor('<ul class="menu"><li>One</li></ul>');
+    expect(findings[0].message).toContain("HTML-AAM's implicit li-to-listitem mapping");
+    expect(findings[0].message).not.toContain('requires listitem-owned children');
+  });
+
+  // The mixed-display honesty fixture (round B): a list whose changed items compute to two
+  // different displays reports the set, never just the first item's value.
+  it('reports the set of displays when a list mixes them across its changed items', async () => {
+    const findings = await findingsFor(
+      '<ul class="menu"><li style="display:grid">One</li><li>Two</li></ul>'
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('one of several displays');
+    expect(findings[0].message).toContain('flex');
+    expect(findings[0].message).toContain('grid');
+  });
+
+  // <menu> maps to role list under HTML-AAM too, and daisyUI styles chrome with it.
+  it('flags a classless <li> under a <menu> the same way it flags one under a <ul>', async () => {
+    const findings = await findingsFor('<menu class="menu"><li>One</li></menu>');
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('display: flex');
   });
 });

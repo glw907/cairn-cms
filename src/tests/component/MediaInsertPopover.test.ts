@@ -82,7 +82,7 @@ function fakePlaceholders() {
 function fakeEditor(placeholders: ImagePlaceholderApi) {
   return {
     caretCoords: () => ({ left: 10, right: 12, top: 20, bottom: 36 }),
-    focusEditor: vi.fn(),
+    focus: vi.fn(),
     placeholders,
     insertImage: vi.fn(),
   };
@@ -172,7 +172,7 @@ describe('MediaInsertPopover focus restore', () => {
     const panel = screen.container.querySelector('[role="dialog"]') as HTMLElement;
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await tick();
-    expect(editor.focusEditor).toHaveBeenCalled();
+    expect(editor.focus).toHaveBeenCalled();
     expect(screen.container.querySelector('[role="dialog"]')).toBeNull();
   });
 });

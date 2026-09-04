@@ -18,7 +18,7 @@ exactly as it was (open risk 2).
 
 The popover is headless by default (trigger=false): the host opens it through the exported open(). It
 moves focus in on open, traps Tab, and restores focus to the editor on close or Escape through
-editor.focusEditor() (the selection is intact, since opening only blurred the editor). Below the
+editor.focus() (the selection is intact, since opening only blurred the editor). Below the
 narrow breakpoint it falls back to a full-height bottom sheet (the admin design system's modal-sizing
 rule). The CSRF token is read from the admin context.
 -->
@@ -63,7 +63,7 @@ rule). The CSRF token is read from the admin context.
      *  the direct-insert path for a picked image (no upload). */
     editor: {
       caretCoords: () => { left: number; right: number; top: number; bottom: number } | null;
-      focusEditor: () => void;
+      focus: () => void;
       placeholders: ImagePlaceholderApi;
       insertImage: (alt: string, ref: string) => void;
     };
@@ -149,7 +149,7 @@ rule). The CSRF token is read from the admin context.
     view = null;
     captureFile = null;
     status = { kind: 'idle' };
-    editor.focusEditor();
+    editor.focus();
   }
 
   // Trap Tab within the panel and close on Escape, restoring focus to the editor.

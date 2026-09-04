@@ -199,6 +199,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ConfirmPage`: Component<Props, {}, "">
 - `CsrfField`: Component<Props, {}, "">
 - `DeleteDialog`: Component<Props, { open: () => void }, "">
+- `EditorApi`: { insert: (text: string) => void; insertLink: (href: string, title: string) => void; insertImage: (alt: string, ref: string) => void; replaceRange: (from: number, to: number, text: string) => void; getSelection: () => string; getSelectionRange: () => { from: number; to: number } | null; selectRange: (from: number, to: number) => void; format: (kind: FormatKind) => void; caretCoords: () => { left: number; right: number; top: number; bottom: number } | null; focus: () => void; undo: () => void; tidy: TidyApi; imagePlaceholders: ImagePlaceholderApi }
 - `EditPage`: Component<Props, {}, "">
 - `HelpHome`: Component<$$ComponentProps, {}, "">
 - `LoginPage`: Component<Props, {}, "">

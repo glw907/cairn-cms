@@ -9,8 +9,11 @@ This document argues why a small organization might run its website and its own 
 for a reader who has to make that choice and can check the reasoning. The reader is a developer or
 a technically fluent lead choosing how a club, a nonprofit, or a small business with non-technical
 editors runs its site. It is built to survive an intelligent attack and to be graded on logic and
-evidence. The figure's form is decided later, from this text, and the last section records that
-open question.
+evidence. Its sections are the traditional setup at its strongest, five legs (cairn as CMS and
+admin tool; content in git; one hosting account; no page builder; agent-assisted development as a
+case report), and, between the first and second legs, a short section on the shape the case argues
+for, of which cairn is one implementation. The figure's form is decided later, from this text, and
+the last section records that open question.
 
 Four rules govern it. Nothing here is a pitch; the document has no stake in whether the reader
 adopts cairn, and it grades neither side [opinion]. That sentence is for this record and never
@@ -74,17 +77,20 @@ how often a small site is breached [verifiable: same; opinion on the second clau
 found no independent measurement of maintenance hours for a small organization's site, and agency
 care-plan prices are not evidence [verifiable:
 docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 2]. cairn has its own
-treadmill. The engine published 87 numbered releases from `0.22.0` to `0.96.0` [verifiable:
-CHANGELOG.md, `git tag`; `v0.96.0` dated 2026-08-22]. The phrase "Consumers must" appears 202
-times in that changelog [verifiable: `grep -c "Consumers must" CHANGELOG.md`]. The package
-declares 37 runtime dependencies and four peers [verifiable: package.json]. The production site
-ran two engine-adoption passes on consecutive days, 2026-08-21 and 2026-08-22 [verifiable: one
-production site's record, docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E;
-internal]. A Vite 8 change once broke every consumer build until the engine added a post-package
-transpile step [verifiable: docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md]. npm
-is the surface a cairn site patches [opinion]. A site that stops applying updates keeps serving on
-its pinned version, and the risk is deferred to the next platform floor, framework major, or
-change to the beta email API [opinion; verifiable: docs/extend/upgrade-cairn.md for the floors].
+treadmill. The engine's changelog carries 87 numbered entries from `0.22.0` to `0.96.0`, one of
+them a release-candidate heading, and the tag list carries 70 plain tags plus 3 release-candidate
+tags in that range, starting at `v0.24.0` [verifiable: `grep -cE '^## [0-9]+\.[0-9]+\.[0-9]+'
+CHANGELOG.md`; `git tag | grep -E '^v0\.(2[2-9]|[3-9][0-9])\.[0-9]+$' | wc -l`; `v0.96.0` dated
+2026-08-22]. The phrase "Consumers must" appears 202 times in that changelog [verifiable: `grep -c
+"Consumers must" CHANGELOG.md`]. The package declares 37 runtime dependencies and four peers
+[verifiable: package.json]. The production site ran two engine-adoption passes on consecutive
+days, 2026-08-21 and 2026-08-22 [verifiable: one production site's record,
+docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E; internal]. A Vite 8 change
+once broke every consumer build until the engine added a post-package transpile step [verifiable:
+docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md]. npm is the surface a cairn site
+patches [opinion]. A site that stops applying updates keeps serving on its pinned version, and the
+risk is deferred to the next platform floor, framework major, or change to the beta email API
+[opinion; verifiable: docs/extend/upgrade-cairn.md for the floors].
 
 ## Leg 1: cairn is both a working CMS and an extensible admin tool
 
@@ -128,13 +134,13 @@ docs/internal/docs-register.md, Killed list; docs/extend/add-a-second-audience.m
 corrected above.
 
 **Drawbacks.** Starting a cairn site needs a developer, because the scaffold is unpublished and
-its chapters assume one [verifiable: ROADMAP.md:74; packages/create-cairn-site/README.md:10-13
-(Node 24, `npm`, `wrangler`); docs/why-cairn.md:77]. Adding a form, a booking page, or a shop
-needs the same developer, since content is Posts and Pages [verifiable: CLAUDE.md "What cairn
-is"]. A developer stays in the loop for anything past writing and publishing, and an organization
-without that person should weigh that before starting [verifiable: docs/why-cairn.md]. The engine
-has no vendor and no support contract, so the developer is the support [verifiable: package.json,
-a `bugs` field and no support field; docs/why-cairn.md]. A bespoke SvelteKit app on Workers has a
+its chapters assume one [verifiable: ROADMAP.md:74; packages/create-cairn-site/README.md:9-13
+(`npm create`, Node 24); docs/why-cairn.md:77]. Adding a form, a booking page, or a shop needs the
+same developer, since content is Posts and Pages [verifiable: CLAUDE.md "What cairn is"]. A
+developer stays in the loop for anything past writing and publishing, and an organization without
+that person should weigh that before starting [verifiable: docs/why-cairn.md]. The engine has no
+vendor and no support contract, so the developer is the support [verifiable: package.json, a
+`bugs` field and no support field; docs/why-cairn.md]. A bespoke SvelteKit app on Workers has a
 small labor market when that developer leaves [opinion]. cairn is pre-1.0, and a seam has already
 moved across two minor releases inside the tier meant to stay frozen [verifiable:
 docs/why-cairn.md, docs/extend/migration-notes.md].
@@ -156,7 +162,7 @@ sends the editor an email from the site's own Cloudflare account, with no third 
 sign-in path [verifiable: https://keystatic.com/docs/github-mode;
 https://keystatic.com/docs/cloud, "without needing a GitHub account";
 https://decapcms.org/docs/backends-overview/, all fetched 2026-09-04]. Leg 3 carries what that
-costs.Past that, cairn brings the holding-branch publish path, the admin shell and its primitives,
+costs. Past that, cairn brings the holding-branch publish path, the admin shell and its primitives,
 the snapshot gate that keeps the seams from moving, and the agent skill [verifiable:
 docs/extend/architecture.md; docs/extend/add-a-custom-admin-screen.md; `check:surface`;
 skills/cairn-admin-screens/]. A developer assembling the same thing writes or installs each one
@@ -164,6 +170,25 @@ skills/cairn-admin-screens/]. A developer assembling the same thing writes or in
 reads as a reviewer of their work as well as a gift [verifiable: docs/reference/cairn-audit.md;
 opinion on the reading]. What the other stack gives that cairn does not: a choice of host and
 framework, and an editor UI its own project maintains [opinion].
+
+## The shape, not only the product
+
+Front door: derivable.
+
+The case argues for a shape, and cairn is one implementation of it [opinion]. The shape has four
+parts: content as markdown in the organization's own git repository; an admin frame that lives
+inside the organization's own app; the organization's own screens mounted through seams; and one
+hosting platform supplying hosting, data, media, mail, and deploy [verifiable:
+docs/extend/architecture.md; docs/internal/what-cairn-is-and-is-not.md]. A developer can build the
+same shape from SvelteKit plus Keystatic or Decap plus a hand-written admin, or on another stack
+entirely [verifiable: https://keystatic.com/docs/github-mode;
+https://decapcms.org/docs/backends-overview/, both fetched 2026-09-04]. That is a valid choice,
+and this document does not grade it against cairn [opinion]. What cairn ships that such a build
+writes or installs itself is the list Leg 1 carries under "The developer's other option": the
+magic-link editor login with no third service in the sign-in path, the holding-branch publish
+path, the admin shell and its primitives, the snapshot gate, and the agent skill [verifiable: Leg
+1, the same tags]. The claim is the shape plus those pieces, and it is never a claim about the
+product against another build of the shape [opinion].
 
 ## Leg 2: content is markdown files in the site's git repository
 
@@ -223,9 +248,10 @@ above 100 MiB, so a content corpus has a ceiling a database does not [verifiable
 https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github].
 So media lives in R2, and content is split across two stores by design [verifiable:
 docs/extend/data-tiers.md]. The category is small: WordPress holds 58.9% of sites with a known
-CMS, and git-based CMS tools are not a tracked category [supported: W3Techs CMS overview, data
-dated 2026-09-05, https://w3techs.com/technologies/overview/content_management]. Backup is as good
-as the organization's GitHub account, one account and one place to lose access [verifiable:
+CMS, and git-based CMS tools are not a tracked category [supported: W3Techs CMS overview, the
+page's own stamp 2026-09-05, read 2026-09-04,
+https://w3techs.com/technologies/overview/content_management]. Backup is as good as the
+organization's GitHub account, one account and one place to lose access [verifiable:
 docs/why-cairn.md, "Committing to git-backed content is itself a choice"]. The search found no
 named case study of a git CMS failing at scale and no survey of editor satisfaction with markdown
 against rich text. Both are gaps [verifiable:
@@ -332,7 +358,7 @@ docs/admin/before-you-start.md]. A private repository sits on GitHub's free plan
 https://github.com/pricing, "Unlimited public/private repositories", fetched 2026-09-04].
 
 **Counter-evidence a skeptic cites.** Cloudflare published seven postmortems for its own incidents
-between 2025-06-12 and 2026-02-20, and two for external ones [verifiable:
+between 2025-06-12 and 2026-02-20, and posts about other providers' incidents [verifiable:
 https://blog.cloudflare.com/tag/outage/, read 2026-09-04]. Two did not touch a Workers-hosted
 site: the 1.1.1.1 resolver on 2025-07-14 and the BYOIP withdrawal on 2026-02-20 [verifiable:
 https://blog.cloudflare.com/cloudflare-1-1-1-1-incident-on-july-14-2025/;
@@ -348,7 +374,7 @@ three that touched a Workers-hosted site:
 | 2025-11-18 | about 2 h 10 min for the global outage, full restoration 17:06 UTC | CDN, Turnstile, Workers KV, Access, the dashboard, after a database permissions change doubled a Bot Management feature file | https://blog.cloudflare.com/18-november-2025-outage/ |
 | 2025-12-05 | about 25 min | 28% of applications behind the network | https://blog.cloudflare.com/5-december-2025-outage/ |
 
-Three in six months [verifiable: the table]. 
+Three in six months [verifiable: the three postmortems above]. 
 
 The status API is a rolling window, and read on 2026-09-04 it listed, among others, Durable Objects
 errors on 2026-08-26, Workers Builds degraded for 1 h 39 min on 2026-08-27, and Workers KV errors
@@ -371,14 +397,15 @@ shape's "each part replaceable" is a real asymmetry [opinion].
 **Data, backup, and whose accounts.** The organization's own data, members, payments, documents,
 and media, lives in D1 and R2 inside the Cloudflare account [verifiable:
 docs/extend/data-tiers.md]. D1 offers point-in-time restore to any minute in the last 30 days on
-every plan, and R2 documents no equivalent [verifiable:
-https://developers.cloudflare.com/d1/reference/time-travel/, "Time Travel", read 2026-09-04;
-https://developers.cloudflare.com/r2/, by absence]. R2 needs the site's own copy [opinion]. The
-published cairn docs carry no backup or restore procedure for either, a gap the docs owe
-[verifiable: `grep -rniE "backup|restore|d1 export" docs/admin docs/extend docs/reference` returns
-the CSRF guard's Origin restore, key-rotation prose, and an email-normalization example, and no
-procedure]. No monitoring, alerting, or uptime check is in the published docs beyond the
-scaffold's `healthz` route, and Cloudflare's status page is the only signal named [verifiable:
+the Workers Paid plan a cairn site already needs, and 7 days on the free plan; R2 documents no
+equivalent [verifiable: https://developers.cloudflare.com/d1/reference/time-travel/, read
+2026-09-04; https://developers.cloudflare.com/r2/, by absence]. R2 needs the site's own copy
+[opinion]. The published cairn docs carry no backup or restore procedure for either, a gap the
+docs owe [verifiable: `grep -rniE "backup|restore|d1 export" docs/admin docs/extend
+docs/reference` returns the CSRF guard's Origin restore, key-rotation prose, and an
+email-normalization example, and four unrelated "restore" and "backup" verbs, and no procedure on
+any hit]. No monitoring, alerting, or uptime check is in the published docs beyond the scaffold's
+`healthz` route, and Cloudflare's status page is the only signal named [verifiable:
 docs/extend/what-the-scaffold-wrote.md, `healthz/`; by absence elsewhere]. Whether the Cloudflare
 and GitHub accounts belong to the organization or to its developer is a choice this document does
 not make [opinion]. In the production case the repository, the Cloudflare account, and the GitHub
@@ -467,9 +494,9 @@ stays small: headings, emphasis, links, lists, images, and the site's declared d
 
 **Counter-evidence a skeptic cites.** Elementor runs 12.8% of all websites W3Techs tracks and
 roughly 31% of WordPress sites, so a large share of site owners choose builder coupling knowingly
-[supported: W3Techs Elementor page, read 2026-09-04]. In the WordPress 2023 annual survey
-(n=3,922), 45.1% agreed the Site Editor meets their site-building needs and 28.6% disagreed, with
-block editor use about 60% and rising [supported:
+[supported: W3Techs Elementor page, the page's own stamp 2026-09-05, read 2026-09-04]. In the
+WordPress 2023 annual survey (n=3,922), 45.1% agreed the Site Editor meets their site-building
+needs and 28.6% disagreed, with block editor use about 60% and rising [supported:
 https://wordpress.org/news/2024/02/2023-annual-survey-results-and-next-steps/]. Most WordPress
 users are not fighting it [opinion]. The Classic Editor install count (8 million plus, fourth by
 active installs, read 2026-09-04) is dropped from this argument: it measures transition friction
@@ -673,14 +700,14 @@ aksailingclub-org src/member-auth/lib/auth.ts:6-14,279].
 **What the record supports.** The initial membership and assets build landed in two calendar days,
 as an overnight agent run whose token spend the record does not carry, with the owner's own time
 unrecorded, and with the first build rendering shells and demo data that moved onto live data a
-week later [verifiable: the table; `81634ca`; docs/status-archive.md:1941]. The layer then took 42
-commits of refinement on the routes over eight weeks, and 81 on the shared library, including six
-engine-adoption commits and the CSRF seam defect [verifiable: the table; docs/STATUS.md:17-28].
-The site's recorded token spend on later passes ran 1.4 to about 2.3 times its own ceilings, which
-the site's record calls "roughly twofold" [verifiable: aksailingclub-org
-docs/HISTORY.md:102,151,198-199]. The general studies are cited only for what they test, issue
-repair on benchmarks and security defect rates in generated code, and none tests this division of
-labor [opinion].
+week later [verifiable: the case-report table's commands; `81634ca`; docs/status-archive.md:1941].
+The layer then took 42 commits of refinement on the routes over eight weeks, and 81 on the shared
+library, including six engine-adoption commits and the CSRF seam defect [verifiable: the
+case-report table's commands; docs/STATUS.md:17-28]. The site's recorded token spend on later
+passes ran 1.4 to about 2.3 times its own ceilings, which the site's record calls "roughly
+twofold" [verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-199]. The general studies are
+cited only for what they test, issue repair on benchmarks and security defect rates in generated
+code, and none tests this division of labor [opinion].
 
 **Derivable form, for the front door.** I built the membership and assets admin for one club site
 in two days. I ran it overnight as an agent job and did not record what it cost. Then I spent
@@ -689,7 +716,7 @@ engine's toolkit has since absorbed, so a site starting today starts further alo
 That site's member login, payments, and signatures are its own code, not cairn's, and the one
 blocker that reached production was a CSRF defect at the seam between the two. I am the engine's
 author too, so read this as what I can do with my own engine. It says nothing about a second
-developer [verifiable: this section's commands; opinion on "further along"].
+developer [verifiable: the case-report table's commands; opinion on "further along"].
 
 ### Already extensible, measured
 
@@ -805,7 +832,7 @@ of it is the other.
 | Gates | 33 check scripts plus the public-surface snapshot [verifiable: scripts/checks/] | The repo's `ci.yml` (`check`, `test`, `build`, e2e) [verifiable: aksailingclub-org CLAUDE.md] |
 | Shipped surface | 18 export subpaths [verifiable: package.json `exports`] | Imports 11 engine specifiers, `/sveltekit` 57 times, the root 44, `/admin-toolkit` 27, `/delivery` 22, `/components` 18, `/cloudflare` 11, `/media` 9, `/delivery/head` 6, `/auth-crypto` 4, `/render` 2, `/delivery/data` 1 [verifiable: `grep` over `src/`] |
 | Schema | 3 packaged migration sets (`migrations`, `migrations-app` in the scaffold, `migrations-channel`) [verifiable: package.json `files`, docs/extend/what-the-scaffold-wrote.md] | 125 `.sql` files, 2,844 lines under `migrations/asc-club/`; 2,997 lines under `migrations/` in all [verifiable: `find`, `wc -l`] |
-| History | 87 numbered releases, `0.22.0` through `0.96.0` (tagged 2026-08-22), about 4,000 commits, 2026-05-24 to 2026-09-04 [verifiable: CHANGELOG.md, `git tag`, `git log`] | 838 commits, 2026-07-06 to 2026-08-30, in named passes with plans and post-mortems [verifiable: aksailingclub-org docs/HISTORY.md] |
+| History | 87 numbered changelog entries, `0.22.0` through `0.96.0` (73 tags in range, `v0.96.0` on 2026-08-22), about 4,000 commits, 2026-05-24 to 2026-09-04 [verifiable: CHANGELOG.md, `git tag`, `git log`] | 838 commits, 2026-07-06 to 2026-08-30, in named passes with plans and post-mortems [verifiable: aksailingclub-org docs/HISTORY.md] |
 
 What the membership layer reuses from the engine, read from its imports: `requireSession`,
 `requireAccess`, `createSectionAction`, and `createD1AuditSink` for gating and audit;
@@ -854,21 +881,26 @@ scaffold ships is 90 lines. I wrote the engine too, so read that ratio as one au
 
 ## Where this document argues with the reviews
 
-Round 3 ranked twenty changes. This document takes all twenty; the one it could not apply as
-written is the missing email-spike record, which is not missing and is re-pointed to
-`docs/internal/record/2026-08-11-t4b-email-spike.md` [verifiable: that path]. Round 2 ranked
-twenty changes. This document takes nineteen as written and overrides one: its first change, which
-would reverse Leg 5 into the thesis that the division of labor hands agents the organization's
-hardest work. The product owner ruled that Leg 5 is a case report, so the leg now states the
-measurements and neither inference [opinion]. Round 1 ranked twelve changes. This document takes
-eleven as written [opinion]. It differs on one point of scope. Round 1's section 7 holds that the
-comparative material belongs in `why-cairn.md` as prose and that the front door should show one
-system only. This document keeps the traditional setup as a section, because the product owner's
-ruling is that the case is built first and the figure follows, and because a reader choosing
-between two shapes is owed the other shape in the same voice [opinion]. The register objection to
-naming competitors is honored: the traditional setup is described by capability, and the only
-vendor names in this document are in citations of public numbers [opinion]. Whether any of that
-material reaches the front door is the figure's question, recorded below [opinion].
+Round 5 ranked ten changes, all taken [opinion]. Round 4 ranked twenty-one changes. This document
+takes twenty and half of the twenty-first: four of the ten `[uncited]` tags became vendor-page
+citations where a fetched page showed the claim, and the rest stay `[uncited]` because the
+traditional setup is described by capability and a named vendor page would tie each sentence to
+one product [opinion]. Round 3 ranked twenty changes. This document takes all twenty; the one it
+could not apply as written is the missing email-spike record, which is not missing and is
+re-pointed to `docs/internal/record/2026-08-11-t4b-email-spike.md` [verifiable: that path]. Round
+2 ranked twenty changes. This document takes nineteen as written and overrides one: its first
+change, which would reverse Leg 5 into the thesis that the division of labor hands agents the
+organization's hardest work. The product owner ruled that Leg 5 is a case report, so the leg now
+states the measurements and neither inference [opinion]. Round 1 ranked twelve changes. This
+document takes eleven as written [opinion]. It differs on one point of scope. Round 1's section 7
+holds that the comparative material belongs in `why-cairn.md` as prose and that the front door
+should show one system only. This document keeps the traditional setup as a section, because the
+product owner's ruling is that the case is built first and the figure follows, and because a
+reader choosing between two shapes is owed the other shape in the same voice [opinion]. The
+register objection to naming competitors is honored: the traditional setup is described by
+capability, and the only vendor names in this document are in citations of public numbers
+[opinion]. Whether any of that material reaches the front door is the figure's question, recorded
+below [opinion].
 
 ## Open questions
 
@@ -907,7 +939,11 @@ material reaches the front door is the figure's question, recorded below [opinio
 6. **The setup-needs-a-developer conflict.** `why-cairn.md:23-26` says the setup is one a
    non-developer runs; this document says a developer is needed to start. The derived page has to
    move to this document's sentence.
-7. **A measured worked example.** The measured pair above sizes the code, and the production
+7. **Further evidence in collection.** A public success record of the shape (other organizations
+   running content in git with an admin inside their own app) and cost-and-speed evidence for
+   agent-assisted builds are being collected through two research passes and one measured build,
+   and will fold as a further revision.
+8. **A measured worked example.** The measured pair above sizes the code, and the production
    site's records give token spend per pass; nothing yet measures one screen's effort in
    isolation. One custom screen built on a cairn site with an agent, its diff size, files, and
    passes recorded, would be the first evidence for Leg 5's economic half. Whether to build it
@@ -968,4 +1004,5 @@ docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabu
 | engine | board member, business owner | the cairn software itself |
 | beta | board member | not a finished product; the vendor may change or withdraw it |
 | snapshot gate, public-surface snapshot gate | designer | a test that fails the engine's build when an extension point changes |
+| point-in-time restore | IT admin | put the database back the way it was at any minute in the last 30 days |
 | DMARC at `p=reject` | IT admin | a DNS record telling other mail servers to reject unauthenticated mail from the domain; it can affect the organization's own mail |

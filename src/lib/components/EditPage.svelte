@@ -1150,9 +1150,10 @@ persistent "?" carries Markdown help).
   // The assertive region's text re-announces only when it changes, so a repeated identical
   // refusal (a second Delete click blocked by the same still-unresolved links) would go silent.
   // An invisible nonce flips on every fresh submit so the region text always mutates and the
-  // screen reader speaks again (ConceptList's own discipline, ported here since both files share
-  // the same live-region contract). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged.
+  // screen reader speaks again. This is one of seven admin screens (ConceptList, CairnTidySettings,
+  // ManageEditors, NavTree, VocabularyAdmin, TidyReview, this one) that hand-roll the identical
+  // idiom rather than share it; no accessibility helper module exists yet to hold it. The nonce is
+  // a zero-width space, never voiced, so the heard sentence is unchanged.
   let assertiveNonce = $state(0);
   function assertiveNonceMark(): string {
     return assertiveNonce % 2 === 0 ? '' : '​';

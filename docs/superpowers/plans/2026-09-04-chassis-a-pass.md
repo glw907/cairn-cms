@@ -276,9 +276,11 @@ is true; the styleguide HTML diff is empty and every baseline unchanged;
 ### Task 7: Single-source public routes and site metadata
 
 **Files:**
-- Modify: `examples/showcase/src/routes/(site)/[...path=md]/+server.ts:13-21` (consume the
-  chassis `PublicRoutesConfig` from `src/chassis/public-routes.ts:11-25` instead of retyping
-  seven of nine fields and dropping `defaultImage`/`feeds`), `examples/showcase/src/chassis/content.ts`
+- Modify: `examples/showcase/src/routes/(site)/[...path=md]/+server.ts:13-20` (consume the
+  chassis `PublicRoutesConfig` from `src/chassis/public-routes.ts:13-27` instead of retyping
+  seven of nine fields and dropping `defaultImage`/`feeds`), `examples/showcase/src/chassis/public-routes.ts:1-9`
+  (the header comment internals-C rewrote asserts that the raw-markdown route does NOT import
+  this binding; this task makes that false, so rewrite the sentence), `examples/showcase/src/chassis/content.ts`
   (a `siteMeta` export holding the title, description, and origin the feeds compose today),
   `examples/showcase/src/routes/feed.xml/+server.ts:11-13` and `feed.json/+server.ts:11-13`
   (each consumes `siteMeta` and supplies only its own `feedUrl`), `templates/waymark`

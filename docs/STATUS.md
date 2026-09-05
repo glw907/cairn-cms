@@ -65,7 +65,11 @@ writer its own worktree (the chain worktrees did this correctly), or serialize.
 `docs/superpowers/plans/2026-09-04-chassis-a-pass.md` (12 sequential tasks, ceiling 7.5M,
 checkpoints 4/8/12, worktree `.claude/worktrees/chassis-a` off post-C `main`; its own
 three-lens review is folded before dispatch). Geoff's "add this work to the existing
-workflow" is the approval and carries the same authorization: push, PR, merge on green CI.
+workflow" is the approval and carries the same authorization: push, PR, merge on green CI;
+after both review rounds folded, Geoff ruled the plan STANDS AS WRITTEN (2026-09-04), so the
+seven conductor calls it records (trio shape, `/render` type-only, header prefix dropped,
+`createSectionAction` unadopted, tests shipping to the scaffold, the Prettier values, the
+archive proof in B) need no re-confirmation at dispatch.
 Sequence: internals-C ritual and merge; reconcile chassis-A's anchors and its Task 10
 conditional against merged main; execute chassis-A the same way. Chassis-B's plan is
 authored after A lands (spec section "Chassis-B").

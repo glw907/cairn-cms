@@ -13,14 +13,16 @@ evidence. The figure's form is decided later, from this text, and the last secti
 open question.
 
 Four rules govern it. Nothing here is a pitch; the document has no stake in whether the reader
-adopts cairn, and it grades neither side [opinion]. The
-traditional setup is a steel man, described in the same voice as cairn, with its advantages
-stated as facts. cairn's drawbacks carry the same weight as its advantages, each with a factual
-counterweight where one exists and a plain concession where none does. Every factual sentence
-ends in a tag: `[verifiable: <path or URL>]` for a fact checkable against the tree or a primary
-document, `[supported: <citation>]` for a claim backed by a study or report with a stated sample,
-or `[opinion]` for a judgment. A sentence that could earn no tag was cut. Evidence dates matter,
-because counts and ratings move; the evidence file records the read date of each number
+adopts cairn, and it grades neither side [opinion]. That sentence is for this record and never
+derives, since a page that says it is not a pitch is pitching. The traditional setup is described
+at its strongest, in the same voice as cairn. cairn's drawbacks carry the same weight as its
+advantages, each with a factual counterweight where one exists and a plain concession where none
+does. Every factual sentence ends in a tag: `[verifiable: <path or URL>]` for a fact checkable
+against the tree or a primary document, `[supported: <citation>]` for a claim backed by a study or
+report with a stated sample, `[uncited: checkable against <what>]` for a statement that is
+checkable but was not cited here, or `[opinion]` for a judgment. The fourth tag exists so that
+`[opinion]` marks only judgments. A sentence that could earn no tag was cut. Evidence dates
+matter, because counts and ratings move; the evidence file records the read date of each number
 [verifiable: docs/internal/record/2026-09-04-cairn-case/02-evidence.md, research date 2026-09-04].
 
 Inputs: the ratified argument brief, its round-1 adversarial review (verdict RETHINK, twelve
@@ -37,48 +39,52 @@ Front door: derivable.
 
 The shape is a hosted CMS with a theme and plugin ecosystem, beside a membership product that
 carries the member database, dues, event registration, bulk email to members, and a member portal
-in its own interface, with a payments provider, a registrar, and organizational mail as separate
-accounts [opinion]. Good teams build this well, and the shape varies: some membership products
-embed into the CMS site on its own domain, and some bundle the website builder and the portal
-into one product with one member login [opinion]. Any drawing of "two systems, two logins" is
-true of some vendors and false of others, so this document describes the shape's capabilities and
-never a vendor [opinion].
+in its own interface [uncited: checkable against any membership product's feature page]. A
+payments provider, a registrar, and organizational mail sit beside them as separate accounts
+[uncited: checkable against the same]. Good teams build this well [opinion]. The shape varies:
+some membership products embed into the CMS site on its own domain, and some bundle the website
+builder and the portal into one product with one member login [uncited: checkable against the
+vendors' own pages]. Any drawing of "two systems, two logins" is true of some vendors and false of
+others. So what follows describes what these products do, not who sells them [opinion].
 
-Its advantages, stated as facts. The membership product supplies event registration with payment,
-recurring dues with renewals and reminders, invoices and receipts, a member directory, bulk email
-with subscription state and unsubscribe handling, and a member export, as configuration rather
-than code [opinion]. The CMS supplies a visual editor a volunteer already knows, a theme and
-plugin market, and a labor market of people who can be hired to work on it [opinion]. Each part
-can be replaced independently, and each vendor carries a support contract [opinion]. The payments
-provider arrives already integrated with dues and renewals [opinion].
+The membership product supplies event registration with payment, recurring dues with renewals and
+reminders, invoices and receipts, a member directory, bulk email with subscription state and
+unsubscribe handling, and a member export, as configuration rather than code [uncited: checkable
+against any membership product's feature page]. The CMS supplies a visual editor a volunteer
+already knows, a theme and plugin market, and a labor market of people who can be hired to work on
+it [uncited: checkable against the WordPress plugin and theme directories; opinion on the labor
+market]. Each part can be replaced independently, and each vendor carries a support contract
+[uncited: checkable against the vendors' plan pages]. The payments provider arrives already
+integrated with dues and renewals [uncited: checkable against the membership product's
+integrations page].
 
-Its costs, stated as facts. The same people use two interfaces and two logins where the two
-products are separate, and the member record lives in the vendor's store [opinion]. The
-integration between site and membership product is maintained by the organization [opinion]. A
-plugin ecosystem is an update and security treadmill: Patchstack's disclosure data for 2024 counts
-7,966 new vulnerabilities in the WordPress ecosystem, 96% of them in plugins, and 33% unpatched at
-public disclosure [supported: Patchstack, State of WordPress Security in 2025, data updated
-2025-03-14, https://patchstack.com/whitepaper/state-of-wordpress-security-in-2025/]. For 2025 the
-same database counts 11,334 new vulnerabilities, 91% in plugins, 46% unpatched at public
-disclosure, and a weighted median of five hours from disclosure to first exploitation among
+The same people use two interfaces and two logins where the two products are separate, and the
+member record lives in the vendor's store [uncited: checkable against the two-product vendors'
+pages]. The integration between site and membership product is maintained by the organization
+[opinion]. A plugin ecosystem is an update and security treadmill: Patchstack's disclosure data
+for 2024 counts 7,966 new vulnerabilities in the WordPress ecosystem, 96% of them in plugins, and
+33% unpatched at public disclosure [supported: Patchstack, State of WordPress Security in 2025,
+data updated 2025-03-14, https://patchstack.com/whitepaper/state-of-wordpress-security-in-2025/].
+For 2025 the same database counts 11,334 new vulnerabilities, 91% in plugins, 46% unpatched at
+public disclosure, and a weighted median of five hours from disclosure to first exploitation among
 heavily exploited flaws [supported: Patchstack, State of WordPress Security in 2026,
 https://patchstack.com/whitepaper/state-of-wordpress-security-in-2026/]. Patchstack sells a
-competing security product, so those are disclosure counts, never incident rates on small sites
-[verifiable: same]. No independent measurement of maintenance hours for a small organization's
-site was found, and agency care-plan prices are not evidence [verifiable:
-docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 2]. The cairn shape
-has its own treadmill, and it is stated here in the same terms. The engine published 87 numbered
-releases from `0.22.0` to `0.96.0` [verifiable: CHANGELOG.md, `git tag`; `v0.96.0` dated
-2026-08-22]. The phrase "Consumers must" appears 202 times in that changelog [verifiable: `grep -c
-"Consumers must" CHANGELOG.md`]. The package declares 37 runtime dependencies and four peers
-[verifiable: package.json]. The production site ran two engine-adoption passes on consecutive
-days, 2026-08-21 and 2026-08-22 [verifiable: one production site's record,
-docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E; internal]. A Vite 8 change
-once broke every consumer build until the engine added a post-package transpile step [verifiable:
-docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md]. npm is the surface a cairn site
-patches [opinion]. A site that stops applying updates keeps serving on its pinned version; the
-risk is deferred to the next platform floor, framework major, or change to the beta email API
-[opinion; verifiable: docs/extend/upgrade-cairn.md for the floors].
+competing security product. Those are counts of disclosed vulnerabilities, and nobody has measured
+how often a small site is breached [verifiable: same; opinion on the second clause]. The search
+found no independent measurement of maintenance hours for a small organization's site, and agency
+care-plan prices are not evidence [verifiable:
+docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 2]. cairn has its own
+treadmill. The engine published 87 numbered releases from `0.22.0` to `0.96.0` [verifiable:
+CHANGELOG.md, `git tag`; `v0.96.0` dated 2026-08-22]. The phrase "Consumers must" appears 202
+times in that changelog [verifiable: `grep -c "Consumers must" CHANGELOG.md`]. The package
+declares 37 runtime dependencies and four peers [verifiable: package.json]. The production site
+ran two engine-adoption passes on consecutive days, 2026-08-21 and 2026-08-22 [verifiable: one
+production site's record, docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E;
+internal]. A Vite 8 change once broke every consumer build until the engine added a post-package
+transpile step [verifiable: docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md]. npm
+is the surface a cairn site patches [opinion]. A site that stops applying updates keeps serving on
+its pinned version, and the risk is deferred to the next platform floor, framework major, or
+change to the beta email API [opinion; verifiable: docs/extend/upgrade-cairn.md for the floors].
 
 ## Leg 1: cairn is both a working CMS and an extensible admin tool
 
@@ -88,29 +94,29 @@ Front door: derivable.
 `/admin`, and the same admin is where a developer mounts the organization's own screens through
 documented seams [verifiable: docs/extend/architecture.md].
 
-**Reasoning and evidence.** Left at the scaffold's defaults, the adapter yields an owner/editor
-CMS: editors sign in from an emailed link, write markdown with a live preview rendered by the same
-function the public site uses, and publish [verifiable: docs/extend/architecture.md,
-docs/why-cairn.md]. A site's own route under `src/routes/admin/` renders inside the shared shell
-automatically, is gated by the same access map, audits through the same sink, and composes from
-`@glw907/cairn-cms/admin-toolkit` primitives (`OfficeList`, `AdminTable`, `ListToolbar`,
-`Pagination`, `StatusChip`, `EmptyState`, `FieldLabel`) [verifiable:
-docs/extend/add-a-custom-admin-screen.md]. The scaffold ships one worked custom screen,
-`admin/signups`, reading its own `APP_DB` binding [verifiable:
+**Reasoning and evidence.** Out of the box, before a developer writes anything, the adapter gives
+you an editor-first CMS with two roles, owner and editor: editors sign in from an emailed link,
+write markdown with a live preview rendered by the same function the public site uses, and publish
+[verifiable: docs/extend/architecture.md, docs/why-cairn.md]. A site's own route under
+`src/routes/admin/` renders inside the shared shell automatically, is gated by the same access
+map, audits through the same sink, and composes from `@glw907/cairn-cms/admin-toolkit` primitives
+(`OfficeList`, `AdminTable`, `ListToolbar`, `Pagination`, `StatusChip`, `EmptyState`,
+`FieldLabel`) [verifiable: docs/extend/add-a-custom-admin-screen.md]. The scaffold ships one
+worked custom screen, `admin/signups`, reading its own `APP_DB` binding [verifiable:
 docs/extend/what-the-scaffold-wrote.md]. The seams form a versioned public surface held by a
 snapshot gate, so a site's screens survive ordinary engine updates [verifiable:
 docs/internal/what-cairn-is-and-is-not.md, `check:surface`].
 
-**What the admin is for, stated exactly.** A staff-shaped audience (an instructor, a volunteer
-coordinator) uses the editors' magic-link sign-in with a `none`-capability role and its own
-`home`, and stays a row in `AUTH_DB` [verifiable: docs/extend/add-a-second-audience.md]. Members
-are a different case. A member population gets `createAuthChannel`, a wholly separate login with
-its own D1 store, its own session, and its own area outside `/admin`; nothing about it plugs into
-the admin shell [verifiable: docs/extend/add-a-second-audience.md]. The engine's own example
-site binds `MEMBER_DB` as a third database beside `AUTH_DB` and `APP_DB` [verifiable:
+**Who the admin is for.** A staff-shaped audience (an instructor, a volunteer coordinator) uses
+the editors' magic-link sign-in with a `none`-capability role and its own `home`, and stays a row
+in `AUTH_DB` [verifiable: docs/extend/add-a-second-audience.md]. Members are a different case. A
+member population gets `createAuthChannel`, a wholly separate login with its own D1 store, its own
+session, and its own area outside `/admin`, and nothing about it plugs into the admin shell
+[verifiable: docs/extend/add-a-second-audience.md]. The engine's own example site binds
+`MEMBER_DB` as a third database beside `AUTH_DB` and `APP_DB` [verifiable:
 examples/showcase/wrangler.jsonc]. Member management, dues, events, and announcements are the
-site's own code; cairn ships none of them, on purpose [verifiable: docs/why-cairn.md, "The honest
-trade-offs"]. The engine never models a domain actor; it knows only owner and editor [verifiable:
+site's own code, and cairn ships none of them [verifiable: docs/why-cairn.md, "The honest
+trade-offs"]. The engine never models a domain actor and knows only owner and editor [verifiable:
 docs/internal/what-cairn-is-and-is-not.md].
 
 **Counter-evidence a skeptic cites.** Everything the membership product supplies as configuration
@@ -120,16 +126,17 @@ one interface for editors and members" was the sentence the register already kil
 false for members [verifiable: docs/internal/docs-register.md, Killed list;
 docs/extend/add-a-second-audience.md]. Conceded, and corrected above.
 
-**Drawbacks.** Starting a cairn site needs a developer: the scaffold is unpublished and its
-chapters assume one; adding a form, a booking page, or a shop needs the same developer, since
-content is Posts and Pages [verifiable: ROADMAP.md:74; packages/create-cairn-site/README.md:16;
-CLAUDE.md "What cairn is"]. A developer stays in the loop for anything past writing and
-publishing, and an organization without that person should weigh that before starting [verifiable:
-docs/why-cairn.md]. The engine has no vendor and no support contract; the developer is the support
-[verifiable: package.json, a `bugs` field and no support field; docs/why-cairn.md]. A bespoke
-SvelteKit app on Workers has a small labor market when that developer leaves [opinion]. cairn is
-pre-1.0, and a seam has already moved across two minor releases inside the tier meant to stay
-frozen [verifiable: docs/why-cairn.md, docs/extend/migration-notes.md].
+**Drawbacks.** Starting a cairn site needs a developer, because the scaffold is unpublished and
+its chapters assume one [verifiable: ROADMAP.md:74; packages/create-cairn-site/README.md:16].
+Adding a form, a booking page, or a shop needs the same developer, since content is Posts and
+Pages [verifiable: CLAUDE.md "What cairn is"]. A developer stays in the loop for anything past
+writing and publishing, and an organization without that person should weigh that before starting
+[verifiable: docs/why-cairn.md]. The engine has no vendor and no support contract, so the
+developer is the support [verifiable: package.json, a `bugs` field and no support field;
+docs/why-cairn.md]. A bespoke SvelteKit app on Workers has a small labor market when that
+developer leaves [opinion]. cairn is pre-1.0, and a seam has already moved across two minor
+releases inside the tier meant to stay frozen [verifiable: docs/why-cairn.md,
+docs/extend/migration-notes.md].
 
 **Counterweight.** The custom code starts from a scaffold with a worked screen, a toolkit of
 primitives that ship pre-compiled in cairn's own stylesheet, a documented seam per extension
@@ -140,19 +147,20 @@ docs/extend/what-the-scaffold-wrote.md]. Everything past that is the developer's
 also take SvelteKit plus a git-backed CMS and a hand-written `/admin` [opinion]. The git-backed
 tools in that position, by npm weekly downloads for the week of 2026-08-23: `@keystatic/core`
 134,619, TinaCMS 70,261, Decap CMS 3,059 [verifiable: npm registry API, read 2026-09-04;
-docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 3]. What cairn ships that the
-developer would otherwise install or write elsewhere, the differentiator first: the magic-link
-editor login, where Keystatic's GitHub mode requires each editor to hold a GitHub account with
-write access and Decap requires an identity provider [verifiable: docs/why-cairn.md;
-https://keystatic.com/docs/github-mode; https://decapcms.org/docs/backends-overview/, the two
-vendor pages not fetched this pass]; the per-entry holding branch and publish path; the admin
-shell and the toolkit primitives; the public-surface snapshot gate that holds the seams; and the
-skill [verifiable: docs/extend/architecture.md; docs/extend/add-a-custom-admin-screen.md;
-`check:surface`; skills/cairn-admin-screens/]. The 28-rule admin audit is a gate over screens the
-developer designs, which a designer reads as a reviewer of their work as well as a gift
-[verifiable: docs/reference/cairn-audit.md; opinion on the reading]. What the other stack gives
-that cairn does not: a choice of host and framework, and an editor UI its own project maintains
-[opinion].
+docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 3]. The difference that matters
+is sign-in. Keystatic's GitHub mode wants every editor to hold a GitHub account with write access
+to the repository, and Decap wants an OAuth backend, a GitHub OAuth app behind a proxy or Git
+Gateway. cairn sends the editor an email [verifiable: docs/why-cairn.md;
+https://keystatic.com/docs/github-mode, "Collaborators will need write access to this repository",
+fetched 2026-09-04; https://decapcms.org/docs/backends-overview/, fetched 2026-09-04]. Past that,
+cairn brings the holding-branch publish path, the admin shell and its primitives, the snapshot
+gate that keeps the seams from moving, and the agent skill [verifiable:
+docs/extend/architecture.md; docs/extend/add-a-custom-admin-screen.md; `check:surface`;
+skills/cairn-admin-screens/]. A developer assembling the same thing writes or installs each one
+[opinion].The 28-rule admin audit is a gate over screens the developer designs, which a designer
+reads as a reviewer of their work as well as a gift [verifiable: docs/reference/cairn-audit.md;
+opinion on the reading]. What the other stack gives that cairn does not: a choice of host and
+framework, and an editor UI its own project maintains [opinion].
 
 ## Leg 2: content is markdown files in the site's git repository
 
@@ -163,44 +171,44 @@ attribution, and rollback come from git, and there is no content server to run [
 docs/extend/architecture.md].
 
 **Reasoning and evidence.** An editor's save commits to a per-entry holding branch,
-`cairn/<concept>/<id>`, with the editor as commit author and `cairn-cms[bot]` as committer; a
-deliberate publish copies it onto the adapter's configured default branch, and the site's existing
-deploy carries it live [verifiable: docs/extend/architecture.md, "The write path";
-docs/reference/core.md, `backend.branch`]. Editors never see git [verifiable: docs/why-cairn.md].
-The pattern is the category's, not cairn's alone: Decap commits an editor's draft to a
-`cms/collectionName/entrySlug` branch and opens a pull request, and TinaCMS documents an app
-identity committing on the editor's behalf [verifiable:
-https://decapcms.org/docs/editorial-workflows/, https://tina.io/docs/tinacloud/git-co-authoring].
-The bodies are plain text a human can read and a tool can parse, and no export step stands
-between the organization and its content [verifiable: docs/extend/what-the-scaffold-wrote.md,
-`src/content/`].
+`cairn/<concept>/<id>`, with the editor as commit author and `cairn-cms[bot]` as committer
+[verifiable: docs/extend/architecture.md, "The write path"]. A deliberate publish copies it onto
+the adapter's configured default branch, and the site's existing deploy carries it live
+[verifiable: docs/extend/architecture.md, "The write path"; docs/reference/core.md,
+`backend.branch`]. Editors never see git [verifiable: docs/why-cairn.md]. The pattern is the
+category's, not cairn's alone: Decap commits an editor's draft to a `cms/collectionName/entrySlug`
+branch and opens a pull request, and TinaCMS documents an app identity committing on the editor's
+behalf [verifiable: https://decapcms.org/docs/editorial-workflows/,
+https://tina.io/docs/tinacloud/git-co-authoring]. The bodies are plain text a human can read and a
+tool can parse, and no export step stands between the organization and its content [verifiable:
+docs/extend/what-the-scaffold-wrote.md, `src/content/`].
 
 **Corrections the round-1 review forced, accepted.** Drafts are a holding branch and also a
 `status` field defaulting to `draft`, carried in the committed manifest [verifiable:
 docs/reference/core.md; docs/extend/announce-on-publish.md]. The committed manifest
-(`src/content/.cairn/index.json`) is a projection of every entry's identity, routing, draft
-state, and edges, rebuilt at build and patched in the same commit as a save; it is an index with
+(`src/content/.cairn/index.json`) is a projection of every entry's identity, routing, draft state,
+and edges, rebuilt at build and patched in the same commit as a save, which makes it an index with
 a maintenance contract [verifiable: docs/extend/architecture.md, "The read path";
-docs/extend/what-the-scaffold-wrote.md]. Write access to content is the GitHub App's private key,
-a credential with a rotation procedure, so the attack surface moved from a database to a key
-[verifiable: docs/extend/rotate-the-github-app-key.md]. A concurrent edit to one entry is
-detected and refused: the engine logs `commit.failed` with `reason: conflict` on a 409, and the
-second editor loses that attempt [verifiable: docs/reference/log-events.md]. A publish from
-`/admin` lands on the default branch with no review gate; content is reviewable in git, and the
-editor path does not route through a review [verifiable: docs/extend/architecture.md].
+docs/extend/what-the-scaffold-wrote.md]. Write access to content is the GitHub App's private key.
+The attack surface moved from a database to a key, and the key has a rotation procedure
+[verifiable: docs/extend/rotate-the-github-app-key.md]. A concurrent edit to one entry is detected
+and refused: the engine logs `commit.failed` with `reason: conflict` on a 409, and the second
+editor loses that attempt [verifiable: docs/reference/log-events.md]. A publish from `/admin`
+lands on the default branch with no review gate [verifiable: docs/extend/architecture.md]. Content
+is reviewable in git, and the editor path does not route through a review [verifiable: same].
 
-**What a database gives that files do not.** Validation enforced at the store, where cairn's
-fieldset validates in the admin, and a commit made outside the admin meets only the build's
+**What a database gives that files do not.** A database enforces validation at the store. cairn's
+fieldset validates in the admin instead, so a commit made outside the admin meets only the build's
 manifest regeneration [verifiable: docs/extend/what-the-scaffold-wrote.md, `cairnManifest`;
-opinion on the bypass].
-Referential integrity in real time, where cairn checks references at build and guards deletes
-[verifiable: docs/extend/link-content-with-references.md]. Transactions across entries, per-row
-permissions, and multi-writer merge, none of which cairn has [verifiable:
-docs/extend/restrict-admin-access.md gates by route and role]. Reads without a network hop: an
-uncached body read crosses the GitHub API, which is limited to 5,000 requests an hour per App
-installation [verifiable:
-https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api]. Erasure:
-personal data that reaches a content file is in history across every clone, and removing it
+opinion on the bypass]. A database also keeps referential integrity in real time, where cairn
+checks references at build and guards deletes [verifiable:
+docs/extend/link-content-with-references.md]. Transactions across entries, per-row permissions,
+and multi-writer merge have no cairn equivalent at all [verifiable:
+docs/extend/restrict-admin-access.md gates by route and role]. A database reads without a network
+hop. An uncached body read in cairn crosses the GitHub API, which is limited to 5,000 requests an
+hour per App installation [verifiable:
+https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api]. A database can
+erase. Personal data that reaches a content file is in history across every clone, and removing it
 means rewriting history [opinion]. Cross-entry queries, reporting, and full-text search are the
 developer's job at build or request time [verifiable: docs/internal/what-cairn-is-and-is-not.md,
 "querying is build-time over a committed manifest"].
@@ -208,14 +216,14 @@ developer's job at build or request time [verifiable: docs/internal/what-cairn-i
 **Counter-evidence a skeptic cites.** GitHub recommends repositories under 1 GB and blocks files
 above 100 MiB, so a content corpus has a ceiling a database does not [verifiable:
 https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github].
-Media therefore lives in R2, and content is split across two stores by design [verifiable:
+So media lives in R2, and content is split across two stores by design [verifiable:
 docs/extend/data-tiers.md]. The category is small: WordPress holds 58.9% of sites with a known
 CMS, and git-based CMS tools are not a tracked category [supported: W3Techs CMS overview, data
 dated 2026-09-05, https://w3techs.com/technologies/overview/content_management]. Backup is as good
 as the organization's GitHub account, one account and one place to lose access [verifiable:
-docs/why-cairn.md, "Committing to git-backed content is itself a choice"]. All conceded. No named
-case study of a git CMS failing at scale was found, and no survey of editor satisfaction with
-markdown against rich text was found; both are gaps [verifiable:
+docs/why-cairn.md, "Committing to git-backed content is itself a choice"]. The search found no
+named case study of a git CMS failing at scale and no survey of editor satisfaction with markdown
+against rich text. Both are gaps [verifiable:
 docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 3].
 
 The category's leading tool stalled: Netlify transferred Netlify CMS to an agency in February
@@ -229,32 +237,33 @@ exists so index pages never crawl the repository through the API [verifiable:
 docs/extend/architecture.md]. A stalled CMS leaves the content readable and the site building,
 since the content is files in the repository its GitHub account holds and the engine is an npm
 dependency [verifiable: docs/why-cairn.md, "Committing to git-backed content"]. Personal data
-belongs in D1, which has `DELETE`; content files carry site content [verifiable:
-docs/extend/data-tiers.md]. A cairn site has no plugin surface to patch; the code is the site's
-own and the engine updates through npm [verifiable: package.json, docs/extend/migration-notes.md].
-The category's own tracked issues admit the concurrency cost (no conflict resolution in the
-editor, no presence indication), which is the shape cairn chose too [verifiable:
-https://github.com/decaporg/decap-cms/issues/1691, /issues/277].
+belongs in D1, which has `DELETE`, and content files carry site content [verifiable:
+docs/extend/data-tiers.md]. A cairn site has no plugin surface to patch, since the code is the
+site's own and the engine updates through npm [verifiable: package.json,
+docs/extend/migration-notes.md]. The category's own tracked issues admit the concurrency cost (no
+conflict resolution in the editor, no presence indication), which is the shape cairn chose too
+[verifiable: https://github.com/decaporg/decap-cms/issues/1691, /issues/277].
 
-### And why markdown
+### Why markdown
 
 **Claim.** Markdown is plain text, so git's line-based diff, blame, and review work on content the
 way they work on code, and a file is readable without cairn [opinion].
 
 **Evidence.** Structured fields ride in frontmatter typed by the concept's fieldset [verifiable:
 docs/reference/core.md]. cairn ships a component grammar, `defineComponent` with `fields.*`
-attribute descriptors (exactly ten) and the hast helpers `cardShell`, `headRow`, and `iconSpan`;
-an empty registry still renders plain markdown, GFM tables, `cairn:` links, and `media:`
-references [verifiable: docs/extend/configure-rendering.md]. The site declares its own vocabulary
-of callouts, figures, and embeds; cairn ships none [verifiable: same, the worked callout is
-site-authored]. The charter calls markdown in git over a structured manifest the cleanest input a
-language model can get, and warns to invest where machine consumption is evidenced rather than
-hyped [verifiable: docs/internal/what-cairn-is-and-is-not.md]. The mechanism statement that
-survives: a tool or a model reads the file itself, with no database export and no rendered page
-between [verifiable: docs/extend/wire-the-delivery-surface.md, the raw-markdown twin route]. The
-brief's superlative, "the most widely read format by agents," has no published measurement and is
-dropped [opinion]. The CommonMark core is stable; cairn's directives, `cairn:` targets, and
-`media:` scheme are pre-1.0 surface and are not covered by that stability [opinion; verifiable:
+attribute descriptors (exactly ten) and the hast helpers `cardShell`, `headRow`, and `iconSpan`
+[verifiable: docs/extend/configure-rendering.md]. An empty registry still renders plain markdown,
+GFM tables, `cairn:` links, and `media:` references [verifiable:
+docs/extend/configure-rendering.md]. The site declares its own vocabulary of callouts, figures,
+and embeds, and cairn ships none [verifiable: same, the worked callout is site-authored]. The
+charter calls markdown in git over a structured manifest the cleanest input a language model can
+get, and warns to invest where machine consumption is evidenced rather than hyped [verifiable:
+docs/internal/what-cairn-is-and-is-not.md]. The mechanism statement that survives: a tool or a
+model reads the file itself, with no database export and no rendered page between [verifiable:
+docs/extend/wire-the-delivery-surface.md, the raw-markdown twin route]. The brief's superlative,
+"the most widely read format by agents," has no published measurement and is dropped [opinion].
+The CommonMark core is stable [opinion]. cairn's directives, `cairn:` targets, and `media:` scheme
+are pre-1.0 surface and are not covered by that stability [opinion; verifiable:
 docs/why-cairn.md].
 
 **Drawbacks.** Editors learn markdown syntax, with live preview and a tidy pass, where a visual
@@ -265,7 +274,7 @@ of the components, `cairn:` links, or `media:` references [verifiable:
 docs/extend/link-content-with-references.md, docs/extend/add-an-island.md]. Moving existing
 content in is a project [verifiable: docs/extend/migrate-existing-content.md].
 
-## Leg 3: one platform for a small team
+## Leg 3: one hosting account instead of several
 
 Front door: derivable, with every vendor number replaced by a link; two tags marked internal cite a
 consumer site's record through the evidence file.
@@ -273,26 +282,38 @@ consumer site's record through the evidence file.
 **Claim.** One Cloudflare account supplies hosting, the sign-in store, media storage, the
 magic-link sender, and optionally the deploy [verifiable: docs/extend/what-the-scaffold-wrote.md,
 `wrangler.jsonc` bindings]. The two-product traditional shape assembles those from several vendors
-[opinion]. Against a bundled membership product that hosts the site, the portal, and the mail,
-vendor count is equal and the capability list is the product's [opinion]. Counted, the cairn shape
-is one Cloudflare account, one GitHub account, a payments provider, organizational mail, and a
-registrar unless DNS moves to Cloudflare: four or five accounts [opinion]. TLS and DDoS protection
-are edge defaults on every Cloudflare plan, as they are at other hosts [verifiable:
-https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/,
+[uncited: checkable against the vendors' pages]. Against a bundled membership product that hosts
+the site, the portal, and the mail, vendor count is equal and the capability list is the product's
+[opinion]. Count the accounts and cairn's shape is four or five: Cloudflare, GitHub, a payments
+provider, organizational mail, and a registrar unless DNS moves to Cloudflare [opinion]. TLS and
+DDoS protection are edge defaults on every Cloudflare plan, as they are at other hosts
+[verifiable: https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/,
 https://developers.cloudflare.com/ddos-protection/].
 
-**Evidence, each with its caveat.** SvelteKit deploys to Workers with the Cloudflare adapter
-[verifiable: https://developers.cloudflare.com/workers/frameworks/framework-guides/svelte/]. D1 is
-serverless SQL with SQLite semantics, and a site binds as many databases as it needs (`AUTH_DB`,
-`APP_DB`, `MEMBER_DB` in `examples/showcase`) [verifiable: https://developers.cloudflare.com/d1/,
+**Evidence.** A cairn site runs on one Cloudflare account: the site on Workers, the sign-in store
+in D1, media in R2, sign-in mail through Email Sending [verifiable:
+docs/extend/what-the-scaffold-wrote.md, `wrangler.jsonc`]. Two of those have edges worth knowing
+before you start. Email Sending is still in public beta and needs the $5 paid plan to mail
+arbitrary addresses, and editor sign-in depends on it, so an unverified sender means nobody can
+get in [verifiable: https://developers.cloudflare.com/email-service/; src/lib/email.ts:79-101]. D1
+handles one query at a time per database, which is right for a club's roster and wrong for
+anything with real write concurrency [verifiable:
+https://developers.cloudflare.com/d1/platform/limits/; opinion on the fit]. The current limits
+live on Cloudflare's own pages, which is where they should be read, since they move [opinion]. The
+record keeps the figures read on 2026-09-04 below. SvelteKit deploys to Workers with the
+Cloudflare adapter [verifiable:
+https://developers.cloudflare.com/workers/frameworks/framework-guides/svelte/]. D1 is serverless
+SQL with SQLite semantics, and a site binds as many databases as it needs (`AUTH_DB`, `APP_DB`,
+`MEMBER_DB` in `examples/showcase`) [verifiable: https://developers.cloudflare.com/d1/,
 examples/showcase/wrangler.jsonc]. Each D1 database is single-threaded and processes queries one
 at a time, with a 500 MB size limit on the free plan and 10 GB on paid [verifiable:
 https://developers.cloudflare.com/d1/platform/limits/]. Workers Free allows 100,000 requests a day
-and 10 ms CPU per invocation; Paid allows 30 s by default [verifiable:
+and 10 ms CPU per invocation, and Paid allows 30 s by default [verifiable:
 https://developers.cloudflare.com/workers/platform/limits/]. R2 stores objects without egress
-fees; storage and operations are still billed [verifiable: https://developers.cloudflare.com/r2/].
-Email Sending sends from a Worker binding, up to 50 recipients per send, and is in public beta
-since 2026-04-16; its product page still reads "Beta" as of 2026-06-09 [verifiable:
+fees, though storage and operations are still billed [verifiable:
+https://developers.cloudflare.com/r2/]. Email Sending sends from a Worker binding, up to 50
+recipients per send, and is in public beta since 2026-04-16, and its product page still reads
+"Beta" as of 2026-06-09 [verifiable:
 https://developers.cloudflare.com/changelog/post/2026-04-16-email-sending-public-beta/,
 https://developers.cloudflare.com/email-service/]. Sending to arbitrary recipients requires the
 Workers Paid plan, with 3,000 sends a month included and $0.35 per 1,000 beyond, and new accounts
@@ -302,65 +323,68 @@ https://developers.cloudflare.com/email-service/platform/limits/;
 docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 3; internal]. Its
 limits and pricing pages describe no list management, unsubscribe handling, bounce suppression, or
 campaign features [verifiable: the same two pages, by absence]. Editor sign-in is a magic link
-sent through Email Sending, so an unready sender means no editor can sign in; the engine parses
-that failure (`E_SENDER_NOT_VERIFIED`) because one consumer met it in production [verifiable:
-src/lib/email.ts:79-101; CLAUDE.md "Durable gotcha (Cloudflare email)"; the full record at
-docs/internal/record/2026-08-11-t4b-email-spike.md].
-Enabling Email Sending writes an apex DMARC record at `p=reject` on the organization's domain,
-which the admin track documents [verifiable: docs/admin/own-your-domain.md:115; CLAUDE.md:261].
-Editor sign-in therefore depends on a beta product on the paid plan [opinion]. Workers Builds
-deploys on push from a connected GitHub or GitLab repository, and is an optional later step in
-cairn's own setup that needs a second, wider API token; a site may deploy with `wrangler` instead
-[verifiable: https://developers.cloudflare.com/workers/ci-cd/builds/,
-docs/admin/own-your-domain.md]. The free-plan WAF is a subset (custom rules, one rate-limiting
-rule, the free managed ruleset); attack scoring and advanced rate limiting are paid [verifiable:
+sent through Email Sending, so an unready sender means no editor can sign in, and the engine
+parses that failure (`E_SENDER_NOT_VERIFIED`) because one consumer met it in production
+[verifiable: src/lib/email.ts:79-101; CLAUDE.md "Durable gotcha (Cloudflare email)"; the full
+record at docs/internal/record/2026-08-11-t4b-email-spike.md]. Enabling Email Sending writes an
+apex DMARC record at `p=reject` on the organization's domain, which the admin track documents
+[verifiable: docs/admin/own-your-domain.md:115; CLAUDE.md:261]. So editor sign-in rides on a beta
+product, on the paid plan [opinion]. Workers Builds deploys on push from a connected GitHub or
+GitLab repository, and is an optional later step in cairn's own setup that needs a second, wider
+API token, and a site may deploy with `wrangler` instead [verifiable:
+https://developers.cloudflare.com/workers/ci-cd/builds/, docs/admin/own-your-domain.md]. The
+free-plan WAF is a subset (custom rules, one rate-limiting rule, the free managed ruleset), and
+attack scoring and advanced rate limiting are paid [verifiable:
 https://developers.cloudflare.com/waf/]. DNS can sit at Cloudflare, which consolidates a billing
 relationship and removes no component [opinion]. A cairn site costs the $5 Workers Paid plan plus
 a domain, about $6 a month, and whether the domain's certificate is charged was unconfirmed as of
 2026-08-11 [verifiable: docs/admin/before-you-start.md].
 
 **Counter-evidence a skeptic cites.** Cloudflare published six outage postmortems between
-2025-06-12 and 2026-02-20; two of them, the 1.1.1.1 resolver on 2025-07-14 and the BYOIP
-withdrawal on 2026-02-20, did not touch Workers [verifiable:
-https://blog.cloudflare.com/tag/outage/]. The four that did: 2025-06-12, up to 2 h 28 min, Workers
-KV, Access, and the dashboard; 2025-11-18, a database permissions change doubled a Bot Management
-feature file and the CDN, Turnstile, Workers KV, Access, and the dashboard failed together, with
-Cloudflare's own resilience post putting the global outage at about two hours ten minutes and full
-restoration at 17:06 UTC [verifiable: https://blog.cloudflare.com/18-november-2025-outage/,
-https://blog.cloudflare.com/fail-small-resilience-plan/]; 2025-12-05, about 25 minutes, 28% of
-applications behind the network [verifiable:
-https://blog.cloudflare.com/fail-small-resilience-plan/]; 2026-02-20, 6 h 7 min, a BYOIP route
-withdrawal [verifiable: https://blog.cloudflare.com/cloudflare-outage-february-20-2026/]. The
-status API is a rolling window; read on 2026-09-04 it listed, among others, Durable Objects errors
-on 2026-08-26, Workers Builds degraded for 1 h 39 min on 2026-08-27, and Workers KV errors in
-Western Europe for 4 h on 2026-08-31 [verifiable:
+2025-06-12 and 2026-02-20 [verifiable: https://blog.cloudflare.com/tag/outage/]. Two of them, the
+1.1.1.1 resolver on 2025-07-14 and the BYOIP withdrawal on 2026-02-20, did not touch Workers
+[verifiable: same]. The four that did [verifiable:
+https://blog.cloudflare.com/18-november-2025-outage/,
+https://blog.cloudflare.com/fail-small-resilience-plan/,
+https://blog.cloudflare.com/cloudflare-outage-february-20-2026/]:
+
+| Date | Duration | Scope |
+| --- | --- | --- |
+| 2025-06-12 | up to 2 h 28 min | Workers KV, Access, the dashboard |
+| 2025-11-18 | about 2 h 10 min for the global outage, full restoration 17:06 UTC | CDN, Turnstile, Workers KV, Access, the dashboard, after a database permissions change doubled a Bot Management feature file |
+| 2025-12-05 | about 25 min | 28% of applications behind the network |
+| 2026-02-20 | 6 h 7 min | a BYOIP route withdrawal, not a Workers incident |
+
+The status API is a rolling window, and read on 2026-09-04 it listed, among others, Durable Objects
+errors on 2026-08-26, Workers Builds degraded for 1 h 39 min on 2026-08-27, and Workers KV errors
+in Western Europe for 4 h on 2026-08-31 [verifiable:
 https://www.cloudflarestatus.com/api/v2/incidents.json, a rolling feed; the count on any later
 read differs]. Cloudflare's "Fail Small" plan commits to health-mediated deployments for all
 production configuration by the end of Q1 2026 [verifiable:
-https://blog.cloudflare.com/fail-small-resilience-plan/]. A multi-vendor shape fails in parts, and
-a single-platform shape fails whole [opinion]. No study isolates vendor count as a variable
-against a small team's operational burden; the efficacy half of this leg is a hypothesis
-[verifiable: docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 2]. The DX "6 to 15
-hours a week" tool-sprawl figure has no located primary instrument and is not cited [verifiable:
-docs/internal/record/2026-09-04-cairn-case/02-evidence.md, open question 7]. The outage is
-conceded and named here rather than left for a reader to supply [opinion].
+https://blog.cloudflare.com/fail-small-resilience-plan/]. When Cloudflare goes down, a cairn site
+goes down with it. The traditional shape loses one piece at a time instead, and that is a real
+difference the reader should weigh [opinion]. No study isolates vendor count as a variable against
+a small team's operational burden, so whether one account is less work for a small team is
+untested [verifiable: docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 2]. The DX
+"6 to 15 hours a week" tool-sprawl figure has no located primary instrument and is not cited
+[verifiable: docs/internal/record/2026-09-04-cairn-case/02-evidence.md, open question 7].
 
 **Drawbacks.** One account is one vendor, and cairn has no abstraction layer for swapping
 Cloudflare or GitHub later [verifiable: docs/why-cairn.md, "Why this stack"]. The traditional
 shape's "each part replaceable" is a real asymmetry [opinion].
 
 **Data, backup, and whose accounts.** The organization's own data, members, payments, documents,
-and media, lives in D1 and R2 inside the Cloudflare account; the published docs carry no backup or
-restore procedure for either, a gap the docs owe [verifiable: `grep -rniE "backup|restore|d1
-export" docs/admin docs/extend docs/reference` returns only migration and key-rotation prose]. No
-monitoring, alerting, or uptime check is in the published docs beyond the scaffold's `healthz`
-route; Cloudflare's status page is the only signal named [verifiable:
-docs/extend/what-the-scaffold-wrote.md, `healthz/`; by absence elsewhere]. Whether the Cloudflare
-and GitHub accounts belong to the organization or to its developer is a choice this document does
-not make; in the production case the repository is under the developer's personal account
-[verifiable: one production site's CLAUDE.md:255, internal]. The engine has no vendor and no
-support contract; the developer is the support [verifiable: package.json carries a `bugs` field
-and no support field; docs/why-cairn.md, "A developer stays in the loop"].
+and media, lives in D1 and R2 inside the Cloudflare account [verifiable:
+docs/extend/data-tiers.md]. The published docs carry no backup or restore procedure for either, a
+gap the docs owe [verifiable: `grep -rniE "backup|restore|d1 export" docs/admin docs/extend
+docs/reference` returns only migration and key-rotation prose]. No monitoring, alerting, or uptime
+check is in the published docs beyond the scaffold's `healthz` route, and Cloudflare's status page
+is the only signal named [verifiable: docs/extend/what-the-scaffold-wrote.md, `healthz/`; by
+absence elsewhere]. Whether the Cloudflare and GitHub accounts belong to the organization or to
+its developer is a choice this document does not make [opinion]. In the production case the
+repository is under the developer's personal account [verifiable: one production site's
+CLAUDE.md:255, internal]. The support question, above under Leg 1, applies to the platform choice
+too [opinion].
 
 **The tie.** A cairn site is tied to these decisions together. Content lives in GitHub, the site
 runs on Cloudflare, the app is SvelteKit, and the engine reaches D1, R2, and Workers directly with
@@ -369,9 +393,9 @@ Cloudflare, fully"]. A change of any one is a migration, and the platform's pric
 incidents are the site's [opinion]. The admin's tie is narrower than the brief stated. The admin
 frame is DaisyUI on Tailwind, and a site that restyles the admin itself works in that idiom
 [verifiable: CLAUDE.md, "What cairn is"; docs/internal/admin-design-system.md]. A custom admin
-screen mostly consumes the toolkit: each toolkit component assembles daisyUI classes from cairn's
-own blessed set and keeps its layout in a scoped `<style>`, ships pre-compiled in cairn's admin
-stylesheet, and the skill tells an author to load it before touching `/admin` routes, toolkit
+screen mostly consumes the toolkit. Each toolkit component assembles daisyUI classes from cairn's
+own blessed set, keeps its layout in a scoped `<style>`, and ships pre-compiled in cairn's admin
+stylesheet. The skill tells an author to load it before touching `/admin` routes, toolkit
 components, or `cairn-admin.css`, and to finish with `npx cairn-audit` rather than with DaisyUI
 knowledge [verifiable: docs/reference/admin-toolkit.md:22-26;
 docs/extend/add-a-custom-admin-screen.md, "Compose the screen";
@@ -381,21 +405,22 @@ docs/internal/what-cairn-is-and-is-not.md; docs/extend/configure-rendering.md]. 
 Waymark theme happens to use Tailwind with DaisyUI theme blocks, as copy-in files the site owns
 outright with no version lock, and a site built by hand may use any CSS [verifiable:
 examples/showcase/src/theme/theme.css:9-11,69; docs/extend/design-your-site.md, "Extending the
-component model"; docs/extend/build-a-site-by-hand.md]. The counterweights that are facts: the
-content is plain markdown files in a repository under whichever GitHub account holds it, portable
-by clone when the organization controls that account [verifiable:
-docs/extend/what-the-scaffold-wrote.md; opinion on control]; the app is standard SvelteKit with
-`@sveltejs/adapter-cloudflare`, so deploying elsewhere is an adapter change plus rewriting every
-D1, R2, and email binding the engine and the site reach, which is real work this document does not
-size [verifiable: examples/showcase/svelte.config.js:1;
-docs/internal/what-cairn-is-and-is-not.md]; the engine is MIT-licensed on npm [verifiable:
-package.json "license"]. None of that loosens the tie, and the reader decides with it in view
+component model"; docs/extend/build-a-site-by-hand.md]. Three counterweights are facts rather than
+judgments. The content is plain markdown files in a repository, portable by clone whenever the
+organization controls the GitHub account that holds it [verifiable:
+docs/extend/what-the-scaffold-wrote.md; opinion on control]. The app is standard SvelteKit with
+`@sveltejs/adapter-cloudflare`, so deploying elsewhere means an adapter change plus rewriting
+every D1, R2, and email binding the engine and the site reach. That is real work, and this
+document does not size it [verifiable: examples/showcase/svelte.config.js:1;
+docs/internal/what-cairn-is-and-is-not.md]. The engine is MIT-licensed on npm [verifiable:
+package.json "license"].None of that loosens the tie, and the reader decides with it in view
 [opinion]. Announcements to members need list management, unsubscribe handling, suppression,
 batching against rate limits, and a send record, none of which the Email Sending primitive
-supplies and all of which the site builds; the engine's own publish seam is a pure manifest diff
-that sends nothing [verifiable: docs/extend/announce-on-publish.md]. A payments provider on cairn
-means webhooks, a subscription state machine, and reconciliation code the site maintains, where
-the membership product ships those integrated [opinion].
+supplies and all of which the site builds [verifiable: the Email Sending limits page, by absence].
+The engine's own publish seam is a pure manifest diff that sends nothing [verifiable:
+docs/extend/announce-on-publish.md]. A payments provider on cairn means webhooks, a subscription
+state machine, and reconciliation code the site maintains, where the membership product ships
+those integrated [opinion].
 
 **Counterweight, and the developer's contact with infrastructure.** The scaffold writes the Worker
 configuration, `wrangler.jsonc` with the `AUTH_DB`, `APP_DB`, `EMAIL`, and `MEDIA_BUCKET`
@@ -404,21 +429,21 @@ docs/extend/what-the-scaffold-wrote.md, "Root"; docs/admin/is-it-working.md]. Th
 install, the Cloudflare deploy with its databases and bucket, and the domain are three guided
 chapters of `create-cairn-site`, which is pre-release [verifiable: packages/create-cairn-site/;
 docs/internal/record/2026-09-04-cairn-case/02-evidence.md, scaffold chapters; ROADMAP.md:74].
-Workers Builds deploys from a push and is an optional later step needing a second token; `wrangler
-deploy` is the other path [verifiable: docs/admin/own-your-domain.md, "Connect to Workers
-Builds"]. The developer's infrastructure contact is that list [opinion]. The single-vendor cost is
-a choice the reader makes with the tie above in view, and this document does not weigh it for them
-[opinion].
+Workers Builds deploys from a push and is an optional later step needing a second token, and
+`wrangler deploy` is the other path [verifiable: docs/admin/own-your-domain.md, "Connect to
+Workers Builds"]. The developer's infrastructure contact is that list [opinion]. The single-vendor
+cost is a choice the reader makes with the tie above in view, and this document does not weigh it
+for them [opinion].
 
 ## Leg 4: no page builder, as a feature and as a cost
 
 Front door: derivable.
 
-**Claim, in its true form.** A directive in a cairn content file names a site-owned component and
-a small declared attribute set; what the component looks like lives in code, changes for every
-page at once, and cannot be overridden per occurrence; an island, by contrast, carries its props
-in the file, which is per-occurrence configuration in the content [verifiable:
-docs/extend/configure-rendering.md; docs/extend/add-an-island.md]. A page builder stores
+**Claim.** A directive in a cairn content file names a site-owned component and a small declared
+attribute set. What that component looks like lives in code, changes for every page at once, and
+cannot be overridden per occurrence. An island is the contrast: it carries its props in the file,
+which is per-occurrence configuration living in the content [verifiable:
+docs/extend/configure-rendering.md; docs/extend/add-an-island.md].A page builder stores
 per-occurrence presentation in the content [opinion]. The brief's "the file carries no layout" was
 false, since a directive carries a component name and attributes, and is replaced by the sentence
 above [verifiable: docs/extend/configure-rendering.md, the `tone` attribute on the worked
@@ -429,28 +454,29 @@ comment delimiters carrying JSON attributes [verifiable:
 https://developer.wordpress.org/block-editor/getting-started/fundamentals/markup-representation-block/].
 The lock-in claim is strongest for proprietary builder structures: deactivating a third-party
 builder is widely reported to leave pages as raw output, with no official conversion path
-[verifiable: wordpress.org support forums, InstaWP guide, read 2026-09-04; community-documented,
-never an official disclosure]. It is weakest for core block markup, which reads as valid HTML with
-ignorable comments in any tool, and is on that measure more portable than a cairn directive, which
-renders as literal text outside cairn [opinion]. An editor cannot change the site's design
-language or a component's styling; an editor can still pick the wrong directive or write a heading
-that wraps badly [opinion]. The editor's job stays small: headings, emphasis, links, lists,
-images, and the site's declared directives [verifiable: docs/extend/configure-rendering.md].
+[verifiable: wordpress.org support forums, InstaWP guide, read 2026-09-04]. This comes from
+support forums and third-party guides, not from the vendors [opinion]. It is weakest for core
+block markup, which reads as valid HTML with ignorable comments in any tool, and is on that
+measure more portable than a cairn directive, which renders as literal text outside cairn
+[opinion]. An editor cannot change the site's design language or a component's styling, though an
+editor can still pick the wrong directive or write a heading that wraps badly [opinion]. The
+editor's job stays small: headings, emphasis, links, lists, images, and the site's declared
+directives [verifiable: docs/extend/configure-rendering.md].
 
 **Counter-evidence a skeptic cites.** Elementor runs 12.8% of all websites W3Techs tracks and
 roughly 31% of WordPress sites, so a large share of site owners choose builder coupling knowingly
 [supported: W3Techs Elementor page, dated 2026-09-05]. In the WordPress 2023 annual survey
 (n=3,922), 45.1% agreed the Site Editor meets their site-building needs and 28.6% disagreed, with
 block editor use about 60% and rising [supported:
-https://wordpress.org/news/2024/02/2023-annual-survey-results-and-next-steps/]. The block editor
-is not a rejected product; conceded. The Classic Editor install count (8 million plus, fourth by
-active installs, read 2026-09-04) is dropped from this argument: it measures transition friction
-on sites that predate 2018, and a preference for Classic Editor is a preference for a different
-visual editor, which argues toward a builder and away from markdown [verifiable:
-https://wordpress.org/plugins/classic-editor/; opinion on inference]. The Gutenberg plugin rating
-is dropped, since that listing is the beta channel and does not measure the shipped editor
-[verifiable: https://wordpress.org/plugins/gutenberg/, the plugin's own description]. No survey
-with a stated sample measures page-builder lock-in or migration regret [verifiable:
+https://wordpress.org/news/2024/02/2023-annual-survey-results-and-next-steps/]. Most WordPress
+users are not fighting the block editor [opinion]. The Classic Editor install count (8 million
+plus, fourth by active installs, read 2026-09-04) is dropped from this argument: it measures
+transition friction on sites that predate 2018, and a preference for Classic Editor is a
+preference for a different visual editor, which argues toward a builder and away from markdown
+[verifiable: https://wordpress.org/plugins/classic-editor/; opinion on inference]. The Gutenberg
+plugin rating is dropped, since that listing is the beta channel and does not measure the shipped
+editor [verifiable: https://wordpress.org/plugins/gutenberg/, the plugin's own description]. No
+survey with a stated sample measures page-builder lock-in or migration regret [verifiable:
 docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 4].
 
 **Drawbacks.** Any organization wanting one page laid out unlike every other page, a special page
@@ -459,9 +485,9 @@ Complex layouts are the developer's components [verifiable: docs/extend/configur
 Moving out of cairn means resolving the site's directive vocabulary, `cairn:` ids, and `media:`
 references, a migration cost of its own [opinion].
 
-**Counterweight.** The trade is deliberate: content and design separate by construction because
-a component's appearance lives in code rather than in the file, and a theme change reaches every
-page [verifiable: docs/extend/architecture.md, one `render` for preview and public pages].
+**Counterweight.** That is the trade cairn takes on purpose. A component's appearance lives in
+code, so changing a theme changes every page at once, and no editor can drift one page away from
+the rest [verifiable: docs/extend/architecture.md, one `render` for preview and public pages].
 
 ## Leg 5: agent-assisted development, a case report
 
@@ -508,8 +534,8 @@ vendor]. None of these tests a framework that owns the editor and admin invarian
 developer a seam [opinion]. Ten further studies the evidence file records (SWE-Bench Pro, Rahman
 et al., Watanabe et al., Evaluating AGENTS.md, Kim et al., How Coding Agents Fail Their Users, the
 METR self-report survey, Peng et al. and Cui et al., Shen and Tamkin, Agarwal et al.) bear on task
-type, context files, review burden, and skill formation, and none tests this partition; they stay
-in the evidence file with their numbers [verifiable:
+type, context files, review burden, and skill formation, and none tests this division of labor;
+they stay in the evidence file with their numbers [verifiable:
 docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 1].
 
 **Speed and later maintenance.** In METR's randomized trial, 16 experienced developers on 246
@@ -629,8 +655,7 @@ layout and toolkit shapes that the engine's `/admin-toolkit` has since absorbed,
 those components now ship in the engine [verifiable: the table; cairn-cms src/lib/admin-toolkit/].
 Whether a site built on the current engine starts from them rather than deriving them is an
 inference this record cannot test, since the components exist because this site derived them, and
-a site's own screens still compose them [opinion]. The remainder was domain refinement and
-engine-adoption passes [verifiable: the table].
+a site's own screens still compose them [opinion].
 
 **The defect at the seam.** The site's pre-cutover blocker is a CSRF defect: its blanket
 `Referrer-Policy: no-referrer` nulls `Origin` on plain form POSTs, the engine's CSRF guard
@@ -642,25 +667,26 @@ where this bug lived, and the site's developer had to understand the invariant t
 the engine's `auth-crypto` primitives, written before that subpath shipped [verifiable:
 aksailingclub-org src/member-auth/lib/auth.ts:6-14,279].
 
-**The sentences the record supports.** The initial membership and assets build landed in two
-calendar days, as an overnight agent run whose token spend the record does not carry, with the
-owner's own time unrecorded, and with the first build rendering shells and demo data that moved
-onto live data a week later [verifiable: the table; `81634ca`; docs/status-archive.md:1941]. The
-layer then took 42 commits of refinement on the routes over eight weeks, and 81 on the shared
-library, including six engine-adoption commits and the CSRF seam defect [verifiable: the table;
-docs/STATUS.md:17-28]. The site's recorded token spend on later passes ran 1.4 to about 2.3 times
-its own ceilings, which the site's record calls "roughly twofold" [verifiable: aksailingclub-org
+**What the record supports.** The initial membership and assets build landed in two calendar days,
+as an overnight agent run whose token spend the record does not carry, with the owner's own time
+unrecorded, and with the first build rendering shells and demo data that moved onto live data a
+week later [verifiable: the table; `81634ca`; docs/status-archive.md:1941]. The layer then took 42
+commits of refinement on the routes over eight weeks, and 81 on the shared library, including six
+engine-adoption commits and the CSRF seam defect [verifiable: the table; docs/STATUS.md:17-28].
+The site's recorded token spend on later passes ran 1.4 to about 2.3 times its own ceilings, which
+the site's record calls "roughly twofold" [verifiable: aksailingclub-org
 docs/HISTORY.md:102,151,198-199]. The general studies are cited only for what they test, issue
-repair on benchmarks and security defect rates in generated code, and none tests this partition
-[opinion]. The reader draws the inference [opinion].
+repair on benchmarks and security defect rates in generated code, and none tests this division of
+labor [opinion].
 
-**Derivable form, for the front door.** One production site, built by the engine's own author,
-landed its membership and assets admin in two calendar days as an overnight agent run whose spend
-is unrecorded, then refined it over eight weeks in 42 commits on the routes, of which 20 touched
-layout shapes the engine's toolkit has since absorbed, 16 were domain logic, and 6 were engine
-adoption; its member login, payments, and signatures are its own code, and its one recorded
-blocker was a CSRF defect at the seam between engine and site [verifiable: this section's
-commands].
+**Derivable form, for the front door.** I built the membership and assets admin for one club site
+in two days, as an overnight agent run whose spend I did not record, then spent eight weeks
+refining it: 42 commits on those routes. Twenty of them were layout work on shapes the engine's
+toolkit has since absorbed, so a site starting today starts further along than I did. That site's
+member login, payments, and signatures are its own code, not cairn's, and the one blocker that
+reached production was a CSRF defect at the seam between the two. I am also the engine's author,
+so this shows what the author can do with his own engine and nothing about a second developer
+[verifiable: this section's commands; opinion on "further along"].
 
 ### Already extensible, measured
 
@@ -712,9 +738,8 @@ its own module on the engine's `auth-crypto` primitives, against its own databas
 `auth-channel` seam shipped [verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279,
 migrations/asc-auth/].
 
-The size ratio is stated in two halves, both stated as sizes. The first is the increment: what one
-more section cost, against the engine subpaths it imports. The second is what the developer never
-writes. The whole-layer ratio sits beneath as the size record. All counts are `wc -l` on
+The size ratio has two halves: what one more section costs, and what the developer never
+writes. The whole-layer ratio sits beneath. All counts are `wc -l` on
 2026-09-04 and include comments and blank lines [verifiable:
 docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E].
 
@@ -767,11 +792,8 @@ those [verifiable: `wc -l` over cairn-cms src/lib/*/ on `main`; the production s
 | The gates | `scripts/checks/` | 33 scripts among 40 files |
 | The tests | `src/tests/` | 446 `.test.ts` files |
 
-The sentence the two halves support: a developer adding a section pays a measured increment and
-does not write the first table's modules [verifiable: the two tables].
-
-**The pair, as the size record.** Building something like cairn is one measurement; building
-this layer on top of it is the other.
+**The pair.** Building something like cairn is one measurement, and building this layer on top
+of it is the other.
 
 | Measure | The engine (`cairn-cms`, `main`) | One production membership layer (`aksailingclub-org`) |
 | --- | --- | --- |
@@ -796,7 +818,7 @@ The minimal case beside it is the scaffold's own worked screen: `admin/signups` 
 across two files plus a 9-line migration [verifiable:
 examples/showcase/src/routes/admin/signups/, examples/showcase/migrations-app/0000_signups.sql].
 
-What the ratio says. The production layer is about half the engine's source line count (35,888
+The production layer is about half the engine's source line count (35,888
 against 68,644), and it is the four-category system enumerated above, with renewal reminders,
 refunds, signatures, and a member directory besides [verifiable: aksailingclub-org src/tests/ file
 names]. The sentence "a small fraction of the whole" is not what this measurement supports, and
@@ -805,7 +827,7 @@ tables, forms, and toolkit lists on 11 engine import paths, and none of it reimp
 authentication crypto, CSRF, the editor, the publish path, or the design system [verifiable: the
 import list above]. A smaller organization's layer, a roster and a signup form, sits nearer the
 90-line end of the range than the 35,888-line end [opinion]. The site's own records give the
-effort in agent tokens and human interaction points, never in hours: events-redesign ran about
+effort in agent tokens and human interaction points, and not in hours: events-redesign ran about
 2.1M tokens against a ceiling raised from 1.5M to 2.2M; events-admin about 3.5M against 2M;
 assets-register about 1.35M through six tasks plus about 2.1M in the close against 1.5M, which the
 record calls "roughly twofold"; human interaction points per pass are in single digits
@@ -819,12 +841,13 @@ scaffolding or a context file as a variable on work of this shape [verifiable:
 docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, "Where searches found
 nothing"].
 
-**Derivable form, for the front door.** One production site, built by the engine's own author,
-carries about 36,000 lines of its own membership, events, assets, and email code over about 69,000
-engine lines it did not write, on eleven engine import paths, with its member login, payments, and
-personal data on the site's side of the line; its custom sections compose the engine's toolkit
-inside the engine's shell behind the editors' guard, and the smallest such screen in the scaffold
-is 90 lines [verifiable: this section's tables].
+**Derivable form, for the front door.** The club site I run on cairn carries about 36,000 lines of
+its own membership, events, assets, and email code. It sits over about 69,000 engine lines it did
+not write, reached through eleven import paths. The member login, the payments, and the personal
+data are on the site's side of the line. Its custom sections compose the engine's toolkit inside
+the engine's shell, behind the editors' guard, and the smallest such screen in the scaffold is 90
+lines. I wrote the engine too, so read that ratio as one author's site and not as a second
+developer's [verifiable: this section's tables].
 
 ## Where this document argues with the reviews
 
@@ -832,10 +855,10 @@ Round 3 ranked twenty changes. This document takes all twenty; the one it could 
 written is the missing email-spike record, which is not missing and is re-pointed to
 `docs/internal/record/2026-08-11-t4b-email-spike.md` [verifiable: that path]. Round 2 ranked
 twenty changes. This document takes nineteen as written and overrides one: its first change, which
-would reverse Leg 5 into the thesis that the partition hands agents the organization's hardest
-work. The product owner ruled that Leg 5 is a case report, so the leg now states the measurements
-and neither inference [opinion]. Round 1 ranked twelve changes. This document takes eleven as
-written [opinion]. It differs on one point of scope. Round 1's section 7 holds that the
+would reverse Leg 5 into the thesis that the division of labor hands agents the organization's
+hardest work. The product owner ruled that Leg 5 is a case report, so the leg now states the
+measurements and neither inference [opinion]. Round 1 ranked twelve changes. This document takes
+eleven as written [opinion]. It differs on one point of scope. Round 1's section 7 holds that the
 comparative material belongs in `why-cairn.md` as prose and that the front door should show one
 system only. This document keeps the traditional setup as a section, because the product owner's
 ruling is that the case is built first and the figure follows, and because a reader choosing
@@ -908,7 +931,7 @@ docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabu
 | admin, admin frame, admin shell, admin skeleton | designer, IT admin, board member, business owner | the editing screens; the screen frame |
 | admin toolkit, toolkit | designer, board member | ready-made screen parts |
 | admin audit, cairn-audit | designer | the screen checks |
-| platform | designer, IT admin | the hosting account (Cloudflare); a product (a membership platform); never cairn |
+| platform | designer, IT admin | the hosting account (Cloudflare); a product (a membership platform); not cairn |
 | adapter (cairn's) | designer | the site's configuration object |
 | adapter (SvelteKit's) | designer | the build plug-in for the host |
 | manifest | designer | the committed content index |
@@ -929,9 +952,9 @@ docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabu
 | domain | business owner | your web address |
 | CSRF | board member | a web security check |
 | npm, release, "Consumers must" | board member | software updates the developer applies, each with a list of required changes |
-| tokens | professor, board member | the unit the AI tools meter and bill in; never an auth token |
+| tokens | professor, board member | the unit the AI tools meter and bill in; not an auth token |
 | pass | professor, board member | one planned chunk of development work |
 | conductor | professor | the top-level agent directing sub-agents |
 | harvest | professor, designer | the list of engine feedback banked at the end of a pass |
 | graduated | professor, designer | moved from a site into the engine |
-| register | professor, designer | the editorial voice standard; never a CPU register |
+| register | professor, designer | the editorial voice standard; not a CPU register |

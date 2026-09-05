@@ -56,6 +56,10 @@ New findings start below this line, one per finding, with its perspective and a 
   and relative import specifier to `any`, so the snippet gate can never catch a wrong adapter
   path in a documented snippet. This migration's `cairn.config` spelling misses were invisible
   to it.
+- **contributor:** `content-routes-media.ts:668` still calls `ctx.logCommitFailed(commitFields,
+  err)`, the bound-method style, while `content-routes-entry.ts` was unified onto the
+  `logCommitFailed` module import (`content-routes-entry.ts:42, 1109, 1591`). The two call
+  styles now read as contradictory in the same subsystem. Routed to polish.
 
 ## Clearings
 

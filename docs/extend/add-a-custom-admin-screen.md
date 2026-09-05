@@ -30,7 +30,9 @@ decide whether *this* signed-in editor may see *this* screen. That's yours to de
 ## Gate it
 
 The recommended path is [`createSectionAction`](../reference/sveltekit.md#createsectionaction),
-built once per section and reused by every action inside it:
+built once per section and reused by every action inside it. Follow this shape even though no
+shipped example wires it yet. A hand-rolled guard that skips the audit call and the shared
+access-map check is the discouraged shape this guide is steering you away from.
 
 ```ts
 // src/lib/club/section.ts

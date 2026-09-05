@@ -746,7 +746,9 @@ ancestor layout `load` run first, so a page's own guard never runs before a POST
 actions. `createSectionAction` composes [`adminAction`](#adminaction) (editor identity, CSRF,
 the single form read, the audit contract) with the same access-map check
 [`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
-binding, so a section's own actions need no hand-rolled precondition.
+binding, so a section's own actions need no hand-rolled precondition. This is the sanctioned
+shape for a custom section regardless of what any given site's own routes show. See [Add a
+custom admin screen](../extend/add-a-custom-admin-screen.md#gate-it).
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
 binding off the platform env, and `config.rateLimit`, when set, names the binding and the

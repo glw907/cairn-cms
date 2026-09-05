@@ -303,30 +303,19 @@ The original decision framing, for the record:
     three closure leaks).
   - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
     do), which reopens and then retires `DEFAULT_ROLES`.
-  - **internals-C: coherence** (next; internals-B split four of the audit's five untracked
-    monolith files—`EditPage.svelte`, `CairnMediaLibrary.svelte`, `content-routes-core.ts`
-    (retired, its actions folded across five siblings), `audit/rendered.ts`—behind unchanged
-    public surfaces, landed 2026-09-04; `content-routes-media.ts` at 1,447 lines is the
-    remaining tracked monolith). Carries the coherence thirteen (enforce the idiom charter with
-    a gate; purge the pass-scoped comment register, 179 process references and 18 consumer-site
-    names; rename the `ec-*` prefix out of engine-emitted markup to an engine-owned one, a
-    `Consumers must:` event; the 827 `as never` test casts; a formatter decision, least-churn
-    default), the exhaustiveness idiom (`FieldDescriptor`'s ten permissive-default dispatch
-    sites, proven exploitable by the walk's mutation experiment; the plan rules the never-idiom
-    mechanism), and the newcomer walk's `src/lib` internals map. Also carries three items
-    internals-B's close routed here: `content-routes-entry.ts` still does two jobs at 1,630
-    lines, the create/edit/save/publish half and the delete/rename half, the latter a
-    self-contained ~330-line concern with its own reference-index gates, worth a
-    `-mutations.ts` sibling; `edit-page-state-reset-coverage.test.ts`'s declared-state regex
-    cannot match a type annotation containing a generic comma (`let x: Record<string, boolean>
-    = $state({})`), so such a declaration silently escapes the gate; and the
-    `ctx.logCommitFailed` call-style note joins the header sweep (preserve `:1672`'s
-    `'publish.failed'` argument, verified safe to unify, `commit-log.ts:33`). The custom-screen
-    content read-seam boundary decision (the former internals-half's last item) is **dropped as
-    unfoundable**, not carried forward as work: no source document and no consumer ask
-    motivates it; reopens on a consumer building a custom admin screen asking for an engine
-    seam to read content. Mostly consumer-invisible, riding outside the `Consumers must:`
-    window except the `ec-*` rename.
+  - **internals-C's coherence work landed 2026-09-04**: the coherence thirteen (the
+    `check:idioms` gate, the comment-register purge, the `ec-*` → `cairn-*` rename, the
+    `as never` retirement, the least-churn formatter default), the exhaustiveness idiom
+    (`FieldDescriptor`'s dispatch sites), and the newcomer walk's `src/lib` internals map,
+    all behind unchanged public surfaces except the `ec-*` rename's own `Consumers must:`
+    line. `content-routes-media.ts` at 1,447 lines is the remaining tracked monolith. Two
+    items internals-B's close routed here stay open, carried forward: `content-routes-entry.ts`
+    still does two jobs at 1,630 lines, the create/edit/save/publish half and the
+    delete/rename half, the latter a self-contained ~330-line concern with its own
+    reference-index gates, worth a `-mutations.ts` sibling; and
+    `edit-page-state-reset-coverage.test.ts`'s declared-state regex cannot match a type
+    annotation containing a generic comma (`let x: Record<string, boolean> = $state({})`),
+    so such a declaration silently escapes the gate.
   - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
     `examples/showcase` gets its round of improvement against the changed engine, as its own
     pass in this initiative. Its review half is done (14 findings, none rewrite-tier; rank

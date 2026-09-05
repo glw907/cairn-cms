@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 // Five bugs the Waymark design review found on the reading-surface article and the styleguide's
 // banner demo, each reproducible without any special setup:
 //   1. a standalone `:::icon` directive fell back to the browser's default SVG box (about 280px),
-//      because prose.css sized `.ec-glyph` only inside a nested component (alert, video-facade,
+//      because prose.css sized `.cairn-glyph` only inside a nested component (alert, video-facade,
 //      cta-link, faq-marker), never a bare top-level icon.
 //   2. the inline CTA's `.cta-primary` reused the panel-button token pair (`--cairn-cta-btn-*`),
 //      which resolves to the page's own paper color in the light theme, so the button vanished; it
@@ -21,7 +21,7 @@ test.describe('Waymark design-review fixes', () => {
     await page.goto('/posts/the-reading-surface');
     // The direct-child selector matches only the standalone `:::icon{name="flag"}` in this article,
     // not the alert's, the video facade's, the cta's, or the faq's own nested glyph.
-    const glyph = page.locator('.prose > .ec-icon > .ec-glyph');
+    const glyph = page.locator('.prose > .cairn-icon > .cairn-glyph');
     await expect(glyph).toBeVisible();
     const box = await glyph.boundingBox();
     expect(box).not.toBeNull();

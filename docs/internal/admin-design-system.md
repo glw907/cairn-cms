@@ -613,6 +613,26 @@ alongside the component recipes above and below it.
   `src/lib/admin-toolkit` found only structured lists: menus, listboxes, flex rows with their own
   gap, daisyUI's `.steps`), so `.toolkit-list` ships as documented infrastructure for the next screen
   that needs one, rather than an in-tree call site today.
+- **Registration note (internals-C, coherence pass, Task 4): two `admin-toolkit` naming
+  defectors and a repeated eyebrow-label literal, documented rather than renamed.** Every other
+  class `admin-toolkit` component owns carries the `toolkit-` prefix; `StatusChip.svelte`'s
+  `status-chip`/`status-chip-quiet`/`status-chip-warning`/`status-chip-outline`/`status-chip-xs`/
+  `status-chip-label` and `PageHeader.svelte`'s `page-h1` do not. Both stay Svelte-scoped (no
+  `:global()`), so neither collides with anything on either side of the `cairn-*` render/admin
+  namespace boundary [`render.md`](../reference/render.md#emitted-classes) documents; a rename
+  would also touch the canvas-readback measurement suites that pin these exact names
+  (`status-chip-register-tuning.test.ts`, `status-chip-register-parity.test.ts`,
+  `badge-tier-legibility.test.ts`) and the audit norms that read them
+  (`src/lib/audit/norms.ts`, `src/lib/audit/rules/rendered/screen-anatomy.ts`), a blast radius out
+  of proportion to a naming-convention fix. Registered here instead: both names are known,
+  intentional exceptions to the `toolkit-` prefix, scoped-safe, and not available for reuse
+  elsewhere in the admin sheet. Separately, the eyebrow-label utility bundle (`type-label
+  font-semibold uppercase tracking-[0.08em] text-muted`, with a `tracking-wide` variant in
+  `CairnTidySettings.svelte`) is written out under two local names (`headerLabel`, `col`) across
+  ten call sites rather than one shared constant; it is a Tailwind utility combination, not a
+  custom class, so it carries no namespace-collision risk, and is registered here as the admin
+  sheet's own "eyebrow label" convention rather than extracted, since no shared home for it
+  exists yet.
 - **Field/button focus-ring color, decline-with-reason (2026-08-27):** a field's `:focus` outline and
   a neutral button's `:focus-visible` outline both resolve to the same color, `base-content`
   (daisyUI's own defaults: `.input:focus`/`.select:focus`/`.textarea:focus` set

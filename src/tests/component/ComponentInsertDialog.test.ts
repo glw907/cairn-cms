@@ -90,7 +90,7 @@ describe('ComponentInsertDialog catalog', () => {
     const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
     await screen.getByRole('button', { name: /insert block/i }).click();
     const row = document.querySelector('[data-testid="cairn-pk-row"]');
-    const path = row?.querySelector('svg.ec-glyph path');
+    const path = row?.querySelector('svg.cairn-glyph path');
     expect(path?.getAttribute('d')).toBe(icons.snowflake);
   });
 
@@ -104,7 +104,7 @@ describe('ComponentInsertDialog catalog', () => {
     await screen.getByRole('button', { name: /insert block/i }).click();
     const row = document.querySelector('[data-testid="cairn-pk-row"]');
     // The icon name resolves to nothing in the set, so no empty glyph box renders.
-    expect(row?.querySelector('svg.ec-glyph')).toBeNull();
+    expect(row?.querySelector('svg.cairn-glyph')).toBeNull();
   });
 
   it('excludes a hidden def from the rendered catalog', async () => {

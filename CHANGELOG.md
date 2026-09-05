@@ -1035,6 +1035,17 @@
   tracked monolith, carried to the next slice. Consumers must: nothing beyond the
   `registerEditor` change recorded above.
 
+- The five classes the render pipeline stamps onto its built-in directives (`cardShell`,
+  `headRow`, `iconSpan`, `renderGlyph`, `markFirstList`) rename from the `ec-*` prefix to
+  `cairn-*` (any-site audit finding 11: `ec-*` is a consumer site's initials, not a namespace the
+  engine should freeze into a public API at 1.0). `docs/reference/render.md` now carries the full
+  emitted list and the registration rule that keeps this shared namespace from colliding with the
+  admin sheet's own `cairn-*` classes. Consumers must: rename `.ec-head` to `.cairn-head`,
+  `.ec-icon` to `.cairn-icon`, `.ec-icon-secondary` to `.cairn-icon-secondary`, `.ec-glyph` to
+  `.cairn-glyph`, and `.ec-grid` to `.cairn-grid` in any hand-authored prose CSS that targets the
+  built-in directive output; a site's own chassis copy (forked from the showcase's) still carries
+  the old names until that site's own pass re-homes them.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

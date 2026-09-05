@@ -17,7 +17,29 @@ Stability tier: Extension API.
 
 - `cardShell(classes, body)` wraps body content in a `<section><div class="card-body">` shell.
 - `headRow(title, icon?, level?)` builds the icon-plus-heading head row; the heading level defaults to 2.
-- `iconSpan(glyphEl, role?)` wraps a built glyph element in an `ec-icon` span.
+- `iconSpan(glyphEl, role?)` wraps a built glyph element in a `cairn-icon` span.
+
+## Emitted classes
+
+Stability tier: Extension API.
+
+These helpers, plus `renderGlyph` (documented on [Core](./core.md)), stamp a fixed set of classes
+onto the hast they build. A site's own prose CSS targets these names to style the built-in
+directives.
+
+- `cairn-head` (`headRow`) is the icon-plus-heading row of a card or an alert.
+- `cairn-icon` and its `cairn-icon-secondary` modifier (`iconSpan`) wrap a built glyph; the
+  modifier lands when the caller passes `role: 'secondary'`.
+- `cairn-glyph` (`renderGlyph`) is the inline SVG glyph itself.
+- `cairn-grid` (`markFirstList`) marks the first `<ul>` inside a component's stamped children.
+  `markFirstList` has no public export, but the class it stamps is still a real, emitted name.
+
+**Registration.** `cairn-*` is a shared namespace. The admin sheet also owns roughly sixty of its
+own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`, and similar), documented in
+[the admin design system](../internal/admin-design-system.md). This page is the emitted-markup
+side's registry; a new name on either side should check the other's list before landing, so the
+two vocabularies never collide. `cairn-icon-label`, an admin toolkit label class, is an
+admin-sheet neighbor, not one of the five names above; no render helper emits it.
 
 ## Types
 

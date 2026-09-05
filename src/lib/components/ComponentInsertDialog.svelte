@@ -414,7 +414,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       {:else}
         {#if showSearch}
           <div class="mb-3 flex flex-none items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-100 px-3 py-2">
-            <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
+            <svg class="cairn-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
               class="w-full border-0 bg-transparent p-0 type-body outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
@@ -455,7 +455,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                       <button type="button" data-testid="cairn-pk-row" class="flex items-start gap-3 py-2" onclick={() => choose(def)} onkeydown={onRowKeydown}>
                         {#if def.icon && icons?.[def.icon]}
                           <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-base-200 text-base-content">
-                            <svg class="ec-glyph h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d={icons[def.icon]} /></svg>
+                            <svg class="cairn-glyph h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d={icons[def.icon]} /></svg>
                           </span>
                         {/if}
                         <span class="flex flex-col items-start gap-0.5">
@@ -480,12 +480,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 {/if}
 
 <style>
-  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts): the admin
+  /* cairn-glyph is the public render pipeline's own class (src/lib/render/glyph.ts): the admin
      preview reuses the exact class the embed-card glyph ships with on a public page, deliberately
      outside the admin sheet since public render output stays design-agnostic. The glyph's fill
      rides currentColor from the surrounding markup. The rule carries only an inert custom
      property, never read anywhere, since an empty ruleset fails svelte-check's own lint. */
-  .ec-glyph {
+  .cairn-glyph {
     --cairn-naming-hook: true;
   }
 </style>

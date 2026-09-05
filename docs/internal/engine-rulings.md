@@ -3916,6 +3916,10 @@ when the remediation pass lands.
   then the deletion.
 - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 2; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
+- **Annotation (internals-C, coherence pass, Task 4):** the class vocabulary `iconSpan` bakes
+  renamed from `ec-icon`/`ec-icon-secondary` to `cairn-icon`/`cairn-icon-secondary`. The retire
+  itself stays open, owned by the chassis pass named above; this annotation only means the chassis
+  re-homing inherits `cairn-*` names, not the `ec-*` ones this ruling originally described.
 
 ## audit-render-headrow: `headRow`  (retire, 2026-08-26, any-site audit)
 
@@ -3929,6 +3933,10 @@ when the remediation pass lands.
   then the deletion.
 - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 3; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
+- **Annotation (internals-C, coherence pass, Task 4):** the class vocabulary `headRow` bakes
+  renamed from `ec-head` to `cairn-head`. The retire itself stays open, owned by the chassis pass
+  named above; this annotation only means the chassis re-homing inherits the `cairn-head` name,
+  not `ec-head`, which this ruling originally described.
 
 ## audit-render-iselement: `isElement`  (retire, 2026-08-26, any-site audit)
 

@@ -20,7 +20,7 @@ import {
 const ICONS = { flag: 'M16 16 240 16 240 240 16 240Z' };
 const makeIcon: MakeIcon = (name, role) => iconSpan(renderGlyph(name, ICONS), role);
 
-// Local fixture helper: pull the <h2> out as the head's title and build the .ec-head row with
+// Local fixture helper: pull the <h2> out as the head's title and build the .cairn-head row with
 // an optional icon read from the declared attribute path. Mirrors what a real site build does
 // with headRow now that the engine ships it.
 function fixtureHead(ctx: ComponentContext, icon: MakeIcon): { head: Element; rest: ElementContent[] } {

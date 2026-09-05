@@ -19,8 +19,10 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**IN FLIGHT (2026-09-04, checkpoint 4 at eight tasks): internals-C mid-pass.** Ledger: Tasks
-1, 9, 8, 5, 6a, 6b, 2, 3a ACCEPTED (3a after two fix rounds, the second decided by the
+**IN FLIGHT (2026-09-04, checkpoint 5 at nine tasks): internals-C mid-pass.** Ledger: Tasks
+1, 9, 8, 5, 6a, 6b, 2, 3a, 3b ACCEPTED (3b after an escalation the conductor ruled: the
+process-reference rule widened to a curated shape list, consumer names purged by hand with
+no rule enumerating them; final commit `5248fed8`) (3a after two fix rounds, the second decided by the
 conductor: five exact comment rewrites, `0ad68a0d`; rulings recorded in the 3b dispatch: bare
 functional-spec citations and `R4` ledger vocabulary stay) (chain R complete at `634fdf16`, run `wf_b02e967c-515`, 0.56M; both sweeps
 annotate survivors as `// idioms-allow: as-never  <reason>` with two spaces, so 6c's rule
@@ -28,8 +30,8 @@ matches the prefix, not the separator) (Task 8 after an escalation decided by th
 `cairn.config.ts` location migration on the scaffold's `$theme/cairn.config.js` spelling,
 plus two fix rounds; Task 5's gate re-proven green on an idle machine). Chains Q and T are
 MERGED into `internals-c` (`78af949d`, `724296c2`). Chain R is MERGED into `internals-c` (`02a2fda7`).
-One workflow run is live: the main worktree `internals-c` (run `wf_5fb3afaf-84e`) runs 3b, 4,
-6c, 7, 10 sequentially; pass-end ritual; push, PR, merge on green
+One workflow run is live: the main worktree `internals-c` (run `wf_640e93d2-2c1`) runs 4, 6c,
+7, 10 sequentially; pass-end ritual; push, PR, merge on green
 CI (authorized). Spend: 1.57M for phase 1 plus about 0.6M of fix and review dispatches, of
 the 6.5M ceiling. Lesson: three concurrent full gates on this 15 GB / 8-core machine cause
 load-induced timeouts; two is the ceiling. If a cold session finds this line: inspect the
@@ -96,6 +98,14 @@ behind and its sheet says to run it as a numbered site pass.
   treats the ROADMAP's older 14-finding list as input, never the ceiling; chassis precedes
   polish because polish's cover-to-cover docs read must see the chassis that teaches the
   surface.
+- **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
+  is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
+  beside it in `docs/internal/record/2026-09-04-cairn-case/`. Round 1 RETHINK and round 2
+  SOUND AFTER FIXES (C+) are folded; round 3 revision in progress with Leg 5 as a measured case
+  report; then a round-3 review, then an audience-lens review, then the figure synthesis. The
+  docs figure (banded ownership map) is finished and uncommitted under `docs/extend/assets/`
+  with its source `docs/internal/site-figures.svg` and emitter `scripts/figures/`; the front-door
+  figure waits on the case.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

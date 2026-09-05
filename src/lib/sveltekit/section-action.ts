@@ -182,12 +182,13 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // correction, never a runtime behavior change (the underlying object is exactly what
       // this wrapper's caller passed in). A direct `as` assertion suffices, with no `unknown`
       // bridge: TypeScript's comparability check for an `as` cast treats the unconstrained
-      // `Env` permissively regardless of which concrete env it is relabeled from. The pre-C2
-      // code carried an `as unknown as` double hop here, on the stated grounds that AuthEnv and
-      // Env shared no property names and would trip TypeScript's weak-type check; that reasoning
-      // did not hold up on re-verification (dropping the `unknown` bridge still compiles clean
-      // under the renamed CairnEnv), so the bridge came out as unneeded ceremony, not because R5's
-      // EmailSender/CairnPlatformBindings fix touched this cast. The cast itself stays: removing
+      // `Env` permissively regardless of which concrete env it is relabeled from. An earlier
+      // version of this cast carried an `as unknown as` double hop here, on the stated grounds
+      // that AuthEnv and Env shared no property names and would trip TypeScript's weak-type
+      // check; that reasoning did not hold up on re-verification (dropping the `unknown` bridge
+      // still compiles clean under the renamed CairnEnv), so the bridge came out as unneeded
+      // ceremony, unrelated to the EmailSender/CairnPlatformBindings fix elsewhere in this file.
+      // The cast itself stays: removing
       // it entirely reproduces a real TS2345 (`Env` is a fully unconstrained generic type
       // parameter, so `CairnEnv` is not assignable to it in either direction).
       const siteEvent = event as CairnEvent<Env>;

@@ -188,7 +188,7 @@ export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdm
 
   /**
    * The editor-voiced copy for an admin action's unexpected failure: the class of bug the
-   *  original ecxc save 500 exposed (an exception escaping deep inside an action, past every
+   *  original save-500 finding exposed (an exception escaping deep inside an action, past every
    *  validated refusal). Calm and honest, no jargon: the writing survives (nothing here has
    *  discarded it) and the retry is the editor's, with a hand-off to their site developer if it
    *  keeps failing.
@@ -327,7 +327,7 @@ export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdm
     mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceAction(contentEvent(event, {}))),
     mediaAltPreview: viewAction('mediaAltPreview', ['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),
     mediaAltPropagate: viewAction('mediaAltPropagate', ['media'], (event) => content.mediaAltPropagateAction(contentEvent(event, {}))),
-    // Pass C library actions: a multi-select bulk delete, the on-demand orphan scan, and the
+    // The library actions: a multi-select bulk delete, the on-demand orphan scan, and the
     // irreversible byte purge. The component posts to `?/mediaBulkDelete`, `?/mediaOrphanScan`, and
     // `?/mediaOrphanPurge`. All gate on the media view.
     mediaBulkDelete: viewAction('mediaBulkDelete', ['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),

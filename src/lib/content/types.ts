@@ -126,7 +126,7 @@ export interface SenderConfig {
   replyTo?: string;
 }
 
-/** A git-committed YAML menu this site's nav editor manages (Plan 06). */
+/** A git-committed YAML menu this site's nav editor manages. */
 export interface NavMenuConfig {
   /** Repo-relative path to the site-config YAML, e.g. "src/lib/site.config.yaml". */
   configPath: string;

@@ -1,5 +1,5 @@
 // The closed vocabulary a genuinely-navigating refusal may carry on `?error=`. Every in-place
-// refusal answers through `fail()` (R10); this module is the whole bounded surface the query
+// refusal answers through `fail()`; this module is the whole bounded surface the query
 // channel is still allowed to speak, so an attacker-crafted query value carries no meaning past
 // this resolver. Internal: no signature outside this file names RefusalCode, so a `*Data.error`
 // field stays `string | null` and the public surface never grows a code union to write.
@@ -10,7 +10,7 @@
  *  "publish-all only ever redirects to its own three outcomes" rule, `publish_failed`, for the
  *  unexpected (non-conflict) commit error that would otherwise reach `viewAction`'s generic
  *  `fail(500)` and be discarded when `/admin`'s own load redirects away before it can render
- *  (C2b's own post-review fix; `publishAllAction`, `content-routes-entry.ts`). `expired` keeps its
+ *  (`publishAllAction`, `content-routes-entry.ts`). `expired` keeps its
  *  shipped spelling; the rest are snake_case, matching the log vocabulary's grammar
  *  (`docs/reference/log-events.md`).
  */

@@ -317,7 +317,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Load the tag-vocabulary admin screen (Plan 3): the committed vocabulary plus a per-value
+   * Load the tag-vocabulary admin screen: the committed vocabulary plus a per-value
    *  cross-branch usage count and the in-use-but-unlisted seed set. The committed list is read on the
    *  default branch and degrades to `[]` on a read or parse failure, mirroring navLoad, so the screen
    *  still opens. The usage overlay is best-effort and separate, mirroring mediaLibraryLoad: the
@@ -378,7 +378,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
+   * Save the tag vocabulary: validate the posted list, gate a delete on cross-branch usage
    *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
    *  nav and settings saves write. The transport is settingsSaveAction's exactly: a form POST carrying the
    *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict answered in place as

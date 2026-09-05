@@ -107,8 +107,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
 
 /**
  * The wide shape `createContentRoutesInternal` returns. Named so the public view below is DERIVED
- *  from it rather than hand-mirrored, which is what keeps the two from drifting apart
- *  (coherence-v2 C3).
+ *  from it rather than hand-mirrored, which is what keeps the two from drifting apart.
  */
 type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
 

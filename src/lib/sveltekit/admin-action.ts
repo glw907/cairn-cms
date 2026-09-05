@@ -1,4 +1,4 @@
-// cairn-cms: the admin-scoped action wrapper (Part C item 3 of the phase-2 design suite). A site
+// cairn-cms: the admin-scoped action wrapper. A site
 // building its own `/admin/` screen needs the same editor + CSRF + audit contract every engine
 // action honors; this wraps a custom form action with that contract instead of a site
 // hand-rolling it.

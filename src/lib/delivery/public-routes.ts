@@ -195,7 +195,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
   const { site, resolveMedia, assetsEnabled } = config;
 
   // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
-  // every public hero and body `media:` token renders bare (the ecxc 0.57.0 finding). The condition
+  // every public hero and body `media:` token renders bare (a consuming site's 0.57.0 finding). The condition
   // is a property of the wiring, not of any one load, so it is checked once here at construction
   // rather than per entryLoad or per image, which keeps the warning loud-once and out of the
   // prerender hot path. Resolution is unchanged; resolveMedia alone still gates the hero projection.

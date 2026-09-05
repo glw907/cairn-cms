@@ -78,14 +78,15 @@ export function readPublicOrigin(
   platformEnv: unknown,
   options?: { depth?: 'platform-only' },
 ): string | undefined {
-  const fromPlatform =
-    typeof platformEnv === 'object' && platformEnv !== null
-      ? (platformEnv as Record<string, unknown>).PUBLIC_ORIGIN
-      : undefined;
-  if (typeof fromPlatform === 'string' && fromPlatform.length > 0) return fromPlatform;
+  // An empty string is treated as absent at both depths: a var set to '' configures nothing, and
+  // letting it through would make the platform read shadow a usable process value.
+  const usable = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.length > 0 ? value : undefined;
+  const env = typeof platformEnv === 'object' && platformEnv !== null ? (platformEnv as Record<string, unknown>) : undefined;
+  const fromPlatform = usable(env?.PUBLIC_ORIGIN);
+  if (fromPlatform) return fromPlatform;
   if (options?.depth === 'platform-only') return undefined;
-  const fromProcess = typeof process !== 'undefined' ? process.env?.PUBLIC_ORIGIN : undefined;
-  return typeof fromProcess === 'string' && fromProcess.length > 0 ? fromProcess : undefined;
+  return typeof process !== 'undefined' ? usable(process.env?.PUBLIC_ORIGIN) : undefined;
 }
 
 /**

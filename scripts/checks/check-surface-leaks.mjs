@@ -276,12 +276,10 @@ export function deriveTypeCheckerLeaks(model, universe) {
     // object. Structurally modeling component props (walking each component's own Props type
     // argument) would need a third model this rider does not build; Task 7's props gate is the
     // answer for that surface instead (see the ledger row's stated-limits paragraph).
-    const rootSymbols =
-      entry.subpath === '/components'
-        ? symbols.filter((sym) => isPlainTypeExport(resolveAlias(checker, sym)))
-        : symbols;
+    const resolved = symbols.map((sym) => resolveAlias(checker, sym));
+    const rootSymbols = entry.subpath === '/components' ? resolved.filter(isPlainTypeExport) : resolved;
     if (rootSymbols.length === 0) continue;
-    const rootTypes = rootSymbols.map((sym) => shapeTypeOf(checker, resolveAlias(checker, sym)));
+    const rootTypes = rootSymbols.map((sym) => shapeTypeOf(checker, sym));
     const reachable = collectReachableNames(checker, rootTypes, distDir);
     for (const name of [...reachable].sort()) {
       if (!universe.has(name)) continue;

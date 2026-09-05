@@ -89,18 +89,32 @@ const FIXTURES_PREFIX = 'scripts/checks/fixtures/';
 // text rule 2 bans (see the header note above).
 const PROCESS_EXIT_PATTERN = 'process.' + 'exit(';
 
+// The shape every rule below shares: scan a file's lines and collect the 1-based numbers of the
+// ones a predicate accepts. Rule 5 is why the predicate also receives the whole line array, since
+// its round-marker exemption has to read the next line for a wrapped comment.
+/**
+ * Every 1-based line number in `source` whose line `matches` accepts.
+ * @param {string} source
+ * @param {(line: string, index: number, lines: string[]) => boolean} matches
+ * @returns {number[]}
+ */
+function findLines(source, matches) {
+  const lines = source.split('\n');
+  /** @type {number[]} */
+  const hits = [];
+  lines.forEach((line, i) => {
+    if (matches(line, i, lines)) hits.push(i + 1);
+  });
+  return hits;
+}
+
 /**
  * Every 1-based line number in `source` whose first character is a tab.
  * @param {string} source
  * @returns {number[]}
  */
 export function findLeadingTabIndentLines(source) {
-  /** @type {number[]} */
-  const hits = [];
-  source.split('\n').forEach((line, i) => {
-    if (line.startsWith('\t')) hits.push(i + 1);
-  });
-  return hits;
+  return findLines(source, (line) => line.startsWith('\t'));
 }
 
 /**
@@ -109,12 +123,7 @@ export function findLeadingTabIndentLines(source) {
  * @returns {number[]}
  */
 export function findProcessExitLines(source) {
-  /** @type {number[]} */
-  const hits = [];
-  source.split('\n').forEach((line, i) => {
-    if (line.includes(PROCESS_EXIT_PATTERN)) hits.push(i + 1);
-  });
-  return hits;
+  return findLines(source, (line) => line.includes(PROCESS_EXIT_PATTERN));
 }
 
 /**
@@ -172,12 +181,7 @@ export const COMMENT_SCOPE_PATTERN = /\.(ts|svelte|css)$/;
  * @returns {number[]}
  */
 export function findSuperpowersPathLines(source) {
-  /** @type {number[]} */
-  const hits = [];
-  source.split('\n').forEach((line, i) => {
-    if (line.includes('docs/superpowers/')) hits.push(i + 1);
-  });
-  return hits;
+  return findLines(source, (line) => line.includes('docs/superpowers/'));
 }
 
 // Task N (a one- or two-letter suffix allowed, e.g. `Task 16b`): the original, narrowest shape,
@@ -252,35 +256,35 @@ function isExemptRoundMarker(letter, digits, suffix, line, matchEnd, nextLine) {
 }
 
 /**
+ * Whether `line` carries a round marker that {@link isExemptRoundMarker} does not excuse.
+ * @param {string} line
+ * @param {string} nextLine
+ * @returns {boolean}
+ */
+function hasUnexemptRoundMarker(line, nextLine) {
+  ROUND_MARKER_PATTERN.lastIndex = 0;
+  let m;
+  while ((m = ROUND_MARKER_PATTERN.exec(line))) {
+    if (!isExemptRoundMarker(m[1], m[2], m[3], line, m.index + m[0].length, nextLine)) return true;
+  }
+  return false;
+}
+
+/**
  * Every 1-based line number in `source` carrying a pass-scoped process reference (rule 5).
  * @param {string} source
  * @returns {number[]}
  */
 export function findProcessReferenceLines(source) {
-  /** @type {number[]} */
-  const hits = [];
-  const lines = source.split('\n');
-  lines.forEach((line, i) => {
-    if (
+  return findLines(
+    source,
+    (line, i, lines) =>
       PROCESS_REF_LABEL_PATTERNS.some((pattern) => pattern.test(line)) ||
       THIS_PASS_OR_PHASE_PATTERN.test(line) ||
       NAMED_SWEEP_PATTERN.test(line) ||
-      (T_MARKER_PATTERN.test(line) && T_MARKER_CONTEXT_PATTERN.test(line))
-    ) {
-      hits.push(i + 1);
-      return;
-    }
-    ROUND_MARKER_PATTERN.lastIndex = 0;
-    let m;
-    while ((m = ROUND_MARKER_PATTERN.exec(line))) {
-      const nextLine = lines[i + 1] ?? '';
-      if (!isExemptRoundMarker(m[1], m[2], m[3], line, m.index + m[0].length, nextLine)) {
-        hits.push(i + 1);
-        break;
-      }
-    }
-  });
-  return hits;
+      (T_MARKER_PATTERN.test(line) && T_MARKER_CONTEXT_PATTERN.test(line)) ||
+      hasUnexemptRoundMarker(line, lines[i + 1] ?? ''),
+  );
 }
 
 // A bare `label.tld`-shaped literal over a short list of real TLDs. The TLD list also collides
@@ -325,20 +329,15 @@ const DOTTED_IDENTIFIER_ALLOWANCES = new Set(['github.app']);
  * @returns {number[]}
  */
 export function findConsumerHostnameLines(source) {
-  /** @type {number[]} */
-  const hits = [];
-  source.split('\n').forEach((line, i) => {
+  return findLines(source, (line) => {
     HOSTNAME_SHAPE_PATTERN.lastIndex = 0;
     let m;
     while ((m = HOSTNAME_SHAPE_PATTERN.exec(line))) {
       const shape = m[0].toLowerCase();
-      if (!HOSTNAME_ALLOWED_HOSTS.has(shape) && !DOTTED_IDENTIFIER_ALLOWANCES.has(shape)) {
-        hits.push(i + 1);
-        break;
-      }
+      if (!HOSTNAME_ALLOWED_HOSTS.has(shape) && !DOTTED_IDENTIFIER_ALLOWANCES.has(shape)) return true;
     }
+    return false;
   });
-  return hits;
 }
 
 // The scope for rule 7: every .ts and .svelte file under src/tests.
@@ -368,14 +367,12 @@ const AS_NEVER_PATTERN = /\bas never\b/;
  * @returns {number[]}
  */
 export function findAsNeverLines(source) {
-  /** @type {number[]} */
-  const hits = [];
-  source.split('\n').forEach((line, i) => {
-    if (line.includes(AS_NEVER_ALLOW_PREFIX)) return;
-    const stripped = line.replace(BACKTICK_SPAN_PATTERN, '');
-    if (AS_NEVER_PATTERN.test(stripped)) hits.push(i + 1);
-  });
-  return hits;
+  return findLines(
+    source,
+    (line) =>
+      !line.includes(AS_NEVER_ALLOW_PREFIX) &&
+      AS_NEVER_PATTERN.test(line.replace(BACKTICK_SPAN_PATTERN, '')),
+  );
 }
 
 /**
@@ -389,6 +386,16 @@ export function findAsNeverLines(source) {
  *   asNever: string[],
  * }} IdiomViolations
  */
+
+/**
+ * A file's repo-relative path in forward-slash form, the spelling every violation is reported in
+ * and the one the fixture and self-exclusion prefixes are written against.
+ * @param {string} file
+ * @returns {string}
+ */
+function relPath(file) {
+  return relative(ROOT, file).split('\\').join('/');
+}
 
 /**
  * Scan the real tree for all seven rules. Exported so the unit test can assert the gate is born
@@ -412,7 +419,7 @@ export function scanIdioms() {
     ...walk(resolve(ROOT, 'scripts'), (n) => /\.(ts|svelte|mjs)$/.test(n)),
   ];
   for (const file of tabScopeFiles) {
-    const rel = relative(ROOT, file).split('\\').join('/');
+    const rel = relPath(file);
     if (rel.startsWith(FIXTURES_PREFIX)) continue;
     const source = readFileSync(file, 'utf8');
     for (const line of findLeadingTabIndentLines(source)) violations.tabs.push(`${rel}:${line}`);
@@ -420,7 +427,7 @@ export function scanIdioms() {
 
   const checksFiles = walk(resolve(ROOT, 'scripts/checks'), (n) => n.endsWith('.mjs'));
   for (const file of checksFiles) {
-    const rel = relative(ROOT, file).split('\\').join('/');
+    const rel = relPath(file);
     if (rel.startsWith(FIXTURES_PREFIX)) continue;
     const source = readFileSync(file, 'utf8');
     for (const line of findProcessExitLines(source)) violations.exit.push(`${rel}:${line}`);
@@ -430,7 +437,7 @@ export function scanIdioms() {
 
   const commentScopeFiles = walk(resolve(ROOT, 'src/lib'), (n) => COMMENT_SCOPE_PATTERN.test(n));
   for (const file of commentScopeFiles) {
-    const rel = relative(ROOT, file).split('\\').join('/');
+    const rel = relPath(file);
     const source = readFileSync(file, 'utf8');
     for (const line of findSuperpowersPathLines(source)) violations.superpowersPaths.push(`${rel}:${line}`);
     for (const line of findProcessReferenceLines(source)) violations.processReferences.push(`${rel}:${line}`);
@@ -439,7 +446,7 @@ export function scanIdioms() {
 
   const testFiles = walk(resolve(ROOT, 'src/tests'), (n) => TEST_SCOPE_PATTERN.test(n));
   for (const file of testFiles) {
-    const rel = relative(ROOT, file).split('\\').join('/');
+    const rel = relPath(file);
     if (rel === AS_NEVER_SELF_EXCLUSION) continue;
     const source = readFileSync(file, 'utf8');
     for (const line of findAsNeverLines(source)) violations.asNever.push(`${rel}:${line}`);
@@ -448,6 +455,19 @@ export function scanIdioms() {
   return violations;
 }
 
+// Each category's report heading, in report order: the count and the indented hit list around it
+// are identical in shape across all seven, so only the wording differs.
+/** @type {[keyof IdiomViolations, string][]} */
+const VIOLATION_HEADINGS = [
+  ['tabs', 'leading-tab indentation hit(s) (repo convention is 2-space)'],
+  ['exit', 'direct process.exit call(s) in scripts/checks (use process.exitCode plus a flow guard)'],
+  ['identity', 'self-identity spelling mismatch(es)'],
+  ['superpowersPaths', 'docs/superpowers/ path reference(s) in src/lib (the npm tarball never ships that directory)'],
+  ['processReferences', 'pass-scoped process reference(s) in src/lib (keep the rationale, drop the session label)'],
+  ['hostnames', 'unrecognized hostname literal(s) in src/lib (add a real public host to HOSTNAME_ALLOWED_HOSTS, or generalize a consumer-site mention)'],
+  ['asNever', 'unescaped "as never" cast(s) in src/tests (use a typed fixture, or annotate a deliberate negative-path cast with "// idioms-allow: as-never  <reason>")'],
+];
+
 /**
  * Render every violation as one gate report.
  * @param {IdiomViolations} violations
@@ -455,47 +475,18 @@ export function scanIdioms() {
  */
 export function formatViolations(violations) {
   const lines = [];
-  if (violations.tabs.length) {
-    lines.push(`check-idioms: ${violations.tabs.length} leading-tab indentation hit(s) (repo convention is 2-space):`);
-    for (const hit of violations.tabs) lines.push(`  ${hit}`);
-  }
-  if (violations.exit.length) {
-    lines.push(`check-idioms: ${violations.exit.length} direct process.exit call(s) in scripts/checks (use process.exitCode plus a flow guard):`);
-    for (const hit of violations.exit) lines.push(`  ${hit}`);
-  }
-  if (violations.identity.length) {
-    lines.push(`check-idioms: ${violations.identity.length} self-identity spelling mismatch(es):`);
-    for (const hit of violations.identity) lines.push(`  ${hit}`);
-  }
-  if (violations.superpowersPaths.length) {
-    lines.push(`check-idioms: ${violations.superpowersPaths.length} docs/superpowers/ path reference(s) in src/lib (the npm tarball never ships that directory):`);
-    for (const hit of violations.superpowersPaths) lines.push(`  ${hit}`);
-  }
-  if (violations.processReferences.length) {
-    lines.push(`check-idioms: ${violations.processReferences.length} pass-scoped process reference(s) in src/lib (keep the rationale, drop the session label):`);
-    for (const hit of violations.processReferences) lines.push(`  ${hit}`);
-  }
-  if (violations.hostnames.length) {
-    lines.push(`check-idioms: ${violations.hostnames.length} unrecognized hostname literal(s) in src/lib (add a real public host to HOSTNAME_ALLOWED_HOSTS, or generalize a consumer-site mention):`);
-    for (const hit of violations.hostnames) lines.push(`  ${hit}`);
-  }
-  if (violations.asNever.length) {
-    lines.push(`check-idioms: ${violations.asNever.length} unescaped "as never" cast(s) in src/tests (use a typed fixture, or annotate a deliberate negative-path cast with "// idioms-allow: as-never  <reason>"):`);
-    for (const hit of violations.asNever) lines.push(`  ${hit}`);
+  for (const [key, heading] of VIOLATION_HEADINGS) {
+    const hits = violations[key];
+    if (hits.length === 0) continue;
+    lines.push(`check-idioms: ${hits.length} ${heading}:`);
+    for (const hit of hits) lines.push(`  ${hit}`);
   }
   return lines.join('\n');
 }
 
 function main() {
   const violations = scanIdioms();
-  const total =
-    violations.tabs.length +
-    violations.exit.length +
-    violations.identity.length +
-    violations.superpowersPaths.length +
-    violations.processReferences.length +
-    violations.hostnames.length +
-    violations.asNever.length;
+  const total = Object.values(violations).reduce((n, hits) => n + hits.length, 0);
   if (total === 0) {
     console.log(
       'check-idioms: OK (2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no docs/superpowers/ paths, pass-scoped references, or consumer hostnames in src/lib, no unescaped as-never casts in src/tests)',

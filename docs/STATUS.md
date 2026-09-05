@@ -104,12 +104,15 @@ behind and its sheet says to run it as a numbered site pass.
   is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
   beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), 3 (B-), 4 (B), and
   5 (B+, SOUND) are folded through v6 (`3485b0bb`); the exit criterion (B+) is met. In flight:
-  revision 7 (round 5's ten mechanical changes plus the "shape, not only the product" section),
-  a measured build of a custom admin screen on the showcase as first-party cost-and-speed
-  evidence (branch `experiment-screen`), and two research passes (the public record of the
-  cairn-like shape, Charm first; cost and speed of agent-assisted coding). Then a verification
-  fold, the audience-lens-driven front-door derivation in first person, and the figure
-  synthesis. The
+  round 6 grading v8 (`5a03cd06`: the fourth evidence pass, the measured build as a second
+  case, the Cloudflare leg redrafted), the measured build's fix round (branch `experiment-screen`,
+  never merging), then revision 9 (core prose plus footnotes, cadence measured), the final
+  four-axis review (prose, structure, AI tells, each audience), and the freeze. Overnight
+  decisions (Geoff, 2026-09-05, defaults accepted): the concept figure is built as an
+  uncommitted prototype in the one-system-with-its-boundary form on the existing review page;
+  the front-door prose is drafted in first person in the why-cairn.md voice as an uncommitted
+  proposal (a new why-cairn.md and the front-door lines), never touching the published pages.
+  Both wait for Geoff's morning read. The
   docs figure (banded ownership map) is finished and uncommitted under `docs/extend/assets/`
   with its source `docs/internal/site-figures.svg` and emitter `scripts/figures/`; the front-door
   figure waits on the case.

@@ -84,3 +84,14 @@ lists, without grading words, what cairn ships that such a build writes or insta
 (the list already in Leg 1). This is the honest answer to the designer persona's objection,
 and it keeps cairn inside its charter: the claim is the shape plus the pieces, never the
 product's superiority.
+
+## Closing sequence (Geoff, 2026-09-05)
+
+After round 6 grades v8's content: revision 9 restructures the document into core prose plus
+footnotes (or per-section endnotes) so a reader gets the argument and a checker gets every tag,
+citation, and reproduction command without either interrupting the other. Then the FINAL
+adversarial review, on four axes with a letter grade each: prose quality, structure, AI tells,
+and how the document addresses each audience (the evaluator profile plus the five personas),
+run as the register editor, the voice reviewer, and a Fable audience reader in parallel. Only
+after that does the document freeze and the derivation begin (first-person front-door prose,
+the revised why-cairn.md, the concept figure).

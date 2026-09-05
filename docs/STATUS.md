@@ -100,10 +100,14 @@ behind and its sheet says to run it as a numbered site pass.
   surface.
 - **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
   is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
-  beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), and 3 (B-) are
-  folded through v4 (`e1790435`); the audience lens is banked. Exit criterion (Geoff): the loop
-  repeats until a graded round returns B+ or better, each round from 4 on adding an AI-tells
-  reviewer; then the front-door derivation and the figure synthesis. The
+  beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), 3 (B-), 4 (B), and
+  5 (B+, SOUND) are folded through v6 (`3485b0bb`); the exit criterion (B+) is met. In flight:
+  revision 7 (round 5's ten mechanical changes plus the "shape, not only the product" section),
+  a measured build of a custom admin screen on the showcase as first-party cost-and-speed
+  evidence (branch `experiment-screen`), and two research passes (the public record of the
+  cairn-like shape, Charm first; cost and speed of agent-assisted coding). Then a verification
+  fold, the audience-lens-driven front-door derivation in first person, and the figure
+  synthesis. The
   docs figure (banded ownership map) is finished and uncommitted under `docs/extend/assets/`
   with its source `docs/internal/site-figures.svg` and emitter `scripts/figures/`; the front-door
   figure waits on the case.

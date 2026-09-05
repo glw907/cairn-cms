@@ -16,7 +16,7 @@ import type { CairnEvent } from './types.js';
 /**
  * The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
  *  add landed. The client reconciles its pending-additions set against this (a word now in the list
- *  is committed and dropped from pending). Retired from the public surface (4b, Task 1); the
+ *  is committed and dropped from pending). Retired from the public surface; the
  *  module-level export stays, since `content-routes-dictionary.test.ts` imports it directly.
  */
 export interface DictionaryAddResult {

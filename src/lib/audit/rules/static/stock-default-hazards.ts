@@ -89,7 +89,7 @@ export const stockDefaultHazards: StaticRule = {
       // read utilityBase(), so a variant-prefixed write (sm:badge-ghost, md:border-base-300)
       // slips past this rule. The admin already writes ~100 variant-prefixed tokens. Routing
       // these through utilityBase() WIDENS the rule and may surface real findings, so it is a
-      // rule-design decision for the Task 17 calibration, not a cleanup. Recorded 2026-07-28.
+      // deliberate rule-design decision, not a cleanup. Recorded 2026-07-28.
       // badge-ghost: unconditional, since the stock class itself is the hazard regardless of
       // where it renders.
       for (const token of file.classTokens) {

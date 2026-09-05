@@ -62,7 +62,7 @@ describe('insertableDefs', () => {
 
 describe('ComponentInsertDialog catalog', () => {
   it('lists actionable components with descriptions and omits inert ones', async () => {
-    const screen = await render(ComponentInsertDialog, { registry, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry, insert: () => {}, icons });
     const openBtn = screen.getByRole('button', { name: /insert block/i });
     await expect.element(openBtn).toBeInTheDocument();
     await openBtn.click();
@@ -73,7 +73,7 @@ describe('ComponentInsertDialog catalog', () => {
 
   it('groups rows under eyebrow headings in declaration order', async () => {
     const reg = defineRegistry({ components: [schemaDef, alertDef, gridDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
 
     const headings = document.querySelectorAll('[data-testid="cairn-pk-group-heading"]');
@@ -87,10 +87,10 @@ describe('ComponentInsertDialog catalog', () => {
 
   it('renders the icon glyph beside the label from the icon set', async () => {
     const reg = defineRegistry({ components: [schemaDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     const row = document.querySelector('[data-testid="cairn-pk-row"]');
-    const path = row?.querySelector('svg.ec-glyph path');
+    const path = row?.querySelector('svg.cairn-glyph path');
     expect(path?.getAttribute('d')).toBe(icons.snowflake);
   });
 
@@ -100,16 +100,16 @@ describe('ComponentInsertDialog catalog', () => {
       icon: 'missing', insertTemplate: ':::ghost\n:::',
     } as ComponentDef;
     const reg = defineRegistry({ components: [ghost] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     const row = document.querySelector('[data-testid="cairn-pk-row"]');
     // The icon name resolves to nothing in the set, so no empty glyph box renders.
-    expect(row?.querySelector('svg.ec-glyph')).toBeNull();
+    expect(row?.querySelector('svg.cairn-glyph')).toBeNull();
   });
 
   it('excludes a hidden def from the rendered catalog', async () => {
     const reg = defineRegistry({ components: [schemaDef, hiddenDef, templateDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await expect.element(screen.getByText(/^Nested$/)).not.toBeInTheDocument();
     await expect.element(screen.getByText(/^Callout$/)).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('ComponentInsertDialog catalog', () => {
 
   it('caps the dialog box height per the design system', async () => {
     const reg = defineRegistry({ components: [schemaDef, alertDef, gridDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     // The box caps at 85vh via a Tailwind utility (the utilities layer beats DaisyUI's modal-box
     // 100vh; a components-layer rule would not), and the catalog body is the scroll container so the
@@ -131,7 +131,7 @@ describe('ComponentInsertDialog catalog', () => {
 
   it('inserts a template-only def directly', async () => {
     const insert = vi.fn();
-    const screen = await render(ComponentInsertDialog, { registry, insert, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry, insert, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /rule/i }).click();
     expect(insert).toHaveBeenCalledWith(':::rule\n:::');
@@ -139,7 +139,7 @@ describe('ComponentInsertDialog catalog', () => {
 
   it('routes a schema def to the form and inserts the built markdown', async () => {
     const insert = vi.fn();
-    const screen = await render(ComponentInsertDialog, { registry, insert, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry, insert, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     await screen.getByRole('combobox', { name: /tone/i }).selectOptions('warning');
@@ -151,13 +151,13 @@ describe('ComponentInsertDialog catalog', () => {
 
 describe('ComponentInsertDialog search', () => {
   it('shows no search input below the threshold', async () => {
-    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(8), insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(8), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await expect.element(screen.getByRole('searchbox')).not.toBeInTheDocument();
   });
 
   it('shows the search input past the threshold and focuses it on open', async () => {
-    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     const box = screen.getByRole('searchbox');
     await expect.element(box).toBeInTheDocument();
@@ -165,7 +165,7 @@ describe('ComponentInsertDialog search', () => {
   });
 
   it('filters rows by label and description and reports the count', async () => {
-    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('searchbox').fill('Comp 3');
     const rows = document.querySelectorAll('[data-testid="cairn-pk-row"]');
@@ -175,7 +175,7 @@ describe('ComponentInsertDialog search', () => {
   });
 
   it('shows a no-match state when nothing matches', async () => {
-    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('searchbox').fill('zzzznope');
     expect(document.querySelectorAll('[data-testid="cairn-pk-row"]').length).toBe(0);
@@ -198,8 +198,8 @@ const plainForm = defineComponent({
 describe('ComponentInsertDialog configure step', () => {
   it('shows two panes for a preview-declaring component', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const renderFn = (md: string) => `<p>${md}</p>`;
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    const renderFn = async ({ body }: { body: string }) => `<p>${body}</p>`;
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     // The preview pane mounts only in the two-pane case.
@@ -209,8 +209,8 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('stays single column for a component that declares no preview', async () => {
     const reg = defineRegistry({ components: [plainForm] });
-    const renderFn = (md: string) => `<p>${md}</p>`;
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    const renderFn = async ({ body }: { body: string }) => `<p>${body}</p>`;
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /newsletter signup/i }).click();
     expect(document.querySelector('[data-testid="cairn-pk-preview"]')).toBeNull();
@@ -218,7 +218,7 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('shows no preview pane when no render function is threaded, even for a preview-declaring def', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     expect(document.querySelector('[data-testid="cairn-pk-preview"]')).toBeNull();
@@ -226,8 +226,8 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('shows the incomplete state and disables Insert when a required field is empty', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const renderFn = (md: string) => `<p>${md}</p>`;
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    const renderFn = async ({ body }: { body: string }) => `<p>${body}</p>`;
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     // Clear the seeded required title so a required region is empty.
@@ -238,8 +238,8 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('keeps the settle chip a silent visual cue (no live region)', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const renderFn = (md: string) => `<p>${md}</p>`;
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    const renderFn = async ({ body }: { body: string }) => `<p>${body}</p>`;
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     // The chip text renders, but it is not announced: no aria-live, no role=status on it.
@@ -252,10 +252,10 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('shows the render-failed surface when the adapter render throws, keeping the form', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const renderFn = () => {
+    const renderFn = async (): Promise<string> => {
       throw new Error('boom');
     };
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     await expect.element(screen.getByTestId('cairn-pk-preview-failed')).toBeInTheDocument();
@@ -266,8 +266,8 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('moves focus to the first form field on pick', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const renderFn = (md: string) => `<p>${md}</p>`;
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    const renderFn = async ({ body }: { body: string }) => `<p>${body}</p>`;
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     const tone = screen.getByRole('combobox', { name: /tone/i });
@@ -277,7 +277,7 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('carries the Insert > group breadcrumb eyebrow and a Back control at the configure step', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     await expect.element(screen.getByText(/insert\s*›\s*callouts/i)).toBeInTheDocument();
@@ -286,7 +286,7 @@ describe('ComponentInsertDialog configure step', () => {
 
   it('Back returns to the catalog from the configure step', async () => {
     const reg = defineRegistry({ components: [previewCallout, gridDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('button', { name: /callout/i }).click();
     await screen.getByRole('button', { name: /back/i }).click();
@@ -297,7 +297,7 @@ describe('ComponentInsertDialog configure step', () => {
 
 describe('ComponentInsertDialog keyboard', () => {
   it('ArrowDown from the search input moves focus to the first catalog row', async () => {
-    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     const box = screen.getByRole('searchbox');
     await expect.element(box).toBeInTheDocument();
@@ -308,7 +308,7 @@ describe('ComponentInsertDialog keyboard', () => {
   });
 
   it('ArrowUp from the search input moves focus to the last catalog row', async () => {
-    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
     const box = screen.getByRole('searchbox');
     await expect.element(box).toBeInTheDocument();
@@ -321,7 +321,7 @@ describe('ComponentInsertDialog keyboard', () => {
   it('moves between rows with the arrow keys and chooses on Enter', async () => {
     const insert = vi.fn();
     const reg = defineRegistry({ components: [schemaDef, gridDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();
 
     const rows = document.querySelectorAll<HTMLButtonElement>('[data-testid="cairn-pk-row"]');
@@ -349,7 +349,7 @@ describe('ComponentInsertDialog edit mode', () => {
 
   it('opens the configure step with the fields pre-filled from the passed values', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     screen.component.editComponent(previewCallout, editValues, { from: 10, to: 40 });
     await expect.element(screen.getByRole('textbox', { name: /title/i })).toHaveValue('Existing title');
     await expect.element(screen.getByRole('combobox', { name: /tone/i })).toHaveValue('warning');
@@ -359,7 +359,7 @@ describe('ComponentInsertDialog edit mode', () => {
 
   it('shows the Edit breadcrumb eyebrow and an Update primary button', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons });
     screen.component.editComponent(previewCallout, editValues, { from: 10, to: 40 });
     await expect.element(screen.getByText(/edit\s*›\s*callouts/i)).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();
@@ -370,7 +370,7 @@ describe('ComponentInsertDialog edit mode', () => {
     const update = vi.fn();
     const insert = vi.fn();
     const reg = defineRegistry({ components: [previewCallout] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert, update, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert, update, icons });
     const range = { from: 10, to: 40 };
     screen.component.editComponent(previewCallout, editValues, range);
     await screen.getByRole('button', { name: /^update$/i }).click();
@@ -383,7 +383,7 @@ describe('ComponentInsertDialog edit mode', () => {
   it('reopening the catalog after an edit is a clean Insert flow', async () => {
     const insert = vi.fn();
     const reg = defineRegistry({ components: [schemaDef, gridDef] });
-    const screen = await render(ComponentInsertDialog, { registry: reg, insert, icons } as never);
+    const screen = await render(ComponentInsertDialog, { registry: reg, insert, icons });
     // Edit, close it, then open fresh for an Insert.
     screen.component.editComponent(schemaDef, editValues, { from: 1, to: 5 });
     await expect.element(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();

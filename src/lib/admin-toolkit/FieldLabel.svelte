@@ -10,8 +10,8 @@ shrinkable of a flex row's two children, so a long label wraps once the row narr
 (label beside its control on one line, `flex items-center gap-1.5 type-body`, muted) stays
 available as the explicit, control-adjacent exception: a toolbar filter, a compact panel, a row
 already scoped tightly enough by a group legend that a full stacked label would be excess. The
-toolkit's one field primitive (merged from the retired `admin-fields` subpath, C2 breaking-window
-pass, R3); compose it directly around a bare custom control when a site's own field needs the
+toolkit's one field primitive (merged from the retired `admin-fields` subpath); compose it
+directly around a bare custom control when a site's own field needs the
 admin's label rhythm.
 
 WHAT `children` MAY HOLD: the control, and nothing that is not the control. This component renders

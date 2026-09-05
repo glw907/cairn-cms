@@ -1,3 +1,7 @@
+// cairn-cms: the component registry's self-documenting reference generator. Walks a
+// ComponentRegistry and emits one markdown file with a section per component (its label, its
+// description, and a worked example serialized through component-grammar.ts), so a site's
+// component set never needs a hand-maintained authoring reference.
 import { serializeComponent } from './component-grammar.js';
 import { emptyValues, type ComponentDef, type ComponentRegistry, type ComponentValues } from './registry.js';
 

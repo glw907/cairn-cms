@@ -164,7 +164,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
     const event = tidyEvent() as unknown as { cookies: unknown };
     event.cookies = undefined;
-    await expect(routes.tidyAction(event as never)).rejects.toThrow(/cookie jar/i);
+    await expect(routes.tidyAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
     expect(tidyFn).not.toHaveBeenCalled();
   });
 

@@ -44,7 +44,7 @@ index](../reference/README.md) documents each subpath individually.*
 
 ## The adapter is the one contract
 
-A site declares a single `CairnAdapter` object, typically at `src/lib/cairn.config.ts`: which
+A site declares a single `CairnAdapter` object, typically at `src/theme/cairn.config.ts`: which
 content concepts exist, the GitHub repository commits land on, the magic-link sender, the render
 function, and the optional extension points (roles, an access map, a nav layout, media). The engine
 never hard-codes a concept, a directory, or a field. Every route factory, every admin screen, and

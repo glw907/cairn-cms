@@ -12,6 +12,7 @@ import { defineAccess } from '../../lib/auth/access.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, backend as sharedBackend } from './_content-harness.js';
+import { testEvent } from '../helpers/test-event.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
@@ -56,13 +57,13 @@ function restrictedMultiRuntime(): CairnRuntime {
 /** A publishAllAction request driven by a named custom role rather than the harness's default editor. */
 function roleActionEvent(role: 'webmaster' | 'publisher') {
   const url = 'https://t.example/admin/posts';
-  return {
-    url: new URL(url),
+  return testEvent({
+    url,
     params: { concept: 'posts' },
     request: new Request(url, { method: 'POST' }),
     locals: { cairnEditor: { email: `${role}@t`, displayName: role, role, capability: 'editor' as const }, cairnBackend: sharedBackend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
+  });
 }
 
 /** A single undated pages concept, so an entry's address is its own path-derived permalink. */
@@ -155,7 +156,7 @@ describe('publishAction', () => {
 
     // The form carries text typed after the last save: publish-what-you-see.
     const location = await redirectedTo(
-      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed after the save' }) as never),
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed after the save' })),
     );
     expect(location).toBe('/admin/posts/2026-05-01-hi?published=1');
 
@@ -180,7 +181,7 @@ describe('publishAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'pending body' }) as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'pending body' })));
 
     expect(gh.read('main', ENTRY_PATH)).toContain('pending body');
     const manifest = parseManifest(gh.read('main', MANIFEST_PATH) ?? '');
@@ -193,7 +194,7 @@ describe('publishAction', () => {
     const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(
-      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'straight to publish' }) as never),
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'straight to publish' })),
     );
     expect(location).toBe('/admin/posts/2026-05-01-hi?published=1');
     expect(gh.read('main', ENTRY_PATH)).toContain('straight to publish');
@@ -210,7 +211,7 @@ describe('publishAction', () => {
     rt.concepts[0].validate = () => ({ ok: false as const, errors: { title: 'Title is required' } });
     const routes = createContentRoutes(rt);
 
-    const result = (await routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never)) as unknown as {
+    const result = (await routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }))) as unknown as {
       status: number;
       data: { error: string; body: string };
     };
@@ -229,7 +230,7 @@ describe('publishAction', () => {
     const routes = createContentRoutes(runtime());
 
     const result = (await routes.publishAction(
-      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
+      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/1 missing page/i);
@@ -248,7 +249,7 @@ describe('publishAction', () => {
     const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(
-      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first-tab text' }) as never),
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first-tab text' })),
     );
     expect(location).toBe('/admin/posts/2026-05-01-hi?published=1');
 
@@ -267,7 +268,7 @@ describe('publishAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' }) as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' })));
 
     const record = infoSpy.mock.calls
       .map((c) => c[0] as { event?: string; concept?: string; id?: string; editor?: string; batch?: boolean })
@@ -300,7 +301,7 @@ describe('publishAction', () => {
     const routes = createContentRoutes(rt);
 
     const location = await redirectedTo(
-      routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'about copy text' }) as never),
+      routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'about copy text' })),
     );
     // The publish still commits: it redirects to the published page and the entry lands on main.
     expect(location).toBe('/admin/pages/about-copy?published=1');
@@ -336,7 +337,7 @@ describe('publishAction', () => {
     gh.install();
     const routes = createContentRoutes(rt);
 
-    await redirectedTo(routes.publishAction(pagesActionEvent('contact', { title: 'Contact', body: 'reach us' }) as never));
+    await redirectedTo(routes.publishAction(pagesActionEvent('contact', { title: 'Contact', body: 'reach us' })));
 
     const collision = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string })
@@ -355,7 +356,7 @@ describe('publishAction', () => {
     const routes = createContentRoutes(runtime());
 
     const result = (await routes.publishAction(
-      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never,
+      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toBe('Your edits are saved. Reload and publish again.');
@@ -405,7 +406,7 @@ describe('publishAllAction', () => {
     const routes = createContentRoutes(multiRuntime());
 
     // The form posts from the pages list, but the redirect lands on the first concept.
-    const location = await redirectedTo(routes.publishAllAction(listActionEvent('pages') as never));
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent('pages')));
     expect(location).toBe('/admin/posts?publishedAll=3');
 
     // One commit (one main ref PATCH) lands every entry file plus the manifest.
@@ -444,7 +445,7 @@ describe('publishAllAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent()));
     expect(location).toBe('/admin/posts?publishedAll=1');
 
     expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
@@ -468,7 +469,7 @@ describe('publishAllAction', () => {
     injectSaveDuringMainPatch(gh, PAGE_BRANCH, PAGE_PATH, '---\ntitle: Mid-publish\n---\nnewer save');
     const routes = createContentRoutes(multiRuntime());
 
-    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent()));
     expect(location).toBe('/admin/posts?publishedAll=2');
 
     // Both entries went live with the content read at publish time.
@@ -486,7 +487,7 @@ describe('publishAllAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent()));
     expect(location).toBe('/admin/posts?error=nothing_to_publish');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
@@ -515,7 +516,7 @@ describe('publishAllAction', () => {
     });
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent()));
     expect(location).toBe('/admin/posts?error=publish_failed');
     // The branch survives a failed commit, so the edits are not lost.
     expect(gh.branches.has(BRANCH)).toBe(true);
@@ -536,7 +537,7 @@ describe('publishAllAction', () => {
     failMainRefPatch();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent()));
     expect(location).toBe('/admin/posts?error=publish_conflict');
 
     const record = warnSpy.mock.calls
@@ -558,7 +559,7 @@ describe('publishAllAction', () => {
     const routes = createContentRoutes(restrictedMultiRuntime());
 
     // publisher cannot reach 'pages' (mapped to webmaster only), so its batch publishes just posts.
-    const location = await redirectedTo(routes.publishAllAction(roleActionEvent('publisher') as never));
+    const location = await redirectedTo(routes.publishAllAction(roleActionEvent('publisher')));
     expect(location).toBe('/admin/posts?publishedAll=1');
     expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
     expect(gh.read('main', PAGE_PATH)).toBeNull();
@@ -575,7 +576,7 @@ describe('publishAllAction', () => {
     gh.install();
     const routes = createContentRoutes(restrictedMultiRuntime());
 
-    const location = await redirectedTo(routes.publishAllAction(roleActionEvent('webmaster') as never));
+    const location = await redirectedTo(routes.publishAllAction(roleActionEvent('webmaster')));
     expect(location).toBe('/admin/posts?publishedAll=2');
     expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
     expect(gh.read('main', PAGE_PATH)).toBe(PAGE_MD);
@@ -618,7 +619,7 @@ describe('the publishedAt first-publish stamp', () => {
     const routes = createContentRoutes(runtime());
     const before = Date.now();
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'live now' }) as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'live now' })));
 
     const stamp = publishedRow(gh)?.publishedAt;
     expect(stamp).toBeTruthy();
@@ -634,7 +635,7 @@ describe('the publishedAt first-publish stamp', () => {
     const routes = createContentRoutes(runtime());
     const before = Date.now();
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first publish' }) as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first publish' })));
 
     const stamp = publishedRow(gh)?.publishedAt;
     expect(stamp).toBeTruthy();
@@ -646,7 +647,7 @@ describe('the publishedAt first-publish stamp', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'edited text' }) as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'edited text' })));
 
     expect(publishedRow(gh)).toMatchObject({ title: 'Hi', publishedAt: EARLIER });
   });
@@ -656,7 +657,7 @@ describe('the publishedAt first-publish stamp', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'edited text' }) as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'edited text' })));
 
     expect(publishedRow(gh)?.publishedAt).toBeUndefined();
   });
@@ -666,7 +667,7 @@ describe('the publishedAt first-publish stamp', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'saved text' }) as never));
+    await redirectedTo(routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'saved text' })));
 
     expect(publishedRow(gh)?.draft).toBe(true);
     expect(publishedRow(gh)?.publishedAt).toBeUndefined();
@@ -693,7 +694,7 @@ describe('the publishedAt first-publish stamp', () => {
     const before = Date.now();
 
     await redirectedTo(
-      routes.publishAllAction(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form: {} }) as never),
+      routes.publishAllAction(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form: {} })),
     );
 
     // The draft-to-live post takes a fresh stamp; the already-stamped page keeps its own.
@@ -709,7 +710,7 @@ describe('the publishedAt first-publish stamp', () => {
     const routes = createContentRoutes(runtime());
 
     await redirectedTo(
-      routes.publishAllAction(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form: {} }) as never),
+      routes.publishAllAction(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form: {} })),
     );
 
     expect(publishedRow(gh)?.publishedAt).toBeUndefined();
@@ -725,7 +726,7 @@ describe('discardAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi') as never));
+    const location = await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi')));
     expect(location).toBe('/admin/posts/2026-05-01-hi?discarded=1');
     expect([...gh.branches.keys()]).toEqual(['main']);
   });
@@ -738,7 +739,7 @@ describe('discardAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi') as never));
+    const location = await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi')));
     expect(location).toBe('/admin/posts');
     expect(gh.branches.has(BRANCH)).toBe(false);
   });
@@ -752,7 +753,7 @@ describe('discardAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi') as never));
+    await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi')));
 
     const record = infoSpy.mock.calls
       .map((c) => c[0] as { event?: string; concept?: string; id?: string; editor?: string })

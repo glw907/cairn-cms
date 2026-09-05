@@ -173,7 +173,7 @@ function validateField(
       // array(reference): coerceToText returns '' for an array, so the empty-first drop below would
       // silently lose an optional list or falsely error a required one. The canonicalizer coerces a
       // lone scalar to one element and a Date element to its id. Each element must pass isValidId (the
-      // item's reference rule this phase); a required empty list errors; the value is set only when the
+      // item's reference rule); a required empty list errors; the value is set only when the
       // list is non-empty.
       const list = referenceIdsFromValue(value);
       if (field.required && list.length === 0) return { issues: [{ path, message: `${label} is required` }] };
@@ -291,18 +291,29 @@ function validateField(
       if (!isValidId(text)) return { issues: [{ path, message: `${label} is not a valid reference` }] };
       return { value: text, issues: [] };
     }
-    default: {
-      // text, textarea, datetime: a trimmed non-empty string. text and textarea also enforce the
-      // string-length and pattern constraints (v1 parity); datetime stays a plain string for now,
-      // since its bounds are out of scope this pass and v1 has no datetime equivalent to match.
-      if (field.type === 'text' || field.type === 'textarea') {
-        const lengthError = stringLengthError(text, field, label);
-        if (lengthError != null) return { issues: [{ path, message: lengthError }] };
-        const formatError = patternError(text, patterns.get(key), label);
-        if (formatError != null) return { issues: [{ path, message: formatError }] };
-      }
+    // text and textarea also enforce the string-length and pattern constraints (v1 parity);
+    // datetime and icon stay a plain string: datetime's bounds are not constrained here (there
+    // is no v1 datetime equivalent to match) and icon's value is a glyph name, not a format the
+    // site constrains.
+    case 'text':
+    case 'textarea': {
+      const lengthError = stringLengthError(text, field, label);
+      if (lengthError != null) return { issues: [{ path, message: lengthError }] };
+      const formatError = patternError(text, patterns.get(key), label);
+      if (formatError != null) return { issues: [{ path, message: formatError }] };
       return { value: text, issues: [] };
     }
+    case 'datetime':
+    case 'icon':
+      return { value: text, issues: [] };
+    default:
+      // Compile-time exhaustiveness proof: every FieldDescriptor member has an explicit case
+      // above, so `field` is typed `never` here; adding a member without a case fails
+      // `npm run check` on the line below. This is a save-validation request path, so a gap
+      // defeated only by an unsafe cast degrades to the same bare-string, no-further-validation
+      // value as the datetime/icon arms above, rather than throwing.
+      field satisfies never;
+      return { value: text, issues: [] };
   }
 }
 
@@ -310,8 +321,8 @@ function validateField(
 // marks that field with an explicit `seo: true`; there is no field-name default, since the record key
 // is arbitrary. Two seo images is a site config error, so fail loudly at declaration (v1 parity).
 // The delivery seo reader resolves the social card off a hardcoded top-level key list, so a nested
-// seo image cannot resolve at delivery; this phase forbids seo: true inside any container and defers
-// nested seo to the pass that generalizes delivery seo resolution.
+// seo image cannot resolve at delivery: seo: true is refused inside any container; nested seo is
+// not supported.
 function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
   const seo: string[] = [];
   for (const [key, field] of Object.entries(record)) {
@@ -319,7 +330,7 @@ function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
     else if (field.type === 'object') {
       for (const [leafKey, leaf] of Object.entries(field.fields)) {
         if (leaf.type === 'image' && leaf.seo === true) {
-          throw new Error(`cairn: the image "${key}.${leafKey}" sets seo: true, but a nested seo image is not supported this phase. Put the social-card image at the top level.`);
+          throw new Error(`cairn: the image "${key}.${leafKey}" sets seo: true, but a nested seo image is not supported. Put the social-card image at the top level.`);
         }
       }
     } else if (field.type === 'array') {
@@ -385,7 +396,7 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
         throw new Error(`cairn: ${where} "${k}" must be a leaf field; containers nest one level only.`);
       }
       if (leaf.type === 'reference') {
-        throw new Error(`cairn: ${where} "${k}" is a reference; a reference inside an object is not supported this phase. Model it as the parent's own concept, or use a top-level array(reference).`);
+        throw new Error(`cairn: ${where} "${k}" is a reference; a reference inside an object is not supported. Model it as the parent's own concept, or use a top-level array(reference).`);
       }
     }
   };

@@ -61,7 +61,7 @@ const manifestOk = checkManifest();
 
 if (tscOk && lintOk && manifestOk) {
   console.log('check:dev-package OK');
-  process.exit(0);
+} else {
+  console.log('check:dev-package FAILED');
+  process.exitCode = 1;
 }
-console.log('check:dev-package FAILED');
-process.exit(1);

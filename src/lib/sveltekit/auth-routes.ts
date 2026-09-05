@@ -1,6 +1,6 @@
 // The SvelteKit handlers for the magic-link flow, consumed by a site's thin route shims.
 // The factory takes per-site branding and an injected send, so tests run the real handlers
-// against a sink. The confirm-load, confirm, and logout handlers arrive in Task 6.
+// against a sink.
 import { redirect } from '@sveltejs/kit';
 import { requireOrigin, requireDb } from '../env.js';
 import {
@@ -189,14 +189,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
     if (await recentlyIssued(db, email, now - SEND_COOLDOWN_MS)) {
-      // Rebind the live token to THIS browser before answering (Geoff, 2026-08-31: "rebind, no
-      // email"). Without it the same-browser binding is a lockout: an attacker POSTing this form
+      // Rebind the live token to THIS browser before answering, deliberately, with no new email
+      // sent. Without it the same-browser binding is a lockout: an attacker POSTing this form
       // once a minute keeps the live row bound to their own nonce, and this very cooldown then
       // throttles the editor's recovery re-request, so the editor can neither confirm the link
-      // sitting in their inbox nor earn a new one. The ratified semantics are
-      // last-requester-wins, and they cost nothing an attacker did not already have: the email
-      // only ever goes to the editor's own address, so asking grants no token, and the editor
-      // recovers by simply asking again.
+      // sitting in their inbox nor earn a new one. The intended semantics are last-requester-wins,
+      // and they cost nothing an attacker did not already have: the email only ever goes to the
+      // editor's own address, so asking grants no token, and the editor recovers by simply asking
+      // again.
       //
       // No new token, no send, and the cooldown window is untouched, so the response is
       // byte-identical to a throttled answer that rebound nothing. This is a server-side write
@@ -301,9 +301,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     const token = String(form.get('token') ?? '');
     if (!token) throw redirect(303, '/admin/login?error=expired');
 
-    // One variable for the whole handler, per Task 6's rule: this same `secure` names the
-    // pending cookie read and deleted here, the session cookie set below, and the CSRF cookie
-    // rotated after it.
+    // One variable for the whole handler: this same `secure` names the pending cookie read and
+    // deleted here, the session cookie set below, and the CSRF cookie rotated after it.
     const secure = csrfSecure({ url: event.url, platform: event.platform });
     const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
     const nonce = event.cookies.get(pendingCookie);
@@ -333,7 +332,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     log.info('auth.session.created', { email });
     // The nonce has done its job; a spent pending cookie left in the browser would outlive the
     // token it was bound to. `secure` here is the same variable the pending cookie was read
-    // under above, one csrfSecure call for the whole handler (Task 6, N-4): the session cookie
+    // under above, one csrfSecure call for the whole handler: the session cookie
     // used to derive `secure` from the bare `event.url.protocol`, independently of the CSRF
     // pair's own PUBLIC_ORIGIN-aware derivation, which could resolve the cookies to different
     // `secure` values on one request. An https request always resolves Secure either way;
@@ -379,7 +378,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  `Set-Cookie` sent over http, which would leave both cookies alive on an http dev host such as
    *  `127.0.0.1`.
    *
-   *  Belt-and-braces (Task 6, security round N1): BOTH cookie-name forms delete for BOTH cookies
+   *  Belt-and-braces: BOTH cookie-name forms delete for BOTH cookies
    *  (bare and `__Host-`, session and CSRF), each with its matching `secure`, not just the one
    *  `csrfSecure` derives for this request. A `PUBLIC_ORIGIN` change between login and logout
    *  changes which name this request's own derivation produces, and the bare-derived-name-only
@@ -403,7 +402,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
-    // One variable, one csrfSecure call (Task 6, N-4): the session cookie used to derive
+    // One variable, one csrfSecure call: the session cookie used to derive
     // `secure` independently from the CSRF pair's own derivation. `!secure` is this same value's
     // complement, not a second independent derivation.
     const secure = csrfSecure({ url: event.url, platform: event.platform });

@@ -1,7 +1,7 @@
 // The tidy output validation: the safety backstop that proves a tidy result is a proofread and not
 // a restructure (spec 2.6) or a successful prompt injection (spec 2.3.3). A pure module taking the
 // captured original and the model's corrected string and returning either the validated change set
-// (the Task 12 diff) or a typed rejection reason. A rejected result is discarded by the caller with
+// (the diff) or a typed rejection reason. A rejected result is discarded by the caller with
 // an honest message and the document is left untouched; nothing here mutates the buffer.
 //
 // Four of the five checks are EXACT and are the real structural backstop: the directive structure,
@@ -20,7 +20,7 @@ import { diffTokens, diffChanges } from './tidy-diff.js';
 import type { Change } from './tidy-diff.js';
 
 /**
- * The reason a tidy result was rejected. Task 14 branches on this; every value maps to the one
+ * The reason a tidy result was rejected. The caller branches on this; every value maps to the one
  *  honest author-facing message, so the reason is for logging and tests, not the user surface.
  *  - `structure`: a directive opener/closer sequence, a heading count or level, or a fenced-code
  *    count diverged (the result restructured the document).
@@ -37,15 +37,15 @@ type TidyRejectionReason = 'structure' | 'frontmatter' | 'media' | 'code' | 'div
  *  discarded and their text is safe.
  */
 export const TIDY_REJECTION_MESSAGE =
-	'Tidy returned a result that changed more than the wording, so it was discarded. Your text is unchanged.';
+  'Tidy returned a result that changed more than the wording, so it was discarded. Your text is unchanged.';
 
 /**
- * The outcome of validating a tidy result. On success it carries the Task 12 change set the review
+ * The outcome of validating a tidy result. On success it carries the change set the review
  *  surface accepts and rejects against; on failure it carries the typed reason and the message.
  */
 export type TidyValidation =
-	| { ok: true; changes: Change[] }
-	| { ok: false; reason: TidyRejectionReason; message: string };
+  | { ok: true; changes: Change[] }
+  | { ok: false; reason: TidyRejectionReason; message: string };
 
 // The divergence bound. The floor allows a fixed number of changed tokens regardless of fraction so
 // a legitimate heavy proofread of a SHORT input is not penalized: a short paragraph with a typo in
@@ -74,12 +74,12 @@ const MEDIA_TOKEN = /media:[A-Za-z0-9.-]+/g;
  *  compare by value, order-independent.
  */
 function mediaHashes(text: string): string[] {
-	const hashes: string[] = [];
-	for (const m of text.matchAll(MEDIA_TOKEN)) {
-		const ref = parseMediaToken(m[0]);
-		if (ref) hashes.push(ref.hash);
-	}
-	return hashes.sort();
+  const hashes: string[] = [];
+  for (const m of text.matchAll(MEDIA_TOKEN)) {
+    const ref = parseMediaToken(m[0]);
+    if (ref) hashes.push(ref.hash);
+  }
+  return hashes.sort();
 }
 
 /**
@@ -90,12 +90,12 @@ function mediaHashes(text: string): string[] {
  *  not enter the signature.
  */
 function directiveSignature(text: string): string {
-	const { depths, roles } = fenceScan(text.split('\n'));
-	const parts: string[] = [];
-	for (let i = 0; i < roles.length; i++) {
-		if (roles[i] !== null) parts.push(`${roles[i]}@${depths[i]}`);
-	}
-	return parts.join(',');
+  const { depths, roles } = fenceScan(text.split('\n'));
+  const parts: string[] = [];
+  for (let i = 0; i < roles.length; i++) {
+    if (roles[i] !== null) parts.push(`${roles[i]}@${depths[i]}`);
+  }
+  return parts.join(',');
 }
 
 /**
@@ -105,12 +105,12 @@ function directiveSignature(text: string): string {
  *  heading fails the comparison.
  */
 function headingSignature(text: string): string {
-	const tree = unified().use(remarkParse).use(remarkGfm).parse(text);
-	const levels: number[] = [];
-	visit(tree, 'heading', (node: { depth?: number }) => {
-		if (typeof node.depth === 'number') levels.push(node.depth);
-	});
-	return levels.join(',');
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(text);
+  const levels: number[] = [];
+  visit(tree, 'heading', (node: { depth?: number }) => {
+    if (typeof node.depth === 'number') levels.push(node.depth);
+  });
+  return levels.join(',');
 }
 
 /**
@@ -121,23 +121,23 @@ function headingSignature(text: string): string {
  *  `inlineCode` node is a span.
  */
 function codeContents(text: string): string[] {
-	const tree = unified().use(remarkParse).use(remarkGfm).parse(text);
-	const values: string[] = [];
-	visit(tree, (node: { type: string; value?: string }) => {
-		if ((node.type === 'code' || node.type === 'inlineCode') && typeof node.value === 'string') {
-			values.push(`${node.type}:${node.value}`);
-		}
-	});
-	return values.sort();
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(text);
+  const values: string[] = [];
+  visit(tree, (node: { type: string; value?: string }) => {
+    if ((node.type === 'code' || node.type === 'inlineCode') && typeof node.value === 'string') {
+      values.push(`${node.type}:${node.value}`);
+    }
+  });
+  return values.sort();
 }
 
 /** True when two string multisets are equal: same length and same sorted contents. */
 function multisetEqual(a: string[], b: string[]): boolean {
-	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; i++) {
-		if (a[i] !== b[i]) return false;
-	}
-	return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
 }
 
 // The changed token amount: the count of tokens the diff marked inserted or deleted, against the
@@ -145,25 +145,25 @@ function multisetEqual(a: string[], b: string[]): boolean {
 // its own tokens. This is the rewrite measure, deliberately coarse, since the structure/token/code
 // checks are the exact backstop and this only catches a wholesale rewrite that slipped past them.
 function divergence(original: string, corrected: string): { changed: number; total: number } {
-	const runs = diffTokens(original, corrected);
-	// Count tokens by splitting each run's text on the same word/non-word boundary the diff uses; a
-	// run's token count is its number of word-or-nonword matches. The original's total is the equal
-	// plus deleted token count.
-	const countTokens = (s: string) => (s.match(/[A-Za-z0-9_]+(?:['’][A-Za-z0-9_]+)*|[^A-Za-z0-9_]+/g) ?? []).length;
-	let changed = 0;
-	let total = 0;
-	for (const run of runs) {
-		const tokens = countTokens(run.text);
-		if (run.kind === 'inserted' || run.kind === 'deleted') changed += tokens;
-		if (run.kind === 'equal' || run.kind === 'deleted') total += tokens;
-	}
-	return { changed, total };
+  const runs = diffTokens(original, corrected);
+  // Count tokens by splitting each run's text on the same word/non-word boundary the diff uses; a
+  // run's token count is its number of word-or-nonword matches. The original's total is the equal
+  // plus deleted token count.
+  const countTokens = (s: string) => (s.match(/[A-Za-z0-9_]+(?:['’][A-Za-z0-9_]+)*|[^A-Za-z0-9_]+/g) ?? []).length;
+  let changed = 0;
+  let total = 0;
+  for (const run of runs) {
+    const tokens = countTokens(run.text);
+    if (run.kind === 'inserted' || run.kind === 'deleted') changed += tokens;
+    if (run.kind === 'equal' || run.kind === 'deleted') total += tokens;
+  }
+  return { changed, total };
 }
 
 /**
  * Validate a tidy result against the captured original. Runs the exact structural checks first (a
  * restructure or a token or code edit is a hard reject regardless of how little else changed), then
- * the length-aware divergence bound. On success returns the Task 12 change set for the review
+ * the length-aware divergence bound. On success returns the change set for the review
  * surface; on failure returns the typed reason and the one honest message.
  *
  * The checks, in order: the directive opener/closer sequence and depths, the ATX heading count and
@@ -173,44 +173,44 @@ function divergence(original: string, corrected: string): { changed: number; tot
  * and nothing else, and it never mutates the buffer.
  */
 export function validateTidy(original: string, corrected: string): TidyValidation {
-	// Directive structure: the opener/closer sequence and depths must match exactly.
-	if (directiveSignature(original) !== directiveSignature(corrected)) {
-		return { ok: false, reason: 'structure', message: TIDY_REJECTION_MESSAGE };
-	}
+  // Directive structure: the opener/closer sequence and depths must match exactly.
+  if (directiveSignature(original) !== directiveSignature(corrected)) {
+    return { ok: false, reason: 'structure', message: TIDY_REJECTION_MESSAGE };
+  }
 
-	// Headings: the same ATX headings at the same levels, in order.
-	if (headingSignature(original) !== headingSignature(corrected)) {
-		return { ok: false, reason: 'structure', message: TIDY_REJECTION_MESSAGE };
-	}
+  // Headings: the same ATX headings at the same levels, in order.
+  if (headingSignature(original) !== headingSignature(corrected)) {
+    return { ok: false, reason: 'structure', message: TIDY_REJECTION_MESSAGE };
+  }
 
-	// Frontmatter: byte-for-byte equal, via the same helper the spellcheck skip uses. A null span
-	// (no frontmatter) on both sides slices to the empty string on both, so a body-only document
-	// passes; a span on one side and not the other diverges.
-	const fmOriginal = frontmatterSpan(original);
-	const fmCorrected = frontmatterSpan(corrected);
-	const fmTextOriginal = fmOriginal ? original.slice(fmOriginal.from, fmOriginal.to) : '';
-	const fmTextCorrected = fmCorrected ? corrected.slice(fmCorrected.from, fmCorrected.to) : '';
-	if (fmTextOriginal !== fmTextCorrected) {
-		return { ok: false, reason: 'frontmatter', message: TIDY_REJECTION_MESSAGE };
-	}
+  // Frontmatter: byte-for-byte equal, via the same helper the spellcheck skip uses. A null span
+  // (no frontmatter) on both sides slices to the empty string on both, so a body-only document
+  // passes; a span on one side and not the other diverges.
+  const fmOriginal = frontmatterSpan(original);
+  const fmCorrected = frontmatterSpan(corrected);
+  const fmTextOriginal = fmOriginal ? original.slice(fmOriginal.from, fmOriginal.to) : '';
+  const fmTextCorrected = fmCorrected ? corrected.slice(fmCorrected.from, fmCorrected.to) : '';
+  if (fmTextOriginal !== fmTextCorrected) {
+    return { ok: false, reason: 'frontmatter', message: TIDY_REJECTION_MESSAGE };
+  }
 
-	// Media: the exact same multiset of hashes across the whole text.
-	if (!multisetEqual(mediaHashes(original), mediaHashes(corrected))) {
-		return { ok: false, reason: 'media', message: TIDY_REJECTION_MESSAGE };
-	}
+  // Media: the exact same multiset of hashes across the whole text.
+  if (!multisetEqual(mediaHashes(original), mediaHashes(corrected))) {
+    return { ok: false, reason: 'media', message: TIDY_REJECTION_MESSAGE };
+  }
 
-	// Code: every code span and fenced or indented block identical. The block count is folded in
-	// here: a multiset of block-and-span values that differs in count or contents fails.
-	if (!multisetEqual(codeContents(original), codeContents(corrected))) {
-		return { ok: false, reason: 'code', message: TIDY_REJECTION_MESSAGE };
-	}
+  // Code: every code span and fenced or indented block identical. The block count is folded in
+  // here: a multiset of block-and-span values that differs in count or contents fails.
+  if (!multisetEqual(codeContents(original), codeContents(corrected))) {
+    return { ok: false, reason: 'code', message: TIDY_REJECTION_MESSAGE };
+  }
 
-	// Divergence: rejected only when the changed amount exceeds BOTH the absolute floor and the
-	// fraction of the total. A short input rides the floor; a long input rides the fraction.
-	const { changed, total } = divergence(original, corrected);
-	if (changed > DIVERGENCE_TOKEN_FLOOR && changed > total * DIVERGENCE_FRACTION) {
-		return { ok: false, reason: 'divergence', message: TIDY_REJECTION_MESSAGE };
-	}
+  // Divergence: rejected only when the changed amount exceeds BOTH the absolute floor and the
+  // fraction of the total. A short input rides the floor; a long input rides the fraction.
+  const { changed, total } = divergence(original, corrected);
+  if (changed > DIVERGENCE_TOKEN_FLOOR && changed > total * DIVERGENCE_FRACTION) {
+    return { ok: false, reason: 'divergence', message: TIDY_REJECTION_MESSAGE };
+  }
 
-	return { ok: true, changes: diffChanges(original, corrected) };
+  return { ok: true, changes: diffChanges(original, corrected) };
 }

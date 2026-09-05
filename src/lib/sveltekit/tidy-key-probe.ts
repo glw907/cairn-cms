@@ -1,4 +1,4 @@
-// cairn-cms: the tidy settings screen's active key probe (save-500-honest-errors, Task 5).
+// cairn-cms: the tidy settings screen's active key probe (save-500-honest-errors).
 // Presence alone stopped being the bar once a live site proved a present-but-revoked key: the
 // settings load calls this to distinguish missing / invalid / valid instead of just presence,
 // through the same injectable TidyClient the tidy action itself calls, so a test's fake client

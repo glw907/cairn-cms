@@ -55,7 +55,7 @@ export interface TidyClient {
     tokens: { input: number; output: number };
   }>;
   /**
-   * The zero-token key-health probe (save-500-honest-errors, Task 5): list available models to
+   * The zero-token key-health probe (save-500-honest-errors): list available models to
    *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
    *  only `tidy` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades to
    *  'unknown' when a client omits it rather than throwing. The signal rides the second argument,

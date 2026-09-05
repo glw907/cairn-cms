@@ -22,7 +22,7 @@
    The directive components (the engine's render output) are styled here too. They
    carry the real engine class names, NOT the mockup's BEM names: a callout is
    `.callout > .callout-title + .callout-body + .callout-points`, an alert is
-   `.alert > .card-body > (.ec-head > .card-title) + .alert-body`. Every rule is
+   `.alert > .card-body > (.cairn-head > .card-title) + .alert-body`. Every rule is
    scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component
    classes (theme.css bundles DaisyUI for the public layer) on specificity.
 
@@ -499,7 +499,7 @@
   }
 
   /* Alert: the second directive, built from the cairn render helpers (a section
-     with a card-body, an ec-head holding an optional icon and the card-title,
+     with a card-body, a cairn-head holding an optional icon and the card-title,
      and an alert-body). DaisyUI's .alert grid is overridden here. Roles note /
      caution; caution leans on the warning ink so it reads as a caution. */
   .prose .alert {
@@ -520,7 +520,7 @@
   .prose .alert .card-body {
     padding: var(--spacing-s) var(--spacing-m);
   }
-  .prose .alert .ec-head {
+  .prose .alert .cairn-head {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -536,14 +536,14 @@
   .prose .alert-caution .card-title {
     color: var(--cairn-warning-ink);
   }
-  .prose .alert .ec-icon {
+  .prose .alert .cairn-icon {
     display: inline-flex;
     color: var(--cairn-info-ink);
   }
-  .prose .alert-caution .ec-icon {
+  .prose .alert-caution .cairn-icon {
     color: var(--cairn-warning-ink);
   }
-  .prose .alert .ec-glyph {
+  .prose .alert .cairn-glyph {
     width: 1.1em;
     height: 1.1em;
   }
@@ -556,7 +556,7 @@
 
   /* Icon: a single glyph with no card and no title, sitting directly in the prose flow rather than
      nested inside another component (the alert head, the video-facade thumb, the cta link, the faq
-     marker all size their own `.ec-glyph` above and below). The direct-child combinator scopes this
+     marker all size their own `.cairn-glyph` above and below). The direct-child combinator scopes this
      rule to exactly that standalone case, so it never fights the more specific nested rules. With no
      sizing rule at all the bare SVG falls back to the browser's default replaced-element box, reading
      as an oversized glyph instead of a modest inline marker; text-height scale keeps it reading like a
@@ -569,13 +569,13 @@
      designed 1.75em marker (measured at ~14x8px of visible ink inside the 28px box, not the full
      square). Adding a stroke here, scoped to the standalone case only, paints those degenerate
      subpaths too, so the whole glyph reads as one deliberate mark at the size this rule already sets;
-     the nested `.ec-glyph` sizings elsewhere in this sheet size icons drawn only inside a filled
+     the nested `.cairn-glyph` sizings elsewhere in this sheet size icons drawn only inside a filled
      shape (a card head, a thumb, a chevron) that never hit this problem, so they keep the plain
      fill-only treatment. */
-  .prose > .ec-icon {
+  .prose > .cairn-icon {
     display: inline-flex;
   }
-  .prose > .ec-icon > .ec-glyph {
+  .prose > .cairn-icon > .cairn-glyph {
     width: 1.75em;
     height: 1.75em;
     stroke: currentColor;
@@ -625,7 +625,7 @@
     background: var(--color-primary);
     color: var(--color-primary-content);
   }
-  .prose .video-facade-thumb .ec-glyph {
+  .prose .video-facade-thumb .cairn-glyph {
     width: 1.3rem;
     height: 1.3rem;
   }
@@ -705,7 +705,7 @@
   .prose .cta-secondary:active {
     background: color-mix(in oklab, var(--color-card-border) 65%, transparent);
   }
-  .prose .cta-link .ec-glyph {
+  .prose .cta-link .cairn-glyph {
     width: 0.9em;
     height: 0.9em;
   }
@@ -756,7 +756,7 @@
     font-size: var(--text-step--1);
     color: var(--color-muted);
   }
-  .prose .micro-cta-link .ec-glyph {
+  .prose .micro-cta-link .cairn-glyph {
     width: 0.9em;
     height: 0.9em;
     color: var(--color-primary);
@@ -807,7 +807,7 @@
     color: var(--color-muted);
     transition: transform 0.2s ease-out;
   }
-  .prose .faq-marker .ec-glyph {
+  .prose .faq-marker .cairn-glyph {
     width: 0.85em;
     height: 0.85em;
   }

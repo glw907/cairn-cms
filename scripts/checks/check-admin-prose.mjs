@@ -235,7 +235,7 @@ function copyForFile(file) {
   return file.endsWith('.ts') ? extractTsCopy(src) : extractCopy(src);
 }
 
-// Print every extracted string, grouped by file, then exit 0. Backs the `--list` flag.
+// Print every extracted string, grouped by file. Backs the `--list` flag.
 /** @param {string[]} files */
 function listCopy(files) {
   for (const file of files) {
@@ -244,7 +244,6 @@ function listCopy(files) {
     console.log(`\n${file}`);
     for (const s of copy) console.log(`  ${s}`);
   }
-  process.exit(0);
 }
 
 // Scan every file, report each tell on stderr, and exit 1 on any hit (0 when clean).
@@ -265,7 +264,8 @@ function scanCopy(files) {
   if (hits > 0) {
     console.error(`\nadmin-copy prose gate: ${hits} tell(s) found. Rewrite in a plain human voice.`);
     console.error('Run `node scripts/check-admin-prose.mjs --list` to read all admin copy at once.');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`admin-copy prose gate: clean (${files.length} components scanned).`);
 }

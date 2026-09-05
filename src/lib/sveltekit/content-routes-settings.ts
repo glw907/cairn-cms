@@ -27,7 +27,7 @@ import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
 
 /**
- * The two-tier tidy settings load (spec 2.8, Task 15). The developer tier is read-only: `enabled`,
+ * The two-tier tidy settings load (spec 2.8). The developer tier is read-only: `enabled`,
  *  `keyConfigured`, and `model`/`modelLabel` are deploy-time facts the editor sees but cannot change.
  *  The editor tier is the resolved `conventions` block, written back through the save. The visibility
  *  gate is truthful: `enabled` is true only when `tidy.enabled` is set AND the API key is present, so
@@ -51,7 +51,7 @@ export interface SettingsData {
   /** Whether the API key secret is present in the Worker env. A presence flag, never the key. */
   keyConfigured: boolean;
   /**
-   * The active-probe verdict for the resolved key (save-500-honest-errors, Task 5): `'missing'`
+   * The active-probe verdict for the resolved key (save-500-honest-errors): `'missing'`
    *  when no key is present, `'valid'` when a zero-token Anthropic call accepts it, `'invalid'`
    *  when Anthropic rejects it (401/403, most likely revoked or mistyped), or `'unknown'` when the
    *  probe did not run (tidy is off) or could not reach Anthropic (a client with no probe surface,
@@ -95,7 +95,7 @@ export interface VocabularyLoadData {
 /**
  * A refused tidy settings save: `fail(400)` on an invalid conventions payload, `fail(500)` on a
  *  malformed committed config, `fail(409)` when the config's head moved since the editor opened
- *  the page. Retired from the public surface (4b, Task 1); the module-level export stays, since
+ *  the page. Retired from the public surface; the module-level export stays, since
  *  `settingsSaveAction`'s return type composes into `createContentRoutesInternal`
  *  (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
  */
@@ -106,7 +106,7 @@ export interface SettingsSaveFailure {
 /**
  * A refused tag-vocabulary save: `fail(400)` on an invalid vocabulary payload, `fail(500)` on a
  *  malformed committed config, `fail(409)` when a removed value is still in use or the config's
- *  head moved since the editor opened the page. Retired from the public surface (4b, Task 1);
+ *  head moved since the editor opened the page. Retired from the public surface;
  *  the module-level export stays, since `vocabularySaveAction`'s return type composes into
  *  `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts`
  *  emitter must be able to name.
@@ -210,7 +210,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Load the two-tier tidy settings (spec 2.8, Task 15). The developer tier (enabled, key, model) is
+   * Load the two-tier tidy settings (spec 2.8). The developer tier (enabled, key, model) is
    *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
    *  `enabled` flag is true only when `tidy.enabled` is set, the key is present, AND the key is not
    *  confirmed invalid, so the screen renders the convention list only then. No secret is returned: only
@@ -218,7 +218,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  config (the same source the tidy action's prompt reads), so the screen and the prompt can never
    *  diverge.
    *
-   *  The active key probe (save-500-honest-errors, Task 5) runs only when tidy is on and the key is
+   *  The active key probe (save-500-honest-errors) runs only when tidy is on and the key is
    *  present, since it would otherwise spend a network round trip proving nothing the screen can use.
    *  A confirmed-invalid key still counts as `keyConfigured` (the checklist item stays checked; the
    *  problem is correctness, not presence) but closes the gate, and an unverifiable probe (`'unknown'`,
@@ -317,7 +317,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Load the tag-vocabulary admin screen (Plan 3): the committed vocabulary plus a per-value
+   * Load the tag-vocabulary admin screen: the committed vocabulary plus a per-value
    *  cross-branch usage count and the in-use-but-unlisted seed set. The committed list is read on the
    *  default branch and degrades to `[]` on a read or parse failure, mirroring navLoad, so the screen
    *  still opens. The usage overlay is best-effort and separate, mirroring mediaLibraryLoad: the
@@ -378,7 +378,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
+   * Save the tag vocabulary: validate the posted list, gate a delete on cross-branch usage
    *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
    *  nav and settings saves write. The transport is settingsSaveAction's exactly: a form POST carrying the
    *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict answered in place as

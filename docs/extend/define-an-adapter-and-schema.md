@@ -115,7 +115,7 @@ covers that cost if you haven't set it up yet.
 ## Assemble the adapter
 
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter, defineConcept, defineRegistry, defineFieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
 
 const registry = defineRegistry({ components: [] });

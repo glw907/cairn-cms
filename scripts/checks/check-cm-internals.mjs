@@ -66,11 +66,11 @@ function main() {
   const all = [...failures, ...evaluate(files, allow).failures];
   if (all.length === 0) {
     console.log('cm-internals: PASS');
-    process.exit(0);
+    return;
   }
   console.error('cm-internals: FAIL');
   for (const f of all) console.error(`  ${f}`);
-  process.exit(1);
+  process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

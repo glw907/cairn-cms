@@ -8,6 +8,7 @@ import { fields } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import type { MediaResolve } from '../../lib/render/resolve-media.js';
 
 const [posts] = normalizeConcepts({
   posts: {
@@ -324,8 +325,8 @@ describe('composeEntryData', () => {
     ]);
     const linkConfig = {
       site: linkSite,
-      render: ({ body, resolve, resolveMedia }: { body: string; resolve?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: unknown }) =>
-        renderMarkdown(body, { resolve, resolveMedia: resolveMedia as never }),
+      render: ({ body, resolve, resolveMedia }: { body: string; resolve?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: MediaResolve }) =>
+        renderMarkdown(body, { resolve, resolveMedia }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',

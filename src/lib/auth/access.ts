@@ -191,7 +191,7 @@ export function hasAccessRule(access: AccessMap | undefined, target: string): bo
 
 // Guaranteed to equal no real route id or pathname (both always start with `/`), so a null
 // `event.route.id` fails the authorization check closed instead of falling back to the
-// attacker-chosen `url.pathname` R9 removed: an access map never declares a rule for this key,
+// attacker-chosen `url.pathname`: an access map never declares a rule for this key,
 // so `hasAccessRule` always refuses it.
 const UNRESOLVED_ROUTE_TARGET = '(unresolved route)';
 // One whole route-group segment: a path segment that opens with `(` and closes with `)` right
@@ -211,7 +211,7 @@ const ROUTE_GROUP_SEGMENT = /\/\([^/]+\)(?=\/|$)/g;
  * the fixed non-matching sentinel rather than the request path or an empty string.
  *
  * Shared by `createSectionAction` (section-action.ts) and `requireAccess` (guard.ts), the two
- * halves of one authorization story (C2 R9 and C2b): both derive their default target this way,
+ * halves of one authorization story: both derive their default target this way,
  * never from `event.url.pathname`, so a load and its own POST agree on what a session is allowed
  * to reach. It stays internal to the engine, never re-exported from a package subpath: a site
  * declares its own target through `SectionActionOptions.target` or `requireAccess`'s own

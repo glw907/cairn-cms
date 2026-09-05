@@ -56,9 +56,10 @@ discriminant, not the fields, gates the chrome).
 
   let { data, children, themeOverride }: Props = $props();
 
-  // The authed member, narrowed once. Every chrome read below goes through `shell`, which is null on
-  // a public payload (the template renders only the children then, so the chrome never reads it). The
-  // authed-branch template guards on `data.public`, so `shell` is non-null wherever the chrome reads.
+  // The authed member, narrowed once for the script's own logic below (the nav-collapse derived,
+  // the theme seed). The authed-branch template still reads `data` directly in most places, since
+  // its own `{#if data.public}` guard already proves `data` is the authed shape there; `shell`
+  // exists for script-side reads that run before that guard is in scope.
   const shell = $derived(data.public ? null : data);
 
   // Hand descendant forms a live getter for the CSRF token the shell load issued, so the field stays
@@ -357,8 +358,8 @@ discriminant, not the fields, gates the chrome).
 
   // Every visible item in the resolved layout, sections' children included (locked call 10), plus
   // the fallback foot group (so an unreferenced Help still surfaces here, the way it did as a
-  // hard-coded palette entry before this task): a section's own label never becomes a command, only
-  // its leaves do.
+  // hard-coded palette entry before this layout became configurable): a section's own label never
+  // becomes a command, only its leaves do.
   const paletteNavItems: NavItem[] = $derived([
     ...navGroups.flatMap((group) => group.items),
     ...fallbackItems,
@@ -498,9 +499,11 @@ discriminant, not the fields, gates the chrome).
   });
 
   // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
-  // can never tab out into the inert document behind it. Redirects into the trap even when focus
-  // currently sits outside drawerNavEl (a defensive fallback for the moment before the focus-in
-  // effect above lands), the same fallback MediaInsertPopover's trap uses.
+  // can never tab out into the inert document behind it. Both directions redirect into the trap
+  // when focus currently sits outside drawerNavEl (a defensive fallback for the moment before the
+  // focus-in effect above lands); MediaInsertPopover's own trap checks a narrower condition on its
+  // Shift+Tab branch, focus sitting on the panel itself rather than anywhere outside it, and its
+  // forward Tab branch carries no such fallback at all.
   function trapDrawerTab(e: KeyboardEvent) {
     if (!drawerNavEl) return;
     const focusables = drawerNavEl.querySelectorAll<HTMLElement>(
@@ -567,9 +570,8 @@ discriminant, not the fields, gates the chrome).
        data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
        still governs the overlay at every width below each route's persist breakpoint, so the toggle
        (and Cmd/Ctrl+B) reopens the nav over the document on demand.
-       Zen recedes the sidebar too, at every width regardless of route kind (plan-locked call 1,
-       docs/superpowers/plans/2026-07-15-admin-reorganization.md): it is an explicit, reversible
-       editor choice, so the persistent breakpoint never overrides it. The checkbox-driven overlay
+       Zen recedes the sidebar too, at every width regardless of route kind: it is an explicit,
+       reversible editor choice, so the persistent breakpoint never overrides it. The checkbox-driven overlay
        still governs the whole sidebar under zen, so the toggle (and Cmd/Ctrl+B) never traps an
        editor away from the nav.
        At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
@@ -599,7 +601,7 @@ discriminant, not the fields, gates the chrome).
     />
 
     <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
-         pointer, keyboard, and assistive tech (the APG modal-dialog contract, Task 8). Never inert
+         pointer, keyboard, and assistive tech (the APG modal-dialog contract). Never inert
          at the persistent breakpoint, where the sidebar sits beside the document, not over it. -->
     <div
       class="drawer-content flex flex-col"
@@ -619,7 +621,7 @@ discriminant, not the fields, gates the chrome).
            metrics, and the two border-bottoms stop meeting at the seam). Below sm the sidebar is an
            overlay drawer, not a visible band to align against, so the alignment argument does not
            bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
-           C1 phone-desk band. Office routes keep the full 64px band at every width. -->
+           phone-desk band. Office routes keep the full 64px band at every width. -->
       <div
         class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
         class:max-sm:px-2={isDeskRoute}
@@ -810,7 +812,7 @@ discriminant, not the fields, gates the chrome).
 
     <div class="drawer-side">
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (Task 8's APG
+      <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (the APG
            treatment): at the persistent breakpoint this is a plain nav landmark beside the document,
            never a modal, so the two attributes stay conditional rather than standing. -->
       <nav
@@ -875,7 +877,7 @@ discriminant, not the fields, gates the chrome).
             <!-- The header carries the visible children's summed count only while the section is
                  closed, since an open <details> already carries each child's own pill (the rollup
                  would double the story); it disappears the instant the section opens, per the
-                 collapsed-header rollup contract (Task 8). -->
+                 collapsed-header rollup contract. -->
             <summary
               class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 type-label font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content"
               aria-label={showHeaderPill ? `${label}, ${attentionSum} pending items` : undefined}

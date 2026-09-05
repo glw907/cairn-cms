@@ -56,6 +56,12 @@ export interface RequestGuard {
  * reports whether a newer call has since superseded it. A client action that can be re-run while
  * an earlier call is still in flight (a dialog reopen, a "Check usage again" retry) pins a token
  * at entry and drops its response after the await if a fresher call has already landed.
+ *
+ * A sibling exists in `spellcheck.ts`'s {@link arbitrateChecked}, an independent arbiter for the
+ * same "drop the stale response" shape with inverted polarity: `isStale` here rejects anything
+ * short of the exact current token, where `SeqArbiter.accept` also accepts a tied seq. The two
+ * were not unified because that polarity difference is load-bearing for each caller, not an
+ * accident, so this file is a real duplication of the pattern, not a licensed one.
  */
 export function createRequestGuard(): RequestGuard {
   let seq = 0;

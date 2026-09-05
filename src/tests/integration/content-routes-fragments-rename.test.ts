@@ -67,7 +67,7 @@ async function rename(
   slug: string,
 ): Promise<{ location?: string; status?: number; error?: string }> {
   try {
-    const result = (await routes.renameAction(renameEvent(concept, id, slug) as never)) as unknown as {
+    const result = (await routes.renameAction(renameEvent(concept, id, slug))) as unknown as {
       status: number;
       data: { error: string };
     };
@@ -90,7 +90,7 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
     // Publish the fragment itself, then a post whose body includes it. manifestEntryFromFile's real
     // extractIncludes computes the includes row from this body; nothing here hand-writes the manifest.
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
       routes.publishAction(
@@ -98,7 +98,7 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
           title: 'Hi',
           date: '2026-05-01',
           body: 'See.\n\n::include{fragment="welcome"}',
-        }) as never,
+        }),
       ),
     );
 
@@ -132,10 +132,10 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
     const routes = createContentRoutes(runtime());
 
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'taken', { title: 'Taken', body: 'Already here.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'taken', { title: 'Taken', body: 'Already here.' })),
     );
 
     const out = await rename(routes, 'fragments', 'welcome', 'taken');

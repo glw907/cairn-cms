@@ -22,9 +22,8 @@ import type { EmailSender } from '../email.js';
  * ```
  *
  * A recommended convenience preset, not a requirement: every route factory's env parameter is
- *  structurally satisfied by a bare `wrangler types`-generated env too (env-genericity sweep,
- *  R5), so this type exists to catch a forgotten binding at compile time, not to unblock the
- *  factory assignments themselves.
+ *  structurally satisfied by a bare `wrangler types`-generated env too, so this type exists to
+ *  catch a forgotten binding at compile time, not to unblock the factory assignments themselves.
  *
  * A media-enabled site also intersects {@link CairnMediaBindings}, since `MEDIA_BUCKET` exists only
  *  on a site that turns media on. The GitHub App's id and installation id are not runtime bindings:

@@ -111,6 +111,11 @@ The release step sets the version number at the cut and renames this section to 
   (a host nulls its reference only when the revoked value is the one it still holds), so an
   out-of-order destroy from a superseded `{#key}` instance can never clobber a newer, already-live
   grant.
+- **The five classes the render pipeline stamps onto its built-in directives rename from `ec-*`
+  to `cairn-*`.** Rename `.ec-head` to `.cairn-head`, `.ec-icon` to `.cairn-icon`,
+  `.ec-icon-secondary` to `.cairn-icon-secondary`, `.ec-glyph` to `.cairn-glyph`, and `.ec-grid`
+  to `.cairn-grid` in any hand-authored prose CSS that targets `cardShell`/`headRow`/`iconSpan`/
+  `renderGlyph`/`markFirstList` output. See `docs/reference/render.md` for the full emitted list.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

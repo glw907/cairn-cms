@@ -88,7 +88,7 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
     expect(location).toBe('/admin/posts/2026-05-01-new?renamed=1');
     const tree = treeOf(calls);
     expect(tree.find((t) => t.path === 'src/content/posts/2026-05-01-hi.md')!.sha).toBeNull();
@@ -113,7 +113,7 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
     expect(location).toBe('/admin/posts/2026-05-01-new?renamed=1');
     const tree = treeOf(calls);
     const home = tree.find((t) => t.path === 'src/content/pages/home.md')!;
@@ -136,7 +136,7 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
     const tree = treeOf(calls);
     const moved = tree.find((t) => t.path === 'src/content/posts/2026-05-01-new.md')!;
     expect(moved.content).toContain('cairn:posts/2026-05-01-new');
@@ -158,7 +158,7 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
 
     // The rename removes the old key and adds a new one, so the renamed row's stamp is carried
     // explicitly; the linker's row goes through the upsert chokepoint and keeps its own.
@@ -175,7 +175,7 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
+    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new'))) as unknown as {
       status: number; data: { error: string };
     };
     expect(result.status).toBe(409);
@@ -190,7 +190,7 @@ describe('renameAction', () => {
     const files = new Map<string, string | null>([['src/content/.cairn/index.json', JSON.stringify({ version: 1, entries: [] })]]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'hi') as never)) as unknown as {
+    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'hi'))) as unknown as {
       status: number; data: { error: string };
     };
     expect(result.status).toBe(400);
@@ -213,7 +213,7 @@ describe('renameAction with a pending branch', () => {
     gh.createBranch('cairn/posts/2026-05-01-hi', 'main');
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
+    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new'))) as unknown as {
       status: number; data: { error: string };
     };
     expect(result.status).toBe(409);
@@ -227,7 +227,7 @@ describe('renameAction with a pending branch', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
     expect(location).toBe('/admin/posts/2026-05-01-new?renamed=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-new.md')).toContain('title: Hi');
     expect(gh.read('main', ENTRY_PATH)).toBeNull();

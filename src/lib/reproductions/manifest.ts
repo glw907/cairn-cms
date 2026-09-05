@@ -11,8 +11,7 @@
 // The Svelte-importing half (component references, fixture props, poses, the context wrapper) is
 // ./index.ts, on the `@glw907/cairn-cms/reproductions` subpath. Nothing here may import it.
 //
-// The ids, their order, and the flags come from the story inventory in cairn-pub
-// docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md; the per-story mechanism
+// The ids, their order, and the flags come from the story inventory whose per-story mechanism
 // evidence is docs/internal/record/repro-story-audit.md.
 
 /**

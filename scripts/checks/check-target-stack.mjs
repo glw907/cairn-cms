@@ -106,7 +106,8 @@ function main() {
   if (errors.length > 0) {
     console.error('check-target-stack: the target-stack table has drifted from its sources:');
     for (const error of errors) console.error(`  - ${error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`check-target-stack: OK (${Object.keys(expected).length} rows match)`);
 }

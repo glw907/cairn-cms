@@ -42,7 +42,7 @@ describe('saveAction on the pending branch', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'hello' }) as never));
+    const location = await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'hello' })));
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
 
     // The entry file lives on the branch, not on main.
@@ -61,8 +61,8 @@ describe('saveAction on the pending branch', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'first' }) as never));
-    await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'second' }) as never));
+    await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'first' })));
+    await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'second' })));
 
     const refCreates = gh.calls.filter((c) => c.method === 'POST' && c.url.endsWith('/git/refs'));
     expect(refCreates).toHaveLength(1);
@@ -77,7 +77,7 @@ describe('saveAction on the pending branch', () => {
     const routes = createContentRoutes(runtime());
 
     const result = (await routes.saveAction(
-      saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/1 missing page/i);
@@ -97,7 +97,7 @@ describe('createAction with a pending branch', () => {
     const routes = createContentRoutes(runtime());
 
     const result = (await routes.createAction(
-      createEvent({ slug: 'hello', date: '2026-05-01' }) as never,
+      createEvent({ slug: 'hello', date: '2026-05-01' }),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/already exists/i);

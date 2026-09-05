@@ -12,7 +12,7 @@
 // `[role="heading"]`): the text before the first heading is its own region, and each heading opens
 // a new one that runs until the next, MINUS CHROME.
 //
-// Ruling 4 (Task 16b, 2026-07-28, Geoff): the region definition above, before this ruling, still
+// Ruling 4 (2026-07-28, Geoff): the region definition above, before this ruling, still
 // counted a route's own toolbar, pagination, and column-header furniture as if it were the body
 // prose or data the rule exists to test. Every one of the ten advisories the rendered baseline
 // raised against cairn's own admin (five routes times two themes, every one at exactly three

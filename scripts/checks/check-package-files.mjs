@@ -369,32 +369,37 @@ function main() {
   const migrationsResult = checkPackageFiles(files);
   if (!migrationsResult.ok) {
     console.error(`check-package-files: ${migrationsResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const channelResult = checkChannelMigrationPacked(files);
   if (!channelResult.ok) {
     console.error(`check-package-files: ${channelResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const docsResult = checkDocsPacked(files);
   if (!docsResult.ok) {
     console.error(`check-package-files: ${docsResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const skillResult = checkSkillPacked(files);
   if (!skillResult.ok) {
     console.error(`check-package-files: ${skillResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const reachable = reachableRuleBasenames(ROOT);
   const reachabilityResult = checkRuleReachability(files, reachable.static, reachable.rendered);
   if (!reachabilityResult.ok) {
     console.error(`check-package-files: ${reachabilityResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   // The only check here that reads the exports map rather than the packed file list.
@@ -402,7 +407,8 @@ function main() {
   const workerResult = checkWorkerCondition(packageJson.exports);
   if (!workerResult.ok) {
     console.error(`check-package-files: ${workerResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   console.log(

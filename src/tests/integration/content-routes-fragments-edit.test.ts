@@ -63,9 +63,9 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(baseRuntime({ concepts: [postsConcept()] }));
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
-    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(data.fragmentTargets).toBeNull();
   });
 
@@ -77,20 +77,20 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'address', { title: 'Address', body: 'Somewhere.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'address', { title: 'Address', body: 'Somewhere.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
 
     // A post sees both, so the corpus really is there to offer.
-    const post = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const post = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(post.fragmentTargets).toHaveLength(2);
 
-    const fragment = await routes.editLoad(editEvent('fragments', 'welcome') as never);
+    const fragment = await routes.editLoad(editEvent('fragments', 'welcome'));
     expect(fragment.fragmentTargets).toBeNull();
   });
 
@@ -99,9 +99,9 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
-    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(data.fragmentTargets).toEqual([]);
   });
 
@@ -110,18 +110,18 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
     // A pending (unpublished) edit to the fragment must never leak into another entry's targets:
     // fragmentTargets reads bodies from the default branch only.
     await redirectedTo(
-      routes.saveAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Pending edit body.' }) as never),
+      routes.saveAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Pending edit body.' })),
     );
 
-    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(data.fragmentTargets).toContainEqual({ id: 'welcome', title: 'Welcome', body: 'Hi there.\n' });
   });
 
@@ -130,16 +130,16 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
     // The fragment file vanishes out of band while the manifest still lists it. A 404 reads as a
     // genuine absence (readFile returns null), which is a different branch from a transport failure.
     delete gh.branches.get('main')!['src/content/fragments/welcome.md'];
 
-    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(data.fragmentTargets).toEqual([]);
   });
 
@@ -152,10 +152,10 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
 
     // A 500 on the fragment's own path only: readRaw throws, unlike the 404 above. Everything else
@@ -172,7 +172,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     );
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(data.fragmentTargets).toEqual([]);
     // The sink takes the record object, not a string.
     const records = warn.mock.calls.map((c) => c[0] as { event?: string; fragment?: string });
@@ -188,13 +188,13 @@ describe('editLoad: linkTargets excludes non-routable concepts (Task 6)', () => 
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
 
-    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(data.linkTargets.map((t) => t.concept)).not.toContain('fragments');
     expect(data.linkTargets.map((t) => t.id)).toContain('2026-05-hi');
   });
@@ -206,15 +206,15 @@ describe('editLoad: routable (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
-      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
 
-    const postData = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    const postData = await routes.editLoad(editEvent('posts', '2026-05-hi'));
     expect(postData.routable).toBe(true);
-    const fragmentData = await routes.editLoad(editEvent('fragments', 'welcome') as never);
+    const fragmentData = await routes.editLoad(editEvent('fragments', 'welcome'));
     expect(fragmentData.routable).toBe(false);
   });
 });
@@ -225,15 +225,15 @@ describe('editLoad: usage visibility for a fragments-concept entry (Task 6)', ()
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
       routes.publishAction(
-        saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.\n\n::include{fragment="welcome"}' }) as never,
+        saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.\n\n::include{fragment="welcome"}' }),
       ),
     );
 
-    const data = await routes.editLoad(editEvent('fragments', 'welcome') as never);
+    const data = await routes.editLoad(editEvent('fragments', 'welcome'));
     expect(data.inboundLinks.some((l) => l.id === '2026-05-hi')).toBe(true);
   });
 });
@@ -244,7 +244,7 @@ describe('saveToBranch: the nested-include bounce (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     const result = (await routes.saveAction(
-      saveEvent('fragments', 'nested', { title: 'Nested', body: '::include{fragment="other"}' }) as never,
+      saveEvent('fragments', 'nested', { title: 'Nested', body: '::include{fragment="other"}' }),
     )) as unknown as { status: number; data: { error: string; body: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toBe("A fragment can't include another fragment.");
@@ -259,11 +259,11 @@ describe('saveToBranch: the nested-include bounce (Task 6)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi.' })),
     );
     const location = await redirectedTo(
       routes.saveAction(
-        saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: '::include{fragment="welcome"}' }) as never,
+        saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: '::include{fragment="welcome"}' }),
       ),
     );
     expect(location).toMatch(/^\/admin\/posts\/2026-05-hi\?saved=1/);

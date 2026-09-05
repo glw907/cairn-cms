@@ -7,6 +7,43 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-09-05: internals-C pass complete (audit-remediation slice 7, coherence)
+
+Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-c-pass.md` (worktree
+`internals-c`, off post-B `main`). All thirteen tasks landed through the
+implementer/diff-reviewer/gate chain: type-level exhaustiveness over `FieldDescriptor`'s five
+dispatch sites (compile-time-only proof, permissive runtime fallback preserved on every Worker
+request path); the `check:idioms` gate born green (leading-tab indentation, the
+`process.exit(`-to-`process.exitCode` conversion across 18 `scripts/checks/*.mjs` files, three
+comment-register rules); the pass-scoped comment-citation purge across all of `src/lib`; the
+`ec-*` -> `cairn-*` emitted-class rename (the pass's one `Consumers must:` event); the full
+`as never` retirement from `src/tests` (881 casts to zero, minus the annotated escape hatch);
+truthful module headers and a unified `logCommitFailed` call style; the `docs/internal/
+src-lib-map.md` contributor map; the `readPublicOrigin`/`csrfSecure` reconciliation at platform
+depth only; and the `createSectionAction` docs repositioning. Final state: `npm run check` 0/0,
+`npm test` exit 0, 22 named gates green, and a from-scratch showcase install/build/e2e (155
+Playwright tests) exit 0.
+
+What the gate caught: the three-reviewer pass-end fan-out (`cloudflare-workers-reviewer`,
+`web-auth-security-reviewer`, `svelte-reviewer`) found no blocking architectural defect, but did
+find the exhaustiveness rewrite had turned three permissive dispatch defaults into runtime
+throws on a save/validate/form-load request path; the fix round (`994bf8e5`) restored the
+permissive fallback on all three while keeping the proof compile-time-only, per the conductor's
+own exhaustiveness rule. One asymmetry was flagged non-blocking and left deliberately:
+`decodeField`'s default arm still throws `unreachable()` (its one live caller, genuinely
+unreachable for any real value today), while its three siblings now degrade permissively; the
+next pass touching a field descriptor's dispatch sites should decide this on purpose rather than
+rediscover the split.
+
+What a later pass would be wrong to rediscover: the workstation suspended for 8 hours 13 minutes
+mid-pass when GNOME's 15-minute-on-battery rule fired because the runaway-work battery guard
+(inhibitor plus watchdog) was never armed for this run; arm both before any unattended run past
+roughly 30 minutes, battery or not. The measured build that ran concurrently with this pass's
+close surfaced four engine defects and two undocumented inference traps, filed to `ROADMAP.md`'s
+Next tier rather than fixed here, since none falls inside this pass's task list. Budget: ceiling
+6.5M; planning misses 1 (Task 8's config-location escalation), execution sittings 0; the token
+spend figure is recorded at STATUS close.
+
 ## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits), merged at `0ac9b40a` (PR #48)
 
 Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-b-pass.md` (worktree

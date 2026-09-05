@@ -109,7 +109,7 @@ function deriveHeroImage(
 /**
  * Substitutes for {@link composeEntryData}'s three resolvers, each defaulting to the build's own
  *  (throwing) pair drawn from `config.site`, or `config.resolveMedia` for the hero. `previewLoad`
- *  (task 3b) is the first caller to pass these: the marking link and fragment resolvers built from
+ *  is the first caller to pass these: the marking link and fragment resolvers built from
  *  a pending branch's manifest, and a request-time media resolver built from that branch's
  *  `media.json`. The hero derivation consumes `resolveMedia` from here too, not only the body render.
  */
@@ -125,7 +125,7 @@ export interface EntryDataOverrides {
 /**
  * Compose one entry's public data shape: the rendered html, its SEO, its adjacent-entry pair, and
  *  its hero projection. `createPublicRoutes`'s `entryLoad` is lookup-then-compose over this
- *  function with no overrides, so its output is unchanged; `previewLoad` (task 3b) is the first
+ *  function with no overrides, so its output is unchanged; `previewLoad` is the first
  *  caller to pass `overrides`, substituting the marking resolvers and a request-time media
  *  resolver in place of the build's throwing pair and the site's committed `media.json`.
  */
@@ -195,7 +195,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
   const { site, resolveMedia, assetsEnabled } = config;
 
   // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
-  // every public hero and body `media:` token renders bare (the ecxc 0.57.0 finding). The condition
+  // every public hero and body `media:` token renders bare (a consuming site's 0.57.0 finding). The condition
   // is a property of the wiring, not of any one load, so it is checked once here at construction
   // rather than per entryLoad or per image, which keeps the warning loud-once and out of the
   // prerender hot path. Resolution is unchanged; resolveMedia alone still gates the hero projection.

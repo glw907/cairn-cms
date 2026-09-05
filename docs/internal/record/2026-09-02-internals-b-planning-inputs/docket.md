@@ -310,6 +310,10 @@ fixed there, all verified against the internals branch's own final tree:
   ran on adapter-node in a production site), but the two functions now answer a
   structurally identical question, "is `PUBLIC_ORIGIN` set to a non-local origin,"
   differently. Reconcile onto one shared read the next time either file is opened.
+  **(2026-09-04, internals-C Task 9): reconciled onto one shared `readPublicOrigin`, but
+  the consultation-depth divergence persists by design; `isDeployedHost` keeps the dual
+  read and `csrfSecure` consumes the shared reader at platform depth only. Retirement
+  trigger: `csrfSecure` starts running on adapter-node in a production site.**
 
 ## Polish-slice inputs (noted at the internals close, 2026-09-03)
 

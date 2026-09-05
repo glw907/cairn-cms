@@ -6,7 +6,7 @@ import { defineRegistry } from '../../lib/render/registry.js';
 import type { ComponentContext } from '../../lib/render/registry.js';
 
 // Local fixture helper: pull the <h2> out as a .card-title and wrap it in an
-// .ec-head row. The engine no longer ships a heading-sniffing splitHead, so the
+// .cairn-head row. The engine no longer ships a heading-sniffing splitHead, so the
 // fixture builds its own head from the stamped section.
 function fixtureHead(node: Element): { head: Element; rest: ElementContent[] } {
   const children = node.children as ElementContent[];
@@ -14,7 +14,7 @@ function fixtureHead(node: Element): { head: Element; rest: ElementContent[] } {
   const h2 = children[i] as Element;
   h2.properties = { ...h2.properties, className: ['card-title'] };
   const rest = children.filter((_, j) => j !== i);
-  return { head: h('div', { className: ['ec-head'] }, [h2]), rest };
+  return { head: h('div', { className: ['cairn-head'] }, [h2]), rest };
 }
 
 const reg = defineRegistry({
@@ -39,14 +39,14 @@ describe('rehypeDispatch', () => {
       children: [h('div', { dataPrimitive: 'card' }, [h('h2', ['Title']), h('p', ['Body'])])],
     } as Root;
     rehypeDispatch(reg)(tree);
-    const section = tree.children[0] as never as {
+    const section = tree.children[0] as {
       tagName: string;
       children: { children: { properties: { className: string[] } }[] }[];
     };
     expect(section.tagName).toBe('section');
-    // section > div.card-body > [div.ec-head, div.section-body]
+    // section > div.card-body > [div.cairn-head, div.section-body]
     const cardBody = section.children[0];
-    expect(cardBody.children[0].properties.className).toContain('ec-head');
+    expect(cardBody.children[0].properties.className).toContain('cairn-head');
   });
 
   it('stamps a data-rise ordinal on top-level primitives in document order', () => {
@@ -59,17 +59,17 @@ describe('rehypeDispatch', () => {
       ],
     } as Root;
     rehypeDispatch(reg)(tree);
-    const first = tree.children[0] as never as { properties: { dataRise?: string } };
-    const second = tree.children[2] as never as { properties: { dataRise?: string } };
+    const first = tree.children[0] as { properties: { dataRise?: string } };
+    const second = tree.children[2] as { properties: { dataRise?: string } };
     // The index counts primitives only, so the interleaved <p> does not bump it.
     expect(first.properties.dataRise).toBe('0');
     expect(second.properties.dataRise).toBe('1');
   });
 
-  it('markFirstList tags the first <ul> with ec-grid', () => {
+  it('markFirstList tags the first <ul> with cairn-grid', () => {
     const ul = h('ul', [h('li', ['a'])]);
     const out = markFirstList([h('p', ['x']), ul]);
-    expect(out?.properties?.className).toContain('ec-grid');
+    expect(out?.properties?.className).toContain('cairn-grid');
   });
 
   const islandReg = defineRegistry({
@@ -80,8 +80,8 @@ describe('rehypeDispatch', () => {
         description: '',
         hydrate: true,
         attributes: {
-          from: { type: 'text', label: 'From' } as never,
-          rate: { type: 'number', label: 'Rate' } as never,
+          from: { type: 'text', label: 'From' },
+          rate: { type: 'number', label: 'Rate' },
         },
         build: () => h('p', { className: ['fallback'] }, ['1 mi = 1.609 km']),
       },
@@ -90,7 +90,7 @@ describe('rehypeDispatch', () => {
         label: '',
         description: '',
         hydrate: 'visible',
-        attributes: { active: { type: 'text', label: 'Active' } as never },
+        attributes: { active: { type: 'text', label: 'Active' } },
         build: () => h('div', { className: ['fallback'] }, ['tab']),
       },
     ],
@@ -162,10 +162,10 @@ describe('ctx.attr', () => {
 });
 
 describe('headRow', () => {
-  it('builds an ec-head with an h2.card-title and no icon when none is given', () => {
+  it('builds a cairn-head with an h2.card-title and no icon when none is given', () => {
     const row = headRow([{ type: 'text', value: 'Hello' }]);
     expect(row.tagName).toBe('div');
-    expect(row.properties?.className).toEqual(['ec-head']);
+    expect(row.properties?.className).toEqual(['cairn-head']);
     expect(row.children).toHaveLength(1);
     const heading = row.children[0] as Element;
     expect(heading.tagName).toBe('h2');
@@ -174,12 +174,12 @@ describe('headRow', () => {
   });
 
   it('places a pre-built icon before the heading when given', () => {
-    const icon = h('span', { className: ['ec-icon'] }, []);
+    const icon = h('span', { className: ['cairn-icon'] }, []);
     const row = headRow([{ type: 'text', value: 'Hi' }], icon);
     expect(row.children).toHaveLength(2);
     const first = row.children[0] as Element;
     expect(first.tagName).toBe('span');
-    expect(first.properties?.className).toEqual(['ec-icon']);
+    expect(first.properties?.className).toEqual(['cairn-icon']);
     expect((row.children[1] as Element).tagName).toBe('h2');
   });
 });

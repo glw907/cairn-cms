@@ -1,3 +1,7 @@
+// cairn-cms: the component directive grammar (`:::name[label]{key="value"}`), the codec between a
+// component's serialized markdown and its parsed slot/attribute values. `serializeComponent` and
+// `parseComponent`/`parseComponentWithRawKeys` are inverses of each other over that one grammar, so
+// the editor's insert form and the validator round-trip through the same string shape.
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkDirective from 'remark-directive';
@@ -34,7 +38,8 @@ function nestedSlots(def: ComponentDef): SlotDef[] {
 }
 
 /**
- * Render a parsed component node back to its `{% name %}` directive source, the inverse of {@link parseComponent}.
+ * Render a parsed component node back to its `:::name[label]{key="value"}` directive source, the
+ * inverse of {@link parseComponent}.
  */
 export function serializeComponent(def: ComponentDef, values: ComponentValues): string {
   const fence = COLON.repeat(nestedSlots(def).length > 0 ? 4 : 3);

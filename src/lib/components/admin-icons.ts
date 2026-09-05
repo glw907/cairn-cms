@@ -1,5 +1,7 @@
-// The fixed set of Lucide glyphs the admin chrome uses, each a per-icon import so only these ship.
-// Components import from here, which keeps one import surface and documents the chrome's icon set.
+// A barrel of Lucide glyphs the admin curates as a shared set, each a per-icon import so only
+// these ship. Most components import a glyph directly from `@lucide/svelte/icons/*` instead
+// (Lucide is still tree-shaken per icon either way); this barrel holds the icons the admin
+// treats as its shared vocabulary, not strictly a more-than-one-consumer set.
 export { default as MenuIcon } from '@lucide/svelte/icons/menu';
 export { default as SearchIcon } from '@lucide/svelte/icons/search';
 export { default as ArrowUpIcon } from '@lucide/svelte/icons/arrow-up';

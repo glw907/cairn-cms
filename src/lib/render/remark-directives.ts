@@ -1,3 +1,7 @@
+// cairn-cms: the remark step that stamps a parsed component directive with the hast data markers
+// (data-primitive, data-slot, data-role, the data-attr<Key> set) rehype-dispatch.ts reads back to
+// route it to its ComponentRegistry entry's `render`. This is the mdast-to-hast handoff for every
+// component in the render pipeline.
 import type { Paragraph, PhrasingContent, Root, Text } from 'mdast';
 import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive';
 import { visit } from 'unist-util-visit';

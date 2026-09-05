@@ -56,13 +56,17 @@ describe('hydrateIslands', () => {
     class FakeObserver {
       constructor(private cb: IntersectionObserverCallback) {}
       observe(node: Element) {
-        trigger = () => this.cb([{ isIntersecting: true, target: node } as IntersectionObserverEntry], this as never);
+        trigger = () =>
+          this.cb(
+            [{ isIntersecting: true, target: node } as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver,
+          );
       }
       disconnect() {}
       unobserve() {}
       takeRecords() { return []; }
     }
-    window.IntersectionObserver = FakeObserver as never;
+    window.IntersectionObserver = FakeObserver as unknown as typeof IntersectionObserver;
     try {
       boundary({ label: 'later' }, { visible: true });
       hydrateIslands({ echo: Echo });

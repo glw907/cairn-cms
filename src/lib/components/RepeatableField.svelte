@@ -8,7 +8,7 @@ each row either a single leaf (`array(text)`, `array(image)`) or a flat object g
 Rows are wrapped in a `{ id, value }` envelope so node identity follows a row through a reorder or a
 remove and an in-progress edit (or the keyboard focus) never jumps to the wrong row. The id is a
 seed-time counter, not a random uuid, so the server and client agree at hydration. The envelope is
-UI-only; the form names derive from each row's CURRENT position (`${name}.${i}`), so the Task 3
+UI-only; the form names derive from each row's CURRENT position (`${name}.${i}`), so the
 decoder reads a compact, ordered set. The component seeds once from `rows`; the `{#key entryKey}`
 wrapper in EditPage remounts it on an entry change, so it adds no re-seed effect.
 

@@ -1,6 +1,5 @@
-// cairn-cms: identity derivation and code handling for the auth-channel factory (spec
-// docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, Storage section). No D1
-// access lives here; store.ts owns every SQL statement.
+// cairn-cms: identity derivation and code handling for the auth-channel factory. No D1 access
+// lives here; store.ts owns every SQL statement.
 import { hashToken } from '../auth/crypto.js';
 
 /**

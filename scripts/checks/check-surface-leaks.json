@@ -13,6 +13,12 @@
       "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisorynotice."
     },
     {
+      "name": "Change",
+      "subpath": "/components",
+      "model": "type-checker",
+      "standing-unverdicted": "First surfaced by this rider's own derivation (Task 9, internals-C, 2026-09-04), once its /components clause started walking the barrel's plain type exports mechanically instead of skipping the subpath outright. `Change` (src/lib/components/tidy-diff.ts:36) is never exported from any subpath and is reachable through TidyApi.enter's `changes: Change[]` parameter, one hop past the already-named `TidyApi`."
+    },
+    {
       "name": "ConfirmData",
       "subpath": "/sveltekit",
       "model": "type-checker",

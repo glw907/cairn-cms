@@ -56,6 +56,7 @@
     "check:custom-surface": "npm run package && node scripts/checks/check-custom-surface.mjs",
     "check:chassis-boundary": "node scripts/checks/check-chassis-boundary.mjs",
     "check:cm-internals": "node scripts/checks/check-cm-internals.mjs",
+    "check:idioms": "node scripts/checks/check-idioms.mjs",
     "check:invisible-craft": "npm run package && node scripts/checks/check-invisible-craft.mjs",
     "check:admin-css-classes": "npm run package && node scripts/checks/check-admin-css-classes.mjs",
     "update-admin-sheet-inventory": "npm run package && node scripts/build/update-admin-sheet-inventory.mjs",

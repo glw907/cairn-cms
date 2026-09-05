@@ -4,10 +4,10 @@
 // production build and refuses on the flag alone), `auth-channel/factory.ts` (one factory
 // instance serves both dev and prod, so it additionally requires a deployed request before
 // refusing), and `sveltekit/csrf.ts` (which reads only the local-host predicate). A divergent
-// second wording would violate the read-from-the-source rule this pass's own Task 1 enforces;
-// the two flag refusals diverge on WITNESS, never on message, and each states why where it fires
-// (Task 9, ruling 4 as letter-amended: refuse when the flag is set AND the request is deployed;
-// docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
+// second wording would violate the read-from-the-source rule; the two flag refusals diverge on
+// WITNESS, never on message, and each states why where it fires (ruling 4 as letter-amended:
+// refuse when the flag is set AND the request is deployed; docs/internal/engine-rulings.md,
+// `dev-backend-flag-refusal`).
 //
 // It sits at the lib root rather than under `auth-channel/`, where it started, because its
 // consumers now span `sveltekit/` and `auth-channel/`. It imports nothing, so any module can read
@@ -51,18 +51,42 @@ export function isLocalHost(hostname: string): boolean {
 
 /**
  * Read `PUBLIC_ORIGIN` from whichever env source this runtime carries it in: a Cloudflare Worker
- * var lands on `platform.env`, an adapter-node OS var on `process.env`. The adapter-node half is
- * what makes {@link isDeployedHost} work at all on the deployment where the Host header is most
- * freely forged, so it is not an optional convenience.
+ * var lands on `platform.env`, an adapter-node OS var on `process.env`. Two consultation depths
+ * exist because two callers need two different guarantees from the same value:
+ *
+ * - The default (dual) depth, `readPublicOrigin(platformEnv)`, reads `platform.env` first and
+ *   falls through to `process.env` unconditionally when the platform read yields nothing. This is
+ *   what makes {@link isDeployedHost} work at all on adapter-node, the deployment where the Host
+ *   header is most freely forged, so it is not an optional convenience.
+ * - `{ depth: 'platform-only' }` reads `platform.env` alone and never falls through, no matter what
+ *   `process.env` carries. `csrfSecure` (`sveltekit/csrf.ts`) is the one platform-only consumer,
+ *   for four reasons recorded on that function's own doc comment: the doctor probe's external
+ *   cross-check invariant, the csrf unit suite's determinism against the runner's own shell, a LAN
+ *   http host that a process-env https origin would otherwise mint an unusable Secure cookie for,
+ *   and a TLS-terminated deploy's shared `secure` input, which renames both the csrf and session
+ *   cookies together.
+ *
+ * Both depths are monotonic toward Secure and neither can downgrade it: an https request
+ * short-circuits `true` in `csrfSecure` before either depth is ever consulted, so no fallback
+ * (present or absent) can turn a Secure request non-Secure. The divergence between the two depths
+ * is consultation depth only, never direction, and it persists by design rather than reconciling
+ * onto one shared depth; the trigger that would reopen it is `csrfSecure` starting to run on
+ * adapter-node in a production site, where the read-from-the-source rule would then favor the dual
+ * depth for the same reason `isDeployedHost` already needs it.
  */
-function readPublicOrigin(platformEnv: unknown): string | undefined {
-  const fromPlatform =
-    typeof platformEnv === 'object' && platformEnv !== null
-      ? (platformEnv as Record<string, unknown>).PUBLIC_ORIGIN
-      : undefined;
-  if (typeof fromPlatform === 'string' && fromPlatform.length > 0) return fromPlatform;
-  const fromProcess = typeof process !== 'undefined' ? process.env?.PUBLIC_ORIGIN : undefined;
-  return typeof fromProcess === 'string' && fromProcess.length > 0 ? fromProcess : undefined;
+export function readPublicOrigin(
+  platformEnv: unknown,
+  options?: { depth?: 'platform-only' },
+): string | undefined {
+  // An empty string is treated as absent at both depths: a var set to '' configures nothing, and
+  // letting it through would make the platform read shadow a usable process value.
+  const usable = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.length > 0 ? value : undefined;
+  const env = typeof platformEnv === 'object' && platformEnv !== null ? (platformEnv as Record<string, unknown>) : undefined;
+  const fromPlatform = usable(env?.PUBLIC_ORIGIN);
+  if (fromPlatform) return fromPlatform;
+  if (options?.depth === 'platform-only') return undefined;
+  return typeof process !== 'undefined' ? usable(process.env?.PUBLIC_ORIGIN) : undefined;
 }
 
 /**

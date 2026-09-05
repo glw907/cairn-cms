@@ -60,8 +60,8 @@ last word; it stays scoped CSS rather than a utility class, which ships the same
   </div>
   {#if action}
     <!-- The flex row default (stretch) pulls the action full-width below `sm`; pin it to its
-         intrinsic content width instead (ported from OfficeList, Task 9 of the 2026-09-01
-         conformance pass, so a naive OfficeList-onto-PageHeader collapse would not regress it). -->
+         intrinsic content width instead (ported from OfficeList, so a naive OfficeList-onto-PageHeader
+         collapse would not regress it). -->
     <div class="self-start">{@render action()}</div>
   {/if}
 </header>

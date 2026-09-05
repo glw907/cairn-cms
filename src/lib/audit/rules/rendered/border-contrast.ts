@@ -4,7 +4,7 @@
 // every card hairline). Advisory, and deliberately report-only by ruling, not by
 // accident: the ratified `--cairn-card-border` hairline measures 1.11:1 in light and 1.43:1 in dark
 // against the page's base-200 ambient (both numbers reproduced exactly by this rule's own fixtures
-// against real Chromium). RULING 2 (Task 16b, 2026-07-28) settled the question spec 6.3 raised: the
+// against real Chromium). RULING 2 (2026-07-28) settled the question spec 6.3 raised: the
 // hairline stays as designed, the quiet edge is deliberate, and `check` below stops reporting the
 // page's own `--cairn-card-border` while it still renders the way Geoff signed it off (see
 // `RATIFIED_TOKEN` and `RATIFIED_HAIRLINE_FLOOR`). Do not loosen the floor or widen the exemption
@@ -87,8 +87,8 @@ import {
 
 /**
  * The floor every rendered border is measured against. It is a HOUSE bar, borrowed from WCAG 1.4.11
- * rather than an application of it, and the distinction is load-bearing enough that Task 18's
- * review pass demanded it in writing.
+ * rather than an application of it, and the distinction is load-bearing enough to state in
+ * writing here.
  *
  * SC 1.4.11 Non-text Contrast (AA) requires 3:1 of two enumerated things: the visual information
  * required to identify user interface components and their states, and the parts of a graphic
@@ -134,9 +134,9 @@ const RATIFIED_TOKEN = '--cairn-card-border';
  * sees it.
  *
  * THE NAMED BOUNDARY OF THE EXEMPTION: equality with the sentinel, so a border that passes the
- * token through `color-mix` is NOT derived and reports. Task 17 adjudicated this and the answer is
- * that they correctly report. The two mix shapes the admin ships fail for different reasons, and
- * the distinction is what makes the boundary defensible rather than arbitrary:
+ * token through `color-mix` is NOT derived and reports; they correctly report. The two mix shapes
+ * the admin ships fail for different reasons, and the distinction is what makes the boundary
+ * defensible rather than arbitrary:
  *
  * - A mix that only DIMS the token, `color-mix(in oklab, var(--cairn-card-border) 70%, transparent)`
  *   on the media library's orphan-scan result rows and HelpHome's section rules, renders the
@@ -312,8 +312,8 @@ function readBorderCandidates(probe: { token: string; sentinel: string }): Borde
    * `transition-property` is forced to `none` across the probe, and that is not hygiene, it is what
    * makes the answer correct. A transition covering `border-color` makes `getComputedStyle` report
    * the animation's CURRENT value, which one synchronous tick after the substitution is still the
-   * OLD color, so the sentinel never appears and a token-painted border reads as a literal. Task 17
-   * measured it on `/admin/media`: daisyUI's `.btn` transitions `border-color` over 0.2s, and the
+   * OLD color, so the sentinel never appears and a token-painted border reads as a literal. Measured
+   * on `/admin/media`: daisyUI's `.btn` transitions `border-color` over 0.2s, and the
    * media library's `border-[var(--cairn-card-border)]` button reported four findings in the two
    * themes while its border did follow the substitution 0.2s later. The tell in the raw value is a
    * serialization flip, `oklch(0.93 0.008 75)` before and `oklab(0.93 0.00207 0.00773)` after: the

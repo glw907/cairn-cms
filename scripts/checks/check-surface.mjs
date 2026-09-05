@@ -397,7 +397,10 @@ export function formatHomeViolations(result) {
 // Load the R4 re-export record, failing with the gate's own message (naming the file and the
 // failure kind) rather than a raw ENOENT or SyntaxError, so a missing or malformed record reads
 // the same as any other check-surface failure.
-/** @returns {ReexportRecord} */
+/**
+ * @returns {ReexportRecord | null} null when the record cannot be read or parsed (the
+ *   diagnostic is already printed and `process.exitCode` set; the caller must stop)
+ */
 function loadReexportRecord() {
   const reexportsPath = resolve(ROOT, REEXPORTS);
   /** @type {string} */
@@ -406,13 +409,15 @@ function loadReexportRecord() {
     raw = readFileSync(reexportsPath, 'utf8');
   } catch (err) {
     console.error(`check-surface: could not read ${REEXPORTS}: ${err instanceof Error ? err.message : err}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return null;
   }
   try {
     return JSON.parse(raw);
   } catch (err) {
     console.error(`check-surface: ${REEXPORTS} is not valid JSON: ${err instanceof Error ? err.message : err}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return null;
   }
 }
 
@@ -425,6 +430,7 @@ function main() {
   // a design failure to argue, and regenerating the snapshot would otherwise record it as settled
   // surface with only the next plain run left to notice.
   const record = loadReexportRecord();
+  if (!record) return;
   const homes = findHomeViolations(model, record);
   if (homes.unrecorded.length || homes.stale.length || homes.misfiled.length) {
     console.error('check-surface: the canonical-home rule failed.');
@@ -434,7 +440,8 @@ function main() {
         ` publication in ${REEXPORTS} with the signature that requires it, or correct the entry` +
         ` whose subpath or home the surface no longer matches.`,
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   if (update) {
     writeFileSync(snapshotPath, `${emitted}\n`);
@@ -443,7 +450,8 @@ function main() {
   }
   if (!existsSync(snapshotPath)) {
     console.error(`check-surface: missing ${SNAPSHOT}; run "npm run check:surface -- --update" to generate it`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   // The file is written with a trailing newline; compare against the same form.
   const committed = readFileSync(snapshotPath, 'utf8');
@@ -455,7 +463,7 @@ function main() {
   console.error('check-surface: the public surface drifted from the committed snapshot.');
   console.error(formatDrift(result.drift));
   console.error(`\nIf this change is intended, run "npm run check:surface -- --update" and commit ${SNAPSHOT}.`);
-  process.exit(1);
+  process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

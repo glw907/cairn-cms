@@ -3,7 +3,7 @@
 The editor card's instrument strip. Three labelled clusters, Format (bold, italic, strike, inline
 code), Structure (headings, lists, quote, table, plus the More overflow), and Insert (the host's
 insert/edit/link/image/figure/Tidy controls), each divided by a hairline and, at sm and up, topped
-with a presentational micro-eyebrow naming it (design-arc D2, docs/internal/2026-07-15-design-arc-log.md,
+with a presentational micro-eyebrow naming it (docs/internal/2026-07-15-design-arc-log.md,
 "grouped micro-eyebrows"). Each cluster wrapper carries `role="group"` with an `aria-label` matching
 its eyebrow, so the grouping reaches assistive tech even though the eyebrow text itself is
 `aria-hidden`. "Blocks" never labels a cluster: cairn's own vocabulary already uses block for a
@@ -11,7 +11,7 @@ component (Insert block / Edit block), so the word appears only inside those two
 labels, never as a group name. A persistent 44px "?" control sits at the strip's right end at every
 width (a glyph plus a sr-only "Markdown help" label) and calls the host's `onHelp`; it never
 disables and never scrolls out of reach below sm, since it renders outside the horizontally
-scrolling region C1 gave the rest of the strip. Format buttons ask the host to transform the
+scrolling region the rest of the strip gets. Format buttons ask the host to transform the
 editor's current selection; the host supplies the Insert group through the `insertControls`
 snippet so the strip stays free of picker wiring. While Preview shows, a device trigger joins the
 Write/Preview segmented capsule (inside the scrolling region, right end, hidden below sm) and
@@ -20,7 +20,7 @@ toggles live in the host's card footer (the bottom strip carries the writing env
 strip acts on the text). The glyphs are stroke SVG icons in the admin's house style (24x24
 viewBox, `currentColor`, round caps).
 
-Below sm (design-arc C1, docs/internal/2026-07-15-design-arc-log.md) the scrolling region becomes
+Below sm (docs/internal/2026-07-15-design-arc-log.md) the scrolling region becomes
 one horizontally scrolling row instead of wrapping, every square control grows to a 44px floor,
 the micro-eyebrow labels disappear (the hairlines alone still divide the three clusters), the
 Write/Preview tablist hides, and the host's `moreExtra` snippet appends its own items to the
@@ -48,15 +48,15 @@ stays pinned at the row's right end, reachable at every width.
     /** The host's Insert controls (link picker, component insert, image), rendered in the Insert group. */
     insertControls?: Snippet;
     /**
-     * Extra items appended to the More-formatting popover, visible below sm only (design-arc C1,
-     * docs/internal/2026-07-15-design-arc-log.md): the host's Write/Preview picks, writing-mode
+     * Extra items appended to the More-formatting popover, visible below sm only
+     * (docs/internal/2026-07-15-design-arc-log.md): the host's Write/Preview picks, writing-mode
      * toggles, and Markdown help fold in here at that width, since the phone composition gives the
      * toolbar exactly one overflow trigger. Receives a close-the-menu callback so a pick dismisses
      * the popover the way the built-in items do.
      */
     moreExtra?: Snippet<[closeMenu: () => void]>;
-    /** Opens the Markdown-help destination from the strip's persistent "?" control (design-arc D2),
-     *  present at every width. A no-op until the host supplies it. */
+    /** Opens the Markdown-help destination from the strip's persistent "?" control, present at
+     *  every width. A no-op until the host supplies it. */
     onHelp?: () => void;
   }
 
@@ -78,7 +78,7 @@ stays pinned at the row's right end, reachable at every width.
   // Labels carry the shortcut where one exists. "Ctrl" is written literally for macOS readers
   // too; detecting the platform buys little for what it costs.
   //
-  // The Format cluster (design-arc D2): the four controls that act on the current selection's
+  // The Format cluster: the four controls that act on the current selection's
   // characters, in the ruled order (bold, italic, strike, inline code).
   const formatButtons: ToolButton[] = [
     { kind: 'bold', label: 'Bold (Ctrl+B)', paths: ['M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8'] },
@@ -91,7 +91,7 @@ stays pinned at the row's right end, reachable at every width.
     { kind: 'code', label: 'Inline code (Ctrl+E)', paths: ['m9 8-4 4 4 4', 'm15 8 4 4-4 4'] },
   ];
 
-  // The Structure cluster (design-arc D2): the block-shape formats, ending with the More overflow
+  // The Structure cluster: the block-shape formats, ending with the More overflow
   // trigger for the rarer block formats (code block, horizontal rule, task list).
   const structureButtons: ToolButton[] = [
     {
@@ -258,7 +258,7 @@ stays pinned at the row's right end, reachable at every width.
 {/snippet}
 
 {#snippet tab(m: 'write' | 'preview', label: string)}
-  <!-- Design ratchet D3 item 5: this is not a two-segment capsule at rest. Unselected stays
+  <!-- This is not a two-segment capsule at rest. Unselected stays
        btn-ghost, and ghost composites fully transparent (fill and border both equal the ground)
        until hover or focus, so the resting render is one bordered selected box plus a plain text
        label beside it, not two visually joined segments. A plain btn in its place was tried and
@@ -290,8 +290,8 @@ stays pinned at the row's right end, reachable at every width.
     class:-ml-px={m === 'preview'}
     onclick={() => onMode(m)}
   >
-    <!-- Design ratchet D3 item 6: always rendered, so the tab's own box reserves the check
-         glyph's width in every state (selected or not). Selecting a tab used to add 22px of
+    <!-- The check glyph is always rendered, so the tab's own box reserves its width in every
+         state (selected or not). Selecting a tab used to add 22px of
          glyph-plus-gap to that tab's box on click, so the Preview tab's own box, and everything
          after it on the row, shifted; toggling visibility instead of presence keeps the layout
          identical across the swap, matching this tab's own widest (glyph-plus-label) state at
@@ -314,7 +314,7 @@ stays pinned at the row's right end, reachable at every width.
      carries keyboard entry, per the ARIA toolbar pattern. items-end bottom-aligns every child
      (the three eyebrow-topped clusters, the tablist wrapper, the "?" control) against the same
      button-row baseline, so the strip still reads as one row of controls with the eyebrows
-     floating above it, not two visually competing rows (design-arc D2). -->
+     floating above it, not two visually competing rows. -->
 <div
   bind:this={toolbarEl}
   class="bg-base-100 flex items-end gap-1 border-b border-[var(--cairn-card-border)] p-1"
@@ -323,7 +323,7 @@ stays pinned at the row's right end, reachable at every width.
   tabindex="-1"
   onkeydown={onToolbarKeydown}
 >
-  <!-- The scrolling region (design-arc C1): below sm this is the ONE horizontally scrolling row
+  <!-- The scrolling region: below sm this is the ONE horizontally scrolling row
        (max-sm:flex-nowrap max-sm:overflow-x-auto), so nothing here clips or wraps to a second
        glyph row (audit finding 1: the toolbar clipped to three rows at 390px). sm and up wraps
        normally and shows the clusters' eyebrows. The persistent help control below sits OUTSIDE
@@ -349,7 +349,7 @@ stays pinned at the row's right end, reachable at every width.
         <!-- The More menu is a DaisyUI v5 popover dropdown: click to open (never focus-in-transit),
              Escape and light dismiss from the Popover API, and the anchor-name/position-anchor pair
              places the panel under its trigger. Preview no longer disables the trigger itself when
-             the host supplies moreExtra (design-arc C1): below sm, Write/Preview folds into this
+             the host supplies moreExtra: below sm, Write/Preview folds into this
              same popover as the ONLY way back out of Preview, so the trigger must stay reachable
              there; only the trigger's OWN formatting items (moreItems below), meaningless on
              read-only content, gate on Preview individually. Without a host-supplied moreExtra
@@ -406,8 +406,8 @@ stays pinned at the row's right end, reachable at every width.
         <span class={eyebrowClass} aria-hidden="true">Insert</span>
         <!-- The host's controls carry their own disabled state in Preview; this wrapper just keeps
              any stray pointer target in the snippet inert while the pane is read-only. Below sm
-             every insert control grows to the same 44px floor the glyph buttons take (design-arc
-             C1), applied here rather than per-button in the host's own snippet. -->
+             every insert control grows to the same 44px floor the glyph buttons take below sm,
+             applied here rather than per-button in the host's own snippet. -->
         <div
           class="flex items-center gap-1 max-sm:[&_button]:min-h-11 max-sm:[&_button]:min-w-11 max-sm:[&_button]:shrink-0"
           class:pointer-events-none={mode === 'preview'}
@@ -423,7 +423,7 @@ stays pinned at the row's right end, reachable at every width.
          required children: anything else in a tablist makes assistive tech miscount the tabs).
          While Preview shows, the device trigger reads as the capsule's third segment from the
          flex row right after the wrapper; it is a plain button, not a tab. Hidden below sm
-         (design-arc C1): the same Write/Preview toggle lives in the More popover's moreExtra items
+         below sm: the same Write/Preview toggle lives in the More popover's moreExtra items
          there instead, since the phone composition gives the toolbar exactly one overflow. -->
     <div class="hidden items-center sm:ml-auto sm:flex">
       <div role="tablist" aria-label="Editor view" class="flex items-center">
@@ -476,7 +476,7 @@ stays pinned at the row's right end, reachable at every width.
     </ul>
   {/if}
 
-  <!-- The persistent Markdown-help control (design-arc D2): a 44px "?" glyph at the strip's right
+  <!-- The persistent Markdown-help control: a 44px "?" glyph at the strip's right
        end at every width, pinned outside the scrolling region above so it is reachable below sm
        too (it replaces relying on the folded-away footer link at that width, audit finding 7). It
        never disables: help is a reference, not an edit action, so it stays available in Preview

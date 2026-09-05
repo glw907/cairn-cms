@@ -38,7 +38,7 @@ export const actions = admin.actions;
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/components';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$lib/cairn.config.js';
+  import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';
 
   let { data, form }: { data: AdminData; form: ActionData } = $props();
@@ -86,7 +86,7 @@ The composer builds the runtime once, and every server route that needs it (the 
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime);

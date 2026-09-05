@@ -72,7 +72,7 @@ export interface SectionActionOptions {
  * One audit record a `createSectionAction`-wrapped handler emits through `ctx.audit`. `action`
  * and `entity` default from the call site's own `SectionActionOptions`, so the common call names
  * only what the options declaration does not already say; a handler touching more than one
- * entity (the audit sweep's confirmed two-row-touch case) still overrides either field.
+ * entity (the confirmed two-row-touch case) still overrides either field.
  */
 export interface SectionActionAudit {
   /** Overrides `opts.action`; omit to reuse the call site's own declared verb. */
@@ -182,14 +182,14 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // correction, never a runtime behavior change (the underlying object is exactly what
       // this wrapper's caller passed in). A direct `as` assertion suffices, with no `unknown`
       // bridge: TypeScript's comparability check for an `as` cast treats the unconstrained
-      // `Env` permissively regardless of which concrete env it is relabeled from. The pre-C2
-      // code carried an `as unknown as` double hop here, on the stated grounds that AuthEnv and
-      // Env shared no property names and would trip TypeScript's weak-type check; that reasoning
-      // did not hold up on re-verification (dropping the `unknown` bridge still compiles clean
-      // under the renamed CairnEnv), so the bridge came out as unneeded ceremony, not because R5's
-      // EmailSender/CairnPlatformBindings fix touched this cast. The cast itself stays: removing
-      // it entirely reproduces a real TS2345 (`Env` is a fully unconstrained generic type
-      // parameter, so `CairnEnv` is not assignable to it in either direction).
+      // `Env` permissively regardless of which concrete env it is relabeled from. An earlier
+      // version of this cast carried an `as unknown as` double hop here, on the stated grounds
+      // that AuthEnv and Env shared no property names and would trip TypeScript's weak-type
+      // check; that reasoning did not hold up on re-verification (dropping the `unknown` bridge
+      // still compiles clean under the renamed CairnEnv), so the bridge came out as unneeded
+      // ceremony. The cast itself stays: removing it entirely reproduces a real TS2345 (`Env`
+      // is a fully unconstrained generic type parameter, so `CairnEnv` is not assignable to it
+      // in either direction).
       const siteEvent = event as CairnEvent<Env>;
       const path = siteEvent.url.pathname;
       // event.route.id, never url.pathname: on a catch-all route the pathname is

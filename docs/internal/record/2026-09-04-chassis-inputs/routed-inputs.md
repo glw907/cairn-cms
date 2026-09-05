@@ -641,3 +641,29 @@ written on 2026-08-27; it appears to have been introduced later, in `ROADMAP.md`
 `docs/STATUS.md` only (both dated/attributed 2026-09-01), without a corresponding
 amendment edit to this spec file.
 
+
+---
+
+## 10. Internals-C Task 10 ruling (2026-09-04): the `createSectionAction` bullet
+
+Verified against the tree at the internals-C branch point: `createSectionAction` has zero
+non-test call sites (`grep -rln "createSectionAction" --include="*.ts" --include="*.svelte"
+src/lib examples templates` returns only `src/lib` itself; no hit under `examples/` or
+`templates/`), confirming §5's audit-finding-8 count. `examples/showcase/src/routes/admin/signups/+page.server.ts`
+still uses the raw `requireOwner`/`formData()`/`fail(400, ...)` shape the finding names.
+
+**Ruling: reposition, not demote.** `docs/extend/add-a-custom-admin-screen.md` keeps
+`createSectionAction` as the recommended path; the guide now says so explicitly even though no
+shipped example wires it, so a reader does not mistake the showcase's own signups route for
+the sanctioned shape. `docs/reference/sveltekit.md`'s `createSectionAction` entry cross-links
+the guide with the same "sanctioned shape regardless of what any given site's own routes show"
+framing. The evidence favors keeping the recommendation rather than softening it: on branch
+`experiment-screen` (not merged), a measured experiment built a custom admin screen following
+the showcase's raw exemplar shape instead of the documented `createSectionAction` path, and its
+reviewer flagged the deviation, an independent data point that the docs' guidance is right and
+the showcase exemplar is what is out of date.
+
+**Routed to chassis:** adopting `createSectionAction` in `examples/showcase`'s signups route is
+showcase-exemplar work, not a docs fix, and belongs to the chassis pass that touches that route.
+The chassis-A plan (`docs/superpowers/plans/2026-09-04-chassis-a-pass.md`) keeps the showcase's
+raw shape as written and defers adoption to chassis-B on this ruling.

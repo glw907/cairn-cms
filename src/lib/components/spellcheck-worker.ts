@@ -73,8 +73,8 @@ const SUGGEST_OPTIONS: CheckSpellingOptions = {
 
 /**
  * The init message: the URLs of the two fetched assets, resolved by the consumer build. The
- * dictionaryUrl is the dialect dictionary the main thread resolved from `spellcheck.dialect` (Task 7,
- * defaulting to US English); the worker receives the resolved URL and does not read config itself.
+ * dictionaryUrl is the dialect dictionary the main thread resolved from `spellcheck.dialect`
+ * (defaulting to US English); the worker receives the resolved URL and does not read config itself.
  */
 interface InitMessage {
   readonly type: 'init';

@@ -6,10 +6,9 @@
 // per-story flags) lives on `./manifest.js`, importable from a bare `node` process. This module
 // may freely import Svelte components; ./manifest.ts may never import this one.
 //
-// The ids, their order, and the flags come from the story inventory in cairn-pub
-// docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md; the per-story mechanism
+// The ids, their order, and the flags come from the story inventory whose per-story mechanism
 // evidence is docs/internal/record/repro-story-audit.md. Story groups register from
-// ./stories/*.ts, one module per task (A4 auth, A5a editor, A5b publish, A6a media, A6b the rest),
+// ./stories/*.ts, one module per story group (auth, editor, publish, media, the rest),
 // and this file's `stories` array grows by concatenation as each group lands.
 import type { Component } from 'svelte';
 import type { AdminShellData } from '../sveltekit/content-routes-shell.js';
@@ -26,7 +25,7 @@ import { siteStories } from './stories/site.js';
  * exported signature at the one call site that uses it, which is cheaper than teaching this
  * interface every mountable component's exports.
  *
- * Module-internal (the retires pass, Task 2 retired its export, a sanctioned NavIcon-class leak,
+ * Module-internal (a sanctioned NavIcon-class leak,
  * per the F-1 hybrid ruling, r4-rederivation section 7); `ReproStory.pose` below still names it,
  * and a consumer reads it structurally as `Parameters<NonNullable<ReproStory['pose']>>[1]`.
  */
@@ -100,8 +99,8 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories, in manifest order: the full 25. Module-internal (the retires pass,
- *  batch 1c retired its export); `getStory` is the seam a consumer, including
+ * The registered stories, in manifest order: the full 25. Module-internal (retired from its own
+ *  export); `getStory` is the seam a consumer, including
  *  `src/tests/component/reproductions-stories.test.ts`, reaches one through.
  */
 const stories: ReproStory[] = [

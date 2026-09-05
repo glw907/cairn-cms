@@ -2,7 +2,7 @@
 
 The root export is the engine. It carries the adapter and schema contract a site declares, the
 markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
-and GitHub App primitives. A site imports it at `src/lib/cairn.config.ts` and in its admin and
+and GitHub App primitives. A site imports it at `src/theme/cairn.config.ts` and in its admin and
 delivery code. This subpath carries the adapter and schema construction surface plus the read
 helpers a site's own routes call directly; a SvelteKit route factory lives on
 [`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/components`](./components.md),
@@ -206,7 +206,7 @@ defect: the build legitimately ships both copies.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the editor.preview member -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 import appCssUrl from './app.css?url';
 
@@ -731,7 +731,7 @@ permalinks cannot diverge.
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime);
@@ -771,7 +771,7 @@ Read one named menu from a parsed config and validate it. Returns `[]` when the 
 
 ```ts
 import { readMenu } from '@glw907/cairn-cms';
-import { siteConfig } from './cairn.config.js';
+import { siteConfig } from '$theme/cairn.config.js';
 
 const primary = readMenu(siteConfig, 'primary', 2);
 ```
@@ -791,7 +791,7 @@ and edit paths read.
 
 ```ts
 import { readVocabulary } from '@glw907/cairn-cms';
-import { siteConfig } from './cairn.config.js';
+import { siteConfig } from '$theme/cairn.config.js';
 
 const vocabulary = readVocabulary(siteConfig);
 ```
@@ -908,7 +908,7 @@ fixed while a site's own role names are not.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the roles member -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter, defineRoles } from '@glw907/cairn-cms';
 
 export const roles = defineRoles({
@@ -976,7 +976,7 @@ once the runtime knows the real concept list.
 ```ts
 // src/lib/cairn.access.ts
 import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from './cairn.config.js';
+import { roles } from '$theme/cairn.config.js';
 
 export const access = defineAccess(roles, {
   pages: ['webmaster'],
@@ -1033,7 +1033,7 @@ function signatures above reference these.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `CairnAdapter` | Extension API | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/lib/cairn.config.ts`. |
+| `CairnAdapter` | Extension API | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/theme/cairn.config.ts`. |
 | `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |

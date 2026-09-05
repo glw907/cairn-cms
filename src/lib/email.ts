@@ -13,7 +13,8 @@ export type { EmailAttachment, EmailRecipient };
  * shape `buildMagicLinkMessage` fills; `cc`/`bcc`/`replyTo`/`attachments` are optional widenings
  * of the Email Sending API surface (live-verified 2026-07-07) that a custom `SendMagicLink` or a
  * site composing its own message may set. `replyTo` takes a single address only, since the
- * platform rejects an array there (live-probed 2026-07-07, ASC migration), unlike `cc`/`bcc`.
+ * platform rejects an array there (live-probed 2026-07-07 during a consumer-site migration),
+ * unlike `cc`/`bcc`.
  */
 export interface MagicLinkMessage {
   to: string;
@@ -91,10 +92,10 @@ export function errorCode(err: unknown): string | undefined {
 
 /**
  * Map a magic-link send failure to its registered diagnostic condition, carrying the original error
- * as the cause. The not-verified code is the onboarding gap (the ecxc fault); the live binding has
- * also been observed throwing the bare "not a verified address" string with no code, so that
- * message maps to the same condition. Everything else is the generic send failure. The caller logs
- * the conditionId and code, and returns a send_error status.
+ * as the cause. The not-verified code is the onboarding gap (a real-world consumer fault); the
+ * live binding has also been observed throwing the bare "not a verified address" string with no
+ * code, so that message maps to the same condition. Everything else is the generic send failure.
+ * The caller logs the conditionId and code, and returns a send_error status.
  */
 export function emailSendFailure(err: unknown): CairnError {
   const onboarding =

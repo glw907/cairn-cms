@@ -6,8 +6,8 @@
 // ("the portal's first filled button"), made mechanical.
 //
 // Each landmark is its own surface, keyed by its own DOM position, not by its tag name: a page with
-// two `<nav>` rails partitions into two surfaces, never one shared `'nav'` surface (design ratchet
-// Batch B fix; latent until now only because every shipped nav uses `btn-active`, never a real fill).
+// two `<nav>` rails partitions into two surfaces, never one shared `'nav'` surface
+// (latent until now only because every shipped nav uses `btn-active`, never a real fill).
 //
 // The partition RULING (Geoff, 2026-07-30, SETTLED, not re-litigated): <nav> and <aside> partition;
 // the topmost open dialog layer partitions; <header>, <footer>, and <main> itself do NOT. The rule
@@ -60,7 +60,7 @@ interface FilledCandidate {
  */
 function collectFilledCandidates(): FilledCandidate[] {
   const CONTROL_SELECTOR = 'button, [role="button"], a.btn, input[type="submit"], input[type="button"]';
-  // Design ratchet Task 4: narrowed from `main, nav, aside, header, footer` to just the two
+  // Narrowed from `main, nav, aside, header, footer` to just the two
   // landmarks the ruling above holds actually partition. `main` and `header`/`footer` no longer
   // separate a surface, so a control's surface falls through to the layer id unless it sits inside
   // a nav or aside.

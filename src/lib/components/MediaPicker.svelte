@@ -44,7 +44,7 @@ while a site stores images only.
 <script lang="ts">
   import { getContext } from 'svelte';
   import { formatMediaToken } from '../media/reference.js';
-  // The bare delivery path under transformations: false (the same path the Task 3 source chip uses).
+  // The bare delivery path under transformations: false (the same path the source chip uses).
   // SEAM: when transformations are on, the row thumbnail should request the `thumb` preset URL
   // instead of the bare path; that is a later transformations-on refinement.
   import { publicPath } from '../media/naming.js';
@@ -161,7 +161,7 @@ while a site stores images only.
         select(activeEntry);
       }
     }
-    // Escape is handled by the host popover (Task 6); let it bubble.
+    // Escape is handled by the host popover; let it bubble.
   }
 </script>
 
@@ -186,7 +186,7 @@ while a site stores images only.
 
   <!-- The combobox: focus stays in this input; aria-activedescendant tracks the active option. -->
   <div class="flex items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-100 px-3 py-2">
-    <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
+    <svg class="cairn-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
     <input
       bind:value={query}
       onkeydown={onKeydown}
@@ -251,7 +251,7 @@ while a site stores images only.
             <span class="truncate type-body font-medium">{entry.displayName || entry.slug || entry.hash}</span>
             {#if entry.alt.trim() === ''}
               <!-- The needs-alt flag: a glyph plus a label, never hue alone (the spec a11y rule),
-                   matching the Task 3 source-chip treatment. -->
+                   matching the source-chip treatment. -->
               <span class="inline-flex items-center gap-1 type-label font-medium cairn-text-warning">
                 <span aria-hidden="true">&#9888;</span>
                 <span>Needs alt</span>
@@ -265,13 +265,13 @@ while a site stores images only.
 </div>
 
 <style>
-  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts), reused here so
+  /* cairn-glyph is the public render pipeline's own class (src/lib/render/glyph.ts), reused here so
      the admin preview matches the exact class the embed-card glyph ships with on a public page.
      The glyph's fill rides currentColor from the surrounding markup; its real "home" is
      deliberately outside the admin sheet, since public render output stays design-agnostic. The
      rule carries only an inert custom property, never read anywhere, since an empty ruleset
      fails svelte-check's own lint. */
-  .ec-glyph {
+  .cairn-glyph {
     --cairn-naming-hook: true;
   }
 </style>

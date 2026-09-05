@@ -39,7 +39,7 @@ export async function applyState(state: InteractionState, page: RenderedPage): P
       return true;
     });
   }
-  // Refined at Task 15 against the admin's real markup, resolving Task 14's WATCH. Every dialog
+  // Refined against the admin's real markup. Every dialog
   // trigger in the admin (the entry, link, fragment, media, and reference pickers, the rename and
   // web-link dialogs) declares `aria-haspopup="dialog"`, which the original menu-only selector
   // could not reach, so the whole dialog surface was structurally outside every rendered rule while

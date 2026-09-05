@@ -474,7 +474,7 @@ Swapping the editor stays a one-file change.
         // the measure default) when a media token sits inside a :::figure, in the directive accent
         // language. The accent ink and a color-mix accent border on the base-100 surface read as a
         // quiet tag beside the name. The ink is theme-defined, so it holds contrast in both themes
-        // (Task 8's polish confirms it visually). A bare token renders no pill at all.
+        // (confirmed visually). A bare token renders no pill at all.
         '.cm-cairn-media-role': {
           fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
           fontSize: '0.625rem',
@@ -875,7 +875,7 @@ Swapping the editor stays a one-file change.
               return true;
             },
           }),
-          // No native text-correction override here (Task 7). The old `spellcheck: 'true'` is gone, so
+          // No native text-correction override here. The old `spellcheck: 'true'` is gone, so
           // the content node falls back to CodeMirror's own defaults: spellcheck "false", autocorrect
           // "off", autocapitalize "off". The cairn lint source replaces the browser's spellcheck
           // (running both would double-underline), and autocorrect/autocapitalize stay off so a browser
@@ -893,7 +893,7 @@ Swapping the editor stays a one-file change.
           // Diagnostic traversal: F8/Shift-F8 jump the caret to the next/previous diagnostic range and
           // land it in the cairn recipe popover (never the stock lint tooltip, which tooltipFilter
           // suppresses; see spellcheck.ts). The stock exported commands, not lintKeymap (which also binds
-          // Mod-Shift-m to openLintPanel, the unaligned stock panel this pass avoids). General and
+          // Mod-Shift-m to openLintPanel, the unaligned stock panel this component avoids). General and
           // top-level, like the announcer above: any lint source, not just spellcheck.
           keymap.of([
             { key: 'F8', run: lintMod.nextDiagnostic },

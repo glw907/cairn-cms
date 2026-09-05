@@ -3,6 +3,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
+import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -47,17 +48,18 @@ function adminEvent(
 ) {
   const headers: Record<string, string> = {};
   return {
-    url: new URL(`https://t.example${pathname}${opts.search ?? ''}`),
-    request: new Request(`https://t.example${pathname}`),
-    locals: {
-      cairnEditor:
-        opts.editor === undefined
-          ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
-          : opts.editor,
-      cairnBackend: opts.backend ?? backend,
-    },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db } },
-    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    ...testEvent({
+      url: `https://t.example${pathname}${opts.search ?? ''}`,
+      request: new Request(`https://t.example${pathname}`),
+      locals: {
+        cairnEditor:
+          opts.editor === undefined
+            ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
+            : opts.editor,
+        cairnBackend: opts.backend ?? backend,
+      },
+      env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db },
+    }),
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),
     _headers: headers,
   };
@@ -94,12 +96,12 @@ afterEach(() => vi.restoreAllMocks());
 describe('createCairnAdmin load dispatch', () => {
   it('throws 404 for a path the parser does not recognize', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    await expect(admin.load(adminEvent('/admin/bogus') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(admin.load(adminEvent('/admin/bogus'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('redirects /admin to the first concept list', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    await expect(admin.load(adminEvent('/admin') as never)).rejects.toMatchObject({
+    await expect(admin.load(adminEvent('/admin'))).rejects.toMatchObject({
       status: 307,
       location: '/admin/posts',
     });
@@ -109,7 +111,7 @@ describe('createCairnAdmin load dispatch', () => {
 describe('public views', () => {
   it('serves the login page bare, with branding derived from the runtime', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    const data = await admin.load(adminEvent('/admin/login', { editor: null }) as never);
+    const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
     if (data.view !== 'login') throw new Error('narrowing');
     expect(data.page).toMatchObject({ siteName: 'Test Site', error: null });
@@ -119,7 +121,7 @@ describe('public views', () => {
 
   it('applies deps.auth.branding to the login page, overriding the runtime-derived default', async () => {
     const admin = createCairnAdmin(runtime(), { auth: { branding: { siteName: 'Overridden Site', from: 'x@test' } } });
-    const data = await admin.load(adminEvent('/admin/login', { editor: null }) as never);
+    const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
     if (data.view !== 'login') throw new Error('narrowing');
     expect(data.page.siteName).toBe('Overridden Site');
@@ -128,7 +130,7 @@ describe('public views', () => {
   it('serves the confirm page with the token and sets Referrer-Policy', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const event = adminEvent('/admin/auth/confirm', { editor: null, search: '?token=abc' });
-    const data = await admin.load(event as never);
+    const data = await admin.load(event);
     expect(data.view).toBe('confirm');
     if (data.view !== 'confirm') throw new Error('narrowing');
     expect(data.page).toMatchObject({ token: 'abc', siteName: 'Test Site' });
@@ -143,7 +145,7 @@ describe('authed views', () => {
     });
     gh.install();
     const admin = createCairnAdmin(runtime(), deps);
-    const data = await admin.load(adminEvent('/admin/posts') as never);
+    const data = await admin.load(adminEvent('/admin/posts'));
     expect(data.view).toBe('list');
     if (data.view !== 'list') throw new Error('narrowing');
     // The chrome rides the separate shell load; this per-view load carries only the page data.
@@ -161,7 +163,7 @@ describe('authed views', () => {
     });
     gh.install();
     const admin = createCairnAdmin(runtime(), deps);
-    const data = await admin.load(adminEvent('/admin/posts/2026-05-hello') as never);
+    const data = await admin.load(adminEvent('/admin/posts/2026-05-hello'));
     expect(data.view).toBe('edit');
     if (data.view !== 'edit') throw new Error('narrowing');
     expect('layout' in data).toBe(false);
@@ -174,7 +176,7 @@ describe('authed views', () => {
   it('delegates the history view with the concept and id synthesized from the URL', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const event = adminEvent('/admin/posts/2026-05-hello/history', { backend: fakeHistoryBackend() });
-    const data = await admin.load(event as never);
+    const data = await admin.load(event);
     expect(data.view).toBe('history');
     if (data.view !== 'history') throw new Error('narrowing');
     expect('layout' in data).toBe(false);
@@ -186,14 +188,14 @@ describe('authed views', () => {
 
   it('404s the history view for an unknown concept', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    await expect(admin.load(adminEvent('/admin/unknown/2026-05-hello/history') as never)).rejects.toMatchObject({
+    await expect(admin.load(adminEvent('/admin/unknown/2026-05-hello/history'))).rejects.toMatchObject({
       status: 404,
     });
   });
 
   it('404s the history view for a malformed id', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    await expect(admin.load(adminEvent('/admin/posts/Hello/history') as never)).rejects.toMatchObject({
+    await expect(admin.load(adminEvent('/admin/posts/Hello/history'))).rejects.toMatchObject({
       status: 404,
     });
   });
@@ -209,7 +211,7 @@ describe('authed views', () => {
         { email: 'own@t', display_name: 'Own', role: 'owner' },
       ]),
     });
-    const data = await admin.load(event as never);
+    const data = await admin.load(event);
     expect(data.view).toBe('editors');
     if (data.view !== 'editors') throw new Error('narrowing');
     expect('layout' in data).toBe(false);
@@ -219,7 +221,7 @@ describe('authed views', () => {
 
   it('404s the nav view when the runtime configures no navMenu', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    await expect(admin.load(adminEvent('/admin/nav') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(admin.load(adminEvent('/admin/nav'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('serves the nav view when a navMenu is configured', async () => {
@@ -228,7 +230,7 @@ describe('authed views', () => {
     const rt = runtime();
     rt.navMenu = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
     const admin = createCairnAdmin(rt, deps);
-    const data = await admin.load(adminEvent('/admin/nav') as never);
+    const data = await admin.load(adminEvent('/admin/nav'));
     expect(data.view).toBe('nav');
     if (data.view !== 'nav') throw new Error('narrowing');
     expect('layout' in data).toBe(false);

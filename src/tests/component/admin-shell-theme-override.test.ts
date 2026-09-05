@@ -111,7 +111,7 @@ describe('CairnAdminShell theme override', () => {
     probeMatchMedia(false);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
-    } as never);
+    });
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
   });
 
@@ -120,9 +120,9 @@ describe('CairnAdminShell theme override', () => {
     probeMatchMedia(false);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
-    } as never);
+    });
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
-    await screen.rerender({ themeOverride: 'cairn-admin' } as never);
+    await screen.rerender({ themeOverride: 'cairn-admin' });
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
   });
 
@@ -133,7 +133,7 @@ describe('CairnAdminShell theme override', () => {
     const media = probeMatchMedia(true);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin-dark'), children: child, themeOverride: 'cairn-admin' },
-    } as never);
+    });
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
     expect(cookie.reads).toBe(0);
     expect(media.queries).not.toContain('(prefers-color-scheme: dark)');
@@ -144,7 +144,7 @@ describe('CairnAdminShell theme override', () => {
     probeMatchMedia(false);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
-    } as never);
+    });
     // Both the topbar button and the palette command would still write ownTheme and the cookie
     // under an override while the render stayed pinned, so each would be a focusable control with
     // an accessible name and no visible effect. The palette's label is worse still: it would keep
@@ -160,7 +160,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
     const media = probeMatchMedia(true);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
-    } as never);
+    });
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
     expect(cookie.reads).toBeGreaterThan(0);
     expect(media.queries).toContain('(prefers-color-scheme: dark)');
@@ -171,7 +171,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
     probeMatchMedia(true);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
-    } as never);
+    });
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
   });
 
@@ -180,7 +180,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
     probeMatchMedia(false);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
-    } as never);
+    });
     expect(themeControlNames(screen.container)).toEqual(['Toggle theme', 'Switch to dark mode']);
   });
 
@@ -189,7 +189,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
     probeMatchMedia(false);
     const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
-    } as never);
+    });
     await screen.getByRole('button', { name: /dark mode|light mode|toggle theme/i }).click();
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
     expect(cookie.writes.some((w) => w.includes('cairn-admin-theme=cairn-admin-dark'))).toBe(true);

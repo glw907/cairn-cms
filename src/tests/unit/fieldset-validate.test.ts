@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fields } from '../../lib/content/fields.js';
+import type { FieldDescriptor } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const fs = defineFieldset({
@@ -82,6 +83,24 @@ describe('fieldset parsed-YAML input symmetry', () => {
   it('accepts a parsed numeric value, not only a form string', () => {
     expect(fs.validate({ n: 5 }, '')).toEqual({ ok: true, data: { n: 5 } });  // a number, not '5'
     expect(fs.validate({ n: 0 }, '')).toEqual({ ok: true, data: { n: 0 } });  // 0 is a real value, not empty
+  });
+});
+
+// `validateField`'s default arm absorbs text, textarea, datetime, and icon (the only four arms
+// left once boolean/multiselect/image/object/array are handled by their own `if` and
+// number/select/url/email/date/reference by their own `case`). text/textarea are covered above and
+// icon in fields-icon.test.ts; this pins datetime, the one arm with no dedicated test anywhere.
+describe('fieldset datetime field (default-arm absorption)', () => {
+  const fs = defineFieldset({ when: fields.datetime({ label: 'When' }) });
+  it('validates a plain string as-is and drops an empty optional', () => {
+    expect(fs.validate({ when: '2026-06-26T14:30' }, '')).toEqual({ ok: true, data: { when: '2026-06-26T14:30' } });
+    expect(fs.validate({}, '')).toEqual({ ok: true, data: {} });
+  });
+  it('fails a required, empty datetime', () => {
+    const req = defineFieldset({ when: fields.datetime({ label: 'When', required: true }) });
+    const r = req.validate({}, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors).toEqual({ when: 'When is required' });
   });
 });
 
@@ -254,5 +273,26 @@ describe('fieldset refine', () => {
 
   it('passes when refine returns nothing', () => {
     expect(fs.validate({ title: 'x', date: '2026-02-01', updated: '2026-02-02' }, '').ok).toBe(true);
+  });
+});
+
+// validateField's switch over field.type is exhaustive over FieldDescriptor at compile time; the
+// default arm is reachable only via an unsafe cast (a descriptor type the union does not name). It
+// must degrade to the same bare-string, no-further-validation value the datetime/icon arms return,
+// never throw, since this runs on the save-validation request path.
+describe('validateField default arm (an out-of-union descriptor, cast through unknown)', () => {
+  it('degrades to a trimmed bare-string value rather than throwing', () => {
+    const mystery = { type: 'mystery', label: 'Mystery' } as unknown as FieldDescriptor;
+    const mysteryFieldset = defineFieldset({ mystery });
+    expect(mysteryFieldset.validate({ mystery: '  value  ' }, '')).toEqual({
+      ok: true,
+      data: { mystery: 'value' },
+    });
+  });
+
+  it('drops an empty value as not provided', () => {
+    const mystery = { type: 'mystery', label: 'Mystery' } as unknown as FieldDescriptor;
+    const mysteryFieldset = defineFieldset({ mystery });
+    expect(mysteryFieldset.validate({}, '')).toEqual({ ok: true, data: {} });
   });
 });

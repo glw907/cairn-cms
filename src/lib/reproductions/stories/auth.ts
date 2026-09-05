@@ -1,5 +1,4 @@
-// cairn-cms: the two auth stories for the live-reproduction seam (Task A4 of
-// docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md). Both mount `bare` and own
+// cairn-cms: the two auth stories for the live-reproduction seam. Both mount `bare` and own
 // their theme root: LoginPage and ConfirmPage render their wrapper from `data.theme`
 // (docs/internal/record/repro-story-audit.md), so ReproContext routes an override theme into
 // `data.theme` rather than a shell prop. Neither needs a pose or markers; the contracted state

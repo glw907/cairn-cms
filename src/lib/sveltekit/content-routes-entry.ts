@@ -5,7 +5,7 @@
 // sibling factory; the public createContentRoutes is a thin wrapper around that internal factory.
 //
 // Five of these eleven handlers (discardAction, deleteAction, listDeleteAction, renameAction,
-// revertAction) folded in here from content-routes-core.ts at internals-B, which retired that file.
+// revertAction) folded in here from content-routes-core.ts, since retired.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
@@ -171,8 +171,8 @@ export interface EditData {
    *  that runs (for the head pill), and the RESOLVED conventions (the only data source for a
    *  normalization's because-line and the local category inference). The API key never appears here, it
    *  is a Worker secret. `enabled` false hides the Tidy control, whether because the developer never
-   *  turned tidy on or because a prior call already proved the key unhealthy (save-500-honest-errors,
-   *  Task 5): this is a cache read only, never an inline probe, so an edit load pays no added latency,
+   *  turned tidy on or because a prior call already proved the key unhealthy (save-500-honest-errors):
+   *  this is a cache read only, never an inline probe, so an edit load pays no added latency,
    *  and a dead key is absent, not disabled, until the cache's TTL clears or a fresh call succeeds.
    */
   tidy: { enabled: boolean; model: string; conventions: TidyConventions };
@@ -189,8 +189,8 @@ export interface EditData {
 
 /**
  * A blocked save or publish: `fail(400)` when the body links to a target absent from main.
- *  Module-internal (`convention-internal-sibling-comment`): the conventions pass flattened its
- *  fields into {@link ContentFormFailure}, the exported carrier every action's `form` prop reads,
+ *  Module-internal (`convention-internal-sibling-comment`): its fields were flattened into
+ *  {@link ContentFormFailure}, the exported carrier every action's `form` prop reads,
  *  so this narrower shape stays only as the `satisfies` clause each `fail()` call site below
  *  validates its literal against.
  */
@@ -556,7 +556,7 @@ export function createEntryActions(ctx: ContentRoutesContext) {
         concept.id === FRAGMENTS_CONCEPT_ID ? inboundIncludes(manifest, id) : inboundLinks(manifest, concept.id, id);
     }
 
-    // The published fragments this entry can include (Task 6/7): null when nothing here can include
+    // The published fragments this entry can include: null when nothing here can include
     // one, so the fragment picker and the preview's resolveFragment read the same absence signal.
     // That covers two cases. A site with no fragments concept has none to offer. A fragment's OWN
     // edit screen cannot include one either (the save refuses a nested include), and resolving them
@@ -1106,7 +1106,7 @@ export function createEntryActions(ctx: ContentRoutesContext) {
     } catch (err) {
       // One record per entry in the failed batch, so the log names what did not go live.
       for (const entry of published) {
-        ctx.logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
+        logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
       }
       if (isConflict(err)) {
         throw redirect(303, `${listPage}?error=publish_conflict`);

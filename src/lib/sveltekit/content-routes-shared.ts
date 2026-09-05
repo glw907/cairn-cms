@@ -30,8 +30,8 @@ import type { CairnEvent } from './types.js';
  *  last failed, merged with every field optional. `error` is always set on a failure; the richer
  *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
  *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
- *  refusal without a second type. One flat interface (the conventions pass,
- *  `audit-sveltekit-contentformfailure`): every field optional, replacing the earlier
+ *  refusal without a second type. One flat interface (`audit-sveltekit-contentformfailure`):
+ *  every field optional, replacing the earlier
  *  `Partial<>` intersection over the eleven now-module-internal arm shapes.
  */
 export interface ContentFormFailure {

@@ -206,3 +206,109 @@ describe('FieldInput closed-multiselect orphan flag', () => {
     expect(row?.textContent).not.toContain('not in your tag list');
   });
 });
+
+// Characterization of every FieldDescriptor arm this dispatcher branches on. text, textarea,
+// date, and both multiselect shapes are covered above; this fills in the rest, one arm each.
+describe('FieldInput arm dispatch (characterization: every FieldDescriptor arm)', () => {
+  it('renders a number input for a number field', async () => {
+    const field: NamedField = { type: 'number', name: 'count', label: 'Count', min: 1, max: 5 };
+    await render(FieldInput, { field, frontmatter: { count: 3 }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="count"]');
+    expect(input?.type).toBe('number');
+    expect(input?.value).toBe('3');
+  });
+
+  it('renders a select with its options for a select field', async () => {
+    const field: NamedField = { type: 'select', name: 'status', label: 'Status', options: ['draft', 'live'] };
+    await render(FieldInput, { field, frontmatter: { status: 'live' }, ...shared() });
+    const select = document.querySelector('select[name="status"]') as HTMLSelectElement | null;
+    expect(select).not.toBeNull();
+    expect(Array.from(select?.options ?? []).map((o) => o.value)).toEqual(['', 'draft', 'live']);
+  });
+
+  it('renders a url input for a url field', async () => {
+    const field: NamedField = { type: 'url', name: 'site', label: 'Site' };
+    await render(FieldInput, { field, frontmatter: { site: 'https://example.com' }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="site"]');
+    expect(input?.type).toBe('url');
+    expect(input?.value).toBe('https://example.com');
+  });
+
+  it('renders an email input for an email field', async () => {
+    const field: NamedField = { type: 'email', name: 'contact', label: 'Contact' };
+    await render(FieldInput, { field, frontmatter: { contact: 'a@b.c' }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="contact"]');
+    expect(input?.type).toBe('email');
+  });
+
+  it('renders a datetime-local input for a datetime field', async () => {
+    const field: NamedField = { type: 'datetime', name: 'when', label: 'When' };
+    await render(FieldInput, { field, frontmatter: { when: '2026-06-26T14:30' }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="when"]');
+    expect(input?.type).toBe('datetime-local');
+  });
+
+  it('renders a checkbox for a boolean field', async () => {
+    const field: NamedField = { type: 'boolean', name: 'draft', label: 'Draft' };
+    await render(FieldInput, { field, frontmatter: { draft: true }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[type="checkbox"][name="draft"]');
+    expect(input?.checked).toBe(true);
+  });
+
+  it('renders the icon picker radiogroup when an icon set is supplied', async () => {
+    const field: NamedField = { type: 'icon', name: 'glyph', label: 'Glyph' };
+    await render(FieldInput, { field, frontmatter: { glyph: 'leaf' }, icons: { leaf: 'M1 1h2' }, ...shared() });
+    expect(document.querySelector('[role="radiogroup"]')).not.toBeNull();
+  });
+
+  it('falls back to a plain text input for an icon field when no icon set is supplied', async () => {
+    const field: NamedField = { type: 'icon', name: 'glyph', label: 'Glyph' };
+    await render(FieldInput, { field, frontmatter: { glyph: 'leaf' }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="glyph"]');
+    expect(input?.type).toBe('text');
+    expect(document.querySelector('[role="radiogroup"]')).toBeNull();
+  });
+
+  it('renders a reference chooser for a reference field', async () => {
+    const field: NamedField = { type: 'reference', name: 'author', label: 'Author', concept: 'pages' };
+    await render(FieldInput, { field, frontmatter: { author: '' }, ...shared() });
+    expect(document.querySelector('button[aria-label="Author"]')).not.toBeNull();
+    expect(document.querySelector('input[type="hidden"][name="author"]')).toBeNull();
+  });
+
+  it('renders a reference chooser for an array(reference) field', async () => {
+    const field: NamedField = {
+      type: 'array',
+      name: 'related',
+      label: 'Related',
+      item: { type: 'reference', concept: 'posts', label: '' },
+    };
+    await render(FieldInput, { field, frontmatter: { related: [] }, ...shared() });
+    expect(document.querySelector('button[aria-label="Add Related"]')).not.toBeNull();
+  });
+
+  it('renders an object group for an object field', async () => {
+    const field: NamedField = {
+      type: 'object',
+      name: 'meta',
+      label: 'Meta',
+      fields: { note: { type: 'text', label: 'Note' } },
+    };
+    await render(FieldInput, { field, frontmatter: { meta: { note: 'x' } }, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="meta.note"]');
+    expect(input?.value).toBe('x');
+  });
+
+  it('renders a repeatable list for an array(non-reference) field', async () => {
+    const field: NamedField = {
+      type: 'array',
+      name: 'aliases',
+      label: 'Alias',
+      item: { type: 'text', label: 'Alias' },
+    };
+    await render(FieldInput, { field, frontmatter: { aliases: ['x'] }, ...shared() });
+    // Each row starts collapsed; expand it to reach the nested leaf input.
+    document.querySelector<HTMLButtonElement>('[data-cairn-row-toggle]')?.click();
+    await expect.poll(() => document.querySelector<HTMLInputElement>('input[name="aliases.0"]')?.value).toBe('x');
+  });
+});

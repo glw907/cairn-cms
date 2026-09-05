@@ -71,9 +71,8 @@ export type CairnLogEvent =
   | 'admin.action.sink_threw'
   | 'turnstile.verify_failed'
   | 'audit.sink.write_failed'
-  // The auth-channel factory (createAuthChannel), twelve events per its design spec
-  // (docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, Logging), plus
-  // auth.channel.salt_unavailable, added by the internals pass's salt-fault diagnostic (Task 9).
+  // The auth-channel factory (createAuthChannel), twelve events, plus
+  // auth.channel.salt_unavailable, the salt-fault diagnostic.
   | 'auth.channel.requested'
   | 'auth.channel.send_failed'
   | 'auth.channel.delivery_inline'

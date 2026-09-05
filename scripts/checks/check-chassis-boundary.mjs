@@ -131,18 +131,19 @@ export function findReachIns(srcDir, chassisDir, seams) {
 function main() {
   const seams = parseSeams(readFileSync(CANONICAL_README, 'utf8'));
   if (seams.size === 0) {
-    console.error('check:chassis-boundary: parsed zero seams out of the chassis README table');
-    process.exit(1);
+    console.error('chassis-boundary: parsed zero seams out of the chassis README table');
+    process.exitCode = 1;
+    return;
   }
   const roots = findChassisRoots();
   const violations = roots.flatMap((src) => findReachIns(src, resolve(src, 'chassis'), seams));
   if (violations.length === 0) {
     console.log(`chassis-boundary: PASS (${seams.size} documented seams, ${roots.length} chassis roots, no reach-ins)`);
-    process.exit(0);
+    return;
   }
   console.error('chassis-boundary: FAIL');
   for (const v of violations) console.error(`  ${v.file}: reaches into chassis via "${v.spec}", which the canonical src/chassis/README.md does not document as a seam`);
-  process.exit(1);
+  process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

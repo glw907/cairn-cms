@@ -49,8 +49,7 @@
 //     a chip measuring 12.98 against the image it actually sits on. An overlapping painter outside
 //     the chip's own ancestors now makes the ground indeterminate, which is advisory, because
 //     "cannot measure" is a different claim from "this collides".
-//  7. The formula had no chroma term at all (conformance pass, 2026-09-01, closing the HUE half of
-//     the repair filed out of design infrastructure Pass 3): two colors of plainly different hue
+//  7. The formula had no chroma term at all: two colors of plainly different hue
 //     but similar luminance measured as a collision, one of the two named mechanisms behind the
 //     60% false-positive rate (24 of 40) on the first real consumer admin this rule ever measured
 //     (14 of the 24, the hue-distinct class). A collision now also requires the two colors to sit
@@ -83,7 +82,7 @@ import {
 
 /**
  * Below this contrast ratio, a chip's composited fill and the ground behind it are close enough
- * to read as the same color. RATIFIED (Task 16b ruling 3, Geoff, 2026-07-28): spec 6.3 named no
+ * to read as the same color. RATIFIED (ruling 3, Geoff, 2026-07-28): spec 6.3 named no
  * number here, a builder borrowed this value from `interactive-contrast`'s own probe-derived floor,
  * and Geoff confirmed the borrow on review rather than leaving it as an open question. The shared
  * rationale, now on the record so neither rule re-litigates it: both rules test "not accidentally
@@ -100,7 +99,7 @@ import {
  * engages 1.4.1 Use of Color (Level A) where hue alone carries the state and 1.4.11 Graphical
  * Objects at 3:1 where the fill is what identifies it. None of the three is checked anywhere here.
  *
- * The number is LOAD-BEARING, not a rounding nicety, and this pass demonstrated why: the
+ * The number is LOAD-BEARING, not a rounding nicety, demonstrated by the fact that the
  * always-opaque canvas default this file's header describes (closed by making
  * `GroundOptions.canvas` required in `color.ts`) manufactured a measured ratio of 1.514 against
  * this exact 1.5 line, one hundredth over it, and that one hundredth silently took two real
@@ -278,22 +277,22 @@ function readChipGrounds(): ChipGroundReading {
  * false positive would flag the correct `badge-outline` pattern (see the file header), so a chip
  * with no fill of its own is skipped rather than compared.
  *
- * DEMOTED TO ADVISORY (Task 3, ruling 3, corpus C, Geoff 2026-07-28): the formula had no chroma term
+ * DEMOTED TO ADVISORY (ruling 3, Geoff 2026-07-28): the formula had no chroma term
  * and could not see hue, so a hue-distinct chip a sighted user reads as plainly bounded still
  * flagged. As coded then it could not serve as a consumer gate. This was a tier change only at the
- * time; the formula itself was untouched, per the Pass 2 discipline that a gating rule's repair
- * earns its own pass rather than a gate-stage patch. Sequencing also argued for demoting first:
+ * time; the formula itself was untouched, on the discipline that a gating rule's repair
+ * earns its own dedicated fix rather than a gate-stage patch. Sequencing also argued for demoting first:
  * ruling 1 moved the rule's own domain (the chip recipe StatusChip ships), and repairing the
  * formula before that recipe settled would have fit it twice.
  *
- * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY (conformance pass, 2026-09-01): the check below now
+ * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY: the check below now
  * also requires `chromaDistance` (color.ts) under `CHROMA_DISTINCT_FLOOR`, so a collision needs
  * both a close luminance ratio AND a close hue, closing the hue-distinct false-positive class the
  * demotion above named (roughly 14 of the 24 measured false positives). The other named class,
  * a near-neutral dark-theme pill reading bounded despite a low ratio (roughly the other 10), carries
  * no hue for this term to rescue and stays open: it needs the filed floor-recalibration half of the
  * repair, which needs measured pixel data from a real consumer admin audit run (see ROADMAP.md), not
- * something this task can honestly derive. **Stays advisory in this pass regardless**: promotion to
+ * something derivable here. **Stays advisory regardless**: promotion to
  * error is a separate, later act on its own re-measured evidence, not a consequence of either half
  * of this repair landing.
  */

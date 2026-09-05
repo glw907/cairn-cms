@@ -699,13 +699,16 @@ export function checkOne({
  * @template {{ subpath: string }} T
  * @param {string | undefined} only
  * @param {T[]} config
- * @returns {T[]}
+ * @returns {T[] | null} null when `only` names an unknown subpath (the caller has already had
+ *   the diagnostic printed and `process.exitCode` set, and must stop rather than proceed with
+ *   no entries)
  */
 export function resolveEntries(only, config) {
   const entries = only ? config.filter((c) => c.subpath === only) : config;
   if (only && entries.length === 0) {
     console.error(`unknown subpath ${only}`);
-    process.exit(2);
+    process.exitCode = 2;
+    return null;
   }
   return entries;
 }
@@ -722,10 +725,12 @@ export function runIfMain(main, moduleUrl) {
 
 function main() {
   const entries = resolveEntries(process.argv[2], CONFIG);
+  if (!entries) return;
   assertAllowlistReasoned(NARRATIVE_CONTEXT_ALLOWLIST);
   const pageNames = knownNamesByPage(CONFIG);
   const globalNames = globalKnownNames(CONFIG);
   const leaks = loadRegistry();
+  if (!leaks) return;
   let failed = false;
   for (const entry of entries) {
     const leakNames = leakNamesForSubpath(leaks, entry.subpath);
@@ -795,7 +800,7 @@ function main() {
       }
     }
   }
-  process.exit(failed ? 1 : 0);
+  if (failed) process.exitCode = 1;
 }
 
 runIfMain(main, import.meta.url);

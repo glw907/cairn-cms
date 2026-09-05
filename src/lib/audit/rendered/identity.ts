@@ -47,10 +47,11 @@ export function waitForHydrationSettle(): Promise<void> {
  * Capture a route's SSR identity: what the server actually sent, before any client script has a
  * chance to run. A dedicated context with JavaScript disabled is the only way to guarantee that;
  * reading it from the same context immediately after `goto` resolves already races the client
- * bundle, which is the exact race the ASC hydrated-404 defect exploited (the harness measured a page
- * that had already swapped chrome before it ever looked). Playwright still serves `evaluate` calls
- * through the page's own runtime binding regardless of `javaScriptEnabled`, so
- * {@link capturePageIdentity} is unchanged between this capture and the hydrated one.
+ * bundle, which is the exact race a consumer site's hydrated-404 defect exploited (the harness
+ * measured a page that had already swapped chrome before it ever looked). Playwright still
+ * serves `evaluate` calls through the page's own runtime binding regardless of
+ * `javaScriptEnabled`, so {@link capturePageIdentity} is unchanged between this capture and the
+ * hydrated one.
  */
 export async function captureSsrIdentity(
   browser: RenderedBrowser,

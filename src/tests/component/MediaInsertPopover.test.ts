@@ -129,7 +129,7 @@ describe('MediaInsertPopover routing', () => {
       library: {},
       editor: fakeEditor(api),
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open('chooser');
     await tick();
     await expect.element(screen.getByRole('button', { name: /upload an image/i })).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe('MediaInsertPopover routing', () => {
       library: {},
       editor: fakeEditor(api),
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
       'capture',
       fileNamed('blue-shoes.png'),
@@ -166,7 +166,7 @@ describe('MediaInsertPopover focus restore', () => {
       library: {},
       editor,
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string) => void }).open('chooser');
     await tick();
     const panel = screen.container.querySelector('[role="dialog"]') as HTMLElement;
@@ -196,7 +196,7 @@ describe('MediaInsertPopover optimistic loop', () => {
       library: {},
       editor: fakeEditor(api),
       onuploaded,
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
       'capture',
       fileNamed('blue-shoes.png'),
@@ -232,7 +232,7 @@ describe('MediaInsertPopover optimistic loop', () => {
       library: {},
       editor: fakeEditor(api),
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
       'capture',
       fileNamed('blue-shoes.png'),
@@ -255,7 +255,7 @@ describe('MediaInsertPopover optimistic loop', () => {
       library: {},
       editor,
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
       'capture',
       fileNamed('blue-shoes.png'),
@@ -293,7 +293,7 @@ describe('MediaInsertPopover optimistic loop', () => {
       library: {},
       editor,
       onuploaded,
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
       'capture',
       fileNamed('blue-shoes.png'),
@@ -319,7 +319,7 @@ describe('MediaInsertPopover optimistic loop', () => {
       library: {},
       editor: fakeEditor(api),
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
       'capture',
       fileNamed('blue-shoes.png'),
@@ -350,11 +350,12 @@ describe('MediaInsertPopover picker path', () => {
           width: 800,
           height: 600,
           bytes: 1234,
+          createdAt: '2026-03-04T00:00:00.000Z',
         },
       },
       editor,
       onuploaded: () => {},
-    } as never);
+    });
     (screen.component as unknown as { open: (s: string) => void }).open('chooser');
     await tick();
     await screen.getByRole('option', { name: /blue shoes/i }).click();

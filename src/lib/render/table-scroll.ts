@@ -1,14 +1,15 @@
+// cairn-cms: the table-scroll rehype step, a pipeline default that wraps every rendered `<table>`
+// in a scrolling container. A markdown table renders as a bare `<table>` with no wrapper.
+// `.prose table { display: block; overflow-x: auto }` alone made a narrow viewport scroll a wide
+// table instead of squeezing its columns, but it also strips the table's row/cell display roles
+// from the accessibility tree (a `display: block` table is no longer exposed as a table to a
+// screen reader, in every current engine). The standard fix keeps the table a real table and
+// scrolls a wrapper around it instead. Two sites independently rediscovered this gap and wrote the
+// identical rehype step at their own boundary, so the engine now ships it as the pipeline's
+// default.
 import { visit, SKIP } from 'unist-util-visit';
 import { toString } from 'hast-util-to-string';
 import type { Root, Element } from 'hast';
-
-// A markdown table renders as a bare `<table>` with no wrapper. `.prose table { display: block;
-// overflow-x: auto }` alone made a narrow viewport scroll a wide table instead of squeezing its
-// columns, but it also strips the table's row/cell display roles from the accessibility tree (a
-// `display: block` table is no longer exposed as a table to a screen reader, in every current
-// engine). The standard fix keeps the table a real table and scrolls a wrapper around it instead.
-// Two sites independently rediscovered this gap and wrote the identical rehype step at their own
-// boundary, so the engine now ships it as the pipeline's default.
 
 /** Find the first table row that carries a header cell, `<thead>` or not. */
 function findHeaderRow(table: Element): Element | undefined {

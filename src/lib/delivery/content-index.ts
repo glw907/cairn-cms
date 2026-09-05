@@ -52,8 +52,8 @@ export interface ContentSummary {
 
 /**
  * The detail view: a summary plus the frontmatter and the body to render. The frontmatter
- *  type defaults to `Record<string, unknown>`; the typed-reads pass infers it from the concept
- *  fields. Generic now so that change does not break this signature.
+ *  type defaults to `Record<string, unknown>`; a site's own typed reads can infer it from the
+ *  concept fields. Generic now so that change does not break this signature.
  */
 export interface ContentEntry<F = Record<string, unknown>> extends ContentSummary {
   frontmatter: F;

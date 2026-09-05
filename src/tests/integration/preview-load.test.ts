@@ -192,7 +192,7 @@ describe('previewLoad: the build-time guard', () => {
   it('throws a descriptive error naming the fix when building is true', async () => {
     __setBuilding(true);
     const { event } = loadEvent('x'.repeat(43));
-    await expect(previewLoad(runtime(), publicConfig(), event as never)).rejects.toThrow(/prerender = false/);
+    await expect(previewLoad(runtime(), publicConfig(), event)).rejects.toThrow(/prerender = false/);
   });
 
   // The build-time guard's dynamic `import('$app/environment')` is wrapped in try/catch so a
@@ -210,7 +210,7 @@ describe('previewLoad: the build-time guard', () => {
       const { event } = loadEvent('too-short');
       // A malformed token still answers its own ordinary 404, proving the fallback did not
       // short-circuit as "building" and did not itself throw.
-      const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never));
+      const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event));
       expect(result.status).toBe(404);
     } finally {
       vi.doUnmock('$app/environment');
@@ -225,7 +225,7 @@ describe('previewLoad: the malformed-token gate', () => {
     gh.install();
     const { event } = loadEvent('too-short', { env: { AUTH_DB: spiedDb } });
     const captured = await records(async () => {
-      await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never));
+      await expectNotFound(() => previewLoad(runtime(), publicConfig(), event));
     });
     expect(count()).toBe(0);
     expect(captured).toEqual([]);
@@ -239,7 +239,7 @@ describe('previewLoad: the missing AUTH_DB binding', () => {
     const { event, headers } = loadEvent('x'.repeat(43), { env: {} });
     const captured = await records(async () => {
       try {
-        await previewLoad(runtime(), publicConfig(), event as never);
+        await previewLoad(runtime(), publicConfig(), event);
         throw new Error('expected an error');
       } catch (e) {
         expect(isHttpError(e) && e.status).toBe(503);
@@ -256,7 +256,7 @@ describe('previewLoad: the row-verification chain', () => {
     const gh = freshGithub();
     gh.install();
     const { event } = loadEvent('y'.repeat(43));
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'unknown' });
   });
 
@@ -265,7 +265,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await seedExpiredToken();
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'expired' });
   });
 
@@ -274,7 +274,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await mintValidToken('ghost-concept');
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'row_invalid', concept: 'ghost-concept' });
   });
 
@@ -285,7 +285,7 @@ describe('previewLoad: the row-verification chain', () => {
     await db.exec('DROP TABLE preview_tokens');
     try {
       const { event } = loadEvent(token);
-      const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+      const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
       expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'table_missing' });
     } finally {
       await db.exec(
@@ -299,7 +299,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'draft_invalid' });
   });
 
@@ -308,7 +308,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'branch_gone' });
   });
 });
@@ -322,7 +322,7 @@ describe('previewLoad: identical outward refusals', () => {
       const gh = freshGithub();
       gh.install();
       const { event } = loadEvent('nope');
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
     // unknown
@@ -330,7 +330,7 @@ describe('previewLoad: identical outward refusals', () => {
       const gh = freshGithub();
       gh.install();
       const { event } = loadEvent('z'.repeat(43));
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
     // row_invalid
@@ -339,7 +339,7 @@ describe('previewLoad: identical outward refusals', () => {
       gh.install();
       const token = await mintValidToken('ghost');
       const { event } = loadEvent(token);
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
     // branch_gone
@@ -348,7 +348,7 @@ describe('previewLoad: identical outward refusals', () => {
       gh.install();
       const token = await mintValidToken();
       const { event } = loadEvent(token);
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never)));
+      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
 
@@ -367,7 +367,7 @@ describe('previewLoad: the draft render', () => {
     gh.install();
     const token = await mintValidToken();
     const { event, headers } = loadEvent(token);
-    const data = (await previewLoad(runtime(), publicConfig(), event as never)) as PreviewData;
+    const data = (await previewLoad(runtime(), publicConfig(), event)) as PreviewData;
 
     expect(data.preview).toEqual({ state: 'draft', expiresAt: expect.any(String), published: null });
     expect(data.entry.id).toBe(ID);
@@ -384,7 +384,7 @@ describe('previewLoad: the draft render', () => {
     gh.install();
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await previewLoad(runtime(), publicConfig(), event as never)) as PreviewData;
+    const data = (await previewLoad(runtime(), publicConfig(), event)) as PreviewData;
 
     expect(data.seo.links.find((l) => l.rel === 'canonical')).toBeUndefined();
     expect(data.seo.meta.find((m) => m.property === 'og:url')).toBeUndefined();
@@ -430,7 +430,7 @@ describe('previewLoad: the draft render', () => {
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await previewLoad(runtime({ resolvedAssets }), publicConfig(), event as never)) as PreviewData;
+    const data = (await previewLoad(runtime({ resolvedAssets }), publicConfig(), event)) as PreviewData;
     expect(data.heroImage?.url).toBe(`/media/photo.${hash}.webp`);
   });
 
@@ -475,7 +475,7 @@ describe('previewLoad: the draft render', () => {
     const data = (await previewLoad(
       runtime({ resolvedAssets }),
       mediaRenderPublicConfig(),
-      event as never,
+      event,
     )) as PreviewData;
     expect(data.html).toContain(`/media/photo.${hash}.webp`);
     expect(data.html).not.toContain('cairn-broken-media');
@@ -488,7 +488,7 @@ describe('previewLoad: the ended page', () => {
     gh.install();
     const token = await mintValidToken();
     const { event, headers } = loadEvent(token);
-    const data = (await previewLoad(runtime(), publicConfig(), event as never)) as PreviewData;
+    const data = (await previewLoad(runtime(), publicConfig(), event)) as PreviewData;
 
     expect(data.preview.state).toBe('published');
     expect(data.preview.published).toEqual({ permalink: '/posts/hello' });
@@ -501,7 +501,7 @@ describe('previewLoad: the ended page', () => {
     gh.install();
     const token = await seedExpiredToken();
     const { event } = loadEvent(token);
-    const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never));
+    const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event));
     expect(result.status).toBe(404);
   });
 });
@@ -546,7 +546,7 @@ describe('PreviewData: the type and runtime shape contract', () => {
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = await previewLoad(runtime({ resolvedAssets }), publicConfig(), event as never);
+    const data = await previewLoad(runtime({ resolvedAssets }), publicConfig(), event);
 
     // newer/older are unconditional keys on EntryData (always assigned, possibly undefined);
     // heroImage is the one truly optional (conditionally spread) key, populated above.

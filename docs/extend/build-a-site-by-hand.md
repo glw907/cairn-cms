@@ -201,12 +201,12 @@ description: The first entry in a hand-built site.
 This is the body. It's plain markdown.
 ```
 
-Declare the concept, the render pipeline, and the adapter in `src/lib/cairn.config.ts`. The
+Declare the concept, the render pipeline, and the adapter in `src/theme/cairn.config.ts`. The
 `backend` and `email` values matter only once you deploy for real, in Milestone 5; for now the
 dev backend intercepts every request before either one connects, so placeholders are fine:
 
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import {
   defineAdapter,
   defineConcept,
@@ -267,6 +267,17 @@ description: A hand-built cairn site.
 delivery layers read; see [Define an adapter and schema](./define-an-adapter-and-schema.md) for
 what each field on `defineConcept` and `fields.*` means.
 
+Add a `$theme` alias so anything outside `src/theme/` can import `cairn.config.ts` without a
+fragile relative path. It's a new key inside the same `sveltekit({ ... })` call from Milestone 1:
+
+<!-- snippet-check-skip: illustrates the alias key inside the sveltekit() call opened in Milestone 1; the full call is shown in context there -->
+```ts
+sveltekit({
+  /* ... */
+  alias: { $theme: 'src/theme' },
+}),
+```
+
 ### Mount the admin
 
 Add `createCairnAdmin` beside the runtime, then the two-file catch-all route pair plus the
@@ -275,7 +286,7 @@ shared shell layout. This is the whole admin mount:
 ```ts
 // src/lib/cairn.server.ts
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from './cairn.config.js';
+import { runtime } from '$theme/cairn.config.js';
 
 export const admin = createCairnAdmin(runtime, {
   auth: { bootstrapOwner: { email: 'you@example.com', displayName: 'You' } },
@@ -300,7 +311,7 @@ export const actions = admin.actions;
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/components';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$lib/cairn.config.js';
+  import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';
 
   let { data, form }: { data: AdminData; form: ActionData } = $props();
@@ -387,6 +398,7 @@ export default defineConfig(({ command }) => ({
       },
       adapter: adapter(),
       csrf: { checkOrigin: false },
+      alias: { $theme: 'src/theme' },
     }),
   ],
   ssr: { noExternal: ['@glw907/cairn-cms'] },
@@ -430,7 +442,7 @@ public route reads:
 ```ts
 // src/lib/content.ts
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 const postsRaw = import.meta.glob('/src/content/posts/*.md', {
   query: '?raw',
@@ -459,7 +471,7 @@ export default defineConfig(({ command }) => ({
       /* ... */
     }),
     cairnManifest({
-      configModule: '/src/lib/cairn.config.ts',
+      configModule: '/src/theme/cairn.config.ts',
       content: { posts: '/src/content/posts/*.md' },
       manifestPath: '/src/content/.cairn/index.json',
     }),
@@ -483,7 +495,7 @@ Wire the catch-all public route:
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN } from '$lib/content.js';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const prerender = true;
 

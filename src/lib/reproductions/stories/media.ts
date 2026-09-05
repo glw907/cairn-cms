@@ -1,5 +1,4 @@
-// cairn-cms: the seven media stories for the live-reproduction seam (Task A6a of
-// docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md). Each row's component, host,
+// cairn-cms: the seven media stories for the live-reproduction seam. Each row's component, host,
 // and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's seven `media/*`
 // rows, and the sweep at docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's
 // findings 12, 14, and 17 correct three of that row set's own details (finding 9 is a general

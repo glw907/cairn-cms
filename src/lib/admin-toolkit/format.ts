@@ -1,12 +1,13 @@
-// cairn-cms: the admin toolkit's formatter primitives, graduated from aksailingclub-org's
-// `src/admin-club/toolkit/format.ts` ("Formatters as citizens" -- no consuming admin screen should
-// hand-roll civil-date or timestamp arithmetic). Every formatter takes its locale and time zone as
+// cairn-cms: the admin toolkit's formatter primitives, graduated from a consumer site's admin
+// toolkit ("Formatters as citizens" -- no consuming admin screen should hand-roll civil-date or
+// timestamp arithmetic). Every formatter takes its locale and time zone as
 // an option with a neutral default rather than assuming any one site's own locale or zone, so a
 // second consumer in another zone or locale is a parameter, not a fork.
 //
-// `formatTimestamp` differs from the ASC original on one point, deliberately: its `timeZone`
-// default is `'UTC'`, not ASC's own `'America/Anchorage'`. A shared engine formatter cannot default
-// to one consumer's zone; a site that wants its own local time passes `timeZone` explicitly.
+// `formatTimestamp` differs from the graduated consumer-site original on one point, deliberately:
+// its `timeZone` default is `'UTC'`, not a consumer's own local zone (for example
+// `'America/Denver'`). A shared engine formatter cannot default to one consumer's zone; a site
+// that wants its own local time passes `timeZone` explicitly.
 //
 // Every display formatter in this file (formatCivilDate, formatTimestamp) accepts a nullish input
 // and takes a `fallback?: string` option defaulting to `''`. The point is uniformity: a caller
@@ -95,8 +96,8 @@ export function formatTimestamp(input: string | null | undefined, options: Forma
 }
 
 /**
- * A count-line noun in both grammatical numbers, graduated from aksailingclub-org's own
- * `format.ts` (the "1 households" defect: a bare plural noun reads wrong at exactly one). `one`
+ * A count-line noun in both grammatical numbers, graduated from a consumer site's own formatter
+ * (the "1 households" defect: a bare plural noun reads wrong at exactly one). `one`
  * is the singular form, used when the count is exactly 1; `many` is the plural, used for every
  * other count, zero included ("0 households").
  */

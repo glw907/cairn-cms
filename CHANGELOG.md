@@ -225,6 +225,40 @@
   resolved-path-stays-under-cwd containment assert covering every relative read it does, not only
   this one. Internal tooling and CLI hardening only; no consumer action.
 
+- New standing gate `check:idioms` (internals-C pass, Task 2): bans leading-tab indentation across
+  `src/lib` and `scripts` (`*.ts`/`*.svelte`/`*.mjs`), bans `process.exit(` inside
+  `scripts/checks/*.mjs` in favor of `process.exitCode` plus an explicit flow guard, and enforces
+  one self-identity spelling per gate. Task 3b adds three more rules scoped to `src/lib` comments:
+  a ban on `docs/superpowers/` path citations, a ban on pass-scoped process references, and a
+  ban on a bare production hostname literal (matched by shape, never by an enumerated private
+  hostname list). Born green on the tree it gates, including its own file. Internal tooling only;
+  no consumer action.
+
+- `check:surface`'s F-1 leak-class rider now walks the `/components` subpath's plain type exports
+  mechanically instead of skipping it outright (internals-C pass, Task 9), so a type reachable
+  only through another export's expanded shape on that subpath is caught the same way every other
+  subpath already was. Internal tooling only; no consumer action.
+
+- `FieldDescriptor`'s five dispatch sites (`decodeField`, `frontmatterFromForm`, `validateField`,
+  `formValues`, and the two template `{:else}` render branches) now enumerate every arm of the
+  15-member union explicitly instead of falling through a generic default, with a compile-time-only
+  `field satisfies never` exhaustiveness proof at each site (internals-C pass, Task 1). No arm's
+  runtime behavior changes: the permissive scalar fallback the generic default used to apply now
+  sits on the final enumerated arm instead, so a save, validate, or form-load request path throws
+  in no case it did not already throw in before. Consumers must: nothing.
+
+- Four gate scripts (`check-custom-surface`, `check-public-tokens`, `reference-coverage`,
+  `check-reference-signatures`) no longer clear an earlier nonzero `process.exitCode` with a
+  `failed ? 1 : 0` ternary at their tail; they only ever raise it (internals-C pass, Task 2 and its
+  pass-end fix round). The eighteen files in `scripts/checks/` calling `process.exit(` directly
+  convert to `process.exitCode` plus an explicit flow guard everywhere the exit was doing
+  early-return duty, proven red-on-failure per gate against a fixture. Internal tooling only; no
+  consumer action.
+
+- The test config now sets `unstubGlobals: true` (internals-C pass, Task 5), so `vi.stubGlobal`
+  no longer leaks a stub across test files; `vi.restoreAllMocks` never restored globals. Internal
+  test-harness fix only; no consumer action.
+
 ### Changed
 
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
@@ -1034,6 +1068,17 @@
   the public `/components` barrel. `content-routes-media.ts` at 1,447 lines is the one remaining
   tracked monolith, carried to the next slice. Consumers must: nothing beyond the
   `registerEditor` change recorded above.
+
+- The five classes the render pipeline stamps onto its built-in directives (`cardShell`,
+  `headRow`, `iconSpan`, `renderGlyph`, `markFirstList`) rename from the `ec-*` prefix to
+  `cairn-*` (any-site audit finding 11: `ec-*` is a consumer site's initials, not a namespace the
+  engine should freeze into a public API at 1.0). `docs/reference/render.md` now carries the full
+  emitted list and the registration rule that keeps this shared namespace from colliding with the
+  admin sheet's own `cairn-*` classes. Consumers must: rename `.ec-head` to `.cairn-head`,
+  `.ec-icon` to `.cairn-icon`, `.ec-icon-secondary` to `.cairn-icon-secondary`, `.ec-glyph` to
+  `.cairn-glyph`, and `.ec-grid` to `.cairn-grid` in any hand-authored prose CSS that targets the
+  built-in directive output; a site's own chassis copy (forked from the showcase's) still carries
+  the old names until that site's own pass re-homes them.
 
 ### Documentation
 

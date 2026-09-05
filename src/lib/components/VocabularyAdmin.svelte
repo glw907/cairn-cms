@@ -23,7 +23,7 @@ Built natively on the frozen role interface: secondary text rides only the `text
 named utilities, error text the sanctioned Tier-2 AA ink `text-[var(--cairn-error-ink)]`. No bespoke
 custom surface, no `@layer components` rule, no retired muted/subtle bracket token.
 
-The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its `meta`
+The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated. The ledger below stays hand-rolled: it is an
 editable grid of rename inputs and guarded deletes, not a data table, so it does not adopt
 `AdminTable`; the "Your tags" count chip stays its own section device, per the pass's adoption map.
@@ -132,8 +132,9 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
-  // every fresh error so the region text always mutates and the screen reader speaks again (the
-  // NavTree/ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard
+  // every fresh error so the region text always mutates and the screen reader speaks again; this is
+  // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
+  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
   // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
   // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);

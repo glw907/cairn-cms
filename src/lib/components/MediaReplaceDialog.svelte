@@ -157,7 +157,7 @@ full-page POST to `?/mediaReplace` navigates away.
   }
 
   // The chosen-file handler: route the file through the ingest-and-upload loop, exactly as the insert
-  // popover does, then fetch the preview. A file is the only path (Pass B is upload-new-only).
+  // popover does, then fetch the preview. A file is the only path; this dialog is upload-new-only.
   function onReplaceFileChosen(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
     const file = input.files?.[0];

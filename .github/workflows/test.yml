@@ -67,6 +67,7 @@ jobs:
       - run: npm run check:custom-surface
       - run: npm run check:chassis-boundary
       - run: npm run check:cm-internals
+      - run: npm run check:idioms
       - run: npm run check:invisible-craft
       - run: npm run check:admin-css-classes
       - run: npm run check:readiness

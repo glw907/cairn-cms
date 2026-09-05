@@ -15,7 +15,7 @@ export interface MediaRef {
 const HASH_RE = /^[0-9a-f]{16}$/;
 
 /**
- * The slug grammar from the Task 2 slugify transform: lowercase alphanumerics joined by single
+ * The slug grammar from the slugify transform: lowercase alphanumerics joined by single
  *  internal hyphens, with no leading or trailing hyphen and no dot (the dot is the slug/hash
  *  separator).
  */

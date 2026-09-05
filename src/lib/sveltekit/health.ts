@@ -18,7 +18,7 @@ export interface HealthData {
  * non-GitHub backend skips the signing check.
  *
  * Takes {@link CairnEvent}, deliberately defaulted to `CairnEnv` rather than generic over a site's
- * own `Env` (env-genericity sweep, pre-beta C1 Task 2): a compile-only fixture proving this call
+ * own `Env`: a compile-only fixture proving this call
  * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
  * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
  * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings` shares

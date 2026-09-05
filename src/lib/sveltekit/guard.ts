@@ -83,8 +83,8 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // define named at each call site), so a set flag signals a polluted environment; refuse loudly.
     // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
     // production build (the dev branch replaces it entirely rather than running alongside it), so
-    // there is no legitimate live-flag case for this handler to admit (Task 9, ruling 4;
-    // docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
+    // there is no legitimate live-flag case for this handler to admit
+    // (docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
     // `auth-channel/factory.ts` carries the flag's OTHER refusal, on a narrower set-AND-deployed
     // predicate, since one factory instance serves both dev and prod; both import the flag name,
     // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto
@@ -155,7 +155,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       if (!verdict.ok) {
         // Presence-only: whether the session cookie was sent, never its value or a resolved
         // identity. This check runs before session resolution (below), so no editor is known yet.
-        // The name derives through csrfSecure, the same call the CSRF pair uses (Task 6): a
+        // The name derives through csrfSecure, the same call the CSRF pair uses: a
         // coherence change here, since an http, non-local admin request never reaches this
         // point at all (the https-help-page check above already refused it).
         const hasSession =
@@ -173,7 +173,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     }
 
     if (!isPublicAdminPath(pathname)) {
-      // Same csrfSecure derivation as the hasSession read above (Task 6): unreachable to differ
+      // Same csrfSecure derivation as the hasSession read above: unreachable to differ
       // from the bare protocol check on a guarded admin path, since the https-help-page check
       // above already refused every http, non-local request before this line runs.
       const id = event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform })));

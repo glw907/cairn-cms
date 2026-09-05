@@ -570,7 +570,7 @@ describe('ListToolbar', () => {
         count: 149,
         itemLabel: 'households',
       },
-    } as never);
+    });
     const second = await render(ListToolbar, {
       target: secondTarget,
       props: {
@@ -580,7 +580,7 @@ describe('ListToolbar', () => {
         count: 149,
         itemLabel: 'households',
       },
-    } as never);
+    });
 
     const secondTrigger = second.getByRole('button', { name: 'Standing' });
     await secondTrigger.click();

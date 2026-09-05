@@ -95,7 +95,7 @@ describe('vocabularyLoad', () => {
   it('returns the committed vocabulary, a per-value usage count, and the unlisted seed set', async () => {
     seeded();
     const routes = createContentRoutes(runtime());
-    const data = await routes.vocabularyLoad(loadEvent() as never);
+    const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([
       { value: 'svelte', label: 'Svelte' },
       { value: 'rust', label: 'Rust' },
@@ -124,7 +124,7 @@ describe('vocabularyLoad', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createContentRoutes(runtime());
-    const data = await routes.vocabularyLoad(loadEvent() as never);
+    const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([
       { value: 'svelte', label: 'Svelte' },
       { value: 'rust', label: 'Rust' },
@@ -136,7 +136,7 @@ describe('vocabularyLoad', () => {
   it('degrades the vocabulary to empty when the config read fails, not the error page', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
-    const data = await routes.vocabularyLoad(loadEvent() as never);
+    const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([]);
     expect(data.usage).toEqual({});
     expect(data.unlisted).toEqual([]);
@@ -145,7 +145,7 @@ describe('vocabularyLoad', () => {
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
     seeded();
     const routes = createContentRoutes(runtime());
-    const data = await routes.vocabularyLoad(loadEvent('?error=You+have+been+signed+out') as never);
+    const data = await routes.vocabularyLoad(loadEvent('?error=You+have+been+signed+out'));
     expect(data).not.toHaveProperty('error');
   });
 });
@@ -159,7 +159,7 @@ describe('vocabularySaveAction', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted)));
     expect(location).toBe('/admin/vocabulary?saved=1');
     const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
     expect((commitPost.body as { author: unknown }).author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
@@ -180,7 +180,7 @@ describe('vocabularySaveAction', () => {
       { value: 'rust', label: 'Rust' },
       { value: 'extra', label: 'Extra' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted)));
     expect(location).toBe('/admin/vocabulary?saved=1');
     const reparsed = readVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte', 'rust', 'extra']);
@@ -192,7 +192,7 @@ describe('vocabularySaveAction', () => {
     // Drop svelte, which the seeded post carries: blocked by the strict cross-branch gate.
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
     const result = (await routes.vocabularySaveAction(
-      saveEvent(posted) as never,
+      saveEvent(posted),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toContain('svelte');
@@ -207,7 +207,7 @@ describe('vocabularySaveAction', () => {
     const routes = createContentRoutes(runtime());
     // Drop rust, which no entry carries: allowed.
     const posted = JSON.stringify([{ value: 'svelte', label: 'Svelte' }]);
-    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted)));
     expect(location).toBe('/admin/vocabulary?saved=1');
     const reparsed = readVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte']);
@@ -219,7 +219,7 @@ describe('vocabularySaveAction', () => {
     const routes = createContentRoutes(runtime());
     // A value that violates SAFE_TAG_VALUE makes validateVocabulary throw.
     const result = (await routes.vocabularySaveAction(
-      saveEvent('[{"value":"Not A Slug","label":"x"}]') as never,
+      saveEvent('[{"value":"Not A Slug","label":"x"}]'),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toBeTruthy();
@@ -233,7 +233,7 @@ describe('vocabularySaveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     const result = (await routes.vocabularySaveAction(
-      saveEvent('<script>not json</script>') as never,
+      saveEvent('<script>not json</script>'),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).not.toContain('<script>');
@@ -254,7 +254,7 @@ describe('vocabularySaveAction', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
     const result = (await routes.vocabularySaveAction(
-      saveEvent(posted) as never,
+      saveEvent(posted),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(500);
     expect(result.data.error).not.toMatch(/weird/);
@@ -275,7 +275,7 @@ describe('vocabularySaveAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const data = await routes.vocabularyLoad(loadEvent() as never);
+    const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([]);
     const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
     expect(record).toMatchObject({ event: 'config.invalid', scope: 'vocabulary' });
@@ -308,7 +308,7 @@ describe('vocabularySaveAction', () => {
       { value: 'rust', label: 'Rust' },
     ]);
     const result = (await routes.vocabularySaveAction(
-      saveEvent(posted) as never,
+      saveEvent(posted),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/changed since/i);

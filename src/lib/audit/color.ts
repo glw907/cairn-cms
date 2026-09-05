@@ -71,8 +71,8 @@ export function sameColor(a: Rgba, b: Rgba): boolean {
  * How far two colors sit from each other in hue and saturation alone, with luminance projected
  * out. `contrastRatio` answers a different, WCAG-defined question (how far apart two colors' relative
  * luminance sits) and is blind to this axis by construction: a bright purple and a bright orange at
- * the same luminance measure 1:1 on it. This is the axis `chip-ground-collision` was missing (design
- * infrastructure Pass 3, corpus C): a chip and its ground can read as plainly distinct to a sighted
+ * the same luminance measure 1:1 on it. This is the axis `chip-ground-collision` was missing: a
+ * chip and its ground can read as plainly distinct to a sighted
  * user on hue alone even where their luminance sits close enough to fail the contrast floor.
  *
  * Implemented as Euclidean distance in the Cb/Cr plane of YCbCr (ITU-R BT.601), over the same sRGB
@@ -177,8 +177,8 @@ export type GroundResolution =
  * A `null` in `colors` is read as a layer that painted nothing, and it is worth knowing why that is
  * not the whole truth. `resolveColors` returns `null` for BOTH an empty string and a string the
  * browser refused, so a refused color composites away here exactly as an unpainted layer does, which
- * is a residual fail-open of the family this doc describes. Task 18's review pass proposed making
- * the null case indeterminate; that is wrong at this level, and two pinned fixtures in
+ * is a residual fail-open of the family this doc describes. A proposal to make
+ * the null case indeterminate was considered; that is wrong at this level, and two pinned fixtures in
  * `color.test.ts` demonstrate it, since both pass `null` to mean "nothing painted" and one of them
  * exists to hold the dark-canvas defect closed. The repair belongs at the `resolveColors` boundary,
  * where the two facts can be told apart and given separate sentinels the way `probeSelectors`

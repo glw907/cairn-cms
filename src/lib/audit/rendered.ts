@@ -211,7 +211,7 @@ export async function runRendered(
                 if (!(rule.states ?? ['rest']).includes(state)) continue;
                 // A rule that throws reports at its OWN tier rather than aborting the run with exit
                 // 2. An advisory rule taking the whole process down on a substrate condition (a
-                // pruned manifest in a consumer install) is the leak this pass's exit criterion
+                // pruned manifest in a consumer install) is the leak a fail-closed exit criterion
                 // forbids, and an error-tier rule still gates through the finding it raises here.
                 let found: RenderedFinding[];
                 try {

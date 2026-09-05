@@ -1,3 +1,7 @@
+// cairn-cms: the render pipeline's sanitize-schema builder and its three rehype hardening steps
+// (anchor rel, the interactive-sink guard, task-list a11y). `buildSanitizeSchema` is the pipeline's
+// last line of defense against unsafe HTML from any source (an author's raw markdown, a plugin, a
+// site's own `extend`), so every allowance it grants is deliberate and named below.
 import { defaultSchema, type Schema } from 'hast-util-sanitize';
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';

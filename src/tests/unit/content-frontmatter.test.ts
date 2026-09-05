@@ -167,6 +167,120 @@ describe('frontmatterFromForm', () => {
   });
 });
 
+// `frontmatterFromForm`'s top-level default arm absorbs every type without its own case: text,
+// textarea, number, select, url, email, date, datetime, icon. text/textarea/date are already
+// characterized above; this pins the remaining five, which read as a plain, possibly-empty string.
+describe('frontmatterFromForm default-arm absorption (top level)', () => {
+  const fields: NamedField[] = [
+    { type: 'number', name: 'count', label: 'Count' },
+    { type: 'select', name: 'status', label: 'Status', options: ['a', 'b'] },
+    { type: 'url', name: 'site', label: 'Site' },
+    { type: 'email', name: 'contact', label: 'Contact' },
+    { type: 'icon', name: 'glyph', label: 'Glyph' },
+  ];
+
+  it('reads each as a plain string', () => {
+    const form = new FormData();
+    form.set('count', '5');
+    form.set('status', 'a');
+    form.set('site', 'https://example.com');
+    form.set('contact', 'a@b.c');
+    form.set('glyph', 'leaf');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      count: '5',
+      status: 'a',
+      site: 'https://example.com',
+      contact: 'a@b.c',
+      glyph: 'leaf',
+    });
+  });
+
+  it('normalizes an absent one to an empty string, not null', () => {
+    expect(frontmatterFromForm(fields, new FormData())).toEqual({
+      count: '',
+      status: '',
+      site: '',
+      contact: '',
+      glyph: '',
+    });
+  });
+
+  // frontmatterFromForm's switch over field.type is exhaustive over FieldDescriptor at compile
+  // time; the default arm is reachable only via an unsafe cast (a descriptor type the union does
+  // not name). It must degrade to the same permissive FormData.get read the enumerated
+  // text/select/... arms use, never throw, since this runs on the save request path.
+  it('degrades an out-of-union descriptor to a plain FormData.get read rather than throwing', () => {
+    const mystery: NamedField = { type: 'mystery', name: 'x', label: 'X' } as unknown as NamedField;
+    const form = new FormData();
+    form.set('x', 'a value');
+    expect(frontmatterFromForm([mystery], form)).toEqual({ x: 'a value' });
+    expect(frontmatterFromForm([mystery], new FormData())).toEqual({ x: '' });
+  });
+});
+
+// `decodeField` (the nested-use sibling: object leaves, array rows) shares the same default arm,
+// but its own explicit cases are boolean/multiselect/image/object, so text/textarea/date land here
+// too, alongside number/select/url/email/datetime/icon and (structurally, though the
+// declaration-time checkContainerNesting guard never lets a real fieldset reach this with either)
+// reference/array.
+describe('decodeField default-arm absorption (nested; every arm not explicitly cased)', () => {
+  const nested: NamedField = {
+    type: 'object',
+    name: 'meta',
+    label: 'Meta',
+    fields: {
+      title: { type: 'text', label: 'Title' },
+      note: { type: 'textarea', label: 'Note' },
+      count: { type: 'number', label: 'Count' },
+      status: { type: 'select', label: 'Status', options: ['a', 'b'] },
+      site: { type: 'url', label: 'Site' },
+      contact: { type: 'email', label: 'Contact' },
+      when: { type: 'date', label: 'When' },
+      scheduled: { type: 'datetime', label: 'Scheduled' },
+      glyph: { type: 'icon', label: 'Glyph' },
+      author: { type: 'reference', concept: 'pages', label: 'Author' },
+      extra: { type: 'array', item: { type: 'text', label: 'Extra' }, label: 'Extra' },
+    },
+  };
+
+  it('trims each to a plain non-empty string', () => {
+    const form = new FormData();
+    form.set('meta.title', ' Hi ');
+    form.set('meta.note', ' A note ');
+    form.set('meta.count', '5');
+    form.set('meta.status', 'a');
+    form.set('meta.site', 'https://example.com');
+    form.set('meta.contact', 'a@b.c');
+    form.set('meta.when', '2026-01-05');
+    form.set('meta.scheduled', '2026-01-05T09:00');
+    form.set('meta.glyph', 'leaf');
+    form.set('meta.author', 'jane-doe');
+    form.set('meta.extra', 'x');
+
+    expect(frontmatterFromForm([nested], form).meta).toEqual({
+      title: 'Hi',
+      note: 'A note',
+      count: '5',
+      status: 'a',
+      site: 'https://example.com',
+      contact: 'a@b.c',
+      when: '2026-01-05',
+      scheduled: '2026-01-05T09:00',
+      glyph: 'leaf',
+      author: 'jane-doe',
+      extra: 'x',
+    });
+  });
+
+  it('drops a key whose value trims to empty, keeping a sibling that is set', () => {
+    const form = new FormData();
+    form.set('meta.title', '   ');
+    form.set('meta.note', 'kept');
+    expect(frontmatterFromForm([nested], form).meta).toEqual({ note: 'kept' });
+  });
+});
+
 describe('dateInputValue', () => {
   it('formats a Date as YYYY-MM-DD with no timezone shift', () => {
     expect(dateInputValue(new Date('2026-05-14T00:00:00.000Z'))).toBe('2026-05-14');
@@ -291,6 +405,16 @@ describe('formValues', () => {
       { type: 'multiselect', name: 'tags', label: 'Tags' },
     ];
     expect(formValues(fields, {})).toEqual({ title: '', tags: [] });
+  });
+
+  // formValues' switch over field.type is exhaustive over FieldDescriptor at compile time; the
+  // default arm is reachable only via an unsafe cast (a descriptor type the union does not name).
+  // It must degrade to the same plain-string coercion the enumerated text/select/... arms use,
+  // never throw, since this feeds a form load.
+  it('degrades an out-of-union descriptor to a String() coercion rather than throwing', () => {
+    const mystery: NamedField = { type: 'mystery', name: 'x', label: 'X' } as unknown as NamedField;
+    expect(formValues([mystery], { x: 42 })).toEqual({ x: '42' });
+    expect(formValues([mystery], {})).toEqual({ x: '' });
   });
 });
 

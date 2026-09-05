@@ -14,6 +14,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
+import { testEvent } from '../helpers/test-event.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
@@ -68,13 +69,13 @@ const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A delete POST for posts/<id> (the route-param delete action). */
 function deleteEvent(id: string) {
-  return {
-    url: new URL(`https://t.example/admin/posts/${id}`),
+  return testEvent({
+    url: `https://t.example/admin/posts/${id}`,
+    method: 'POST',
     params: { concept: 'posts', id },
-    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST' }),
     locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }, cairnBackend: backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
+  });
 }
 
 /** One manifest entry, optionally carrying reference edges. */
@@ -93,7 +94,7 @@ function entry(
 async function del(id: string): Promise<{ location?: string; status?: number; data?: { error: string; inboundLinks?: { id: string }[] } }> {
   const routes = createContentRoutes(runtime());
   try {
-    const result = (await routes.deleteAction(deleteEvent(id) as never)) as unknown as {
+    const result = (await routes.deleteAction(deleteEvent(id))) as unknown as {
       status: number; data: { error: string; inboundLinks?: { id: string }[] };
     };
     // A fail() returns rather than throws.

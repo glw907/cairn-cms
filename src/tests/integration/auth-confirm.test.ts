@@ -4,6 +4,7 @@ import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, ex
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { generateToken, hashToken, sessionCookieName, csrfCookieName, cookieName } from '../../lib/auth/crypto.js';
 import { issueToken, createSession } from '../../lib/auth/store.js';
+import { testEvent } from '../helpers/test-event.js';
 
 const db = env.AUTH_DB;
 const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'noreply@test.dev' }, send: async () => {} });
@@ -354,17 +355,16 @@ describe('confirm and logout logging', () => {
     const sessionId = 'a-host-prefixed-session';
     await createSession(env.AUTH_DB, sessionId, 'ed4@x.dev', Date.now() + 10_000, Date.now());
     const cookies = makeRecordingCookies({ [sessionCookieName(true)]: sessionId });
-    const logoutEvent = {
-      url: new URL('http://admin.example/admin/auth/logout'),
-      request: new Request('http://admin.example/admin/auth/logout', { method: 'POST', body: new URLSearchParams() }),
-      params: {},
-      route: { id: '/admin/auth/[...path]' },
+    const logoutEvent = testEvent({
+      url: 'http://admin.example/admin/auth/logout',
+      method: 'POST',
+      body: new URLSearchParams(),
+      route: '/admin/auth/[...path]',
       cookies,
       locals: { cairnEditor: null },
-      platform: { env: { AUTH_DB: env.AUTH_DB } },
-      setHeaders: () => {},
-    };
-    await expectRedirect(() => routes.logoutAction(logoutEvent as never));
+      env: { AUTH_DB: env.AUTH_DB },
+    });
+    await expectRedirect(() => routes.logoutAction(logoutEvent));
     expect(cookies.get(sessionCookieName(true))).toBeUndefined();
     expect(cookies.get(sessionCookieName(false))).toBeUndefined();
     expect(await countRows('session')).toBe(0);
@@ -387,18 +387,17 @@ describe('confirm and logout logging', () => {
         }),
       }),
     };
-    const logoutEvent = {
-      url: new URL('https://test.dev/admin/auth/logout'),
-      request: new Request('https://test.dev/admin/auth/logout', { method: 'POST', body: new URLSearchParams() }),
-      params: {},
-      route: { id: '/admin/auth/[...path]' },
+    const logoutEvent = testEvent({
+      url: 'https://test.dev/admin/auth/logout',
+      method: 'POST',
+      body: new URLSearchParams(),
+      route: '/admin/auth/[...path]',
       cookies,
       locals: { cairnEditor: null },
-      platform: { env: { AUTH_DB: brokenDb, PUBLIC_ORIGIN: 'https://test.dev' } },
-      setHeaders: () => {},
-    };
+      env: { AUTH_DB: brokenDb, PUBLIC_ORIGIN: 'https://test.dev' },
+    });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expectRedirect(() => routes.logoutAction(logoutEvent as never));
+    await expectRedirect(() => routes.logoutAction(logoutEvent));
     // The cookie is gone from the jar regardless of the D1 fault.
     expect(cookies.get('__Host-cairn_session')).toBeUndefined();
     // The fault is logged, not swallowed silently.

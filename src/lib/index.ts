@@ -2,8 +2,7 @@
 // `cairn.config.ts` needs to declare its adapter (`defineAdapter`, `defineConcept`, the
 // field/fieldset builders, `CairnAdapter` and its member types), plus the render pipeline entry
 // (`createRenderer`), the composed runtime's read surface, and the content-manifest and
-// GitHub-backend primitives a build script or the delivery layer calls. Auth landed in Plan 01,
-// the content model and adapter in Plan 02, and the GitHub read-and-commit backend in Plan 03. A
+// GitHub-backend primitives a build script or the delivery layer calls. A
 // SvelteKit route factory belongs on `/sveltekit`, and an admin Svelte component on `/components`,
 // even though a site's adapter config also feeds both: this barrel carries no server route, no
 // Svelte component, and no per-request framework binding.
@@ -26,7 +25,7 @@ export { defineAccess, canReach, hasAccessRule } from './auth/access.js';
 export type { AccessMap } from './auth/access.js';
 export type { MagicLinkMessage, SendMagicLink, EmailSender } from './email.js';
 
-// Content model and adapter contract (Plan 02).
+// Content model and adapter contract.
 export type {
   CairnAdapter,
   ConceptConfig,
@@ -41,8 +40,7 @@ export type {
   ConceptDescriptor,
   CairnRuntime,
   SiteRender,
-  // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these (export-rule sweep,
-  // C2 breaking-window pass, R4 ruling).
+  // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these.
   RoutingRule,
   // `CairnAdapter.aiPosture` names this, so it reaches root the way every other adapter member
   // type does. `/delivery` and `/delivery/data` export it too, since that is where `buildRobots`
@@ -59,8 +57,7 @@ export type { StandardInput } from './content/standard-schema.js';
 export { fields } from './content/fields.js';
 export type { FieldDescriptor } from './content/fields.js';
 // The field-descriptor union's fifteen arms, each named in `FieldDescriptor` and in `fields`'s own
-// per-type builder signature; the export-rule sweep makes every one importable by its own name
-// (C2 breaking-window pass, R4 ruling).
+// per-type builder signature; every one is importable by its own name.
 export type {
   TextField,
   TextareaField,
@@ -97,7 +94,7 @@ export type { CairnRef, LinkResolve } from './content/links.js';
 export { serializeManifest, verifyManifest, verifyReferences } from './content/manifest.js';
 // `Manifest.entries` names `ManifestEntry`.
 export type { Manifest, ManifestEntry } from './content/manifest.js';
-// Render engine (Plan 04): generic directive pipeline; sites own the component registry.
+// Render engine: generic directive pipeline; sites own the component registry.
 export { defineRegistry, defineComponent } from './render/registry.js';
 // `ComponentDef.build`'s parameter and `.slots` name these.
 export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
@@ -106,7 +103,7 @@ export type { IconSet } from './render/glyph.js';
 // The component-authoring helpers (iconSpan, cardShell, headRow) live on the
 // @glw907/cairn-cms/render subpath, not the root barrel. rehypeDispatch is deliberately not public:
 // createRenderer is the one public render pipeline, so the safe plugin ordering is the only public
-// path. See docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md.
+// path.
 export { createRenderer } from './render/pipeline.js';
 // `createRenderer`'s returned `renderMarkdown`/`renderDocument` name `ResolveOptions` in their own
 // `opts` parameter.
@@ -123,21 +120,21 @@ export type { MediaRef } from './media/reference.js';
 // `Manifest.entries[].references` names `ReferenceEdge`.
 export type { ReferenceEdge } from './content/references.js';
 
-// GitHub read-and-commit backend (Plan 03).
+// GitHub read-and-commit backend.
 export type { RepoFile, CommitAuthor } from './github/types.js';
 export { CommitConflictError, BranchExistsError } from './github/types.js';
-// The Backend seam (Contract v2 backend phase): the store interface and its default GitHub provider.
+// The Backend seam: the store interface and its default GitHub provider.
 export { githubApp } from './github/backend.js';
 export type { Backend, BackendProvider, GithubAppProvider, BackendCommit } from './github/backend.js';
 export type { FileChange } from './github/repo.js';
 
-// Nav tree and site-config helpers (Plan 06).
+// Nav tree and site-config helpers.
 export { parseSiteConfig, readMenu, readVocabulary, SiteConfigError } from './nav/site-config.js';
 // `CairnRuntime.tidy` names `TidyConfig`, whose own `conventions` field names `TidyConventions`.
 export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from './nav/site-config.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because `CairnAdapter.editor.navLayout`
 // names `NavLayout`, whose own union names its three member shapes in turn. Type-only imports, so
-// no `/sveltekit` module ever executes here (export-rule sweep, C2 breaking-window pass, R4 ruling).
+// no `/sveltekit` module ever executes here.
 export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because
 // `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name it directly as

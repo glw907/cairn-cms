@@ -1,5 +1,5 @@
-// cairn-cms: the SEO head fields read at the cross-concept boundary (schema-source-of-truth design,
-// Plan 3). The catch-all route resolves any concept by request path, so the entry's frontmatter is
+// cairn-cms: the SEO head fields read at the cross-concept boundary (schema-source-of-truth design).
+// The catch-all route resolves any concept by request path, so the entry's frontmatter is
 // typed Record<string, unknown>; this reads the known head fields by name and coerces. Kept apart
 // from seo.ts (the head builder) so reading frontmatter and building the head stay distinct concerns.
 

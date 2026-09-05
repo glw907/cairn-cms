@@ -1,6 +1,6 @@
 // The dependency-floors check. The engine's peer ranges have teeth only when something reads
 // the consumer's lockfile, where a transitively pinned svelte can sit below the floor while
-// package.json looks fine (the ecxc retrofit shipped svelte 5.56.0 that way). The check compares
+// package.json looks fine (a consumer retrofit shipped svelte 5.56.0 that way). The check compares
 // the resolved svelte and @sveltejs/kit versions against the peer ranges the installed
 // @glw907/cairn-cms declares, read at runtime so the floors live in one place. It reads
 // package-lock.json, pnpm-lock.yaml, and yarn.lock, in that order, so an npm, pnpm, or yarn

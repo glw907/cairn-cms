@@ -91,7 +91,7 @@ One call, from your root layout, after every navigation:
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { cairn } from '$lib/cairn.config.js';
+  import { cairn } from '$theme/cairn.config.js';
 
   let { children } = $props();
 

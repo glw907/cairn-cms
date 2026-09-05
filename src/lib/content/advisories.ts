@@ -1,4 +1,4 @@
-// cairn-cms: the entry editor's internal advisory channel (editor-help pass 3). An advisory is a
+// cairn-cms: the entry editor's internal advisory channel. An advisory is a
 // non-blocking, serializable notice that rides EditData across the SSR boundary, so it carries data
 // only and never a callback. Today's one notice is the address collision: a warning, not a gate,
 // that another entry already resolves to the same public address (last-write-wins).
@@ -18,8 +18,8 @@ import { buildCrossBranchIndex, type CrossBranchRow } from './cross-branch-index
 import { asString, entryIdentity } from './identity.js';
 
 /**
- * One action an advisory offers, as a label and an optional link target. Module-internal (the
- * retires pass, Task 2 retired its export, a sanctioned NavIcon-class leak); a consumer reads it
+ * One action an advisory offers, as a label and an optional link target. Module-internal (its
+ * export was retired, a sanctioned NavIcon-class leak); a consumer reads it
  * structurally as `NonNullable<EditData['advisories'][number]['actions']>[number]`.
  */
 interface AdvisoryAction {

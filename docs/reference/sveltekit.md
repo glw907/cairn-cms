@@ -118,7 +118,7 @@ a decision that belongs to whoever owns it.
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { roles } from './lib/cairn.config.js';
+import { roles } from '$theme/cairn.config.js';
 import { theme } from './theme-handle.js';
 
 export const handle = sequence(theme, createAuthGuard({ roles }));
@@ -268,7 +268,7 @@ or a cast recovers the ten. `createCairnAdmin` is the only public seam that moun
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime);
@@ -746,7 +746,9 @@ ancestor layout `load` run first, so a page's own guard never runs before a POST
 actions. `createSectionAction` composes [`adminAction`](#adminaction) (editor identity, CSRF,
 the single form read, the audit contract) with the same access-map check
 [`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
-binding, so a section's own actions need no hand-rolled precondition.
+binding, so a section's own actions need no hand-rolled precondition. This is the sanctioned
+shape for a custom section regardless of what any given site's own routes show. See [Add a
+custom admin screen](../extend/add-a-custom-admin-screen.md#gate-it).
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
 binding off the platform env, and `config.rateLimit`, when set, names the binding and the
@@ -1005,7 +1007,7 @@ against the default owner/editor pair.
 ```ts
 // src/routes/admin/(app)/editors/+page.server.ts (per-route mounting)
 import { createEditorRoutes } from '@glw907/cairn-cms/sveltekit';
-import { roles } from '$lib/cairn.config.js';
+import { roles } from '$theme/cairn.config.js';
 
 const editors = createEditorRoutes({ roles });
 
@@ -1229,7 +1231,7 @@ since only the fields the last-refused action actually sets are present.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createContentRoutes } from '@glw907/cairn-cms/sveltekit';
 
@@ -1277,7 +1279,7 @@ other route factory's convention.
 // src/routes/media/[...path]/+server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }));
 ```
@@ -1484,7 +1486,7 @@ hand-mounted route registers `navSaveAction` under `save`.
 // src/routes/admin/(app)/nav/+page.server.ts (per-route mounting)
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createNavRoutes } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 const nav = createNavRoutes(composeRuntime({ adapter: cairn, siteConfig }));
 
@@ -1817,7 +1819,7 @@ accessible noun for the count ("pending requests"), joined into the entry's acce
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the attention function -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 import { db } from './club/db.js';
 
@@ -1841,8 +1843,8 @@ where `cairn.server.ts` composes the runtime, not declared on the adapter beside
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
-import { attention } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { attention } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime, { attention });
@@ -1889,7 +1891,7 @@ Stability tier: Extension API.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the editor.publishActions member -->
 ```ts
-// src/lib/cairn.config.ts
+// src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({

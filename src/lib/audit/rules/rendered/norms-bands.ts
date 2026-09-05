@@ -1,4 +1,4 @@
-// cairn-audit's norms-bands rule: a component's own measurements read against the bands Task 13's
+// cairn-audit's norms-bands rule: a component's own measurements read against the bands the
 // norms manifest observed across the admin. It is the consumer side of the manifest (`norms.ts`
 // derives and ships it, `cairn-audit norms` prints it for a builder to read before it composes) and
 // it stays advisory BY PRINCIPLE, not by an unfinished promotion: a legitimately novel component may
@@ -237,7 +237,7 @@ function isOutsideBand(kind: NormsBandCandidate['kind'], value: number | string,
  * property (nothing to check against), the norm is unbanded by contract ({@link UNBANDED_FLAGS}),
  * or the measurement falls inside the band. A candidate whose value never resolved to a readable
  * length, ratio, or keyword is reported rather than dropped, the same fail-loud posture every
- * rendered rule in this pass takes on an unreadable value.
+ * rendered rule takes on an unreadable value.
  */
 export function evaluateNormsBandCandidate(
   candidate: NormsBandCandidate,
@@ -328,7 +328,7 @@ function manifestOnce(): NormsManifest {
 
 /**
  * A component's own control heights, padding-to-type ratios, radii, and border treatments read
- * against the norms manifest's observed bands. Advisory by principle: unlike this pass's six
+ * against the norms manifest's observed bands. Advisory by principle: unlike the
  * error-tier rules, a finding here never states a defect, only a step worth a second look, so the
  * manifest's own honesty disciplines (open-question, single-observation) carry through to the
  * message rather than being smoothed over into a flat pass/fail.

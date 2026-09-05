@@ -6,7 +6,7 @@
 // invents class tokens out of prose. svelte is a peer dependency, so the parser is present in every
 // consumer at no dependency cost.
 //
-// The node list is flat and in document order because the suppression idiom (Task 8) resolves a
+// The node list is flat and in document order because the suppression idiom resolves a
 // directive to the first node beginning on or after the following line, then suppresses matching
 // findings anywhere in that node's range. Cairn's own tree contains a multi-line element whose
 // class attribute sits three lines below its directive, so a line-literal reading scores a

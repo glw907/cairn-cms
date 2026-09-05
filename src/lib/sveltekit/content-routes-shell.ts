@@ -22,8 +22,8 @@ import type { CairnEvent } from './types.js';
 
 /**
  * A sidebar concept entry: just enough to render the nav without shipping validators to the
- * client. Module-internal (the retires pass, Task 2 retired its export, a sanctioned
- * NavIcon-class leak); a consumer reads it structurally as
+ * client. Module-internal (its export was retired, a sanctioned NavIcon-class leak); a consumer
+ * reads it structurally as
  * `Extract<AdminShellData, { public: false }>['concepts'][number]`.
  */
 interface NavConcept {

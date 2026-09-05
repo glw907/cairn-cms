@@ -64,7 +64,7 @@ const devPackageOk = run('packages/cairn-cms-dev typecheck (via check:dev-packag
 
 if (showcaseOk && devPackageOk) {
   console.log('check:consumers OK');
-  process.exit(0);
+} else {
+  console.log('check:consumers FAILED');
+  process.exitCode = 1;
 }
-console.log('check:consumers FAILED');
-process.exit(1);

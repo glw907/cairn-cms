@@ -5,12 +5,12 @@
 //
 // Sixteen rules are registered: seven error-tier rules (`one-filled-action`, `focus-renders`,
 // `interactive-contrast`, `touch-targets`, `viewport-overflow`, `panel-width`, `list-role`;
-// `chip-ground-collision` demoted out of this tier in design infrastructure Pass 3, pending its
+// `chip-ground-collision` demoted out of this tier pending its
 // chroma repair, see ROADMAP), then nine advisory ones (`chip-ground-collision`, `border-contrast`,
 // `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`, `form-font-parity`,
 // `field-edge-alignment`, `container-inset-asymmetry`), which report and never reach the exit code.
-// `form-font-parity` is registered PROVISIONALLY at advisory (design ratchet Task 5): its own
-// header names the intended promotion to error, gated on Task 6's CI re-check. `panel-width`
+// `form-font-parity` is registered PROVISIONALLY at advisory: its own
+// header names the intended promotion to error, gated on a CI re-check. `panel-width`
 // closes the hole `viewport-overflow` declines on purpose (see its own header): a row clipped
 // inside a table wrapper that never genuinely scrolls to reach it. `list-role` closes the gap the
 // STATIC `list-role` names in its own header: a descendant selector scoped to an ancestor's class

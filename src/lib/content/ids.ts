@@ -12,8 +12,8 @@ export function isValidId(id: string): boolean {
 
 /**
  * A content entry's id from its filename: the basename without the `.md` suffix. Pass a
- * basename, not a path; the caller strips any directory prefix first (Plan 03's Git Trees
- * listing yields basenames directly).
+ * basename, not a path; the caller strips any directory prefix first, since a Git Trees
+ * listing yields basenames directly.
  */
 export function idFromFilename(filename: string): string {
   return filename.replace(/\.md$/, '');

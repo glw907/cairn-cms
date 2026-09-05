@@ -1,3 +1,7 @@
+// cairn-cms: the rehype step that turns a component directive's stamped hast markers (from
+// remark-directives.ts) into the site's own rendered markup, by looking up the directive's name in
+// the ComponentRegistry and calling its declared `render`. `iconSpan` and the small hast-reading
+// helpers below back that render call.
 import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
 import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';
@@ -16,9 +20,9 @@ export function strProp(node: Element, name: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-/** Wrap a pre-built glyph in an ec-icon span; secondary role adds the modifier. */
+/** Wrap a pre-built glyph in a cairn-icon span; secondary role adds the modifier. */
 export function iconSpan(glyphEl: Element, role?: string): Element {
-  const className = role === 'secondary' ? ['ec-icon', 'ec-icon-secondary'] : ['ec-icon'];
+  const className = role === 'secondary' ? ['cairn-icon', 'cairn-icon-secondary'] : ['cairn-icon'];
   return h('span', { className }, [glyphEl]);
 }
 
@@ -31,7 +35,7 @@ export function cardShell(classes: string[], body: ElementContent[]): Element {
 }
 
 /**
- * Card head row: `<div class="ec-head">[icon]<hN class="card-title">{title}</hN></div>`.
+ * Card head row: `<div class="cairn-head">[icon]<hN class="card-title">{title}</hN></div>`.
  *  Pass the title's inline children, an optional pre-built icon element, and an optional heading
  *  level (default 2). This factors the icon-plus-heading head that a titled component build would
  *  otherwise rebuild by hand (the shape the removed `splitHead` produced).
@@ -40,17 +44,17 @@ export function headRow(title: ElementContent[], icon?: Element, level: number =
   const children: ElementContent[] = [];
   if (icon) children.push(icon);
   children.push(h(`h${level}`, { className: ['card-title'] }, title));
-  return h('div', { className: ['ec-head'] }, children);
+  return h('div', { className: ['cairn-head'] }, children);
 }
 
 /**
- * Tag the first <ul> among children with `ec-grid` and strip its whitespace-only
+ * Tag the first <ul> among children with `cairn-grid` and strip its whitespace-only
  *  text nodes so the bare list serializes without newlines. Returns that <ul>.
  */
 export function markFirstList(children: ElementContent[]): Element | undefined {
   const ul = children.find((c) => isElement(c) && c.tagName === 'ul') as Element | undefined;
   if (ul) {
-    ul.properties = { ...ul.properties, className: ['ec-grid'] };
+    ul.properties = { ...ul.properties, className: ['cairn-grid'] };
     ul.children = (ul.children as ElementContent[]).filter(
       (c) => !(c.type === 'text' && /^\s*$/.test(c.value)),
     );

@@ -10,8 +10,9 @@
 // cannot (a `VITE_CAIRN_E2E=1` build that reaches a deployed runtime with CAIRN_DEV_BACKEND=1
 // still set would otherwise expose an unauthenticated OTP oracle there), and
 // `platform.env?.CAIRN_DEV_BACKEND === '1'` mirrors the same flag every other dev-only surface
-// reads. Duplicated in the two sibling routes rather than imported from a shared module, the same
-// duplication `factory.ts`'s own `isLocalHost` documents for `guard.ts`'s.
+// reads. `isLocalHost` is re-declared here, and in the two sibling routes, rather than imported:
+// the engine's own copy (`dev-flag.ts`) is internal, not part of the public export map, so a
+// showcase route has no seam to import it through and hand-rolls the three-line predicate instead.
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { readCapture } from '../../../members/capture-transport.js';

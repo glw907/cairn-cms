@@ -278,6 +278,11 @@ export function buildSpellDiagnostic(
  * answer lands, {@link accept} returns true only for the highest seq seen, so a stale answer from an
  * older document state is dropped and the underlines never lag the text. Pure, so the seq logic
  * unit-tests without a Worker.
+ *
+ * A sibling exists in `client-action.ts`'s `RequestGuard`, an independent arbiter for the same
+ * shape with inverted polarity: `accept` here also accepts a tied seq, where `RequestGuard.isStale`
+ * rejects anything short of the exact current token. The two were not unified because that
+ * polarity difference is load-bearing for each caller, not an accident.
  */
 export interface SeqArbiter {
   /** The next monotonic seq, recorded as the current run. */
@@ -375,7 +380,7 @@ export function createSpellWorker(): SpellWorker {
 // mechanism createSpellWorker uses for the worker. The spike (docs/internal/design/
 // 2026-06-20-editor-copyedit-spike-result.md) proved Vite's `?worker`/`?url` package-subpath imports
 // from CONSUMER app code; the library's own source cannot self-import by package name, so it uses the
-// portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. Task 16's
+// portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. The
 // showcase E2E proves the whole chain through the real consumer build; if resolution ever fails there,
 // only these two URL lines change. The dictionary filename is the dialect-resolved one the main thread
 // passes in; the wasm filename is fixed.
@@ -422,7 +427,7 @@ export interface SpellcheckOptions {
   /**
    * The pending personal-dictionary additions, owned by the caller. When an author chooses "Add to
    *  dictionary" the source posts addWord to the Worker (the underline clears at once) and records the
-   *  word here. The set is the seam Task 9 commits to the git-backed dictionary file; this source only
+   *  word here. The set is the seam a later commit writes to the git-backed dictionary file; this source only
    *  fills it and never persists. A caller that does not pass one gets a fresh internal set.
    */
   pendingAdditions?: Set<string>;
@@ -536,7 +541,7 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
  * quick-fix actions (the suggestions, then add-to-dictionary, then ignore). The returned extension
  * bundles the spellcheck linter, a second deterministic objective-error linter over the same prose
  * spans (doubled words, double spaces, repeated punctuation), and the locked amber underline theme,
- * so Task 7's single on/off toggle gates both surfaces by reconfiguring this one extension.
+ * so a single on/off toggle gates both surfaces by reconfiguring this one extension.
  */
 export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<Extension> {
   // Reuse the caller's already-loaded modules when supplied (the editor passes its own view/language
@@ -687,8 +692,8 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     const w = ensureWorker();
     const callbacks: SpellDiagnosticActions = {
       onAddWord(word) {
-        // Post addWord so the Worker's merged set now answers correct, record the pending addition for
-        // Task 9 to commit, and re-lint so every instance of the word clears at once.
+        // Post addWord so the Worker's merged set now answers correct, record the pending addition
+        // to commit later, and re-lint so every instance of the word clears at once.
         w.postMessage({ type: 'addWord', word });
         pendingAdditions.add(word.toLowerCase());
         relint();
@@ -759,7 +764,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   // spellcheck source uses, so a doubled word inside a code fence is never flagged. It is synchronous
   // and deterministic (no Worker, no dictionary), and its diagnostics carry `info` so they share the
   // locked amber underline. It ships in the same returned extension as the spellcheck source, so the
-  // Task 7 toggle reconfigures one compartment to gate both surfaces at once.
+  // single toggle reconfigures one compartment to gate both surfaces at once.
   const objectiveSource = linter((view) => {
     const { text, spans } = visibleProseSpans(view);
     return objectiveErrors(text, spans).map(buildObjectiveDiagnostic);

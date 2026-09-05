@@ -1,18 +1,18 @@
 <!--
 @component
-The admin toolkit's one surface allowed a semantic status color, graduated from
-aksailingclub-org's `src/admin-club/toolkit/StatusChip.svelte` and re-expressed for its second
-generation (the 2026-08-24 owner probe, Geoff's own ratification:
-docs/internal/probes/2026-08-26-chip-registers-v2). The first generation split a `tone` prop
-(the color signal, carried by a small `status` dot) from a `bounded`/`quiet` register (the shape).
+The admin toolkit's one surface allowed a semantic status color, graduated from a consumer site's
+admin toolkit and re-expressed for its second generation (the 2026-08-24 owner probe, Geoff's own
+ratification: docs/internal/probes/2026-08-26-chip-registers-v2). The first generation split a
+`tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet` register
+(the shape).
 The probe measured the 6px dot illegible toolkit-wide across three consumer screens and ratified
 fusing tone INTO the register instead: `register` alone now carries both shape and color, `tone`
 retires with the dot, and the whole chip vocabulary is three registers, no more.
 
 Assembles from one daisyUI 5 primitive already in cairn's admin CSS build: `badge` (the pill
 shape), with `badge-outline` supplying the inherited-border box model every register composes on
-top of. `badge-outline` retired from cairn's own tree on its own (design infrastructure Pass 3,
-corpus C): it compiles to an explicit background and border color that can match one of
+top of. `badge-outline` retired from cairn's own tree on its own: it compiles to an explicit
+background and border color that can match one of
 AdminTable's own zebra stripe colors, so a ghost chip melts into whichever row shares that color,
 and neither it nor the un-tuned `badge-outline` clears the audit's own 3:1 border-contrast floor in
 both themes. `register` supplies the three ratified recipes instead: `'quiet'` (the default) tints
@@ -40,8 +40,8 @@ still binds a CONSUMER's own admin screen, which cairn never scans.
 The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
 consumer's own household-standing context; a min-width-free "hugging" alternative was tried and
 adversarially refuted -- it produces a ragged column when chip labels vary in length); `xs`
-carries no floor of its own (the admin-toolkit organization pass's T6 absorption: a dense table
-column, ConceptList's publish-state cell and MediaLibrary's alt/usage cells, budgets its narrow-
+carries no floor of its own: a dense table column, ConceptList's publish-state cell and
+MediaLibrary's alt/usage cells, budgets its narrow-
 viewport width against the chip's real content, not a fixed reservation sized for a longer label
 the office's own three-word vocabulary never needs).
 -->

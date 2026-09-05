@@ -17,9 +17,9 @@ const DOC = 'docs/admin-route-structure.md';
 const NON_CONSTRAINING = new Set(['none', '100%', '100vw']);
 
 function describe(el: Element): string {
-	const tag = el.tagName.toLowerCase();
-	const cls = el.getAttribute('class');
-	return cls ? `<${tag} class="${cls}">` : `<${tag}>`;
+  const tag = el.tagName.toLowerCase();
+  const cls = el.getAttribute('class');
+  return cls ? `<${tag} class="${cls}">` : `<${tag}>`;
 }
 
 /**
@@ -29,36 +29,36 @@ function describe(el: Element): string {
  * into the message as context rather than raised on its own, because it is the noisier of the two.
  */
 export function detectChromeWrap(root: HTMLElement): string | null {
-	const body = root.ownerDocument.body;
-	let constrainer: HTMLElement | null = null;
-	let maxWidth = '';
-	for (let el = root.parentElement; el && el !== body; el = el.parentElement) {
-		const elMaxWidth = getComputedStyle(el).maxWidth;
-		if (elMaxWidth && !NON_CONSTRAINING.has(elMaxWidth)) {
-			constrainer = el;
-			maxWidth = elMaxWidth;
-			break;
-		}
-	}
-	if (!constrainer) return null;
+  const body = root.ownerDocument.body;
+  let constrainer: HTMLElement | null = null;
+  let maxWidth = '';
+  for (let el = root.parentElement; el && el !== body; el = el.parentElement) {
+    const elMaxWidth = getComputedStyle(el).maxWidth;
+    if (elMaxWidth && !NON_CONSTRAINING.has(elMaxWidth)) {
+      constrainer = el;
+      maxWidth = elMaxWidth;
+      break;
+    }
+  }
+  if (!constrainer) return null;
 
-	const siblings = [...body.children].filter(
-		(el) => !el.contains(root) && !root.contains(el) && el !== root,
-	);
-	const siblingNote = siblings.length
-		? ` Host elements also sit beside the admin in <body> (${siblings.map(describe).join(', ')}).`
-		: '';
-	return (
-		`[cairn-cms] The admin is rendering inside host chrome. A width-constraining ancestor ` +
-		`${describe(constrainer)} (max-width: ${maxWidth}) sits between the admin root and <body>, so the ` +
-		`admin shell cannot fill the viewport.${siblingNote} Keep the host root layout chrome-free and move ` +
-		`your nav, footer, and app.css into a (site) route group. See ${DOC}.`
-	);
+  const siblings = [...body.children].filter(
+    (el) => !el.contains(root) && !root.contains(el) && el !== root,
+  );
+  const siblingNote = siblings.length
+    ? ` Host elements also sit beside the admin in <body> (${siblings.map(describe).join(', ')}).`
+    : '';
+  return (
+    `[cairn-cms] The admin is rendering inside host chrome. A width-constraining ancestor ` +
+    `${describe(constrainer)} (max-width: ${maxWidth}) sits between the admin root and <body>, so the ` +
+    `admin shell cannot fill the viewport.${siblingNote} Keep the host root layout chrome-free and move ` +
+    `your nav, footer, and app.css into a (site) route group. See ${DOC}.`
+  );
 }
 
 /** Run the check in dev and log one error when host chrome is detected. A no-op in production. */
 export function warnIfChromeWrapped(root: HTMLElement): void {
-	if (!DEV) return;
-	const problem = detectChromeWrap(root);
-	if (problem) console.error(problem);
+  if (!DEV) return;
+  const problem = detectChromeWrap(root);
+  if (problem) console.error(problem);
 }

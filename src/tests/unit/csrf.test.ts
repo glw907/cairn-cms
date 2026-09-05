@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   isUnsafeFormRequest,
   originMatches,
@@ -11,6 +11,7 @@ import {
   csrfFieldVerdict,
 } from '../../lib/sveltekit/csrf.js';
 import { SESSION_TTL_MS } from '../../lib/auth/crypto.js';
+import { testEvent } from '../helpers/test-event.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 
 function jar(initial: Record<string, string> = {}) {
@@ -64,7 +65,7 @@ describe('originMatches', () => {
     ({
       url: new URL('https://x.dev/about'),
       request: req('https://x.dev/about', origin ? { headers: { origin } } : undefined),
-    }) as never;
+    });
   it('matches an equal origin and rejects a mismatch or absence', () => {
     expect(originMatches(ev('https://x.dev'))).toBe(true);
     expect(originMatches(ev('https://evil.dev'))).toBe(false);
@@ -174,6 +175,47 @@ describe('csrfSecure', () => {
   });
 });
 
+// The Task 9 reconciliation: `csrfSecure` now consumes the shared `readPublicOrigin` reader
+// (dev-flag.ts) at platform depth only, so a `process.env.PUBLIC_ORIGIN` the runner's own shell
+// happens to export must never leak into this function's answer. Every case stubs
+// `PUBLIC_ORIGIN` on `process.env` so the suite stays deterministic regardless of the runner's
+// shell, and unstubs it afterward so the stub cannot leak into a sibling test file.
+describe('csrfSecure (platform-only depth; process.env must never leak in)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('platform-set PUBLIC_ORIGIN still decides, unchanged, with process.env also set', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'http://process-should-be-ignored.example');
+    const event = {
+      url: new URL('http://site.example/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
+    };
+    expect(csrfSecure(event)).toBe(true);
+  });
+
+  it('a process.env-only PUBLIC_ORIGIN (no platform value) does not flip csrfSecure', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'https://site.example');
+    const event = {
+      url: new URL('http://site.example/admin/login'),
+      platform: { env: {} },
+    };
+    // Platform depth only: with no platform-supplied origin, csrfSecure falls through to its own
+    // non-Secure default rather than consulting process.env, even though a bare `readPublicOrigin`
+    // dual read would have found the stubbed value.
+    expect(csrfSecure(event)).toBe(false);
+  });
+
+  it('the https short-circuit is unchanged with process.env set to an http origin', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'http://process-should-be-ignored.example');
+    const event = {
+      url: new URL('https://site.example/admin/login'),
+      platform: { env: {} },
+    };
+    expect(csrfSecure(event)).toBe(true);
+  });
+});
+
 describe('CSRF cookie round trip under PUBLIC_ORIGIN', () => {
   // The permanent-403 class this pass closes: a writer and a reader must resolve the same
   // cookie name for the same request, which only holds when both are handed `platform`.
@@ -207,8 +249,8 @@ describe('CSRF cookie round trip under PUBLIC_ORIGIN', () => {
 
 describe('validateCsrfToken', () => {
   const ev = (cookie: string | undefined, body: string | undefined) =>
-    ({
-      url: new URL('https://x.dev/admin/login'),
+    testEvent({
+      url: 'https://x.dev/admin/login',
       cookies: jar(cookie !== undefined ? { '__Host-cairn_csrf': cookie } : {}),
       request:
         body !== undefined
@@ -218,7 +260,7 @@ describe('validateCsrfToken', () => {
               body,
             })
           : req('https://x.dev/admin/login', { method: 'POST' }),
-    }) as never;
+    });
 
   it('passes when the field matches the cookie', async () => {
     expect(await validateCsrfToken(ev('TOK', 'csrf=TOK&email=a@b.c'))).toBe(true);
@@ -233,7 +275,7 @@ describe('validateCsrfToken', () => {
   it('leaves the original body readable by the action', async () => {
     const event = ev('TOK', 'csrf=TOK&email=a@b.c');
     await validateCsrfToken(event);
-    const form = await (event as { request: Request }).request.formData();
+    const form = await event.request.formData();
     expect(form.get('email')).toBe('a@b.c');
   });
 });
@@ -250,7 +292,8 @@ describe('csrfHeaderVerdict', () => {
         method: 'POST',
         headers: header !== undefined ? { 'x-cairn-csrf': header } : {},
       }),
-    }) as never;
+      platform: undefined,
+    });
 
   it('passes when the header matches the cookie', () => {
     expect(csrfHeaderVerdict(ev('TOK', 'TOK'))).toEqual({ ok: true });
@@ -271,8 +314,8 @@ describe('csrfHeaderVerdict', () => {
 
 describe('csrfTokenVerdict', () => {
   const ev = (cookie: string | undefined, body: string | undefined) =>
-    ({
-      url: new URL('https://x.dev/admin/login'),
+    testEvent({
+      url: 'https://x.dev/admin/login',
       cookies: jar(cookie !== undefined ? { '__Host-cairn_csrf': cookie } : {}),
       request:
         body !== undefined
@@ -282,7 +325,7 @@ describe('csrfTokenVerdict', () => {
               body,
             })
           : req('https://x.dev/admin/login', { method: 'POST' }),
-    }) as never;
+    });
 
   it('passes when the field matches the cookie', async () => {
     expect(await csrfTokenVerdict(ev('TOK', 'csrf=TOK'))).toEqual({ ok: true });
@@ -301,15 +344,15 @@ describe('csrfTokenVerdict', () => {
   });
 
   it('reads unparseable-body when the body cannot be read as form data', async () => {
-    const event = {
-      url: new URL('https://x.dev/admin/login'),
+    const event = testEvent({
+      url: 'https://x.dev/admin/login',
       cookies: jar({ '__Host-cairn_csrf': 'TOK' }),
       request: req('https://x.dev/admin/login', {
         method: 'POST',
         headers: { 'content-type': 'multipart/form-data; boundary=z' },
         body: 'not actually multipart',
       }),
-    } as never;
+    });
     expect(await csrfTokenVerdict(event)).toEqual({ ok: false, detail: 'unparseable-body' });
   });
 });

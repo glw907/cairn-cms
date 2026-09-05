@@ -303,30 +303,19 @@ The original decision framing, for the record:
     three closure leaks).
   - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
     do), which reopens and then retires `DEFAULT_ROLES`.
-  - **internals-C: coherence** (next; internals-B split four of the audit's five untracked
-    monolith files—`EditPage.svelte`, `CairnMediaLibrary.svelte`, `content-routes-core.ts`
-    (retired, its actions folded across five siblings), `audit/rendered.ts`—behind unchanged
-    public surfaces, landed 2026-09-04; `content-routes-media.ts` at 1,447 lines is the
-    remaining tracked monolith). Carries the coherence thirteen (enforce the idiom charter with
-    a gate; purge the pass-scoped comment register, 179 process references and 18 consumer-site
-    names; rename the `ec-*` prefix out of engine-emitted markup to an engine-owned one, a
-    `Consumers must:` event; the 827 `as never` test casts; a formatter decision, least-churn
-    default), the exhaustiveness idiom (`FieldDescriptor`'s ten permissive-default dispatch
-    sites, proven exploitable by the walk's mutation experiment; the plan rules the never-idiom
-    mechanism), and the newcomer walk's `src/lib` internals map. Also carries three items
-    internals-B's close routed here: `content-routes-entry.ts` still does two jobs at 1,630
-    lines, the create/edit/save/publish half and the delete/rename half, the latter a
-    self-contained ~330-line concern with its own reference-index gates, worth a
-    `-mutations.ts` sibling; `edit-page-state-reset-coverage.test.ts`'s declared-state regex
-    cannot match a type annotation containing a generic comma (`let x: Record<string, boolean>
-    = $state({})`), so such a declaration silently escapes the gate; and the
-    `ctx.logCommitFailed` call-style note joins the header sweep (preserve `:1672`'s
-    `'publish.failed'` argument, verified safe to unify, `commit-log.ts:33`). The custom-screen
-    content read-seam boundary decision (the former internals-half's last item) is **dropped as
-    unfoundable**, not carried forward as work: no source document and no consumer ask
-    motivates it; reopens on a consumer building a custom admin screen asking for an engine
-    seam to read content. Mostly consumer-invisible, riding outside the `Consumers must:`
-    window except the `ec-*` rename.
+  - **internals-C's coherence work landed 2026-09-04**: the coherence thirteen (the
+    `check:idioms` gate, the comment-register purge, the `ec-*` → `cairn-*` rename, the
+    `as never` retirement, the least-churn formatter default), the exhaustiveness idiom
+    (`FieldDescriptor`'s dispatch sites), and the newcomer walk's `src/lib` internals map,
+    all behind unchanged public surfaces except the `ec-*` rename's own `Consumers must:`
+    line. `content-routes-media.ts` at 1,447 lines is the remaining tracked monolith. Two
+    items internals-B's close routed here stay open, carried forward: `content-routes-entry.ts`
+    still does two jobs at 1,630 lines, the create/edit/save/publish half and the
+    delete/rename half, the latter a self-contained ~330-line concern with its own
+    reference-index gates, worth a `-mutations.ts` sibling; and
+    `edit-page-state-reset-coverage.test.ts`'s declared-state regex cannot match a type
+    annotation containing a generic comma (`let x: Record<string, boolean> = $state({})`),
+    so such a declaration silently escapes the gate.
   - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
     `examples/showcase` gets its round of improvement against the changed engine, as its own
     pass in this initiative. Its review half is done (14 findings, none rewrite-tier; rank
@@ -344,7 +333,11 @@ The original decision framing, for the record:
     `audit-admin-officelist` is a CLOSED reshape row (`engine-rulings.md:2660-2666`, executed by
     4b, `Reopens on: closed`), so an outright retire there is a new proposal against a closed
     row, not a reopen. A `formatTimestamp` (`/admin-toolkit`) widening. The command palette's
-    own live region.
+    own live region. `content-routes-media.ts:668` still calls `ctx.logCommitFailed(commitFields,
+    err)`, the bound-method style, while `content-routes-entry.ts` was unified onto the
+    `logCommitFailed` module import (`content-routes-entry.ts:42, 1109, 1591`); the two call
+    styles now read as contradictory in the same subsystem (filed 2026-09-04, internals-C's
+    Task 10 close, from the docs-friction-log).
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -891,6 +884,45 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **Four engine defects the measured build surfaced (filed 2026-09-05, from
+  `docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review-2.md`'s second
+  review and `inference-traps-to-fix.md`).** A dispatched implementer built a real custom admin
+  screen against the published seams under review, twice; four things it hit belong to the
+  engine, not the experiment, and no doc warns of any of them today.
+  1. `@glw907/cairn-cms-dev` mints `locals.cairnEditor` but never `locals.cairnAccess`, so the
+     engine's own documented authorization path (`requireAccess` in a load, `createSectionAction`
+     in an action) is unusable under the dev backend without a site-owned shim.
+  2. `docs/extend/add-a-custom-admin-screen.md`'s `platform.ctx` example does not typecheck
+     against `App.Platform` as the scaffold ships it (`context` only, no `ctx` alias).
+  3. The showcase declares no `sheet` key, so `cairn-audit` reports a false `no-uncompiled-class`
+     on an ordinary utility class (the exemplar's own `my-4`).
+  4. Mixing a static and a dynamic import of the engine's `sveltekit` barrel emits a Rollup
+     facade artifact on the page chunk; no doc mentions the trap.
+
+  The same record's `inference-traps-to-fix.md` names two more traps with no owner yet assigned
+  to a filed pass: **shipped behavior must never change to satisfy a test** (the first round
+  dropped native `required` and `type="email"` from a form so its own e2e could reach server
+  validation; the skill and the custom-screen guide need a line saying the test changes, never
+  the product) and **admin-visual baselines are CI-canonical, never workstation-regenerated**
+  (the same skill and `docs/extend/what-the-scaffold-wrote.md` need to say so in the place an
+  agent reads before running e2e). The record's other three traps (exemplar-over-doc, the
+  done-gate checklist, and the scaffold-leak exclusion convention) already have owners named in
+  `inference-traps-to-fix.md` inside the chassis-A/chassis-B pass series; a tandem-maintenance
+  gate keeping the exemplar, the skill, and the custom-screen guide in agreement is filed there
+  too, to `ROADMAP.md`, which is this entry. **Trigger:** the next pass touching
+  `packages/cairn-cms-dev`, `docs/extend/add-a-custom-admin-screen.md`, the showcase's
+  `cairn-audit.config.json`, or the skill.
+
+- **The `ec-*` -> `cairn-*` rename ships a `/render` output break the four production sites have
+  not taken yet (release decision owed at the next cut, filed 2026-09-05 from internals-C's
+  pass-end reviewer fan-out).** The rename is documented under `Consumers must:` in
+  `CHANGELOG.md` and `docs/extend/migration-notes.md`, but a site's own forked
+  `chassis/prose.css` (or any hand-authored prose CSS) keeps targeting the old `.ec-*` selectors
+  until it takes its own rename pass. The release that carries this change either gates on the
+  sites' rename passes landing first, or ships emitting both class names for one release window
+  so a site's existing CSS keeps matching through the upgrade. **Decision owed:** at the next
+  release cut that would carry this window.
 
 - **Per-IP rate limiting on the auth request and confirm actions (filed 2026-08-31, conventions-pass
   security review).** The per-email send cooldown is the only pressure control on either action
@@ -2010,6 +2042,23 @@ the named human gates only):**
   declined it deliberately as adjacent scope rather than folding it into the cutover.
   **Trigger:** the gate passing roughly 60 seconds, or the published corpus growing past about
   120 files.
+
+- **`check:snippets` stubs every `$`-prefixed and relative doc-snippet import specifier to `any`
+  (docs friction log, triaged 2026-09-05).** `scripts/checks/check-snippets.mjs` (around :63-66)
+  can never catch a wrong adapter path or a misspelled relative import inside a documented
+  snippet, since it never typechecks either kind of specifier against a real module; the
+  `internals` pass's `cairn.config` spelling misses were invisible to it for exactly this
+  reason. Fixing it means resolving `$lib`/`$app`/relative specifiers against the doc's own
+  declared project context rather than stubbing them, a real design question this filing does
+  not answer. **Trigger:** a doc snippet with a wrong adapter or relative import ships again
+  undetected.
+
+- **`check:idioms` walks `src/lib` only (internals-C pass, filed at its 2026-09-04 close).**
+  `scripts/checks/check-idioms.mjs:437`'s tab-indentation, exit-idiom, and comment-register rules
+  never reach `scripts/`, `examples/showcase/`, or `templates/waymark/`; the pass purged all
+  three by hand rather than gating them, so they can silently drift back to the patterns the
+  gate exists to ban. **Trigger:** a hardening pass widens the gate's scope to those three trees,
+  or a drift is caught by hand in one of them.
 
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**

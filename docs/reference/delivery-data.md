@@ -47,7 +47,7 @@ of the build gate. The showcase builds its one content layer this way.
 
 ```ts
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
-import { cairn, siteConfig } from './cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 const postsRaw = import.meta.glob('/src/content/posts/*.md', {
   query: '?raw',
@@ -171,7 +171,7 @@ then hands them to the responder.
 import type { RequestHandler } from './$types';
 import { rssResponse, createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn, siteConfig } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const prerender = true;
 
@@ -269,7 +269,7 @@ serve a body the enumerator never listed.
 ```ts
 import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn, siteConfig } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 const routes = createPublicRoutes({
   site,
@@ -304,7 +304,7 @@ object. All URLs in `SeoInput` are absolute, built from the site origin. The `/d
 ```ts
 import { buildSeoMeta, type ContentEntry } from '@glw907/cairn-cms/delivery/data';
 import { ORIGIN } from '$lib/content';
-import { siteConfig } from '$lib/cairn.config';
+import { siteConfig } from '$theme/cairn.config.js';
 
 declare const entry: ContentEntry;
 
@@ -336,7 +336,7 @@ the manifest bin call this in a plain-Node context, which is why it lives on thi
 
 ```ts
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
-import { cairn, siteConfig } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 import { postsRaw, pagesRaw } from './content-globs.js';
 
 const manifest = buildSiteManifest(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });

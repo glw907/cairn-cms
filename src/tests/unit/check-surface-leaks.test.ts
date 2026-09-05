@@ -1,7 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
 import {
   collectReachableNames,
@@ -11,6 +13,7 @@ import {
   deriveRendererLeaks,
   findLeakViolations,
   formatLeakViolations,
+  isPlainTypeExport,
 } from '../../../scripts/checks/check-surface-leaks.mjs';
 
 // The type-checker model, proven against a real compile-only fixture (the move record's own
@@ -89,6 +92,78 @@ describe('collectReachableNames (the type-checker model)', () => {
     // `Wide` visits first and reaches `Deep` past MAX_DEPTH (12); `Shallow` reaches it directly.
     const names = collectReachableNames(checker, [wideType, shallowType], dir);
     expect(names.has('DeepPayload')).toBe(true);
+  });
+});
+
+// F-1's `/components` clause (Task 9, internals-C): whether a barrel export is a plain type
+// export (an interface, type alias, or enum with no value side) or a runtime value export (a
+// function, a const, or a Svelte component's `declare const X: Component<...>` default), read
+// off real TypeScript symbol flags rather than asserted in prose. Proven against real dist
+// declarations too, below: `dist/components/index.d.ts` classifies its four plain-type exports
+// (TidyApi, ImagePlaceholderApi, FormatKind, EditorApi) as `true` and its nineteen component
+// exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
+// descending into a component's own Props/Events/Slots type graph.
+describe('isPlainTypeExport (the /components mechanical split)', () => {
+  const tmpFiles: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpFiles.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function compileFixture(source: string) {
+    const dir = mkdtempSync(join(tmpdir(), 'check-surface-leaks-plain-type-'));
+    tmpFiles.push(dir);
+    const dtsPath = join(dir, 'fixture.d.ts');
+    writeFileSync(dtsPath, source);
+    return dtsPath;
+  }
+
+  it('is true for a bare interface or type alias export, erased at compile time', () => {
+    const dtsPath = compileFixture(
+      ['export interface PlainInterface { x: string }', 'export type PlainAlias = { y: number };'].join('\n'),
+    );
+    const { symbols } = moduleExports(dtsPath);
+    for (const name of ['PlainInterface', 'PlainAlias']) {
+      const sym = symbols.find((s) => s.name === name);
+      expect(sym).toBeDefined();
+      expect(isPlainTypeExport(sym!)).toBe(true);
+    }
+  });
+
+  it('is false for a value export (a function, a const, or an enum), which all compile to real JS', () => {
+    // An `enum`, unlike a bare `interface`/`type`, compiles to a real runtime object, so
+    // TypeScript's own `SymbolFlags.Value` includes its `RegularEnum` bit; it belongs with the
+    // value exports here, not the erased-at-compile-time plain types above.
+    const dtsPath = compileFixture(
+      [
+        'export declare function plainFunction(): void;',
+        'export declare const plainConst: { x: string };',
+        'export enum PlainEnum { A, B }',
+      ].join('\n'),
+    );
+    const { symbols } = moduleExports(dtsPath);
+    for (const name of ['plainFunction', 'plainConst', 'PlainEnum']) {
+      const sym = symbols.find((s) => s.name === name);
+      expect(sym).toBeDefined();
+      expect(isPlainTypeExport(sym!)).toBe(false);
+    }
+  });
+
+  it('classifies the real dist/components/index.d.ts barrel (4 plain-type, 19 component)', () => {
+    // `npm ci`'s `prepare` hook and CI's own `npm run package` step both build `dist/` ahead of
+    // `npm test`, so a real built barrel is available here without this suite building one itself.
+    const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+    const dtsPath = join(repoRoot, 'dist/components/index.d.ts');
+    const { checker, symbols } = moduleExports(dtsPath);
+    // Mirrors check-surface-leaks.mjs's own `resolveAlias`: `moduleExports` returns barrel-level
+    // symbols, most of which are re-export ALIAS symbols whose Interface/TypeAlias/Value flags
+    // live on the aliased target, not on the alias itself.
+    const resolved = symbols.map((sym) =>
+      sym.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sym) : sym,
+    );
+    const plainTypeNames = resolved.filter((sym) => isPlainTypeExport(sym)).map((sym) => sym.name);
+    const componentNames = resolved.filter((sym) => !isPlainTypeExport(sym)).map((sym) => sym.name);
+    expect(plainTypeNames.sort()).toEqual(['EditorApi', 'FormatKind', 'ImagePlaceholderApi', 'TidyApi']);
+    expect(componentNames).toHaveLength(19);
   });
 });
 

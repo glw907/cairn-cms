@@ -13,6 +13,7 @@ import { defineAccess } from '../../lib/auth/access.js';
 import { githubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import { testEvent } from '../helpers/test-event.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -77,16 +78,12 @@ function event(
   params: Record<string, string> = {},
   form?: Record<string, string>,
 ) {
-  const url = 'https://test.example/admin/x';
-  const init: RequestInit = form ? { method: 'POST', body: new URLSearchParams(form) } : {};
-  return {
-    url: new URL(url),
+  return testEvent({
+    url: 'https://test.example/admin/x',
     params,
-    request: new Request(url, init),
+    ...(form ? { method: 'POST', body: new URLSearchParams(form) } : {}),
     locals: { cairnEditor: { email: `${role}@test`, displayName: role, role, capability }, cairnBackend: backend },
-    platform: { env: {} },
-    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
-  };
+  });
 }
 
 /** The HTTP status of a rejected call, or null when it did not reject. Robust to whatever happens
@@ -109,36 +106,36 @@ describe('access map: engine route enforcement', () => {
 
   it('403s a non-listed role on a restricted concept, on list load and save action', async () => {
     const routes = createContentRoutes(runtime());
-    expect(await statusOf(routes.listLoad(event('publisher', 'editor', { concept: 'pages' }) as never))).toBe(403);
+    expect(await statusOf(routes.listLoad(event('publisher', 'editor', { concept: 'pages' })))).toBe(403);
     expect(
       await statusOf(
-        routes.saveAction(event('publisher', 'editor', { concept: 'pages', id: 'p1' }, { title: 'x' }) as never),
+        routes.saveAction(event('publisher', 'editor', { concept: 'pages', id: 'p1' }, { title: 'x' })),
       ),
     ).toBe(403);
   });
 
   it('admits the mapped role and owner on the restricted concept', async () => {
     const routes = createContentRoutes(runtime());
-    expect(await statusOf(routes.listLoad(event('webmaster', 'editor', { concept: 'pages' }) as never))).not.toBe(403);
-    expect(await statusOf(routes.listLoad(event('owner', 'owner', { concept: 'pages' }) as never))).not.toBe(403);
+    expect(await statusOf(routes.listLoad(event('webmaster', 'editor', { concept: 'pages' })))).not.toBe(403);
+    expect(await statusOf(routes.listLoad(event('owner', 'owner', { concept: 'pages' })))).not.toBe(403);
   });
 
   it('keeps today\'s any-editor-capability behavior for an unrestricted concept', async () => {
     const routes = createContentRoutes(runtime());
-    expect(await statusOf(routes.listLoad(event('publisher', 'editor', { concept: 'posts' }) as never))).not.toBe(403);
+    expect(await statusOf(routes.listLoad(event('publisher', 'editor', { concept: 'posts' })))).not.toBe(403);
   });
 
   it('403s a non-listed role on each mapped fixed screen', async () => {
     const routes = createContentRoutes(runtime());
-    expect(await statusOf(routes.mediaLibraryLoad(event('publisher', 'editor') as never))).toBe(403);
-    expect(await statusOf(routes.vocabularyLoad(event('publisher', 'editor') as never))).toBe(403);
-    expect(await statusOf(routes.settingsLoad(event('publisher', 'editor') as never))).toBe(403);
+    expect(await statusOf(routes.mediaLibraryLoad(event('publisher', 'editor')))).toBe(403);
+    expect(await statusOf(routes.vocabularyLoad(event('publisher', 'editor')))).toBe(403);
+    expect(await statusOf(routes.settingsLoad(event('publisher', 'editor')))).toBe(403);
   });
 
   it('owner passes every mapped fixed screen', async () => {
     const routes = createContentRoutes(runtime());
-    expect(await statusOf(routes.mediaLibraryLoad(event('owner', 'owner') as never))).not.toBe(403);
-    expect(await statusOf(routes.vocabularyLoad(event('owner', 'owner') as never))).not.toBe(403);
-    expect(await statusOf(routes.settingsLoad(event('owner', 'owner') as never))).not.toBe(403);
+    expect(await statusOf(routes.mediaLibraryLoad(event('owner', 'owner')))).not.toBe(403);
+    expect(await statusOf(routes.vocabularyLoad(event('owner', 'owner')))).not.toBe(403);
+    expect(await statusOf(routes.settingsLoad(event('owner', 'owner')))).not.toBe(403);
   });
 });

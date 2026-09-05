@@ -16,7 +16,7 @@ import type { UsageEntry, UsageIndex } from './usage.js';
 
 /**
  * A purgeable orphan: a stored R2 key with no manifest row, plus the 16-hex hash parsed from it.
- *  Retired from the public surface (4b, Task 1); consumed only inside this module, by
+ *  Retired from the public surface; consumed only inside this module, by
  *  `MediaOrphanScanResult.orphanedBytes`.
  */
 interface OrphanByteRow {
@@ -29,7 +29,7 @@ interface OrphanByteRow {
 /**
  * A broken reference: a manifest row whose bytes are gone. Read-only, since purging it would drop a
  *  still-referenced asset's record; the screen shows where it is used so an operator can re-ingest.
- *  Retired from the public surface (4b, Task 1); consumed only inside this module, by
+ *  Retired from the public surface; consumed only inside this module, by
  *  `MediaOrphanScanResult.brokenRefs`.
  */
 interface BrokenRefRow {

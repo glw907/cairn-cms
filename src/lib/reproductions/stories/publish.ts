@@ -1,5 +1,4 @@
-// cairn-cms: the four publish stories for the live-reproduction seam (Task A5b of
-// docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md). Each row's component, host,
+// cairn-cms: the four publish stories for the live-reproduction seam. Each row's component, host,
 // and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's
 // `publish/header-band`, `publish/history-list`, `publish/pending-list`, and `publish/refusal-banner`
 // rows, and the sweep at docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's

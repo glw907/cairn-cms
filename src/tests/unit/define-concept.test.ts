@@ -19,7 +19,7 @@ describe('defineConcept', () => {
     expect(() => defineConcept({ ...base, routing: 'page', permalink: '/:year/:slug' })).toThrow(/date token/);
   });
   it('throws on an out-of-range datePrefix', () => {
-    expect(() => defineConcept({ ...base, datePrefix: 'week' as never })).toThrow(/year, month, day/);
+    expect(() => defineConcept({ ...base, datePrefix: 'week' as never })).toThrow(/year, month, day/); // idioms-allow: as-never  feeds the runtime guard an out-of-range datePrefix
   });
   it('throws on an unknown permalink token', () => {
     expect(() => defineConcept({ ...base, permalink: '/:category/:slug' })).toThrow('unknown token ":category"');

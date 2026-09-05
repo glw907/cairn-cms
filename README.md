@@ -18,7 +18,8 @@ npx create-cairn-site
   back to [the extend track](./docs/extend/README.md) for custom content, admin screens, and
   everything else past the default.
 - **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
-  change lands.
+  change lands. [The `src/lib` map](./docs/internal/src-lib-map.md) goes deeper into the library
+  tree itself.
 
 ## What cairn is
 

@@ -24,7 +24,7 @@ describe('navSaveAction', () => {
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
     gh.install();
     const routes = createNavRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
+    const { location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }]))));
     expect(location).toBe('/admin/nav?saved=1');
     // The new YAML landed on main, carrying the new menu.
     expect(gh.read('main', 'src/lib/site.config.yaml')).toContain('label: Home');
@@ -39,7 +39,7 @@ describe('navSaveAction', () => {
     gh.install();
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createNavRoutes(runtime());
-    await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
+    await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }]))));
     const committed = infoSpy.mock.calls
       .map((c) => c[0] as Record<string, unknown>)
       .filter((r) => r.event === 'commit.succeeded');
@@ -53,7 +53,7 @@ describe('navSaveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createNavRoutes(runtime());
     const result = (await routes.navSaveAction(
-      saveEvent(JSON.stringify([{ url: '/no-label' }])) as never,
+      saveEvent(JSON.stringify([{ url: '/no-label' }])),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/label/i);
@@ -67,7 +67,7 @@ describe('navSaveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createNavRoutes(runtime());
     const result = (await routes.navSaveAction(
-      saveEvent('<script>not json</script>') as never,
+      saveEvent('<script>not json</script>'),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).not.toContain('<script>');
@@ -78,7 +78,7 @@ describe('navSaveAction', () => {
   it('404s when the config file is gone at save time', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createNavRoutes(runtime());
-    await expect(routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home' }])) as never)).rejects.toMatchObject({ status: 404 });
+    await expect(routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home' }])))).rejects.toMatchObject({ status: 404 });
   });
 
   it('reports a head-moved conflict as a reload prompt without overwriting', async () => {
@@ -100,7 +100,7 @@ describe('navSaveAction', () => {
     }));
     const routes = createNavRoutes(runtime());
     const result = (await routes.navSaveAction(
-      saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never,
+      saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/changed since/i);

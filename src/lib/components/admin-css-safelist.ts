@@ -7,10 +7,10 @@
 // (fixed with scoped CSS instead), which is what motivated a standing, documented safelist rather than
 // a one-off fix.
 //
-// The blessed set is curated, not exhaustive: it carries only the families the ASC admin-toolkit
-// design survey (aksailingclub-org's docs/2026-07-20-admin-toolkit-research-survey.md, "Assembly
-// doctrine: daisyUI-first") names as needed for a general-purpose admin toolkit built on cairn's admin
-// CSS, so a site-authored screen can reach for the vocabulary before cairn's own components adopt it.
+// The blessed set is curated, not exhaustive: it carries only the families a consumer site's
+// admin-toolkit design survey ("Assembly doctrine: daisyUI-first") names as needed for a
+// general-purpose admin toolkit built on cairn's admin CSS, so a site-authored screen can reach
+// for the vocabulary before cairn's own components adopt it.
 // It is never "add all of daisyUI"; extending it is a deliberate, documented act, the same as any
 // other change to the admin's compiled surface.
 
@@ -92,8 +92,8 @@ export const ADMIN_CSS_SAFELIST = [
   // badge: the TagChip toolkit component's category badges (StatusChip reuses `badge` for
   // system-set state, per the survey's Polaris/Atlassian/Spectrum convergence). `badge` and
   // `badge-outline` already compile from the admin's own usage; `badge-soft` and `badge-dash` are
-  // new. The stock ghost badge modifier stays OUT of this toolkit vocabulary: design
-  // infrastructure Pass 3 retired it from cairn's own tree in favor of the three chip registers
+  // new. The stock ghost badge modifier stays OUT of this toolkit vocabulary: it was
+  // retired from cairn's own tree in favor of the three chip registers
   // (`cairn-chip-quiet`/`cairn-chip-warning`/`cairn-chip-outline` in cairn-admin.css, StatusChip's
   // own `register` prop), and a new toolkit screen should reach for those, not the stock modifier.
   // It still ships in the compiled sheet, through the separate compatibility safelist in

@@ -35,7 +35,7 @@ pages**, so it inherits the same layout, stylesheets, and chrome:
 // src/routes/(site)/preview/[token]/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { previewLoad } from '@glw907/cairn-cms/sveltekit';
-import { runtime, cairn, siteConfig } from '$lib/cairn.config.js';
+import { runtime, cairn, siteConfig } from '$theme/cairn.config.js';
 import { site, ORIGIN } from '$lib/content.js';
 
 const routesConfig = {

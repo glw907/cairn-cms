@@ -74,7 +74,7 @@ export function parseAdminPath(
     // vocabulary is its own view (the tag-admin screen), a peer of settings. It is also in the
     // reserved set so /admin/vocabulary/<anything> 404s and no concept can claim the segment.
     if (head === 'vocabulary') return { view: 'vocabulary' };
-    // help is its own view (the Help home, editor-help Pass 2), decided here like settings. It is
+    // help is its own view (the Help home), decided here like settings. It is
     // also in the reserved set so /admin/help/<anything> 404s and no concept can claim the segment.
     if (head === 'help') return { view: 'help' };
     if (RESERVED_SEGMENTS.has(head)) return null;

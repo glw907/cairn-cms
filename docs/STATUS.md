@@ -21,9 +21,9 @@ initiative design. CI on `main` is fully green.
 
 **INTERNALS-C: ALL 13 TASKS ACCEPTED (2026-09-05), pass-end ritual in progress** on
 `internals-c` (28 commits over `main`): Task 7 closed at `35282ce0`, Task 10 at `217c39b5`.
-Ritual state: code-simplifier dispatched over the pass diff; then the six CI-only gates plus
-`check:idioms` and `check:cm-internals` by name, from-scratch showcase install and e2e, the
-reviewer fan-out, the docs dimension (CHANGELOG, migration notes, ROADMAP, HISTORY, the plan's
+Ritual state: code-simplifier landed (`6462b2fc`, 29 commits); the full named gate list
+with the from-scratch showcase install and e2e, and the Svelte, security, and Workers reviewers
+are running (2026-09-05); then the docs dimension (CHANGELOG, migration notes, ROADMAP, HISTORY, the plan's
 post-mortem, STATUS), push, PR, merge on green CI (authorized). Merge note: `routed-inputs.md`
 under the chassis-inputs record was copied whole onto the branch and will conflict as both-added;
 take the branch version (main's content plus section 10) (3b after an escalation the conductor ruled: the
@@ -106,19 +106,24 @@ behind and its sheet says to run it as a numbered site pass.
 - **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
   is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
   beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), 3 (B-), 4 (B), and
-  5 (B+, SOUND) are folded through v6 (`3485b0bb`); the exit criterion (B+) is met. In flight:
-  round 6 grading v8 (`5a03cd06`: the fourth evidence pass, the measured build as a second
-  case, the Cloudflare leg redrafted), the measured build's fix round (branch `experiment-screen`,
-  never merging), then revision 9 (core prose plus footnotes, cadence measured), the final
-  four-axis review (prose, structure, AI tells, each audience), and the freeze. Overnight
+  5 (B+, SOUND), and 6 (B+) are folded; the exit criterion (B+) is met. FROZEN at revision 12
+  (`dcb11bd3`, 2026-09-05) after two fresh-context verification reads; 354 notes, apparatus
+  clean. The measured build is complete at three rounds (`experiment-screen`, never merging;
+  record at `16-measured-build/experiment-measurement.md`, `b0423fac`). The first-person
+  front-door derivation is written to `25-front-door-proposal.md`, UNCOMMITTED and untracked, for
+  Geoff's read: a why-cairn.md replacement (1,619 words, register grade B+ after three folds; a cut
+  list to ~1,100 sits in its Section C.5) and the README/front-door one-sentence and one-paragraph
+  forms. The concept figure's labels were re-derived from the frozen case (four labels, the Email
+  Sending boundary added) and the review page republished. Overnight
   decisions (Geoff, 2026-09-05, defaults accepted): the concept figure is built as an
   uncommitted prototype in the one-system-with-its-boundary form on the existing review page;
   the front-door prose is drafted in first person in the why-cairn.md voice as an uncommitted
   proposal (a new why-cairn.md and the front-door lines), never touching the published pages.
   Both wait for Geoff's morning read. The
-  docs figure (banded ownership map) is finished and uncommitted under `docs/extend/assets/`
-  with its source `docs/internal/site-figures.svg` and emitter `scripts/figures/`; the front-door
-  figure waits on the case.
+  two figures (the concept figure and the banded ownership map) are built with cosmetic fixes
+  applied and uncommitted under `docs/extend/assets/` with source `docs/internal/site-figures.svg`,
+  emitter `scripts/figures/`, and an uncommitted `check:figures` gate; the review page is
+  republished (artifact bfe5eef9). The concept figure's labels re-derive from the frozen case.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

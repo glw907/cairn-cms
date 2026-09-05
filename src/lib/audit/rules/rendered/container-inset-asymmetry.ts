@@ -1,11 +1,11 @@
-// cairn-audit's container-inset-asymmetry rule: the phantom-gutter detector (design ratchet Task 5,
-// the mechanical half of finding 1). A block container's rendered content should sit roughly as far
+// cairn-audit's container-inset-asymmetry rule: the phantom-gutter detector,
+// the mechanical half of finding 1. A block container's rendered content should sit roughly as far
 // from its left edge as from its right; when it does not, the container reads as pushed off-center
 // even though nothing about its own box moved.
 //
-// PROVENANCE, measured against the running corpus rather than paraphrased from the harvest (design
-// ratchet fix C). The motivating shape is the ASC Assets-trial gutter on `/admin/club/asset-requests`:
-// a bare `<ul class="list">` keeping the user agent's own 40px bullet indent, which the published
+// PROVENANCE, measured against the running corpus rather than paraphrased from the harvest. The
+// motivating shape is a consumer site's asset-list gutter on a generic admin list route: a bare
+// `<ul class="list">` keeping the user agent's own 40px bullet indent, which the published
 // sheet of that moment never reset, so the rule reads a 40px left inset against a 0px right one on
 // the `ul` itself. The harvest's headline number, 57px, was a different origin: the card's left edge
 // out to the row's text, which sums the card's border, that same 40px, and the row's own padding.

@@ -87,10 +87,11 @@ describe('ManageEditors', () => {
   });
 
   it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
-    const screen = await render(ManageEditors, {
-      data: { ...data(), error: 'Something went wrong and your changes were not saved.' } as never,
-      form: null,
-    });
+    // A deliberate excess key: `data.error` no longer exists on the load's real shape, so this
+    // proves a stray one is ignored rather than resurrected as a rendered alert. Held in a
+    // variable, not an inline literal, so the excess key does not trip an excess-property error.
+    const dataWithStaleError = { ...data(), error: 'Something went wrong and your changes were not saved.' };
+    const screen = await render(ManageEditors, { data: dataWithStaleError, form: null });
     const alert = screen.container.querySelector('.alert-error');
     expect(alert).toBeNull();
   });

@@ -1,6 +1,6 @@
 <!--
 @component
-The two-tier tidy settings screen (spec 2.8, Task 15). It follows the approved settings mockup
+The two-tier tidy settings screen (spec 2.8). It follows the approved settings mockup
 (2026-06-20-editor-copyedit-settings-final-mockup.html).
 
 Two tiers with a truthful visibility gate:
@@ -9,7 +9,7 @@ Two tiers with a truthful visibility gate:
     literal deploy-time tokens sit in a marked "For your developer" sub-block.
   - The EDITOR tier (the per-convention config) renders ONLY when tidy is enabled, the key is
     present, AND the key is not confirmed invalid by the active probe (`data.enabled`). Presence
-    alone is no longer the bar (save-500-honest-errors, Task 5): `data.keyStatus` distinguishes
+    alone is no longer the bar (save-500-honest-errors): `data.keyStatus` distinguishes
     `'missing'` / `'invalid'` / `'valid'` / `'unknown'`, and the screen renders one of three states
     accordingly: the editor tier, the missing-setup gate (a deploy-time step is undone), or a
     distinct broken-key region (both steps are done, but Anthropic rejects the key) when the probe
@@ -27,7 +27,7 @@ announces the new total; the per-keystroke diff examples are aria-hidden so the 
 The save commits the conventions block to the same committed YAML the nav editor writes (one config
 home), diffable and shared across editors.
 
-The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its `meta`
+The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated; Save stays in the form's own foot, the screen's
 form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
 re-express on `StatusChip` at a neutral tone (ruling 9 of the pass's adoption map: a Tidy pill never
@@ -70,10 +70,11 @@ bespoke (ruling 7): a single-use control, not a repeated device.
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
-  // every fresh error so the region text always mutates and the screen reader speaks again (the
-  // ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard sentence is
-  // unchanged; the visible alert below keeps its own styling and drops the `role` (a fresh-inserted
-  // role element announces inconsistently and would clobber a repeat).
+  // every fresh error so the region text always mutates and the screen reader speaks again; this is
+  // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
+  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);
   function nonce(): string {
     return announceNonce % 2 === 0 ? '' : '​';
@@ -593,7 +594,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </div>
     </form>
   {:else if data.keyStatus === 'invalid'}
-    <!-- THE BROKEN-KEY STATE (save-500-honest-errors, Task 5): tidy is on and the key is present,
+    <!-- THE BROKEN-KEY STATE (save-500-honest-errors): tidy is on and the key is present,
          but the active probe confirmed Anthropic rejects it. Distinct from the missing-setup gate
          below: both deploy-time steps are done, so this names the actual problem (truthful
          visibility applied to the settings screen, not just the edit-page Tidy button) instead of

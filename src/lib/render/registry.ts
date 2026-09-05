@@ -1,6 +1,6 @@
 // cairn-cms: the directive component registry (seam 3). One declaration per component,
 // carrying how it inserts in the editor and how it renders in rehype. The render pipeline
-// (Plan 04) and the future component palette both derive from this single source, so the
+// and the future component palette both derive from this single source, so the
 // parser, the render dispatch, and the editor never drift apart. The adapter references
 // `ComponentRegistry` from here.
 import type { Element, ElementContent } from 'hast';
@@ -65,7 +65,7 @@ export interface ComponentDef {
    */
   build: (ctx: ComponentContext) => Element;
   /**
-   * Opt this directive into client hydration (phase 4b islands). `true` mounts the island eagerly on
+   * Opt this directive into client hydration. `true` mounts the island eagerly on
    *  first load and after client-side navigation; `'visible'` defers the mount to first intersection.
    *  The engine wraps {@link ComponentDef.build}'s output in an island boundary, and the site registers
    *  the live Svelte component under the same name on `rendering.islands`. Absent leaves the directive a
@@ -233,7 +233,9 @@ export function previewValues(def: ComponentDef): ComponentValues {
 }
 
 /** The descriptor types that serialize to a single directive-attribute string (decision 2). */
-const ATTRIBUTE_TYPES = new Set(['text', 'textarea', 'number', 'select', 'url', 'email', 'date', 'datetime', 'boolean', 'icon']);
+const ATTRIBUTE_TYPES: Set<FieldDescriptor['type']> = new Set([
+  'text', 'textarea', 'number', 'select', 'url', 'email', 'date', 'datetime', 'boolean', 'icon',
+]);
 
 /** Reject an attribute type that cannot serialize to a single directive-attribute string (decision 2). */
 function checkComponentAttributes(name: string, attributes: Record<string, FieldDescriptor>): void {

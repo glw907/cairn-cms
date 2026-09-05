@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaPicker from '../../lib/components/MediaPicker.svelte';
+import MediaPicker, { type MediaLibraryEntry } from '../../lib/components/MediaPicker.svelte';
 
 // A small projected library, the manifest-entry array mediaLibraryLoad hands back on
 // MediaLibraryData.assets and the shape the picker's own prop takes.
-function entry(over: Partial<Record<string, unknown>> = {}) {
+function entry(over: Partial<MediaLibraryEntry> = {}): MediaLibraryEntry {
   return {
     hash: '0123456789abcdef',
     slug: 'blue-shoes',
@@ -15,6 +15,7 @@ function entry(over: Partial<Record<string, unknown>> = {}) {
     width: 800,
     height: 600,
     bytes: 12345,
+    createdAt: '2026-03-04T00:00:00.000Z',
     ...over,
   };
 }
@@ -49,7 +50,7 @@ const MIXED_TYPES = [
 
 describe('MediaPicker combobox a11y', () => {
   it('holds focus in the input while arrow keys move aria-activedescendant over option rows', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     const input = screen.container.querySelector('input[role="combobox"]') as HTMLInputElement;
     expect(input).not.toBeNull();
     expect(input.getAttribute('aria-expanded')).toBe('true');
@@ -86,7 +87,7 @@ describe('MediaPicker combobox a11y', () => {
   });
 
   it('moves only the narration region (not the count) as ArrowDown advances, with the per-row announce text', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     const live = [...screen.container.querySelectorAll('[aria-live]')];
     expect(live.length).toBeGreaterThanOrEqual(2);
     // The count region is the role="status" live region; the narration region is the other one.
@@ -126,7 +127,7 @@ describe('MediaPicker combobox a11y', () => {
 
 describe('MediaPicker search', () => {
   it('narrows by display name', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     const input = screen.container.querySelector('input[role="combobox"]') as HTMLInputElement;
     await screen.getByRole('combobox').fill('red');
     const options = screen.container.querySelectorAll('[role="option"]');
@@ -136,7 +137,7 @@ describe('MediaPicker search', () => {
   });
 
   it('narrows by alt text', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     // "running" appears only in the blue shoes alt, not in any display name.
     await screen.getByRole('combobox').fill('running');
     const options = screen.container.querySelectorAll('[role="option"]');
@@ -147,7 +148,7 @@ describe('MediaPicker search', () => {
 
 describe('MediaPicker empty results', () => {
   it('keeps the listbox (with its id) rendered so aria-controls resolves on a no-match query', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     const input = screen.container.querySelector('input[role="combobox"]') as HTMLInputElement;
     await screen.getByRole('combobox').fill('nothingmatchesthisquery');
     // No option rows, but the listbox container still exists and aria-controls still resolves to it.
@@ -165,7 +166,7 @@ describe('MediaPicker empty results', () => {
 
 describe('MediaPicker rows', () => {
   it('carries a thumbnail with the delivery-path src, the name, and a needs-alt flag for an alt-empty asset', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     // The alt-empty fixture is "Red hat".
     const options = [...screen.container.querySelectorAll('[role="option"]')];
     const redHat = options.find((o) => /red hat/i.test(o.textContent ?? ''))!;
@@ -188,7 +189,7 @@ describe('MediaPicker rows', () => {
 describe('MediaPicker selection', () => {
   it('emits the media: reference and the prefilled alt on Enter', async () => {
     const onselect = vi.fn();
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect });
     const input = screen.container.querySelector('input[role="combobox"]') as HTMLInputElement;
     await screen.getByRole('combobox').fill('blue');
     input.focus();
@@ -205,7 +206,7 @@ describe('MediaPicker selection', () => {
 
   it('emits on a row click', async () => {
     const onselect = vi.fn();
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect });
     const options = [...screen.container.querySelectorAll('[role="option"]')];
     const redHat = options.find((o) => /red hat/i.test(o.textContent ?? '')) as HTMLElement;
     redHat.click();
@@ -219,12 +220,12 @@ describe('MediaPicker selection', () => {
 
 describe('MediaPicker type facet', () => {
   it('stays hidden with one stored content type', async () => {
-    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: IMAGES_ONLY, onselect: () => {} });
     expect(screen.container.querySelector('[data-testid="cairn-mp-facet"]')).toBeNull();
   });
 
   it('appears with two distinct top-level content types', async () => {
-    const screen = await render(MediaPicker, { entries: MIXED_TYPES, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { entries: MIXED_TYPES, onselect: () => {} });
     expect(screen.container.querySelector('[data-testid="cairn-mp-facet"]')).not.toBeNull();
   });
 });

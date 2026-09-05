@@ -2494,7 +2494,7 @@ describe('EditPage', () => {
             model: 'claude-sonnet-4-6',
             conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
           },
-        }) as never,
+        }),
       );
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       const tidyButton = () =>
@@ -2507,7 +2507,7 @@ describe('EditPage', () => {
 
       // Hop to entry B on the same route (a {#key} remount, not a fresh mount) without ever
       // dismissing entry A's message dialog.
-      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
       await expect
         .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
         .toBe('second body');
@@ -2547,7 +2547,7 @@ describe('EditPage', () => {
             model: 'claude-sonnet-4-6',
             conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
           },
-        }) as never,
+        }),
       );
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       const tidyButton = () =>
@@ -2561,7 +2561,7 @@ describe('EditPage', () => {
       await expect.poll(() => spy.mock.calls.length).toBeGreaterThan(0);
 
       // Hop to entry B on the same route while entry A's tidy call is still pending.
-      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
       await expect
         .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
         .toBe('second body');
@@ -2606,7 +2606,7 @@ describe('EditPage', () => {
       .toBe('Edit figure');
 
     // Hop to entry B on the same route.
-    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('second body');
@@ -2641,7 +2641,7 @@ describe('EditPage', () => {
     expect(figureButton()?.getAttribute('aria-disabled')).toBe('false');
 
     // Hop to entry B, a plain body with no component or image anywhere in it.
-    await screen.rerender(postProps({ body: 'second body, no image at all', id: '2026-06-other', slug: 'other' }) as never);
+    await screen.rerender(postProps({ body: 'second body, no image at all', id: '2026-06-other', slug: 'other' }));
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('second body, no image at all');
@@ -2976,7 +2976,7 @@ describe('EditPage', () => {
     }
 
     it('disables Edit block with a plain reason when the caret is not on a component', async () => {
-      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await expect.poll(() => editControl(screen)).not.toBeNull();
       const control = editControl(screen)!;
@@ -2990,7 +2990,7 @@ describe('EditPage', () => {
     });
 
     it('keeps the unavailable Edit block focusable and announced through aria-disabled', async () => {
-      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await expect.poll(() => editControl(screen)).not.toBeNull();
       const control = editControl(screen)!;
@@ -3003,7 +3003,7 @@ describe('EditPage', () => {
     });
 
     it('enables Edit block when the caret sits in a safe component', async () => {
-      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
@@ -3011,7 +3011,7 @@ describe('EditPage', () => {
     });
 
     it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {
-      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
@@ -3028,7 +3028,7 @@ describe('EditPage', () => {
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
-      const screen = await render(EditPage, { ...postProps({ body: bodyWith(UNSAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(UNSAFE_BLOCK) }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       // The block carries an undeclared attribute key, so the gate refuses it. The control stays
@@ -3059,7 +3059,7 @@ describe('EditPage', () => {
       });
 
       it('keeps the unavailable Edit block control reachable to a mouse, not suppressed by pointer-events: none', async () => {
-        const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+        const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
         await expect.poll(() => editControl(screen)).not.toBeNull();
         const control = editControl(screen)!;
@@ -3090,7 +3090,7 @@ describe('EditPage', () => {
           resolvers.push(resolve);
         });
       vi.mocked(componentGrammar.componentRoundTripSafety).mockImplementationOnce(pending).mockImplementationOnce(pending);
-      const screen = await render(EditPage, { ...postProps({ body }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, 'Block A');
       await expect.poll(() => resolvers.length).toBe(1);
@@ -3110,7 +3110,7 @@ describe('EditPage', () => {
     });
 
     it('opens the dialog in edit mode seeded from the parsed block when activated', async () => {
-      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
@@ -3164,7 +3164,7 @@ describe('EditPage', () => {
     it('a no-op (corrected equals the source) shows Nothing to fix and opens no review', async () => {
       const body = 'The body reads clean.';
       stubTidyFetch(body); // the model returned the text unchanged
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3181,7 +3181,7 @@ describe('EditPage', () => {
       // must show the honest message and write nothing.
       const body = '# Title\n\nA paragraph that is fine.';
       stubTidyFetch('## Title\n\nA paragraph that is fine.');
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3198,7 +3198,7 @@ describe('EditPage', () => {
     it('a clean validated result opens the review with the change set', async () => {
       const body = 'We can accomodate the crowd.';
       stubTidyFetch('We can accommodate the crowd.');
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3252,7 +3252,7 @@ describe('EditPage', () => {
       // must splice over the actually-selected occurrence (the later offset), never the first match.
       const body = 'I like colour. I also like colour very much.';
       stubTidyFetch('color');
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       // CodeMirror renders "colour" verbatim (no syntax markers), so the text node carries both copies.
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('colour');
@@ -3279,7 +3279,7 @@ describe('EditPage', () => {
       // that the focus trap and Escape are live.
       const body = 'The body reads clean.';
       stubTidyFetch(body);
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3323,7 +3323,7 @@ describe('EditPage', () => {
       // independent of whether the abort flag happened to flip first.
       const body = 'We can accomodate the crowd.';
       const deferred = deferredTidyFetch();
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3356,7 +3356,7 @@ describe('EditPage', () => {
       vi.mocked(tidyValidateModule.validateTidy).mockImplementationOnce(() => {
         throw new Error('boom');
       });
-      const screen = await render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3380,7 +3380,7 @@ describe('EditPage', () => {
       const original = 'We can accomodate the crowd.';
       const corrected = 'We can accommodate the crowd.';
       const deferred = deferredTidyFetch();
-      const screen = await render(EditPage, tidyProps({ body: original }) as never);
+      const screen = await render(EditPage, tidyProps({ body: original }));
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3389,7 +3389,7 @@ describe('EditPage', () => {
 
       // Hop to entry B on the same route while entry A's tidy call is still pending; the reset
       // aborts and nulls the shared controller, but the deferred fetch below has not settled yet.
-      await screen.rerender(tidyProps({ body: 'second body', id: '2026-06-other', slug: 'other' }) as never);
+      await screen.rerender(tidyProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
       await expect
         .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
         .toBe('second body');

@@ -20,7 +20,7 @@ describe('MediaCaptureCard display name', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture: () => {},
-    } as never);
+    });
     const name = screen.getByRole('textbox', { name: /name/i });
     await expect.element(name).toHaveValue('blue-shoes');
     await expect.element(screen.getByText(/suggested/i)).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe('MediaCaptureCard display name', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('IMG_4821.jpg'),
       oncapture: () => {},
-    } as never);
+    });
     const name = screen.getByRole('textbox', { name: /name/i });
     await expect.element(name).toHaveValue('');
     await expect.element(name).toHaveAttribute('aria-required', 'true');
@@ -43,7 +43,7 @@ describe('MediaCaptureCard alt radiogroup', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture: () => {},
-    } as never);
+    });
     const group = screen.container.querySelector('[role="radiogroup"]')!;
     expect(group).not.toBeNull();
     expect(group.getAttribute('aria-required')).toBe('true');
@@ -61,7 +61,7 @@ describe('MediaCaptureCard alt radiogroup', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture: () => {},
-    } as never);
+    });
     const describe = screen.getByRole('radio', { name: /describ|write/i });
     await describe.click();
     await expect.element(describe).toBeChecked();
@@ -75,7 +75,7 @@ describe('MediaCaptureCard submit', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('IMG_4821.jpg'),
       oncapture: () => {},
-    } as never);
+    });
     const insert = screen.getByRole('button', { name: /insert/i });
     // No alt chosen, no name: still enabled.
     await expect.element(insert).not.toBeDisabled();
@@ -89,7 +89,7 @@ describe('MediaCaptureCard submit', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture,
-    } as never);
+    });
     await screen.getByRole('radio', { name: /decorative/i }).click();
     await screen.getByRole('button', { name: /insert/i }).click();
     expect(oncapture).toHaveBeenCalledTimes(1);
@@ -104,7 +104,7 @@ describe('MediaCaptureCard submit', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture,
-    } as never);
+    });
     await screen.getByRole('button', { name: /insert/i }).click();
     expect(oncapture).toHaveBeenCalledTimes(1);
     expect(oncapture.mock.calls[0][0].alt).toBe('');
@@ -115,7 +115,7 @@ describe('MediaCaptureCard submit', () => {
     const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture,
-    } as never);
+    });
     await screen.getByRole('radio', { name: /describ|write/i }).click();
     await screen.getByRole('textbox', { name: /alt|description/i }).fill('Blue running shoes');
     await screen.getByRole('button', { name: /insert/i }).click();

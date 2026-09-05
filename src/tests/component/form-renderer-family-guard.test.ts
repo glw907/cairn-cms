@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import FieldInput from '../../lib/components/FieldInput.svelte';
 import ComponentForm from '../../lib/components/ComponentForm.svelte';
-import { defineComponent } from '../../lib/render/registry.js';
+import { defineComponent, type ComponentValues } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { NamedField } from '../../lib/content/types.js';
 
@@ -216,7 +216,7 @@ const iconDef = defineComponent({
 
 describe('ComponentForm validation convention (controlled state + inline touched errors)', () => {
   it('renders required markers as visible asterisks and aria-required, never a native required attribute', async () => {
-    const screen = await render(ComponentForm, { def: iconDef, icons, onInsert: () => {} } as never);
+    const screen = await render(ComponentForm, { def: iconDef, icons, onInsert: () => {} });
     const title = screen.getByRole('textbox', { name: /title/i });
     await expect.element(title).toHaveAttribute('aria-required', 'true');
     // Controlled convention: no form `name`, no native `required`; requiredness rides aria + asterisk.
@@ -226,7 +226,7 @@ describe('ComponentForm validation convention (controlled state + inline touched
   });
 
   it('shows a role=alert error span linked by aria-describedby once a required field is touched-empty', async () => {
-    const screen = await render(ComponentForm, { def: iconDef, icons, onInsert: () => {} } as never);
+    const screen = await render(ComponentForm, { def: iconDef, icons, onInsert: () => {} });
     const title = screen.getByRole('textbox', { name: /title/i });
     await title.fill('x');
     await title.fill('');
@@ -238,7 +238,7 @@ describe('ComponentForm validation convention (controlled state + inline touched
   });
 
   it('binds the working values out live so the host preview reads each keystroke (controlled coupling)', async () => {
-    let values: { attributes: Record<string, unknown>; slots: Record<string, unknown> } | undefined;
+    let values: ComponentValues | undefined;
     const grid = defineComponent({
       ...base,
       name: 'note',
@@ -255,7 +255,7 @@ describe('ComponentForm validation convention (controlled state + inline touched
       set values(v) {
         values = v;
       },
-    } as never);
+    });
     await screen.getByRole('textbox', { name: /label/i }).fill('Hi');
     // The controlled write reached working state and mirrored out through the bound prop, with no
     // form submit. A native-participation renderer would leave values unchanged until FormData read.
@@ -263,7 +263,7 @@ describe('ComponentForm validation convention (controlled state + inline touched
   });
 
   it('folds a date attribute into a plain typed input, without FieldInput publish-hint semantics', async () => {
-    const screen = await render(ComponentForm, { def: iconDef, icons, onInsert: () => {} } as never);
+    const screen = await render(ComponentForm, { def: iconDef, icons, onInsert: () => {} });
     // ComponentForm's date attribute is a bare typed input; it must NOT carry FieldInput's
     // post-publish date hint, which is nonsensical in the component-insert context.
     expect(screen.container.querySelector('input[type="date"]')).not.toBeNull();
@@ -273,7 +273,7 @@ describe('ComponentForm validation convention (controlled state + inline touched
 
 describe('ComponentForm icon attribute renders through IconPicker', () => {
   it('renders a radiogroup and writes the picked glyph into working state', async () => {
-    let values: { attributes: Record<string, unknown> } | undefined;
+    let values: ComponentValues | undefined;
     const screen = await render(ComponentForm, {
       def: iconDef,
       icons,
@@ -284,7 +284,7 @@ describe('ComponentForm icon attribute renders through IconPicker', () => {
       set values(v) {
         values = v;
       },
-    } as never);
+    });
     await expect.element(screen.getByRole('radiogroup', { name: /glyph/i })).toBeInTheDocument();
     await screen.getByRole('radio', { name: /snowflake/i }).click();
     expect(values?.attributes.glyph).toBe('snowflake');

@@ -34,7 +34,7 @@ function entry(over: Partial<MediaLibraryEntry> = {}): MediaLibraryEntry {
 const LIBRARY: Record<string, MediaLibraryEntry> = { [HASH]: entry() };
 
 /** The mount options for a component under an injected media base. */
-function withBase(props: Record<string, unknown>) {
+function withBase<T extends object>(props: T) {
   return { props, context: new Map<unknown, unknown>([[MEDIA_BASE_CONTEXT_KEY, INJECTED]]) };
 }
 
@@ -63,7 +63,7 @@ describe('the media public base is injectable through context', () => {
   it('renders MediaPicker option thumbnails under the injected base', async () => {
     const screen = await render(
       MediaPicker,
-      withBase({ entries: Object.values(LIBRARY), onselect: () => {} }) as never,
+      withBase({ entries: Object.values(LIBRARY), onselect: () => {} }),
     );
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
@@ -71,14 +71,14 @@ describe('the media public base is injectable through context', () => {
   });
 
   it('renders CairnMediaLibrary tile thumbnails under the injected base', async () => {
-    const screen = await render(CairnMediaLibrary, withBase({ data: LIBRARY_DATA }) as never);
+    const screen = await render(CairnMediaLibrary, withBase({ data: LIBRARY_DATA }));
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
     expect(paths[0]).toBe(`${INJECTED}/first-light.${HASH}.webp`);
   });
 
   it('renders the MediaHeroField resting thumbnail under the injected base', async () => {
-    const screen = await render(MediaHeroField, withBase(HERO_PROPS) as never);
+    const screen = await render(MediaHeroField, withBase(HERO_PROPS));
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
     expect(paths[0]).toBe(`${INJECTED}/first-light.${HASH}.webp`);
@@ -87,7 +87,7 @@ describe('the media public base is injectable through context', () => {
   it('renders the editor media chip thumbnail under the injected base', async () => {
     const screen = await render(
       MarkdownEditor,
-      withBase({ value: EDITOR_DOC, name: 'body', mediaLibrary: LIBRARY }) as never,
+      withBase({ value: EDITOR_DOC, name: 'body', mediaLibrary: LIBRARY }),
     );
     await expect
       .poll(() => screen.container.querySelectorAll('.cm-cairn-media-thumb').length)
@@ -133,17 +133,17 @@ describe('the media public base defaults to /media with no provider (a bare moun
     const screen = await render(MediaPicker, {
       entries: Object.values(LIBRARY),
       onselect: () => {},
-    } as never);
+    });
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 
   it('keeps CairnMediaLibrary tile thumbnails under /media', async () => {
-    const screen = await render(CairnMediaLibrary, { data: LIBRARY_DATA } as never);
+    const screen = await render(CairnMediaLibrary, { data: LIBRARY_DATA });
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 
   it('keeps the MediaHeroField resting thumbnail under /media', async () => {
-    const screen = await render(MediaHeroField, HERO_PROPS as never);
+    const screen = await render(MediaHeroField, HERO_PROPS);
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 
@@ -152,7 +152,7 @@ describe('the media public base defaults to /media with no provider (a bare moun
       value: EDITOR_DOC,
       name: 'body',
       mediaLibrary: LIBRARY,
-    } as never);
+    });
     await expect
       .poll(() => screen.container.querySelectorAll('.cm-cairn-media-thumb').length)
       .toBe(1);

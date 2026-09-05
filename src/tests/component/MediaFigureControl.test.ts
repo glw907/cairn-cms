@@ -11,7 +11,7 @@ describe('MediaFigureControl pre-fill', () => {
       decorative: false,
       onapply: () => {},
       onunwrap: () => {},
-    } as never);
+    });
     await expect.element(screen.getByRole('textbox', { name: /caption/i })).toHaveValue(
       'A quiet shore at dusk.',
     );
@@ -30,7 +30,7 @@ describe('MediaFigureControl pre-fill', () => {
     const screen = await render(MediaFigureControl, {
       mode: 'wrap',
       onapply: () => {},
-    } as never);
+    });
     await expect.element(screen.getByRole('button', { name: /wrap in figure/i })).toBeInTheDocument();
     expect(screen.container.textContent ?? '').not.toMatch(/unwrap/i);
   });
@@ -43,7 +43,7 @@ describe('MediaFigureControl placement segmented control', () => {
       mode: 'edit',
       onapply: () => {},
       onunwrap: () => {},
-    } as never);
+    });
     const group = screen.container.querySelector('[role="radiogroup"]')!;
     expect(group).not.toBeNull();
     // Four segments, the active one carries a check svg (not hue alone).
@@ -60,7 +60,7 @@ describe('MediaFigureControl placement segmented control', () => {
       role: null,
       mode: 'wrap',
       onapply,
-    } as never);
+    });
     await screen.getByRole('radio', { name: /full/i }).click();
     await expect.element(screen.getByRole('radio', { name: /full/i })).toHaveAttribute(
       'aria-checked',
@@ -79,7 +79,7 @@ describe('MediaFigureControl placement segmented control', () => {
       mode: 'edit',
       onapply,
       onunwrap: () => {},
-    } as never);
+    });
     await screen.getByRole('radio', { name: /measure/i }).click();
     await screen.getByRole('button', { name: /update figure/i }).click();
     expect(onapply.mock.calls[0][0]).toEqual({ caption: 'A caption.', role: null });
@@ -95,7 +95,7 @@ describe('MediaFigureControl decorative-plus-caption warning', () => {
       decorative: true,
       onapply: () => {},
       onunwrap: () => {},
-    } as never);
+    });
     await expect.element(screen.getByText(/hidden from screen readers/i)).toBeInTheDocument();
   });
 
@@ -107,7 +107,7 @@ describe('MediaFigureControl decorative-plus-caption warning', () => {
       decorative: true,
       onapply: () => {},
       onunwrap: () => {},
-    } as never);
+    });
     expect(screen.container.textContent ?? '').not.toMatch(/hidden from screen readers/i);
   });
 
@@ -119,7 +119,7 @@ describe('MediaFigureControl decorative-plus-caption warning', () => {
       decorative: false,
       onapply: () => {},
       onunwrap: () => {},
-    } as never);
+    });
     expect(screen.container.textContent ?? '').not.toMatch(/hidden from screen readers/i);
   });
 });
@@ -133,7 +133,7 @@ describe('MediaFigureControl unwrap', () => {
       mode: 'edit',
       onapply: () => {},
       onunwrap,
-    } as never);
+    });
     await screen.getByRole('button', { name: /unwrap/i }).click();
     expect(onunwrap).toHaveBeenCalledTimes(1);
   });

@@ -9,6 +9,7 @@ import {
   findSuperpowersPathLines,
   findProcessReferenceLines,
   findConsumerHostnameLines,
+  findAsNeverLines,
   formatViolations,
   scanIdioms,
   COMMENT_SCOPE_PATTERN,
@@ -197,6 +198,33 @@ describe('findConsumerHostnameLines', () => {
   });
 });
 
+describe('findAsNeverLines', () => {
+  it('flags a bare as-never cast', () => {
+    expect(findAsNeverLines('const x = value as never;\n')).toEqual([1]);
+  });
+
+  it('passes a cast carrying the idioms-allow escape hatch', () => {
+    expect(
+      findAsNeverLines(
+        "const x = value as never; // idioms-allow: as-never  feeds the runtime guard an off-union value\n",
+      ),
+    ).toEqual([]);
+  });
+
+  it('does not false-positive on prose containing the substring ("was never")', () => {
+    expect(findAsNeverLines('// this control was never load-bearing.\n')).toEqual([]);
+  });
+
+  it('does not flag a backtick-quoted mention of the phrase', () => {
+    expect(findAsNeverLines('// the same as a stray `as never` would in production.\n')).toEqual([]);
+  });
+
+  it('matches the fixture file’s real hits and passes its escaped and mention lines', () => {
+    const source = readFileSync(resolve(FIXTURES, 'as-never.ts'), 'utf8');
+    expect(findAsNeverLines(source)).toEqual([2]);
+  });
+});
+
 const EMPTY_VIOLATIONS = {
   tabs: [],
   exit: [],
@@ -204,6 +232,7 @@ const EMPTY_VIOLATIONS = {
   superpowersPaths: [],
   processReferences: [],
   hostnames: [],
+  asNever: [],
 };
 
 describe('formatViolations', () => {
@@ -215,6 +244,7 @@ describe('formatViolations', () => {
       superpowersPaths: ['c.ts:2'],
       processReferences: ['c.ts:3'],
       hostnames: ['c.ts:4'],
+      asNever: ['d.test.ts:5'],
     });
     expect(text).toContain('1 leading-tab indentation hit(s)');
     expect(text).toContain('a.ts:1');
@@ -224,6 +254,8 @@ describe('formatViolations', () => {
     expect(text).toContain('1 docs/superpowers/ path reference(s)');
     expect(text).toContain('1 pass-scoped process reference(s)');
     expect(text).toContain('1 unrecognized hostname literal(s)');
+    expect(text).toContain('1 unescaped "as never" cast(s)');
+    expect(text).toContain('d.test.ts:5');
   });
 
   it('renders nothing for an all-clean report', () => {

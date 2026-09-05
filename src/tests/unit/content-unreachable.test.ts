@@ -6,7 +6,7 @@ describe('unreachable', () => {
     // A real caller only ever reaches this line once every union arm is handled, so the argument
     // is `never` at the type level; a test proving the runtime half of the guard must defeat that
     // proof with a cast, the same as a stray `as never` would in production.
-    expect(() => unreachable('bogus' as never, 'test.context')).toThrow(
+    expect(() => unreachable('bogus' as never, 'test.context')).toThrow( // idioms-allow: as-never  feeds the runtime guard an argument off the (empty) union it types
       'cairn: unreachable arm in test.context: "bogus"',
     );
   });

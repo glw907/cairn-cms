@@ -187,13 +187,10 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
 
     const rows: { screen: RenderResult; tr: Element }[] = [];
     for (let i = 0; i < count; i++) {
-      const screen = await render(
-        ExpandableRow,
-        {
-          props: { ...BASE_PROPS, datum: { name: `Row ${i}` }, triggerLabel: `Expand row ${i}` },
-          target: tbody,
-        } as never,
-      );
+      const screen = await render(ExpandableRow, {
+        props: { ...BASE_PROPS, datum: { name: `Row ${i}` }, triggerLabel: `Expand row ${i}` },
+        target: tbody,
+      });
       const trs = tbody.querySelectorAll('.toolkit-expandable-row-summary');
       rows.push({ screen, tr: trs[trs.length - 1]! });
     }

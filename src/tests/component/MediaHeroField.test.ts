@@ -1,11 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { tick } from 'svelte';
+import type { ComponentProps } from 'svelte';
 import MediaHeroField from '../../lib/components/MediaHeroField.svelte';
+import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 
 // A small projected library keyed by 16-hex hash, the shape EditData.mediaLibrary carries (the merged
 // committed-plus-uploaded projection the picker and the resting thumbnail both resolve against).
-function libEntry(over: Partial<Record<string, unknown>> = {}) {
+function libEntry(over: Partial<MediaLibraryEntry> = {}): MediaLibraryEntry {
   return {
     hash: '0123456789abcdef',
     slug: 'first-light',
@@ -16,6 +18,7 @@ function libEntry(over: Partial<Record<string, unknown>> = {}) {
     width: 1600,
     height: 900,
     bytes: 54321,
+    createdAt: '2026-03-04T00:00:00.000Z',
     ...over,
   };
 }
@@ -32,7 +35,7 @@ const LIBRARY = {
 
 const FIELD = { name: 'image', label: 'Hero image' };
 
-async function mount(props: Record<string, unknown> = {}) {
+async function mount(props: Partial<ComponentProps<typeof MediaHeroField>> = {}) {
   return await render(MediaHeroField, {
     field: FIELD,
     mediaLibrary: LIBRARY,
@@ -41,7 +44,7 @@ async function mount(props: Record<string, unknown> = {}) {
     onuploaded: () => {},
     ondirty: () => {},
     ...props,
-  } as never);
+  });
 }
 
 /** The visible field text, excluding the always-rendered dialog (which holds the chooser markup). */

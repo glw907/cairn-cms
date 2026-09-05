@@ -1,7 +1,7 @@
 // cairn-cms: the code-idiom gate. Records the code-idiom charter's M4 rule (indentation is
 // 2-space everywhere) as a running check rather than a one-time sweep; .editorconfig has
 // declared `indent_size = 2` since the M4 pass, but nothing enforced it until this gate exists,
-// so its claim becomes true only from here on. Six rules, several scopes:
+// so its claim becomes true only from here on. Seven rules, several scopes:
 //
 //   1. Leading-tab indentation is banned in src/lib and scripts (*.ts, *.svelte, *.mjs).
 //   2. `process.exit` is banned in scripts/checks/*.mjs ONLY (never scripts/lab, build, or
@@ -41,6 +41,17 @@
 //      "aksailingclub-org") into this public gate's data; only the hostname shape is
 //      structurally caught, so a bare mention of a private repo's name in prose is a manual sweep
 //      finding, not something this gate can catch going forward.
+//   7. An `as never` cast is banned in src/tests (*.ts, *.svelte): the internals-C `as never`
+//      retirement replaced every bottom-type test cast with a real typed fixture (`testEvent`,
+//      component-props builders) or an explained `as unknown as X`, so a fresh one reintroduces the
+//      erased-type-safety hazard those casts posed (a hand-built literal that drifts from the real
+//      type compiles clean, since `never` is assignable to and from anything). A per-line escape
+//      hatch, `// idioms-allow: as-never  <reason>` (the literal prefix the gate matches on, then a
+//      two-space separator before the free-text reason), covers the narrow legitimate case: a
+//      negative-path test that feeds a runtime guard a value deliberately off the union it types,
+//      where the cast is the point of the test, not a bypass of it. The scan strips backtick-quoted
+//      spans before matching, so a comment that MENTIONS the phrase (`` `as never` ``) rather than
+//      writing the cast is never flagged.
 //
 // Rules 4-6 live in THIS gate, scoped to `src/lib`, rather than in the ESLint comment plugin
 // (`eslint.config.js`, `check:comments`) for one structural reason: ESLint's TypeScript parser
@@ -62,7 +73,9 @@
 // spelling (`check-idioms`). Rules 4-6 scope to `src/lib` only, so this file and its own header
 // above (which quotes the banned shapes) are never in their scan. Every rule also excludes
 // `scripts/checks/fixtures/`, where this gate's own tests keep deliberately-violating sample
-// files. Wired as `npm run check:idioms`.
+// files. Rule 7 additionally excludes its own unit test file BY NAME (AS_NEVER_SELF_EXCLUSION
+// below), which exercises real `as never` literals to prove the matcher's own behavior. Wired as
+// `npm run check:idioms`.
 import { readFileSync } from 'node:fs';
 import { resolve, relative, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -328,6 +341,43 @@ export function findConsumerHostnameLines(source) {
   return hits;
 }
 
+// The scope for rule 7: every .ts and .svelte file under src/tests.
+const TEST_SCOPE_PATTERN = /\.(ts|svelte)$/;
+
+// Self-exclusion: this gate's own unit test exercises findAsNeverLines against literal `as never`
+// strings (a real cast, an escaped one, a backtick mention) so it can assert the function's own
+// behavior, which would otherwise make the gate fail against itself the same way an unassembled
+// exit-call literal would trip rule 2.
+const AS_NEVER_SELF_EXCLUSION = 'src/tests/unit/check-idioms.test.ts';
+
+// The literal escape-hatch prefix rule 7 matches on; the reason after it (a two-space separator,
+// then free text) is never parsed, only the prefix's presence on the same line as the cast.
+const AS_NEVER_ALLOW_PREFIX = '// idioms-allow: as-never';
+
+// A backtick-quoted span, stripped before matching so a comment MENTIONING the phrase (rather
+// than writing the cast) is never flagged.
+const BACKTICK_SPAN_PATTERN = /`[^`]*`/g;
+
+const AS_NEVER_PATTERN = /\bas never\b/;
+
+/**
+ * Every 1-based line number in `source` carrying an unescaped `as never` cast (rule 7): the line
+ * matches {@link AS_NEVER_PATTERN} once backtick-quoted spans are stripped, and carries no
+ * {@link AS_NEVER_ALLOW_PREFIX} escape hatch.
+ * @param {string} source
+ * @returns {number[]}
+ */
+export function findAsNeverLines(source) {
+  /** @type {number[]} */
+  const hits = [];
+  source.split('\n').forEach((line, i) => {
+    if (line.includes(AS_NEVER_ALLOW_PREFIX)) return;
+    const stripped = line.replace(BACKTICK_SPAN_PATTERN, '');
+    if (AS_NEVER_PATTERN.test(stripped)) hits.push(i + 1);
+  });
+  return hits;
+}
+
 /**
  * @typedef {{
  *   tabs: string[],
@@ -336,11 +386,12 @@ export function findConsumerHostnameLines(source) {
  *   superpowersPaths: string[],
  *   processReferences: string[],
  *   hostnames: string[],
+ *   asNever: string[],
  * }} IdiomViolations
  */
 
 /**
- * Scan the real tree for all six rules. Exported so the unit test can assert the gate is born
+ * Scan the real tree for all seven rules. Exported so the unit test can assert the gate is born
  * green without shelling out.
  * @returns {IdiomViolations}
  */
@@ -353,6 +404,7 @@ export function scanIdioms() {
     superpowersPaths: [],
     processReferences: [],
     hostnames: [],
+    asNever: [],
   };
 
   const tabScopeFiles = [
@@ -383,6 +435,14 @@ export function scanIdioms() {
     for (const line of findSuperpowersPathLines(source)) violations.superpowersPaths.push(`${rel}:${line}`);
     for (const line of findProcessReferenceLines(source)) violations.processReferences.push(`${rel}:${line}`);
     for (const line of findConsumerHostnameLines(source)) violations.hostnames.push(`${rel}:${line}`);
+  }
+
+  const testFiles = walk(resolve(ROOT, 'src/tests'), (n) => TEST_SCOPE_PATTERN.test(n));
+  for (const file of testFiles) {
+    const rel = relative(ROOT, file).split('\\').join('/');
+    if (rel === AS_NEVER_SELF_EXCLUSION) continue;
+    const source = readFileSync(file, 'utf8');
+    for (const line of findAsNeverLines(source)) violations.asNever.push(`${rel}:${line}`);
   }
 
   return violations;
@@ -419,6 +479,10 @@ export function formatViolations(violations) {
     lines.push(`check-idioms: ${violations.hostnames.length} unrecognized hostname literal(s) in src/lib (add a real public host to HOSTNAME_ALLOWED_HOSTS, or generalize a consumer-site mention):`);
     for (const hit of violations.hostnames) lines.push(`  ${hit}`);
   }
+  if (violations.asNever.length) {
+    lines.push(`check-idioms: ${violations.asNever.length} unescaped "as never" cast(s) in src/tests (use a typed fixture, or annotate a deliberate negative-path cast with "// idioms-allow: as-never  <reason>"):`);
+    for (const hit of violations.asNever) lines.push(`  ${hit}`);
+  }
   return lines.join('\n');
 }
 
@@ -430,10 +494,11 @@ function main() {
     violations.identity.length +
     violations.superpowersPaths.length +
     violations.processReferences.length +
-    violations.hostnames.length;
+    violations.hostnames.length +
+    violations.asNever.length;
   if (total === 0) {
     console.log(
-      'check-idioms: OK (2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no docs/superpowers/ paths, pass-scoped references, or consumer hostnames in src/lib)',
+      'check-idioms: OK (2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no docs/superpowers/ paths, pass-scoped references, or consumer hostnames in src/lib, no unescaped as-never casts in src/tests)',
     );
     return;
   }

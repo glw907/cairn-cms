@@ -164,7 +164,7 @@ describe('RepeatableField scopes focus to its own instance', () => {
   }
 
   it('focuses the second list on Add in the second list', async () => {
-    await render(TwoRepeatableFields, twoLists() as never);
+    await render(TwoRepeatableFields, twoLists());
     const listB = listFor('b');
     // The Add button is the trailing button in the list; query by its text.
     const addBtns = Array.from(listB.querySelectorAll<HTMLButtonElement>('button')).filter((b) =>
@@ -179,7 +179,7 @@ describe('RepeatableField scopes focus to its own instance', () => {
   });
 
   it('keeps focus in the second list on a remove in the second list', async () => {
-    await render(TwoRepeatableFields, twoLists() as never);
+    await render(TwoRepeatableFields, twoLists());
     const listB = listFor('b');
     const firstRemoveB = listB.querySelector<HTMLButtonElement>('[data-cairn-row-remove]')!;
     firstRemoveB.focus();

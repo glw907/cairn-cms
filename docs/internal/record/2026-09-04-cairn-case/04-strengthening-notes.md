@@ -71,3 +71,16 @@ round 4 on, each round adds a sixth reviewer: an AI-writing expert reading for t
 cadence, machine vocabulary, punctuation habits, the structural tells the writing-voice
 style names), run through the repo's `cairn-register-editor` and `prose-voice-reviewer`
 agents in addition to the five personas.
+
+## Round 6 addition (Geoff, 2026-09-04): the shape, not only the product
+
+A "cairn-like" approach would also work, and the case says so. The argument is for a shape:
+content as markdown in the organisation's own git repository; an admin frame that lives
+inside the organisation's own app; the organisation's own screens mounted through seams; one
+hosting platform supplying hosting, data, media, mail, and deploy. cairn is one implementation
+of that shape. A developer can build the same shape from SvelteKit plus Keystatic or Decap
+plus a hand-written admin, or on another stack, and the case names that as a valid choice and
+lists, without grading words, what cairn ships that such a build writes or installs itself
+(the list already in Leg 1). This is the honest answer to the designer persona's objection,
+and it keeps cairn inside its charter: the claim is the shape plus the pieces, never the
+product's superiority.

@@ -70,10 +70,11 @@ bespoke (ruling 7): a single-use control, not a repeated device.
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
-  // every fresh error so the region text always mutates and the screen reader speaks again (the
-  // ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard sentence is
-  // unchanged; the visible alert below keeps its own styling and drops the `role` (a fresh-inserted
-  // role element announces inconsistently and would clobber a repeat).
+  // every fresh error so the region text always mutates and the screen reader speaks again; this is
+  // one of six admin screens that hand-roll the identical idiom rather than share it (ConceptList's
+  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);
   function nonce(): string {
     return announceNonce % 2 === 0 ? '' : '​';

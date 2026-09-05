@@ -1,3 +1,7 @@
+// cairn-cms: the shared render pipeline (remark parse, gfm, directives, cairn's own remark and
+// rehype steps in a fixed order, then sanitize and stringify). This is `renderDocument`'s wiring:
+// every mdast/hast step the render pipeline owns is composed here once, so the editor preview and
+// every public page call the exact same pipeline, never two divergent ones.
 import { unified, type PluggableList } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';

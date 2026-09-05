@@ -264,8 +264,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second submit failing the same way) would go silent. An invisible nonce flips on every fresh
-  // error so the region text always mutates and the screen reader speaks again (the MediaPicker
-  // discipline). The nonce is a zero-width space, never voiced, so the heard sentence is unchanged.
+  // error so the region text always mutates and the screen reader speaks again. Six admin screens
+  // (MediaPicker, this one, CairnTidySettings, ManageEditors, NavTree, VocabularyAdmin) each
+  // hand-roll this same few-line nonce idiom rather than share it; no accessibility helper module
+  // exists yet to hold it. The nonce is a zero-width space, never voiced, so the heard sentence is
+  // unchanged.
   let announceNonce = $state(0);
   function nonce(): string {
     return announceNonce % 2 === 0 ? '' : '​';

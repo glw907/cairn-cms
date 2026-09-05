@@ -1,3 +1,7 @@
+// cairn-cms: the rehype step that turns a component directive's stamped hast markers (from
+// remark-directives.ts) into the site's own rendered markup, by looking up the directive's name in
+// the ComponentRegistry and calling its declared `render`. `iconSpan` and the small hast-reading
+// helpers below back that render call.
 import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
 import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';

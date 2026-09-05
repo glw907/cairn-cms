@@ -1,3 +1,7 @@
+// cairn-cms: component-directive validation. Parses a serialized directive through
+// component-grammar.ts, then runs its attributes through the same defineFieldset validator a
+// concept field uses, plus the two checks a fieldset cannot express: an unknown attribute key and
+// an unfilled required slot.
 import { parseComponentWithRawKeys } from './component-grammar.js';
 import { defineFieldset } from '../content/fieldset.js';
 import type { ComponentDef } from './registry.js';

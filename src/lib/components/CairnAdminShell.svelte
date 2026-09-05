@@ -56,9 +56,10 @@ discriminant, not the fields, gates the chrome).
 
   let { data, children, themeOverride }: Props = $props();
 
-  // The authed member, narrowed once. Every chrome read below goes through `shell`, which is null on
-  // a public payload (the template renders only the children then, so the chrome never reads it). The
-  // authed-branch template guards on `data.public`, so `shell` is non-null wherever the chrome reads.
+  // The authed member, narrowed once for the script's own logic below (the nav-collapse derived,
+  // the theme seed). The authed-branch template still reads `data` directly in most places, since
+  // its own `{#if data.public}` guard already proves `data` is the authed shape there; `shell`
+  // exists for script-side reads that run before that guard is in scope.
   const shell = $derived(data.public ? null : data);
 
   // Hand descendant forms a live getter for the CSRF token the shell load issued, so the field stays
@@ -498,9 +499,10 @@ discriminant, not the fields, gates the chrome).
   });
 
   // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
-  // can never tab out into the inert document behind it. Redirects into the trap even when focus
-  // currently sits outside drawerNavEl (a defensive fallback for the moment before the focus-in
-  // effect above lands), the same fallback MediaInsertPopover's trap uses.
+  // can never tab out into the inert document behind it. Both directions redirect into the trap
+  // when focus currently sits outside drawerNavEl (a defensive fallback for the moment before the
+  // focus-in effect above lands); MediaInsertPopover's own trap only carries that fallback on its
+  // Shift+Tab branch, not its forward Tab branch.
   function trapDrawerTab(e: KeyboardEvent) {
     if (!drawerNavEl) return;
     const focusables = drawerNavEl.querySelectorAll<HTMLElement>(

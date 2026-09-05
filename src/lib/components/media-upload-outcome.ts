@@ -1,8 +1,9 @@
-// The pure upload-envelope to outcome mapper. The insert popover's optimistic loop posts the bytes
-// and reads back a SvelteKit form-action result (or a manual-redirect Response shape); this turns
-// that raw shape into the one decision the popover acts on: insert the reference, show a typed
-// failure card, or treat the session as expired. Keeping it pure lets the branch logic unit-test
-// without a browser or a real fetch.
+// The pure upload-envelope to outcome mapper. Every media upload surface's optimistic loop
+// (the insert popover, the hero field, the upload and replace dialogs) posts the bytes and reads
+// back a SvelteKit form-action result (or a manual-redirect Response shape); this turns that raw
+// shape into the one decision a caller acts on: insert the reference, show a typed failure card,
+// or treat the session as expired. Keeping it pure lets the branch logic unit-test without a
+// browser or a real fetch.
 //
 // Node-safe (no @codemirror, no DOM): it imports only the MediaEntry and UploadResult types, which
 // are erased at build time.
@@ -20,7 +21,7 @@ import { formatMediaToken } from '../media/reference.js';
 export type UploadFailureKind = IngestFailureKind | 'generic';
 
 /**
- * The outcome the popover acts on. `inserted` swaps the placeholder for the reference and records
+ * The outcome a media upload surface acts on. `inserted` swaps the placeholder for the reference and records
  *  the entry; `failed` cancels the placeholder and shows the typed card; `session-expired` cancels
  *  the placeholder and tells the author to sign in again.
  */
@@ -30,8 +31,8 @@ export type UploadOutcome =
   | { kind: 'session-expired' };
 
 /**
- * The shape the popover hands in: either a parsed SvelteKit action result (success or failure) or a
- *  bare response signal for the redirect and network-error cases. The popover deserializes the body
+ * The shape a caller hands in: either a parsed SvelteKit action result (success or failure) or a
+ *  bare response signal for the redirect and network-error cases. The caller deserializes the body
  *  for the success and failure cases and passes the raw `response.type`/`response.status` for the
  *  redirect case, so this one mapper covers every branch.
  */
@@ -57,7 +58,7 @@ const REFUSE_TO_FAILURE: Record<string, UploadFailureKind | 'session-expired'> =
 };
 
 /**
- * Map a parsed upload envelope to the single outcome the popover acts on. A success envelope yields
+ * Map a parsed upload envelope to the single outcome the calling upload surface acts on. A success envelope yields
  * an `inserted` outcome carrying the reference, the record, and the dedup flag. A failure envelope
  * maps its refuse reason to a typed card, with `session-expired` lifted to its own outcome. An
  * opaque or status-0 response (the guard's `redirect: 'manual'` 303) is a session-expired signal, as

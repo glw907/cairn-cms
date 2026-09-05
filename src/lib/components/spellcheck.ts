@@ -278,6 +278,11 @@ export function buildSpellDiagnostic(
  * answer lands, {@link accept} returns true only for the highest seq seen, so a stale answer from an
  * older document state is dropped and the underlines never lag the text. Pure, so the seq logic
  * unit-tests without a Worker.
+ *
+ * A sibling exists in `client-action.ts`'s `RequestGuard`, an independent arbiter for the same
+ * shape with inverted polarity: `accept` here also accepts a tied seq, where `RequestGuard.isStale`
+ * rejects anything short of the exact current token. The two were not unified because that
+ * polarity difference is load-bearing for each caller, not an accident.
  */
 export interface SeqArbiter {
   /** The next monotonic seq, recorded as the current run. */

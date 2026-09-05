@@ -1,7 +1,10 @@
-// The doctor's local-config checks: the wrangler bindings, the observability sink, the
-// svelte.config CSRF handoff, the site-config validation, the public origin, and the blanket
-// no-referrer trap. Every read a CHECK performs goes through the injected ctx.readFile, so the
-// tests pass fixtures and the bin passes node:fs. One read sits outside that rule: the shipped
+// The doctor's local-config checks: the wrangler bindings, the media bucket binding, the
+// observability sink, the svelte.config CSRF handoff, the site-config validation and its tidy
+// API key, the public origin, the four-file /admin mount shape, role wiring, and the blanket
+// no-referrer trap. Every file read a check performs goes through the injected ctx.readFile, so
+// the tests pass fixtures and the bin passes node:fs; the tidy-key check additionally probes
+// Anthropic over the injected ctx.fetch when a literal key is readable locally, which is a
+// network read outside that file-read rule. One read sits outside both rules: the shipped
 // site-config-path.json is read eagerly with readFileSync at module load, since a corrupt data
 // file is a build-time defect that should throw on import rather than degrade one check (the
 // posture audit/norms.ts takes on its own JSON; see readCanonicalSiteConfigPath below).

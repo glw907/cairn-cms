@@ -1,3 +1,6 @@
+// cairn-cms: the icon-glyph renderer, a public seam a site's own icon-rendering component composes
+// with rehype-dispatch.ts's `iconSpan` (`iconSpan(renderGlyph(name, icons), role)`) to turn a
+// stamped icon name into an inline SVG hast node, from the site's own IconSet path-data map.
 import { s } from 'hastscript';
 import type { Element } from 'hast';
 

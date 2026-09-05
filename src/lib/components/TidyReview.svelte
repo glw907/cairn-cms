@@ -136,11 +136,12 @@ must never make, so no such count exists.
   // The keyboard step-through cursor: the focused hunk's array position. j/k move; a/r act on it.
   let focusedPos = $state(0);
 
-  // The two live regions (the MediaPicker discipline). The tally region (role=status) speaks only on a
-  // bulk action; the action region (aria-live=polite) narrates the single per-hunk action and each
-  // cursor move. A live region re-announces only when its text changes, so a deterministic message
-  // (the same hunk, the same verb) would go silent on a repeat. Each writer appends an invisible
-  // incrementing nonce so the region text always mutates and the screen reader always speaks it.
+  // Two live regions, the same shape MediaPicker's own results-count/narration pair uses but not
+  // shared with it: the tally region (role=status) speaks only on a bulk action; the action region
+  // (aria-live=polite) narrates the single per-hunk action and each cursor move. A live region
+  // re-announces only when its text changes, so a deterministic message (the same hunk, the same
+  // verb) would go silent on a repeat. Each writer appends an invisible incrementing nonce so the
+  // region text always mutates and the screen reader always speaks it.
   let tallyMessage = $state('');
   let actionMessage = $state('');
   let announceNonce = 0;
@@ -458,7 +459,7 @@ must never make, so no such count exists.
       </button>
     </div>
 
-    <!-- the two live regions (the MediaPicker discipline), both visually hidden. The tally (role=status)
+    <!-- The two live regions above, both visually hidden. The tally (role=status)
          speaks only on a bulk action; the polite region narrates the single last per-hunk action. -->
     <span class="sr-only" role="status" data-testid="tidy-tally-live">{tallyMessage}</span>
     <span class="sr-only" aria-live="polite" data-testid="tidy-action-live">{actionMessage}</span>

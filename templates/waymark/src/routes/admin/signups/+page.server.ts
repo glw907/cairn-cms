@@ -30,7 +30,8 @@ export const actions: Actions = {
     const name = String(form.get('name') ?? '').trim();
     const email = String(form.get('email') ?? '').trim();
     if (!name || !email) return fail(400, { error: 'missing' });
-    await event.platform!.env.APP_DB.prepare('INSERT INTO signups (name, email) VALUES (?, ?)')
+    await event
+      .platform!.env.APP_DB.prepare('INSERT INTO signups (name, email) VALUES (?, ?)')
       .bind(name, email)
       .run();
     return { created: true };

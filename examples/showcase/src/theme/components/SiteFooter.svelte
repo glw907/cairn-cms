@@ -37,26 +37,13 @@ this file; the look re-skins from `theme.css`.
   ];
 </script>
 
-<footer
-  class="site-footer mt-2xl border-t border-base-300 bg-base-200"
->
-  <div
-    class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl"
-  >
-    <a
-      href="/"
-      class="brand-link inline-flex min-h-11 items-center text-muted no-underline"
-    >
-      <span
-        class="font-display text-step-1 font-semibold tracking-tight"
-        >Waymark</span
-      >
+<footer class="site-footer mt-2xl border-t border-base-300 bg-base-200">
+  <div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl">
+    <a href="/" class="brand-link inline-flex min-h-11 items-center text-muted no-underline">
+      <span class="font-display text-step-1 font-semibold tracking-tight">Waymark</span>
     </a>
 
-    <nav
-      class="site-nav flex flex-wrap items-center gap-s text-step--1"
-      aria-label="Footer"
-    >
+    <nav class="site-nav flex flex-wrap items-center gap-s text-step--1" aria-label="Footer">
       {#each nav as item (item.href)}
         <a
           href={item.href}
@@ -68,9 +55,7 @@ this file; the look re-skins from `theme.css`.
       {/each}
     </nav>
 
-    <p
-      class="w-full border-t border-card-border pt-s text-step--1 text-muted"
-    >
+    <p class="w-full border-t border-card-border pt-s text-step--1 text-muted">
       Built with cairn. A self-contained SvelteKit site that consumes the package and proves it.
     </p>
   </div>

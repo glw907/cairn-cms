@@ -21,7 +21,11 @@ const fragmentsRaw = import.meta.glob('/src/content/fragments/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw, fragments: fragmentsRaw });
+const indexes = createSiteIndexes(cairn, siteConfig, {
+  posts: postsRaw,
+  pages: pagesRaw,
+  fragments: fragmentsRaw,
+});
 
 export const site = indexes.site;
 export const posts = indexes.posts;

@@ -32,20 +32,18 @@
   // A tag search is a narrowing operation over the flat page, not a composition: it drops the
   // year headings and the featured lead, showing exactly what matched. `filtered` is undefined
   // while browsing unfiltered, so the template can branch on its presence.
-  const filtered = $derived(selected ? pageEntries.filter((p) => p.tags?.includes(selected)) : undefined);
+  const filtered = $derived(
+    selected ? pageEntries.filter((p) => p.tags?.includes(selected)) : undefined,
+  );
   const visibleCount = $derived((filtered ?? pageEntries).length);
   const showFeatured = $derived(selected === '' && Boolean(data.featured));
 </script>
 
 <section class="mx-auto max-w-measure pb-xl pt-l">
-  <h1
-    class="m-0 mb-s font-display text-step-5 font-semibold leading-tight tracking-tight"
-  >
+  <h1 class="m-0 mb-s font-display text-step-5 font-semibold leading-tight tracking-tight">
     Notes, stacked one stone at a time.
   </h1>
-  <p
-    class="m-0 max-w-[38rem] text-step-1 leading-snug text-muted"
-  >
+  <p class="m-0 max-w-[38rem] text-step-1 leading-snug text-muted">
     The cairn showcase. You write in markdown and publish a static page that reads the way a
     publication should. Every entry below is the markdown you type, rendered by the surface your
     readers see.

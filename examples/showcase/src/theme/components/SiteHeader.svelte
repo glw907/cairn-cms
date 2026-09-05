@@ -81,7 +81,11 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
   type Theme = 'cairn' | 'cairn-dark';
 
   /** This theme's own names and cookie, fed to the chassis toggle mechanism below. */
-  const themeConfig: ThemeToggleConfig<Theme> = { light: 'cairn', dark: 'cairn-dark', cookieName: 'cairn-site-theme' };
+  const themeConfig: ThemeToggleConfig<Theme> = {
+    light: 'cairn',
+    dark: 'cairn-dark',
+    cookieName: 'cairn-site-theme',
+  };
 
   // The icon is correct on first paint even before any explicit choice exists (resolveTheme reads
   // `<html>`'s live data-theme, set by the head script, or falls back to the system scheme). Never
@@ -101,14 +105,10 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
   <div
     class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-x-m gap-y-2xs px-m py-xs"
   >
-    <a
-      href="/"
-      class="brand-link inline-flex min-h-11 items-center text-base-content no-underline"
-    >
+    <a href="/" class="brand-link inline-flex min-h-11 items-center text-base-content no-underline">
       <!-- Nowrap keeps the name on one line at any width; the header's own flex-wrap (above) is what
            makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
-      <span
-        class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
+      <span class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
         >Waymark</span
       >
     </a>

@@ -33,7 +33,11 @@ export function sortNewestFirst(entries: ContentSummary[]): ContentSummary[] {
  * `[1, totalPages]`, so an out-of-range request (page 0, or past the last page) still returns a
  * real page rather than an empty one.
  */
-export function paginateArchive(entries: ContentSummary[], page: number, pageSize = ARCHIVE_PAGE_SIZE): ArchivePage {
+export function paginateArchive(
+  entries: ContentSummary[],
+  page: number,
+  pageSize = ARCHIVE_PAGE_SIZE,
+): ArchivePage {
   const totalPages = Math.max(1, Math.ceil(entries.length / pageSize));
   const clampedPage = Math.min(Math.max(1, Math.trunc(page) || 1), totalPages);
   const start = (clampedPage - 1) * pageSize;

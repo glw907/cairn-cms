@@ -72,7 +72,9 @@ test('the insert UI: choose an image, the placeholder resolves to a media: refer
   //    img lives inside the frame; its src is the /media delivery path the resolveMedia step rewrote.
   await page.getByRole('tab', { name: 'Preview' }).click();
   const previewImg = page.frameLocator('iframe[title="Page preview"]').locator('img');
-  await expect(previewImg).toHaveAttribute('src', `/media/seaside.${hash}.png`, { timeout: 15_000 });
+  await expect(previewImg).toHaveAttribute('src', `/media/seaside.${hash}.png`, {
+    timeout: 15_000,
+  });
 
   // 6. Save. The Save control submits the edit form, committing the body and media.json.
   await page.getByRole('button', { name: 'Save', exact: true }).click();

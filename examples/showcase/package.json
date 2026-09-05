@@ -8,6 +8,8 @@
     "preview": "vite preview",
     "cairn:manifest": "cairn-manifest",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "format": "prettier --write --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte}' 'e2e/**/*.ts' '*.ts' '*.js'",
+    "format:check": "prettier --check --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte}' 'e2e/**/*.ts' '*.ts' '*.js'",
     "pretest:e2e": "npm --prefix ../.. run package",
     "test:e2e": "playwright test",
     "design:probe": "node scripts/design-probe.mjs"
@@ -32,6 +34,8 @@
     "@types/node": "^24.13.3",
     "daisyui": "^5.6.6",
     "devalue": "^5.8.1",
+    "prettier": "^3.9.6",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.56.10",
     "svelte-check": "^4",
     "tailwindcss": "^4.3.2",

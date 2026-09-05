@@ -71,7 +71,8 @@ everything else staying byte-for-byte the same. -->
     return {
       url: field.src,
       alt: typeof field.alt === 'string' ? field.alt : '',
-      caption: typeof field.caption === 'string' && field.caption !== '' ? field.caption : undefined,
+      caption:
+        typeof field.caption === 'string' && field.caption !== '' ? field.caption : undefined,
     };
   });
 

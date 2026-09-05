@@ -139,9 +139,7 @@ test('the detail slide-over: the grouped where-used reads published for the used
   await expect(usedPanel).toBeVisible();
   // Where-used groups it under "Published on the site" with a link to the seed post's editor.
   await expect(usedPanel.getByText('Published on the site')).toBeVisible();
-  await expect(
-    usedPanel.locator('a[href="/admin/posts/2026-06-hello"]'),
-  ).toBeVisible();
+  await expect(usedPanel.locator('a[href="/admin/posts/2026-06-hello"]')).toBeVisible();
   // Close the panel before opening the next (Escape closes the non-modal region).
   await page.keyboard.press('Escape');
   await expect(usedPanel).toBeHidden();

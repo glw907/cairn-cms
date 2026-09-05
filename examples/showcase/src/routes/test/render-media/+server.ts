@@ -18,7 +18,10 @@ export async function POST({ request }) {
     const { body, record } = (await request.json()) as { body: string; record: MediaEntry };
     // One-row manifest from the posted record, overlaid onto the (empty) committed manifest.
     const manifest = { [record.hash]: record };
-    const resolveMedia = createMediaResolver(manifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
+    const resolveMedia = createMediaResolver(
+      manifest,
+      normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
+    );
     const html = await cairn.rendering.render({ body, resolveMedia });
     return json({ html });
   }

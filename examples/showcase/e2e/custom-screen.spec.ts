@@ -6,7 +6,9 @@ import { test, expect } from '@playwright/test';
 // visible on the next; a unique signup name per run keeps the assertions exact under Playwright's
 // CI retries (a retry shares the running server, so a fixed name would accumulate duplicate rows).
 
-test('a custom admin screen renders in the shell, reads identity, and writes its own D1', async ({ page }) => {
+test('a custom admin screen renders in the shell, reads identity, and writes its own D1', async ({
+  page,
+}) => {
   await page.goto('/admin/signups');
   // The registered navLayout entry renders as a sidebar link inside the shared shell. Scope to the
   // sidebar nav: the same href also resolves in the command palette (which maps the nav items), so a
@@ -31,7 +33,9 @@ test('a custom admin screen renders in the shell, reads identity, and writes its
   await expect(page.getByRole('cell', { name })).toHaveCount(0);
 });
 
-test("the shell's global logout action targets the absolute catch-all path from a custom route", async ({ page }) => {
+test("the shell's global logout action targets the absolute catch-all path from a custom route", async ({
+  page,
+}) => {
   await page.goto('/admin/signups');
   await expect(page.locator('form[action="/admin?/logout"]')).toHaveCount(1);
 });

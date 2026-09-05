@@ -1,7 +1,11 @@
 // The showcase's one entry-data augmentation: the reference-edge resolution `(site)/[...path]`'s
 // entryLoad and `(site)/preview/[token]`'s previewLoad both apply on top of the engine's own
 // `EntryData`/`PreviewData` shape, factored here so the two routes cannot drift apart on it.
-import { resolveReferences, buildSiteDescriptors, type ResolvedReference } from '@glw907/cairn-cms/delivery';
+import {
+  resolveReferences,
+  buildSiteDescriptors,
+  type ResolvedReference,
+} from '@glw907/cairn-cms/delivery';
 import { site } from './content.js';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 

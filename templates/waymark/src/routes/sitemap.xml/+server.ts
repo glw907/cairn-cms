@@ -7,7 +7,9 @@ export const prerender = true;
 export const GET: RequestHandler = () => {
   const urls: SitemapUrl[] = [
     { loc: ORIGIN + '/' },
-    ...site.all().map((s) => ({ loc: ORIGIN + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
+    ...site
+      .all()
+      .map((s) => ({ loc: ORIGIN + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
   ];
   return sitemapResponse(urls);
 };

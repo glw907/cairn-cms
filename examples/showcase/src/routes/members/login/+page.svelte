@@ -12,7 +12,10 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
 -->
 <script lang="ts">
   import themeCss from '$theme/theme.css?url';
-  import { INSECURE_TEST_CHALLENGE_FIELD, INSECURE_TEST_CHALLENGE_TOKEN } from '../../../members/challenge-token.js';
+  import {
+    INSECURE_TEST_CHALLENGE_FIELD,
+    INSECURE_TEST_CHALLENGE_TOKEN,
+  } from '../../../members/challenge-token.js';
   import type { ActionData } from './$types';
 
   interface Props {
@@ -28,13 +31,19 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
   <title>Member sign in</title>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-200 p-4 text-base-content">
+<div
+  class="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-200 p-4 text-base-content"
+>
   <div class="card w-full max-w-sm bg-base-100 shadow">
     <div class="flex flex-col gap-5 p-6">
       <h1 class="text-lg font-semibold">Member sign in</h1>
 
       <form method="POST" action="?/request" class="flex flex-col gap-3">
-        <input type="hidden" name={INSECURE_TEST_CHALLENGE_FIELD} value={INSECURE_TEST_CHALLENGE_TOKEN} />
+        <input
+          type="hidden"
+          name={INSECURE_TEST_CHALLENGE_FIELD}
+          value={INSECURE_TEST_CHALLENGE_TOKEN}
+        />
         <fieldset class="flex flex-col gap-1">
           <legend class="text-sm font-medium">Email</legend>
           <label class="sr-only" for="member-contact">Email</label>
@@ -54,13 +63,21 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
       </form>
 
       {#if form && 'requestError' in form}
-        <div role="alert" class="rounded-box border border-error p-3 text-sm text-error">Could not send a code. Try again.</div>
+        <div role="alert" class="rounded-box border border-error p-3 text-sm text-error">
+          Could not send a code. Try again.
+        </div>
       {:else if form && 'requested' in form && form.requested}
-        <div role="status" class="rounded-box border border-success p-3 text-sm">A code was sent. Check the inbox.</div>
+        <div role="status" class="rounded-box border border-success p-3 text-sm">
+          A code was sent. Check the inbox.
+        </div>
       {/if}
 
       <form method="POST" action="?/confirm" class="flex flex-col gap-3">
-        <input type="hidden" name={INSECURE_TEST_CHALLENGE_FIELD} value={INSECURE_TEST_CHALLENGE_TOKEN} />
+        <input
+          type="hidden"
+          name={INSECURE_TEST_CHALLENGE_FIELD}
+          value={INSECURE_TEST_CHALLENGE_TOKEN}
+        />
         <fieldset class="flex flex-col gap-1">
           <legend class="text-sm font-medium">Code</legend>
           <label class="sr-only" for="member-code">Code</label>
@@ -79,7 +96,9 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
       </form>
 
       {#if form && 'confirmError' in form}
-        <div role="alert" class="rounded-box border border-error p-3 text-sm text-error">That code did not work. Try again.</div>
+        <div role="alert" class="rounded-box border border-error p-3 text-sm text-error">
+          That code did not work. Try again.
+        </div>
       {/if}
     </div>
   </div>

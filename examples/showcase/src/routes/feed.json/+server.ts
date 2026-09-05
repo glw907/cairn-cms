@@ -9,7 +9,12 @@ export const prerender = true;
 export const GET: RequestHandler = async () => {
   const items = await buildFeedItems();
   return jsonFeedResponse(
-    { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.json' },
+    {
+      title: siteConfig.siteName,
+      description: SITE_DESCRIPTION,
+      siteUrl: ORIGIN,
+      feedUrl: ORIGIN + '/feed.json',
+    },
     items,
   );
 };

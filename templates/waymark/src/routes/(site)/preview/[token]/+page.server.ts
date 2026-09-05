@@ -17,4 +17,5 @@ import { withReferences } from '$chassis/entry-data.js';
 // line stays the documented, load-bearing default rather than relying on that backstop alone.
 export const prerender = false;
 
-export const load: PageServerLoad = (event) => previewLoad(runtime, publicRoutesConfig, event).then(withReferences);
+export const load: PageServerLoad = (event) =>
+  previewLoad(runtime, publicRoutesConfig, event).then(withReferences);

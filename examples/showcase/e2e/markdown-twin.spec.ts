@@ -30,7 +30,10 @@ test('a noindex entry has no markdown twin', async ({ request }) => {
   expect(res.status()).toBe(404);
 });
 
-test('the rendered head advertises the twin, and the twin it points at exists', async ({ page, request }) => {
+test('the rendered head advertises the twin, and the twin it points at exists', async ({
+  page,
+  request,
+}) => {
   await page.goto('/posts/hello');
   const link = page.locator('link[rel="alternate"][type="text/markdown"]');
   await expect(link).toHaveAttribute('href', /\/posts\/hello\.md$/);

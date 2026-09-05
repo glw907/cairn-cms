@@ -94,8 +94,9 @@ transition.
   </div>
   <div class="info-row">
     <div class="info" aria-live="polite">
-      <span class="label">{slides[active].label}</span
-      >{#if slides[active].note}<span class="note">{slides[active].note}</span>{/if}
+      <span class="label">{slides[active].label}</span>{#if slides[active].note}<span class="note"
+          >{slides[active].note}</span
+        >{/if}
     </div>
     <div class="dots">
       {#each slides as slide, i (slide.src)}

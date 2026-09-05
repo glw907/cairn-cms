@@ -5,7 +5,9 @@ import { test, expect } from '@playwright/test';
 // navLayout would still pass every lower-level test if the shell fell back to the default arrangement,
 // so this spec drives the real preview build and reads the rendered sidebar.
 
-test('the sidebar renders the declared navLayout: two named sections, the relabel, and the fallback foot', async ({ page }) => {
+test('the sidebar renders the declared navLayout: two named sections, the relabel, and the fallback foot', async ({
+  page,
+}) => {
   await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin\/posts$/);
 
@@ -31,7 +33,10 @@ test('the sidebar renders the declared navLayout: two named sections, the relabe
   ]);
 
   // The relabel changes the visible label only; the engine-owned href stays /admin/settings.
-  await expect(sidebar.getByRole('link', { name: 'Site settings' })).toHaveAttribute('href', '/admin/settings');
+  await expect(sidebar.getByRole('link', { name: 'Site settings' })).toHaveAttribute(
+    'href',
+    '/admin/settings',
+  );
   // The bare "Settings" label the engine default would have used is gone; only the relabel renders.
   await expect(sidebar.getByRole('link', { name: 'Settings', exact: true })).toHaveCount(0);
 
@@ -42,8 +47,13 @@ test('the sidebar renders the declared navLayout: two named sections, the relabe
   await expect(sidebar.getByRole('link', { name: 'Help' })).toHaveCount(1);
 });
 
-test('an engine door inside the declared layout still navigates to its real route', async ({ page }) => {
+test('an engine door inside the declared layout still navigates to its real route', async ({
+  page,
+}) => {
   await page.goto('/admin');
-  await page.getByRole('navigation', { name: 'Site content' }).getByRole('link', { name: 'Tags' }).click();
+  await page
+    .getByRole('navigation', { name: 'Site content' })
+    .getByRole('link', { name: 'Tags' })
+    .click();
   await expect(page).toHaveURL(/\/admin\/vocabulary$/);
 });

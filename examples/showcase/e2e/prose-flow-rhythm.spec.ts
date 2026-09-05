@@ -44,7 +44,9 @@ test('a paragraph following a blockquote keeps the owl selector rhythm', async (
   await expectFlowSpaceMarginTop(following);
 });
 
-test('a paragraph following a fenced code block keeps the owl selector rhythm', async ({ page }) => {
+test('a paragraph following a fenced code block keeps the owl selector rhythm', async ({
+  page,
+}) => {
   await page.goto('/posts/the-reading-surface');
 
   const codeBlock = page.locator('.prose > pre').first();

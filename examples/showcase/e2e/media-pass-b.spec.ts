@@ -169,9 +169,7 @@ test('replace round-trip: a new file repoints both references and keeps the old 
 
   // Read the new hash off the to-strip (the new file's content hash, surfaced as `.<hash>`). It must
   // differ from the old hash, proving a genuine new content-addressed asset.
-  const newFileHashText = await dialog
-    .locator('input[name="newHash"]')
-    .inputValue();
+  const newFileHashText = await dialog.locator('input[name="newHash"]').inputValue();
   expect(newFileHashText).toMatch(/^[0-9a-f]{16}$/);
   expect(newFileHashText).not.toBe(ASSET.hash);
 

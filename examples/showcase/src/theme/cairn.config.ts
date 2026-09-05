@@ -1,8 +1,21 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineComponent, defineFieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
+import {
+  createRenderer,
+  defineRegistry,
+  defineComponent,
+  defineFieldset,
+  fields,
+  defineAdapter,
+  defineConcept,
+  githubApp,
+} from '@glw907/cairn-cms';
 import { cardShell, headRow } from '@glw907/cairn-cms/render';
-import { normalizeAssets, createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
+import {
+  normalizeAssets,
+  createMediaResolver,
+  readCommittedManifest,
+} from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
@@ -27,7 +40,8 @@ const icons: IconSet = {
   // A solid right-pointing triangle, the video facade's picker row and its thumbnail glyph.
   play: 'M80 32v192l152-96Z',
   // Two stylized quote marks, for the pull-quote picker row.
-  quote: 'M48 64h64v64c0 35-29 64-64 64v-32c18 0 32-14 32-32H48Zm112 0h64v64c0 35-29 64-64 64v-32c18 0 32-14 32-32h-32Z',
+  quote:
+    'M48 64h64v64c0 35-29 64-64 64v-32c18 0 32-14 32-32H48Zm112 0h64v64c0 35-29 64-64 64v-32c18 0 32-14 32-32h-32Z',
   // A thick right arrow, for the CTA picker row and its link glyph.
   'arrow-right': 'M32 104h128v-32l96 56-96 56v-32H32Z',
   // A thick downward chevron, echoing the native <details> disclosure marker for the FAQ picker row.
@@ -54,7 +68,11 @@ const callout = defineComponent({
     h('aside', { className: ['callout', `callout-${String(ctx.attributes.tone ?? 'note')}`] }, [
       h('p', { className: ['callout-title'] }, ctx.slot('title')),
       h('div', { className: ['callout-body'] }, ctx.slot('body')),
-      h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
+      h(
+        'ul',
+        { className: ['callout-points'] },
+        ctx.items('points').map((item: ElementContent[]) => h('li', item)),
+      ),
     ]),
   attributes: {
     tone: fields.select({ label: 'Tone', required: true, options: ['note', 'tip', 'warning'] }),
@@ -63,7 +81,12 @@ const callout = defineComponent({
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
-    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
+    {
+      name: 'points',
+      label: 'Points',
+      kind: 'repeatable',
+      itemFields: { text: fields.text({ label: 'Item' }) },
+    },
   ],
 });
 
@@ -79,7 +102,9 @@ function parseVideoUrl(raw: string): { platform: string } {
   try {
     parsed = new URL(raw);
   } catch {
-    throw new Error(`cairn: video component references URL "${raw}", which is not a valid absolute URL`);
+    throw new Error(
+      `cairn: video component references URL "${raw}", which is not a valid absolute URL`,
+    );
   }
   const host = parsed.hostname.replace(/^(www|m)\./, '');
   if (host === 'youtube.com' || host === 'youtube-nocookie.com' || host === 'youtu.be') {
@@ -88,7 +113,9 @@ function parseVideoUrl(raw: string): { platform: string } {
   if (host === 'vimeo.com' || host === 'player.vimeo.com') {
     return { platform: 'Vimeo' };
   }
-  throw new Error(`cairn: video component references URL "${raw}", which is not a supported YouTube or Vimeo link`);
+  throw new Error(
+    `cairn: video component references URL "${raw}", which is not a supported YouTube or Vimeo link`,
+  );
 }
 
 const alert = defineComponent({
@@ -103,10 +130,10 @@ const alert = defineComponent({
     const name = ctx.attr('icon');
     const role = ctx.attr('role');
     const icon = name ? makeIcon(name, role) : undefined;
-    return cardShell(['alert', `alert-${role ?? 'note'}`], [
-      headRow(ctx.slot('title'), icon),
-      h('div', { className: ['alert-body'] }, ctx.slot('body')),
-    ]);
+    return cardShell(
+      ['alert', `alert-${role ?? 'note'}`],
+      [headRow(ctx.slot('title'), icon), h('div', { className: ['alert-body'] }, ctx.slot('body'))],
+    );
   },
   attributes: {
     role: fields.select({ label: 'Role', options: ['note', 'caution'] }),
@@ -131,7 +158,8 @@ const alert = defineComponent({
 const icon = defineComponent({
   name: 'icon',
   label: 'Icon',
-  description: 'A single glyph from the site icon set, for a note that wants a small marker of its own.',
+  description:
+    'A single glyph from the site icon set, for a note that wants a small marker of its own.',
   use: 'Mark a short standalone line without wrapping it in a card.',
   group: 'Notices',
   icon: 'flag',
@@ -142,7 +170,9 @@ const icon = defineComponent({
   build: (ctx) => {
     const name = ctx.attr('name');
     if (!name || !(name in icons)) {
-      throw new Error(`cairn: icon component references "${name ?? ''}", which is not in the declared icon set`);
+      throw new Error(
+        `cairn: icon component references "${name ?? ''}", which is not in the declared icon set`,
+      );
     }
     return makeIcon(name);
   },
@@ -160,11 +190,17 @@ const icon = defineComponent({
 const video = defineComponent({
   name: 'video',
   label: 'Video',
-  description: 'A link out to a YouTube or Vimeo video, with no third-party request until the reader clicks through.',
+  description:
+    'A link out to a YouTube or Vimeo video, with no third-party request until the reader clicks through.',
   use: 'Point to an off-site video without loading a third-party player on every page view.',
   group: 'Media',
   icon: 'play',
-  preview: { attributes: { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'A short walkthrough' } },
+  preview: {
+    attributes: {
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      title: 'A short walkthrough',
+    },
+  },
   attributes: {
     url: fields.url({ label: 'Video URL', required: true, help: 'A YouTube or Vimeo link.' }),
     title: fields.text({ label: 'Title', required: true }),
@@ -204,7 +240,9 @@ const pullQuote = defineComponent({
   use: 'Land a single sentence hard, once per post at most.',
   group: 'Quotes',
   icon: 'quote',
-  preview: { slots: { title: 'Write the post you wish someone had handed you on your first day.' } },
+  preview: {
+    slots: { title: 'Write the post you wish someone had handed you on your first day.' },
+  },
   attributes: {
     attribution: fields.text({ label: 'Attribution' }),
   },
@@ -214,7 +252,8 @@ const pullQuote = defineComponent({
     const children: ElementContent[] = [
       h('p', { className: ['pull-quote-text', 'pullquote'] }, ctx.slot('title')),
     ];
-    if (attribution) children.push(h('figcaption', { className: ['pull-quote-attribution'] }, [attribution]));
+    if (attribution)
+      children.push(h('figcaption', { className: ['pull-quote-attribution'] }, [attribution]));
     return h('figure', { className: ['pull-quote'] }, children);
   },
 });
@@ -226,11 +265,14 @@ const pullQuote = defineComponent({
 const cta = defineComponent({
   name: 'cta',
   label: 'Call to action',
-  description: 'A single prominent link, for pointing the reader at the one next step that matters.',
+  description:
+    'A single prominent link, for pointing the reader at the one next step that matters.',
   use: 'Send the reader toward one destination: another post, an external tool, a signup form.',
   group: 'Actions',
   icon: 'arrow-right',
-  preview: { attributes: { label: 'Read the guide', url: 'https://example.com', variant: 'primary' } },
+  preview: {
+    attributes: { label: 'Read the guide', url: 'https://example.com', variant: 'primary' },
+  },
   attributes: {
     label: fields.text({ label: 'Label', required: true }),
     url: fields.url({ label: 'URL', required: true }),
@@ -241,7 +283,10 @@ const cta = defineComponent({
     const url = ctx.attr('url') ?? '';
     const variant = ctx.attr('variant') || 'primary';
     return h('p', { className: ['cta'] }, [
-      h('a', { className: ['cta-link', `cta-${variant}`], href: url }, [label, makeIcon('arrow-right')]),
+      h('a', { className: ['cta-link', `cta-${variant}`], href: url }, [
+        label,
+        makeIcon('arrow-right'),
+      ]),
     ]);
   },
 });
@@ -257,7 +302,13 @@ const microCta = defineComponent({
   use: 'Point the reader at one related page without the weight of a full call to action.',
   group: 'Actions',
   icon: 'arrow-right',
-  preview: { attributes: { label: 'Read the guide', url: 'https://example.com', note: 'a short gloss on the link' } },
+  preview: {
+    attributes: {
+      label: 'Read the guide',
+      url: 'https://example.com',
+      note: 'a short gloss on the link',
+    },
+  },
   attributes: {
     label: fields.text({ label: 'Label', required: true }),
     url: fields.url({ label: 'URL', required: true }),
@@ -270,7 +321,9 @@ const microCta = defineComponent({
     const children: ElementContent[] = [h('span', { className: ['micro-cta-label'] }, [label])];
     if (note) children.push(h('span', { className: ['micro-cta-note'] }, [note]));
     children.push(makeIcon('arrow-right'));
-    return h('p', { className: ['micro-cta'] }, [h('a', { className: ['micro-cta-link'], href: url }, children)]);
+    return h('p', { className: ['micro-cta'] }, [
+      h('a', { className: ['micro-cta-link'], href: url }, children),
+    ]);
   },
 });
 
@@ -285,7 +338,10 @@ const faq = defineComponent({
   use: 'Answer a question a reader is likely to have without lengthening the main flow.',
   group: 'Structure',
   icon: 'chevron-down',
-  preview: { attributes: { question: 'Does this work without JavaScript?' }, slots: { body: 'Yes. The disclosure is native `<details>`/`<summary>`.' } },
+  preview: {
+    attributes: { question: 'Does this work without JavaScript?' },
+    slots: { body: 'Yes. The disclosure is native `<details>`/`<summary>`.' },
+  },
   attributes: {
     question: fields.text({ label: 'Question', required: true }),
   },
@@ -318,7 +374,9 @@ const banner = defineComponent({
   icon: 'flag',
   hydrate: true,
   insertTemplate: ':::banner{message="Announcement text" expires="2026-12-31"}\n:::',
-  preview: { attributes: { message: 'The trailhead lot reopens in the spring.', expires: '2999-01-01' } },
+  preview: {
+    attributes: { message: 'The trailhead lot reopens in the spring.', expires: '2999-01-01' },
+  },
   attributes: {
     message: fields.text({ label: 'Announcement', required: true }),
     expires: fields.date({
@@ -341,11 +399,15 @@ const banner = defineComponent({
       ctx.attributes = {};
       return h('div', { hidden: true, className: ['banner-expired'] }, []);
     }
-    return h('div', { className: ['banner'], role: 'status' }, [h('p', { className: ['banner-message'] }, [message])]);
+    return h('div', { className: ['banner'], role: 'status' }, [
+      h('p', { className: ['banner-message'] }, [message]),
+    ]);
   },
 });
 
-const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, microCta, faq, banner] });
+const registry = defineRegistry({
+  components: [callout, alert, icon, video, pullQuote, cta, microCta, faq, banner],
+});
 
 // The real render path: parse markdown through the engine so registered components render. The
 // chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;
@@ -402,14 +464,20 @@ export const cairn = defineAdapter({
         author: fields.reference({ concept: 'pages', label: 'Author' }),
         // A many reference to other posts: array(reference) exercising the chip-list editor arm and
         // the multi-edge extractor, delivered as a list of resolved targets.
-        related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related posts' }),
+        related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), {
+          label: 'Related posts',
+        }),
         // The taxonomy marker: one creatable multiselect per concept whose validated values surface on
         // ContentSummary.tags and feed categories. cairn ships no public tag pages; a site filters its
         // own archive over this data (the size-gated template filter), so the marker carries no routing.
         topics: fields.multiselect({ label: 'Topics', creatable: true, taxonomy: true }),
         // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
         // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
-        status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
+        status: fields.select({
+          label: 'Status',
+          options: ['draft', 'published'],
+          default: 'draft',
+        }),
         // A repeatable flat object: array(object) exercising the v2 container editor end to end. The
         // object carries no label of its own (the array labels the group, itemLabel summarizes a row),
         // and the container e2e pins the add/reorder/remove and the save-and-reload round-trip.
@@ -455,7 +523,13 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  backend: githubApp({
+    owner: 'showcase',
+    repo: 'demo',
+    branch: 'main',
+    appId: '1',
+    installationId: '2',
+  }),
   email: { from: 'cms@showcase.test' },
   // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
   // R2 double rides platform.env in dev; a real site binds it in wrangler.jsonc and mounts the
@@ -474,13 +548,22 @@ export const cairn = defineAdapter({
     // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
     // one (EditPage), and this site's render never needs to vary fragment resolution itself.
     render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-      renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver, resolveFragment }),
+      renderMarkdown(body, {
+        resolve,
+        resolveMedia: resolveMedia ?? publicMediaResolver,
+        resolveFragment,
+      }),
     components: registry,
     icons,
     islands: siteIslands,
   },
   editor: {
-    nav: { configPath: 'src/theme/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+    nav: {
+      configPath: 'src/theme/site.config.yaml',
+      menuName: 'primary',
+      label: 'Navigation',
+      maxDepth: 2,
+    },
     // The site's whole declared sidebar (spec §2, the organize-your-admin-nav guide's own worked
     // shape): a Content group for what an editor authors and owns, then a trailing Site group for
     // site management, inbound data, configuration, and roster. Two taxonomy rulings (design arc
@@ -496,7 +579,12 @@ export const cairn = defineAdapter({
     navLayout: [
       {
         label: 'Content',
-        children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'fragments' }, { screen: 'media' }],
+        children: [
+          { screen: 'posts' },
+          { screen: 'pages' },
+          { screen: 'fragments' },
+          { screen: 'media' },
+        ],
       },
       {
         label: 'Site',

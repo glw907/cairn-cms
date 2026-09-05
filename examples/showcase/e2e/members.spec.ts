@@ -158,7 +158,7 @@ test('same-browser discipline: a confirm from a second browser context answers n
   await expect(page.getByText('member-cross-browser')).toBeVisible();
 });
 
-test('revocation: the test route revokes the caller\'s own session, and the gated page then refuses', async ({
+test("revocation: the test route revokes the caller's own session, and the gated page then refuses", async ({
   page,
 }) => {
   const contact = 'revocation@showcase.test';

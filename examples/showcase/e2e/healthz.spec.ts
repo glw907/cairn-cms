@@ -5,7 +5,9 @@ import { test, expect } from '@playwright/test';
 // self-test returns ok:false with a detail string. The endpoint always returns 200 JSON so an
 // operator (or CI) can tell "key missing" from "server error". The live ok:true check runs
 // per-site at deploy time when the real Worker secret is present.
-test('healthz returns 200 JSON with an ok field; key absent in dev so ok is false', async ({ request }) => {
+test('healthz returns 200 JSON with an ok field; key absent in dev so ok is false', async ({
+  request,
+}) => {
   const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
   const body = await res.json();

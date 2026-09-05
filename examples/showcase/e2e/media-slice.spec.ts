@@ -48,7 +48,10 @@ const SEED = '2026-06-hello';
 // zero bytes. sniffMediaType reads only the magic, so this is enough to pass the type gate.
 const PNG_BYTES = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0];
 
-test('the media slice: upload stores and returns a reference, the record renders an <img>, and saving commits media.json', async ({ page, request }) => {
+test('the media slice: upload stores and returns a reference, the record renders an <img>, and saving commits media.json', async ({
+  page,
+  request,
+}) => {
   // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
   // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
   // click races the entry count. Navigating straight to the edit URL is order-independent.

@@ -305,7 +305,7 @@ campaign features [verifiable: the same two pages, by absence]. Editor sign-in i
 sent through Email Sending, so an unready sender means no editor can sign in; the engine parses
 that failure (`E_SENDER_NOT_VERIFIED`) because one consumer met it in production [verifiable:
 src/lib/email.ts:79-101; CLAUDE.md "Durable gotcha (Cloudflare email)"; the full record at
-docs/internal/record/2026-08-11-t4b-email-spike.md, which CLAUDE.md cites at a stale path].
+docs/internal/record/2026-08-11-t4b-email-spike.md].
 Enabling Email Sending writes an apex DMARC record at `p=reject` on the organization's domain,
 which the admin track documents [verifiable: docs/admin/own-your-domain.md:115; CLAUDE.md:261].
 Editor sign-in therefore depends on a beta product on the paid plan [opinion]. Workers Builds

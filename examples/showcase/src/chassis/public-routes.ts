@@ -1,9 +1,12 @@
-// The showcase's one PublicRoutesConfig literal: the injected dependencies createPublicRoutes and
-// previewLoad both compose entries through (site/render/origin plus the SEO and media defaults).
-// Both `(site)/[...path]/+page.server.ts` (the build's prerendered entry route) and
-// `(site)/preview/[token]/+page.server.ts` (the preview pass's runtime route) import this ONE
-// binding, so a site can never drift the two routes' rendering config apart by editing one copy and
-// forgetting the other.
+// The showcase's one PublicRoutesConfig literal, carrying site/render/origin plus the SEO
+// (siteName, description, defaultImage, feeds) and media (resolveMedia, assetsEnabled) fields.
+// `(site)/[...path]/+page.server.ts` (the build's prerendered entry route, via createPublicRoutes)
+// and `(site)/preview/[token]/+page.server.ts` (the runtime preview route, via previewLoad) both
+// import this ONE binding, so those two routes can never drift their rendering config apart by
+// editing one copy and forgetting the other. `(site)/[...path=md]/+server.ts`, the raw-markdown
+// route, is a third createPublicRoutes caller that does NOT import this binding: it hand-rolls its
+// own object with seven of these nine fields, dropping defaultImage and feeds, since markdownLoad
+// serves the raw body with no SEO head to feed them into.
 import type { PublicRoutesConfig } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from './content.js';
 import { cairn, publicMediaResolver, mediaEnabled, siteConfig } from '$theme/cairn.config.js';

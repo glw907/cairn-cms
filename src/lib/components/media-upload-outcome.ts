@@ -58,11 +58,12 @@ const REFUSE_TO_FAILURE: Record<string, UploadFailureKind | 'session-expired'> =
 };
 
 /**
- * Map a parsed upload envelope to the single outcome the calling upload surface acts on. A success envelope yields
- * an `inserted` outcome carrying the reference, the record, and the dedup flag. A failure envelope
- * maps its refuse reason to a typed card, with `session-expired` lifted to its own outcome. An
- * opaque or status-0 response (the guard's `redirect: 'manual'` 303) is a session-expired signal, as
- * is any redirect-typed result. An error-typed result with a real status is a generic failure.
+ * Map a parsed upload envelope to the single outcome the calling upload surface acts on. A
+ * success envelope yields an `inserted` outcome carrying the reference, the record, and the
+ * dedup flag. A failure envelope maps its refuse reason to a typed card, with `session-expired`
+ * lifted to its own outcome. An opaque or status-0 response (the guard's `redirect: 'manual'`
+ * 303) is a session-expired signal, as is any redirect-typed result. An error-typed result with
+ * a real status is a generic failure.
  */
 export function uploadOutcome(envelope: UploadEnvelope): UploadOutcome {
   switch (envelope.type) {

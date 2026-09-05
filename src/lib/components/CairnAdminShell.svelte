@@ -501,8 +501,9 @@ discriminant, not the fields, gates the chrome).
   // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
   // can never tab out into the inert document behind it. Both directions redirect into the trap
   // when focus currently sits outside drawerNavEl (a defensive fallback for the moment before the
-  // focus-in effect above lands); MediaInsertPopover's own trap only carries that fallback on its
-  // Shift+Tab branch, not its forward Tab branch.
+  // focus-in effect above lands); MediaInsertPopover's own trap checks a narrower condition on its
+  // Shift+Tab branch, focus sitting on the panel itself rather than anywhere outside it, and its
+  // forward Tab branch carries no such fallback at all.
   function trapDrawerTab(e: KeyboardEvent) {
     if (!drawerNavEl) return;
     const focusables = drawerNavEl.querySelectorAll<HTMLElement>(

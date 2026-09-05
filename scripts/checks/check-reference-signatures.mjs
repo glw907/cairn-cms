@@ -297,6 +297,7 @@ function checkOne(entry) {
 
 function main() {
   const entries = resolveEntries(process.argv[2], CONFIG);
+  if (!entries) return;
   let failed = false;
   for (const entry of entries) {
     const r = checkOne(entry);
@@ -312,7 +313,7 @@ function main() {
       console.log(`OK ${r.subpath} (${r.page})`);
     }
   }
-  process.exit(failed ? 1 : 0);
+  process.exitCode = failed ? 1 : 0;
 }
 
 runIfMain(main, import.meta.url);

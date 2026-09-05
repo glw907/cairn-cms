@@ -338,6 +338,7 @@ describe('the indexed-access retrofit is complete on its two target pages (Task 
   // The corpus is derived, never hard-coded: every leak the check-surface-leaks registry
   // records against /sveltekit or /reproductions is a site this retrofit must cover.
   const leaks = loadRegistry();
+  if (!leaks) throw new Error('check-surface-leaks.json failed to load');
   const sveltekitPage = resolve(ROOT, 'docs/reference/sveltekit.md');
   const reproductionsPage = resolve(ROOT, 'docs/reference/reproductions.md');
   const sveltekitText = readFileSync(sveltekitPage, 'utf8');

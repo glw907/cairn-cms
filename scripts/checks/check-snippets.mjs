@@ -431,7 +431,7 @@ function main() {
     console.log(
       `check:snippets: OK (${units.length} block(s) typechecked, ${skipped.length} opted out, ${excluded} excluded as declaration-only or scriptless)`,
     );
-    process.exit(0);
+    return;
   }
 
   console.error(`check:snippets: ${problems.length} problem(s) across ${units.length} checked block(s)\n`);
@@ -443,7 +443,7 @@ function main() {
     }
     console.error(`    :${p.line}  ${p.message.split('\n')[0]}`);
   }
-  process.exit(1);
+  process.exitCode = 1;
 }
 
 runIfMain(main, import.meta.url);

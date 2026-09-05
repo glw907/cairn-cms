@@ -205,7 +205,10 @@ export function analyzeSurface(model) {
 
 /** @typedef {{ name: string, ledger?: string, "no-ledger-row"?: boolean, reason: string }} AllowlistEntry */
 
-/** @returns {{ entries: AllowlistEntry[] }} */
+/**
+ * @returns {{ entries: AllowlistEntry[] } | null} null when the allowlist cannot be read or
+ *   parsed (the diagnostic is already printed and `process.exitCode` set; the caller must stop)
+ */
 function loadAllowlist() {
   /** @type {string} */
   let raw;
@@ -213,13 +216,15 @@ function loadAllowlist() {
     raw = readFileSync(ALLOWLIST_PATH, 'utf8');
   } catch (err) {
     console.error(`check-self-use: could not read ${relative(ROOT, ALLOWLIST_PATH)}: ${err instanceof Error ? err.message : err}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return null;
   }
   try {
     return JSON.parse(raw);
   } catch (err) {
     console.error(`check-self-use: ${relative(ROOT, ALLOWLIST_PATH)} is not valid JSON: ${err instanceof Error ? err.message : err}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return null;
   }
 }
 
@@ -293,7 +298,9 @@ export function formatViolations({ unlisted, unreasoned }) {
 function main() {
   const model = buildSurfaceModel();
   const analysis = analyzeSurface(model);
-  const { entries } = loadAllowlist();
+  const allowlist = loadAllowlist();
+  if (!allowlist) return;
+  const { entries } = allowlist;
   const result = findViolations(analysis, entries);
   if (result.ok) {
     console.log(`check-self-use OK (${analysis.length} public exports, ${entries.length} allowlisted)`);

@@ -655,7 +655,7 @@ function main() {
     console.log('Token-resolution check: PASS (every var(--token) in prose.css and the code ramp is defined)');
   }
 
-  process.exit(failed ? 1 : 0);
+  process.exitCode = failed ? 1 : 0;
 }
 
 // Run only when invoked directly, so reskin-fixture.mjs can import the exports without triggering it.

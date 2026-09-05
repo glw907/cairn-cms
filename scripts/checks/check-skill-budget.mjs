@@ -166,14 +166,16 @@ async function main() {
   const result = checkSkillBudget(text);
   if (!result.ok) {
     console.error(`check-skill-budget: ${result.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`check-skill-budget: OK (${result.tokens}/${result.budget} estimated tokens)`);
 
   const tierMapResult = checkTierMap(parseTierMap(text), await actualTierMap(root));
   if (!tierMapResult.ok) {
     console.error(`check-skill-budget: ${tierMapResult.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log('check-skill-budget: tier map matches the rule registries');
 }
@@ -181,6 +183,6 @@ async function main() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((err) => {
     console.error(`check-skill-budget: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
+    process.exitCode = 1;
   });
 }

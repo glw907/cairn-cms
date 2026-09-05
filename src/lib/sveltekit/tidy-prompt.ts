@@ -65,89 +65,89 @@ OUTPUT:
  * set) so the model applies it in context.
  */
 export function buildTidyPrompt(conventions: TidyConventions): string {
-	const lines = conventionLines(conventions);
-	if (lines.length === 0) return CORE;
-	const section = ['CONVENTIONS (apply only these, in context):', ...lines.map((line) => `- ${line}`)].join(
-		'\n'
-	);
-	return `${CORE}\n\n${section}`;
+  const lines = conventionLines(conventions);
+  if (lines.length === 0) return CORE;
+  const section = ['CONVENTIONS (apply only these, in context):', ...lines.map((line) => `- ${line}`)].join(
+    '\n'
+  );
+  return `${CORE}\n\n${section}`;
 }
 
 // One rule line per enabled convention, in the spec's order. A disabled (undefined or false) toggle
 // contributes nothing. The Fixes group is not emitted here: the objective fixes live in the core, and
 // the group toggle is a screen control that does not strip the core.
 function conventionLines(c: TidyConventions): string[] {
-	const lines: string[] = [];
+  const lines: string[] = [];
 
-	if (c.oxfordComma === 'always') {
-		lines.push('Oxford comma: use a serial comma in every list of three or more items.');
-	} else if (c.oxfordComma === 'complex-only') {
-		lines.push(
-			"Oxford comma (AP complex-series rule): omit it in a simple series, but use it when an element itself contains a conjunction."
-		);
-	} else if (c.oxfordComma === 'never') {
-		lines.push('Oxford comma: remove the serial comma before the conjunction in a list of three or more.');
-	}
+  if (c.oxfordComma === 'always') {
+    lines.push('Oxford comma: use a serial comma in every list of three or more items.');
+  } else if (c.oxfordComma === 'complex-only') {
+    lines.push(
+      "Oxford comma (AP complex-series rule): omit it in a simple series, but use it when an element itself contains a conjunction."
+    );
+  } else if (c.oxfordComma === 'never') {
+    lines.push('Oxford comma: remove the serial comma before the conjunction in a list of three or more.');
+  }
 
-	if (c.numberStyle !== undefined) {
-		const threshold =
-			c.numberStyle === 'under-ten'
-				? 'spell out whole numbers under ten and use numerals for ten and up'
-				: c.numberStyle === 'under-hundred'
-					? 'spell out whole numbers under one hundred and use numerals for one hundred and up'
-					: 'use numerals for all numbers';
-		lines.push(
-			`Number style: ${threshold}; ALWAYS use numerals for ages, dates, measurements, and percentages regardless of the threshold.`
-		);
-	}
+  if (c.numberStyle !== undefined) {
+    const threshold =
+      c.numberStyle === 'under-ten'
+        ? 'spell out whole numbers under ten and use numerals for ten and up'
+        : c.numberStyle === 'under-hundred'
+          ? 'spell out whole numbers under one hundred and use numerals for one hundred and up'
+          : 'use numerals for all numbers';
+    lines.push(
+      `Number style: ${threshold}; ALWAYS use numerals for ages, dates, measurements, and percentages regardless of the threshold.`
+    );
+  }
 
-	if (c.measurements === 'abbreviate') {
-		lines.push(
-			'Measurements: abbreviate the unit (15 cm, not 15 centimeters); change only the notation, never the measurement system and never the number.'
-		);
-	} else if (c.measurements === 'spell-out') {
-		lines.push(
-			'Measurements: spell out the unit (15 centimeters, not 15 cm); change only the notation, never the measurement system and never the number.'
-		);
-	}
+  if (c.measurements === 'abbreviate') {
+    lines.push(
+      'Measurements: abbreviate the unit (15 cm, not 15 centimeters); change only the notation, never the measurement system and never the number.'
+    );
+  } else if (c.measurements === 'spell-out') {
+    lines.push(
+      'Measurements: spell out the unit (15 centimeters, not 15 cm); change only the notation, never the measurement system and never the number.'
+    );
+  }
 
-	if (c.percent === 'sign') {
-		lines.push('Percent: use the "%" sign, not the word "percent".');
-	} else if (c.percent === 'word') {
-		lines.push('Percent: use the word "percent", not the "%" sign.');
-	}
+  if (c.percent === 'sign') {
+    lines.push('Percent: use the "%" sign, not the word "percent".');
+  } else if (c.percent === 'word') {
+    lines.push('Percent: use the word "percent", not the "%" sign.');
+  }
 
-	if (c.emDash === 'spaced') {
-		lines.push('Em-dash style: put a space on each side of the em dash; a double hyphen becomes one spaced em dash.');
-	} else if (c.emDash === 'closed') {
-		lines.push('Em-dash style: do not space the em dash; a double hyphen becomes one em dash with no surrounding spaces.');
-	}
+  if (c.emDash === 'spaced') {
+    lines.push('Em-dash style: put a space on each side of the em dash; a double hyphen becomes one spaced em dash.');
+  } else if (c.emDash === 'closed') {
+    lines.push('Em-dash style: do not space the em dash; a double hyphen becomes one em dash with no surrounding spaces.');
+  }
 
-	if (c.enDashRanges) {
-		lines.push('En-dash in number ranges: a hyphen between two numbers becomes an en dash.');
-	}
+  if (c.enDashRanges) {
+    lines.push('En-dash in number ranges: a hyphen between two numbers becomes an en dash.');
+  }
 
-	if (c.ellipsis === 'single-char') {
-		lines.push('Ellipsis: use the single-character ellipsis, not three dots.');
-	} else if (c.ellipsis === 'three-dots') {
-		lines.push('Ellipsis: use three dots, not the single-character ellipsis.');
-	}
+  if (c.ellipsis === 'single-char') {
+    lines.push('Ellipsis: use the single-character ellipsis, not three dots.');
+  } else if (c.ellipsis === 'three-dots') {
+    lines.push('Ellipsis: use three dots, not the single-character ellipsis.');
+  }
 
-	if (c.timeFormat !== undefined) {
-		lines.push(`Time format: render times as "${c.timeFormat}".`);
-	}
+  if (c.timeFormat !== undefined) {
+    lines.push(`Time format: render times as "${c.timeFormat}".`);
+  }
 
-	if (c.smartQuotes) {
-		lines.push(
-			'Smart quotes: convert straight quotes to curly, applying the full apostrophe rule set (contractions, possessives including a trailing-s possessive, decade elision, leading-apostrophe abbreviations, primes), never altering a quote inside code, a fence, raw HTML, or a link URL.'
-		);
-	}
+  if (c.smartQuotes) {
+    lines.push(
+      'Smart quotes: convert straight quotes to curly, applying the full apostrophe rule set (contractions, possessives including a trailing-s possessive, decade elision, leading-apostrophe abbreviations, primes), never altering a quote inside code, a fence, raw HTML, or a link URL.'
+    );
+  }
 
-	if (c.brandCaps) {
-		lines.push(
-			'Brand and proper-noun capitalization: correct only the names on a curated list to their canonical capitalization (github to GitHub, javascript to JavaScript), never any other term; this is not a general preferred-term list.'
-		);
-	}
+  if (c.brandCaps) {
+    lines.push(
+      'Brand and proper-noun capitalization: correct only the names on a curated list to their canonical capitalization (github to GitHub, javascript to JavaScript), never any other term; this is not a general preferred-term list.'
+    );
+  }
 
-	return lines;
+  return lines;
 }

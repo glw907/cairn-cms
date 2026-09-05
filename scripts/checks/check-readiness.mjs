@@ -69,7 +69,8 @@ async function main() {
   const distPath = resolve(ROOT, CONDITIONS_JS);
   if (!existsSync(distPath)) {
     console.error(`missing ${CONDITIONS_JS}; run "npm run package" first`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const { allConditions } = await import(pathToFileURL(distPath).href);
   const conditions = allConditions();
@@ -77,7 +78,8 @@ async function main() {
   if (problems.length > 0) {
     console.error(`check-readiness: ${problems.length} problem(s)`);
     for (const p of problems) console.error(`  ${p}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`check-readiness: OK (${conditions.length} conditions anchored in ${DOC})`);
 }

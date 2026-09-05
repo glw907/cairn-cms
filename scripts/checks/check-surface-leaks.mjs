@@ -505,7 +505,10 @@ export function formatLeakViolations({ unrecorded, stale, unreasoned }) {
 // Exported so a sibling gate (reference-coverage.mjs's indexed-access-parenthetical clause)
 // reads the same registry file through the same parsing and error handling, rather than
 // re-implementing the load.
-/** @returns {RegistryEntry[]} */
+/**
+ * @returns {RegistryEntry[] | null} null when the registry cannot be read or parsed (the
+ *   diagnostic is already printed and `process.exitCode` set; the caller must stop)
+ */
 export function loadRegistry() {
   /** @type {string} */
   let raw;
@@ -513,13 +516,15 @@ export function loadRegistry() {
     raw = readFileSync(REGISTRY_PATH, 'utf8');
   } catch (err) {
     console.error(`check-surface-leaks: could not read ${relative(ROOT, REGISTRY_PATH)}: ${err instanceof Error ? err.message : err}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return null;
   }
   try {
     return JSON.parse(raw).leaks ?? [];
   } catch (err) {
     console.error(`check-surface-leaks: ${relative(ROOT, REGISTRY_PATH)} is not valid JSON: ${err instanceof Error ? err.message : err}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return null;
   }
 }
 
@@ -527,6 +532,7 @@ function main() {
   const model = buildSurfaceModel();
   const derived = deriveLeaks(model);
   const registry = loadRegistry();
+  if (!registry) return;
   const result = findLeakViolations(derived, registry);
   if (result.ok) {
     console.log(`check-surface-leaks: OK (${derived.length} recorded leaks)`);

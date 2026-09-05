@@ -233,7 +233,8 @@ function main() {
   const result = checkVersion(pkg.version, changelog);
   if (!result.ok) {
     console.error(`check-version: ${result.error}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`check-version: OK (${result.bump})`);
 }

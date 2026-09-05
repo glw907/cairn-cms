@@ -1,6 +1,6 @@
-// cairn-cms: the admin toolkit's formatter primitives, graduated from aksailingclub-org's
-// `src/admin-club/toolkit/format.ts` ("Formatters as citizens" -- no consuming admin screen should
-// hand-roll civil-date or timestamp arithmetic). Every formatter takes its locale and time zone as
+// cairn-cms: the admin toolkit's formatter primitives, graduated from a consumer site's admin
+// toolkit ("Formatters as citizens" -- no consuming admin screen should hand-roll civil-date or
+// timestamp arithmetic). Every formatter takes its locale and time zone as
 // an option with a neutral default rather than assuming any one site's own locale or zone, so a
 // second consumer in another zone or locale is a parameter, not a fork.
 //
@@ -95,8 +95,8 @@ export function formatTimestamp(input: string | null | undefined, options: Forma
 }
 
 /**
- * A count-line noun in both grammatical numbers, graduated from aksailingclub-org's own
- * `format.ts` (the "1 households" defect: a bare plural noun reads wrong at exactly one). `one`
+ * A count-line noun in both grammatical numbers, graduated from a consumer site's own formatter
+ * (the "1 households" defect: a bare plural noun reads wrong at exactly one). `one`
  * is the singular form, used when the count is exactly 1; `many` is the plural, used for every
  * other count, zero included ("0 households").
  */

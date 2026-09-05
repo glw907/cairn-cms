@@ -1,7 +1,7 @@
 <!--
 @component
-The admin toolkit's table shell, graduated from aksailingclub-org's
-`src/admin-club/toolkit/AdminTable.svelte`. General contract: named density tiers (`table-xs`/
+The admin toolkit's table shell, graduated from a consumer site's admin toolkit. General
+contract: named density tiers (`table-xs`/
 `table-sm`), an optional zebra stripe, and an empty-state slot, so the table shell owns the
 first-run/filtered-to-zero recipe rather than each screen re-deriving its own.
 

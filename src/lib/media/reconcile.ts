@@ -2,7 +2,8 @@
 // is never saved leaves R2 bytes with no manifest row (an orphan), and a manifest row whose bytes
 // were never stored (or were collected) points at nothing. This module reads both directions: the
 // stored R2 keys under the media/ prefix versus the manifest's content-hash keys. It only reads and
-// reports; no path here deletes (destructive collection is deferred to Phase 4). The module is
+// reports; no path here deletes (destructive collection is a deliberately separate, later concern).
+// The module is
 // engine-internal and on no public subpath, so the narrow bucket seam below is a local interface, not
 // a re-export of any @cloudflare/workers-types name.
 import type { MediaManifest } from './manifest.js';

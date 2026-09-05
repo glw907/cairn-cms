@@ -16,7 +16,7 @@ guarded rather than hidden when there is nothing new to publish), and an overflo
 Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
 count, the Prose/Wide posture pair, and the focus and typewriter toggles (the toolbar's own
-persistent "?" carries Markdown help, design-arc D2).
+persistent "?" carries Markdown help).
 -->
 <script lang="ts">
   import { flushSync, untrack, getContext } from 'svelte';
@@ -1965,7 +1965,7 @@ persistent "?" carries Markdown help, design-arc D2).
           <!-- Below sm only: the toolbar's one overflow is where Write/Preview, the
                postures, the writing modes, and the word count all land once the card footer stops
                rendering at this width (see the footer's own sm:flex gate above). Markdown help
-               does NOT fold in here (design-arc D2): the toolbar's own persistent "?" control
+               does NOT fold in here: the toolbar's own persistent "?" control
                already reaches it at every width, so this popover would otherwise carry a second,
                redundant "Markdown help" affordance. Each remaining item mirrors an existing
                sm-and-up control's handler exactly, so picking one here has the identical effect as
@@ -2075,8 +2075,8 @@ persistent "?" carries Markdown help, design-arc D2).
            frame never jumps between tabs and the count keeps reading while proofing. The strip
            carries the writing environment (the count, the persisted writing modes) while the top
            toolbar acts on the text; the toggles live here visible rather than buried in an
-           overflow menu. Markdown help lives in the toolbar's own persistent "?" control now
-           (design-arc D2), not here: a second copy in the footer would just be a width-dependent
+           overflow menu. Markdown help lives in the toolbar's own persistent "?" control now,
+           not here: a second copy in the footer would just be a width-dependent
            duplicate of an affordance that already reaches every width from one place. sm and up
            only: below sm this composition drops the strip outright (its own toolbar row already
            scrolls, so wrapping it further was the wrong fix) and moves every one of its remaining

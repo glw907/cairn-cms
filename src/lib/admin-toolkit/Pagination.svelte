@@ -1,7 +1,7 @@
 <!--
 @component
-The admin toolkit's page navigation, graduated from aksailingclub-org's
-`src/admin-club/toolkit/Pagination.svelte`. `page` and `pageCount` drive the nav on their own;
+The admin toolkit's page navigation, graduated from a consumer site's admin toolkit. `page` and
+`pageCount` drive the nav on their own;
 `totalItems`/`pageSize` are optional and only add the "Showing X-Y of N <items>" range line, so a
 consumer that already knows its own page count but not a raw item total (or vice versa) still
 gets a working pager. `pageSizeOptions`/`onPageSizeChange` are an additive graduation extension

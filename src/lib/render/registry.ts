@@ -65,7 +65,7 @@ export interface ComponentDef {
    */
   build: (ctx: ComponentContext) => Element;
   /**
-   * Opt this directive into client hydration (phase 4b islands). `true` mounts the island eagerly on
+   * Opt this directive into client hydration. `true` mounts the island eagerly on
    *  first load and after client-side navigation; `'visible'` defers the mount to first intersection.
    *  The engine wraps {@link ComponentDef.build}'s output in an island boundary, and the site registers
    *  the live Svelte component under the same name on `rendering.islands`. Absent leaves the directive a

@@ -5,12 +5,12 @@
 // control's wrapping label in the admin's label rhythm, and the SCREEN-SCAFFOLD primitives
 // (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`, `ToolbarDisclosure`, `Pagination`,
 // `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters compose a whole
-// screen's chrome. Born in aksailingclub-org's theme layer and graduated here by re-expression, not
+// screen's chrome. Born in a consumer site's theme layer and graduated here by re-expression, not
 // a file copy: each export's contract stays general-purpose, never a domain assumption from its
 // first consumer. `ToolbarDisclosure` itself graduated a level deeper, out of `ListToolbar`'s own
 // two duplicated disclosure mechanics (`audit-admin-listtoolbar`'s reshape), rather than out of a
-// site. `TextInput`/`SelectInput`/`FieldRow` retired from this subpath (the retires pass, batch
-// 1a): zero consumers anywhere in the engine, and their underlying markup composes directly out of
+// site. `TextInput`/`SelectInput`/`FieldRow` retired from this subpath: zero consumers anywhere in
+// the engine, and their underlying markup composes directly out of
 // `FieldLabel` plus a bare control, which stays the documented recipe.
 export {
   formatCivilDate,

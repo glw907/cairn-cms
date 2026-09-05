@@ -6,7 +6,7 @@ svelte-sortable-list (mouse, and keyboard with Space to lift, arrows to move, Sp
 depth comes from the Indent and Outdent buttons, capped at the menu's maxDepth. The engine
 validates on save.
 
-The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its
+The header band is `PageHeader`, its
 title the menu's own declared label; the sortable-list card below stays untouched.
 -->
 <script lang="ts">

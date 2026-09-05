@@ -43,7 +43,7 @@ entry's minted link from surviving onto another entry's panel.
   const REVOKE_FAILED = 'Could not revoke preview links. Try again.';
 
   /** Render a preview link's millisecond expiry as a human date and time (the store's own unit,
-   *  per the round-3 amendment's epoch-ms `expires_at`). */
+   *  an epoch-ms `expires_at`). */
   function formatExpiry(expiresAt: number): string {
     return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(expiresAt));
   }

@@ -25,9 +25,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     formatCivilDate,
     type ListToolbarFilter,
   } from '../admin-toolkit/index.js';
-  // itemNoun retired from the `/admin-toolkit` barrel (the retires pass, batch 1a: zero external
-  // consumers), so this internal caller reaches it at its own module instead of through the
-  // subpath a site importer would use.
+  // itemNoun retired from the `/admin-toolkit` barrel (zero external consumers), so this internal
+  // caller reaches it at its own module instead of through the subpath a site importer would use.
   import { itemNoun } from '../admin-toolkit/format.js';
 
   interface Props {

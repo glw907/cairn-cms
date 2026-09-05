@@ -1,11 +1,10 @@
-// cairn-cms: ListToolbar's pure filter arithmetic, graduated from aksailingclub-org's
-// `src/admin-club/toolkit/ListToolbar.svelte` module context. Kept in a plain module (rather than
-// only inside ListToolbar.svelte's `<script module>`) so the unit test project, which runs in Node
-// with no Svelte plugin, can exercise the arithmetic directly; ListToolbar.svelte imports
-// `computeAppliedFilters` and `computeCountLine` for its own internal use, the same split
-// `pagination-window.ts` establishes for `Pagination`. Neither publishes from the `/admin-toolkit`
-// barrel any longer (the retires pass, batch 1a: zero consumers reached them independently of the
-// component).
+// cairn-cms: ListToolbar's pure filter arithmetic, graduated from a consumer site's admin toolkit
+// module context. Kept in a plain module (rather than only inside ListToolbar.svelte's `<script
+// module>`) so the unit test project, which runs in Node with no Svelte plugin, can exercise the
+// arithmetic directly; ListToolbar.svelte imports `computeAppliedFilters` and `computeCountLine`
+// for its own internal use, the same split `pagination-window.ts` establishes for `Pagination`.
+// Neither publishes from the `/admin-toolkit` barrel any longer: zero consumers reached them
+// independently of the component.
 
 import { itemNoun, type ItemLabel } from './format.js';
 
@@ -57,7 +56,7 @@ export interface ListToolbarFilter {
    * buttons (graduation extension: ruling 6, finding-11's segmented filter device; ConceptList's
    * publish-state filter and MediaLibrary's triage radiogroup are the first consumers), or a
    * `'menu'` quiet bordered button showing the filter's own name at rest and its applied value
-   * in-control (the Members-refinement-round-1 recomposition: `"Standing"` at rest,
+   * in-control (the recomposition that replaced the applied-pills row: `"Standing"` at rest,
    * `"Standing: Overdue"` once applied, with a separate inline clear affordance). Defaults
    * `'select'`.
    */

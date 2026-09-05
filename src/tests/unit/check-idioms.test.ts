@@ -11,6 +11,7 @@ import {
   findConsumerHostnameLines,
   formatViolations,
   scanIdioms,
+  COMMENT_SCOPE_PATTERN,
 } from '../../../scripts/checks/check-idioms.mjs';
 
 const FIXTURES = resolve(process.cwd(), 'scripts/checks/fixtures/idioms');
@@ -129,9 +130,51 @@ describe('findProcessReferenceLines', () => {
     expect(findProcessReferenceLines('// documented as an R4 closure over the field\n')).toEqual([]);
   });
 
-  it('matches the fixture file’s real hits and passes its exempt lines', () => {
+  it('flags Phase N, lettered and numbered Pass, Plan N, batch N, and round-N', () => {
+    expect(findProcessReferenceLines('// proven live at Phase 2b and on a site.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// phase 4b islands are eagerly mounted.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// A file is the only path (Pass B is upload-new-only).\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// closed out in pass 3b of the sweep.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// the dark root gains variables in plan 2.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// retired from the barrel (batch 1a: zero consumers).\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// recomposed for round-3 of the amendment.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// carried at graduation (Members-refinement-round-1).\n')).toEqual([1]);
+  });
+
+  it('flags a design-arc/design-ratchet iteration citation', () => {
+    expect(findProcessReferenceLines('// the toolbar control (design-arc D2) sits at the right end.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// this is not a two-segment capsule (Design ratchet D3 item 5).\n')).toEqual([1]);
+  });
+
+  it('flags a T<n> marker only when its own line also reads as an adoption/sweep/task citation', () => {
+    expect(findProcessReferenceLines('// the header band (the organization pass\'s T7 adoption sweep) is PageHeader.\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// a dense table column budgets against T2 of its remaining width.\n')).toEqual([]);
+  });
+
+  it('passes domain vocabulary carrying no numeric or letter suffix', () => {
+    expect(findProcessReferenceLines('// a validation pass over the whole tree found nothing else to fix.\n')).toEqual([]);
+    expect(findProcessReferenceLines('// the constraints pass never rejects a value with no assigned rule.\n')).toEqual([]);
+    expect(findProcessReferenceLines('// db.batch() writes every row in one round trip.\n')).toEqual([]);
+    expect(findProcessReferenceLines('// the migration did not pass on the first attempt.\n')).toEqual([]);
+  });
+
+  it('matches the fixture file’s real hits and passes its exempt and negative lines', () => {
     const source = readFileSync(resolve(FIXTURES, 'process-reference.ts'), 'utf8');
-    expect(findProcessReferenceLines(source)).toEqual([2, 3, 4, 5]);
+    expect(findProcessReferenceLines(source)).toEqual([2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14]);
+  });
+});
+
+describe('COMMENT_SCOPE_PATTERN', () => {
+  it('matches .ts, .svelte, and .css, and rejects an unrelated extension', () => {
+    expect(COMMENT_SCOPE_PATTERN.test('content-routes.ts')).toBe(true);
+    expect(COMMENT_SCOPE_PATTERN.test('EditPage.svelte')).toBe(true);
+    expect(COMMENT_SCOPE_PATTERN.test('cairn-admin.css')).toBe(true);
+    expect(COMMENT_SCOPE_PATTERN.test('walk-files.mjs')).toBe(false);
+  });
+
+  it('catches a pass-scoped reference inside a real CSS comment', () => {
+    const source = readFileSync(resolve(FIXTURES, 'comment-scope.css'), 'utf8');
+    expect(findProcessReferenceLines(source)).toEqual([1]);
   });
 });
 

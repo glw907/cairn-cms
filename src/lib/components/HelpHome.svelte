@@ -101,9 +101,8 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
 
 <div class="cairn-help-content">
   <div class="help-col">
-    <!-- The masthead (the admin-toolkit organization pass's T7 adoption sweep): PageHeader,
-         mounted for the masthead only. The three section sub-headers below stay their own
-         eyebrow-plus-display recipe this wave (ruling 3 of the pass's adoption map). -->
+    <!-- The masthead is PageHeader, mounted for the masthead only. The three section sub-headers
+         below stay their own eyebrow-plus-display recipe. -->
     <PageHeader
       eyebrow="Help"
       title="Find formatting help and get your site set up."

@@ -3,7 +3,7 @@
 The editor card's instrument strip. Three labelled clusters, Format (bold, italic, strike, inline
 code), Structure (headings, lists, quote, table, plus the More overflow), and Insert (the host's
 insert/edit/link/image/figure/Tidy controls), each divided by a hairline and, at sm and up, topped
-with a presentational micro-eyebrow naming it (design-arc D2, docs/internal/2026-07-15-design-arc-log.md,
+with a presentational micro-eyebrow naming it (docs/internal/2026-07-15-design-arc-log.md,
 "grouped micro-eyebrows"). Each cluster wrapper carries `role="group"` with an `aria-label` matching
 its eyebrow, so the grouping reaches assistive tech even though the eyebrow text itself is
 `aria-hidden`. "Blocks" never labels a cluster: cairn's own vocabulary already uses block for a
@@ -55,8 +55,8 @@ stays pinned at the row's right end, reachable at every width.
      * the popover the way the built-in items do.
      */
     moreExtra?: Snippet<[closeMenu: () => void]>;
-    /** Opens the Markdown-help destination from the strip's persistent "?" control (design-arc D2),
-     *  present at every width. A no-op until the host supplies it. */
+    /** Opens the Markdown-help destination from the strip's persistent "?" control, present at
+     *  every width. A no-op until the host supplies it. */
     onHelp?: () => void;
   }
 
@@ -78,7 +78,7 @@ stays pinned at the row's right end, reachable at every width.
   // Labels carry the shortcut where one exists. "Ctrl" is written literally for macOS readers
   // too; detecting the platform buys little for what it costs.
   //
-  // The Format cluster (design-arc D2): the four controls that act on the current selection's
+  // The Format cluster: the four controls that act on the current selection's
   // characters, in the ruled order (bold, italic, strike, inline code).
   const formatButtons: ToolButton[] = [
     { kind: 'bold', label: 'Bold (Ctrl+B)', paths: ['M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8'] },
@@ -91,7 +91,7 @@ stays pinned at the row's right end, reachable at every width.
     { kind: 'code', label: 'Inline code (Ctrl+E)', paths: ['m9 8-4 4 4 4', 'm15 8 4 4-4 4'] },
   ];
 
-  // The Structure cluster (design-arc D2): the block-shape formats, ending with the More overflow
+  // The Structure cluster: the block-shape formats, ending with the More overflow
   // trigger for the rarer block formats (code block, horizontal rule, task list).
   const structureButtons: ToolButton[] = [
     {
@@ -258,7 +258,7 @@ stays pinned at the row's right end, reachable at every width.
 {/snippet}
 
 {#snippet tab(m: 'write' | 'preview', label: string)}
-  <!-- Design ratchet D3 item 5: this is not a two-segment capsule at rest. Unselected stays
+  <!-- This is not a two-segment capsule at rest. Unselected stays
        btn-ghost, and ghost composites fully transparent (fill and border both equal the ground)
        until hover or focus, so the resting render is one bordered selected box plus a plain text
        label beside it, not two visually joined segments. A plain btn in its place was tried and
@@ -290,8 +290,8 @@ stays pinned at the row's right end, reachable at every width.
     class:-ml-px={m === 'preview'}
     onclick={() => onMode(m)}
   >
-    <!-- Design ratchet D3 item 6: always rendered, so the tab's own box reserves the check
-         glyph's width in every state (selected or not). Selecting a tab used to add 22px of
+    <!-- The check glyph is always rendered, so the tab's own box reserves its width in every
+         state (selected or not). Selecting a tab used to add 22px of
          glyph-plus-gap to that tab's box on click, so the Preview tab's own box, and everything
          after it on the row, shifted; toggling visibility instead of presence keeps the layout
          identical across the swap, matching this tab's own widest (glyph-plus-label) state at
@@ -314,7 +314,7 @@ stays pinned at the row's right end, reachable at every width.
      carries keyboard entry, per the ARIA toolbar pattern. items-end bottom-aligns every child
      (the three eyebrow-topped clusters, the tablist wrapper, the "?" control) against the same
      button-row baseline, so the strip still reads as one row of controls with the eyebrows
-     floating above it, not two visually competing rows (design-arc D2). -->
+     floating above it, not two visually competing rows. -->
 <div
   bind:this={toolbarEl}
   class="bg-base-100 flex items-end gap-1 border-b border-[var(--cairn-card-border)] p-1"
@@ -476,7 +476,7 @@ stays pinned at the row's right end, reachable at every width.
     </ul>
   {/if}
 
-  <!-- The persistent Markdown-help control (design-arc D2): a 44px "?" glyph at the strip's right
+  <!-- The persistent Markdown-help control: a 44px "?" glyph at the strip's right
        end at every width, pinned outside the scrolling region above so it is reachable below sm
        too (it replaces relying on the folded-away footer link at that width, audit finding 7). It
        never disables: help is a reference, not an edit action, so it stays available in Preview

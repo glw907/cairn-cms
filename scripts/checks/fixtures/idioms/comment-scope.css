@@ -1,0 +1,5 @@
+/* check-idioms fixture: a CSS comment carrying a pass-scoped reference (Task 5), to prove the
+   comment-register rules walk .css files under src/lib, not only .ts and .svelte. */
+.marker {
+  color: currentColor;
+}

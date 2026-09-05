@@ -99,8 +99,8 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories, in manifest order: the full 25. Module-internal (the retires pass,
- *  batch 1c retired its export); `getStory` is the seam a consumer, including
+ * The registered stories, in manifest order: the full 25. Module-internal (retired from its own
+ *  export); `getStory` is the seam a consumer, including
  *  `src/tests/component/reproductions-stories.test.ts`, reaches one through.
  */
 const stories: ReproStory[] = [

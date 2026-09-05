@@ -1,9 +1,9 @@
 <!--
 @component
-The admin toolkit's one surface allowed a semantic status color, graduated from
-aksailingclub-org's `src/admin-club/toolkit/StatusChip.svelte` and re-expressed for its second
-generation (the 2026-08-24 owner probe, Geoff's own ratification:
-docs/internal/probes/2026-08-26-chip-registers-v2). The first generation split a `tone` prop
+The admin toolkit's one surface allowed a semantic status color, graduated from a consumer site's
+admin toolkit and re-expressed for its second generation (the 2026-08-24 owner probe, Geoff's own
+ratification: docs/internal/probes/2026-08-26-chip-registers-v2). The first generation split a
+`tone` prop
 (the color signal, carried by a small `status` dot) from a `bounded`/`quiet` register (the shape).
 The probe measured the 6px dot illegible toolkit-wide across three consumer screens and ratified
 fusing tone INTO the register instead: `register` alone now carries both shape and color, `tone`
@@ -40,8 +40,8 @@ still binds a CONSUMER's own admin screen, which cairn never scans.
 The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
 consumer's own household-standing context; a min-width-free "hugging" alternative was tried and
 adversarially refuted -- it produces a ragged column when chip labels vary in length); `xs`
-carries no floor of its own (the admin-toolkit organization pass's T6 absorption: a dense table
-column, ConceptList's publish-state cell and MediaLibrary's alt/usage cells, budgets its narrow-
+carries no floor of its own: a dense table column, ConceptList's publish-state cell and
+MediaLibrary's alt/usage cells, budgets its narrow-
 viewport width against the chip's real content, not a fixed reservation sized for a longer label
 the office's own three-word vocabulary never needs).
 -->

@@ -1,7 +1,7 @@
 <!-- @component
-The admin toolkit's expand-in-place table row, graduated from aksailingclub-org's
-`src/admin-club/toolkit/ExpandableRow.svelte` (its Classes pass landed the component's second real
-consumer, the graduation trigger the admin-toolkit organization pass deferred it on). General
+The admin toolkit's expand-in-place table row, graduated from a consumer site's admin toolkit once
+it gained a second real consumer, the graduation trigger the toolkit's organization work deferred
+it on. General
 contract: a summary `<tr>` plus a conditional panel `<tr>` whose single spanning cell receives the
 row's own datum, so the panel snippet never needs a closure over the row it belongs to.
 
@@ -53,8 +53,8 @@ at a narrow width needs the table itself to never need horizontal scroll in the 
 Members' own `+page.svelte` for the pattern (hiding lower-priority summary columns under a
 breakpoint so the whole row, panel included, fits the viewport with nothing to scroll).
 
-**Three visual fixes carried at graduation (the Members-refinement round-1 audit, adversarially
-verified against zebra stripes in both themes):**
+**Three visual fixes carried at graduation, adversarially verified against zebra stripes in both
+themes:**
 
 1. Row hover feedback: the whole summary row washes on hover. The caller's own summary cells get
    a `color-mix(in oklab, var(--color-base-content) 5%, transparent)` tint; the sticky trigger cell

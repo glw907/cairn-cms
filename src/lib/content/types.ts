@@ -258,7 +258,7 @@ export interface CairnAdapter {
     /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
     icons?: IconSet;
     /**
-     * The live Svelte components for hydrated directives, keyed by directive name (phase 4b islands).
+     * The live Svelte components for hydrated directives, keyed by directive name.
      *  Every component whose {@link ComponentDef.hydrate} is set needs an entry here, and every entry
      *  needs a matching `hydrate` component; `defineAdapter` checks both. Absent leaves the site
      *  static, and the island client runtime is never imported.

@@ -8,7 +8,7 @@
 // The split: the pure parts (HEIC magic detection, GIF header parse, the slug-versus-proposed-name
 // call, the DataTransfer normalizer, the canvas budget, the failure taxonomy, the upload request
 // shape) are exported and unit-tested. The browser-coupled orchestration (ingestFile, the drop guard)
-// is thin glue over them, wired here but proven live at Phase 2b and on a site, not in this suite.
+// is thin glue over them, wired here but proven live in production, not in this suite.
 //
 // The client is untrusted. The server re-derives the type, the slug, the hash, and the size on every
 // upload (the uploadAction), so this helper exists for UX (a correct preview, no dead wait),

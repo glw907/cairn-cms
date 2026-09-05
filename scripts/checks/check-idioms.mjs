@@ -15,15 +15,20 @@
 //      scaffolding the npm tarball never ships, so a comment pointing there sends a package
 //      consumer to a 404, not a citation. A bare functional-spec citation, e.g. `(spec 2.8)`,
 //      names a section of the shipped functional spec by number and is not this shape.
-//   5. A pass-scoped process reference is banned in src/lib: `Task N`, `Pass N`, `Plan NN`,
-//      `Round N`, a bare `R<n>`/`C<n>b?` round marker, `this pass`/`this phase`, and a
-//      named-sweep parenthetical like `(env-genericity sweep)`. These all name the WORK SESSION
-//      that produced a line rather than the durable reason the line is true, so they rot the
-//      moment the session is over; the fix is always to keep the rationale and drop the
-//      session label. `R4 re-export`/`R4 closure` are exempted BY NAME: they are rulings-ledger
-//      vocabulary for the canonical-home re-export pattern (`docs/internal/engine-rulings.md`),
-//      not a pass citation, and Cloudflare's `R2` binding and the `C0`/DEL control-character
-//      pair are exempted because they are not round markers at all.
+//   5. A pass-scoped process reference is banned in src/lib: `Task N`, `Phase N`/`phase N`,
+//      `Pass A`/`pass A` (a single lettered pass), `Pass N`/`pass N`, `Plan N`/`plan N`,
+//      `batch N`, `Round N`/`round-N`, `design-arc D2`/`Design ratchet D3` (a design-decision-log
+//      citation naming its own iteration), a `T<n>` marker sharing its comment line with
+//      "adoption"/"sweep"/"task", a bare `R<n>`/`C<n>b?` round marker, `this pass`/`this phase`,
+//      and a named-sweep parenthetical like `(env-genericity sweep)`. These all name the WORK
+//      SESSION that produced a line rather than the durable reason the line is true, so they rot
+//      the moment the session is over; the fix is always to keep the rationale and drop the
+//      session label. Domain vocabulary is deliberately NOT this shape: "a validation pass", "the
+//      constraints pass", `db.batch()`, and "did not pass" carry no numeric or letter suffix, so
+//      none of these patterns fire on them. `R4 re-export`/`R4 closure` are exempted BY NAME: they
+//      are rulings-ledger vocabulary for the canonical-home re-export pattern
+//      (`docs/internal/engine-rulings.md`), not a pass citation, and Cloudflare's `R2` binding and
+//      the `C0`/DEL control-character pair are exempted because they are not round markers at all.
 //   6. A consumer-site hostname is banned in src/lib, matched BY SHAPE (a bare
 //      `label.label.tld`-shaped literal over a short list of real TLDs), never by enumerating
 //      the private hostnames a consumer's own site carries: this file is public, and printing a
@@ -31,7 +36,11 @@
 //      prevent. `HOSTNAME_ALLOWED_HOSTS` names the public standards bodies and vendor APIs cairn's
 //      own code and docs legitimately cite (w3.org, github.com, cloudflare.com, and so on); a
 //      hostname shape absent from that list fails the gate, so a future private mention is
-//      caught without ever having been typed into this file.
+//      caught without ever having been typed into this file. Accepted limitation: none of rules
+//      4-6 enumerates a private repo NAME (a site's own GitHub org or slug, e.g.
+//      "aksailingclub-org") into this public gate's data; only the hostname shape is
+//      structurally caught, so a bare mention of a private repo's name in prose is a manual sweep
+//      finding, not something this gate can catch going forward.
 //
 // Rules 4-6 live in THIS gate, scoped to `src/lib`, rather than in the ESLint comment plugin
 // (`eslint.config.js`, `check:comments`) for one structural reason: ESLint's TypeScript parser
@@ -137,6 +146,12 @@ export function selfIdentityVariantsUsed(stem, source) {
   return [...found];
 }
 
+// The three comment-register rules (4-6) walk `.ts`, `.svelte`, AND `.css`: a scoped CSS override
+// under `src/lib` (e.g. `cairn-admin.css`) carries `/* */` comments in the same register as any
+// other file here, and the raw-text scan rules 4-6 use do not care which comment syntax
+// surrounds a match.
+export const COMMENT_SCOPE_PATTERN = /\.(ts|svelte|css)$/;
+
 /**
  * Every 1-based line number in `source` that names a `docs/superpowers/` path (rule 4).
  * @param {string} source
@@ -151,8 +166,30 @@ export function findSuperpowersPathLines(source) {
   return hits;
 }
 
-// Task N, Pass N, Round N (a one- or two-letter suffix allowed, e.g. `Task 16b`), and Plan NN.
-const PROCESS_REF_LABEL_PATTERN = /\b(?:Task|Pass|Round)\s+\d+[a-z]?\b|\bPlan\s+\d{2}\b/;
+// Task N (a one- or two-letter suffix allowed, e.g. `Task 16b`): the original, narrowest shape,
+// capitalized only.
+const TASK_LABEL_PATTERN = /\bTask\s+\d+[a-z]?\b/;
+// Phase N / phase-N, either case, space or hyphen before the number.
+const PHASE_LABEL_PATTERN = /\b[Pp]hase[- ]\d+[a-z]?\b/;
+// Pass A / pass A: a single capital letter naming a lettered pass (e.g. "Pass B is
+// upload-new-only"). Never matches a lowercase letter or a bare word after "pass" (a domain verb:
+// "did not pass", "a validation pass" carry no letter at all).
+const PASS_LETTER_LABEL_PATTERN = /\b[Pp]ass [A-Z]\b/;
+// Pass 3 / pass 3b: a numbered pass.
+const PASS_NUMBER_LABEL_PATTERN = /\b[Pp]ass \d+[a-z]?\b/;
+// Plan 2 / plan 05: a numbered plan (widened from the original two-digit-only shape).
+const PLAN_LABEL_PATTERN = /\b[Pp]lan \d+[a-z]?\b/;
+// batch 1a / Batch 12: a numbered batch.
+const BATCH_LABEL_PATTERN = /\b[Bb]atch \d+[a-z]?\b/;
+// Round 2 / round-3 / Round-1: a numbered round, space or hyphen, either case.
+const ROUND_LABEL_PATTERN = /\b[Rr]ound[- ]\d+[a-z]?\b/;
+// design-arc D2 / Design ratchet D3: a design-decision-log citation naming its own iteration.
+const DESIGN_ARC_LABEL_PATTERN = /[Dd]esign[- ](?:arc|ratchet) [A-Z]\d\b/;
+// A `T<n>` marker (e.g. `T7`) is only a process reference when the same comment line also reads
+// as an adoption/sweep/task citation; on its own, `T2` (a generic label, a CSS custom property
+// name, a test id) is too common a shape to ban outright.
+const T_MARKER_PATTERN = /\bT\d+\b/;
+const T_MARKER_CONTEXT_PATTERN = /adoption|sweep|task/i;
 // "this pass"/"this phase" naming the work session that produced the line, case-insensitive.
 const THIS_PASS_OR_PHASE_PATTERN = /\bthis (?:pass|phase)\b/i;
 // A named-sweep parenthetical, e.g. "(env-genericity sweep)".
@@ -160,6 +197,18 @@ const NAMED_SWEEP_PATTERN = /\([a-z][a-z0-9-]* sweep\)/i;
 // A bare round marker: a letter (R or C) directly followed by digits and an optional trailing
 // `b`. Exceptions are resolved per match in isExemptRoundMarker below.
 const ROUND_MARKER_PATTERN = /\b([RC])(\d+)(b?)\b/g;
+
+// The label-shaped rules that fire on a bare line test, independent of surrounding context.
+const PROCESS_REF_LABEL_PATTERNS = [
+  TASK_LABEL_PATTERN,
+  PHASE_LABEL_PATTERN,
+  PASS_LETTER_LABEL_PATTERN,
+  PASS_NUMBER_LABEL_PATTERN,
+  PLAN_LABEL_PATTERN,
+  BATCH_LABEL_PATTERN,
+  ROUND_LABEL_PATTERN,
+  DESIGN_ARC_LABEL_PATTERN,
+];
 
 /**
  * Whether the round marker `letter+digits+suffix`, matched at `matchEnd` in `line` with `nextLine`
@@ -199,9 +248,10 @@ export function findProcessReferenceLines(source) {
   const lines = source.split('\n');
   lines.forEach((line, i) => {
     if (
-      PROCESS_REF_LABEL_PATTERN.test(line) ||
+      PROCESS_REF_LABEL_PATTERNS.some((pattern) => pattern.test(line)) ||
       THIS_PASS_OR_PHASE_PATTERN.test(line) ||
-      NAMED_SWEEP_PATTERN.test(line)
+      NAMED_SWEEP_PATTERN.test(line) ||
+      (T_MARKER_PATTERN.test(line) && T_MARKER_CONTEXT_PATTERN.test(line))
     ) {
       hits.push(i + 1);
       return;
@@ -317,7 +367,7 @@ export function scanIdioms() {
     if (variants.length > 1) violations.identity.push(`${rel}: mixes ${variants.join(', ')}`);
   }
 
-  const commentScopeFiles = walk(resolve(ROOT, 'src/lib'), (n) => /\.(ts|svelte)$/.test(n));
+  const commentScopeFiles = walk(resolve(ROOT, 'src/lib'), (n) => COMMENT_SCOPE_PATTERN.test(n));
   for (const file of commentScopeFiles) {
     const rel = relative(ROOT, file).split('\\').join('/');
     const source = readFileSync(file, 'utf8');

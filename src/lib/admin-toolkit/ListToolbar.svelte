@@ -1,7 +1,7 @@
 <!--
 @component
-The admin toolkit's list-header band, graduated from aksailingclub-org's
-`src/admin-club/toolkit/ListToolbar.svelte`. General contract: search, any number of promoted
+The admin toolkit's list-header band, graduated from a consumer site's admin toolkit. General
+contract: search, any number of promoted
 filters, an overflow disclosure for filters a screen chooses not to promote (present in the
 contract even when a consumer promotes every filter and never renders it), exactly one
 right-aligned primary action, and a count line that always states its own filter scope.
@@ -19,7 +19,7 @@ forced 30px height rather than trusting `input-sm`/`btn-sm` to already agree (th
 slightly different heights in practice). `computeAppliedFilters` and `computeCountLine`
 (imported from the sibling `list-toolbar.ts` module, the same split `Pagination` uses for its own
 windowing math) are the count line's scope-label source; there is no longer a separate
-applied-pills row (Members-refinement-round-1 retired it: an applied filter now renders its value
+applied-pills row (a refinement audit retired it: an applied filter now renders its value
 in-control instead, on the `'menu'` display below).
 
 Graduation extensions over the ASC-born contract (both additive, ASC's own existing usage stays
@@ -31,7 +31,7 @@ carries, so a select and a menu facet sitting side by side read as one control f
 `'segmented'`, a group of toggle buttons for a filter
 whose vocabulary reads better as always-visible tabs than a dropdown (a publish-state filter, a
 triage radiogroup), with each option's own optional `count` rendered beside its label, or
-`'menu'` (Members-refinement-round-1: the ratified filter grammar), a quiet bordered button
+`'menu'` (the ratified filter grammar), a quiet bordered button
 showing the filter's own name at rest (`"Standing"`) and its applied value in-control
 (`"Standing: Overdue"`) with a separate inline clear affordance (its own sibling element, never a
 button nested inside the trigger button) once a value departs the filter's default. An applied
@@ -44,10 +44,10 @@ facet's overflow form renders as a `<select>` for the same reason. The optional 
 snippet renders after the toolbar band, for a screen-specific view control this component has no
 vocabulary for (a grid/list density toggle).
 
-A segmented filter is a real ARIA radiogroup, not a bare button group (the admin-toolkit
-organization pass's T6 absorption: ConceptList's and MediaLibrary's own pre-toolbar segmented
-controls each independently carried this pattern, and MediaLibrary's carried the fuller
-implementation, so it is the one graduated here rather than forked twice more). The wrapping `join`
+A segmented filter is a real ARIA radiogroup, not a bare button group: ConceptList's and
+MediaLibrary's own pre-toolbar segmented controls each independently carried this pattern, and
+MediaLibrary's carried the fuller implementation, so it is the one graduated here rather than
+forked twice more. The wrapping `join`
 is `role="radiogroup"` and each option is `role="radio"` with `aria-checked`, never `aria-pressed`;
 only the checked option is a tab stop (`tabindex="0"`), every other option is `tabindex="-1"`, and
 ArrowRight/ArrowDown, ArrowLeft/ArrowUp, Home, and End move both the selection and the focus
@@ -423,9 +423,9 @@ reflows its neighboring characters.
      applied treatment (mixed from --color-primary, since no daisy utility carries that ratio),
      the shared control height, and the muted count line, matching `Pagination`'s own range-line
      color. Values stay literal where there's no shared token that survives an `/admin/**` route,
-     per the compiled-CSS constraint the header comment documents. Recomposed for
-     Members-refinement-round-1 (the refuter-verified recipe: flex row, forced 30px control
-     height, the menu facet's applied treatment and 14rem ellipsis cap). */
+     per the compiled-CSS constraint the header comment documents. Recomposed per the
+     refuter-verified recipe: flex row, forced 30px control height, the menu facet's applied
+     treatment and 14rem ellipsis cap. */
   .toolkit-toolbar {
     display: flex;
     flex-direction: column;

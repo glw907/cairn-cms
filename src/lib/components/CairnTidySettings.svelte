@@ -27,7 +27,7 @@ announces the new total; the per-keystroke diff examples are aria-hidden so the 
 The save commits the conventions block to the same committed YAML the nav editor writes (one config
 home), diffable and shared across editors.
 
-The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its `meta`
+The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated; Save stays in the form's own foot, the screen's
 form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
 re-express on `StatusChip` at a neutral tone (ruling 9 of the pass's adoption map: a Tidy pill never

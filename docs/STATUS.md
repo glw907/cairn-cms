@@ -109,9 +109,12 @@ behind and its sheet says to run it as a numbered site pass.
   5 (B+, SOUND), and 6 (B+) are folded; the exit criterion (B+) is met. FROZEN at revision 12
   (`dcb11bd3`, 2026-09-05) after two fresh-context verification reads; 354 notes, apparatus
   clean. The measured build is complete at three rounds (`experiment-screen`, never merging;
-  record at `16-measured-build/experiment-measurement.md`, `b0423fac`). In flight: the
-  first-person front-door derivation, written to `25-front-door-proposal.md` UNCOMMITTED for
-  Geoff's read, and a read-only check of the concept figure's labels against the frozen case. Overnight
+  record at `16-measured-build/experiment-measurement.md`, `b0423fac`). The first-person
+  front-door derivation is written to `25-front-door-proposal.md`, UNCOMMITTED and untracked, for
+  Geoff's read: a why-cairn.md replacement (1,619 words, register grade B+ after three folds; a cut
+  list to ~1,100 sits in its Section C.5) and the README/front-door one-sentence and one-paragraph
+  forms. The concept figure's labels were re-derived from the frozen case (four labels, the Email
+  Sending boundary added) and the review page republished. Overnight
   decisions (Geoff, 2026-09-05, defaults accepted): the concept figure is built as an
   uncommitted prototype in the one-system-with-its-boundary form on the existing review page;
   the front-door prose is drafted in first person in the why-cairn.md voice as an uncommitted

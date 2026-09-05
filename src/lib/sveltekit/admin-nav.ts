@@ -282,7 +282,7 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
 /**
  * Validate a site's declared access map once at composition (server start), after `defineAccess`'s
  *  own shape/vocabulary check: a screen-id key must name either a real concept or one of the fixed
- *  engine screens this pass enforces ({@link ACCESS_FIXED_SCREENS}), and an href key must not
+ *  engine screens ({@link ACCESS_FIXED_SCREENS}), and an href key must not
  *  collide with a built-in admin route (the `parseAdminPath` authority, the same collision check
  *  `validateNavLayout` uses for a site entry's own href). Throws an actionable `access:`-prefixed
  *  error naming the bad key, so a misconfiguration fails at server start rather than silently never

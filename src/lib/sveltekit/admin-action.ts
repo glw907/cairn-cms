@@ -185,7 +185,7 @@ function serializeThrownError(error: unknown): string {
  * };
  * ```
  *
- * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep), on the same
+ * `adminAction` itself stays non-generic over `Env` by design, on the same
  * grounds as {@link CairnEvent}'s own default, not because it never reads
  * `event.platform`: its returned function is declared as taking `CairnEvent<CairnEnv>` (the
  * default type parameter), and a compile-only fixture (`src/tests/unit/env-genericity.test.ts`)

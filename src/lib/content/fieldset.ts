@@ -293,9 +293,9 @@ function validateField(
       return { value: text, issues: [] };
     }
     // text and textarea also enforce the string-length and pattern constraints (v1 parity);
-    // datetime and icon stay a plain string for now, since datetime's bounds are out of scope
-    // this pass (v1 has no datetime equivalent to match) and icon's value is a glyph name, not a
-    // format the site constrains.
+    // datetime and icon stay a plain string: datetime's bounds are not constrained here (there
+    // is no v1 datetime equivalent to match) and icon's value is a glyph name, not a format the
+    // site constrains.
     case 'text':
     case 'textarea': {
       const lengthError = stringLengthError(text, field, label);
@@ -316,8 +316,8 @@ function validateField(
 // marks that field with an explicit `seo: true`; there is no field-name default, since the record key
 // is arbitrary. Two seo images is a site config error, so fail loudly at declaration (v1 parity).
 // The delivery seo reader resolves the social card off a hardcoded top-level key list, so a nested
-// seo image cannot resolve at delivery; this phase forbids seo: true inside any container and defers
-// nested seo to the pass that generalizes delivery seo resolution.
+// seo image cannot resolve at delivery: seo: true is refused inside any container; nested seo is
+// not supported.
 function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
   const seo: string[] = [];
   for (const [key, field] of Object.entries(record)) {

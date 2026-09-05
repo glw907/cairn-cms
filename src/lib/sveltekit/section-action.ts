@@ -187,10 +187,9 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // that AuthEnv and Env shared no property names and would trip TypeScript's weak-type
       // check; that reasoning did not hold up on re-verification (dropping the `unknown` bridge
       // still compiles clean under the renamed CairnEnv), so the bridge came out as unneeded
-      // ceremony, unrelated to the EmailSender/CairnPlatformBindings fix elsewhere in this file.
-      // The cast itself stays: removing
-      // it entirely reproduces a real TS2345 (`Env` is a fully unconstrained generic type
-      // parameter, so `CairnEnv` is not assignable to it in either direction).
+      // ceremony. The cast itself stays: removing it entirely reproduces a real TS2345 (`Env`
+      // is a fully unconstrained generic type parameter, so `CairnEnv` is not assignable to it
+      // in either direction).
       const siteEvent = event as CairnEvent<Env>;
       const path = siteEvent.url.pathname;
       // event.route.id, never url.pathname: on a catch-all route the pathname is

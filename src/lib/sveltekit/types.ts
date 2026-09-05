@@ -50,8 +50,8 @@ export interface PlatformContext<Env> {
  * route id. `cookies` and `setHeaders` are required for the same reason (every kit server event
  * has both), where the shapes this type replaces required them only inconsistently.
  *
- * Deliberately defaulted to `CairnEnv`, not left unconstrained with no default (env-genericity
- * sweep): a compile-only fixture
+ * Deliberately defaulted to `CairnEnv`, not left unconstrained with no default: a compile-only
+ * fixture
  * (`src/tests/unit/env-genericity.test.ts`) proves every engine factory built on this default
  * assigns clean into a site's own generated route event, under a realistic compliant
  * `App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the

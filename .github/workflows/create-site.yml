@@ -115,6 +115,7 @@ jobs:
           npm install
           npm run check
           npm run build
+          npm run format:check
       - name: Dev server reaches the admin
         working-directory: /tmp/ci-site
         run: |

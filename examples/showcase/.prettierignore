@@ -1,3 +1,13 @@
 *.css
 src/chassis/*.css
 src/theme/*.css
+
+# The bake writes these fresh (bake-template.mjs) or rewrites them in place
+# (emit-template.mjs), or the emit-template-dir overlay replaces or appends onto them
+# (emit-template-dir.mjs); none of these are the showcase's own formatted sources.
+README.md
+scripts/dev.mjs
+package.json
+LICENSE
+.dev.vars.example
+.gitignore

@@ -1,14 +1,13 @@
-// cairn-cms: `createAuthChannel`, the second-audience login factory (spec
-// docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md). Construction validates every
+// cairn-cms: `createAuthChannel`, the second-audience login factory. Construction validates every
 // clamp, every required-config check, and the cookie-name discipline, so a misconfigured site
-// fails at startup rather than at the first login. `actions.request` (Task 3), `actions.confirm`,
-// `actions.logout`, `resolveSubject`, and `revokeSessions` (Task 4) are all implemented against
-// Task 1's store and identity functions; Task 5 layers the optional rate limit on top.
+// fails at startup rather than at the first login. `actions.request`, `actions.confirm`,
+// `actions.logout`, `resolveSubject`, and `revokeSessions` are all implemented against this
+// module's store and identity functions, with the optional rate limit layered on top.
 //
-// The rule every later task must honor, restated because construction is where a violation would
-// otherwise go unnoticed until a review round finds it: no control keyed on the victim's identity
-// may deny, delay, or destroy anything. Denial keys on the requester; an identity-keyed control
-// either escalates through `challenge-required` or only logs.
+// The rule every later addition here must honor, restated because construction is where a
+// violation would otherwise go unnoticed until a review finds it: no control keyed on the
+// victim's identity may deny, delay, or destroy anything. Denial keys on the requester; an
+// identity-keyed control either escalates through `challenge-required` or only logs.
 import { error, isHttpError, isRedirect } from '@sveltejs/kit';
 import { cookieName, generateToken, hashToken } from '../auth/crypto.js';
 import { originMatches } from '../sveltekit/csrf.js';
@@ -93,8 +92,8 @@ interface DevBackendFlagCache {
 
 /**
  * Step 0 of every action, ahead even of {@link assertOriginAndScheme}: the dev-backend leak
- * tripwire (Task 9, ruling 4 as letter-amended; docs/internal/engine-rulings.md,
- * `dev-backend-flag-refusal`). `CAIRN_DEV_BACKEND` is the dev transport's own
+ * tripwire (docs/internal/engine-rulings.md, `dev-backend-flag-refusal`). `CAIRN_DEV_BACKEND` is
+ * the dev transport's own
  * ENABLE contract (the showcase capture transport, and the documented transport-body pattern
  * this tripwire backs up, both refuse WITHOUT it), so refusing on the flag alone, the way
  * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
@@ -109,8 +108,8 @@ interface DevBackendFlagCache {
  *
  * The deployment witness is evaluated fresh on every call, never cached, since one isolate can
  * serve `*.workers.dev` and a custom domain interchangeably, so a cached verdict from an early
- * warm-up request would pin a permissive answer onto later production traffic (round-1 review
- * S-2). {@link isDeployedHost}, not the bare request hostname, is what answers it, so a forged
+ * warm-up request would pin a permissive answer onto later production traffic.
+ * {@link isDeployedHost}, not the bare request hostname, is what answers it, so a forged
  * `Host: localhost` cannot talk a configured deployment out of refusing.
  *
  * The refusal is a hard throw, not a member of either action's own result union, matching
@@ -508,8 +507,8 @@ async function refundGateCharge(
  * Apply the optional rate limit (spec, Surface's `rateLimit?` row: back pressure only, never a
  * security control). Both actions call this after deriving the identity their default key needs
  * (`request` right after step 4's derivation, `confirm` right after step 4's row read), rather
- * than at the spec's literal step 1: the plan's Task 5 overrides that placement deliberately,
- * since a key that needs the identity cannot be computed before the identity exists (v3 died on
+ * than at the spec's literal step 1: this placement deliberately overrides that ordering, since a
+ * key that needs the identity cannot be computed before the identity exists (v3 died on
  * specifying a key at a step that could not compute it).
  *
  * Degrades to open on an absent binding (`auth.channel.rate_limit_absent`) or a throwing
@@ -748,7 +747,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
 
     // The optional rate limit (spec, Surface's rateLimit? row) runs here, deferred from the
     // spec's literal step 1 to right after identity derivation, since its default key is this
-    // same requester bucket and cannot be computed any earlier (plan Task 5). Blocked here means
+    // same requester bucket and cannot be computed any earlier. Blocked here means
     // neither the requester send charge below nor a code row has been touched yet.
     const rateLimitOk = await checkChannelRateLimit(config.rateLimit, event, 'request', fullRequesterBucket, correlationId);
     if (!rateLimitOk) {
@@ -782,7 +781,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // the only requests reaching this line over http are local dev, where a Secure cookie would
     // be discarded by the browser anyway. A weak-cookie mint on a deployed host is therefore
     // unreachable rather than merely unlikely. This divergence, and checkChannelRateLimit's from
-    // resolveRateLimit, are recorded fold candidates for pass 4b, not accidents.
+    // resolveRateLimit, are deliberate; either could fold into one shared reader if the reasons
+    // above ever collapse, but neither is an accident.
     const secure = event.url.protocol === 'https:';
     const pendingCookie = cookieName(pendingBase, secure);
     const existingNonce = event.cookies.get(pendingCookie);
@@ -943,8 +943,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
 
     // The optional rate limit runs here, right after the row read supplies the derived identity
     // this nonce's mint already fixed, and before the failure gate below, so a blocked confirm
-    // charges nothing and consumes no row (plan Task 5, the same deferred-from-step-1 placement
-    // requestAction uses).
+    // charges nothing and consumes no row (the same deferred-from-step-1 placement requestAction
+    // uses).
     const rateLimitOk = await checkChannelRateLimit(
       config.rateLimit,
       event,

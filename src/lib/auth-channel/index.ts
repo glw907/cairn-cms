@@ -1,9 +1,8 @@
 // cairn-cms: the public `/auth-channel` barrel, a server-only subpath (types plus a default
-// condition, no browser or svelte condition) per the design spec
-// (docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md). `createAuthChannel` is the
-// whole surface: a site supplies delivery, roster lookup, identifier shape, and a bot challenge,
-// and the factory owns every security discipline (mint, consume, budgets, sessions, revocation).
-// Nothing here imports `$app/*`.
+// condition, no browser or svelte condition). `createAuthChannel` is the whole surface: a site
+// supplies delivery, roster lookup, identifier shape, and a bot challenge, and the factory owns
+// every security discipline (mint, consume, budgets, sessions, revocation). Nothing here imports
+// `$app/*`.
 //
 // The channel's D1 schema is a packaged migration file (`migrations-channel/0000_channel.sql` in
 // the tarball), never an export: a site points its channel binding's own `migrations_dir` at it,

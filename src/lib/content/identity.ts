@@ -1,4 +1,4 @@
-// cairn-cms: a content entry's URL identity in one place (engine-hardening pass 3). The id, the
+// cairn-cms: a content entry's URL identity in one place. The id, the
 // slug, the date, and the permalink are computed here, so the content index and the manifest cannot
 // drift on what an entry's URL is. A cairn: link resolves through the manifest in the admin preview
 // and through the content index in the public build, so the two must agree by construction.

@@ -3,12 +3,12 @@
 // action honors; this wraps a custom form action with that contract instead of a site
 // hand-rolling it.
 //
-// SCAFFOLD FINDING (the reference stand-in that shaped this, aksailingclub-org's club-admin-scaffold):
-// `createAuthGuard` (guard.ts) already verifies the double-submit CSRF token on every unsafe POST
-// under `/admin/**`, custom routes included, before any route's own load or action runs. The
-// check below is therefore defense-in-depth, not the sole gate; this wrapper's real value is
-// resolving the signed-in editor as a typed `ctx.editor` and requiring an audit emit for a
-// mutating action, which the engine has no other hook for.
+// A site building its own admin action easily duplicates the guard's CSRF check by hand; the
+// generalized finding is recorded here instead: `createAuthGuard` (guard.ts) already verifies the
+// double-submit CSRF token on every unsafe POST under `/admin/**`, custom routes included, before
+// any route's own load or action runs. The check below is therefore defense-in-depth, not the
+// sole gate; this wrapper's real value is resolving the signed-in editor as a typed `ctx.editor`
+// and requiring an audit emit for a mutating action, which the engine has no other hook for.
 import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
 import { csrfCookieName } from '../auth/crypto.js';
@@ -185,8 +185,8 @@ function serializeThrownError(error: unknown): string {
  * };
  * ```
  *
- * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep, pre-beta C1
- * Task 2), on the same grounds as {@link CairnEvent}'s own default, not because it never reads
+ * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep), on the same
+ * grounds as {@link CairnEvent}'s own default, not because it never reads
  * `event.platform`: its returned function is declared as taking `CairnEvent<CairnEnv>` (the
  * default type parameter), and a compile-only fixture (`src/tests/unit/env-genericity.test.ts`)
  * proves that assigns clean into a route's generated `Actions` under a realistic compliant

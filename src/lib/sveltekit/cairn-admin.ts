@@ -279,11 +279,11 @@ export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdm
       if (!nav) throw error(404, 'Not found');
       return nav.navSaveAction(contentEvent(event, {}));
     }),
-    // The tidy settings save (spec 2.8, Task 15): the editor commits the per-convention block to the
+    // The tidy settings save (spec 2.8): the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
     settingsSave: viewAction('settingsSave', ['settings'], (event) => content.settingsSaveAction(contentEvent(event, {}))),
-    // The tag-vocabulary save (Plan 3): the editor commits the curated vocabulary to the committed
+    // The tag-vocabulary save: the editor commits the curated vocabulary to the committed
     // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
     vocabularySave: viewAction('vocabularySave', ['vocabulary'], (event) => content.vocabularySaveAction(contentEvent(event, {}))),
     upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),

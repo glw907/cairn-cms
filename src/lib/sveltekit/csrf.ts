@@ -1,6 +1,5 @@
 // cairn owns CSRF for the admin once a site disables SvelteKit's global checkOrigin. These helpers
-// back the guard's two rules and the loads that issue the double-submit token. See
-// docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md.
+// back the guard's two rules and the loads that issue the double-submit token.
 import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
 import type { CairnEvent, CookieJar } from './types.js';
@@ -14,7 +13,7 @@ const FORM_CONTENT_TYPES = new Set([
 
 // `isLocalHost` is imported, not copied. It used to be duplicated here because guard.ts imports
 // this module and importing back would be circular; the shared module is a leaf that imports
-// nothing, so the cycle no longer exists and the audit's coherence-thirteen collapse is done.
+// nothing, so the cycle no longer exists.
 //
 // What this call site decides, which is not what the dev-backend tripwire's own call decides:
 // under csrfSecure's monotonic rule the hostname is consulted only for a NON-https request, where

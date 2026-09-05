@@ -12,8 +12,8 @@ import type { Backend } from '../github/backend.js';
 import type { CairnEvent } from './types.js';
 
 /**
- * One page option for the URL picker datalist. Module-internal (the retires pass, Task 2 retired
- * its export, a sanctioned NavIcon-class leak); a consumer reads it structurally as
+ * One page option for the URL picker datalist. Module-internal (its export was retired, a
+ * sanctioned NavIcon-class leak); a consumer reads it structurally as
  * `NavLoadData['pages'][number]`.
  */
 interface NavPageOption {
@@ -31,7 +31,7 @@ export interface NavLoadData {
 
 /**
  * A refused nav save: `fail(400)` on an invalid posted tree, `fail(409)` when the config's head
- *  moved since the editor opened the page. Retired from the public surface (4b, Task 1); survives
+ *  moved since the editor opened the page. Retired from the public surface; survives
  *  structurally inside `NavRoutes.navSaveAction`'s return type, the sanctioned leak.
  */
 interface NavSaveFailure {

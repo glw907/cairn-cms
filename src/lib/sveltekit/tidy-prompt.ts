@@ -3,7 +3,7 @@
 // voice the same way on every request. The CONVENTIONS section emits one rule line per enabled
 // convention and nothing for a disabled one; with nothing enabled it is omitted entirely, and tidy
 // does only the objective fixes. tidy NEVER harmonizes to the author and never guesses a style: an
-// undeclared style is the author's choice. That is the single largest design correction in the pass,
+// undeclared style is the author's choice. That is the single largest design correction here,
 // so the never-harmonize clause lives in the core where no config can strip it.
 //
 // This module is pure (no Worker, no model call) so the prompt contract is unit-testable. The prompt

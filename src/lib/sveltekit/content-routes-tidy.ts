@@ -15,8 +15,8 @@ import type { CairnEvent } from './types.js';
 
 /**
  * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
- * token usage. The diff is computed on the client (Task 12), so the server returns the plain text and
- * commits nothing. Retired from the public surface (4b, Task 1); the module-level export stays,
+ * token usage. The diff is computed on the client, so the server returns the plain text and
+ * commits nothing. Retired from the public surface; the module-level export stays,
  * since `tidyAction`'s return type composes into `createContentRoutesInternal`
  * (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
  */
@@ -91,15 +91,15 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *    5. Only then build the prompt and call the model, bounded by the Worker deadline.
    *
    *  The untrusted text rides as the user message, never interpolated into the system prompt; the
-   *  prompt's injection framing (Task 10) treats it as data. The API key never leaves the action: it is
+   *  prompt's injection framing treats it as data. The API key never leaves the action: it is
    *  not returned and not logged, and the log line carries no content. The action commits NOTHING, so a
-   *  failed, aborted, or refused tidy can never corrupt the entry; the diff is computed on the client
-   *  (Task 12), so the server stays a thin model-call boundary.
+   *  failed, aborted, or refused tidy can never corrupt the entry; the diff is computed on the client,
+   *  so the server stays a thin model-call boundary.
    *
-   *  A throw out of the client call classifies into one of two voices (save-500-honest-errors,
-   *  Task 4). Not retryable, and so answered without the "Try again." copy: an auth/permission
+   *  A throw out of the client call classifies into one of two voices (save-500-honest-errors).
+   *  Not retryable, and so answered without the "Try again." copy: an auth/permission
    *  failure (401/403), where the key itself is the problem, which returns the calm copy naming
-   *  the site developer and marks the shared key-health cache unhealthy (Task 5) so the next edit
+   *  the site developer and marks the shared key-health cache unhealthy so the next edit
    *  load hides the Tidy button rather than offering a control that will fail again; a missing
    *  `@anthropic-ai/sdk`, where the optional peer was never installed, which returns the install
    *  command and leaves the cache alone; and a 400 `invalid_request_error`, where Anthropic
@@ -151,14 +151,14 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       return fail(413, { error: 'This is too long to tidy at once. Select a passage and tidy that instead.' } satisfies TidyFailure);
     }
 
-    // Build the system prompt from the resolved conventions (Task 10). The prompt is built from config,
+    // Build the system prompt from the resolved conventions. The prompt is built from config,
     // never from the author's text, so the untrusted text cannot reshape the instructions.
     const system = buildTidyPrompt(resolveTidyConventions(tidy.conventions));
     const model = tidy.model || DEFAULT_TIDY_MODEL;
 
     // Bound the model call with the Worker's own deadline (shorter than the platform limit), so a slow
     // call becomes a retryable fail(502) rather than a platform timeout. The client also drives its own
-    // AbortController (Cancel + a bounded timeout, Task 14); this action accepts an aborted request
+    // AbortController (Cancel + a bounded timeout); this action accepts an aborted request
     // cleanly by mapping any abort to the same fail(502). `deadlineHit` distinguishes the deadline
     // timer's own abort from some other abort reaching the same signal (a client disconnect cancelling
     // the underlying subrequest), so the log's `reason` names which one actually happened.
@@ -201,7 +201,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       if (status === 401 || status === 403) {
         // An auth/permission failure is not retryable: the key itself is the problem, not a transient
         // model hiccup, so "Try again." would be a false promise. Mark the shared key-health cache
-        // unhealthy (Task 5) so editLoad's tidy projection hides the button for the TTL rather than
+        // unhealthy so editLoad's tidy projection hides the button for the TTL rather than
         // offering a control that will fail the same way on the next click.
         markKeyUnhealthy();
         log.warn('tidy.failed', { editor: editor.email, model, reason: 'auth' });

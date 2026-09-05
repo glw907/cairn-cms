@@ -576,7 +576,7 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
  *  configured, settings, editors) as loose top-level nodes; `help` is deliberately left
  *  unreferenced, so it resolves into `fallback`. No section wraps these nodes: at the sizes a
  *  zero-config site actually reaches, a section header pays a category-decision cost the flat list
- *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1).
+ *  never earns back.
  */
 function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
   const items: ResolvedLayoutNode[] = [];

@@ -1,4 +1,4 @@
-// cairn-cms: the tidy action's per-isolate key-health cache (save-500-honest-errors, Task 5).
+// cairn-cms: the tidy action's per-isolate key-health cache (save-500-honest-errors).
 // A Cloudflare Worker isolate serves one site, so one module-level slot is enough: a tidy call
 // that fails with an auth reason (401/403 from Anthropic) marks the key unhealthy for a TTL
 // window, and either a subsequent successful call or a passing settings-screen probe clears it.

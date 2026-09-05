@@ -548,7 +548,7 @@ export function manifestLinkResolver(targets: { concept: string; id: string; per
  *  those bodies. A resolved fragment's raw markdown body is returned for a hit; a dangling id
  *  returns undefined, which the render step turns into the missing-fragment notice. The
  *  returned resolver's `previewTitle` looks up the same target's title for the preview-only
- *  boundary cue (ratified 4B); the build-time resolver carries no such property. `entry` names
+ *  boundary cue; the build-time resolver carries no such property. `entry` names
  *  the entry being previewed, so an `include.missing` from this body says which one it came from.
  */
 export function manifestFragmentResolver(

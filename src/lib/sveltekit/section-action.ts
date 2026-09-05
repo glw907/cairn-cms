@@ -72,7 +72,7 @@ export interface SectionActionOptions {
  * One audit record a `createSectionAction`-wrapped handler emits through `ctx.audit`. `action`
  * and `entity` default from the call site's own `SectionActionOptions`, so the common call names
  * only what the options declaration does not already say; a handler touching more than one
- * entity (the audit sweep's confirmed two-row-touch case) still overrides either field.
+ * entity (the confirmed two-row-touch case) still overrides either field.
  */
 export interface SectionActionAudit {
   /** Overrides `opts.action`; omit to reuse the call site's own declared verb. */

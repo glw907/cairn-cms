@@ -3,7 +3,7 @@
 Renders a page's SEO head from a SeoMeta object into <svelte:head>: a title, meta tags, link
 tags, and one escaped JSON-LD script. The title renders from seo.title by default; title={false}
 lets the site own the <title>, and a string overrides it. titleTemplate wraps seo.title in the
-site's own suffix convention (for example `(t) => `${t} · 907.life`); it applies only when title
+site's own suffix convention (for example `(t) => `${t} · My Site`); it applies only when title
 is left undefined, so an explicit title or title={false} still wins. markdownUrl, when passed,
 adds a rel="alternate" type="text/markdown" link pointing at the entry's raw-markdown twin; a
 site that has not wired the twin route passes nothing and the link is omitted. It carries no

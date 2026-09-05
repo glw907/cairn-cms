@@ -15,7 +15,7 @@ interface FieldBase {
   help?: string;
   /** A required field fails validation when empty. */
   required?: boolean;
-  /** Form-render-time initial value; a sentinel like "today" resolves at render (Task 9). */
+  /** Form-render-time initial value; a sentinel like "today" resolves at render. */
   default?: string | boolean;
 }
 /** A single-line text input. */

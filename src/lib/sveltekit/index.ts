@@ -35,8 +35,8 @@ export type {
   ContentRoutesConfig,
   AttentionItem,
   ContentFormFailure,
-  // The export-rule sweep (C2 breaking-window pass, R4 ruling): every type a route factory's
-  // return type names, down to its own nested shapes, becomes importable from this subpath.
+  // Every type a route factory's return type names, down to its own nested shapes, is importable
+  // from this subpath.
   TidyClient,
   TidyEffort,
   MediaLibraryEntry,
@@ -92,31 +92,31 @@ export type {
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';
-// `AuthBranding`'s canonical home is this subpath (settled: `audit-adapter-authbranding`
-// executed, conformance pass Task 2), since `AuthRoutesConfig.branding` is the one public
+// `AuthBranding`'s canonical home is this subpath (ruling `audit-adapter-authbranding`,
+// docs/internal/engine-rulings.md), since `AuthRoutesConfig.branding` is the one public
 // signature naming it and the root barrel no longer re-exports it. `MagicLinkMessage`,
 // `SendMagicLink`, and `EmailSender` keep canonical home `.`.
 export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
 // The binding-shaped types a site's app.d.ts intersects into its own Platform.env; /sveltekit is
-// their canonical home (decision: surface-pruning Task 6).
+// their canonical home.
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';
 
-// The export-rule sweep (C2 breaking-window pass, R4 ruling): every remaining type a factory or
-// wrapper's own signature names, re-exported here so a site importing only from this subpath can
-// still name the value it holds. `CairnRuntime`'s own structural body in turn names most of the
-// rest below it, the same recursive closure `/delivery` and root carry.
+// Every remaining type a factory or wrapper's own signature names is re-exported here so a site
+// importing only from this subpath can still name the value it holds. `CairnRuntime`'s own
+// structural body in turn names most of the rest below it, the same recursive closure
+// `/delivery` and root carry.
 //
 // Canonical home for everything below this line is the root barrel `.`, except `MediaRef`
 // (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded
-// R4 re-export, not a second home (canonical-home rule, foundations A); the full set with its
+// R4 re-export, not a second home (canonical-home rule); the full set with its
 // per-name reason is `scripts/checks/check-surface-reexports.json`, and
 // `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
-// Foundations B narrowed `ContentRoutes` and re-derived this closure without shrinking the list:
-// the narrowing was necessary for the media-janitorial retires, not sufficient, since
-// `createCairnAdmin` still named every one of those types. The conventions pass (Task 2) narrows
-// `CairnAdminRoutes` the same way, which is the remaining precondition; the retire itself (the
-// list actually shrinking) is 4b's job, off the re-derivation at
-// `docs/internal/record/2026-08-30-r4-rederivation.md`.
+// `ContentRoutes` was narrowed and this closure re-derived without shrinking the list: the
+// narrowing was necessary for the media-janitorial retires, not sufficient, since
+// `createCairnAdmin` still named every one of those types. `CairnAdminRoutes` needs the same
+// narrowing as the remaining precondition; the retire itself (the list actually shrinking) is
+// still open, tracked at the re-derivation record
+// (`docs/internal/record/2026-08-30-r4-rederivation.md`).
 export type { AccessMap } from '../auth/access.js';
 export type { Backend, BackendProvider } from '../github/backend.js';
 export type {

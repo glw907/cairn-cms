@@ -1,10 +1,9 @@
 // cairn-cms: D1 access for the auth-channel factory, through prepared statements only. No ORM.
-// Every statement in this file targets a site's own channel binding, never AUTH_DB (spec
-// docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, decision 1: physical
-// separation). Each flow opens one `db.withSession('first-primary')` and threads it through these
-// functions (spec, Storage), so a flow's reads and writes share a session; `resolveChannelSession`
-// is the documented exception and takes the bare `db`, since it runs on every authenticated
-// request and accepts replica lag on the revocation path.
+// Every statement in this file targets a site's own channel binding, never AUTH_DB: the two
+// stores are physically separate databases. Each flow opens one `db.withSession('first-primary')`
+// and threads it through these functions, so a flow's reads and writes share a session;
+// `resolveChannelSession` is the documented exception and takes the bare `db`, since it runs on
+// every authenticated request and accepts replica lag on the revocation path.
 //
 // Three throttle-shaped functions here (`mintCode`, `charge`, `refund`) are each one atomic
 // conditional statement, never a read followed by a decide followed by a write: a read-modify-write

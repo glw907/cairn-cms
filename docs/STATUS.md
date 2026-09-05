@@ -100,9 +100,10 @@ behind and its sheet says to run it as a numbered site pass.
   surface.
 - **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
   is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
-  beside it in `docs/internal/record/2026-09-04-cairn-case/`. Round 1 RETHINK and round 2
-  SOUND AFTER FIXES (C+) are folded; round 3 revision in progress with Leg 5 as a measured case
-  report; then a round-3 review, then an audience-lens review, then the figure synthesis. The
+  beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), and 3 (B-) are
+  folded through v4 (`e1790435`); the audience lens is banked. Exit criterion (Geoff): the loop
+  repeats until a graded round returns B+ or better, each round from 4 on adding an AI-tells
+  reviewer; then the front-door derivation and the figure synthesis. The
   docs figure (banded ownership map) is finished and uncommitted under `docs/extend/assets/`
   with its source `docs/internal/site-figures.svg` and emitter `scripts/figures/`; the front-door
   figure waits on the case.

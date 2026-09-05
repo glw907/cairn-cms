@@ -41,3 +41,33 @@ Fold these with evidence-round-2.md into the case document before the round-2 re
    clone); the app is standard SvelteKit with an adapter (deployable elsewhere with work the
    document should not minimise); the engine is MIT and on npm. Do not soften the tie; the
    register wants the reader to see it and decide.
+
+## Round 3 review charge (Geoff, 2026-09-04)
+
+Four personas replace the generic stances: a skeptical computer science professor (logic and
+the evidence base, studies applied within scope); a working SvelteKit web designer (does the
+case match the job as done; what they would build instead; the seams' cost; the toolkit and
+theme boundary); a world-weary IT admin (operations: who gets paged, what breaks on upgrade,
+the vendor tie at three in the morning, what happens when the developer leaves); a nonprofit
+board member who must approve the budget (cost lines with numbers, what the organisation owns
+if the developer leaves or the vendor changes terms, bespoke versus a mature product with
+support, all in words a non-developer can approve against).
+
+Every persona also returns a vocabulary map: the terms that stopped them (the board member on
+jargon; the admin and the developer where one word means different things to them: deploy,
+admin, app, platform, repository, worker), each with the plain equivalent that would have
+worked. The map drives the front-door derivation, which must read for all four.
+
+Fifth persona: a small-business owner who just wants a working website. They read for whether
+the site will exist, look right, and stay up without them; who they call when it breaks; what
+it costs per month and at the start; whether they can change a page themselves; and whether
+any of the case's argument matters to them at all. Their verdict is the shortest of the five,
+and their vocabulary map is the strictest: any term they would not say to a friend is flagged.
+
+## Exit criterion (Geoff, 2026-09-04)
+
+The revise-and-review loop repeats until a graded round returns B+ or better overall. From
+round 4 on, each round adds a sixth reviewer: an AI-writing expert reading for tells (flat
+cadence, machine vocabulary, punctuation habits, the structural tells the writing-voice
+style names), run through the repo's `cairn-register-editor` and `prose-voice-reviewer`
+agents in addition to the five personas.

@@ -19,8 +19,10 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**IN FLIGHT (2026-09-04, checkpoint 6 at eleven tasks): internals-C mid-pass.** Ledger: Tasks
-1, 9, 8, 5, 6a, 6b, 2, 3a, 3b, 4 (`d39ea980`), 6c (`81013ffd`) ACCEPTED (3b after an escalation the conductor ruled: the
+**IN FLIGHT (2026-09-05, checkpoint 7 at twelve tasks): internals-C mid-pass.** Ledger: Tasks
+1, 9, 8, 5, 6a, 6b, 2, 3a, 3b, 4 (`d39ea980`), 6c (`81013ffd`) ACCEPTED; Task 7 landed in
+three commits (`6b6ae89f`, `f9d1827f`, `2fb357d0`) and a final one-item fix (the showcase
+`public-routes.ts` header) is dispatched, after which it is accepted by conductor ruling (3b after an escalation the conductor ruled: the
 process-reference rule widened to a curated shape list, consumer names purged by hand with
 no rule enumerating them; final commit `5248fed8`) (3a after two fix rounds, the second decided by the
 conductor: five exact comment rewrites, `0ad68a0d`; rulings recorded in the 3b dispatch: bare
@@ -30,11 +32,8 @@ matches the prefix, not the separator) (Task 8 after an escalation decided by th
 `cairn.config.ts` location migration on the scaffold's `$theme/cairn.config.js` spelling,
 plus two fix rounds; Task 5's gate re-proven green on an idle machine). Chains Q and T are
 MERGED into `internals-c` (`78af949d`, `724296c2`). Chain R is MERGED into `internals-c` (`02a2fda7`).
-Run `wf_640e93d2-2c1` stopped on the session rate limit (22:00 AKDT reset) with Task 7's
-implementer mid-task: Steps 1 and 2 (the contradicted headers, the ten render headers) sit
-uncommitted in the worktree, Step 3 (logCommitFailed unification, the audit barrel export) not
-started; Task 10 deferred. Resume: `resumeFromRunId` replays 4 and 6c from cache and re-runs 7
-(its notes tell the implementer to review and keep the residue) then 10; pass-end ritual; push, PR, merge on green
+Task 10 (records; last) runs next as one chain in the same worktree, then the pass-end
+ritual; pass-end ritual; push, PR, merge on green
 CI (authorized). Spend: 1.57M for phase 1 plus about 0.6M of fix and review dispatches, of
 the 6.5M ceiling. Lesson: three concurrent full gates on this 15 GB / 8-core machine cause
 load-induced timeouts; two is the ceiling. If a cold session finds this line: inspect the

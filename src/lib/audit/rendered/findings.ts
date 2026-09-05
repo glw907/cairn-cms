@@ -193,8 +193,8 @@ export function identityRefusedFinding(entry: RenderedAllowlistEntry): Finding {
  * SSR response carried: a named harness finding, not a rule finding, since no rule ever got to look
  * at this page. Error tier: an admin route that hydrates into unrelated chrome is a real defect, not
  * a compositional judgment a rule might reasonably differ on, and a harness that reported clean here
- * anyway is the trust failure this guard exists to close (the two ASC edit desks were measured this
- * way, silently, for 58 findings against the wrong page).
+ * anyway is the trust failure this guard exists to close (two consumer-site edit desks were
+ * measured this way, silently, for 58 findings against the wrong page).
  */
 export function pageIdentityMismatchFinding(pagePath: string, theme: Theme, ssr: PageIdentity, hydrated: PageIdentity): Finding {
   const describe = (identity: PageIdentity) =>

@@ -357,8 +357,8 @@ discriminant, not the fields, gates the chrome).
 
   // Every visible item in the resolved layout, sections' children included (locked call 10), plus
   // the fallback foot group (so an unreferenced Help still surfaces here, the way it did as a
-  // hard-coded palette entry before this task): a section's own label never becomes a command, only
-  // its leaves do.
+  // hard-coded palette entry before this layout became configurable): a section's own label never
+  // becomes a command, only its leaves do.
   const paletteNavItems: NavItem[] = $derived([
     ...navGroups.flatMap((group) => group.items),
     ...fallbackItems,

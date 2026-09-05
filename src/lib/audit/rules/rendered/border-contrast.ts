@@ -4,8 +4,8 @@
 // every card hairline). Advisory, and deliberately report-only by ruling, not by
 // accident: the ratified `--cairn-card-border` hairline measures 1.11:1 in light and 1.43:1 in dark
 // against the page's base-200 ambient (both numbers reproduced exactly by this rule's own fixtures
-// against real Chromium). RULING 2 (2026-07-28) settled the question of whether the hairline should
-// change: it stays as designed, the quiet edge is deliberate, and `check` below stops reporting the
+// against real Chromium). RULING 2 (2026-07-28) settled the question spec 6.3 raised: the
+// hairline stays as designed, the quiet edge is deliberate, and `check` below stops reporting the
 // page's own `--cairn-card-border` while it still renders the way Geoff signed it off (see
 // `RATIFIED_TOKEN` and `RATIFIED_HAIRLINE_FLOOR`). Do not loosen the floor or widen the exemption
 // to make cairn's own admin quiet; every OTHER boundary still has to answer the measurement
@@ -134,8 +134,9 @@ const RATIFIED_TOKEN = '--cairn-card-border';
  * sees it.
  *
  * THE NAMED BOUNDARY OF THE EXEMPTION: equality with the sentinel, so a border that passes the
- * token through `color-mix` is NOT derived and reports; they correctly report. The two mix shapes the admin ships fail for different reasons, and
- * the distinction is what makes the boundary defensible rather than arbitrary:
+ * token through `color-mix` is NOT derived and reports; they correctly report. The two mix shapes
+ * the admin ships fail for different reasons, and the distinction is what makes the boundary
+ * defensible rather than arbitrary:
  *
  * - A mix that only DIMS the token, `color-mix(in oklab, var(--cairn-card-border) 70%, transparent)`
  *   on the media library's orphan-scan result rows and HelpHome's section rules, renders the

@@ -4,9 +4,10 @@
 // an option with a neutral default rather than assuming any one site's own locale or zone, so a
 // second consumer in another zone or locale is a parameter, not a fork.
 //
-// `formatTimestamp` differs from the ASC original on one point, deliberately: its `timeZone`
-// default is `'UTC'`, not ASC's own `'America/Anchorage'`. A shared engine formatter cannot default
-// to one consumer's zone; a site that wants its own local time passes `timeZone` explicitly.
+// `formatTimestamp` differs from the graduated consumer-site original on one point, deliberately:
+// its `timeZone` default is `'UTC'`, not a consumer's own local zone (for example
+// `'America/Denver'`). A shared engine formatter cannot default to one consumer's zone; a site
+// that wants its own local time passes `timeZone` explicitly.
 //
 // Every display formatter in this file (formatCivilDate, formatTimestamp) accepts a nullish input
 // and takes a `fallback?: string` option defaulting to `''`. The point is uniformity: a caller

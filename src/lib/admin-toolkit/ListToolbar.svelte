@@ -22,12 +22,13 @@ windowing math) are the count line's scope-label source; there is no longer a se
 applied-pills row (a refinement audit retired it: an applied filter now renders its value
 in-control instead, on the `'menu'` display below).
 
-Graduation extensions over the ASC-born contract (both additive, ASC's own existing usage stays
-valid): a filter's `display` chooses `'select'` (the original contract, unchanged, restyled to
-the shared 30px height and 13px text and, since a coherence fix, `width: auto` so it
-sizes to its own content rather than daisyUI's fixed 320px clamp, `max-width: 100%` so it never
-exceeds its container, and a border tinted to the same `--cairn-card-border` a `'menu'` facet
-carries, so a select and a menu facet sitting side by side read as one control family), or
+Graduation extensions over the graduated consumer-site contract (both additive, that consumer's
+own existing usage stays valid): a filter's `display` chooses `'select'` (the original contract,
+unchanged, restyled to the shared 30px height and 13px text and, since a coherence fix, `width:
+auto` so it sizes to its own content rather than daisyUI's fixed 320px clamp, `max-width: 100%`
+so it never exceeds its container, and a border tinted to the same `--cairn-card-border` a
+`'menu'` facet carries, so a select and a menu facet sitting side by side read as one control
+family), or
 `'segmented'`, a group of toggle buttons for a filter
 whose vocabulary reads better as always-visible tabs than a dropdown (a publish-state filter, a
 triage radiogroup), with each option's own optional `count` rendered beside its label, or

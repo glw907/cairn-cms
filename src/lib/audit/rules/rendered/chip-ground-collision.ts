@@ -49,8 +49,7 @@
 //     a chip measuring 12.98 against the image it actually sits on. An overlapping painter outside
 //     the chip's own ancestors now makes the ground indeterminate, which is advisory, because
 //     "cannot measure" is a different claim from "this collides".
-//  7. The formula had no chroma term at all (conformance pass, 2026-09-01, closing the HUE half of
-//     a previously filed repair): two colors of plainly different hue
+//  7. The formula had no chroma term at all: two colors of plainly different hue
 //     but similar luminance measured as a collision, one of the two named mechanisms behind the
 //     60% false-positive rate (24 of 40) on the first real consumer admin this rule ever measured
 //     (14 of the 24, the hue-distinct class). A collision now also requires the two colors to sit
@@ -286,7 +285,7 @@ function readChipGrounds(): ChipGroundReading {
  * ruling 1 moved the rule's own domain (the chip recipe StatusChip ships), and repairing the
  * formula before that recipe settled would have fit it twice.
  *
- * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY (conformance pass, 2026-09-01): the check below now
+ * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY: the check below now
  * also requires `chromaDistance` (color.ts) under `CHROMA_DISTINCT_FLOOR`, so a collision needs
  * both a close luminance ratio AND a close hue, closing the hue-distinct false-positive class the
  * demotion above named (roughly 14 of the 24 measured false positives). The other named class,

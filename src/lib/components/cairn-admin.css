@@ -869,12 +869,11 @@
    components-layer rule cannot outrank regardless of specificity (cascade layers resolve before
    specificity, the same reason the three chip rules above are unlayered); this is UNLAYERED for the
    same reason.
-   The `>` is deliberate, not `.cairn-field-stacked`'s descendant space (design ratchet fix A2,
-   item 1): a stacked field's control is always a direct child of the label FieldLabel renders,
-   so scoping the hook to a direct child lets a consumer nest
-   a compact row (a flex wrapper holding two or more narrower controls side by side) inside a stacked
-   label and keep that row's own width choice; a descendant selector reached through the wrapper and
-   forced every nested control to 100% regardless.
+   The `>` is deliberate, not `.cairn-field-stacked`'s descendant space: a stacked field's control
+   is always a direct child of the label FieldLabel renders, so scoping the hook to a direct child
+   lets a consumer nest a compact row (a flex wrapper holding two or more narrower controls side
+   by side) inside a stacked label and keep that row's own width choice; a descendant selector
+   reached through the wrapper and forced every nested control to 100% regardless.
    PINNED unlayered rule 8 of 13 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
    field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
    fields' controls in the same column stop sharing a left AND right edge once the cell exceeds

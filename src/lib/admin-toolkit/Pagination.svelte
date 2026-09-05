@@ -1,12 +1,12 @@
 <!--
 @component
 The admin toolkit's page navigation, graduated from a consumer site's admin toolkit. `page` and
-`pageCount` drive the nav on their own;
-`totalItems`/`pageSize` are optional and only add the "Showing X-Y of N <items>" range line, so a
-consumer that already knows its own page count but not a raw item total (or vice versa) still
-gets a working pager. `pageSizeOptions`/`onPageSizeChange` are an additive graduation extension
-(ConceptList's rows-per-page select is the first engine consumer): omit both for the original
-ASC contract unchanged, or pass both to add a page-size select beside the range line.
+`pageCount` drive the nav on their own; `totalItems`/`pageSize` are optional and only add the
+"Showing X-Y of N <items>" range line, so a consumer that already knows its own page count but
+not a raw item total (or vice versa) still gets a working pager. `pageSizeOptions`/
+`onPageSizeChange` are an additive graduation extension (ConceptList's rows-per-page select is
+the first engine consumer): omit both for the original consumer contract unchanged, or pass both
+to add a page-size select beside the range line.
 
 Every class below (`join`, `join-item`, `btn`, `btn-sm`, `btn-active`, `select`, `select-sm`) is
 in cairn's admin CSS safelist or already compiles from cairn's own admin usage; the wrapper

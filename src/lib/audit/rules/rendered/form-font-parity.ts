@@ -20,14 +20,13 @@
 // input and its two type-to-confirm inputs, and MarkdownEditor's no-JS fallback textarea, all
 // declare their own monospace face this way and are mismatches by construction, not by omission.
 //
-// EXEMPTION NET CLOSED, THE THREE DOCKET-NAMED SHAPES ONLY (conformance pass, 2026-09-01, closing
-// the docket entry filed out of the any-site audit, rank 6): the net used to match only a bare
-// `font-mono` class or the Tailwind v3 arbitrary-value form `font-[family-name:...]`, which
-// false-positived on three shapes the docket named explicitly: a variant-prefixed utility
-// (`md:font-mono`, `dark:font-mono`), the `font-serif`/`font-sans` families (the docket's own text
-// names both), and Tailwind 4's `font-(family-name:--x)` shorthand. `hasExplicitFace` now strips a
-// leading run of bare word-character variant prefixes (`md:`, `dark:md:`) before testing the base
-// utility, so all three named shapes close.
+// EXEMPTION NET CLOSED, THREE SHAPES: the net used to match only a bare `font-mono` class or the
+// Tailwind v3 arbitrary-value form `font-[family-name:...]`, which false-positived on three
+// shapes an any-site audit surfaced: a variant-prefixed utility (`md:font-mono`,
+// `dark:font-mono`), the `font-serif`/`font-sans` families, and Tailwind 4's
+// `font-(family-name:--x)` shorthand. `hasExplicitFace` now strips a leading run of bare
+// word-character variant prefixes (`md:`, `dark:md:`) before testing the base utility, so all
+// three named shapes close.
 //
 // STILL OPEN, not docket-named, found while closing the net above: a bracketed arbitrary variant
 // (`[&:hover]:font-mono`, `has-[:checked]:font-mono`) is not a bare word-character run, so the

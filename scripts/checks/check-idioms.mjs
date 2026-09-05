@@ -30,7 +30,7 @@
 //      (`docs/internal/engine-rulings.md`), not a pass citation, and Cloudflare's `R2` binding and
 //      the `C0`/DEL control-character pair are exempted because they are not round markers at all.
 //   6. A consumer-site hostname is banned in src/lib, matched BY SHAPE (a bare
-//      `label.label.tld`-shaped literal over a short list of real TLDs), never by enumerating
+//      `label.tld`-shaped literal over a short list of real TLDs), never by enumerating
 //      the private hostnames a consumer's own site carries: this file is public, and printing a
 //      customer's domain in a public gate would be the exact disclosure the rule exists to
 //      prevent. `HOSTNAME_ALLOWED_HOSTS` names the public standards bodies and vendor APIs cairn's
@@ -50,10 +50,11 @@
 // both, which today is a plain-text scan, not an AST-aware linter. Rules 4-6 scan each file's
 // RAW TEXT rather than an extracted comment stream: a real comment-only extractor would need a
 // second parser per extension (svelte/compiler for `.svelte`, a TS tokenizer for `.ts`) for a
-// three-rule register that, in practice, only ever fires inside a comment or a doc-facing error
-// string (never inside a real runtime hostname or URL literal, which is why the false-positive
-// surface measured against the real tree is the fixed, small allowlist above rather than every
-// asset path in the codebase).
+// three-rule register whose real false-positive class is a dotted identifier or property access
+// whose suffix collides with a register pattern (`state.app`, `import.meta.dev`, `node.io`), not
+// a runtime hostname literal; the allowance sets below (HOSTNAME_ALLOWED_HOSTS and
+// DOTTED_IDENTIFIER_ALLOWANCES) name every such collision the real tree turns up, rather than
+// exempting every dotted identifier by shape.
 //
 // Self-exclusion: this file lives under scripts/checks and is itself in scope for rules 2 and 3,
 // so its own `process.exit` pattern is assembled from two literals (PROCESS_EXIT_PATTERN below)
@@ -269,8 +270,10 @@ export function findProcessReferenceLines(source) {
   return hits;
 }
 
-// A bare `label.label.tld`-shaped literal over a short, code-safe list of real TLDs (never a
-// property-access suffix like `.js`, `.page`, or `.info`, none of which appear here).
+// A bare `label.tld`-shaped literal over a short list of real TLDs. The TLD list also collides
+// with plain dotted identifiers and property accesses (`state.app`, `import.meta.dev`,
+// `node.io`), which is why a match still has to clear one of the two allowance sets below rather
+// than being treated as a hostname on shape alone.
 const HOSTNAME_SHAPE_PATTERN = /\b[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.(?:com|org|net|io|dev|app|life|ski|club)\b/g;
 
 // Public standards bodies and vendor APIs cairn's own code and docs legitimately name. Never a
@@ -283,7 +286,6 @@ const HOSTNAME_ALLOWED_HOSTS = new Set([
   'purl.org',
   'commoncrawl.org',
   'github.com',
-  'github.app',
   'workers.dev',
   'cloudflare.com',
   'anthropic.com',
@@ -297,9 +299,15 @@ const HOSTNAME_ALLOWED_HOSTS = new Set([
   'facebook.com',
 ]);
 
+// Not hostnames: dotted identifiers or ids that happen to collide with the HOSTNAME_SHAPE_PATTERN
+// TLD list. `github.app` is the doctor check id / diagnostic condition id declared at
+// src/lib/diagnostics/conditions.ts and src/lib/doctor/checks-github.ts (`id: 'github.app'`), not
+// a URL cairn's code or docs ever dereference.
+const DOTTED_IDENTIFIER_ALLOWANCES = new Set(['github.app']);
+
 /**
- * Every 1-based line number in `source` naming a hostname shape absent from
- * {@link HOSTNAME_ALLOWED_HOSTS} (rule 6).
+ * Every 1-based line number in `source` naming a hostname shape absent from both
+ * {@link HOSTNAME_ALLOWED_HOSTS} and {@link DOTTED_IDENTIFIER_ALLOWANCES} (rule 6).
  * @param {string} source
  * @returns {number[]}
  */
@@ -310,7 +318,8 @@ export function findConsumerHostnameLines(source) {
     HOSTNAME_SHAPE_PATTERN.lastIndex = 0;
     let m;
     while ((m = HOSTNAME_SHAPE_PATTERN.exec(line))) {
-      if (!HOSTNAME_ALLOWED_HOSTS.has(m[0].toLowerCase())) {
+      const shape = m[0].toLowerCase();
+      if (!HOSTNAME_ALLOWED_HOSTS.has(shape) && !DOTTED_IDENTIFIER_ALLOWANCES.has(shape)) {
         hits.push(i + 1);
         break;
       }

@@ -8,8 +8,9 @@
 // a one-off fix.
 //
 // The blessed set is curated, not exhaustive: it carries only the families a consumer site's
-// admin-toolkit design survey ("Assembly doctrine: daisyUI-first") names as needed for a general-purpose admin toolkit built on cairn's admin
-// CSS, so a site-authored screen can reach for the vocabulary before cairn's own components adopt it.
+// admin-toolkit design survey ("Assembly doctrine: daisyUI-first") names as needed for a
+// general-purpose admin toolkit built on cairn's admin CSS, so a site-authored screen can reach
+// for the vocabulary before cairn's own components adopt it.
 // It is never "add all of daisyUI"; extending it is a deliberate, documented act, the same as any
 // other change to the admin's compiled surface.
 

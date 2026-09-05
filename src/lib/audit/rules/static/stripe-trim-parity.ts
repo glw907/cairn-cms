@@ -8,11 +8,12 @@
 //
 // The engine ships no instance of this condition itself: the packaged sheet has no first/last-child
 // trim, and `ExpandableRow.svelte`'s own zebra handling is a sticky-cell mechanism, a different
-// interaction. The grounding is ASC's measured evidence, the same DaisyUI-plus-UA-default shape the
-// `container-inset-asymmetry` keep already stands as precedent for. `DEFAULT_STATIC_SCOPE` reaches
-// `src/lib/components`, a consumer's own generic component directory, and the interaction is plain
-// CSS with no admin-specific vocabulary, so this rule stands on a consumer's public-side row
-// components exactly the same way it would on the admin's own.
+// interaction. The grounding is a consumer site's measured evidence, the same
+// DaisyUI-plus-UA-default shape the `container-inset-asymmetry` keep already stands as precedent
+// for. `DEFAULT_STATIC_SCOPE` reaches `src/lib/components`, a consumer's own generic component
+// directory, and the interaction is plain CSS with no admin-specific vocabulary, so this rule
+// applies to a consumer's public-side row components exactly the same way it would on the
+// admin's own.
 import { selectorClassNames, splitSelectorList } from '../../sheet.js';
 import { cssRulePosition, cssScopeRules, normalizeSelector, selectorsFor } from './css-scope.js';
 import type { CssScopeRule } from './css-scope.js';

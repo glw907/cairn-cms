@@ -3,8 +3,8 @@
 The admin toolkit's one surface allowed a semantic status color, graduated from a consumer site's
 admin toolkit and re-expressed for its second generation (the 2026-08-24 owner probe, Geoff's own
 ratification: docs/internal/probes/2026-08-26-chip-registers-v2). The first generation split a
-`tone` prop
-(the color signal, carried by a small `status` dot) from a `bounded`/`quiet` register (the shape).
+`tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet` register
+(the shape).
 The probe measured the 6px dot illegible toolkit-wide across three consumer screens and ratified
 fusing tone INTO the register instead: `register` alone now carries both shape and color, `tone`
 retires with the dot, and the whole chip vocabulary is three registers, no more.

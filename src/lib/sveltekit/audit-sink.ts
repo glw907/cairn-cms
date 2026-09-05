@@ -1,5 +1,5 @@
 // cairn-cms: the packaged implementation of the `AdminActionAuditSink` seam (seam 5 of the
-// 2026-08-01 ASC engine-seams design). `adminAction` and `createSectionAction` already call
+// 2026-08-01 engine-seams design). `adminAction` and `createSectionAction` already call
 // `event.locals.cairnAuditSink` for every mutating action and every authorization refusal; this is the
 // first sink the engine ships, backed by the `audit_log` table `migrations/0002_audit.sql` adds.
 // Opt-in: a site applies the migration and wires this factory only if it wants the trail

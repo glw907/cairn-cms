@@ -1,10 +1,9 @@
 <!--
 @component
-The admin toolkit's centered first-run empty state (ruling 2 of the 2026-07-20 admin-toolkit
-organization pass's adoption map), graduated from the recipe the engine's own admin already
-repeats three times (`ConceptList`, `CairnMediaLibrary`, `WelcomeView`): a centered fill on the
-content area, the cairn mark (or a caller's own icon), a heading, muted copy, and an optional
-action.
+The admin toolkit's centered first-run empty state, graduated from the recipe the engine's own
+admin already repeats three times (`ConceptList`, `CairnMediaLibrary`, `WelcomeView`): a centered
+fill on the content area, the cairn mark (or a caller's own icon), a heading, muted copy, and an
+optional action.
 
 This is the whole-concept-empty state only (a fresh "no posts yet" screen), never the
 filtered-to-zero state (a search or filter narrowed a non-empty list to nothing): that recipe

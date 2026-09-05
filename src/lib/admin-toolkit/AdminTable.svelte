@@ -1,9 +1,9 @@
 <!--
 @component
 The admin toolkit's table shell, graduated from a consumer site's admin toolkit. General
-contract: named density tiers (`table-xs`/
-`table-sm`), an optional zebra stripe, and an empty-state slot, so the table shell owns the
-first-run/filtered-to-zero recipe rather than each screen re-deriving its own.
+contract: named density tiers (`table-xs`/`table-sm`), an optional zebra stripe, and an
+empty-state slot, so the table shell owns the first-run/filtered-to-zero recipe rather than each
+screen re-deriving its own.
 
 Assembles from daisyUI 5's own `table` family, every class already compiled into cairn's packaged
 `cairn-admin.css`: `table`, `table-xs`, `table-sm`, `table-zebra`. The header and body are

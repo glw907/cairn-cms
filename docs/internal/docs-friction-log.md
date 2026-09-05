@@ -22,7 +22,11 @@ clearings.
 
 ## Live findings
 
-None open. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
+- `contributor` (2026-09-04, the cairn-case round-2 review): `what-cairn-is-and-is-not.md:48` says
+  "all 23 registered rules"; `docs/reference/cairn-audit.md` and the tree count 28. The charter
+  carries a stale number; refresh the sentence or drop the count.
+
+None else open. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
 section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified
 shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
 `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS`

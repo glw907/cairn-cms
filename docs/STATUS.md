@@ -19,6 +19,30 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
+**INTERNALS-C: ALL 13 TASKS ACCEPTED (2026-09-05), pass-end ritual in progress** on
+`internals-c` (28 commits over `main`): Task 7 closed at `35282ce0`, Task 10 at `217c39b5`.
+Ritual state: code-simplifier landed (`6462b2fc`, 29 commits); the full named gate list
+with the from-scratch showcase install and e2e, and the Svelte, security, and Workers reviewers
+are running (2026-09-05); then the docs dimension (CHANGELOG, migration notes, ROADMAP, HISTORY, the plan's
+post-mortem, STATUS), push, PR, merge on green CI (authorized). Merge note: `routed-inputs.md`
+under the chassis-inputs record was copied whole onto the branch and will conflict as both-added;
+take the branch version (main's content plus section 10) (3b after an escalation the conductor ruled: the
+process-reference rule widened to a curated shape list, consumer names purged by hand with
+no rule enumerating them; final commit `5248fed8`) (3a after two fix rounds, the second decided by the
+conductor: five exact comment rewrites, `0ad68a0d`; rulings recorded in the 3b dispatch: bare
+functional-spec citations and `R4` ledger vocabulary stay) (chain R complete at `634fdf16`, run `wf_b02e967c-515`, 0.56M; both sweeps
+annotate survivors as `// idioms-allow: as-never  <reason>` with two spaces, so 6c's rule
+matches the prefix, not the separator) (Task 8 after an escalation decided by the conductor, complete the
+`cairn.config.ts` location migration on the scaffold's `$theme/cairn.config.js` spelling,
+plus two fix rounds; Task 5's gate re-proven green on an idle machine). Chains Q and T are
+MERGED into `internals-c` (`78af949d`, `724296c2`). Chain R is MERGED into `internals-c` (`02a2fda7`).
+Then chassis-A per the queued entry below; pass-end ritual; push, PR, merge on green
+CI (authorized). Spend: 1.57M for phase 1 plus about 0.6M of fix and review dispatches, of
+the 6.5M ceiling. Lesson: three concurrent full gates on this 15 GB / 8-core machine cause
+load-induced timeouts; two is the ceiling. If a cold session finds this line: inspect the
+branches and both run journals before re-dispatching; accepted commits merge, unfinished
+tasks re-run. Never let two writers share one worktree.
+
 **Execute internals-C** (audit-remediation slice 7, coherence). The plan is
 `docs/superpowers/plans/2026-09-03-internals-c-pass.md`: 13 tasks, ceiling 6.5M, checkpoints
 4/8/12, workflow mode with explicit per-task dependencies, worktree
@@ -40,6 +64,22 @@ One execution rule from internals-B's close, binding on every pass: **never let 
 writers share one worktree.** Two of three parallel pass-end fixers ran `git stash` in the
 shared `internals-b` worktree and transiently clobbered each other. Give each parallel
 writer its own worktree (the chain worktrees did this correctly), or serialize.
+
+**QUEUED AFTER INTERNALS-C (Geoff, 2026-09-04): chassis-A, added to this run.** Spec
+`docs/superpowers/specs/2026-09-04-chassis-passes-design.md` (brainstormed and ratified
+2026-09-04, revised after a three-lens review banked at
+`docs/internal/record/2026-09-04-chassis-inputs/`); plan
+`docs/superpowers/plans/2026-09-04-chassis-a-pass.md` (12 sequential tasks, ceiling 7.5M,
+checkpoints 4/8/12, worktree `.claude/worktrees/chassis-a` off post-C `main`; its own
+three-lens review is folded before dispatch). Geoff's "add this work to the existing
+workflow" is the approval and carries the same authorization: push, PR, merge on green CI;
+after both review rounds folded, Geoff ruled the plan STANDS AS WRITTEN (2026-09-04), so the
+seven conductor calls it records (trio shape, `/render` type-only, header prefix dropped,
+`createSectionAction` unadopted, tests shipping to the scaffold, the Prettier values, the
+archive proof in B) need no re-confirmation at dispatch.
+Sequence: internals-C ritual and merge; reconcile chassis-A's anchors and its Task 10
+conditional against merged main; execute chassis-A the same way. Chassis-B's plan is
+authored after A lands (spec section "Chassis-B").
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -63,6 +103,27 @@ behind and its sheet says to run it as a numbered site pass.
   treats the ROADMAP's older 14-finding list as input, never the ceiling; chassis precedes
   polish because polish's cover-to-cover docs read must see the chassis that teaches the
   surface.
+- **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
+  is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
+  beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), 3 (B-), 4 (B), and
+  5 (B+, SOUND), and 6 (B+) are folded; the exit criterion (B+) is met. FROZEN at revision 12
+  (`dcb11bd3`, 2026-09-05) after two fresh-context verification reads; 354 notes, apparatus
+  clean. The measured build is complete at three rounds (`experiment-screen`, never merging;
+  record at `16-measured-build/experiment-measurement.md`, `b0423fac`). The first-person
+  front-door derivation is written to `25-front-door-proposal.md`, UNCOMMITTED and untracked, for
+  Geoff's read: a why-cairn.md replacement (1,619 words, register grade B+ after three folds; a cut
+  list to ~1,100 sits in its Section C.5) and the README/front-door one-sentence and one-paragraph
+  forms. The concept figure's labels were re-derived from the frozen case (four labels, the Email
+  Sending boundary added) and the review page republished. Overnight
+  decisions (Geoff, 2026-09-05, defaults accepted): the concept figure is built as an
+  uncommitted prototype in the one-system-with-its-boundary form on the existing review page;
+  the front-door prose is drafted in first person in the why-cairn.md voice as an uncommitted
+  proposal (a new why-cairn.md and the front-door lines), never touching the published pages.
+  Both wait for Geoff's morning read. The
+  two figures (the concept figure and the banded ownership map) are built with cosmetic fixes
+  applied and uncommitted under `docs/extend/assets/` with source `docs/internal/site-figures.svg`,
+  emitter `scripts/figures/`, and an uncommitted `check:figures` gate; the review page is
+  republished (artifact bfe5eef9). The concept figure's labels re-derive from the frozen case.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

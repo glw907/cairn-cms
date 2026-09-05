@@ -260,7 +260,7 @@ onboarding is the only discriminator.
 Onboarding is `wrangler email sending enable <domain>` with the zone's apex name; arbitrary
 recipients need Workers Paid. It writes DNS records including an apex DMARC at `p=reject`, and
 deleting the subdomain leaves that record behind. Full detail, measured propagation, and every
-captured body: `docs/internal/2026-08-11-t4b-email-spike.md`.
+captured body: `docs/internal/record/2026-08-11-t4b-email-spike.md`.
 
 ## Pointing a consumer at unreleased engine work
 

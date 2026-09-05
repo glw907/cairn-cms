@@ -57,8 +57,8 @@ function makeEvent(opts: {
 
 /** Narrow the shell payload to its authed member, failing the test loudly otherwise, and await
  *  the streamed pendingEntries probe so it settles before the test returns. */
-async function authedShell(routes: ReturnType<typeof createContentRoutes>, event: unknown) {
-  const { shell } = await routes.shellLoad(event as never);
+async function authedShell(routes: ReturnType<typeof createContentRoutes>, event: ReturnType<typeof makeEvent>) {
+  const { shell } = await routes.shellLoad(event);
   if (shell.public) throw new Error('expected authed shell');
   await shell.pendingEntries;
   return shell;
@@ -148,7 +148,7 @@ describe('listLoad', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.conceptId).toBe('posts');
     expect(data.dated).toBe(true);
     // Newest id first, the same order the old crawl produced.
@@ -172,7 +172,7 @@ describe('listLoad', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     const indexed = data.entries.find((e) => e.id === '2026-05-hello');
     const bare = data.entries.find((e) => e.id === '2026-04-older');
     expect(indexed?.status).toBe('published');
@@ -200,7 +200,7 @@ describe('listLoad', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     const edited = data.entries.find((e) => e.id === '2026-05-hello');
     const fresh = data.entries.find((e) => e.id === '2026-06-fresh');
     expect(edited?.status).toBe('edited');
@@ -213,7 +213,7 @@ describe('listLoad', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([]);
     expect(data.error).toBeNull();
     expect(gh.calls.some((c) => c.method === 'GET' && c.url.includes('/git/trees/'))).toBe(false);
@@ -222,7 +222,7 @@ describe('listLoad', () => {
   it('degrades to an inline error when the listing fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('boom', { status: 500 })));
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([]);
     expect(data.error).toMatch(/could not load/i);
   });
@@ -231,7 +231,7 @@ describe('listLoad', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: 'not json' } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([]);
     expect(data.error).toMatch(/could not load/i);
   });
@@ -239,7 +239,7 @@ describe('listLoad', () => {
   it('degrades to its load error when the token mint fails', async () => {
     const routes = createContentRoutes(runtime());
     const failingBackend = makeGithubBackend(REPO, async () => { throw new Error('no key'); });
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '', failingBackend) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '', failingBackend));
     expect(data.entries).toEqual([]);
     // The token mint is lazy inside the first read now, so a token failure lands in the one
     // could-not-load degrade rather than the old separate auth tier.
@@ -250,7 +250,7 @@ describe('listLoad', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=nothing_to_publish') as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=nothing_to_publish'));
     expect(data.formError).toBe('Nothing to publish. Every entry is already live.');
   });
 
@@ -258,7 +258,7 @@ describe('listLoad', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug') as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug'));
     expect(data.formError).toBeNull();
   });
 
@@ -266,9 +266,9 @@ describe('listLoad', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const flashed = await routes.listLoad(listEvent({ concept: 'posts' }, '?publishedAll=3') as never);
+    const flashed = await routes.listLoad(listEvent({ concept: 'posts' }, '?publishedAll=3'));
     expect(flashed.publishedAll).toBe(3);
-    const plain = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const plain = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(plain.publishedAll).toBeNull();
   });
 });
@@ -288,7 +288,7 @@ describe('listLoad with pending branches', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     // The edited row carries the branch's title and draft flag, not the manifest's.
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited', summary: 'x' },
@@ -308,7 +308,7 @@ describe('listLoad with pending branches', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     // Ordering parity with the old crawl: new rows append after the published set even when
     // their ids would sort first.
     expect(data.entries).toEqual([
@@ -324,7 +324,7 @@ describe('listLoad with pending branches', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published', summary: null },
     ]);
@@ -338,7 +338,7 @@ describe('listLoad with pending branches', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-06-ghost', title: '2026-06-ghost', date: null, draft: false, status: 'new', summary: null },
     ]);
@@ -355,7 +355,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published', summary: 'x' },
       { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
@@ -376,7 +376,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited', summary: 'x' },
       { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
@@ -392,7 +392,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
       { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new', summary: 'x' },
@@ -411,7 +411,7 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
     const { status, location } = await expectRedirect(() =>
-      routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' }) as never),
+      routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' })),
     );
     expect(status).toBe(303);
     expect(location).toBe('/admin/posts/2026-05-01-hello-world?new=1&date=2026-05-01&title=Hello%20World');
@@ -420,7 +420,7 @@ describe('createAction', () => {
   it('bounces back with an error for an invalid slug', async () => {
     const routes = createContentRoutes(runtime());
     const result = (await routes.createAction(
-      createEvent({ title: 'X', slug: 'Bad Slug!' }) as never,
+      createEvent({ title: 'X', slug: 'Bad Slug!' }),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toBeTruthy();
@@ -430,7 +430,7 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('exists', { status: 200 })));
     const routes = createContentRoutes(runtime());
     const result = (await routes.createAction(
-      createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }) as never,
+      createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/already exists/i);
@@ -470,7 +470,7 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
     const { status, location } = await expectRedirect(() =>
-      routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' }) as never),
+      routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' })),
     );
     expect(status).toBe(303);
     expect(location).toBe('/admin/posts/2026-06-15-snowball?new=1&date=2026-06-15&title=Snowball');
@@ -479,13 +479,13 @@ describe('createAction', () => {
   it('truncates the dated id to the concept granularity (month)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(monthRuntime());
-    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never));
+    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' })));
     expect(location).toBe('/admin/posts/2026-05-welcome?new=1&date=2026-05-20');
   });
 
   it('bounces when a dated concept gets no date', async () => {
     const routes = createContentRoutes(runtime());
-    const result = (await routes.createAction(createEvent({ slug: 'welcome' }) as never)) as unknown as {
+    const result = (await routes.createAction(createEvent({ slug: 'welcome' }))) as unknown as {
       status: number;
       data: { error: string };
     };
@@ -499,7 +499,7 @@ describe('createAction', () => {
   it('bounces when a dated slug carries its own date-like prefix', async () => {
     const routes = createContentRoutes(runtime());
     const result = (await routes.createAction(
-      createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }) as never,
+      createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toBeTruthy();
@@ -508,7 +508,7 @@ describe('createAction', () => {
   it('uses the slug verbatim as the id for a non-dated concept', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(pagesRuntime());
-    const { location } = await expectRedirect(() => routes.createAction(pagesEvent({ slug: 'about' }) as never));
+    const { location } = await expectRedirect(() => routes.createAction(pagesEvent({ slug: 'about' })));
     expect(location).toBe('/admin/pages/about?new=1');
   });
 
@@ -516,7 +516,7 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
     const { location } = await expectRedirect(() =>
-      routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never),
+      routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' })),
     );
     expect(location).toBe('/admin/posts/2026-05-20-welcome?new=1&date=2026-05-20');
   });
@@ -525,7 +525,7 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
     const { location } = await expectRedirect(() =>
-      routes.createAction(createEvent({ title: '   ', slug: 'welcome', date: '2026-05-20' }) as never),
+      routes.createAction(createEvent({ title: '   ', slug: 'welcome', date: '2026-05-20' })),
     );
     expect(location).toBe('/admin/posts/2026-05-20-welcome?new=1&date=2026-05-20');
   });
@@ -534,7 +534,7 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
     const { location } = await expectRedirect(() =>
-      routes.createAction(createEvent({ title: 'Geoff’s Trip', slug: 'trip-report', date: '2026-05-20' }) as never),
+      routes.createAction(createEvent({ title: 'Geoff’s Trip', slug: 'trip-report', date: '2026-05-20' })),
     );
     expect(location).toBe(`/admin/posts/2026-05-20-trip-report?new=1&date=2026-05-20&title=${encodeURIComponent('Geoff’s Trip')}`);
   });
@@ -576,7 +576,7 @@ describe('listDeleteAction', () => {
     commitFetch(manifest);
     const routes = createContentRoutes(runtime());
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
-    const { status, location } = await expectRedirect(() => routes.listDeleteAction(event as never));
+    const { status, location } = await expectRedirect(() => routes.listDeleteAction(event));
     expect(status).toBe(303);
     expect(location).toBe('/admin/posts');
   });
@@ -592,7 +592,7 @@ describe('listDeleteAction', () => {
     const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime());
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
-    const result = (await routes.listDeleteAction(event as never)) as unknown as {
+    const result = (await routes.listDeleteAction(event)) as unknown as {
       status: number; data: { error: string; inboundLinks: unknown[]; id: string };
     };
     expect(result.status).toBe(409);
@@ -608,6 +608,6 @@ describe('listDeleteAction', () => {
   it('rejects an invalid id from the form with a 400', async () => {
     const routes = createContentRoutes(runtime());
     const event = deleteFormEvent({ id: '../escape' });
-    await expect(routes.listDeleteAction(event as never)).rejects.toMatchObject({ status: 400 });
+    await expect(routes.listDeleteAction(event)).rejects.toMatchObject({ status: 400 });
   });
 });

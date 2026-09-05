@@ -72,7 +72,7 @@ describe('requireDb', () => {
 describe('requireBucket', () => {
   it('returns the binding when it carries a callable get', () => {
     const bucket = { get() {} };
-    expect(requireBucket({ MEDIA_BUCKET: bucket }, 'MEDIA_BUCKET')).toBe(bucket as never);
+    expect(requireBucket({ MEDIA_BUCKET: bucket }, 'MEDIA_BUCKET')).toBe(bucket);
   });
 
   it('throws config.bindings-missing when the binding is absent', () => {

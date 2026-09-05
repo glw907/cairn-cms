@@ -73,7 +73,7 @@ describe('settingsSaveAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     const conventions = JSON.stringify({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
-    const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent(conventions) as never));
+    const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent(conventions)));
     expect(location).toBe('/admin/settings?saved=1');
     // The commit names the session editor as author.
     const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
@@ -101,7 +101,7 @@ describe('settingsSaveAction', () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime({ tidy: { enabled: false } }));
-    await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}'))).rejects.toMatchObject({ status: 404 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -111,7 +111,7 @@ describe('settingsSaveAction', () => {
     const routes = createContentRoutes(runtime());
     // oxfordComma carries a value outside its allowed set.
     const result = (await routes.settingsSaveAction(
-      saveEvent('{"oxfordComma":"sometimes"}') as never,
+      saveEvent('{"oxfordComma":"sometimes"}'),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toBeTruthy();
@@ -135,7 +135,7 @@ describe('settingsSaveAction', () => {
     }));
     const routes = createContentRoutes(runtime());
     const result = (await routes.settingsSaveAction(
-      saveEvent('{"fixes":true}') as never,
+      saveEvent('{"fixes":true}'),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/changed since/i);
@@ -144,7 +144,7 @@ describe('settingsSaveAction', () => {
   it('404s when the config file is gone at save time', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
-    await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('refuses in place with generic copy on a malformed committed config, keeping the parser\'s own message in the log only', async () => {
@@ -159,7 +159,7 @@ describe('settingsSaveAction', () => {
     const routes = createContentRoutes(runtime());
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const result = (await routes.settingsSaveAction(
-      saveEvent('{"fixes":true}') as never,
+      saveEvent('{"fixes":true}'),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(500);
     expect(result.data.error).not.toMatch(/weird/);
@@ -183,7 +183,7 @@ describe('settingsLoad', () => {
 
   it('opens the editor tier when tidy is enabled, the key is present, and the probe confirms it valid', async () => {
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('valid') } });
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(data.enabled).toBe(true);
     expect(data.tidyEnabled).toBe(true);
     expect(data.keyConfigured).toBe(true);
@@ -196,13 +196,13 @@ describe('settingsLoad', () => {
     const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-sonnet-4-6' } }), {
       tidy: { client: fakeTidyClient('valid') },
     });
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(data.modelLabel).toBe('Claude Sonnet 4.6');
   });
 
   it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {
     const routes = createContentRoutes(runtime());
-    const data = await routes.settingsLoad(loadEvent({}) as never);
+    const data = await routes.settingsLoad(loadEvent({}));
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(true);
     expect(data.keyConfigured).toBe(false);
@@ -211,7 +211,7 @@ describe('settingsLoad', () => {
 
   it('closes the gate when the probe confirms the key invalid, though it stays "configured"', async () => {
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('invalid') } });
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-dead' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-dead' }));
     expect(data.enabled).toBe(false);
     expect(data.keyConfigured).toBe(true);
     expect(data.keyStatus).toBe('invalid');
@@ -219,20 +219,20 @@ describe('settingsLoad', () => {
 
   it('fails soft to "unknown" and keeps the gate open when the probe cannot verify (no models surface)', async () => {
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('absent') } });
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(data.enabled).toBe(true);
     expect(data.keyStatus).toBe('unknown');
   });
 
   it('never returns the API key, only a presence flag and the probe verdict', async () => {
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('valid') } });
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-secret-value' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-secret-value' }));
     expect(JSON.stringify(data)).not.toContain('sk-secret-value');
   });
 
   it('keeps the gate closed when tidy is off, and never runs the probe', async () => {
     const routes = createContentRoutes(runtime({ tidy: { enabled: false } }));
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(false);
   });
@@ -243,7 +243,7 @@ describe('settingsLoad', () => {
       contentEvent({
         url: 'https://t.example/admin/settings?error=You+have+been+signed+out',
         env: { ANTHROPIC_API_KEY: 'sk-test' },
-      }) as never,
+      }),
     );
     expect(data).not.toHaveProperty('error');
   });
@@ -284,7 +284,7 @@ describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
   it('bounds the probe with the same deadline as tidy calls, resolving unknown on a timeout', async () => {
     const hanging = hangingTidyClient();
     const routes = createContentRoutes(runtime(), { tidy: { client: hanging.factory, timeoutMs: 20 } });
-    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(hanging.sawSignal()).toBeInstanceOf(AbortSignal);
     expect(hanging.sawSignal()?.aborted).toBe(true);
     expect(data.keyStatus).toBe('unknown');
@@ -301,11 +301,11 @@ describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
       models: { list },
     });
     const routes = createContentRoutes(runtime(), { tidy: { client } });
-    const first = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const first = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(first.keyStatus).toBe('valid');
     expect(list).toHaveBeenCalledTimes(1);
 
-    const second = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const second = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(second.keyStatus).toBe('valid');
     expect(list).toHaveBeenCalledTimes(1);
   });
@@ -321,11 +321,11 @@ describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
         models: { list },
       });
       const routes = createContentRoutes(runtime(), { tidy: { client } });
-      await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+      await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
       expect(list).toHaveBeenCalledTimes(1);
 
       vi.advanceTimersByTime(11 * 60 * 1000); // past the 10-minute TTL
-      await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+      await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
       expect(list).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();

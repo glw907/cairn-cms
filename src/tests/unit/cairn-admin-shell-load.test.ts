@@ -3,6 +3,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
+import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -38,17 +39,17 @@ function eventFor(
 ) {
   const headers: Record<string, string> = {};
   return {
-    url: new URL(`https://t.example${pathname}`),
-    request: new Request(`https://t.example${pathname}`),
-    locals: {
-      cairnEditor:
-        opts.editor === undefined
-          ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
-          : opts.editor,
-      cairnBackend: backend,
-    },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    ...testEvent({
+      url: `https://t.example${pathname}`,
+      locals: {
+        cairnEditor:
+          opts.editor === undefined
+            ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
+            : opts.editor,
+        cairnBackend: backend,
+      },
+      env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
+    }),
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),
     _headers: headers,
   };
@@ -60,7 +61,7 @@ describe('createCairnAdmin shellLoad', () => {
   it('returns the lean shell payload for an authed admin path, with pending streamed', async () => {
     new GithubDouble({ main: {} }).install();
     const { shellLoad } = createCairnAdmin(runtime(), deps);
-    const { shell } = await shellLoad(eventFor('/admin/posts') as never);
+    const { shell } = await shellLoad(eventFor('/admin/posts'));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.user.email).toBe('e@t');
     expect(shell.concepts.map((c) => c.id)).toContain('posts');
@@ -71,7 +72,7 @@ describe('createCairnAdmin shellLoad', () => {
   it('returns a public payload for /admin/login and never calls listBranches', async () => {
     const spy = vi.spyOn(backend, 'listBranches');
     const { shellLoad } = createCairnAdmin(runtime(), deps);
-    const { shell } = await shellLoad(eventFor('/admin/login', { editor: null }) as never);
+    const { shell } = await shellLoad(eventFor('/admin/login', { editor: null }));
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
     expect(shell.siteName).toBe('Test Site');
@@ -88,7 +89,7 @@ describe('createCairnAdmin shellLoad', () => {
     const { shellLoad } = createCairnAdmin(rt, {
       navFilter: (items) => items.filter((item) => item.label !== 'Club'),
     });
-    const { shell } = await shellLoad(eventFor('/admin/posts') as never);
+    const { shell } = await shellLoad(eventFor('/admin/posts'));
     if (shell.public) throw new Error('expected authed shell');
     // The declared navLayout renders the flat 'Standalone' entry and the 'Club' section as
     // top-level nodes; the filter drops only the latter.

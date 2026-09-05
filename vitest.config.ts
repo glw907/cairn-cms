@@ -17,6 +17,12 @@ export default defineConfig({
     // enumeration) starves and trips its timeout under the full run while passing in seconds alone.
     // Capping the pool at half the cores keeps the run parallel without the thrash.
     maxWorkers: 4,
+    // vi.restoreAllMocks (widely used in this suite's afterEach hooks) does not restore a
+    // vi.stubGlobal call; only vi.unstubAllGlobals or this flag do. Every project below repeats
+    // it explicitly, since a `projects` entry is its own Vite config and does not inherit this
+    // root `test` block (internals-C, Task 5): without it, a global a test stubs (commonly
+    // `fetch`) can leak into the next test file sharing a worker.
+    unstubGlobals: true,
     projects: [
       {
         resolve: {
@@ -30,6 +36,7 @@ export default defineConfig({
         },
         test: {
           name: 'unit',
+          unstubGlobals: true,
           include: [
             'src/tests/unit/**/*.test.ts',
             'src/tests/lab/**/*.test.ts',
@@ -61,6 +68,7 @@ export default defineConfig({
           // parallelism, so each spawn runs alone. Every spec here is excluded from the `unit`
           // project above so they run exactly once.
           name: 'unit-dist-spawn',
+          unstubGlobals: true,
           include: [
             'src/tests/unit/delivery-data-dist-spawn.test.ts',
             'src/tests/unit/packaging-boundary.test.ts',
@@ -93,6 +101,7 @@ export default defineConfig({
         },
         test: {
           name: 'integration',
+          unstubGlobals: true,
           include: ['src/tests/integration/**/*.test.ts'],
           setupFiles: ['./src/tests/integration/_apply-migrations.ts'],
         },
@@ -126,6 +135,7 @@ export default defineConfig({
         },
         test: {
           name: 'component',
+          unstubGlobals: true,
           include: ['src/tests/component/**/*.test.ts'],
           setupFiles: ['./src/tests/component/_setup.ts'],
           // The heaviest component tests mount the full EditPage with the CodeMirror editor, and on a

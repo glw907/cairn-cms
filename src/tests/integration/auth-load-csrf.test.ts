@@ -3,18 +3,12 @@ import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { makeRecordingCookies } from './_auth-harness.js';
 import { csrfCookieName } from '../../lib/auth/crypto.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
+import { testEvent } from '../helpers/test-event.js';
 
 const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'a@b.c' } });
 
 function loadEvent(url: string, cookies: CookieJar, env: Record<string, string> = {}) {
-  return {
-    url: new URL(url),
-    request: new Request(url),
-    cookies,
-    locals: {},
-    platform: { env },
-    setHeaders: () => {},
-  } as never;
+  return testEvent({ url, cookies, env });
 }
 
 describe('auth loads issue a CSRF token', () => {

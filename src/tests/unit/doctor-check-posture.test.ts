@@ -14,7 +14,7 @@ function ctx(over: Partial<DoctorContext> = {}): DoctorContext {
     publicOrigin: ORIGIN,
     fetch: (() => {
       throw new Error('unexpected fetch');
-    }) as never,
+    }),
     readFile: async () => null,
     ...over,
   };
@@ -226,7 +226,7 @@ describe('ai.posture-effective', () => {
           publicOrigin: undefined,
           fetch: (() => {
             throw new Error('unexpected fetch');
-          }) as never,
+          }),
         })
       );
       expect(result.status).toBe('skip');

@@ -5,6 +5,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports, moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/index.js';
+import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import type { EmailSender } from '../../lib/email.js';
 
 const SVELTEKIT_DTS = resolve(fileURLToPath(new URL('../../../dist/sveltekit/index.d.ts', import.meta.url)));
 const MEDIA_DTS = resolve(fileURLToPath(new URL('../../../dist/media/index.d.ts', import.meta.url)));
@@ -80,8 +82,8 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
   it('a text-only site declares Platform.env from CairnPlatformBindings alone, no MEDIA_BUCKET required', () => {
     type SiteEnv = CairnPlatformBindings & { APP_DB: string };
     const env: SiteEnv = {
-      AUTH_DB: {} as never,
-      EMAIL: {} as never,
+      AUTH_DB: {} as unknown as D1Database,
+      EMAIL: {} as unknown as EmailSender,
       PUBLIC_ORIGIN: 'https://example.com',
       GITHUB_APP_PRIVATE_KEY_B64: 'z',
       APP_DB: 'db',
@@ -93,8 +95,8 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     type SiteEnv = CairnPlatformBindings & { APP_DB: string };
     // @ts-expect-error GITHUB_APP_PRIVATE_KEY_B64 is missing from the intersection
     const env: SiteEnv = {
-      AUTH_DB: {} as never,
-      EMAIL: {} as never,
+      AUTH_DB: {} as unknown as D1Database,
+      EMAIL: {} as unknown as EmailSender,
       PUBLIC_ORIGIN: 'https://example.com',
       APP_DB: 'db',
     };
@@ -104,10 +106,10 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
   it('a media-enabled site adds CairnMediaBindings to the intersection', () => {
     type SiteEnv = CairnPlatformBindings & CairnMediaBindings & { APP_DB: string };
     const env: SiteEnv = {
-      AUTH_DB: {} as never,
-      EMAIL: {} as never,
+      AUTH_DB: {} as unknown as D1Database,
+      EMAIL: {} as unknown as EmailSender,
       PUBLIC_ORIGIN: 'https://example.com',
-      MEDIA_BUCKET: {} as never,
+      MEDIA_BUCKET: {} as unknown as R2Bucket,
       GITHUB_APP_PRIVATE_KEY_B64: 'z',
       APP_DB: 'db',
     };

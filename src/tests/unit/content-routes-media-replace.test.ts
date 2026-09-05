@@ -168,7 +168,7 @@ describe('mediaReplacePreview', () => {
     gh.install();
     const routes = createContentRoutesInternal(runtime());
     const result = (await routes.mediaReplacePreviewAction(
-      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }) as never,
+      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }),
     )) as MediaReplacePreviewPlan;
 
     expect(result.affectedCount).toBe(2);
@@ -198,7 +198,7 @@ describe('mediaReplacePreview', () => {
     gh.install();
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplacePreviewAction(
-      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }, { csrf: 'wrong' }) as never,
+      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }, { csrf: 'wrong' }),
     );
     expect(result).toMatchObject({ status: 403 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -219,7 +219,7 @@ describe('mediaReplacePreview', () => {
       cookies: unknown;
     };
     event.cookies = undefined;
-    await expect(routes.mediaReplacePreviewAction(event as never)).rejects.toThrow(/cookie jar/i);
+    await expect(routes.mediaReplacePreviewAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
     expect(commitCount(gh)).toBe(0);
   });
 
@@ -233,7 +233,7 @@ describe('mediaReplacePreview', () => {
     gh.install();
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplacePreviewAction(
-      previewEvent({ oldHash: 'not-a-hash', newHash: NEW_HASH, slug: 'x' }) as never,
+      previewEvent({ oldHash: 'not-a-hash', newHash: NEW_HASH, slug: 'x' }),
     );
     expect(result).toMatchObject({ status: 400 });
   });
@@ -252,7 +252,7 @@ describe('mediaReplacePreview', () => {
       cookies: cookieJar(CSRF),
     });
     const routes = createContentRoutesInternal(runtime());
-    const result = await routes.mediaReplacePreviewAction(event as never);
+    const result = await routes.mediaReplacePreviewAction(event);
     expect(result).toMatchObject({ status: 400 });
   });
 
@@ -277,7 +277,7 @@ describe('mediaReplacePreview', () => {
     }));
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplacePreviewAction(
-      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }) as never,
+      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }),
     );
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -310,7 +310,7 @@ describe('mediaReplaceApply', () => {
     const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaReplaceAction(
-        applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [record] }) as never,
+        applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [record] }),
       ),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?replaced=1' });
 
@@ -334,7 +334,7 @@ describe('mediaReplaceApply', () => {
     const record = mediaEntry(NEW_HASH, 'new-photo');
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplaceAction(
-      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'wrong', media: [record] }) as never,
+      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'wrong', media: [record] }),
     );
     expect(result).toMatchObject({ status: 409 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -352,7 +352,7 @@ describe('mediaReplaceApply', () => {
     gh.install();
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplaceAction(
-      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: '', media: [mediaEntry(NEW_HASH, 'new-photo')] }) as never,
+      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: '', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
     expect(result).toMatchObject({ status: 409 });
     expect(commitCount(gh)).toBe(0);
@@ -371,7 +371,7 @@ describe('mediaReplaceApply', () => {
     gh.install();
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplaceAction(
-      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'wrong', media: [mediaEntry(NEW_HASH, 'new-photo')] }) as never,
+      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'wrong', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
     expect(result).toMatchObject({ status: 409 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -399,7 +399,7 @@ describe('mediaReplaceApply', () => {
     }));
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplaceAction(
-      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }) as never,
+      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -420,7 +420,7 @@ describe('mediaReplaceApply', () => {
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaReplaceAction(
       // OTHER_HASH is not in media.json: the asset is not committed.
-      applyEvent({ oldHash: OTHER_HASH, newHash: NEW_HASH, confirmSlug: 'x', media: [mediaEntry(NEW_HASH, 'new-photo')] }) as never,
+      applyEvent({ oldHash: OTHER_HASH, newHash: NEW_HASH, confirmSlug: 'x', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
     expect(result).toMatchObject({ status: 404 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -434,7 +434,7 @@ describe('mediaReplaceApply', () => {
     const routes = createContentRoutesInternal(runtime());
     // The media field carries a record for a DIFFERENT hash, so no row matches newHash.
     const result = await routes.mediaReplaceAction(
-      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(OTHER_HASH, 'other')] }) as never,
+      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(OTHER_HASH, 'other')] }),
     );
     expect(result).toMatchObject({ status: 400 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -448,7 +448,7 @@ describe('mediaReplaceApply', () => {
     const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaReplaceAction(
-        applyEvent({ oldHash: 'bad', newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }) as never,
+        applyEvent({ oldHash: 'bad', newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
       ),
     ).rejects.toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
@@ -459,7 +459,7 @@ describe('mediaReplaceApply', () => {
     gh.install();
     const routes = createContentRoutesInternal(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }));
     const result = await routes.mediaReplaceAction(
-      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }) as never,
+      applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: MediaReplaceFailure }).data;
@@ -477,7 +477,7 @@ describe('mediaReplaceApply', () => {
 
     // Compute a preview to mirror the real flow (the client previews, then applies).
     await routes.mediaReplacePreviewAction(
-      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }) as never,
+      previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }),
     );
 
     // Now mutate main out of band: entry one's body gains a second reference to the old asset, and a
@@ -490,7 +490,7 @@ describe('mediaReplaceApply', () => {
 
     await expect(
       routes.mediaReplaceAction(
-        applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [record] }) as never,
+        applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [record] }),
       ),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?replaced=1' });
 

@@ -42,11 +42,11 @@ describe('defineRoles validation', () => {
 
   it('throws on a malformed declaration object', () => {
     // A capability string outside the vocabulary.
-    expect(() => defineRoles({ owner: 'owner', bad: 'admin' as never })).toThrow();
+    expect(() => defineRoles({ owner: 'owner', bad: 'admin' as never })).toThrow(); // idioms-allow: as-never  feeds the runtime guard a capability string outside the vocabulary
     // An object missing a valid capability.
-    expect(() => defineRoles({ owner: 'owner', bad: {} as never })).toThrow();
+    expect(() => defineRoles({ owner: 'owner', bad: {} as never })).toThrow(); // idioms-allow: as-never  feeds the runtime guard an object missing a valid capability
     // A non-string, non-object value.
-    expect(() => defineRoles({ owner: 'owner', bad: 3 as never })).toThrow();
+    expect(() => defineRoles({ owner: 'owner', bad: 3 as never })).toThrow(); // idioms-allow: as-never  feeds the runtime guard a non-string, non-object value
   });
 
   it('throws when a home is not an absolute /admin-prefixed path', () => {

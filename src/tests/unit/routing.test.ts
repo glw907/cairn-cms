@@ -23,7 +23,7 @@ describe('resolveRouting', () => {
   // resolveRouting a defined-but-unrecognized string. That must fail loudly, the same way
   // parseSiteConfig's unknown-key check does, rather than silently falling through.
   it('throws on a defined-but-unrecognized routing value, naming the concept and the valid shorthands', () => {
-    expect(() => resolveRouting('feeds' as never, 'posts')).toThrow(
+    expect(() => resolveRouting('feeds' as never, 'posts')).toThrow( // idioms-allow: as-never  feeds the runtime guard a defined-but-unrecognized routing value
       'cairn: concept "posts" routing "feeds" must be one of feed, page, embedded',
     );
   });

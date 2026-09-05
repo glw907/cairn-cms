@@ -62,7 +62,7 @@ async function del(
   id: string,
 ): Promise<{ location?: string; status?: number; data?: { error: string; inboundLinks?: { id: string }[]; inboundKind?: string } }> {
   try {
-    const result = (await routes.deleteAction(deleteEvent(concept, id) as never)) as unknown as {
+    const result = (await routes.deleteAction(deleteEvent(concept, id))) as unknown as {
       status: number;
       data: { error: string; inboundLinks?: { id: string }[]; inboundKind?: string };
     };
@@ -85,7 +85,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
     // Publish the fragment itself, then a post whose body includes it. manifestEntryFromFile's real
     // extractIncludes computes the includes row from this body; nothing here hand-writes the manifest.
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
     await redirectedTo(
       routes.publishAction(
@@ -93,7 +93,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
           title: 'Hi',
           date: '2026-05-01',
           body: 'See.\n\n::include{fragment="welcome"}',
-        }) as never,
+        }),
       ),
     );
     expect(gh.read('main', MANIFEST_PATH)).toContain('"includes"');
@@ -115,7 +115,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await redirectedTo(
-      routes.publishAction(saveEvent('fragments', 'lonely', { title: 'Lonely', body: 'No one needs me.' }) as never),
+      routes.publishAction(saveEvent('fragments', 'lonely', { title: 'Lonely', body: 'No one needs me.' })),
     );
 
     const out = await del(routes, 'fragments', 'lonely');
@@ -145,7 +145,7 @@ describe('saveAction/publishAction: the write-path round trip for includes (Task
 
     // saveAction: the branch commit is real (the entry's own file), and nothing lands on main yet,
     // since save never touches the content manifest (only publish does).
-    await redirectedTo(routes.saveAction(saveEvent('posts', '2026-05-hi', form) as never));
+    await redirectedTo(routes.saveAction(saveEvent('posts', '2026-05-hi', form)));
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain(
       '::include{fragment="welcome"}',
     );
@@ -153,7 +153,7 @@ describe('saveAction/publishAction: the write-path round trip for includes (Task
 
     // publishAction re-holds the same body (publish-what-you-see) and lands the manifest row on
     // main with its includes computed by the engine's own extractIncludes, not a hand-written entry.
-    await redirectedTo(routes.publishAction(saveEvent('posts', '2026-05-hi', form) as never));
+    await redirectedTo(routes.publishAction(saveEvent('posts', '2026-05-hi', form)));
     const manifestRaw = gh.read('main', MANIFEST_PATH);
     expect(manifestRaw).not.toBeNull();
     const manifest = JSON.parse(manifestRaw as string) as { entries: { id: string; includes?: string[] }[] };

@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import type { CairnAdapter } from '../../lib/content/types.js';
+import type { BackendProvider } from '../../lib/github/backend.js';
+import type { CairnAdapter, SenderConfig } from '../../lib/content/types.js';
+import type { Component } from 'svelte';
 
 // A minimal valid adapter the tests extend, with the render subsystem the island check reads.
 function baseRendering(components: ReturnType<typeof defineRegistry>) {
@@ -11,13 +13,17 @@ function baseRendering(components: ReturnType<typeof defineRegistry>) {
   };
 }
 
-const liveStub = (() => null) as never; // a stand-in Svelte component for the registry value
+// A stand-in Svelte component for the registry value; only its identity as a distinct entry
+// matters to assertIslandsConsistent, never its render output.
+const liveStub = (() => null) as unknown as Component;
 
 function adapterWith(rendering: CairnAdapter['rendering']): CairnAdapter {
   return {
     content: {},
-    backend: {} as never,
-    email: {} as never,
+    // assertIslandsConsistent reads only `rendering`; backend/email are structurally required
+    // but never touched by the island check this file exercises.
+    backend: {} as unknown as BackendProvider,
+    email: {} as unknown as SenderConfig,
     rendering,
   };
 }

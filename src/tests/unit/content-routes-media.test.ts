@@ -105,7 +105,7 @@ describe('mediaLibraryLoad assets union', () => {
     });
     gh.install();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     expect(data.error).toBeNull();
     expect(data.assets.map((a) => a.hash)).toEqual([HASH_MAIN]);
     expect(data.assets[0].slug).toBe('on-main');
@@ -124,7 +124,7 @@ describe('mediaLibraryLoad assets union', () => {
     });
     gh.install();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     expect(data.assets.map((a) => a.hash).sort()).toEqual([HASH_MAIN, HASH_BRANCH].sort());
   });
 
@@ -140,7 +140,7 @@ describe('mediaLibraryLoad assets union', () => {
     });
     gh.install();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     const row = data.assets.find((a) => a.hash === HASH_SHARED);
     expect(row?.slug).toBe('main-name');
   });
@@ -151,7 +151,7 @@ describe('mediaLibraryLoad assets union', () => {
     });
     gh.install();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     expect(data.assets.map((a) => a.hash)).toEqual([HASH_ORPHAN]);
     expect(data.usage).toEqual({});
     expect(data.error).toBeNull();
@@ -168,7 +168,7 @@ describe('mediaLibraryLoad usage overlay', () => {
     });
     gh.install();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     expect(data.usage[HASH_MAIN].count).toBe(1);
     expect(data.usage[HASH_MAIN].entries).toHaveLength(1);
     expect(data.usage[HASH_MAIN].entries[0]).toMatchObject({ concept: 'posts', id: '2026-05-hi' });
@@ -189,7 +189,7 @@ describe('mediaLibraryLoad usage overlay', () => {
     });
     gh.install();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     // Two rows (published + branch), but one distinct concept/id, so count is 1.
     expect(data.usage[HASH_MAIN].entries).toHaveLength(2);
     expect(data.usage[HASH_MAIN].count).toBe(1);
@@ -202,7 +202,7 @@ describe('mediaLibraryLoad degrade paths', () => {
     const failingBackend = makeGithubBackend(REPO, () => {
       throw new Error('no key');
     });
-    const data = await routes.mediaLibraryLoad(libraryEvent('', failingBackend) as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('', failingBackend));
     // The token mint is lazy inside the first read now, so a token failure lands in the one
     // could-not-load-media degrade rather than the old separate auth tier.
     expect(data).toEqual({ assets: [], usage: {}, error: 'Could not load media.', flash: null });
@@ -224,63 +224,63 @@ describe('mediaLibraryLoad flash flags', () => {
   it('reads the deleted flash from ?deleted=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?deleted=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?deleted=1'));
     expect(data.flash).toBe('deleted');
   });
 
   it('reads the updated flash from ?updated=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?updated=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?updated=1'));
     expect(data.flash).toBe('updated');
   });
 
   it('reads the replaced flash from ?replaced=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?replaced=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?replaced=1'));
     expect(data.flash).toBe('replaced');
   });
 
   it('reads the altPropagated flash from ?altPropagated=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?altPropagated=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?altPropagated=1'));
     expect(data.flash).toBe('altPropagated');
   });
 
   it('reads the bulkDeleted flash from ?bulkDeleted=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?bulkDeleted=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?bulkDeleted=1'));
     expect(data.flash).toBe('bulkDeleted');
   });
 
   it('reads the orphansPurged flash from ?orphansPurged=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?orphansPurged=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?orphansPurged=1'));
     expect(data.flash).toBe('orphansPurged');
   });
 
   it('reads the uploaded flash from ?uploaded=1', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?uploaded=1') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?uploaded=1'));
     expect(data.flash).toBe('uploaded');
   });
 
   it('returns null flash when the URL carries no flag', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent());
     expect(data.flash).toBeNull();
   });
 
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
     gh();
     const routes = createContentRoutesInternal(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?error=You+have+been+signed+out') as never);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?error=You+have+been+signed+out'));
     expect(data).not.toHaveProperty('flashError');
   });
 });
@@ -362,7 +362,7 @@ describe('mediaDeleteAction in-use refusal', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     // The client passes no confirmSlug (the stale "no references" case); the gate still refuses.
-    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN }, bucket, timeline) as never);
+    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN }, bucket, timeline));
     expect(result).toMatchObject({ status: 409 });
     const data = (result as { data: { error: string; foundIn: number; usage: unknown[]; hash: string } }).data;
     expect(data.foundIn).toBe(1);
@@ -391,7 +391,7 @@ describe('mediaDeleteAction in-use refusal', () => {
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
-    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN }, bucket, timeline) as never);
+    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN }, bucket, timeline));
     const data = (result as { data: { usage: { origin: { kind: string } }[] } }).data;
     expect(data.usage).toHaveLength(2);
     expect(data.usage[0].origin.kind).toBe('published');
@@ -411,7 +411,7 @@ describe('mediaDeleteAction in-use refusal', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     await expect(
-      routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN, confirmSlug: 'in-use' }, bucket, timeline) as never),
+      routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN, confirmSlug: 'in-use' }, bucket, timeline)),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?deleted=1' });
     // The forced delete committed the removal and deleted the object.
     expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_MAIN]).toBeUndefined();
@@ -446,7 +446,7 @@ describe('mediaDeleteAction strict-usage gate', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaDeleteAction(event as never);
+    const result = await routes.mediaDeleteAction(event);
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: { error: string } }).data;
     expect(data.error).toMatch(/could not verify/i);
@@ -472,7 +472,7 @@ describe('mediaDeleteAction confirm guards', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     // The empty-default confirmSlug ('') would match an empty row.slug under a naive compare.
-    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN, confirmSlug: '' }, bucket, timeline) as never);
+    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN, confirmSlug: '' }, bucket, timeline));
     expect(result).toMatchObject({ status: 409 });
     expect(bucket.delete).not.toHaveBeenCalled();
     expect(timeline).toEqual([]);
@@ -493,7 +493,7 @@ describe('mediaDeleteAction confirm guards', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     // The key derivation runs before the commit, so the corrupt ext throws before any write.
-    await expect(routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never)).rejects.toThrow();
+    await expect(routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline))).rejects.toThrow();
     // The row survives and no object delete ran.
     expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_ORPHAN]).toBeDefined();
     expect(bucket.delete).not.toHaveBeenCalled();
@@ -515,7 +515,7 @@ describe('mediaDeleteAction orphan delete', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     await expect(
-      routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never),
+      routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline)),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?deleted=1' });
 
     // The row is gone from main's media.json.
@@ -544,7 +544,7 @@ describe('mediaDeleteAction orphan delete', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     await expect(
-      routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never),
+      routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline)),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?deleted=1' });
     expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_ORPHAN]).toBeUndefined();
     expect(bucket.delete).toHaveBeenCalledOnce();
@@ -561,7 +561,7 @@ describe('mediaDeleteAction orphan delete', () => {
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
-    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_BRANCH }, bucket, timeline) as never);
+    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_BRANCH }, bucket, timeline));
     expect(result).toMatchObject({ status: 404 });
     const data = (result as { data: { error: string } }).data;
     expect(data.error).toMatch(/not committed/i);
@@ -591,7 +591,7 @@ describe('mediaDeleteAction orphan delete', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     const result = (await routes.mediaDeleteAction(
-      mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never,
+      mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline),
     )) as unknown as { status: number; data: { error: string; hash: string; usage: unknown[]; foundIn: number } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/changed since/i);
@@ -617,7 +617,7 @@ describe('mediaUpdateAction', () => {
     const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaUpdateAction(
-        mediaActionEvent({ hash: HASH_MAIN, slug: 'new-slug', displayName: 'New name', alt: 'A photo' }, bucket, timeline) as never,
+        mediaActionEvent({ hash: HASH_MAIN, slug: 'new-slug', displayName: 'New name', alt: 'A photo' }, bucket, timeline),
       ),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?updated=1' });
     const committed = parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_MAIN];
@@ -644,7 +644,7 @@ describe('mediaUpdateAction', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     await expect(
-      routes.mediaUpdateAction(mediaActionEvent({ hash: HASH_MAIN, slug: 'kept-slug', displayName: '' }, bucket, timeline) as never),
+      routes.mediaUpdateAction(mediaActionEvent({ hash: HASH_MAIN, slug: 'kept-slug', displayName: '' }, bucket, timeline)),
     ).rejects.toMatchObject({ status: 303 });
     const committed = parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_MAIN];
     expect(committed.displayName).toBe('kept-slug');
@@ -662,7 +662,7 @@ describe('mediaUpdateAction', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaUpdateAction(
-      mediaActionEvent({ hash: HASH_MAIN, slug: 'Not A Slug', displayName: 'x' }, bucket, timeline) as never,
+      mediaActionEvent({ hash: HASH_MAIN, slug: 'Not A Slug', displayName: 'x' }, bucket, timeline),
     );
     // A refusal that leaves the slide-over open on a full-page (no use:enhance) re-render must
     // carry the asset's own hash, or the Library's re-surface effect cannot find it and the error
@@ -679,7 +679,7 @@ describe('mediaUpdateAction', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaUpdateAction(
-      mediaActionEvent({ hash: HASH_BRANCH, slug: 'x', displayName: 'x' }, bucket, timeline) as never,
+      mediaActionEvent({ hash: HASH_BRANCH, slug: 'x', displayName: 'x' }, bucket, timeline),
     );
     expect(result).toMatchObject({ status: 404, data: { hash: HASH_BRANCH } });
   });
@@ -703,7 +703,7 @@ describe('mediaUpdateAction', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaUpdateAction(
-      mediaActionEvent({ hash: HASH_MAIN, slug: 'new-slug', displayName: 'New name' }, bucket, timeline) as never,
+      mediaActionEvent({ hash: HASH_MAIN, slug: 'new-slug', displayName: 'New name' }, bucket, timeline),
     );
     expect(result).toMatchObject({ status: 409, data: { hash: HASH_MAIN } });
     const data = (result as { data: { error: string } }).data;

@@ -11,6 +11,7 @@ import {
   csrfFieldVerdict,
 } from '../../lib/sveltekit/csrf.js';
 import { SESSION_TTL_MS } from '../../lib/auth/crypto.js';
+import { testEvent } from '../helpers/test-event.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 
 function jar(initial: Record<string, string> = {}) {
@@ -64,7 +65,7 @@ describe('originMatches', () => {
     ({
       url: new URL('https://x.dev/about'),
       request: req('https://x.dev/about', origin ? { headers: { origin } } : undefined),
-    }) as never;
+    });
   it('matches an equal origin and rejects a mismatch or absence', () => {
     expect(originMatches(ev('https://x.dev'))).toBe(true);
     expect(originMatches(ev('https://evil.dev'))).toBe(false);
@@ -248,8 +249,8 @@ describe('CSRF cookie round trip under PUBLIC_ORIGIN', () => {
 
 describe('validateCsrfToken', () => {
   const ev = (cookie: string | undefined, body: string | undefined) =>
-    ({
-      url: new URL('https://x.dev/admin/login'),
+    testEvent({
+      url: 'https://x.dev/admin/login',
       cookies: jar(cookie !== undefined ? { '__Host-cairn_csrf': cookie } : {}),
       request:
         body !== undefined
@@ -259,7 +260,7 @@ describe('validateCsrfToken', () => {
               body,
             })
           : req('https://x.dev/admin/login', { method: 'POST' }),
-    }) as never;
+    });
 
   it('passes when the field matches the cookie', async () => {
     expect(await validateCsrfToken(ev('TOK', 'csrf=TOK&email=a@b.c'))).toBe(true);
@@ -274,7 +275,7 @@ describe('validateCsrfToken', () => {
   it('leaves the original body readable by the action', async () => {
     const event = ev('TOK', 'csrf=TOK&email=a@b.c');
     await validateCsrfToken(event);
-    const form = await (event as { request: Request }).request.formData();
+    const form = await event.request.formData();
     expect(form.get('email')).toBe('a@b.c');
   });
 });
@@ -291,7 +292,8 @@ describe('csrfHeaderVerdict', () => {
         method: 'POST',
         headers: header !== undefined ? { 'x-cairn-csrf': header } : {},
       }),
-    }) as never;
+      platform: undefined,
+    });
 
   it('passes when the header matches the cookie', () => {
     expect(csrfHeaderVerdict(ev('TOK', 'TOK'))).toEqual({ ok: true });
@@ -312,8 +314,8 @@ describe('csrfHeaderVerdict', () => {
 
 describe('csrfTokenVerdict', () => {
   const ev = (cookie: string | undefined, body: string | undefined) =>
-    ({
-      url: new URL('https://x.dev/admin/login'),
+    testEvent({
+      url: 'https://x.dev/admin/login',
       cookies: jar(cookie !== undefined ? { '__Host-cairn_csrf': cookie } : {}),
       request:
         body !== undefined
@@ -323,7 +325,7 @@ describe('csrfTokenVerdict', () => {
               body,
             })
           : req('https://x.dev/admin/login', { method: 'POST' }),
-    }) as never;
+    });
 
   it('passes when the field matches the cookie', async () => {
     expect(await csrfTokenVerdict(ev('TOK', 'csrf=TOK'))).toEqual({ ok: true });
@@ -342,15 +344,15 @@ describe('csrfTokenVerdict', () => {
   });
 
   it('reads unparseable-body when the body cannot be read as form data', async () => {
-    const event = {
-      url: new URL('https://x.dev/admin/login'),
+    const event = testEvent({
+      url: 'https://x.dev/admin/login',
       cookies: jar({ '__Host-cairn_csrf': 'TOK' }),
       request: req('https://x.dev/admin/login', {
         method: 'POST',
         headers: { 'content-type': 'multipart/form-data; boundary=z' },
         body: 'not actually multipart',
       }),
-    } as never;
+    });
     expect(await csrfTokenVerdict(event)).toEqual({ ok: false, detail: 'unparseable-body' });
   });
 });

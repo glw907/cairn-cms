@@ -1106,7 +1106,7 @@ export function createEntryActions(ctx: ContentRoutesContext) {
     } catch (err) {
       // One record per entry in the failed batch, so the log names what did not go live.
       for (const entry of published) {
-        ctx.logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
+        logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
       }
       if (isConflict(err)) {
         throw redirect(303, `${listPage}?error=publish_conflict`);

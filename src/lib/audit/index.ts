@@ -30,7 +30,7 @@ export {
   RATIFIED_NORMS,
 } from './norms.js';
 export { lineAt, parseComponent } from './markup.js';
-export { negatedClassNames, parseSheet, selectorClassNames } from './sheet.js';
+export { negatedClassNames, parseSheet, selectorClassNames, splitSelectorList } from './sheet.js';
 export { applySuppressions, parseDirectives, DIRECTIVE_MARKER, SUPPRESSION_RULE_ID } from './suppress.js';
 export { staticRules } from './rules/static/index.js';
 export { renderedRules } from './rules/rendered/index.js';

@@ -161,8 +161,9 @@ yes, benchmarked by the framework's own foundation.
 
 Counter-record. The benchmark is run by the framework's own foundation, on tasks it chose,
 with a ceiling on a third of them; it measures atomic tasks, not a feature built end to end.
-The 92% against 87% gap is five points on a benchmark whose authors say differences of a few
-points "are within run-to-run noise." The solo-build account is one person's report. The
+The 92% against 87% gap is five points on a benchmark with a stated ceiling effect (six of 21
+tasks solved by every run); the page does not call the gap noise, and an earlier version of this
+row attributed a "run-to-run noise" quotation that is not on the page (corrected 2026-09-05). The solo-build account is one person's report. The
 framework's core repository shows a small agent-trailer floor (36 commits), which says
 nothing about how contributors work locally.
 

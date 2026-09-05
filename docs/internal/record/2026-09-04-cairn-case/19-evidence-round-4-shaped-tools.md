@@ -240,7 +240,7 @@ terms; they measure different models on different task sizes.
 | --- | --- | --- |
 | Design | 392 tasks: 28 scenarios across 14 frameworks in 6 languages; correctness by tests, security by end-to-end exploit execution | High |
 | Frameworks | Python: FastAPI, Flask, Django, aiohttp. JavaScript: Express, Fastify, Koa, NestJS. Go: Fiber, Gin, net/http. PHP: Lumen. Ruby: Rails. Rust: Actix | High |
-| Headline | "62% of the solutions generated even by the best model are either incorrect or contain a security vulnerability" | High |
+| Headline | The abstract: the best model "achieves a mere 62% on code correctness," and exploits succeeded "on around half of the correct programs," so roughly a third of its solutions were both correct and secure. (Corrected 2026-09-05: an earlier row inverted 62% into a failure share.) | High |
 | Framework effect | "the chosen framework has a significant impact on both the correctness and the security of the generated backends across all prompt types … correlated with the popularity of the programming language and the complexity of the framework" | High |
 | Multi-file frameworks | Django, Rails, NestJS, Lumen named as multi-file frameworks with higher implementation complexity; per-framework percentages are in the paper's appendix, not extracted here | Medium (numbers not read) |
 

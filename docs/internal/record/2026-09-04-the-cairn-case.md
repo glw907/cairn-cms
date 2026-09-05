@@ -189,18 +189,19 @@ https://decapcms.org/docs/backends-overview/, both fetched 2026-09-04]. That is 
 and this document does not grade it against cairn [opinion]. What cairn ships that such a build
 writes or installs itself is the list Leg 1 carries under "The developer's other option": the
 magic-link editor login with no third service in the sign-in path, the holding-branch publish
-path, the admin shell and its primitives, the snapshot gate, and the agent skill [verifiable: Leg
-1, the same tags]. The claim is the shape plus those pieces, and it is never a claim about the
-product against another build of the shape [opinion].
+path, the admin shell and its primitives, the snapshot gate, and the agent skill [verifiable:
+docs/why-cairn.md; docs/extend/architecture.md; docs/extend/add-a-custom-admin-screen.md;
+`check:surface`; skills/cairn-admin-screens/]. The claim is the shape plus those pieces, and it is
+never a claim about the product against another build of the shape [opinion].
 
 **The shape's public record.** Frameworks that carry the hard parts and leave the developer the
 domain have a measured record with agents. The Rails Foundation runs a public benchmark on its own
 framework: in its first report, 8 models on 21 atomic tasks with 3 runs each, the top model solved
 92% of 63 runs, and runs that used framework APIs solved at 92% against 87% for hand-rolled code,
-with six of 21 tasks solved by every run and the authors calling small gaps run-to-run noise
-[supported: https://rubyonrails.org/2026/8/13/agents-on-rails-the-first-benchmark-report]. Its
-third report added cost: the top model solved 92% of 63 runs for $75, and an open-weight model 83%
-for $3.31, with API recall at most 41% [supported:
+with six of 21 tasks solved by every run [supported:
+https://rubyonrails.org/2026/8/13/agents-on-rails-the-first-benchmark-report]. Its third report
+added cost: the top model solved 92% of 63 runs for $75, and an open-weight model 83% for $3.31,
+with API recall at most 41% [supported:
 https://rubyonrails.org/2026/9/2/agents-on-rails-claude-fable-5-1-and-glm-5-3-flash; harness at
 https://github.com/rails/lemans]. Vercel's public Next.js evals show a bundled documentation index
 lifting mid-tier models to the top tier and doing nothing for models already there, with cost per
@@ -227,9 +228,11 @@ thoughtbot's Administrate because generic dashboards were "too generalized to be
 admins", and Payload and Filament as the current generation [verifiable: Django docs,
 `ref/contrib/admin/`; thoughtbot blog, 2015-11-03;
 docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, section 5]. The
-counter-record stands beside it: Constraint Decay and BaxBench, above, find convention-heavy
-frameworks harder for agents on greenfield backends, and no study conditions on a scaffold of
-cairn's kind [supported: https://arxiv.org/abs/2605.06445; https://arxiv.org/abs/2502.11844].
+counter-record stands beside it. Constraint Decay and BaxBench, read in Leg 5, find
+convention-heavy frameworks harder for agents on greenfield backends, with the best BaxBench model
+at 62% correctness and about half of that exploitable, and no study conditions on a scaffold of
+cairn's kind [supported: https://arxiv.org/abs/2605.06445; https://arxiv.org/abs/2502.11844,
+abstract].
 
 ## Leg 2: content is markdown files in the site's git repository
 
@@ -388,11 +391,14 @@ docs/reference/log-events.md]. Workers Builds deploys on push with 3,000 build m
 free [verifiable: https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/]. The
 registrar charges registry cost with no markup [verifiable:
 https://www.cloudflare.com/products/registrar/]. The bill is $5 a month for Workers Paid, once per
-account, plus the domain; D1, R2, and 3,000 emails a month sit inside that plan's included quotas
-at a club's scale [verifiable: the four pricing pages listed in
-docs/internal/record/2026-09-04-cairn-case/18-evidence-round-4-cloudflare.md, section 1; opinion
-on the scale]. R2 egress is free, and D1 has no egress charge [verifiable: the same]. The limits
-move. Read them on Cloudflare's own pages [opinion].
+account, plus the domain, and $20 a month per zone if the full WAF is wanted; D1, R2, and 3,000
+emails a month sit inside the paid plan's included quotas at a club's scale [verifiable:
+https://developers.cloudflare.com/workers/platform/pricing/;
+https://developers.cloudflare.com/d1/platform/pricing/;
+https://developers.cloudflare.com/r2/pricing/;
+https://developers.cloudflare.com/email-service/platform/pricing/; opinion on the scale]. R2
+egress is free, and D1 has no egress charge [verifiable: the same]. The limits move. Read them on
+Cloudflare's own pages [opinion].
 
 The setup cost of the platform is carried by cairn's tooling. The scaffold writes `wrangler.jsonc`
 with its bindings, the two migration sets, and the doctor's readiness checks [verifiable:
@@ -414,8 +420,9 @@ Wrangler authenticates from `CLOUDFLARE_API_TOKEN` "for situations like CI/CD, a
 automation" [verifiable:
 https://developers.cloudflare.com/workers/wrangler/system-environment-variables/]. This repo's own
 operating instructions route routine Cloudflare changes through that token and the MCP plugin
-[verifiable: CLAUDE.md, "Cloudflare / Wrangler"]. Leg 5 leans on this. A platform an agent can
-read and change from documentation is part of what makes the shape work [opinion].
+[verifiable: CLAUDE.md:86, "Cloudflare MCP ... Prefer it over the dashboard"]. Leg 5 leans on
+this. A platform an agent can read and change from documentation is part of what makes the shape
+work [opinion].
 
 **Counter-evidence a skeptic cites.** No study isolates vendor count against a small team's
 operational burden, so whether one account is less work is untested [verifiable:
@@ -457,15 +464,17 @@ means no editor can get in [verifiable: https://developers.cloudflare.com/email-
 2026-06-09; https://developers.cloudflare.com/email-service/platform/pricing/;
 src/lib/email.ts:79-101, which parses `E_SENDER_NOT_VERIFIED` because one consumer met it in
 production, recorded at docs/internal/record/2026-08-11-t4b-email-spike.md]. Onboarding writes an
-apex DMARC record at `p=reject` [verifiable: docs/admin/own-your-domain.md:115]. The Email Sending
-pages describe no list management, unsubscribe handling, bounce suppression, or campaign features
-[verifiable: the pricing and limits pages, by absence]. D1 processes one query at a time per
-database and caps at 10 GB on the paid plan [verifiable:
-https://developers.cloudflare.com/d1/platform/limits/]. That is right for a club's roster and
-wrong for real write concurrency [opinion]. R2 documents eleven-nines durability and no versioning
-or point-in-time restore; durability "does not prevent intentional or accidental deletion"
-[verifiable: https://developers.cloudflare.com/r2/reference/durability/]. D1 offers Time Travel to
-any minute in the last 30 days on Workers Paid and 7 days on Free [verifiable:
+apex DMARC policy telling receivers to reject mail the domain has not authenticated, `p=reject` in
+the record's terms [verifiable: docs/admin/own-your-domain.md:115;
+docs/internal/record/2026-08-11-t4b-email-spike.md]. The Email Sending pages describe no list
+management, unsubscribe handling, bounce suppression, or campaign features [verifiable: the
+pricing and limits pages, by absence]. D1 processes one query at a time per database and caps at
+10 GB on the paid plan [verifiable: https://developers.cloudflare.com/d1/platform/limits/]. That
+is right for a club's roster and wrong for real write concurrency [opinion]. R2 documents
+eleven-nines durability and no versioning or point-in-time restore; durability "does not prevent
+intentional or accidental deletion" [verifiable:
+https://developers.cloudflare.com/r2/reference/durability/]. D1 offers Time Travel to any minute
+in the last 30 days on Workers Paid and 7 days on Free [verifiable:
 https://developers.cloudflare.com/d1/platform/limits/]. The published cairn docs carry no backup
 or restore procedure for either store, a gap the docs owe [verifiable: `grep -rniE
 "backup|restore|d1 export" docs/admin docs/extend docs/reference`, no procedure on any hit]. No
@@ -485,14 +494,18 @@ scoped policies, so the organization can own the account from day one and the de
 member [verifiable: https://developers.cloudflare.com/fundamentals/manage-members/; opinion on the
 practice]. The support question, above under Leg 1, applies to the platform choice too [opinion].
 
-**The tie, stated precisely.** The tie is the platform bindings layer: the D1, R2, and email
-bindings the engine reaches behind the adapter, and the Worker as the runtime [verifiable:
+**The tie, stated precisely.** The tie is the platform bindings layer and the engine that reaches
+it. The engine has no host-agnostic layer and reaches D1, R2, and Workers directly, so leaving
+Cloudflare means leaving cairn or porting it [verifiable:
 docs/internal/what-cairn-is-and-is-not.md, "SvelteKit + Cloudflare, fully";
-examples/showcase/wrangler.jsonc]. Everything above that layer moves as-is: the SvelteKit app, the
-theme, the chassis copy, the site's own screens, and the content files [verifiable:
-docs/extend/what-the-scaffold-wrote.md; examples/showcase/svelte.config.js:1]. Moving the layer is
-a rewrite of every binding the engine and the site reach, plus an adapter change. This document
-does not size that rewrite, and no one has measured it [opinion]. The admin's tie is narrower than
+examples/showcase/wrangler.jsonc]. What leaves with the organization untouched: the repository,
+the content files, the theme and the chassis copy, and the markup of its own screens [verifiable:
+docs/extend/what-the-scaffold-wrote.md]. What is rewritten: every data access in those screens,
+since each reaches D1 through `platform.env`, the adapter's backend and bindings, and the engine's
+own role [verifiable: examples/showcase/src/routes/admin/signups/+page.server.ts;
+docs/extend/architecture.md]. This document does not size that rewrite, and no one has measured it
+[opinion]. That is a larger tie than the brief stated, and the counterweight below still answers
+it [opinion].The admin's tie is narrower than
 the brief stated. The admin frame is DaisyUI on Tailwind, and a site that restyles the admin
 itself works in that idiom [verifiable: CLAUDE.md, "What cairn is";
 docs/internal/admin-design-system.md]. A custom admin screen mostly consumes the toolkit. Each
@@ -612,33 +625,41 @@ time, a patch touching three or more files or more than 100 lines under 10%, and
 seven or more files never [supported: "SWE-bench Goes Live!", https://arxiv.org/abs/2505.23419,
 section 4.4]. The benchmark measures issue repair [verifiable: the same]. Two studies do measure
 greenfield construction, and both cut against a bare "conventions help agents" sentence.
-Constraint Decay ran 80 greenfield backend tasks across eight frameworks and found agents about
-twice as successful on Flask (49%) and Express (51%) as on Django (25%) and FastAPI (24%), blaming
-the conventions an agent must infer and naming data-layer defects as the leading root cause
-[supported: Dente, Satriani, Papotti, https://arxiv.org/abs/2605.06445; no frontier Anthropic
-model in the set]. BaxBench, 392 tasks across 14 frameworks, found that the framework chosen moves
-both correctness and security and that 62% of even the top-scoring model's solutions were
-incorrect or vulnerable [supported: Vero et al., https://arxiv.org/abs/2502.11844]. What no cited
-study measures is construction against a scaffold that carries auth, sessions, and the admin frame
-[opinion]. This leg's reading of those two studies: they show where agents fail, and the failure
-is inference. An agent handed a convention it must infer from the codebase infers it badly, and
-the convention-heavy frameworks lose on exactly that [supported: the two studies above]. The
-shape's answer is to remove inference from the job. cairn's design makes its conventions explicit
-rather than inferred: the scaffold writes the starting site, the skill states the screen anatomy,
-the component contracts, and the seams, the toolkit supplies the components, the docs name the
-path, and the gates and the audit refuse what drifts [verifiable: templates/waymark/;
+Constraint Decay ran 80 greenfield and 20 feature tasks across eight frameworks and found agents
+about twice as successful on Flask (49%) and Express (51%) as on Django (25%) and FastAPI (24%),
+blaming the conventions an agent must infer and naming data-layer defects as the leading root
+cause [supported: Dente, Satriani, Papotti, https://arxiv.org/abs/2605.06445, Table 4; no
+Anthropic model in the set]. Its headline is the decay in its title: as explicit structural
+requirements (architecture, database, ORM) accumulate, capable configurations lose about 30 points
+in assertion pass rate from the baseline prompt to the fully specified task, and some weaker ones
+approach zero [supported: the same, RQ1]. BaxBench, 392 tasks across 14 frameworks, found that the
+framework chosen moves both correctness and security; the best model reached 62% correctness,
+about half of its correct programs were exploitable, so roughly a third were both correct and
+secure [supported: Vero et al., https://arxiv.org/abs/2502.11844, abstract]. What no cited study
+measures is construction against a scaffold that carries auth, sessions, and the admin frame
+[opinion]. This leg's reading of those two studies: they show where agents fail, and one failure
+is inference. An agent handed a convention it must infer from the framework infers it badly, and
+the convention-heavy frameworks lose on exactly that [supported: Constraint Decay; BaxBench
+attributes the effect to language popularity and framework complexity]. The shape's answer is to
+remove inference from the job. cairn's design makes its conventions explicit rather than inferred:
+the scaffold writes the starting site, the skill states the screen anatomy, the component
+contracts, and the seams, the toolkit supplies the components, the docs name the path, and the
+gates and the audit refuse what drifts [verifiable: templates/waymark/;
 skills/cairn-admin-screens/SKILL.md, "Screen anatomy" and "Component contracts";
 src/lib/admin-toolkit/; docs/extend/add-a-custom-admin-screen.md; scripts/checks/;
-src/lib/audit/]. Whether those explicit conventions achieve it is the hypothesis the measured
-build below tests, and it is unmeasured until the fix round lands [opinion]. The first pass
-already shows the trap is not closed by writing things down: the review found the agent followed
-the nearest in-repo exemplar over the published doc, which is inference happening despite the docs
-[verifiable:
-docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md,
-NON-BLOCKING]. On security-sensitive tasks the highest-scoring of 25 agent and model pairings
-produced correct and secure code 23.8% of the time, AI-co-authored pull requests carried 2.74
-times the security issues of human-only ones across 470 requests, and 45% of generated solutions
-across 80 tasks and more than 100 models carried a security flaw [supported: SecureVibeBench,
+src/lib/audit/]. The 30-point decay cuts against the easy form of that remedy: piling more
+requirements into the ask made capable agents worse, so a written skill that reads as a longer
+specification is not the answer, and the shape's bet is on conventions the agent can copy (the
+exemplar, the toolkit) and on gates that check the result, not on a longer prompt [opinion].
+Whether those explicit conventions achieve it is the hypothesis the measured build below tests,
+and it is unmeasured until the fix round lands [opinion]. The first pass already shows the trap is
+not closed by writing things down: the review found the agent followed the nearest in-repo
+exemplar over the published doc, which is inference happening despite the docs [verifiable:
+docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, NON-BLOCKING].
+On security-sensitive tasks the highest-scoring of 25 agent and model pairings produced correct
+and secure code 23.8% of the time, AI-co-authored pull requests carried 2.74 times the security
+issues of human-only ones across 470 requests, and 45% of generated solutions across 80 tasks and
+more than 100 models carried a security flaw [supported: SecureVibeBench,
 https://arxiv.org/abs/2509.22097, C/C++ memory safety; CodeRabbit,
 https://www.coderabbit.ai/blog/state-of-ai-vs-human-code-generation-report, n=470, a review-tool
 vendor; Veracode 2025,
@@ -679,13 +700,14 @@ persuasion, so the large samples are stated with their methods. A staggered-adop
 7,786,771 commits carrying the Claude co-author trailer from 185,517 authors, with a
 5,838-developer panel, found adoption associated with 41 more commits a month and wider language
 breadth, under a doubly robust estimator against not-yet-adopters [supported: Quispe and Xu,
-https://arxiv.org/abs/2605.25438; the authors call the estimates associations]. Anthropic's
-largest session study, about 400,000 Claude Code sessions from about 235,000 people, found people
-making about 70% of planning decisions and about 20% of execution decisions, with verified success
-at 28% to 33% for experienced users; the report states it cannot see whether the code was kept
-[supported: https://www.anthropic.com/research/claude-code-expertise, 2026-06-16;
-classifier-labeled]. The Economic Index reports state their samples, windows, and classifiers, and
-each says it studies what people delegate and not whether the output shipped [verifiable:
+https://arxiv.org/abs/2605.25438v1; v2 revises the panel to 5,346 developers and the effect to
+about 35 commits; the authors call the estimates associations]. Anthropic's largest session study,
+about 400,000 Claude Code sessions from about 235,000 people, found people making about 70% of
+planning decisions and about 20% of execution decisions, with verified success at 28% to 33% for
+experienced users; the report states it cannot see whether the code was kept [supported:
+https://www.anthropic.com/research/claude-code-expertise, 2026-06-16; classifier-labeled]. The
+Economic Index reports state their samples, windows, and classifiers, and each says it studies
+what people delegate and not whether the output shipped [verifiable:
 docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 1].
 Microsoft's rollout study of tens of thousands of engineers found 24.0% more pull requests per
 engineer per day after CLI-agent adoption, with a passing placebo test and no code-quality measure
@@ -695,12 +717,15 @@ tool's commits introduced a static-analysis issue, Claude carried the highest ra
 per commit, and 22.7% of introduced issues persisted [supported: Liu et al.,
 https://arxiv.org/abs/2603.28592]. Agent feature pull requests are accepted 15 to 40 points below
 human ones in the wild, and documentation pull requests above [supported: Li, Zhang, Hassan,
-https://arxiv.org/abs/2507.15003, AIDev, 932,791 agent PRs]. Same-task agent runs vary up to 30
-times in tokens [supported: Bai et al., https://arxiv.org/abs/2604.22750]. A repository context
-file cut median agent runtime 28.64% and output tokens 16.58% at the same completion rate
-[supported: Lulla et al., https://arxiv.org/abs/2601.20404]. The sentence the telemetry sustains:
-agents are the normal way this stack is now built, and the vendors' own data show they do not
-build it well without a gate [supported: the studies above;
+https://arxiv.org/abs/2507.15003, 456,535 agent PRs; the 932,791 figure is the 2026 dataset paper,
+https://arxiv.org/abs/2602.09185]. Same-task agent runs vary up to 30 times in tokens [supported:
+Bai et al., https://arxiv.org/abs/2604.22750]. A repository context file cut median agent runtime
+28.64% and output tokens 16.58% at the same completion rate [supported: Lulla et al.,
+https://arxiv.org/abs/2601.20404]. The sentence the telemetry sustains: agents are a common way
+the mainstream typed web stack is now built, and the vendors' own data do not show that they build
+it well without a gate, since no study varies gate presence; agents are used daily by 14.1% of
+Stack Overflow's 2025 respondents and by none of 52% [supported: the studies above; Stack Overflow
+2025 via docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 2;
 docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, "The narrowest
 sentence"]. TypeScript is the top language for every agent's pull requests and the
 most-contributed language on GitHub, and SvelteKit is named in none of these sources [supported:
@@ -869,28 +894,30 @@ the implementer worked out a screen-scoped `node:sqlite` dev double itself [veri
 measurement, the implementer's report]. A first attempt was killed by an API rate limit mid-edit
 and discarded; the figures are the clean re-run [verifiable: the same].
 
-**The review.** The Opus diff-review escalated. It found the screen correct inside the boundary
-the dispatch drew and incomplete outside it, on five items: the 13 admin visual baselines were
-regenerated on the workstation against the repo's rule that baselines are CI-canonical, so the
-reported e2e pass partly asserted against baselines the same run wrote; the screen leaked into the
-product scaffold with a third D1 binding that `create-cairn-site` never personalizes, so a
-scaffolded site would deploy a placeholder database id; the implementer followed the nearest
-in-repo exemplar over the published doc, taking bare actions with `requireEditor` where the doc
-names `createSectionAction` and `requireAccess`, so the destructive action writes no audit record;
-the skill's own done-gate, `npx cairn-audit` static and rendered, was neither run nor reported;
-and native `required` and `type="email"` were removed so the e2e could reach server validation,
-which is test pressure changing shipped behavior [verifiable:
+**The review.** The Opus diff-review escalated, which is the verdict that stops a change and sends
+the decision up. It found the screen correct inside the boundary the dispatch drew and incomplete
+outside it, on five items [verifiable:
 docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, BLOCKING and
-NON-BLOCKING]. The review's own reading: the measured 35 minutes buys the code inside the boundary
-and buys nothing outside it [verifiable: the same, SUMMARY].
+NON-BLOCKING]. The 13 admin visual baselines were regenerated on the workstation against the
+repo's rule that baselines are CI-canonical, so the reported e2e pass partly asserted against
+baselines the same run wrote. The screen leaked into the product scaffold with a third D1 binding
+that `create-cairn-site` never personalizes, so a scaffolded site would deploy a placeholder
+database id. The implementer followed the nearest in-repo exemplar over the published doc, taking
+bare actions with `requireEditor` where the doc names `createSectionAction` and `requireAccess`,
+so the destructive action writes no audit record. The skill's own done-gate, `npx cairn-audit`
+static and rendered, was neither run nor reported. Native `required` and `type="email"` were
+removed so the e2e could reach server validation, which is test pressure changing shipped
+behavior. The review's own reading: the measured 35 minutes buys the code inside the boundary and
+buys nothing outside it [verifiable: the same, SUMMARY].
 
 **What the review teaches about conventions.** An agent follows the exemplar. So the exemplar, the
 scaffold, the docs, and the skill must say the same thing and be maintained in tandem, and a
-divergence between any two of them is an inference job handed to the agent, which resolves it by
-copying whichever it read last [opinion]. The measured build shows one such divergence being
-resolved that way: the showcase sign-ups screen uses the raw guard, form-data, and `fail()` shape,
-the custom-screen guide recommends `createSectionAction` plus `requireAccess`, and the agent
-copied the screen [verifiable:
+divergence between any two of them is an inference job handed to the agent [opinion]. That the
+agent resolves it by copying whichever it read last is the mechanism the proposed tandem gate
+would test; one case supports "this happened" and no more [opinion]. The measured build shows one
+such divergence being resolved that way: the showcase sign-ups screen uses the raw guard,
+form-data, and `fail()` shape, the custom-screen guide recommends `createSectionAction` plus
+`requireAccess`, and the agent copied the screen [verifiable:
 docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, NON-BLOCKING;
 examples/showcase/src/routes/admin/signups/+page.server.ts;
 docs/extend/add-a-custom-admin-screen.md, "Gate it"]. The six inference traps the build exposed,
@@ -906,26 +933,30 @@ rulings paragraph].
 its wall-clock, tokens, and second review complete the measurement as a two-pass figure, and the
 coordinator fills this slot.
 
-**Whole-system delivery, the regime the studies do not measure.** Every published design in the
-studies above keeps one human in the inner loop of one task and measures that loop's speed or
-acceptance [verifiable:
-docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, sections 2 and 3;
-docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 4]. The
-owner's regime is different: implementers run in parallel and overnight, gates stand in for a
-reviewer in the loop, and the unit delivered is a whole system in calendar days [opinion]. The
-deliveries on record: the production site's membership and assets layer in two calendar days, then
-eight weeks of refinement, as measured above [verifiable: the case-report table]; the 2026-08-25
-email-announce pass, eleven tasks overnight [verifiable: one production site's
-docs/HISTORY.md:9-12; internal]; and this screen in 35 minutes with a review that stopped it
-[verifiable: the measurement and review above]. A Go server is expected in four or five calendar
-days and is not yet a delivery [opinion]. In that regime wall-clock is bounded by machine and API,
-and the cost that moves is review and tokens, which the same records show running 1.4 to 2.3 times
-their ceilings [verifiable: one production site's docs/HISTORY.md:102,151,198-199; internal]. The
-absence of this regime in the literature is a lag, not a contradiction; this document claims it
-only as far as these measured deliveries carry it [opinion]. No published cost per shipped feature
-with a method exists, and no controlled time-to-first-deploy on a scaffold exists [verifiable:
+**Whole-system delivery, the regime the studies do not measure.** The controlled studies above
+measure one task with a reviewer in the loop [verifiable:
+docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, sections 2 and 3].
+The telemetry sees long delegations and parallel agents: over 10% of Codex users run three or more
+agents at once, whole apps are built from a specification and scored at 61.8% at best, and a
+month-long hackathon deployed 21 of 40 LLM-only projects [verifiable:
+docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, section 2]. What no
+source measures is a gated, scaffold-based delivery with its cost [verifiable:
 docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, "Where searches
-found nothing"].
+found nothing"]. The owner's regime is that missing case: implementers run in parallel and
+overnight, a reviewer model and the gates stand in for a human reviewer, and the unit delivered is
+a whole system in calendar days [opinion]. The measured build shows why both halves are needed.
+Every gate the spec named passed, and the reviewer model stopped the change on five items the
+gates did not see [verifiable:
+docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md]. Measurements
+on record: the production site's membership and assets layer in two calendar days, then eight
+weeks of refinement [verifiable: the case-report table]; the 2026-08-25 email-announce pass,
+eleven tasks overnight [verifiable: one production site's docs/HISTORY.md:9-12; internal]; and
+this screen's first pass in 35 minutes, stopped in review [verifiable: the measurement and review
+above]. In that regime wall-clock is bounded by machine and API. The cost that moves is review and
+tokens, which the same records show running 1.4 to 2.3 times their ceilings [verifiable: one
+production site's docs/HISTORY.md:102,151,198-199; internal]. The absence of this regime in the
+literature is a lag, not a contradiction, and this document claims it only as far as these
+measurements carry it [opinion].
 
 ### Already extensible, measured
 
@@ -1159,11 +1190,12 @@ material reaches the front door is the figure's question, recorded below [opinio
    Workers; a per-repository resolve rate on SWE-bench Verified; a measured record for Laravel or
    Phoenix; an independent small-organization case of git-backed content with non-technical
    editors; and the measured build's fix round, whose slot is marked pending [verifiable: the
-   "found nothing" sections of those records]. 8. **A measured worked example.** The measured pair
-   above sizes the code, and the production site's records give token spend per pass; nothing yet
-   measures one screen's effort in isolation. One custom screen built on a cairn site with an
-   agent, its diff size, files, and passes recorded, would be the first evidence for Leg 5's
-   economic half. Whether to build it before the figure ships is a product decision.
+   "found nothing" sections of those records]. 8. **A measured worked example.** Answered in part
+   by the second case, one screen measured in isolation; the fix round completes it. A Go server
+   the owner expects to deliver in four or five calendar days is a measurement to record when it
+   lands, and not evidence until then. One custom screen built on a cairn site with an agent, its
+   diff size, files, and passes recorded, would be the first evidence for Leg 5's economic half.
+   Whether to build it before the figure ships is a product decision.
 
 ## Vocabulary
 
@@ -1226,4 +1258,8 @@ docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabu
 | row-level security | IT admin | a database rule saying which rows each user may read or write |
 | benchmark harness, pass rate | professor | a public set of tasks with hidden tests, and the share of runs that pass them |
 | gate | board member | an automated check a change must pass before it counts as done |
+| escalate (a review verdict) | designer | the reviewer stopped the change and sent the decision up |
+| zone | IT admin | the domain as Cloudflare manages it |
+| SLA | IT admin, board member | a written uptime promise with a refund if it is broken |
+| registrar | board member | the company you pay for the domain name |
 | DMARC at `p=reject` | IT admin | a DNS record telling other mail servers to reject unauthenticated mail from the domain; it can affect the organization's own mail |

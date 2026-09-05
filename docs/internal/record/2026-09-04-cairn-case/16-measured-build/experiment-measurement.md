@@ -1,6 +1,6 @@
 # Measured build: volunteer roster screen (result)
 
-Spec: experiment-spec.md (this directory). Engine: cairn-cms `main` at 9bf7fcd3 (post-internals-B).
+Spec: experiment-spec.md (this directory). Engine: branched from cairn-cms `main` at 3485b0bb (`git merge-base experiment-screen main`); source identical to 9bf7fcd3, which differs by four docs-only commits.
 Worktree: `.claude/worktrees/experiment-screen`, fresh install, showcase installed from scratch.
 Implementer: `cairn-implementer` (claude-sonnet-5), one dispatch, no fix round yet (diff-review pending).
 

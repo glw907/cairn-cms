@@ -44,8 +44,8 @@ D1 and 10 GB of R2 (opinion on the sizing; the limits are the cited numbers).
 One Cloudflare account and one bill carry: the Worker (compute and static assets), D1 (the auth
 store and the site's own data), R2 (media), Email Sending (magic links), the zone (DNS), Universal
 SSL, DDoS and the free WAF subset, Workers Logs, Workers Builds (optional), and the registrar
-(optional). The showcase `wrangler.jsonc` declares exactly these bindings: `send_email` EMAIL,
-`d1_databases` AUTH_DB and APP_DB, `r2_buckets` MEDIA_BUCKET, `assets`, `observability.enabled:
+(optional). The showcase `wrangler.jsonc` declares these bindings: `send_email` EMAIL,
+`d1_databases` AUTH_DB, APP_DB, and the members fixture's MEMBER_DB, `r2_buckets` MEDIA_BUCKET, `assets`, `observability.enabled:
 true` (examples/showcase/wrangler.jsonc). What the platform does instead of a component the team
 would otherwise run, each to its page above: no server to patch (Workers runtime), no database
 host (D1), no CDN contract (static assets cached at the edge, requests free), no mail relay

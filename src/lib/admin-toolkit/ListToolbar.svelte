@@ -24,7 +24,7 @@ in-control instead, on the `'menu'` display below).
 
 Graduation extensions over the ASC-born contract (both additive, ASC's own existing usage stays
 valid): a filter's `display` chooses `'select'` (the original contract, unchanged, restyled to
-the shared 30px height and 13px text and, since the C2 coherence-round fix, `width: auto` so it
+the shared 30px height and 13px text and, since a coherence fix, `width: auto` so it
 sizes to its own content rather than daisyUI's fixed 320px clamp, `max-width: 100%` so it never
 exceeds its container, and a border tinted to the same `--cairn-card-border` a `'menu'` facet
 carries, so a select and a menu facet sitting side by side read as one control family), or

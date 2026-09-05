@@ -8,8 +8,8 @@ export const CONFIG_FILE = 'cairn-audit.config.json';
 
 // Every surface that renders inside the admin theme, plus the site's own admin routes. The two
 // library directories are the same roots the admin stylesheet build and the class-compilation gate
-// scan (the retired `admin-fields` subpath merged into admin-toolkit in the C2 breaking-window
-// pass, so its own roster entry folded into that one). A directory that renders admin markup
+// scan (the retired `admin-fields` subpath merged into admin-toolkit, so its own roster entry
+// folded into that one). A directory that renders admin markup
 // belongs here even when it looks covered. A path that does not exist in a given tree is skipped,
 // so a consumer inherits only what it actually has.
 export const DEFAULT_STATIC_SCOPE = [

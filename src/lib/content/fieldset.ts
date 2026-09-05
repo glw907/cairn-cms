@@ -174,7 +174,7 @@ function validateField(
       // array(reference): coerceToText returns '' for an array, so the empty-first drop below would
       // silently lose an optional list or falsely error a required one. The canonicalizer coerces a
       // lone scalar to one element and a Date element to its id. Each element must pass isValidId (the
-      // item's reference rule this phase); a required empty list errors; the value is set only when the
+      // item's reference rule); a required empty list errors; the value is set only when the
       // list is non-empty.
       const list = referenceIdsFromValue(value);
       if (field.required && list.length === 0) return { issues: [{ path, message: `${label} is required` }] };
@@ -325,7 +325,7 @@ function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
     else if (field.type === 'object') {
       for (const [leafKey, leaf] of Object.entries(field.fields)) {
         if (leaf.type === 'image' && leaf.seo === true) {
-          throw new Error(`cairn: the image "${key}.${leafKey}" sets seo: true, but a nested seo image is not supported this phase. Put the social-card image at the top level.`);
+          throw new Error(`cairn: the image "${key}.${leafKey}" sets seo: true, but a nested seo image is not supported. Put the social-card image at the top level.`);
         }
       }
     } else if (field.type === 'array') {
@@ -391,7 +391,7 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
         throw new Error(`cairn: ${where} "${k}" must be a leaf field; containers nest one level only.`);
       }
       if (leaf.type === 'reference') {
-        throw new Error(`cairn: ${where} "${k}" is a reference; a reference inside an object is not supported this phase. Model it as the parent's own concept, or use a top-level array(reference).`);
+        throw new Error(`cairn: ${where} "${k}" is a reference; a reference inside an object is not supported. Model it as the parent's own concept, or use a top-level array(reference).`);
       }
     }
   };

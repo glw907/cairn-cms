@@ -91,7 +91,7 @@ export function errorCode(err: unknown): string | undefined {
 
 /**
  * Map a magic-link send failure to its registered diagnostic condition, carrying the original error
- * as the cause. The not-verified code is the onboarding gap (the ecxc fault); the live binding has
+ * as the cause. The not-verified code is the onboarding gap (a real-world consumer fault); the live binding has
  * also been observed throwing the bare "not a verified address" string with no code, so that
  * message maps to the same condition. Everything else is the generic send failure. The caller logs
  * the conditionId and code, and returns a send_error status.

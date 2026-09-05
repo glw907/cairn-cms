@@ -66,7 +66,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   // override a hardcode, and the `mediaBase` prop below is the fix, not a second name for it.
   const DEFAULT_REPRO_MEDIA_BASE = '/repro-assets';
 
-  // `ReproInstance` unexported (the retires pass, Task 2, a sanctioned NavIcon-class leak); the
+  // `ReproInstance` unexported (a sanctioned NavIcon-class leak); the
   // mounted component's own exports, read structurally off `ReproStory.pose`'s own signature
   // rather than by the retired name.
   type ReproInstance = Parameters<NonNullable<ReproStory['pose']>>[1];

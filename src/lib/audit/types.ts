@@ -42,9 +42,9 @@ export interface StaticRuleContext {
   sheet: CompiledSheet;
   config: AuditConfig;
   /**
-   * Standalone CSS files `config.staticCssFiles` names, outside any component. Optional: Task 7's
+   * Standalone CSS files `config.staticCssFiles` names, outside any component. Optional: the
    * markup-family rules never read it, so their fixture contexts stay unchanged; the CSS-family
-   * rules (Task 9b) default it to an empty list when a caller omits it.
+   * rules default it to an empty list when a caller omits it.
    */
   cssFiles?: CssSource[];
 }

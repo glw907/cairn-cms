@@ -1,11 +1,11 @@
-// cairn-audit's field-edge-alignment rule: the staircase detector (design ratchet Task 5, the
-// mechanical half of finding 3). Within a grid or flex-column container, two or more form controls
+// cairn-audit's field-edge-alignment rule: the staircase detector, the
+// mechanical half of finding 3. Within a grid or flex-column container, two or more form controls
 // (`.input`, `.select`, `.textarea`) that render in the same visual column must share a left edge,
 // within 1.5px. The motivating shape is the ASC Assets-trial harvest's own corpus finding: an
 // `inline`-register field (`FieldLabel`'s label-beside-control layout, `FieldLabel.svelte`) whose
 // label text varies row to row pushes each row's control to a different left edge, since the
 // label's own width is what the control's start position rides on. `register="stacked"` (the
-// default since Task 3) cannot produce this shape at all, since a stacked control always starts at
+// default) cannot produce this shape at all, since a stacked control always starts at
 // its own container's edge; this rule is what catches a developer reaching for `inline` in a
 // multi-column composition where the staircase reappears.
 //

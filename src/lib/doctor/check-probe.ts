@@ -47,7 +47,7 @@ async function probe(ctx: DoctorContext, origin: URL): Promise<CheckResult> {
   if (res.status !== 200) {
     return fail(`GET /admin/login returned ${res.status}, expected 200`);
   }
-  // Deliberately NOT folded onto a config-aware derivation (Task 6, F8/N3): the expected cookie
+  // Deliberately NOT folded onto a config-aware derivation (F8/N3): the expected cookie
   // name derives from the PROBED origin's own scheme, an external CROSS-CHECK on what the
   // deployed runtime actually presents, so it must never consult a separately-resolved
   // PUBLIC_ORIGIN the probe itself found (which a `--url` override can legitimately diverge

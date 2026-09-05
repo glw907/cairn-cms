@@ -11,8 +11,8 @@ retires with the dot, and the whole chip vocabulary is three registers, no more.
 
 Assembles from one daisyUI 5 primitive already in cairn's admin CSS build: `badge` (the pill
 shape), with `badge-outline` supplying the inherited-border box model every register composes on
-top of. `badge-outline` retired from cairn's own tree on its own (design infrastructure Pass 3,
-corpus C): it compiles to an explicit background and border color that can match one of
+top of. `badge-outline` retired from cairn's own tree on its own: it compiles to an explicit
+background and border color that can match one of
 AdminTable's own zebra stripe colors, so a ghost chip melts into whichever row shares that color,
 and neither it nor the un-tuned `badge-outline` clears the audit's own 3:1 border-contrast floor in
 both themes. `register` supplies the three ratified recipes instead: `'quiet'` (the default) tints

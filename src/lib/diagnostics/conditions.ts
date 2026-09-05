@@ -2,8 +2,7 @@
 // the shared identity the readiness checklist, the doctor probe, and the runtime renderer all draw
 // from, so the three surfaces agree (the 1:1:1). Internal: exported from no public package subpath,
 // so the shape stays free to grow, the same stance as src/lib/log/. Renaming an id is a breaking
-// change to the observable contract. See
-// docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md.
+// change to the observable contract.
 import type { CairnLogEvent } from '../log/index.js';
 
 type ConditionSeverity = 'blocker' | 'warning';

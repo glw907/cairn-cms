@@ -1,5 +1,5 @@
-// cairn-audit's container-inset-asymmetry rule: the phantom-gutter detector (design ratchet Task 5,
-// the mechanical half of finding 1). A block container's rendered content should sit roughly as far
+// cairn-audit's container-inset-asymmetry rule: the phantom-gutter detector,
+// the mechanical half of finding 1. A block container's rendered content should sit roughly as far
 // from its left edge as from its right; when it does not, the container reads as pushed off-center
 // even though nothing about its own box moved.
 //

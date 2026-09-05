@@ -10,7 +10,7 @@
 // real fix stops tripping the floor it already clears and a fake one (a `::before` with no rendered
 // content, or one `pointer-events: none` strips of its own click-catching) still does.
 //
-// The floor is 24x24, not 44x44, by Geoff's ruling (Task 16b, ruling 1). Spec 6.3 originally set
+// The floor is 24x24, not 44x44, by Geoff's ruling (ruling 1). Spec 6.3 originally set
 // 44x44, which is WCAG 2.2's AAA criterion (2.5.5, Target Size (Enhanced)); the bar cairn can
 // honestly claim is AA, and AA's own target-size criterion (2.5.8, Target Size (Minimum)) is 24x24.
 // At 44x44
@@ -239,7 +239,7 @@ function findSmallTouchTargets({ targetMin, tolerance }: { targetMin: number; to
     // the rule already honored `pointer-events` on a `::before` expansion and on a label while
     // ignoring it on the control itself, which was an inconsistency rather than a position.
     //
-    // `opacity: 0` is deliberately NOT here, against Task 18's review suggestion. A fully
+    // `opacity: 0` is deliberately NOT here, against a review suggestion to add it. A fully
     // transparent element still hit-tests in CSS (that is exactly how daisyUI's own `.drawer-toggle`
     // works), so exempting it would be a fail-open on a gating rule.
     if (style.pointerEvents === 'none' || control.closest('[inert]')) continue;

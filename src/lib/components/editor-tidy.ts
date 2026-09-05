@@ -1,4 +1,4 @@
-// The tidy apply primitives (spec 2.5, Task 14). The author's original stays in the buffer until they
+// The tidy apply primitives (spec 2.5). The author's original stays in the buffer until they
 // accept: tidy never overwrites the document and asks for an undo. A StateField holds the change set
 // and each change's disposition, and a decoration plugin shows the proposed edits IN PLACE over the
 // untouched source. An insertion renders as a mark/widget showing the new text in --color-positive-ink

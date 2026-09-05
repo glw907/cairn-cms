@@ -3,9 +3,9 @@
 // The motivating finding, ExpandableRow's own overflow, was rediscovered independently by two
 // consumers before this rule existed, which is the fail-open this rule closes: a layout that fits
 // at 390 can still overflow at 320, so checking one width and calling the floor covered is exactly
-// the shape of clean-because-it-never-looked report this pass exists to rule out.
+// the shape of clean-because-it-never-looked report this rule exists to rule out.
 //
-// Three failures an adversarial pass demonstrated, all closed here and all fixture-covered in
+// Three failures an adversarial review demonstrated, all closed here and all fixture-covered in
 // browser-regressions.test.ts:
 //
 //  1. The rule measured element border boxes only, and a block element's border box is CLAMPED to

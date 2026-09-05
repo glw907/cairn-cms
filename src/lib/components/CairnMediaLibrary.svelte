@@ -516,7 +516,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   });
 
   // The bar's scope line: how many of the selection are in this view, split by usage so the confirm's
-  // skip-and-report path is foreshadowed (Task 8 reads the same split).
+  // skip-and-report path (which reads the same split) is foreshadowed.
   const selectionScope = $derived.by(() => {
     let noRefs = 0;
     let used = 0;

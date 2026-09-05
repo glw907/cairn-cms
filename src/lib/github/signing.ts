@@ -123,7 +123,7 @@ export const cachedInstallationToken = createInstallationTokenCache();
 /**
  * Deploy-time self-test for the App signer: sign a dummy JWT with the configured key. It
  * exercises the brittle PKCS#1-to-PKCS#8 conversion and the Web Crypto import and sign with
- * no network call and no secret in the result, so `/admin/healthz` (Plan 05) catches a bad
+ * no network call and no secret in the result, so `/admin/healthz` catches a bad
  * or rotated key before an editor's save fails. The `detail` is a fixed classifier, never the
  * raw crypto error, so the surfaced health result cannot echo key bytes. Never throws.
  */

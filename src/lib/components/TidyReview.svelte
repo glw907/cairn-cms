@@ -37,7 +37,7 @@ must never make, so no such count exists.
   import { segmentTintClass } from './segmented-control.js';
 
   interface Props {
-    /** The validated change set (Task 13 output), the unit the surface accepts and rejects. */
+    /** The validated change set, the unit the surface accepts and rejects. */
     changes: Change[];
     /** The captured original the diff was computed against; the source of every line label and the
      *  before/after rows. Positions index this string. */

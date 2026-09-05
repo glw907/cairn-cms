@@ -1,5 +1,5 @@
 // cairn-cms: the pieces shared by every reproduction story that mounts `EditPage`, extracted out
-// of ./editor.ts (Task A5a) once ./publish.ts (Task A5b) needed the same prop bag and the same
+// of ./editor.ts once ./publish.ts needed the same prop bag and the same
 // hydration wait for a second story. Each story module still builds its own props object beyond
 // what `editPageProps()` returns, and a fixture stays in its own story module until a second
 // module needs that same one.

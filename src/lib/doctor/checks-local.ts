@@ -265,7 +265,7 @@ function extractKeyValue(text: string | null): string | undefined {
   return match?.[1];
 }
 
-// The zero-token key-health probe (save-500-honest-errors, Task 5), a raw fetch against the models
+// The zero-token key-health probe (save-500-honest-errors), a raw fetch against the models
 // endpoint mirroring the doctor's own githubApp check idiom (checks-github.ts): a real live call
 // through ctx.fetch, never the SDK, so a test's fetch stub stands in with no real network or key.
 // A 401/403 confirms the key is invalid; any other failure (network, DNS, a non-2xx the API never
@@ -286,7 +286,7 @@ async function probeAnthropicKey(fetchImpl: typeof fetch, apiKey: string): Promi
 // borrowing config.bindings-missing the way configMediaBucket does: a shared id meant one check's
 // failure could print another's remediation (a tidy-key failure printing the missing-EMAIL/AUTH_DB
 // fix), so this check gets its own readiness-checklist entry instead. Presence alone stopped being
-// the bar (save-500-honest-errors, Task 5): when a literal value is readable locally (the common
+// the bar (save-500-honest-errors): when a literal value is readable locally (the common
 // `.dev.vars` case, or an unusual literal wrangler var), the doctor actively verifies it against
 // Anthropic and reports valid/invalid distinctly, the same live-network posture as the GitHub App
 // check; when only the NAME is referenced (a real deployed Worker secret, invisible to this CLI),

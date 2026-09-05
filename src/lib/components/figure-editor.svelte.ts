@@ -1,4 +1,4 @@
-// cairn-cms: the figure-at-caret editing surface's own state, out of EditPage.svelte (Task 12).
+// cairn-cms: the figure-at-caret editing surface's own state, out of EditPage.svelte.
 
 import { untrack } from 'svelte';
 import { unwrapFigure, updateFigure, wrapImageInFigure, type FigureAtImage, type FigureRole } from './markdown-format.js';

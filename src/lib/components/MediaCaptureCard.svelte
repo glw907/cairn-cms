@@ -3,7 +3,7 @@
 The one-step capture card for a media insert. Shown when an author already has bytes in hand (a
 paste, a drop, or a chosen file), it captures three things and emits them to its host: the file, an
 editable display name, and the alt text. It is a presentational form card, not a dialog of its own;
-Task 6's insert popover hosts it.
+the insert popover hosts it.
 
 The display name pre-fills from proposedNameFor(file.name): a real specific stem (blue-shoes.png)
 arrives as a Suggested value, while a generic camera stem (IMG_4821.jpg) leaves the field empty and

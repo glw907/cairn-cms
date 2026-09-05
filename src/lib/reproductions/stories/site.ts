@@ -1,5 +1,4 @@
-// cairn-cms: the last four stories for the live-reproduction seam (Task A6b of
-// docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md): `tags/screen`,
+// cairn-cms: the last four stories for the live-reproduction seam: `tags/screen`,
 // `roster/own-row`, `nav/worked-navlayout`, and `toolkit/custom-screen`. Each row's component, host,
 // and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's four matching
 // rows.

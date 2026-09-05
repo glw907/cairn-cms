@@ -1,6 +1,6 @@
 // cairn-audit's form-font-parity rule: every rendered `input`, `select`, `textarea`, and `button`
 // computes the same first `font-family` as the admin's own `[data-theme]` root. This is the UA
-// reset layer's regression tripwire (design ratchet Task 1, closes findings 1 and 6): the reset's
+// reset layer's regression tripwire, closing findings 1 and 6: the reset's
 // `button, input, select, textarea, optgroup { font: inherit; ... }` rule is what stops a bare
 // control from falling back to the browser's UA monospace/serif default, and this rule is what
 // notices if that reset ever fails to load, whether cairn's own build drops it or a consumer's
@@ -12,7 +12,7 @@
 // stack) is deliberate: a control that resolves the same primary face as the root, with a different
 // fallback chain behind it, is not the regression this rule exists to catch.
 //
-// SCOPE (design ratchet Batch B fix). The walk is scoped to the theme root's own subtree, not the
+// SCOPE. The walk is scoped to the theme root's own subtree, not the
 // whole document: a page that mounts more than one theme wrapper, or that renders unthemed chrome
 // alongside the admin surface, has no business comparing a control outside the root against a face
 // declared on the root. A control that opts INTO a different face on purpose is exempt for the same
@@ -36,16 +36,16 @@
 // reason. Both would still false-positive as a mismatch today; neither blocks the docket's own
 // closure, since the docket named neither.
 //
-// Registered PROVISIONALLY at advisory (design ratchet Task 5). The intended tier is error, since a
+// Registered PROVISIONALLY at advisory. The intended tier is error, since a
 // consumer whose sheet never loaded is exactly the silent-fail-open shape this engine exists to
-// rule out, but a rule validated only on this workstation is not trusted to gate a build until Task
-// 6's CI re-check confirms the rendered suite is green against cairn's own admin and showcase on
+// rule out, but a rule validated only on this workstation is not trusted to gate a build until a
+// CI re-check confirms the rendered suite is green against cairn's own admin and showcase on
 // the CI runner (the local visual suite diverges from CI by dozens of threshold-marginal
 // comparisons, and font resolution is exactly the kind of measurement a runner's installed font set
 // can move). If CI disagrees with the workstation, this stays advisory and the divergence is
-// recorded in the plan's post-mortem rather than promoted anyway. Closing the exemption net above is
-// a false-positive fix, not new evidence toward that promotion, so the tier stays advisory in this
-// pass regardless.
+// recorded rather than promoted anyway. Closing the exemption net above is
+// a false-positive fix, not new evidence toward that promotion, so the tier stays advisory
+// regardless.
 import { ensurePageHelpers } from '../../rendered.js';
 import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../rendered.js';
 

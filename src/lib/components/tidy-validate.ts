@@ -1,7 +1,7 @@
 // The tidy output validation: the safety backstop that proves a tidy result is a proofread and not
 // a restructure (spec 2.6) or a successful prompt injection (spec 2.3.3). A pure module taking the
 // captured original and the model's corrected string and returning either the validated change set
-// (the Task 12 diff) or a typed rejection reason. A rejected result is discarded by the caller with
+// (the diff) or a typed rejection reason. A rejected result is discarded by the caller with
 // an honest message and the document is left untouched; nothing here mutates the buffer.
 //
 // Four of the five checks are EXACT and are the real structural backstop: the directive structure,
@@ -20,7 +20,7 @@ import { diffTokens, diffChanges } from './tidy-diff.js';
 import type { Change } from './tidy-diff.js';
 
 /**
- * The reason a tidy result was rejected. Task 14 branches on this; every value maps to the one
+ * The reason a tidy result was rejected. The caller branches on this; every value maps to the one
  *  honest author-facing message, so the reason is for logging and tests, not the user surface.
  *  - `structure`: a directive opener/closer sequence, a heading count or level, or a fenced-code
  *    count diverged (the result restructured the document).
@@ -40,7 +40,7 @@ export const TIDY_REJECTION_MESSAGE =
   'Tidy returned a result that changed more than the wording, so it was discarded. Your text is unchanged.';
 
 /**
- * The outcome of validating a tidy result. On success it carries the Task 12 change set the review
+ * The outcome of validating a tidy result. On success it carries the change set the review
  *  surface accepts and rejects against; on failure it carries the typed reason and the message.
  */
 export type TidyValidation =
@@ -163,7 +163,7 @@ function divergence(original: string, corrected: string): { changed: number; tot
 /**
  * Validate a tidy result against the captured original. Runs the exact structural checks first (a
  * restructure or a token or code edit is a hard reject regardless of how little else changed), then
- * the length-aware divergence bound. On success returns the Task 12 change set for the review
+ * the length-aware divergence bound. On success returns the change set for the review
  * surface; on failure returns the typed reason and the one honest message.
  *
  * The checks, in order: the directive opener/closer sequence and depths, the ATX heading count and

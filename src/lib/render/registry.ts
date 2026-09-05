@@ -1,6 +1,6 @@
 // cairn-cms: the directive component registry (seam 3). One declaration per component,
 // carrying how it inserts in the editor and how it renders in rehype. The render pipeline
-// (Plan 04) and the future component palette both derive from this single source, so the
+// and the future component palette both derive from this single source, so the
 // parser, the render dispatch, and the editor never drift apart. The adapter references
 // `ComponentRegistry` from here.
 import type { Element, ElementContent } from 'hast';

@@ -11,7 +11,7 @@
 // is thin glue over them, wired here but proven live at Phase 2b and on a site, not in this suite.
 //
 // The client is untrusted. The server re-derives the type, the slug, the hash, and the size on every
-// upload (the Task 5 uploadAction), so this helper exists for UX (a correct preview, no dead wait),
+// upload (the uploadAction), so this helper exists for UX (a correct preview, no dead wait),
 // never for security.
 import { sniffMediaType } from '../media/sniff.js';
 
@@ -202,7 +202,7 @@ export function failureCard(kind: IngestFailureKind): IngestFailureCard {
   return { status: 'failed', kind, message: FAILURE_MESSAGE[kind] };
 }
 
-/** The fields the upload request carries, mirroring exactly what the Task 5 uploadAction reads back. */
+/** The fields the upload request carries, mirroring exactly what uploadAction reads back. */
 export interface UploadRequestOpts {
   conceptId: string;
   id: string;

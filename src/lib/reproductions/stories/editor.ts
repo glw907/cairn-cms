@@ -1,5 +1,4 @@
-// cairn-cms: the eight editor stories for the live-reproduction seam (Task A5a of
-// docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md). Each row's component, host,
+// cairn-cms: the eight editor stories for the live-reproduction seam. Each row's component, host,
 // and props-or-pose decision comes from docs/internal/record/repro-story-audit.md; what each render
 // must SHOW comes from the page contracts in
 // docs/internal/record/2026-08-15-docs-outlines-with-visuals.md, which for these eight is

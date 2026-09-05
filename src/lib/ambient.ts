@@ -6,7 +6,7 @@
 //
 //   import '@glw907/cairn-cms/ambient';
 //
-// The four members share the flat `cairn` prefix (C2 breaking-window pass, R2 ruling) rather than
+// The four members share the flat `cairn` prefix rather than
 // a nested `locals.cairn.{}` namespace: a flat key costs a site one optional hop
 // (`event.locals.cairnEditor`) instead of two, and `grep cairnEditor` finds every engine read of
 // the field in any repo, this one included, with no namespace to peel back first.

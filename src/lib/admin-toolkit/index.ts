@@ -1,7 +1,7 @@
 // cairn-cms: the `/admin-toolkit` public barrel. General-purpose primitives a site building its own
 // `/admin/` screen (or cairn's own admin screens) composes instead of hand-rolling a bespoke
 // parallel. Two tiers share this one charter: the FIELD primitive (`FieldLabel`, merged here from
-// the retired `admin-fields` subpath in the C2 breaking-window pass, R3) renders one labeled
+// the retired `admin-fields` subpath) renders one labeled
 // control's wrapping label in the admin's label rhythm, and the SCREEN-SCAFFOLD primitives
 // (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`, `ToolbarDisclosure`, `Pagination`,
 // `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters compose a whole

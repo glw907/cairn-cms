@@ -1,6 +1,6 @@
 <!--
 @component
-The per-entry publish-history screen (spec "Part 1: entry history"; plan Task 4). A version is a
+The per-entry publish-history screen (spec "Part 1: entry history"). A version is a
 publish: the list renders `historyLoad`'s bounded, newest-first commit read under the heading
 "Recent versions", never a completeness claim, since the commits API's path filter restarts at a
 rename and the view has no way to know its own list fell short of the entry's real lifetime. A

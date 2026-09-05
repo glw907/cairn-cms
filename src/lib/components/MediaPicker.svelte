@@ -44,7 +44,7 @@ while a site stores images only.
 <script lang="ts">
   import { getContext } from 'svelte';
   import { formatMediaToken } from '../media/reference.js';
-  // The bare delivery path under transformations: false (the same path the Task 3 source chip uses).
+  // The bare delivery path under transformations: false (the same path the source chip uses).
   // SEAM: when transformations are on, the row thumbnail should request the `thumb` preset URL
   // instead of the bare path; that is a later transformations-on refinement.
   import { publicPath } from '../media/naming.js';
@@ -161,7 +161,7 @@ while a site stores images only.
         select(activeEntry);
       }
     }
-    // Escape is handled by the host popover (Task 6); let it bubble.
+    // Escape is handled by the host popover; let it bubble.
   }
 </script>
 
@@ -251,7 +251,7 @@ while a site stores images only.
             <span class="truncate type-body font-medium">{entry.displayName || entry.slug || entry.hash}</span>
             {#if entry.alt.trim() === ''}
               <!-- The needs-alt flag: a glyph plus a label, never hue alone (the spec a11y rule),
-                   matching the Task 3 source-chip treatment. -->
+                   matching the source-chip treatment. -->
               <span class="inline-flex items-center gap-1 type-label font-medium cairn-text-warning">
                 <span aria-hidden="true">&#9888;</span>
                 <span>Needs alt</span>

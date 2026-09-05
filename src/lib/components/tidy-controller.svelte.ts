@@ -1,4 +1,4 @@
-// cairn-cms: the tidy flow's own state and action driver, out of EditPage.svelte (Task 12).
+// cairn-cms: the tidy flow's own state and action driver, out of EditPage.svelte.
 
 import { untrack } from 'svelte';
 import { postFormAction } from './client-action.js';
@@ -6,7 +6,7 @@ import { validateTidy, TIDY_REJECTION_MESSAGE } from './tidy-validate.js';
 import type { Change } from './tidy-diff.js';
 import type { EditorApi } from './MarkdownEditor.svelte';
 
-// The client-side tidy deadline (spec 2.1, Task 14): a slow call becomes a cancel/retry rather than a
+// The client-side tidy deadline (spec 2.1): a slow call becomes a cancel/retry rather than a
 // hung review. Set above the action's own 30s Worker deadline so the server's retryable fail lands
 // first when the model is merely slow; this catches a stalled connection past that.
 const TIDY_CLIENT_TIMEOUT_MS = 45_000;
@@ -109,7 +109,7 @@ export function createTidyController(params: TidyControllerParams) {
    * Run tidy (spec 2.1) over the whole document or the current selection. The action receives only
    *  the selected text plus a scope flag; the diff is computed against that text and the changes'
    *  ranges are offset back into the full document before they reach the apply seam. On success the
-   *  result is validated as a proofread (Task 13); a rejection shows the honest message and writes
+   *  result is validated as a proofread; a rejection shows the honest message and writes
    *  nothing; a clean result shows "Nothing to fix"; otherwise the review opens.
    */
   async function runTidy() {
@@ -194,7 +194,7 @@ export function createTidyController(params: TidyControllerParams) {
         noop = true;
         return;
       }
-      // Validate the result as a proofread (Task 13). A rejection writes nothing and shows the message.
+      // Validate the result as a proofread. A rejection writes nothing and shows the message.
       const validation = validateTidy(text, corrected);
       if (!validation.ok) {
         message = TIDY_REJECTION_MESSAGE;

@@ -1,5 +1,5 @@
 // The local tidy category taxonomy and the because-line builder (spec 2.5, decision 9). The tidy
-// action returns a corrected STRING; the diff (Task 12) turns it into changes; this module infers each
+// action returns a corrected STRING; the diff turns it into changes; this module infers each
 // change's category and safety rank LOCALLY from the diff shape and the enabled config, never from a
 // claim the model made and never from a count of the author's own usage. It is pure: the inputs are a
 // change, the captured original, and the resolved conventions, and the outputs are a category and an

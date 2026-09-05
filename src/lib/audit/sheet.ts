@@ -33,9 +33,9 @@ export interface SheetRule {
   negatedClassNames: string[];
   /**
    * Character offset of the selector's first non-whitespace, non-comment character in the CSS
-   * text `parseSheet` was given. Meaningless for the compiled admin sheet (Task 9a's rules
+   * text `parseSheet` was given. Meaningless for the compiled admin sheet (those rules
    * resolve position through a markup class token instead), but load-bearing for the CSS-family
-   * rules (Task 9b), which parse a component's own `<style>` block or a standalone consumer CSS
+   * rules, which parse a component's own `<style>` block or a standalone consumer CSS
    * file and have no class token to anchor a finding to.
    */
   start: number;

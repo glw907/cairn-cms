@@ -567,9 +567,8 @@ discriminant, not the fields, gates the chrome).
        data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
        still governs the overlay at every width below each route's persist breakpoint, so the toggle
        (and Cmd/Ctrl+B) reopens the nav over the document on demand.
-       Zen recedes the sidebar too, at every width regardless of route kind (plan-locked call 1,
-       docs/superpowers/plans/2026-07-15-admin-reorganization.md): it is an explicit, reversible
-       editor choice, so the persistent breakpoint never overrides it. The checkbox-driven overlay
+       Zen recedes the sidebar too, at every width regardless of route kind: it is an explicit,
+       reversible editor choice, so the persistent breakpoint never overrides it. The checkbox-driven overlay
        still governs the whole sidebar under zen, so the toggle (and Cmd/Ctrl+B) never traps an
        editor away from the nav.
        At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
@@ -599,7 +598,7 @@ discriminant, not the fields, gates the chrome).
     />
 
     <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
-         pointer, keyboard, and assistive tech (the APG modal-dialog contract, Task 8). Never inert
+         pointer, keyboard, and assistive tech (the APG modal-dialog contract). Never inert
          at the persistent breakpoint, where the sidebar sits beside the document, not over it. -->
     <div
       class="drawer-content flex flex-col"
@@ -619,7 +618,7 @@ discriminant, not the fields, gates the chrome).
            metrics, and the two border-bottoms stop meeting at the seam). Below sm the sidebar is an
            overlay drawer, not a visible band to align against, so the alignment argument does not
            bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
-           C1 phone-desk band. Office routes keep the full 64px band at every width. -->
+           phone-desk band. Office routes keep the full 64px band at every width. -->
       <div
         class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
         class:max-sm:px-2={isDeskRoute}
@@ -810,7 +809,7 @@ discriminant, not the fields, gates the chrome).
 
     <div class="drawer-side">
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (Task 8's APG
+      <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (the APG
            treatment): at the persistent breakpoint this is a plain nav landmark beside the document,
            never a modal, so the two attributes stay conditional rather than standing. -->
       <nav
@@ -875,7 +874,7 @@ discriminant, not the fields, gates the chrome).
             <!-- The header carries the visible children's summed count only while the section is
                  closed, since an open <details> already carries each child's own pill (the rollup
                  would double the story); it disappears the instant the section opens, per the
-                 collapsed-header rollup contract (Task 8). -->
+                 collapsed-header rollup contract. -->
             <summary
               class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 type-label font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content"
               aria-label={showHeaderPill ? `${label}, ${attentionSum} pending items` : undefined}

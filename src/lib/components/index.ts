@@ -1,4 +1,4 @@
-// cairn-cms: the public `/components` barrel. The admin Svelte UI (Plan 05): the shell, the
+// cairn-cms: the public `/components` barrel. The admin Svelte UI: the shell, the
 // per-view screens `CairnAdmin` switches between, and the composed dialogs and fields those
 // screens mount. The membership rule is exact for the view tier: every view `CairnAdmin` can
 // render is individually mountable here, so a site on the advanced per-route mounting reaches the

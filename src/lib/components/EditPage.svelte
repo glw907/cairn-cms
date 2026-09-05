@@ -279,7 +279,7 @@ persistent "?" carries Markdown help, design-arc D2).
     // floor this shape guards, which the ^5.56.10 peer range now sits comfortably above.
     const onWindowKeydown = (e: KeyboardEvent) => {
       // Escape precedence, top to bottom: an open dialog claims Escape natively, so step aside
-      // when one is up. Otherwise the details slide-over closes first (Task 8: it is a region, not
+      // when one is up. Otherwise the details slide-over closes first (it is a region, not
       // a dialog, so it has no native light-dismiss), and only when no panel is open does Escape
       // exit zen. So under zen with the panel open, the first Escape closes the panel and the
       // second exits zen, which keeps the two affordances independent.
@@ -494,7 +494,7 @@ persistent "?" carries Markdown help, design-arc D2).
   let editor = $state.raw<EditorApi | null>(null);
 
   /** Builds one `registerEditor` handler for a single `MarkdownEditor` mount, so revocation stays
-   *  identity-guarded (spec Task 11): `{#key entryKey}` gives every mount its own fresh call to
+   *  identity-guarded: `{#key entryKey}` gives every mount its own fresh call to
    *  this factory (proven non-reactive, so it runs exactly once per mount, never re-invoked for an
    *  unrelated reactive update on the parent), and the closure it returns remembers only the api
    *  reference IT granted. On mount it both records that reference and updates the shared holder;
@@ -540,8 +540,8 @@ persistent "?" carries Markdown help, design-arc D2).
     editor?.format(kind);
   }
 
-  // The tidy request/review/undo flow (spec 2.1, 2.5), out of this shell (tidy-controller.svelte.ts,
-  // Task 12): every read it needs is a getter, since `data` is replaced on a same-route entry hop and
+  // The tidy request/review/undo flow (spec 2.1, 2.5), out of this shell (tidy-controller.svelte.ts):
+  // every read it needs is a getter, since `data` is replaced on a same-route entry hop and
   // `editor`'s $state.raw grant would lose reactivity if passed by value.
   const tidyController = createTidyController({
     getEditor: () => editor,
@@ -698,7 +698,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // figure-editor.svelte.ts: a `.svelte.ts` module has no template to bind:this a native ref into.
   let figureDialog = $state<HTMLDialogElement | null>(null);
   // The Figure control's availability, label, and open-dialog prefill, which carries the decorative
-  // read (out of this shell, figure-editor.svelte.ts, Task 12). Writes reach the buffer through
+  // read (out of this shell, figure-editor.svelte.ts). Writes reach the buffer through
   // editor?.replaceRange/selectRange only; the module never touches figureDialog, so the shell
   // wrappers below still own showModal()/close() around it.
   const figureEditor = createFigureEditor({
@@ -831,7 +831,7 @@ persistent "?" carries Markdown help, design-arc D2).
   });
   // Edited and New are attention states and stay on the stock daisyUI badge-warning/badge-info
   // fills; Published is a settled, put-away state and takes the quiet chip register instead of
-  // the retired stock ghost badge (design infrastructure Pass 3, corpus C; the register itself is
+  // the retired stock ghost badge (the register itself is
   // the second generation's, docs/internal/probes/2026-08-26-chip-registers-v2).
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';
@@ -839,7 +839,7 @@ persistent "?" carries Markdown help, design-arc D2).
     return 'cairn-chip-quiet';
   });
 
-  // The below-sm compact band (design-arc C1) has room for exactly one status pill, never the
+  // The below-sm compact band has room for exactly one status pill, never the
   // desktop's separate status badge, Hidden badge, and save-state text side by side (audit
   // finding 1's 320px triple: Published + Hidden + a dirty edit). The pill's own visible content
   // carries the eye-off glyph and the dirty dot (see the desk snippet below); this aria-label
@@ -856,7 +856,7 @@ persistent "?" carries Markdown help, design-arc D2).
   let actionsMenu = $state<HTMLUListElement | null>(null);
   let actionsOpen = $state(false);
 
-  // Tracks the sm breakpoint live (CairnAdminShell's matchesLg/matchesXl pattern): design-arc C1's
+  // Tracks the sm breakpoint live (CairnAdminShell's matchesLg/matchesXl pattern): the
   // phone composition (docs/internal/2026-07-15-design-arc-log.md) needs exclusive rendering, not
   // a CSS-hidden duplicate, for any control whose accessible name would otherwise exist twice in
   // the DOM at once (Save, Publish, the status cluster) outside a popover. A popover's own closed
@@ -931,7 +931,7 @@ persistent "?" carries Markdown help, design-arc D2).
 
   // The declared image (hero) fields, for labelling the needs-alt notice's frontmatter rows. Only
   // top-level image fields are enumerated. A nested image (an array(image) gallery item or an object
-  // image sub-field) is intentionally out of scope for the needs-alt notice this phase, the recorded
+  // image sub-field) is intentionally out of scope for the needs-alt notice, a recorded
   // carry-forward, so the flat top-level scan is deliberate, not an oversight.
   const imageFields = $derived(
     data.fields.filter((f) => f.type === 'image').map((f) => ({ name: f.name, label: f.label })),
@@ -1069,9 +1069,9 @@ persistent "?" carries Markdown help, design-arc D2).
   // nulls out itself when the {#key} remount destroys the bound node (tidyWorkingDialog,
   // tidyNoopDialog, tidyMessageDialog, and figureDialog are this group: the tidy and figure STATE
   // that used to sit beside them moved fully into tidy-controller.svelte.ts and
-  // figure-editor.svelte.ts, Task 12, each owning its own entry-key-scoped reset there, so their
+  // figure-editor.svelte.ts, each owning its own entry-key-scoped reset there, so their
   // names no longer appear in this file's declared list at all; detailsPanel joins this group the
-  // same way, Task 13: heroFieldRefs moved fully into DetailsPanel.svelte, which resets by remount
+  // same way: heroFieldRefs moved fully into DetailsPanel.svelte, which resets by remount
   // since it mounts inside the {#key entryKey} block below, so its name is also gone from this
   // file's declared list); and (2) transient UI-only state that is never entry content and never
   // caret-derived, either re-reporting itself independently of the caret (a diagnostics count, a
@@ -1199,7 +1199,7 @@ persistent "?" carries Markdown help, design-arc D2).
   const wordCount = $derived(countedBody.trim() ? countedBody.trim().split(/\s+/).length : 0);
   const wordLabel = $derived(wordCount === 1 ? '1 word' : `${wordCount} words`);
 
-  // The visible issue count (Task 3): the same settled spelling-plus-style diagnostics the
+  // The visible issue count: the same settled spelling-plus-style diagnostics the
   // announcer speaks, read off its identical debounced report rather than a second, independently
   // timed pass over the document. Starts at zero before the editor's first report lands.
   let diagnosticsCounts = $state<DiagnosticCounts>({ spelling: 0, style: 0 });
@@ -1381,7 +1381,7 @@ persistent "?" carries Markdown help, design-arc D2).
 {#snippet desk()}
   <div class="ml-2 flex min-w-0 flex-1 items-center gap-3 max-sm:ml-0 max-sm:gap-1">
     {#if narrow}
-      <!-- The below-sm compact band (design-arc C1, docs/internal/2026-07-15-design-arc-log.md):
+      <!-- The below-sm compact band (docs/internal/2026-07-15-design-arc-log.md):
            the way back to the concept list, the document title as read-only truncating text (not
            the input, which lives with the manuscript), and one status pill. The pill folds the
            Hidden signal in as the eye-off glyph and carries the dirty dot beside it, so the rare
@@ -1557,7 +1557,7 @@ persistent "?" carries Markdown help, design-arc D2).
       </ul>
 
       {#if !narrow}
-      <!-- The lifecycle pair, sm and up only: design-arc C1 moves Save and Publish out of the band
+      <!-- The lifecycle pair, sm and up only: this composition moves Save and Publish out of the band
            below sm, onto the fixed bottom action bar near the end of this component's template
            (both buttons ride the same form="cairn-edit-form" this pair does, so the guarded-Publish
            pattern is identical). An `{#if}`, not a CSS-hidden duplicate: two live Save/Publish
@@ -1602,7 +1602,7 @@ persistent "?" carries Markdown help, design-arc D2).
   </div>
 {/snippet}
 
-<!-- The below-sm fixed bottom action bar (design-arc C1) must stay above an open on-screen
+<!-- The below-sm fixed bottom action bar must stay above an open on-screen
      keyboard, and the admin owns this route's <svelte:head> even though the surrounding app shell
      is a consumer's own SvelteKit layout. `interactive-widget=resizes-content` (the CSS Viewport
      spec's viewport-meta descriptor, shipped in Chromium since ~M108) tells the browser to shrink
@@ -1617,7 +1617,7 @@ persistent "?" carries Markdown help, design-arc D2).
      implements `interactive-widget` as of this writing, so the fix is Chromium-only there; iOS
      Safari's own keyboard-resize behavior varies by version and is not separately patched here (a
      `visualViewport` resize listener would cover it, at the cost of a listener running for the
-     life of every edit session, which this pass judged not worth it for a chrome sliver). -->
+     life of every edit session, judged not worth it for a chrome sliver). -->
 <svelte:head>
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
 </svelte:head>
@@ -1728,7 +1728,7 @@ persistent "?" carries Markdown help, design-arc D2).
   {/each}
 {/snippet}
 
-<!-- The toolbar's below-sm More popover items (design-arc C1), shared so every fold-in control keeps
+<!-- The toolbar's below-sm More popover items, shared so every fold-in control keeps
      one shape. moreCheck is the same active-state glyph ConceptList's check() draws; moreToggle
      renders one aria-pressed <li>, its `act` closure carrying both the state change and the passed
      closeMenu; moreDivider is the sm-hidden separator between clusters. -->
@@ -1962,7 +1962,7 @@ persistent "?" carries Markdown help, design-arc D2).
           </button>
         {/snippet}
         {#snippet moreExtra(closeMenu: () => void)}
-          <!-- Below sm only (design-arc C1): the toolbar's one overflow is where Write/Preview, the
+          <!-- Below sm only: the toolbar's one overflow is where Write/Preview, the
                postures, the writing modes, and the word count all land once the card footer stops
                rendering at this width (see the footer's own sm:flex gate above). Markdown help
                does NOT fold in here (design-arc D2): the toolbar's own persistent "?" control
@@ -2078,7 +2078,7 @@ persistent "?" carries Markdown help, design-arc D2).
            overflow menu. Markdown help lives in the toolbar's own persistent "?" control now
            (design-arc D2), not here: a second copy in the footer would just be a width-dependent
            duplicate of an affordance that already reaches every width from one place. sm and up
-           only: below sm design-arc C1 drops the strip outright (its own toolbar row already
+           only: below sm this composition drops the strip outright (its own toolbar row already
            scrolls, so wrapping it further was the wrong fix) and moves every one of its remaining
            controls, word count included, into the toolbar's own More popover (EditorToolbar's
            moreExtra snippet below), so nothing here is lost, only relocated. Gated on the live
@@ -2282,7 +2282,7 @@ persistent "?" carries Markdown help, design-arc D2).
   </aside>
 </form>
 
-<!-- The below-sm fixed bottom action bar (design-arc C1): Save and Publish leave the band below sm
+<!-- The below-sm fixed bottom action bar: Save and Publish leave the band below sm
      (audit finding 1: the top-right pair measured 31-32px there, under the 44px floor, and sat in
      the one-handed dead zone) for a bar fixed to the bottom of the visual viewport, each button at
      least 44px tall (min-h-11). Both ride form="cairn-edit-form" the way the band's own pair does
@@ -2454,7 +2454,7 @@ persistent "?" carries Markdown help, design-arc D2).
   />
 {/if}
 
-<!-- The tidy working state: a cancelable dialog wired to the real abort (Task 11's AbortController
+<!-- The tidy working state: a cancelable dialog wired to the real abort (an AbortController
      plus the bounded client timeout). Shown while the model call is in flight. -->
 {#if tidyController.tidyBusy}
   <dialog

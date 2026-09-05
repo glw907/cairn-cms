@@ -1,5 +1,5 @@
 // cairn-cms: the repro fence validator, shared by the engine's check:visuals gate (gate 1) and
-// cairn-pub's docsReproBlocks build-time throw (gate 3, Pass 2). One implementation checks a
+// cairn-pub's docsReproBlocks build-time throw (gate 3). One implementation checks a
 // `repro` fence body against the manifest so the two gates cannot silently drift apart.
 //
 // This module stays on the node-safe half of the reproductions seam: nothing here may import

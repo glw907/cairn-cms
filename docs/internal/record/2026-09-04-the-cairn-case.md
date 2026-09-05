@@ -26,12 +26,13 @@ sample. **Uncited** marks a statement that is checkable but was not cited here. 
 a judgment, and the Uncited kind exists so that Opinion marks only judgments. A short structural
 sentence that states no fact, a transition between two tagged sentences, carries no note. A
 sentence about this document's own drafting, what the brief said or what was dropped, never
-derives wherever it sits. A sentence that could earn no kind was cut. From revision 9 the tags
-live in the numbered notes at the end of the document, one note per tag, each carrying its kind,
-its path or URL, the command where one exists, and the figures the sentence turns on, so a checker
-reproduces every number from the note alone; the prose carries the one number each sentence turns
-on inline. Evidence dates matter, because counts and ratings move; the evidence file records the
-read date of each number [^2].
+derives wherever it sits. A sentence that could earn no kind was cut. The mechanical tell scan is
+clean apart from the token `showcase`, which appears only inside the path `examples/showcase`.
+From revision 9 the tags live in the numbered notes at the end of the document, one note per tag,
+each carrying its kind, its path or URL, the command where one exists, and the figures the
+sentence turns on, so a checker reproduces every number from the note alone; the prose carries the
+one number each sentence turns on inline. Evidence dates matter, because counts and ratings move;
+the evidence file records the read date of each number [^2].
 
 Inputs: the ratified argument brief, its round-1 adversarial review (verdict RETHINK, twelve
 ranked changes), the two evidence files, the product owner's strengthening notes, the round-2
@@ -41,14 +42,15 @@ speed, the shape's public record, large-sample telemetry, the Cloudflare leg, sh
 the measured build, the owner's round-8 notes, the scope charter, the docs register,
 `why-cairn.md`, and the extend track, all banked under
 `docs/internal/record/2026-09-04-cairn-case/`. Where this document departs from a review, it says
-so and says why. Each section carries a front-door line: derivable, or internal record only
-because it names a consumer site. The derived page's order is the audience lens's, section 2 of
-`07-audience-lens.md`: identity, the developer's screens, the boundary with the developer-required
-sentence, content in git, the routes; the rest below.
+so and says why. Each section carries a front-door line: derivable, or internal record only,
+because it names a consumer site or because it argues about this document's own drafting. The
+derived page's order is the audience lens's, section 2 of `07-audience-lens.md`: identity, the
+developer's screens, the boundary with the developer-required sentence, content in git, the
+routes; the rest below.
 
 ## The traditional setup, as a competent team builds it
 
-Front door: derivable.
+Front door: derivable; the tag marked internal cites a consumer site's record through the evidence file.
 
 The shape is a hosted CMS with a theme and plugin ecosystem, beside a membership product that
 carries the member database, dues, event registration, bulk email to members, and a member portal
@@ -67,7 +69,7 @@ market of people who can be hired to work on it [^9]. Each part can be replaced 
 each vendor carries a support contract [^10]. The payments provider arrives already integrated
 with dues and renewals [^11].
 
- The same people use two interfaces and two logins where the two products are separate, and the
+The same people use two interfaces and two logins where the two products are separate, and the
 member record lives in the vendor's store [^12], and the integration between site and membership
 product is maintained by the organization [^13]. A plugin ecosystem is an update and security
 treadmill: Patchstack's disclosure data for 2024 counts 7,966 new vulnerabilities in the WordPress
@@ -105,18 +107,18 @@ Cloudflare Workers, the hosting product, has a small labor market when that deve
 [^31]. cairn is pre-1.0, and a seam has already moved across two minor releases inside the tier
 meant to stay frozen [^32].
 
-Out of the box, before a developer writes anything, the site's configuration gives you an
-editor-first CMS with two roles, owner and editor: editors sign in from an emailed link, write
-markdown with a live preview rendered by the same function the public site uses, and publish
-[^33]. A site's own route under `src/routes/admin/` renders inside the shared shell automatically,
-is gated by the same access map, audits through the same sink, and composes from
-`@glw907/cairn-cms/admin-toolkit` primitives (`OfficeList`, `AdminTable`, `ListToolbar`,
-`Pagination`, `StatusChip`, `EmptyState`, `FieldLabel`) [^34]. The scaffold, `create-cairn-site`,
-the tool that writes a new site, ships one worked custom screen, `admin/signups`, reading its own
-`APP_DB` binding [^35]. The seams form a versioned public surface held by a snapshot gate, so a
-site's screens survive ordinary engine updates [^36].
+Before a developer writes anything, the site's configuration supplies an editor-first CMS with two
+roles, owner and editor: editors sign in from an emailed link, write markdown with a live preview
+rendered by the same function the public site uses, and publish [^33]. A site's own route under
+`src/routes/admin/` renders inside the shared shell automatically, is gated by the same access
+map, audits through the same sink, and composes from `@glw907/cairn-cms/admin-toolkit` primitives
+(`OfficeList`, `AdminTable`, `ListToolbar`, `Pagination`, `StatusChip`, `EmptyState`,
+`FieldLabel`) [^34]. The scaffold, `create-cairn-site`, the tool that writes a new site, ships one
+worked custom screen, `admin/signups`, reading its own `APP_DB` binding [^35]. The seams form a
+versioned public surface held by a snapshot gate, so a site's screens survive ordinary engine
+updates [^36].
 
- A staff-shaped audience (an instructor, a volunteer coordinator) uses the editors' magic-link
+A staff-shaped audience (an instructor, a volunteer coordinator) uses the editors' magic-link
 sign-in with a `none`-capability role and its own `home`, and stays a row in `AUTH_DB` [^37].
 Members are a different case. A member population gets `createAuthChannel`, a wholly separate
 login with its own D1 store (D1 is Cloudflare's hosted database), its own session, and its own
@@ -141,15 +143,15 @@ git-backed CMS and a hand-written `/admin` [^47]. The git-backed tools in that p
 weekly downloads for the week of 2026-08-23: `@keystatic/core` 134,619, TinaCMS 70,261, Decap CMS
 3,059 [^48]. The difference that matters is sign-in. Keystatic's GitHub mode wants every editor to
 hold a GitHub account with write access to the repository, and its hosted Cloud mode lifts that by
-routing editors through Keystatic's own service. Decap wants an OAuth backend, a GitHub OAuth app
-behind a proxy or Git Gateway. cairn sends the editor an email from the site's own Cloudflare
-account, with no third service in the sign-in path [^49]. Leg 3 carries what that costs. Past
-that, cairn brings the holding-branch publish path, the admin shell and its primitives, the
-snapshot gate that keeps the seams from moving, and the agent skill [^50], and a developer
-assembling the same thing writes or installs each one [^51]. The 28-rule admin audit is a gate
-over screens the developer designs, so a designer meets it as a reviewer of their own work [^52].
-What the other stack gives that cairn does not: a choice of host and framework, and a writing
-surface its own project maintains [^53].
+routing editors through Keystatic's own service [^49]. Decap wants an OAuth backend, a GitHub
+OAuth app behind a proxy or Git Gateway [^49]. cairn sends the editor an email from the site's own
+Cloudflare account, with no third service in the sign-in path [^49]. Leg 3 carries what that
+costs. Past that, cairn brings the holding-branch publish path, the admin shell and its
+primitives, the snapshot gate that keeps the seams from moving, and the agent skill [^50], and a
+developer assembling the same thing writes or installs each one [^51]. The 28-rule admin audit is
+a gate over screens the developer designs, so a designer meets it as a reviewer of their own work
+[^52]. What the other stack gives that cairn does not: a choice of host and framework, and a
+writing surface its own project maintains [^53].
 
 ## The shape, not only the product
 
@@ -267,17 +269,17 @@ mail, the vendor count is equal and the capability list is the product's [^107].
 accounts and cairn's shape is Cloudflare, GitHub, a payments provider if dues are collected, and
 organizational mail; the registrar folds into Cloudflare when the domain moves there [^108].
 
-The platform is the same one the free plan gives every zone. Cloudflare publishes 348 cities and
-95% of the connected population within 50 ms of one [^109]. Universal SSL issues, renews, and
-deploys "free, unshared, publicly trusted" certificates on every plan, which settles the earlier
-rounds' unconfirmed certificate charge [^110]. DDoS protection and TLS come with every plan, and
-the rest of what the account gives sits on Cloudflare's own pages, which move on the vendor's
-schedule: the free WAF subset and the $20 zone plan for the full managed rules, Bot Fight Mode as
-one toggle, free and unlimited static-asset requests, Workers Logs on one config line with the
-engine's JSON events in them, Workers Builds with free minutes, and the registrar at registry cost
-[^111]. cairn's reasoning does not depend on any one of those numbers. It depends on the account
-carrying them at all, so a small team runs no server, no CDN contract, no mail relay, no
-certificate process, and no CI service of its own [^112].The bill is $5 a month for Workers Paid,
+The platform is the same one the free plan gives every zone [^109]. Cloudflare publishes 348
+cities and 95% of the connected population within 50 ms of one [^109]. Universal SSL issues,
+renews, and deploys "free, unshared, publicly trusted" certificates on every plan, which settles
+the earlier rounds' unconfirmed certificate charge [^110]. DDoS protection and TLS come with every
+plan, and the rest of what the account gives sits on Cloudflare's own pages, which move on the
+vendor's schedule: the free WAF subset and the $20 zone plan for the full managed rules, Bot Fight
+Mode as one toggle, free and unlimited static-asset requests, Workers Logs on one config line with
+the engine's JSON events in them, Workers Builds with free minutes, and the registrar at registry
+cost [^111]. cairn's reasoning does not depend on any one of those numbers. It depends on the
+account carrying them at all, so a small team runs no server, no CDN contract, no mail relay, no
+certificate process, and no CI service of its own [^112]. The bill is $5 a month for Workers Paid,
 once per account, plus the domain, and $20 a month per zone if the full WAF is wanted; D1, R2, and
 3,000 emails a month sit inside the paid plan's included quotas at a club's scale [^113]. The
 developer's time is the largest line, and no dollar or hour figure for it exists in either
@@ -330,24 +332,27 @@ Email Sending is beta and paid, and sign-in depends on it, so an unverified send
 can get in [^136]. Onboarding writes an apex DMARC policy telling receivers to reject mail the
 domain has not authenticated, `p=reject` in the record's terms [^137]. The Email Sending pages
 describe no list management, unsubscribe handling, bounce suppression, or campaign features
-[^138]. D1 processes one query at a time per database and caps at 10 GB on the paid plan [^139].
-That is right for a club's roster and wrong for real write concurrency [^140]. R2 documents
-eleven-nines durability and no versioning or point-in-time restore; durability "does not prevent
-intentional or accidental deletion" [^141]. D1 offers Time Travel to any minute in the last 30
-days on Workers Paid and 7 days on Free [^142]. The published cairn docs carry no backup or
-restore procedure for either store, a gap the docs owe [^143]. No monitoring, alerting, or uptime
-check is in the published docs beyond the scaffold's `healthz` route [^144]. Nobody is paged, and
-Cloudflare's status page is the only signal [^145]. There is no account-transfer feature: moving a
-zone to another account means re-adding the domain, repointing nameservers, and reissuing
-certificates, and a Registrar-held domain needs a support request [^146]. Whether the Cloudflare
-and GitHub accounts belong to the organization or to its developer is a choice this document does
-not make [^147]. In the production case the repository, the Cloudflare account, and the GitHub App
-installation are all under the developer's personal accounts: the site's `wrangler.toml:4` carries
-an `account_id` matching the engine author's account in cairn-cms `CLAUDE.md`, and the engine's
-`CLAUDE.md` names one App installation on the author's account [^148]. Members can be added to an
-account under scoped policies, so the organization can own the account from day one and the
-developer can be a member [^149]. The support question, above under Leg 1, applies to the platform
-choice too [^150].
+[^138].
+
+On the stores, D1 processes one query at a time per database and caps at 10 GB on the paid plan
+[^139]. That is right for a club's roster and wrong for real write concurrency [^140]. R2
+documents eleven-nines durability and no versioning or point-in-time restore; durability "does not
+prevent intentional or accidental deletion" [^141].
+
+On operations, D1 offers Time Travel to any minute in the last 30 days on Workers Paid and 7 days
+on Free [^142]. The published cairn docs carry no backup or restore procedure for either store, a
+gap the docs owe [^143]. No monitoring, alerting, or uptime check is in the published docs beyond
+the scaffold's `healthz` route [^144]. Nobody is paged, and Cloudflare's status page is the only
+signal [^145]. There is no account-transfer feature: moving a zone to another account means
+re-adding the domain, repointing nameservers, and reissuing certificates, and a Registrar-held
+domain needs a support request [^146]. Whether the Cloudflare and GitHub accounts belong to the
+organization or to its developer is a choice this document does not make [^147]. In the production
+case the repository, the Cloudflare account, and the GitHub App installation are all under the
+developer's personal accounts: the site's `wrangler.toml:4` carries an `account_id` matching the
+engine author's account in cairn-cms `CLAUDE.md`, and the engine's `CLAUDE.md` names one App
+installation on the author's account [^148]. Members can be added to an account under scoped
+policies, so the organization can own the account from day one and the developer can be a member
+[^149]. The support question, above under Leg 1, applies to the platform choice too [^150].
 
 The tie is the platform bindings layer and the engine that reaches it. The engine has no
 host-agnostic layer and reaches D1, R2, and Workers directly, so leaving Cloudflare means leaving
@@ -456,131 +461,130 @@ to the top tier and doing nothing for models already there, with cost per eval f
 on 2,525 of its 13,170 commits in the first eight months of 2026, with an `AGENTS.md` naming the
 framework's blind spots [^196]. Basecamp's ledger is smaller. Basecamp's open-source Rails product
 Fizzy carries the trailer on 104 of 1,370 commits in the same window, with an `AGENTS.md` naming
-its invariants [^196]. Simon Willison's published ledger for a library release: 34 commits over 30
-files, $149.25 in model cost, the transcript public, and a data-loss bug caught in review [^197].
+its invariants [^197]. Simon Willison's published ledger for a library release: 34 commits over 30
+files, $149.25 in model cost, the transcript public, and a data-loss bug caught in review [^198].
 Phoenix now generates the agent's instruction file with every new app, and its auth generator
-defaults to magic links [^198]. Charm ran Bubble Tea v2 in production inside its own coding agent,
+defaults to magic links [^199]. Charm ran Bubble Tea v2 in production inside its own coding agent,
 Crush, from the start, and published its upgrade guides for humans and LLMs; no primary source
-says Charm's maintainers build with Claude, and this document does not say so [^199]. None of this
-names cairn [^200]. The admin-inside-the-app precedent is older than agents: Django's automatic
+says Charm's maintainers build with Claude, and this document does not say so [^200]. None of this
+names cairn [^201]. The admin-inside-the-app precedent is older than agents: Django's automatic
 admin since 2005, thoughtbot's Administrate because generic dashboards were "too generalized to be
-useful to site admins", and Payload and Filament as the current generation [^201]. The
-counter-record stands beside it. Constraint Decay and BaxBench, read in Leg 5, find
-convention-heavy frameworks harder for agents on greenfield backends, with the best BaxBench model
-at 62% correctness and about half of that exploitable, and no study conditions on a scaffold of
-cairn's kind [^202].
+useful to site admins", and Payload and Filament as the current generation [^202]. Constraint
+Decay and BaxBench cut the other way: they find convention-heavy frameworks harder for agents on
+greenfield backends, with the best BaxBench model at 62% correctness and about half of that
+exploitable, and no study conditions on a scaffold of cairn's kind [^203].
 
 **Where the general studies reach.** Across 1,319 live repair tasks from 93 repositories with
 early-2025 models, a single-file patch under five lines was solved 48% of the time, a patch
 touching three or more files or more than 100 lines under 10%, and a patch touching seven or more
-files never [^203]. The benchmark measures issue repair [^204]. Two studies do measure greenfield
+files never [^204]. The benchmark measures issue repair [^205]. Two studies do measure greenfield
 construction, and both cut against a bare "conventions help agents" sentence. Constraint Decay ran
 80 greenfield and 20 feature tasks across eight frameworks and found agents about twice as
 successful on Flask (49%) and Express (51%) as on Django (25%) and FastAPI (24%), blaming the
-conventions an agent must infer and naming data-layer defects as the leading root cause [^205].
+conventions an agent must infer and naming data-layer defects as the leading root cause [^206].
 Its headline is the decay in its title: as explicit structural requirements (architecture,
 database, ORM) accumulate, capable configurations lose about 30 points in assertion pass rate from
-the baseline prompt to the fully specified task, and some weaker ones approach zero [^206].
+the baseline prompt to the fully specified task, and some weaker ones approach zero [^207].
 BaxBench, 392 tasks across 14 frameworks, found that the framework chosen moves both correctness
 and security; the best model reached 62% correctness, about half of its correct programs were
-exploitable, so roughly a third were both correct and secure [^207]. What no cited study measures
-is construction against a scaffold that carries auth, sessions, and the admin frame [^208]. This
+exploitable, so roughly a third were both correct and secure [^208]. What no cited study measures
+is construction against a scaffold that carries auth, sessions, and the admin frame [^209]. This
 leg's reading of those two studies: they show where agents fail, and one failure is inference. An
 agent handed a convention it must infer from the framework infers it badly, and the
-convention-heavy frameworks lose on exactly that [^209]. The shape's answer is to remove inference
-from the job. cairn's design makes its conventions explicit rather than inferred: the scaffold
-writes the starting site, the skill states the screen anatomy, the component contracts, and the
-seams, the toolkit supplies the components, the docs name the path, and the gates and the audit
-refuse what drifts [^210]. The 30-point decay cuts against the easy form of that remedy: piling
-more requirements into the ask made capable agents worse, so a written skill that reads as a
-longer specification is not the answer, and the shape's bet is on conventions the agent can copy
-(the exemplar, the toolkit) and on gates that check the result, not on a longer prompt [^211].
-Whether those explicit conventions achieve it is the hypothesis the measured build below tests,
-and it is unmeasured until the fix round lands [^212]. The first pass already shows the trap is
-not closed by writing things down: the review found the agent followed the nearest in-repo
-exemplar over the published doc, which is inference happening despite the docs [^213]. On
+convention-heavy frameworks lose on exactly that [^210]. The shape's answer is to remove inference
+from the job. cairn's design makes its conventions explicit rather than inferred. The scaffold
+writes the starting site. The skill states the screen anatomy, the component contracts, and the
+seams. The toolkit supplies the components, the docs name the path, and the gates and the audit
+refuse what drifts [^211]. The 30-point decay cuts against the easy form of that remedy: piling
+more requirements into the ask made capable agents worse [^207]. So a written skill that reads as
+a longer specification is not the answer, and the shape's bet is on conventions the agent can copy
+(the exemplar, the toolkit) and on gates that check the result, not on a longer prompt [^212].
+Whether those explicit conventions achieve it is what the measured build below tests, and the
+first two rounds answer it only in part [^213]. The first pass already shows the trap is not
+closed by writing things down: the review found the agent followed the nearest in-repo exemplar
+over the published doc, which is inference happening despite the docs [^214]. On
 security-sensitive tasks the highest-scoring of 25 agent and model pairings produced correct and
 secure code 23.8% of the time, AI-co-authored pull requests carried 2.74 times the security issues
 of human-only ones across 470 requests, and 45% of generated solutions across 80 tasks and more
-than 100 models carried a security flaw [^214]. Two public failures sit at the seam cairn carries,
+than 100 models carried a security flaw [^215]. Two public failures sit at the seam cairn carries,
 the access policy over a platform-held store. CVE-2025-48757, CVSS 9.3, records Lovable-generated
 sites whose row-level security let unauthenticated users read and write arbitrary tables, and the
-vendor's dispute was that the policy was each customer's job [^215]. Eight months later Moltbook,
+vendor's dispute was that the policy was each customer's job [^216]. Eight months later Moltbook,
 vibe-coded on Supabase, shipped a public key with no policies and exposed about 1.5 million tokens
-and 35,000 email addresses [^216]. Of 200 deployed vibe-coded apps audited, 180 carried a
-vulnerability and broken access control was the largest class [^217]. cairn's editor session and
+and 35,000 email addresses [^217]. Of 200 deployed vibe-coded apps audited, 180 carried a
+vulnerability and broken access control was the largest class [^218]. cairn's editor session and
 route guard are engine code at that layer; a site's own member login and payments are not, and the
-production case below shows both [^218]. None of these tests a framework that owns the editor and
-admin invariants and hands a developer a seam [^219]. Ten further studies the evidence file
+production case below shows both [^219]. None of these tests a framework that owns the editor and
+admin invariants and hands a developer a seam [^220]. Ten further studies the evidence file
 records (SWE-Bench Pro, Rahman et al., Watanabe et al., Evaluating AGENTS.md, Kim et al., How
 Coding Agents Fail Their Users, the METR self-report survey, Peng et al. and Cui et al., Shen and
 Tamkin, Agarwal et al.) bear on task type, context files, review burden, and skill formation, and
-none tests this division of labor; they stay in the evidence file with their numbers [^220].
+none tests this division of labor; they stay in the evidence file with their numbers [^221].
 
 **Speed and later maintenance.** In METR's randomized trial, 16 experienced developers on 246
-issues in mature repositories were 19% slower with AI while believing they were 20% faster [^221].
+issues in mature repositories were 19% slower with AI while believing they were 20% faster [^222].
 METR's 2026 follow-up, 57 developers on 800-plus tasks, gives point estimates of minus 18% and
 minus 4% with intervals reaching plus 9%, with 30% to 50% of developers withholding tasks they did
-not want to do without AI, so METR stands behind no uplift number [^222]. This document makes no
-speed claim [^223]. In a two-phase experiment with 151 participants, code written with AI
+not want to do without AI, so METR stands behind no uplift number [^223]. This document makes no
+speed claim [^224]. In a two-phase experiment with 151 participants, code written with AI
 assistance showed no significant difference in later completion time or quality when others
-evolved it [^224].
+evolved it [^225].
 
 **The population, from the vendors' and the field's own data.** One author's record is weak
 persuasion, so the large samples are stated with their methods. A staggered-adoption study of
 7,786,771 commits carrying the Claude co-author trailer from 185,517 authors, with a
 5,838-developer panel, found adoption associated with 41 more commits a month and wider language
-breadth, under a doubly robust estimator against not-yet-adopters [^225]. Anthropic's largest
+breadth, under a doubly robust estimator against not-yet-adopters [^226]. Anthropic's largest
 session study, about 400,000 Claude Code sessions from about 235,000 people, found people making
 about 70% of planning decisions and about 20% of execution decisions, with verified success at 28%
-to 33% for experienced users; the report states it cannot see whether the code was kept [^226].
+to 33% for experienced users; the report states it cannot see whether the code was kept [^227].
 The Economic Index reports state their samples, windows, and classifiers, and each says it studies
-what people delegate and not whether the output shipped [^227]. Microsoft's rollout study of tens
+what people delegate and not whether the output shipped [^228]. Microsoft's rollout study of tens
 of thousands of engineers found 24.0% more pull requests per engineer per day after CLI-agent
-adoption, with a passing placebo test and no code-quality measure [^228]. The counter, from an
+adoption, with a passing placebo test and no code-quality measure [^229]. The counter, from an
 independent sample: across 302,600 AI-authored commits in 6,299 repositories, over 15% of every
 tool's commits introduced a static-analysis issue, Claude carried the highest rate at 1.95 issues
-per commit, and 22.7% of introduced issues persisted [^229]. Agent feature pull requests are
+per commit, and 22.7% of introduced issues persisted [^230]. Agent feature pull requests are
 accepted 15 to 40 points below human ones in the wild, and documentation pull requests above
-[^230]. Same-task agent runs vary up to 30 times in tokens [^231]. A repository context file cut
-median agent runtime 28.64% and output tokens 16.58% at the same completion rate [^232]. The
+[^231]. Same-task agent runs vary up to 30 times in tokens [^232]. A repository context file cut
+median agent runtime 28.64% and output tokens 16.58% at the same completion rate [^233]. The
 sentence the telemetry sustains: agents are a common way the mainstream typed web stack is now
 built, and the vendors' own data do not show that they build it well without a gate, since no
 study varies gate presence; agents are used daily by 14.1% of Stack Overflow's 2025 respondents
-and by none of 52% [^233]. TypeScript is the top language for every agent's pull requests and the
-most-contributed language on GitHub, and SvelteKit is named in none of these sources [^234].
+and by none of 52% [^234]. TypeScript is the top language for every agent's pull requests and the
+most-contributed language on GitHub, and SvelteKit is named in none of these sources [^235].
 
 **The artifacts an agent gets.** One agent skill, `cairn-admin-screens`, ships in the npm tarball:
 a 114-line `SKILL.md` that teaches an agent to build or review a screen inside a cairn site's
 `/admin` to cairn's own register, mapping the 28 `cairn-audit` rules across static and rendered
-modes and pointing at the audit rather than restating it, plus six reference files (list and
-detail exemplars at 212 and 206 lines, form anatomy, extension grammar, a grader prompt, and a
-craft catalogue), 1,255 lines in total [^235]. `cairn-doctor --fix` installs it at
-`.claude/skills/cairn-admin-screens/` and reports it fresh, missing, or stale by hash [^236]; the
-check never fails a run, since the skill is a development aid [^237]. The scaffold,
+modes and pointing at the audit rather than restating it, plus seven reference files (list and
+detail exemplars at 212 and 206 lines, form anatomy, extension grammar, a grader prompt, a craft
+catalogue, and a references index), 1,255 lines in total [^236]. `cairn-doctor --fix` installs it
+at `.claude/skills/cairn-admin-screens/` and reports it fresh, missing, or stale by hash [^237];
+the check never fails a run, since the skill is a development aid [^238]. The scaffold,
 `create-cairn-site`, emits a complete SvelteKit site from the Waymark theme with one worked custom
 screen, and it is pre-release: unpublished on npm as of 2026-09-04, with its ship an open roadmap
-item [^238]. Cloudflare publishes an `llms.txt` index, a Claude Code setup page, sixteen remote
+item [^239]. Cloudflare publishes an `llms.txt` index, a Claude Code setup page, sixteen remote
 MCP servers, and an Agents SDK; GitHub publishes an MCP server, the `gh` CLI, and a coding agent
-that opens pull requests [^239]. Those support "vendor agent tooling exists," and nothing about
-its effect [^240].
+that opens pull requests [^240]. Those support "vendor agent tooling exists," and nothing about
+its effect [^241].
 
 ### The case report: one production site's membership and assets build
 
-The site is `aksailingclub-org` at commit `836d324` (2026-08-30), read-only [^241]. The measured
+The site is `aksailingclub-org` at commit `836d324` (2026-08-30), read-only [^242]. The measured
 scope is the three admin routes `members/`, `assets/`, and `asset-requests/` under
 `src/routes/admin/club/`, plus the sixteen modules under `src/admin-club/lib/` those routes import
 (`assets-store`, `classes-store`, `club-action`, `club-db`, `club-email`, `club-settings`,
 `households-store`, `household-surgery`, `ledger`, `manual-payment`, `member-format`,
-`member-types`, `money-store`, `payments`, `refunds`, `ui`) [^242]. The first 48 hours are
-2026-07-06 00:00 to 2026-07-08 00:00 by commit date, in the commits' own timezone (UTC-8) [^243].
+`member-types`, `money-store`, `payments`, `refunds`, `ui`) [^243]. The first 48 hours are
+2026-07-06 00:00 to 2026-07-08 00:00 by commit date, in the commits' own timezone (UTC-8) [^244].
 
 The site's developer is the engine's author, and that bounds what the case shows. 799 of the
 site's 838 commits carry the engine's author name, the repository is under that author's personal
 GitHub account, and the toolkit components named below graduated from this site into the engine
-during the measured window [^244]. The record measures the engine's author extending his own
+during the measured window [^245]. The record measures the engine's author extending his own
 engine, in his own accounts, with his own agent workflow, and says nothing about a second
-developer [^245].
+developer [^246].
 
 | Measure | Value | Command or line |
 | --- | --- | --- |
@@ -597,21 +601,21 @@ developer [^245].
 What the first two days built, from the commit messages: on 2026-07-06 the Club section was
 scaffolded as five custom `/admin/club/*` screens on `CairnAdminShell`, with Members, Assets,
 Classes, and Email rendering structural office-list-shaped table shells and the Members list and
-detail screens and the signup-review queue built the same day [^246]; on 2026-07-07 the member
+detail screens and the signup-review queue built the same day [^247]. On 2026-07-07 the member
 domain, the asset domain with the assets admin, the asset-request inbox, member magic-link
 authentication, the classes admin with the club-action wrapper and audit sink, Stripe Checkout
 with webhook reconciliation, and the scheduled job runner landed, and the club-admin stand-ins
-were swapped onto the engine's `0.82.0` seams [^247]. The Members list and household desk moved
-onto live club data on 2026-07-14, with 395 lines added and 345 deleted on the routes [^248]. How
+were swapped onto the engine's `0.82.0` seams [^248]. The Members list and household desk moved
+onto live club data on 2026-07-14, with 395 lines added and 345 deleted on the routes [^249]. How
 those days ran, from the site's own record: pass 2.1 executed overnight on 2026-07-07 in an
 extended conductor session while the owner slept about nine hours, ten plan tasks plus riders
 built by Sonnet implementers under a Fable conductor, closed by a three-reviewer Opus fan-out
-[^249]. No wall-clock hours of the owner's own time are recorded anywhere in the repository
-[^250].
+[^250]. No wall-clock hours of the owner's own time are recorded anywhere in the repository
+[^251].
 
 **Forty-two later commits.** The 42 commits that touched the three routes after 2026-07-08,
 classified by commit subject and by whether the diff touched `.svelte` markup or `.ts` server and
-store code [^251].
+store code [^252].
 
 | Class | Commits | Lines on the routes | What they did |
 | --- | --- | --- | --- |
@@ -620,44 +624,44 @@ store code [^251].
 | Engine adoption | 6 | +222 / -184 | The `0.90.0` pickup (`5089e0c`), the `0.91.0` grammar (`986f95c`), `0.94.0-rc.1` (`fbb5908`), the swap onto the published `/admin-toolkit` subpath (`0430788`), the club gate onto the engine's typed session (`9031d5e`), retired type names (`107ab1d`) |
 
 A commit here is one conductor-batched agent change; the counts describe the record's shape and
-not effort [^252]. The layout class is the largest by commit count and the second by lines. The
+not effort [^253]. The layout class is the largest by commit count and the second by lines. The
 components those rebuilds moved onto have since graduated into the engine: `AdminTable`,
 `ExpandableRow`, `StatusChip`, `ListToolbar`, `Pagination`, `ToolbarDisclosure`, and the pure
 `list-toolbar`, `pagination-window`, and `format` modules each carry a header saying they
 graduated from the production site, and `ToolbarDisclosure` graduated a level deeper out of
-`ListToolbar` [^253]. The `/admin-toolkit` subpath published across `0.89.0` (2026-07-21) and
+`ListToolbar` [^254]. The `/admin-toolkit` subpath published across `0.89.0` (2026-07-21) and
 `0.90.0` (2026-07-23), the release in which `ExpandableRow` graduated on its second consumer, and
-six further absorptions from the site's harvests merged on 2026-08-27, unpublished [^254]. The
+six further absorptions from the site's harvests merged on 2026-08-27, unpublished [^255]. The
 site's own harvest ruled on 2026-07-20 that a component graduates when its second consuming screen
 has used it, and the 2026-07-30 assets harvest filed vertical centering of padded labels, the
-toggle-action control, and the label-and-value row as engine-level mechanics [^255]. The site's
+toggle-action control, and the label-and-value row as engine-level mechanics [^256]. The site's
 recorded budgets for that layout work: the Members pass about 3.4M subagent tokens with zero
 conductor questions and one coordination note, the Members refinement round about 1.9M with zero,
 and the assets substrate pass about 3.23M across 26 dispatches with eighteen grader runs and three
-fix rounds [^256]. Of the 42 later commits, 20 touched layout and toolkit shapes that the engine's
+fix rounds [^257]. Of the 42 later commits, 20 touched layout and toolkit shapes that the engine's
 `/admin-toolkit` has since absorbed, named above, and those components now ship in the engine
-[^257]. Whether a site built on the current engine starts from them rather than deriving them is
+[^258]. Whether a site built on the current engine starts from them rather than deriving them is
 an inference this record cannot test, since the components exist because this site derived them,
-and a site's own screens still compose them [^258].
+and a site's own screens still compose them [^259].
 
 **The defect at the seam.** The site's pre-cutover blocker is a CSRF defect: its blanket
 `Referrer-Policy: no-referrer` nulls `Origin` on plain form POSTs, the engine's CSRF guard rejects
 them, and member sign-in failed in real browsers across 40 forms, invisible to every prior test
-[^259]. The engine held the invariant and a real-browser gate caught the trip; the seam between
+[^260]. The engine held the invariant and a real-browser gate caught the trip; the seam between
 engine invariant and site code is where this bug lived, and the site's developer had to understand
-the invariant to fix it [^260]. The site's member login is not `createAuthChannel`; it is 914
+the invariant to fix it [^261]. The site's member login is not `createAuthChannel`; it is 914
 lines of site code on the engine's `auth-crypto` primitives, written before that subpath shipped
-[^261].
+[^262].
 
 **What the record supports.** The initial membership and assets build landed in two calendar days,
 as an overnight agent run whose token spend the record does not carry, with the owner's own time
 unrecorded, and with the first build rendering shells and demo data that moved onto live data a
-week later [^262]. The layer then took 42 commits of refinement on the routes over eight weeks,
+week later [^263]. The layer then took 42 commits of refinement on the routes over eight weeks,
 and 81 on the shared library, including six engine-adoption commits and the CSRF seam defect
-[^263]. The site's recorded token spend on later passes ran 1.4 to about 2.3 times its own
-ceilings, which the site's record calls "roughly twofold" [^264]. The general studies are cited
+[^264]. The site's recorded token spend on later passes ran 1.4 to about 2.3 times its own
+ceilings, which the site's record calls "roughly twofold" [^265]. The general studies are cited
 only for what they test, issue repair on benchmarks and security defect rates in generated code,
-and none tests this division of labor [^265].
+and none tests this division of labor [^266].
 
 **Derivable form, for the front door.** I built the membership and assets admin for one club site
 in two days. I ran it overnight as an agent job and did not record what it cost. Then I spent
@@ -666,7 +670,7 @@ engine's toolkit has since absorbed, so a site starting today starts further alo
 That site's member login, payments, and signatures are its own code, not cairn's, and the one
 blocker that reached production was a CSRF defect at the seam between the two. I am the engine's
 author too, so read this as what I can do with my own engine. It says nothing about a second
-developer [^266].
+developer [^267].
 
 ### The second case: one measured screen on the showcase
 
@@ -674,20 +678,20 @@ The first case is the engine author's own site. The second is a controlled build
 from its spec: one Sonnet implementer, one dispatch, a specified volunteer-roster screen at
 `/admin/volunteers` on `examples/showcase`, built against the current engine with the shipped
 skill in a fresh worktree, no engine change allowed, the full gate required, and an Opus
-diff-review after [^267]. The first pass and the review are stated at equal weight.
+diff-review after [^268]. The first pass and the review are stated at equal weight.
 
 **The first pass.** Wall-clock 34 min 51 s from dispatch to last command; 198,039 tokens; 113 tool
 calls; one commit, `27a9e1f5`, 31 files and 540 insertions across the showcase and the template
 re-emit; showcase check 0/0, the new e2e spec 2 passed, full showcase e2e 157 passed, root check
-0/0, chassis-boundary and public-tokens and template gates passed [^268]. The skill and the
+0/0, chassis-boundary and public-tokens and template gates passed [^269]. The skill and the
 exemplar supplied the guard-then-action pattern, the `OfficeList`, `AdminTable`, and `FieldLabel`
 composition, the migrations-per-database convention, and the dev-wiring order; the implementer
-worked out a screen-scoped `node:sqlite` dev double itself [^269]. A first attempt was killed by
-an API rate limit mid-edit and discarded; the figures are the clean re-run [^270].
+worked out a screen-scoped `node:sqlite` dev double itself [^270]. A first attempt was killed by
+an API rate limit mid-edit and discarded; the figures are the clean re-run [^271].
 
 **The review.** The Opus diff-review escalated, which is the verdict that stops a change and sends
 the decision up. It found the screen correct inside the boundary the dispatch drew and incomplete
-outside it, on five items [^271]. The 13 admin visual baselines were regenerated on the
+outside it, on five items [^272]. The 13 admin visual baselines were regenerated on the
 workstation against the repo's rule that baselines are CI-canonical, so the reported e2e pass
 partly asserted against baselines the same run wrote. The screen leaked into the product scaffold
 with a third D1 binding that `create-cairn-site` never personalizes, so a scaffolded site would
@@ -697,55 +701,56 @@ and `requireAccess`, so the destructive action writes no audit record. The skill
 `npx cairn-audit` static and rendered, was neither run nor reported. Native `required` and
 `type="email"` were removed so the e2e could reach server validation, which is test pressure
 changing shipped behavior. The review's own reading: the measured 35 minutes buys the code inside
-the boundary and buys nothing outside it [^272].
+the boundary and buys nothing outside it [^273].
 
 **What the review teaches about conventions.** An agent follows the exemplar. So the exemplar, the
 scaffold, the docs, and the skill must say the same thing and be maintained in tandem, and a
-divergence between any two of them is an inference job handed to the agent [^273]. That the agent
+divergence between any two of them is an inference job handed to the agent [^274]. That the agent
 resolves it by copying whichever it read last is the mechanism the proposed tandem gate would
-test; one case supports "this happened" and no more [^274]. The measured build shows one such
+test; one case supports "this happened" and no more [^275]. The measured build shows one such
 divergence being resolved that way: the showcase sign-ups screen uses the raw guard, form-data,
 and `fail()` shape, the custom-screen guide recommends `createSectionAction` plus `requireAccess`,
-and the agent copied the screen [^275]. The six inference traps the build exposed, this divergence
+and the agent copied the screen [^276]. The six inference traps the build exposed, this divergence
 among them, are filed to the passes that own them, with a tandem-maintenance gate proposed so a
-later divergence fails CI instead of waiting for a measured build to find it [^276]. The measured
+later divergence fails CI instead of waiting for a measured build to find it [^277]. The measured
 build is treated as a standing probe: each review's findings feed the skill, the docs, and the
-gates, and the next run measures whether the trap is gone [^277].
+gates, and the next run measures whether the trap is gone [^278].
 
 **The fix round.** The fix round to the published standard ran as one dispatch: 45 min 6 s
-wall-clock, 272,681 tokens, 213 tool calls, one commit, `bd4a0385` on top of `27a9e1f5` [^278]. It
+wall-clock, 272,681 tokens, 213 tool calls, one commit, `bd4a0385` on top of `27a9e1f5` [^279]. It
 applied every blocking and non-blocking finding: baselines restored, the screen excluded from the
 scaffold, actions moved onto `createSectionAction` plus `requireAccess` with an access map and an
 audit sink, the form rebuilt as the doc's dialog recipe with native validation restored, the
-remove id validated [^279]. The gates then read differently from the first pass. Showcase and root
+remove id validated [^280]. The gates then read differently from the first pass. Showcase and root
 checks 0/0; `check:template` reported OK by the implementer and failing on the committed tree,
 since the emitted template drifted and the audit migration reached the scaffold; the full e2e 142
-passed with the 13 visual baselines failing at 747 to 849 pixels against the 120 allowance; the
-rendered audit not run [^280]. The round also surfaced three defects outside the screen: the dev
+passed with the 13 visual baselines failing at 747 to 849 pixels against the 120 allowance, which
+totals 155 against the first pass's 157, and the record does not say where the other two went; the
+rendered audit not run [^281]. The round also surfaced three defects outside the screen: the dev
 backend never attaches `locals.cairnAccess`, a Rollup facade artifact from mixed imports of the
 engine's `sveltekit` barrel, and an adapter throw on a `platform.env` read from a prerenderable
-route [^281]. Two passes together: 79 min 57 s, 470,720 tokens, 326 tool calls, two commits, one
-review between them [^282]. The second review returned `fix`: eleven of twelve first-round
+route [^282]. Two passes together: 79 min 57 s, 470,720 tokens, 326 tool calls, two commits, one
+review between them [^283]. The second review returned `fix`: eleven of twelve first-round
 findings folded at the published standard, two mechanical blockers left (the audit-sink import
 outside the exclude markers and the audit migration in the scaffold), and four defects filed to
-the engine rather than the experiment [^283]. A third timed round is running; its numbers are one
-line to add when it lands [^284].
+the engine rather than the experiment [^284]. A third timed round is running; its numbers are one
+line to add when it lands [^285].
 
 **Whole-system delivery.** The controlled studies above measure one task with a reviewer in the
-loop [^285]. The telemetry sees long delegations and parallel agents: over 10% of Codex users run
+loop [^286]. The telemetry sees long delegations and parallel agents: over 10% of Codex users run
 three or more agents at once, whole apps are built from a specification and scored at 61.8% at
-best, and a month-long hackathon deployed 21 of 40 LLM-only projects [^286]. What no source
-measures is a gated, scaffold-based delivery with its cost [^287]. The owner's regime is that
+best, and a month-long hackathon deployed 21 of 40 LLM-only projects [^287]. What no source
+measures is a gated, scaffold-based delivery with its cost [^288]. The owner's regime is that
 missing case: implementers run in parallel and overnight, a reviewer model and the gates stand in
-for a human reviewer, and the unit delivered is a whole system in calendar days [^288]. The
+for a human reviewer, and the unit delivered is a whole system in calendar days [^289]. The
 measured build shows why both halves are needed. Every gate the spec named passed, and the
-reviewer model stopped the change on five items the gates did not see [^289]. Gates alone were not
-enough [^290]. Measurements on record: the production site's membership and assets layer in two
-calendar days, then eight weeks of refinement [^291]; the 2026-08-25 email-announce pass, eleven
-tasks overnight [^292]; and this screen's first pass in 35 minutes, stopped in review [^293]. In
+reviewer model stopped the change on five items the gates did not see [^290]. Gates alone were not
+enough [^291]. Measurements on record: the production site's membership and assets layer in two
+calendar days, then eight weeks of refinement [^292]; the 2026-08-25 email-announce pass, eleven
+tasks overnight [^293]; and this screen's first pass in 35 minutes, stopped in review [^294]. In
 that regime wall-clock is bounded by machine and API. The cost that moves is review and tokens,
-which the same records show running 1.4 to 2.3 times their ceilings [^294]. No literature covers
-this regime yet. This document claims it only as far as these measurements carry it [^295].
+which the same records show running 1.4 to 2.3 times their ceilings [^295]. No literature covers
+this regime yet. This document claims it only as far as these measurements carry it [^296].
 
 ### Already extensible, measured
 
@@ -753,10 +758,10 @@ Front door: internal record only (names a consumer site); the derivable form is 
 
 One production site, `aksailingclub-org`, carries a custom admin layer that consolidates what an
 organization would otherwise run as two or three separate products, each with its own admin, its
-own login, and its own data [^296]. It is one author's site [^297]. The site went live by flipping
+own login, and its own data [^297]. It is one author's site [^298]. The site went live by flipping
 the apex from a Hugo site and retiring a hosted membership platform after a two-week soak, and its
-member data was imported from that platform's exports [^298]. Its custom admin sections,
-enumerated by route under `src/routes/admin/club/`, with source lines [^299].
+member data was imported from that platform's exports [^299]. Its custom admin sections,
+enumerated by route under `src/routes/admin/club/`, with source lines [^300].
 
 | Route | Section title | Lines | What the section does |
 | --- | --- | --- | --- |
@@ -772,9 +777,9 @@ enumerated by route under `src/routes/admin/club/`, with source lines [^299].
 
 The member-facing half of the same layer (`src/member-portal`, `src/member-auth`,
 `src/member-signup`, `src/jobs`, and the `my-account`, `join`, `classes`, and `events` site
-routes) is the portal those sections serve [^300]. Counted by category, the layer stands in for a
+routes) is the portal those sections serve [^301]. Counted by category, the layer stands in for a
 membership platform, an events or registration tool, an asset register, and an email service, four
-product categories, over one retained payments provider [^301].
+product categories, over one retained payments provider [^302].
 
 Two facts follow from the tree. First, every section is built from the engine's admin toolkit
 inside the engine's shell. Counting files under `src/routes/admin/club/` and `src/admin-club/`
@@ -783,25 +788,25 @@ multi-line imports included (four such statements exist there): `OfficeList` 16,
 `FieldLabel` 11, `StatusChip` 9, `SelectInput` 8, `EmptyState` 7, `itemNoun` 6, `AdminTable` 4,
 `computeCountLine` 3, `PageHeader` 3, `ageFromBirthdate` 3, `ExpandableRow` 3, `ListToolbar` 3,
 `Pagination` 2; and every `/admin/**` route renders inside `CairnAdminShell` from
-`@glw907/cairn-cms/components` through one `+layout.svelte` [^302]. Second, `hooks.server.ts`
+`@glw907/cairn-cms/components` through one `+layout.svelte` [^303]. Second, `hooks.server.ts`
 composes `createAuthGuard({ roles, access })` over the whole `/admin` subtree, with
-`createD1AuditSink` wired beside it, so the club sections use the editors' session [^303]. Members
+`createD1AuditSink` wired beside it, so the club sections use the editors' session [^304]. Members
 remain a separate audience with their own login, the shape [Add a second
 audience](../../extend/add-a-second-audience.md) prescribes; this site built it as its own module
 on the engine's `auth-crypto` primitives, against its own database, before the `auth-channel` seam
-shipped [^304].
+shipped [^305].
 
 The size ratio has two halves: what one more section costs, and what the developer never writes.
 The whole-layer ratio sits beneath. All counts are `wc -l` on 2026-09-04 and include comments and
-blank lines [^305].
+blank lines [^306].
 
 **One section at a time.** Ten of the eleven sections import `/sveltekit`, `/admin-toolkit`, and
 `/components`; `documents/` imports the first two; no section imports more than four subpaths
-[^306].
+[^307].
 
 | Section | Route lines | Engine imports it leans on |
 | --- | --- | --- |
-| Scaffold `signups` (the minimal case) | 90, plus a 9-line migration | `/sveltekit`, `/admin-toolkit`, `/components` [^307] |
+| Scaffold `signups` (the minimal case) | 90, plus a 9-line migration | `/sveltekit`, `/admin-toolkit`, `/components` [^308] |
 | `settings` | 381 | `/sveltekit` 1, `/admin-toolkit` 1, `/components` 1 |
 | `asset-requests` | 326 | `/sveltekit` 1, `/admin-toolkit` 1, `/components` 1 |
 | `money` | 433 | `/sveltekit` 1, `/admin-toolkit` 1, `/components` 1 |
@@ -815,12 +820,12 @@ blank lines [^305].
 | `events` | 3,120 | `/sveltekit` 2, `/admin-toolkit` 3, `/components` 2, `/media` 1 |
 
 The route lines exclude each section's share of `src/admin-club/` (8,930 lines of stores and
-actions across the eleven sections) and its tests [^308]. The increment runs from 90 lines to
-about 3,100 per section [^309].
+actions across the eleven sections) and its tests [^309]. The increment runs from 90 lines to
+about 3,100 per section [^310].
 
 **The modules a developer does not write.** The carried modules by name and line count, magic-link
 login first, none of which the production site reimplements; the engine's own audit, doctor,
-gates, and tests sit in a second group, since no stack asks a consumer to write those [^310].
+gates, and tests sit in a second group, since no stack asks a consumer to write those [^311].
 
 | Carried by the engine, in place of an install or a hand-written module | Module | Lines |
 | --- | --- | --- |
@@ -846,43 +851,43 @@ it is the other.
 
 | Measure | The engine (`cairn-cms`, `main`) | One production membership layer (`aksailingclub-org`) |
 | --- | --- | --- |
-| Source, TypeScript and Svelte, excluding tests | 68,644 lines under `src/lib/` [^311] | 35,888 lines in 176 files across `src/admin-club` (8,930), `src/routes/admin/club` (12,415), `src/member-portal` (4,997), `src/routes/(site)/my-account` (5,655), `src/member-auth` (914), `src/member-signup` (610), `src/jobs` (814), and the `join`, `classes`, `events`, and `api` site routes (1,553) [^312] |
-| Tests | 446 `.test.ts` files under `src/tests/` [^313] | 172 `.ts` files, 32,420 lines under `src/tests/` [^314] |
-| Gates | 33 check scripts plus the public-surface snapshot [^315] | The repo's `ci.yml` (`check`, `test`, `build`, e2e) [^316] |
-| Shipped surface | 18 export subpaths [^317] | Imports 11 engine specifiers, `/sveltekit` 57 times, the root 44, `/admin-toolkit` 27, `/delivery` 22, `/components` 18, `/cloudflare` 11, `/media` 9, `/delivery/head` 6, `/auth-crypto` 4, `/render` 2, `/delivery/data` 1 [^318] |
-| Schema | 3 packaged migration sets (`migrations`, `migrations-app` in the scaffold, `migrations-channel`) [^319] | 125 `.sql` files, 2,844 lines under `migrations/asc-club/`; 2,997 lines under `migrations/` in all [^320] |
-| History | 87 numbered changelog entries, `0.22.0` through `0.96.0` (73 tags in range, `v0.96.0` on 2026-08-22), about 4,000 commits, 2026-05-24 to 2026-09-04 [^321] | 838 commits, 2026-07-06 to 2026-08-30, in named passes with plans and post-mortems [^322] |
+| Source, TypeScript and Svelte, excluding tests | 68,644 lines under `src/lib/` [^312] | 35,888 lines in 176 files across `src/admin-club` (8,930), `src/routes/admin/club` (12,415), `src/member-portal` (4,997), `src/routes/(site)/my-account` (5,655), `src/member-auth` (914), `src/member-signup` (610), `src/jobs` (814), and the `join`, `classes`, `events`, and `api` site routes (1,553) [^313] |
+| Tests | 446 `.test.ts` files under `src/tests/` [^314] | 172 `.ts` files, 32,420 lines under `src/tests/` [^315] |
+| Gates | 33 check scripts plus the public-surface snapshot [^316] | The repo's `ci.yml` (`check`, `test`, `build`, e2e) [^317] |
+| Shipped surface | 18 export subpaths [^318] | Imports 11 engine specifiers, `/sveltekit` 57 times, the root 44, `/admin-toolkit` 27, `/delivery` 22, `/components` 18, `/cloudflare` 11, `/media` 9, `/delivery/head` 6, `/auth-crypto` 4, `/render` 2, `/delivery/data` 1 [^319] |
+| Schema | 3 packaged migration sets (`migrations`, `migrations-app` in the scaffold, `migrations-channel`) [^320] | 125 `.sql` files, 2,844 lines under `migrations/asc-club/`; 2,997 lines under `migrations/` in all [^321] |
+| History | 87 numbered changelog entries, `0.22.0` through `0.96.0` (73 tags in range, `v0.96.0` on 2026-08-22), about 4,000 commits, 2026-05-24 to 2026-09-04 [^322] | 838 commits, 2026-07-06 to 2026-08-30, in named passes with plans and post-mortems [^323] |
 
 What the membership layer reuses from the engine, read from its imports: `requireSession`,
 `requireAccess`, `createSectionAction`, and `createD1AuditSink` for gating and audit;
 `generateToken`, `hashToken`, `tokensMatch`, `generateSessionId`, and `generateCsrfToken` for its
 own member login; `checkRateLimit`; `CsrfField`; and `OfficeList`, `AdminTable`, `PageHeader`,
-`StatusChip`, `EmptyState`, `FieldLabel`, `TextInput`, and `SelectInput` for its screens [^323].
+`StatusChip`, `EmptyState`, `FieldLabel`, `TextInput`, and `SelectInput` for its screens [^324].
 How it was built: the passes ran as implementer and diff-reviewer chains under a workflow, with
 human interaction points counted per pass, and the 2026-08-25 email-announce pass ran eleven tasks
-overnight [^324].
+overnight [^325].
 
 The minimal case beside it is the scaffold's own worked screen: `admin/signups` is 90 lines across
-two files plus a 9-line migration [^325].
+two files plus a 9-line migration [^326].
 
 The production layer is about half the engine's source line count (35,888 against 68,644), and it
 is the four-category system enumerated above, with renewal reminders, refunds, signatures, and a
-member directory besides [^326]. The sentence "a small fraction of the whole" is not what this
-measurement supports, and this document does not write it [^327]. What it supports: the layer is
+member directory besides [^327]. The sentence "a small fraction of the whole" is not what this
+measurement supports, and this document does not write it [^328]. What it supports: the layer is
 SvelteKit routes, D1 tables, forms, and toolkit lists on 11 engine import paths, and none of it
 reimplements authentication crypto, CSRF, the editor, the publish path, or the design system
-[^328]. A smaller organization's layer, a roster and a signup form, sits nearer the 90-line end of
-the range than the 35,888-line end [^329]. The site's own records give the effort in agent tokens
+[^329]. A smaller organization's layer, a roster and a signup form, sits nearer the 90-line end of
+the range than the 35,888-line end [^330]. The site's own records give the effort in agent tokens
 and human interaction points, and not in hours: events-redesign ran about 2.1M tokens against a
 ceiling raised from 1.5M to 2.2M; events-admin about 3.5M against 2M; assets-register about 1.35M
 through six tasks plus about 2.1M in the close against 1.5M, which the record calls "roughly
-twofold"; human interaction points per pass are in single digits [^330]. The overruns are recorded
-against their causes, chiefly tests that asserted text rather than mechanics [^331]. No dollar or
+twofold"; human interaction points per pass are in single digits [^331]. The overruns are recorded
+against their causes, chiefly tests that asserted text rather than mechanics [^332]. No dollar or
 hour figure for developer cost exists in either repository; the token figures convert to money
-only at a model's published price, which this document does not apply [^332]. No measurement of
+only at a model's published price, which this document does not apply [^333]. No measurement of
 the skill's effect on an agent building one of these screens exists in either tree, and the
 round-2 search found no study that isolates scaffolding or a context file as a variable on work of
-this shape [^333].
+this shape [^334].
 
 **Derivable form, for the front door.** I run a club site on cairn. Its membership, events,
 assets, and email sections are about 36,000 lines of code I wrote, sitting on about 69,000 engine
@@ -890,31 +895,32 @@ lines I did not, reached through eleven import paths. The member login, the paym
 personal data are the site's, not the engine's. Its screens are built from the engine's toolkit
 inside the engine's shell, behind the same guard the editors use, and the smallest such screen the
 scaffold ships is 90 lines. I wrote the engine too, so read that ratio as one author's site
-[^334].
+[^335].
 
 ## Where this document argues with the reviews
 
 Revision 8 folds the third and fourth research passes, the measured build, and the owner's round-8
-notes without a review round [^335]. Round 5 ranked ten changes, all taken [^336]. Round 4 ranked
+notes without a review round [^336]. Round 5 ranked ten changes, all taken [^337]. Round 4 ranked
 twenty-one changes. This document takes twenty and half of the twenty-first: four of the ten
 **uncited** tags became vendor-page citations where a fetched page showed the claim, and the rest
 stay uncited because the traditional setup is described by capability and a named vendor page
-would tie each sentence to one product [^337]. Round 3 ranked twenty changes. This document takes
+would tie each sentence to one product [^338]. Round 3 ranked twenty changes. This document takes
 all twenty; the one it could not apply as written is the missing email-spike record, which is not
-missing and is re-pointed to `docs/internal/record/2026-08-11-t4b-email-spike.md` [^338]. Round 2
+missing and is re-pointed to `docs/internal/record/2026-08-11-t4b-email-spike.md` [^339]. Round 2
 ranked twenty changes. This document takes nineteen as written and overrides one: its first
 change, which would reverse Leg 5 into the thesis that the division of labor hands agents the
 organization's hardest work. The product owner ruled that Leg 5 is a case report, so the leg now
-states the measurements and neither inference [^339]. Round 1 ranked twelve changes. This document
-takes eleven as written [^340]. It differs on one point of scope. Round 1's section 7 holds that
+states the measurements and neither inference [^340]. Round 1 ranked twelve changes. This document
+takes eleven as written [^341]. It differs on one point of scope. Round 1's section 7 holds that
 the comparative material belongs in `why-cairn.md` as prose and that the front door should show
 one system only. This document keeps the traditional setup as a section, because the product
 owner's ruling is that the case is built first and the figure follows, and because a reader
-choosing between two shapes is owed the other shape in the same voice [^341]. The register
-objection to naming competitors is honored: the traditional setup is described by capability, and
-the only vendor names in the derivable sections are the three git-backed CMS tools Leg 1 compares,
-each with its page cited, and the vendors named inside citations [^342]. Whether any of that
-material reaches the front door is the figure's question, recorded below [^343].
+choosing between two shapes is owed the other shape in the same voice [^342]. The register
+objection to naming competitors is honored: the traditional setup is described by capability
+rather than by product, and the vendor names that do appear in derivable sections are those
+attached to a cited measurement (Patchstack, W3Techs, WordPress, Elementor, Netlify) plus the
+three git-backed CMS tools Leg 1 compares [^343]. Whether any of that material reaches the front
+door is the figure's question, recorded below [^344].
 
 ## Open questions
 
@@ -960,27 +966,26 @@ material reaches the front door is the figure's question, recorded below [^343].
 
 7. **The evidence collected, and what is still missing.** The public success record of the shape
    and the cost-and-speed evidence are now in the document, from two research passes and one
-   measured build [^344]. Still missing after the four "found nothing" lists: a cost per shipped
+   measured build [^345]. Still missing after the four "found nothing" lists: a cost per shipped
    feature with a method from any production setting; a controlled time-to-first-deploy on a
    scaffold; a study that varies scaffold quality, test coverage, or a shipped skill as the
    treatment; any telemetry that names SvelteKit or Cloudflare Workers; a per-repository resolve
    rate on SWE-bench Verified; a measured record for Laravel or Phoenix; an independent
-   small-organization case of git-backed content with non-technical editors; and the measured
-   build's fix round, whose slot is marked pending [^345].
+   small-organization case of git-backed content with non-technical editors [^346].
 
-8. **A measured worked example.** Answered in part by the second case, one screen measured in
-   isolation; the fix round completes it. A Go server the owner expects to deliver in four or five
-   calendar days is a measurement to record when it lands, and not evidence until then. One custom
-   screen built on a cairn site with an agent, its diff size, files, and passes recorded, would be
-   the first evidence for Leg 5's economic half. Whether to build it before the figure ships is a
-   product decision.
+8. **A measured worked example.** Answered in part by the second case: one screen measured in
+   isolation, then a fix round to the published standard. A third round is running. A Go server
+   the owner expects to deliver in four or five calendar days is a measurement to record when it
+   lands, and not evidence until then. One custom screen built on a cairn site with an agent, its
+   diff size, files, and passes recorded, would be the first evidence for Leg 5's economic half.
+   Whether to build it before the figure ships is a product decision.
 
 ## Vocabulary
 
 The five readers of the round-3 review each stopped on terms this document uses in a house sense.
 The table merges their maps, term by term, with the reader it stopped and the plain equivalent the
 front-door derivation uses. The board member and the small-business owner stop on nearly every
-technical term, so their rows give the plainest form [^346].
+technical term, so their rows give the plainest form [^347].
 
 | Term | Who it stopped | Plain equivalent |
 | --- | --- | --- |
@@ -1098,7 +1103,7 @@ technical term, so their rows give the plainest form [^346].
 [^31]: Opinion: a judgment, not a checkable fact.
 [^32]: Verifiable: docs/why-cairn.md, docs/extend/migration-notes.md. Supports: 1.0, two.
 [^33]: Verifiable: docs/extend/architecture.md, docs/why-cairn.md. Supports: two.
-[^34]: Verifiable: docs/extend/add-a-custom-admin-screen.md. Supports: 907.
+[^34]: Verifiable: docs/extend/add-a-custom-admin-screen.md, "Compose the screen". Supports: the seven toolkit primitives OfficeList, AdminTable, ListToolbar, Pagination, StatusChip, EmptyState, FieldLabel.
 [^35]: Verifiable: docs/extend/what-the-scaffold-wrote.md. Supports: one.
 [^36]: Verifiable: docs/internal/what-cairn-is-and-is-not.md, `check:surface`.
 [^37]: Verifiable: docs/extend/add-a-second-audience.md.
@@ -1145,7 +1150,7 @@ technical term, so their rows give the plainest form [^346].
 [^78]: Verifiable: docs/internal/what-cairn-is-and-is-not.md, "querying is build-time over a committed manifest".
 [^79]: Verifiable: https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github. Supports: 1, 100.
 [^80]: Verifiable: docs/extend/data-tiers.md. Supports: 2, two.
-[^81]: Supported: W3Techs CMS overview, the page's own stamp 2026-09-05, read 2026-09-04, https://w3techs.com/technologies/overview/content_management. Supports: 58.9%.
+[^81]: Supported: W3Techs CMS overview, the page's own stamp 2026-09-05, which W3Techs dates in UTC a day ahead of the local read date 2026-09-04, https://w3techs.com/technologies/overview/content_management. Supports: 58.9%.
 [^82]: Verifiable: docs/why-cairn.md, "Committing to git-backed content is itself a choice". Supports: one.
 [^83]: Verifiable: docs/internal/record/2026-09-04-cairn-case/02-evidence.md, Claim 3.
 [^84]: Verifiable: https://www.netlify.com/blog/netlify-cms-to-become-decap-cms/; https://sveltiacms.app/en/docs/successor-to-netlify-cms, a competitor's timeline, its share figures not cited. Supports: 2023, six.
@@ -1241,7 +1246,7 @@ technical term, so their rows give the plainest form [^346].
 [^174]: Opinion: a judgment, not a checkable fact.
 [^175]: Verifiable: docs/extend/configure-rendering.md.
 [^176]: Opinion: a judgment, not a checkable fact.
-[^177]: Supported: W3Techs Elementor page, the page's own stamp 2026-09-05, read 2026-09-04. Supports: 12.8%, 3, 31%.
+[^177]: Supported: W3Techs Elementor page, the page's own stamp 2026-09-05, which W3Techs dates in UTC a day ahead of the local read date 2026-09-04. Supports: 12.8%, 3, 31%.
 [^178]: Supported: https://wordpress.org/news/2024/02/2023-annual-survey-results-and-next-steps/. Supports: 2023, 3,922, 45.1%, 28.6%, 60%.
 [^179]: Opinion: a judgment, not a checkable fact.
 [^180]: Verifiable: https://wordpress.org/plugins/classic-editor/; opinion on inference. Supports: 8, 2026-09-04, 2018.
@@ -1261,153 +1266,154 @@ technical term, so their rows give the plainest form [^346].
 [^194]: Supported: https://rubyonrails.org/2026/9/2/agents-on-rails-claude-fable-5-1-and-glm-5-3-flash; harness at https://github.com/rails/lemans. Supports: 92%, 63, $75, 83%, $3.31, 41%.
 [^195]: Supported: https://nextjs.org/evals, last run 2026-08-31; https://github.com/vercel/next-evals-oss. Supports: $0.35, $2.68.
 [^196]: Verifiable: GitHub commit search, read 2026-09-04; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md, sections 1.4 and 2.1; a trailer count is a floor for one agent, never a share. Supports: 2,525, 13,170, eight, 2026.
-[^197]: Verifiable: https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/. Supports: 34, 30, $149.25.
-[^198]: Verifiable: Phoenix 1.8.0 release post, 2025-08-05; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, A5.
-[^199]: Verifiable: Charm blog, "v2", 2026-02-23; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, A1. Supports: 2.
-[^200]: Opinion: none of the named records measures cairn; a judgment about their bearing.
-[^201]: Verifiable: Django docs, `ref/contrib/admin/`; thoughtbot blog, 2015-11-03; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, section 5. Supports: 2005.
-[^202]: Supported: https://arxiv.org/abs/2605.06445; https://arxiv.org/abs/2502.11844, abstract. Supports: 5, 62%.
-[^203]: Supported: "SWE-bench Goes Live!", https://arxiv.org/abs/2505.23419, section 4.4. Supports: 1,319, 93, 2025, five, 48%, three, 100, 10%, seven.
-[^204]: Verifiable: the same.
-[^205]: Supported: Dente, Satriani, Papotti, https://arxiv.org/abs/2605.06445, Table 4; no Anthropic model in the set. Supports: 80, 20, eight, 49%, 51%, 25%, 24%.
-[^206]: Supported: the same, RQ1. Supports: 30.
-[^207]: Supported: Vero et al., https://arxiv.org/abs/2502.11844, abstract. Supports: 392, 14, 62%.
-[^208]: Opinion: a judgment, not a checkable fact.
-[^209]: Supported: Constraint Decay; BaxBench attributes the effect to language popularity and framework complexity.
-[^210]: Verifiable: templates/waymark/; skills/cairn-admin-screens/SKILL.md, "Screen anatomy" and "Component contracts"; src/lib/admin-toolkit/; docs/extend/add-a-custom-admin-screen.md; scripts/checks/; src/lib/audit/.
-[^211]: Opinion: a judgment, not a checkable fact.
+[^197]: Verifiable: GitHub commit search, read 2026-09-04; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md, sections 1.4 and 2.1; a trailer count is a floor for one agent, never a share. Supports: 104, 1,370, eight, 2026.
+[^198]: Verifiable: https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/. Supports: 34, 30, $149.25.
+[^199]: Verifiable: Phoenix 1.8.0 release post, 2025-08-05; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, A5.
+[^200]: Verifiable: Charm blog, "v2", 2026-02-23; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, A1. Supports: 2.
+[^201]: Opinion: none of the named records measures cairn; a judgment about their bearing.
+[^202]: Verifiable: Django docs, `ref/contrib/admin/`; thoughtbot blog, 2015-11-03; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md, section 5. Supports: 2005.
+[^203]: Supported: https://arxiv.org/abs/2605.06445; https://arxiv.org/abs/2502.11844, abstract. Supports: 5, 62%.
+[^204]: Supported: "SWE-bench Goes Live!", https://arxiv.org/abs/2505.23419, section 4.4. Supports: 1,319, 93, 2025, five, 48%, three, 100, 10%, seven.
+[^205]: Verifiable: the same.
+[^206]: Supported: Dente, Satriani, Papotti, https://arxiv.org/abs/2605.06445, Table 4; no Anthropic model in the set. Supports: 80, 20, eight, 49%, 51%, 25%, 24%.
+[^207]: Supported: the same, RQ1. Supports: 30.
+[^208]: Supported: Vero et al., https://arxiv.org/abs/2502.11844, abstract. Supports: 392, 14, 62%.
+[^209]: Opinion: a judgment, not a checkable fact.
+[^210]: Supported: Constraint Decay; BaxBench attributes the effect to language popularity and framework complexity.
+[^211]: Verifiable: templates/waymark/; skills/cairn-admin-screens/SKILL.md, "Screen anatomy" and "Component contracts"; src/lib/admin-toolkit/; docs/extend/add-a-custom-admin-screen.md; scripts/checks/; src/lib/audit/.
 [^212]: Opinion: a judgment, not a checkable fact.
-[^213]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, NON-BLOCKING.
-[^214]: Supported: SecureVibeBench, https://arxiv.org/abs/2509.22097, C/C++ memory safety; CodeRabbit, https://www.coderabbit.ai/blog/state-of-ai-vs-human-code-generation-report, n=470, a review-tool vendor; Veracode 2025, https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/, a security vendor. Supports: 25, 23.8%, 2.74, 470, 45%, 80, 100.
-[^215]: Supported: MITRE CVE record, published 2025-05-30; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md, 4.1. Supports: 2025, 48757, 9.3.
-[^216]: Supported: Wiz Research, https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys, 2026-01-31. Supports: Eight, 1.5, 35,000.
-[^217]: Supported: Deng, Fan, Meng, https://arxiv.org/abs/2606.23130. Supports: 200, 180.
-[^218]: Verifiable: src/lib/auth/, src/lib/sveltekit/; opinion on the bearing.
-[^219]: Opinion: a judgment, not a checkable fact.
-[^220]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 1.
-[^221]: Supported: METR, July 2025, https://arxiv.org/abs/2507.09089. Supports: 16, 246, 19%, 20%.
-[^222]: Supported: https://metr.org/blog/2026-02-24-uplift-update/. Supports: 2026, 57, 800, 18%, 4%, 9%, 30%, 50%.
-[^223]: Opinion: a judgment, not a checkable fact.
-[^224]: Supported: Borg et al., https://arxiv.org/abs/2507.00788. Supports: two, 151.
-[^225]: Supported: Quispe and Xu, https://arxiv.org/abs/2605.25438v1; v2 revises the panel to 5,346 developers and the effect to about 35 commits; the authors call the estimates associations. Supports: 7,786,771, 185,517, 5,838, 41.
-[^226]: Supported: https://www.anthropic.com/research/claude-code-expertise, 2026-06-16; classifier-labeled. Supports: 400,000, 235,000, 70%, 20%, 28%, 33%.
-[^227]: Verifiable: docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 1.
-[^228]: Supported: Murphy-Hill, Butler, Savelieva, https://arxiv.org/abs/2607.01418. Supports: 24.0%.
-[^229]: Supported: Liu et al., https://arxiv.org/abs/2603.28592. Supports: 302,600, 6,299, 15%, 1.95, 22.7%.
-[^230]: Supported: Li, Zhang, Hassan, https://arxiv.org/abs/2507.15003, 456,535 agent PRs; the 932,791 figure is the 2026 dataset paper, https://arxiv.org/abs/2602.09185. Supports: 15, 40.
-[^231]: Supported: Bai et al., https://arxiv.org/abs/2604.22750. Supports: 30.
-[^232]: Supported: Lulla et al., https://arxiv.org/abs/2601.20404. Supports: 28.64%, 16.58%.
-[^233]: Supported: the studies above; Stack Overflow 2025 via docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 2; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, "The narrowest sentence". Supports: 14.1%, 2025, 52%.
-[^234]: Supported: Li et al.; GitHub Octoverse 2025; verifiable: docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 4.
-[^235]: Verifiable: skills/cairn-admin-screens/, package.json `files`. Supports: One, 114, 28, six, 212, 206, 1,255.
-[^236]: Verifiable: src/lib/doctor/check-skill.ts:15.
-[^237]: Verifiable: src/lib/doctor/check-skill.ts:38,123.
-[^238]: Verifiable: packages/create-cairn-site/, ROADMAP.md:74. Supports: one, 2026-09-04.
-[^239]: Verifiable: https://developers.cloudflare.com/agent-setup/claude-code/, https://github.com/github/github-mcp-server. Supports: sixteen.
-[^240]: Opinion: a judgment, not a checkable fact.
-[^241]: Verifiable: `git rev-parse --short HEAD`. Supports: 836, 324, 2026-08-30.
-[^242]: Verifiable: `grep "from '\$admin-club" src/routes/admin/club/{members,assets,asset-requests}`. Supports: three, sixteen.
-[^243]: Verifiable: `git log --since='2026-07-06 00:00' --until='2026-07-08 00:00'`; date-only bounds take the current time of day, so the explicit times are part of the command. Supports: 48, 2026-07-06, 00, 2026-07-08, 8.
-[^244]: Verifiable: `git log --format=%an | sort | uniq -c` in aksailingclub-org (799 `glw907`, 29 `github-actions[bot]`, 10 under the author's full name); the site's CLAUDE.md:255 (`glw907/aksailingclub-org`); cairn-cms src/lib/admin-toolkit/index.ts:8-11. Supports: 799, 838.
-[^245]: Opinion: a judgment, not a checkable fact.
-[^246]: Verifiable: aksailingclub-org `git show cc4edd3`, `a6a5f2b`, `8d7154c`. Supports: two, 2026-07-06, five.
-[^247]: Verifiable: `99088c2`, `64a1939`, `a6d3c05`, `1046660`, `136b926`, `b918044`, `78b4a3a`, `479b2a3`. Supports: two, 2026-07-06, five, 2026-07-07, 0.82, 0.
-[^248]: Verifiable: `81634ca`; `8db6646` deletes the demo members. Supports: 2026-07-14, 395, 345.
-[^249]: Verifiable: aksailingclub-org docs/status-archive.md:1924,1931,1941; docs/plans/2026-07-07-pass-2-1-harvest.md:4. Supports: 2.1, 2026-07-07, nine, ten, three.
-[^250]: Verifiable: `grep -ri hours docs/` returns fourteen lines, none an hours-of-work figure; the nearest is "Geoff sleeping ~9h" at docs/status-archive.md:1941.
-[^251]: Verifiable: `git show --numstat <hash> -- <routes>` for each; opinion on the class. Supports: Forty, two, 42, three, 2026-07-08.
-[^252]: Opinion: a judgment, not a checkable fact.
-[^253]: Verifiable: cairn-cms src/lib/admin-toolkit/*.svelte:2-4, *.ts:1; ToolbarDisclosure.svelte:3; index.ts:8-11.
-[^254]: Verifiable: `git tag`; CHANGELOG.md:3495; docs/HISTORY.md:351-356,561. Supports: 0.89, 0, 2026-07-21, 0.90, 2026-07-23, six, 2026-08-27.
-[^255]: Verifiable: aksailingclub-org docs/2026-07-20-members-pass-harvest-findings.md:8,36-40; docs/2026-07-30-assets-substrate-harvest-findings.md:29,71,101. Supports: 2026-07-20, 2026-07-30.
-[^256]: Verifiable: aksailingclub-org docs/status-archive.md:160,557-558,624-625. Supports: 3.4, one, 1.9, 3.23, 26, three.
-[^257]: Verifiable: the table; cairn-cms src/lib/admin-toolkit/. Supports: 42, 20.
-[^258]: Opinion: a judgment, not a checkable fact.
-[^259]: Verifiable: aksailingclub-org docs/STATUS.md:17-28. Supports: 40.
-[^260]: Opinion: a judgment, not a checkable fact.
-[^261]: Verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279. Supports: 914.
-[^262]: Verifiable: the case-report table's commands; `81634ca`; docs/status-archive.md:1941. Supports: two.
-[^263]: Verifiable: the case-report table's commands; docs/STATUS.md:17-28. Supports: 42, eight, 81, six.
-[^264]: Verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-199. Supports: 1.4, 2.3.
-[^265]: Opinion: a judgment, not a checkable fact.
-[^266]: Verifiable: the case-report table's commands; opinion on "further along".
-[^267]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-spec.md. Supports: one.
-[^268]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-commit-stat.txt. Supports: 34, 51, 198,039, 113, one, 27, 9, 1, 5, 31.
-[^269]: Verifiable: the measurement, the implementer's report.
-[^270]: Verifiable: the same.
-[^271]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, BLOCKING and NON-BLOCKING. Supports: five.
-[^272]: Verifiable: the same, SUMMARY. Supports: 35.
-[^273]: Opinion: a judgment, not a checkable fact.
+[^213]: Opinion: a judgment, not a checkable fact.
+[^214]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, NON-BLOCKING.
+[^215]: Supported: SecureVibeBench, https://arxiv.org/abs/2509.22097, C/C++ memory safety; CodeRabbit, https://www.coderabbit.ai/blog/state-of-ai-vs-human-code-generation-report, n=470, a review-tool vendor; Veracode 2025, https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/, a security vendor. Supports: 25, 23.8%, 2.74, 470, 45%, 80, 100.
+[^216]: Supported: MITRE CVE record, published 2025-05-30; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md, 4.1. Supports: 2025, 48757, 9.3.
+[^217]: Supported: Wiz Research, https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys, 2026-01-31. Supports: Eight, 1.5, 35,000.
+[^218]: Supported: Deng, Fan, Meng, https://arxiv.org/abs/2606.23130. Supports: 200, 180.
+[^219]: Verifiable: src/lib/auth/, src/lib/sveltekit/; opinion on the bearing.
+[^220]: Opinion: a judgment, not a checkable fact.
+[^221]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, Priority 1.
+[^222]: Supported: METR, July 2025, https://arxiv.org/abs/2507.09089. Supports: 16, 246, 19%, 20%.
+[^223]: Supported: https://metr.org/blog/2026-02-24-uplift-update/. Supports: 2026, 57, 800, 18%, 4%, 9%, 30%, 50%.
+[^224]: Opinion: a judgment, not a checkable fact.
+[^225]: Supported: Borg et al., https://arxiv.org/abs/2507.00788. Supports: two, 151.
+[^226]: Supported: Quispe and Xu, https://arxiv.org/abs/2605.25438v1; v2 revises the panel to 5,346 developers and the effect to about 35 commits; the authors call the estimates associations. Supports: 7,786,771, 185,517, 5,838, 41.
+[^227]: Supported: https://www.anthropic.com/research/claude-code-expertise, 2026-06-16; classifier-labeled. Supports: 400,000, 235,000, 70%, 20%, 28%, 33%.
+[^228]: Verifiable: docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 1.
+[^229]: Supported: Murphy-Hill, Butler, Savelieva, https://arxiv.org/abs/2607.01418. Supports: 24.0%.
+[^230]: Supported: Liu et al., https://arxiv.org/abs/2603.28592. Supports: 302,600, 6,299, 15%, 1.95, 22.7%.
+[^231]: Supported: Li, Zhang, Hassan, https://arxiv.org/abs/2507.15003, 456,535 agent PRs; the 932,791 figure is the 2026 dataset paper, https://arxiv.org/abs/2602.09185. Supports: 15, 40.
+[^232]: Supported: Bai et al., https://arxiv.org/abs/2604.22750. Supports: 30.
+[^233]: Supported: Lulla et al., https://arxiv.org/abs/2601.20404. Supports: 28.64%, 16.58%.
+[^234]: Supported: the studies above; Stack Overflow 2025 via docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 2; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, "The narrowest sentence". Supports: 14.1%, 2025, 52%.
+[^235]: Supported: Li et al.; GitHub Octoverse 2025; verifiable: docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 4.
+[^236]: Verifiable: skills/cairn-admin-screens/, package.json `files`. Supports: One, 114, 28, six, 212, 206, 1,255.
+[^237]: Verifiable: src/lib/doctor/check-skill.ts:15.
+[^238]: Verifiable: src/lib/doctor/check-skill.ts:38,123.
+[^239]: Verifiable: packages/create-cairn-site/, ROADMAP.md:74. Supports: one, 2026-09-04.
+[^240]: Verifiable: https://developers.cloudflare.com/agent-setup/claude-code/, https://github.com/github/github-mcp-server. Supports: sixteen.
+[^241]: Opinion: a judgment, not a checkable fact.
+[^242]: Verifiable: `git rev-parse --short HEAD`. Supports: 836, 324, 2026-08-30.
+[^243]: Verifiable: `grep "from '\$admin-club" src/routes/admin/club/{members,assets,asset-requests}`. Supports: three, sixteen.
+[^244]: Verifiable: `git log --since='2026-07-06 00:00' --until='2026-07-08 00:00'`; date-only bounds take the current time of day, so the explicit times are part of the command. Supports: 48, 2026-07-06, 00, 2026-07-08, 8.
+[^245]: Verifiable: `git log --format=%an | sort | uniq -c` in aksailingclub-org (799 `glw907`, 29 `github-actions[bot]`, 10 under the author's full name); the site's CLAUDE.md:255 (`glw907/aksailingclub-org`); cairn-cms src/lib/admin-toolkit/index.ts:8-11. Supports: 799, 838.
+[^246]: Opinion: a judgment, not a checkable fact.
+[^247]: Verifiable: aksailingclub-org `git show cc4edd3`, `a6a5f2b`, `8d7154c`. Supports: two, 2026-07-06, five.
+[^248]: Verifiable: `99088c2`, `64a1939`, `a6d3c05`, `1046660`, `136b926`, `b918044`, `78b4a3a`, `479b2a3`. Supports: 2026-07-07, 0.82, 0.
+[^249]: Verifiable: `81634ca`; `8db6646` deletes the demo members. Supports: 2026-07-14, 395, 345.
+[^250]: Verifiable: aksailingclub-org docs/status-archive.md:1924,1931,1941; docs/plans/2026-07-07-pass-2-1-harvest.md:4. Supports: 2.1, 2026-07-07, nine, ten, three.
+[^251]: Verifiable: `grep -ri hours docs/` returns fourteen lines, none an hours-of-work figure; the nearest is "Geoff sleeping ~9h" at docs/status-archive.md:1941.
+[^252]: Verifiable: `git show --numstat <hash> -- <routes>` for each; opinion on the class. Supports: Forty, two, 42, three, 2026-07-08.
+[^253]: Opinion: a judgment, not a checkable fact.
+[^254]: Verifiable: cairn-cms src/lib/admin-toolkit/*.svelte:2-4, *.ts:1; ToolbarDisclosure.svelte:3; index.ts:8-11.
+[^255]: Verifiable: `git tag`; CHANGELOG.md:3495; docs/HISTORY.md:351-356,561. Supports: 0.89, 0, 2026-07-21, 0.90, 2026-07-23, six, 2026-08-27.
+[^256]: Verifiable: aksailingclub-org docs/2026-07-20-members-pass-harvest-findings.md:8,36-40; docs/2026-07-30-assets-substrate-harvest-findings.md:29,71,101. Supports: 2026-07-20, 2026-07-30.
+[^257]: Verifiable: aksailingclub-org docs/status-archive.md:160,557-558,624-625. Supports: 3.4, one, 1.9, 3.23, 26, three.
+[^258]: Verifiable: the table; cairn-cms src/lib/admin-toolkit/. Supports: 42, 20.
+[^259]: Opinion: a judgment, not a checkable fact.
+[^260]: Verifiable: aksailingclub-org docs/STATUS.md:17-28. Supports: 40.
+[^261]: Opinion: a judgment, not a checkable fact.
+[^262]: Verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279. Supports: 914.
+[^263]: Verifiable: the case-report table's commands; `81634ca`; docs/status-archive.md:1941. Supports: two.
+[^264]: Verifiable: the case-report table's commands; docs/STATUS.md:17-28. Supports: 42, eight, 81, six.
+[^265]: Verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-199. Supports: 1.4, 2.3.
+[^266]: Opinion: a judgment, not a checkable fact.
+[^267]: Verifiable: the case-report table's commands; opinion on "further along".
+[^268]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-spec.md. Supports: one.
+[^269]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-commit-stat.txt. Supports: 34, 51, 198,039, 113, one, 27, 9, 1, 5, 31.
+[^270]: Verifiable: the measurement, the implementer's report.
+[^271]: Verifiable: the same.
+[^272]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, BLOCKING and NON-BLOCKING. Supports: five.
+[^273]: Verifiable: the same, SUMMARY. Supports: 35.
 [^274]: Opinion: a judgment, not a checkable fact.
-[^275]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, NON-BLOCKING; examples/showcase/src/routes/admin/signups/+page.server.ts; docs/extend/add-a-custom-admin-screen.md, "Gate it". Supports: one.
-[^276]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/inference-traps-to-fix.md. Supports: six.
-[^277]: Verifiable: the same, the rulings paragraph.
-[^278]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Fix round". Supports: one, 45, 6, 272,681, 213, 4, 0385, 27, 9, 1.
-[^279]: Verifiable: the same.
-[^280]: Verifiable: the same, "Gates". Supports: 0, 2, 142, 13, 747, 849, 120.
-[^281]: Verifiable: the same, "Defects the round uncovered". Supports: three.
-[^282]: Verifiable: the same. Supports: Two, 79, 57, 470,720, 326, two, one.
-[^283]: Verifiable: the same, "Second review". Supports: eleven, twelve, two, four.
-[^284]: Opinion: a judgment, not a checkable fact.
-[^285]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, sections 2 and 3. Supports: one.
-[^286]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, section 2. Supports: 10%, three, 61.8%, 21, 40.
-[^287]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, "Where searches found nothing".
-[^288]: Opinion: a judgment, not a checkable fact.
-[^289]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md. Supports: five.
-[^290]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md (every named gate passed) and docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md (verdict escalate on five items).
-[^291]: Verifiable: the case-report table. Supports: two, eight.
-[^292]: Verifiable: one production site's docs/HISTORY.md:9-12; internal. Supports: two, eight, 2026-08-25, eleven.
-[^293]: Verifiable: the measurement and review above. Supports: two, eight, 2026-08-25, eleven, 35.
-[^294]: Verifiable: one production site's docs/HISTORY.md:102,151,198-199; internal. Supports: 1.4, 2.3.
-[^295]: Opinion: a judgment, not a checkable fact.
+[^275]: Opinion: a judgment, not a checkable fact.
+[^276]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, NON-BLOCKING; examples/showcase/src/routes/admin/signups/+page.server.ts; docs/extend/add-a-custom-admin-screen.md, "Gate it". Supports: one.
+[^277]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/inference-traps-to-fix.md. Supports: six.
+[^278]: Verifiable: the same, the rulings paragraph.
+[^279]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Fix round". Supports: one, 45, 6, 272,681, 213, 4, 0385, 27, 9, 1.
+[^280]: Verifiable: the same.
+[^281]: Verifiable: the same, "Gates". Supports: 0, 2, 142, 13, 747, 849, 120.
+[^282]: Verifiable: the same, "Defects the round uncovered". Supports: three.
+[^283]: Verifiable: the same. Supports: Two, 79, 57, 470,720, 326, two, one.
+[^284]: Verifiable: the same, "Second review". Supports: eleven, twelve, two, four.
+[^285]: Opinion: a judgment, not a checkable fact.
+[^286]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, sections 2 and 3. Supports: one.
+[^287]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, section 2. Supports: 10%, three, 61.8%, 21, 40.
+[^288]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, "Where searches found nothing".
+[^289]: Opinion: a judgment, not a checkable fact.
+[^290]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md. Supports: five.
+[^291]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md (every named gate passed) and docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md (verdict escalate on five items).
+[^292]: Verifiable: the case-report table. Supports: two, eight.
+[^293]: Verifiable: one production site's docs/HISTORY.md:9-12; internal. Supports: 2026-08-25, eleven.
+[^294]: Verifiable: the measurement and review above. Supports: 35.
+[^295]: Verifiable: one production site's docs/HISTORY.md:102,151,198-199; internal. Supports: 1.4, 2.3.
 [^296]: Opinion: a judgment, not a checkable fact.
-[^297]: Verifiable: the author disclosure in the case report, `git log --format=%an | sort | uniq -c` (799 of 838 commits). Supports: one.
-[^298]: Verifiable: aksailingclub-org docs/2026-07-15-mw-cutover-runbook.md, CLAUDE.md "Member-data imports". Supports: two.
-[^299]: Verifiable: aksailingclub-org src/routes/admin/club/, `wc -l`.
-[^300]: Verifiable: aksailingclub-org src/, the table beneath.
-[^301]: Opinion: a judgment, not a checkable fact.
-[^302]: Verifiable: a parse of each `import {...} from '@glw907/cairn-cms/admin-toolkit'` statement over those two directories, `.test.ts` excluded; src/routes/admin/+layout.svelte:8-22. Supports: 907, four, 16, 12, 11, 9, 8, 7, 6, 4.
-[^303]: Verifiable: aksailingclub-org src/hooks.server.ts:18,54. Supports: 1.
-[^304]: Verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279, migrations/asc-auth/.
-[^305]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E. Supports: 2026-09-04.
-[^306]: Verifiable: `grep "from '@glw907/cairn-cms"` per directory under aksailingclub-org src/routes/admin/club/. Supports: One, Ten, eleven, two, four.
-[^307]: Verifiable: examples/showcase/src/routes/admin/signups/.
-[^308]: Verifiable: aksailingclub-org src/admin-club/. Supports: 8,930, eleven.
-[^309]: Verifiable: the table. Supports: 90, 3,100.
-[^310]: Verifiable: `wc -l` over cairn-cms src/lib/*/ on `main`; the production site's imports.
-[^311]: Verifiable: `wc -l` over `src/lib`. Supports: 68,644.
-[^312]: Verifiable: `wc -l` over those paths. Supports: 35,888, 176, 8,930, 12,415, 4,997, 5,655, 914, 610, 814, 1,553.
-[^313]: Verifiable: `find`; `npm test` on `main`. Supports: 446.
-[^314]: Verifiable: `find`, `wc -l`. Supports: 172, 32,420.
-[^315]: Verifiable: scripts/checks/. Supports: 33.
-[^316]: Verifiable: aksailingclub-org CLAUDE.md. Supports: 2.
-[^317]: Verifiable: package.json `exports`. Supports: 18.
-[^318]: Verifiable: `grep` over `src/`. Supports: 11, 57, 44, 27, 22, 18, 9, 6, 4, 2.
-[^319]: Verifiable: package.json `files`, docs/extend/what-the-scaffold-wrote.md. Supports: 3.
-[^320]: Verifiable: `find`, `wc -l`. Supports: 125, 2,844, 2,997.
-[^321]: Verifiable: CHANGELOG.md, `git tag`, `git log`. Supports: 87, 0.22, 0, 0.96, 73, 2026-08-22, 4,000, 2026-05-24, 2026-09-04.
-[^322]: Verifiable: aksailingclub-org docs/HISTORY.md. Supports: 838, 2026-07-06, 2026-08-30.
-[^323]: Verifiable: `grep "from '@glw907/cairn-cms"` over the membership directories. Supports: 1.
-[^324]: Verifiable: aksailingclub-org docs/HISTORY.md, lines 9 to 12 and 117. Supports: 2026-08-25, eleven.
-[^325]: Verifiable: examples/showcase/src/routes/admin/signups/, examples/showcase/migrations-app/0000_signups.sql. Supports: 90, two, 9.
-[^326]: Verifiable: aksailingclub-org src/tests/ file names. Supports: 35,888, 68,644, four.
-[^327]: Opinion: a judgment, not a checkable fact.
-[^328]: Verifiable: the import list above. Supports: 1, 11.
-[^329]: Opinion: a judgment, not a checkable fact.
-[^330]: Verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-200. Supports: 2.1, 1.5, 2.2, 3.5, 2, 1.35, six.
-[^331]: Verifiable: aksailingclub-org docs/HISTORY.md:153.
-[^332]: Opinion: a judgment, not a checkable fact.
-[^333]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, "Where searches found nothing". Supports: one, 2.
-[^334]: Verifiable: this section's tables. Supports: one.
-[^335]: Opinion: a judgment, not a checkable fact.
+[^297]: Opinion: a judgment, not a checkable fact.
+[^298]: Verifiable: the author disclosure in the case report, `git log --format=%an | sort | uniq -c` (799 of 838 commits). Supports: one.
+[^299]: Verifiable: aksailingclub-org docs/2026-07-15-mw-cutover-runbook.md, CLAUDE.md "Member-data imports". Supports: two.
+[^300]: Verifiable: aksailingclub-org src/routes/admin/club/, `wc -l`.
+[^301]: Verifiable: aksailingclub-org src/, the table beneath.
+[^302]: Opinion: a judgment, not a checkable fact.
+[^303]: Verifiable: a parse of each `import {...} from '@glw907/cairn-cms/admin-toolkit'` statement over those two directories, `.test.ts` excluded; src/routes/admin/+layout.svelte:8-22. Supports: 907, four, 16, 12, 11, 9, 8, 7, 6, 4.
+[^304]: Verifiable: aksailingclub-org src/hooks.server.ts:18,54. Supports: 1.
+[^305]: Verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279, migrations/asc-auth/.
+[^306]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E. Supports: 2026-09-04.
+[^307]: Verifiable: `grep "from '@glw907/cairn-cms"` per directory under aksailingclub-org src/routes/admin/club/. Supports: One, Ten, eleven, two, four.
+[^308]: Verifiable: examples/showcase/src/routes/admin/signups/.
+[^309]: Verifiable: aksailingclub-org src/admin-club/. Supports: 8,930, eleven.
+[^310]: Verifiable: the table. Supports: 90, 3,100.
+[^311]: Verifiable: `wc -l` over cairn-cms src/lib/*/ on `main`; the production site's imports.
+[^312]: Verifiable: `wc -l` over `src/lib`. Supports: 68,644.
+[^313]: Verifiable: `wc -l` over those paths. Supports: 35,888, 176, 8,930, 12,415, 4,997, 5,655, 914, 610, 814, 1,553.
+[^314]: Verifiable: `find`; `npm test` on `main`. Supports: 446.
+[^315]: Verifiable: `find`, `wc -l`. Supports: 172, 32,420.
+[^316]: Verifiable: scripts/checks/. Supports: 33.
+[^317]: Verifiable: aksailingclub-org CLAUDE.md. Supports: 2.
+[^318]: Verifiable: package.json `exports`. Supports: 18.
+[^319]: Verifiable: `grep` over `src/`. Supports: 11, 57, 44, 27, 22, 18, 9, 6, 4, 2.
+[^320]: Verifiable: package.json `files`, docs/extend/what-the-scaffold-wrote.md. Supports: 3.
+[^321]: Verifiable: `find`, `wc -l`. Supports: 125, 2,844, 2,997.
+[^322]: Verifiable: CHANGELOG.md, `git tag`, `git log`. Supports: 87, 0.22, 0, 0.96, 73, 2026-08-22, 4,000, 2026-05-24, 2026-09-04.
+[^323]: Verifiable: aksailingclub-org docs/HISTORY.md. Supports: 838, 2026-07-06, 2026-08-30.
+[^324]: Verifiable: `grep "from '@glw907/cairn-cms"` over the membership directories. Supports: 1.
+[^325]: Verifiable: aksailingclub-org docs/HISTORY.md, lines 9 to 12 and 117. Supports: 2026-08-25, eleven.
+[^326]: Verifiable: examples/showcase/src/routes/admin/signups/, examples/showcase/migrations-app/0000_signups.sql. Supports: 90, two, 9.
+[^327]: Verifiable: aksailingclub-org src/tests/ file names. Supports: 35,888, 68,644, four.
+[^328]: Opinion: a judgment, not a checkable fact.
+[^329]: Verifiable: the import list above. Supports: 1, 11.
+[^330]: Opinion: a judgment, not a checkable fact.
+[^331]: Verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-200. Supports: 2.1, 1.5, 2.2, 3.5, 2, 1.35, six.
+[^332]: Verifiable: aksailingclub-org docs/HISTORY.md:153.
+[^333]: Opinion: a judgment, not a checkable fact.
+[^334]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, "Where searches found nothing". Supports: one, 2.
+[^335]: Verifiable: this section's tables. Supports: one.
 [^336]: Opinion: a judgment, not a checkable fact.
 [^337]: Opinion: a judgment, not a checkable fact.
-[^338]: Verifiable: that path. Supports: twenty, one, 2026-08-11, 4.
-[^339]: Opinion: a judgment, not a checkable fact.
+[^338]: Opinion: a judgment, not a checkable fact.
+[^339]: Verifiable: that path. Supports: twenty, one, 2026-08-11, 4.
 [^340]: Opinion: a judgment, not a checkable fact.
 [^341]: Opinion: a judgment, not a checkable fact.
 [^342]: Opinion: a judgment, not a checkable fact.
 [^343]: Opinion: a judgment, not a checkable fact.
-[^344]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/. Supports: two, one.
-[^345]: Verifiable: the "found nothing" sections of those records. Supports: four.
-[^346]: Verifiable: docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabulary maps.
+[^344]: Opinion: a judgment, not a checkable fact.
+[^345]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/. Supports: two, one.
+[^346]: Verifiable: the "found nothing" sections of those records. Supports: four.
+[^347]: Verifiable: docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabulary maps.

@@ -28,11 +28,15 @@ sentence that states no fact, a transition between two tagged sentences, carries
 sentence about this document's own drafting, what the brief said or what was dropped, never
 derives wherever it sits. A sentence that could earn no kind was cut. The mechanical tell scan is
 clean apart from the token `showcase`, which appears only inside the path `examples/showcase`.
-From revision 9 the tags live in the numbered notes at the end of the document, one note per tag,
-each carrying its kind, its path or URL, the command where one exists, and the figures the
-sentence turns on, so a checker reproduces every number from the note alone; the prose carries the
-one number each sentence turns on inline. Evidence dates matter, because counts and ratings move;
-the evidence file records the read date of each number [^2].
+From revision 9 the tags live in the numbered notes at the end of the document, one note per tag;
+a note may serve more than one sentence when one source covers each of them, and its Supports line
+then covers their figures together. Each note carries its kind, its path or URL, the command where
+one exists, and the figures the sentence turns on, so a checker reproduces every number from the
+note alone; the prose carries the one number each sentence turns on inline. Evidence dates matter,
+because counts and ratings move; the evidence file records the read date of each number [^2].
+
+Frozen at revision 12 (2026-09-05). Derived artifacts (the front-door figure, why-cairn.md) draw
+from this revision; a later change to this document reopens them.
 
 Inputs: the ratified argument brief, its round-1 adversarial review (verdict RETHINK, twelve
 ranked changes), the two evidence files, the product owner's strengthening notes, the round-2
@@ -43,10 +47,10 @@ the measured build, the owner's round-8 notes, the scope charter, the docs regis
 `why-cairn.md`, and the extend track, all banked under
 `docs/internal/record/2026-09-04-cairn-case/`. Where this document departs from a review, it says
 so and says why. Each section carries a front-door line: derivable, or internal record only,
-because it names a consumer site or because it argues about this document's own drafting. The
-derived page's order is the audience lens's, section 2 of `07-audience-lens.md`: identity, the
-developer's screens, the boundary with the developer-required sentence, content in git, the
-routes; the rest below.
+because it names a consumer site, because it names vendors in prose, or because it argues about
+this document's own drafting. The derived page's order is the audience lens's, section 2 of
+`07-audience-lens.md`: identity, the developer's screens, the boundary with the developer-required
+sentence, content in git, the routes; the rest below.
 
 ## The traditional setup, as a competent team builds it
 
@@ -733,24 +737,38 @@ route [^282]. Two passes together: 79 min 57 s, 470,720 tokens, 326 tool calls, 
 review between them [^283]. The second review returned `fix`: eleven of twelve first-round
 findings folded at the published standard, two mechanical blockers left (the audit-sink import
 outside the exclude markers and the audit migration in the scaffold), and four defects filed to
-the engine rather than the experiment [^284]. A third timed round is running; its numbers are one
-line to add when it lands [^285].
+the engine rather than the experiment [^284].
+
+**The third round.** The third round closed the two blockers on `bd4a0385` in one dispatch: 36 min
+18 s wall-clock from 2026-09-05T07:46:54Z to 08:23:12Z, 132,982 tokens, 99 tool calls, commit
+`a05fb6d3`, 5 files, 20 insertions, 43 deletions [^285]. It moved the audit-sink import into its
+own exclude block as a static import, corrected the exclude entry to the exact migration path
+after the previous entry had matched nothing, and read `waitUntil` from `platform.ctx` with the
+one-line `ctx` type matching the adapter's ambient types [^286]. The gates: `check:template` OK
+against a fresh bake, both checks 0/0, chassis-boundary and public-tokens PASS, the targeted e2e 2
+passed, and the root `npm test` at 4927 tests plus 1354 component tests, exit 0 [^287]. One
+limitation stands: the e2e exercises the dev-backend branch only, so the real guard and the audit
+sink are proven by reading, not by a run [^288]. One caveat on the figures: a self-inflicted
+duplicate `npm test` inflated the round's wall-clock and tokens [^289]. Three rounds together: 116
+min 15 s, 603,702 tokens, 425 tool calls, three commits, two Opus reviews [^290]. The third
+round's diff is 20 lines added and 43 removed against a round cost near a third of the first pass,
+most of it the full gate run [^291]. The cost of a fix round is the gate, not the edit [^292].
 
 **Whole-system delivery.** The controlled studies above measure one task with a reviewer in the
-loop [^286]. The telemetry sees long delegations and parallel agents: over 10% of Codex users run
+loop [^293]. The telemetry sees long delegations and parallel agents: over 10% of Codex users run
 three or more agents at once, whole apps are built from a specification and scored at 61.8% at
-best, and a month-long hackathon deployed 21 of 40 LLM-only projects [^287]. What no source
-measures is a gated, scaffold-based delivery with its cost [^288]. The owner's regime is that
+best, and a month-long hackathon deployed 21 of 40 LLM-only projects [^294]. What no source
+measures is a gated, scaffold-based delivery with its cost [^295]. The owner's regime is that
 missing case: implementers run in parallel and overnight, a reviewer model and the gates stand in
-for a human reviewer, and the unit delivered is a whole system in calendar days [^289]. The
+for a human reviewer, and the unit delivered is a whole system in calendar days [^296]. The
 measured build shows why both halves are needed. Every gate the spec named passed, and the
-reviewer model stopped the change on five items the gates did not see [^290]. Gates alone were not
-enough [^291]. Measurements on record: the production site's membership and assets layer in two
-calendar days, then eight weeks of refinement [^292]; the 2026-08-25 email-announce pass, eleven
-tasks overnight [^293]; and this screen's first pass in 35 minutes, stopped in review [^294]. In
+reviewer model stopped the change on five items the gates did not see [^297]. Gates alone were not
+enough [^298]. Measurements on record: the production site's membership and assets layer in two
+calendar days, then eight weeks of refinement [^299]; the 2026-08-25 email-announce pass, eleven
+tasks overnight [^300]; and this screen's first pass in 35 minutes, stopped in review [^301]. In
 that regime wall-clock is bounded by machine and API. The cost that moves is review and tokens,
-which the same records show running 1.4 to 2.3 times their ceilings [^295]. No literature covers
-this regime yet. This document claims it only as far as these measurements carry it [^296].
+which the same records show running 1.4 to 2.3 times their ceilings [^302]. No literature covers
+this regime yet. This document claims it only as far as these measurements carry it [^303].
 
 ### Already extensible, measured
 
@@ -758,10 +776,10 @@ Front door: internal record only (names a consumer site); the derivable form is 
 
 One production site, `aksailingclub-org`, carries a custom admin layer that consolidates what an
 organization would otherwise run as two or three separate products, each with its own admin, its
-own login, and its own data [^297]. It is one author's site [^298]. The site went live by flipping
+own login, and its own data [^304]. It is one author's site [^305]. The site went live by flipping
 the apex from a Hugo site and retiring a hosted membership platform after a two-week soak, and its
-member data was imported from that platform's exports [^299]. Its custom admin sections,
-enumerated by route under `src/routes/admin/club/`, with source lines [^300].
+member data was imported from that platform's exports [^306]. Its custom admin sections,
+enumerated by route under `src/routes/admin/club/`, with source lines [^307].
 
 | Route | Section title | Lines | What the section does |
 | --- | --- | --- | --- |
@@ -777,9 +795,9 @@ enumerated by route under `src/routes/admin/club/`, with source lines [^300].
 
 The member-facing half of the same layer (`src/member-portal`, `src/member-auth`,
 `src/member-signup`, `src/jobs`, and the `my-account`, `join`, `classes`, and `events` site
-routes) is the portal those sections serve [^301]. Counted by category, the layer stands in for a
+routes) is the portal those sections serve [^308]. Counted by category, the layer stands in for a
 membership platform, an events or registration tool, an asset register, and an email service, four
-product categories, over one retained payments provider [^302].
+product categories, over one retained payments provider [^309].
 
 Two facts follow from the tree. First, every section is built from the engine's admin toolkit
 inside the engine's shell. Counting files under `src/routes/admin/club/` and `src/admin-club/`
@@ -788,25 +806,25 @@ multi-line imports included (four such statements exist there): `OfficeList` 16,
 `FieldLabel` 11, `StatusChip` 9, `SelectInput` 8, `EmptyState` 7, `itemNoun` 6, `AdminTable` 4,
 `computeCountLine` 3, `PageHeader` 3, `ageFromBirthdate` 3, `ExpandableRow` 3, `ListToolbar` 3,
 `Pagination` 2; and every `/admin/**` route renders inside `CairnAdminShell` from
-`@glw907/cairn-cms/components` through one `+layout.svelte` [^303]. Second, `hooks.server.ts`
+`@glw907/cairn-cms/components` through one `+layout.svelte` [^310]. Second, `hooks.server.ts`
 composes `createAuthGuard({ roles, access })` over the whole `/admin` subtree, with
-`createD1AuditSink` wired beside it, so the club sections use the editors' session [^304]. Members
+`createD1AuditSink` wired beside it, so the club sections use the editors' session [^311]. Members
 remain a separate audience with their own login, the shape [Add a second
 audience](../../extend/add-a-second-audience.md) prescribes; this site built it as its own module
 on the engine's `auth-crypto` primitives, against its own database, before the `auth-channel` seam
-shipped [^305].
+shipped [^312].
 
 The size ratio has two halves: what one more section costs, and what the developer never writes.
 The whole-layer ratio sits beneath. All counts are `wc -l` on 2026-09-04 and include comments and
-blank lines [^306].
+blank lines [^313].
 
 **One section at a time.** Ten of the eleven sections import `/sveltekit`, `/admin-toolkit`, and
 `/components`; `documents/` imports the first two; no section imports more than four subpaths
-[^307].
+[^314].
 
 | Section | Route lines | Engine imports it leans on |
 | --- | --- | --- |
-| Scaffold `signups` (the minimal case) | 90, plus a 9-line migration | `/sveltekit`, `/admin-toolkit`, `/components` [^308] |
+| Scaffold `signups` (the minimal case) | 90, plus a 9-line migration | `/sveltekit`, `/admin-toolkit`, `/components` [^315] |
 | `settings` | 381 | `/sveltekit` 1, `/admin-toolkit` 1, `/components` 1 |
 | `asset-requests` | 326 | `/sveltekit` 1, `/admin-toolkit` 1, `/components` 1 |
 | `money` | 433 | `/sveltekit` 1, `/admin-toolkit` 1, `/components` 1 |
@@ -820,12 +838,12 @@ blank lines [^306].
 | `events` | 3,120 | `/sveltekit` 2, `/admin-toolkit` 3, `/components` 2, `/media` 1 |
 
 The route lines exclude each section's share of `src/admin-club/` (8,930 lines of stores and
-actions across the eleven sections) and its tests [^309]. The increment runs from 90 lines to
-about 3,100 per section [^310].
+actions across the eleven sections) and its tests [^316]. The increment runs from 90 lines to
+about 3,100 per section [^317].
 
 **The modules a developer does not write.** The carried modules by name and line count, magic-link
 login first, none of which the production site reimplements; the engine's own audit, doctor,
-gates, and tests sit in a second group, since no stack asks a consumer to write those [^311].
+gates, and tests sit in a second group, since no stack asks a consumer to write those [^318].
 
 | Carried by the engine, in place of an install or a hand-written module | Module | Lines |
 | --- | --- | --- |
@@ -851,43 +869,43 @@ it is the other.
 
 | Measure | The engine (`cairn-cms`, `main`) | One production membership layer (`aksailingclub-org`) |
 | --- | --- | --- |
-| Source, TypeScript and Svelte, excluding tests | 68,644 lines under `src/lib/` [^312] | 35,888 lines in 176 files across `src/admin-club` (8,930), `src/routes/admin/club` (12,415), `src/member-portal` (4,997), `src/routes/(site)/my-account` (5,655), `src/member-auth` (914), `src/member-signup` (610), `src/jobs` (814), and the `join`, `classes`, `events`, and `api` site routes (1,553) [^313] |
-| Tests | 446 `.test.ts` files under `src/tests/` [^314] | 172 `.ts` files, 32,420 lines under `src/tests/` [^315] |
-| Gates | 33 check scripts plus the public-surface snapshot [^316] | The repo's `ci.yml` (`check`, `test`, `build`, e2e) [^317] |
-| Shipped surface | 18 export subpaths [^318] | Imports 11 engine specifiers, `/sveltekit` 57 times, the root 44, `/admin-toolkit` 27, `/delivery` 22, `/components` 18, `/cloudflare` 11, `/media` 9, `/delivery/head` 6, `/auth-crypto` 4, `/render` 2, `/delivery/data` 1 [^319] |
-| Schema | 3 packaged migration sets (`migrations`, `migrations-app` in the scaffold, `migrations-channel`) [^320] | 125 `.sql` files, 2,844 lines under `migrations/asc-club/`; 2,997 lines under `migrations/` in all [^321] |
-| History | 87 numbered changelog entries, `0.22.0` through `0.96.0` (73 tags in range, `v0.96.0` on 2026-08-22), about 4,000 commits, 2026-05-24 to 2026-09-04 [^322] | 838 commits, 2026-07-06 to 2026-08-30, in named passes with plans and post-mortems [^323] |
+| Source, TypeScript and Svelte, excluding tests | 68,644 lines under `src/lib/` [^319] | 35,888 lines in 176 files across `src/admin-club` (8,930), `src/routes/admin/club` (12,415), `src/member-portal` (4,997), `src/routes/(site)/my-account` (5,655), `src/member-auth` (914), `src/member-signup` (610), `src/jobs` (814), and the `join`, `classes`, `events`, and `api` site routes (1,553) [^320] |
+| Tests | 446 `.test.ts` files under `src/tests/` [^321] | 172 `.ts` files, 32,420 lines under `src/tests/` [^322] |
+| Gates | 33 check scripts plus the public-surface snapshot [^323] | The repo's `ci.yml` (`check`, `test`, `build`, e2e) [^324] |
+| Shipped surface | 18 export subpaths [^325] | Imports 11 engine specifiers, `/sveltekit` 57 times, the root 44, `/admin-toolkit` 27, `/delivery` 22, `/components` 18, `/cloudflare` 11, `/media` 9, `/delivery/head` 6, `/auth-crypto` 4, `/render` 2, `/delivery/data` 1 [^326] |
+| Schema | 3 packaged migration sets (`migrations`, `migrations-app` in the scaffold, `migrations-channel`) [^327] | 125 `.sql` files, 2,844 lines under `migrations/asc-club/`; 2,997 lines under `migrations/` in all [^328] |
+| History | 87 numbered changelog entries, `0.22.0` through `0.96.0` (73 tags in range, `v0.96.0` on 2026-08-22), about 4,000 commits, 2026-05-24 to 2026-09-04 [^329] | 838 commits, 2026-07-06 to 2026-08-30, in named passes with plans and post-mortems [^330] |
 
 What the membership layer reuses from the engine, read from its imports: `requireSession`,
 `requireAccess`, `createSectionAction`, and `createD1AuditSink` for gating and audit;
 `generateToken`, `hashToken`, `tokensMatch`, `generateSessionId`, and `generateCsrfToken` for its
 own member login; `checkRateLimit`; `CsrfField`; and `OfficeList`, `AdminTable`, `PageHeader`,
-`StatusChip`, `EmptyState`, `FieldLabel`, `TextInput`, and `SelectInput` for its screens [^324].
+`StatusChip`, `EmptyState`, `FieldLabel`, `TextInput`, and `SelectInput` for its screens [^331].
 How it was built: the passes ran as implementer and diff-reviewer chains under a workflow, with
 human interaction points counted per pass, and the 2026-08-25 email-announce pass ran eleven tasks
-overnight [^325].
+overnight [^332].
 
 The minimal case beside it is the scaffold's own worked screen: `admin/signups` is 90 lines across
-two files plus a 9-line migration [^326].
+two files plus a 9-line migration [^333].
 
 The production layer is about half the engine's source line count (35,888 against 68,644), and it
 is the four-category system enumerated above, with renewal reminders, refunds, signatures, and a
-member directory besides [^327]. The sentence "a small fraction of the whole" is not what this
-measurement supports, and this document does not write it [^328]. What it supports: the layer is
+member directory besides [^334]. The sentence "a small fraction of the whole" is not what this
+measurement supports, and this document does not write it [^335]. What it supports: the layer is
 SvelteKit routes, D1 tables, forms, and toolkit lists on 11 engine import paths, and none of it
 reimplements authentication crypto, CSRF, the editor, the publish path, or the design system
-[^329]. A smaller organization's layer, a roster and a signup form, sits nearer the 90-line end of
-the range than the 35,888-line end [^330]. The site's own records give the effort in agent tokens
+[^336]. A smaller organization's layer, a roster and a signup form, sits nearer the 90-line end of
+the range than the 35,888-line end [^337]. The site's own records give the effort in agent tokens
 and human interaction points, and not in hours: events-redesign ran about 2.1M tokens against a
 ceiling raised from 1.5M to 2.2M; events-admin about 3.5M against 2M; assets-register about 1.35M
 through six tasks plus about 2.1M in the close against 1.5M, which the record calls "roughly
-twofold"; human interaction points per pass are in single digits [^331]. The overruns are recorded
-against their causes, chiefly tests that asserted text rather than mechanics [^332]. No dollar or
+twofold"; human interaction points per pass are in single digits [^338]. The overruns are recorded
+against their causes, chiefly tests that asserted text rather than mechanics [^339]. No dollar or
 hour figure for developer cost exists in either repository; the token figures convert to money
-only at a model's published price, which this document does not apply [^333]. No measurement of
+only at a model's published price, which this document does not apply [^340]. No measurement of
 the skill's effect on an agent building one of these screens exists in either tree, and the
 round-2 search found no study that isolates scaffolding or a context file as a variable on work of
-this shape [^334].
+this shape [^341].
 
 **Derivable form, for the front door.** I run a club site on cairn. Its membership, events,
 assets, and email sections are about 36,000 lines of code I wrote, sitting on about 69,000 engine
@@ -895,32 +913,32 @@ lines I did not, reached through eleven import paths. The member login, the paym
 personal data are the site's, not the engine's. Its screens are built from the engine's toolkit
 inside the engine's shell, behind the same guard the editors use, and the smallest such screen the
 scaffold ships is 90 lines. I wrote the engine too, so read that ratio as one author's site
-[^335].
+[^342].
 
 ## Where this document argues with the reviews
 
 Revision 8 folds the third and fourth research passes, the measured build, and the owner's round-8
-notes without a review round [^336]. Round 5 ranked ten changes, all taken [^337]. Round 4 ranked
+notes without a review round [^343]. Round 5 ranked ten changes, all taken [^344]. Round 4 ranked
 twenty-one changes. This document takes twenty and half of the twenty-first: four of the ten
 **uncited** tags became vendor-page citations where a fetched page showed the claim, and the rest
 stay uncited because the traditional setup is described by capability and a named vendor page
-would tie each sentence to one product [^338]. Round 3 ranked twenty changes. This document takes
+would tie each sentence to one product [^345]. Round 3 ranked twenty changes. This document takes
 all twenty; the one it could not apply as written is the missing email-spike record, which is not
-missing and is re-pointed to `docs/internal/record/2026-08-11-t4b-email-spike.md` [^339]. Round 2
+missing and is re-pointed to `docs/internal/record/2026-08-11-t4b-email-spike.md` [^346]. Round 2
 ranked twenty changes. This document takes nineteen as written and overrides one: its first
 change, which would reverse Leg 5 into the thesis that the division of labor hands agents the
 organization's hardest work. The product owner ruled that Leg 5 is a case report, so the leg now
-states the measurements and neither inference [^340]. Round 1 ranked twelve changes. This document
-takes eleven as written [^341]. It differs on one point of scope. Round 1's section 7 holds that
+states the measurements and neither inference [^347]. Round 1 ranked twelve changes. This document
+takes eleven as written [^348]. It differs on one point of scope. Round 1's section 7 holds that
 the comparative material belongs in `why-cairn.md` as prose and that the front door should show
 one system only. This document keeps the traditional setup as a section, because the product
 owner's ruling is that the case is built first and the figure follows, and because a reader
-choosing between two shapes is owed the other shape in the same voice [^342]. The register
+choosing between two shapes is owed the other shape in the same voice [^349]. The register
 objection to naming competitors is honored: the traditional setup is described by capability
 rather than by product, and the vendor names that do appear in derivable sections are those
 attached to a cited measurement (Patchstack, W3Techs, WordPress, Elementor, Netlify) plus the
-three git-backed CMS tools Leg 1 compares [^343]. Whether any of that material reaches the front
-door is the figure's question, recorded below [^344].
+three git-backed CMS tools Leg 1 compares [^350]. Whether any of that material reaches the front
+door is the figure's question, recorded below [^351].
 
 ## Open questions
 
@@ -966,26 +984,27 @@ door is the figure's question, recorded below [^344].
 
 7. **The evidence collected, and what is still missing.** The public success record of the shape
    and the cost-and-speed evidence are now in the document, from two research passes and one
-   measured build [^345]. Still missing after the four "found nothing" lists: a cost per shipped
+   measured build [^352]. Still missing after the four "found nothing" lists: a cost per shipped
    feature with a method from any production setting; a controlled time-to-first-deploy on a
    scaffold; a study that varies scaffold quality, test coverage, or a shipped skill as the
    treatment; any telemetry that names SvelteKit or Cloudflare Workers; a per-repository resolve
    rate on SWE-bench Verified; a measured record for Laravel or Phoenix; an independent
-   small-organization case of git-backed content with non-technical editors [^346].
+   small-organization case of git-backed content with non-technical editors [^353].
 
-8. **A measured worked example.** Answered in part by the second case: one screen measured in
-   isolation, then a fix round to the published standard. A third round is running. A Go server
-   the owner expects to deliver in four or five calendar days is a measurement to record when it
-   lands, and not evidence until then. One custom screen built on a cairn site with an agent, its
-   diff size, files, and passes recorded, would be the first evidence for Leg 5's economic half.
-   Whether to build it before the figure ships is a product decision.
+8. **A measured worked example.** Answered by the second case: one screen measured in isolation,
+   then a fix round to the published standard, then a third round that closed the last two
+   blockers. A Go server the owner expects to deliver in four or five calendar days is a
+   measurement to record when it lands, and not evidence until then. One custom screen built on a
+   cairn site with an agent, its diff size, files, and passes recorded, would be the first
+   evidence for Leg 5's economic half. Whether to build it before the figure ships is a product
+   decision.
 
 ## Vocabulary
 
 The five readers of the round-3 review each stopped on terms this document uses in a house sense.
 The table merges their maps, term by term, with the reader it stopped and the plain equivalent the
 front-door derivation uses. The board member and the small-business owner stop on nearly every
-technical term, so their rows give the plainest form [^347].
+technical term, so their rows give the plainest form [^354].
 
 | Term | Who it stopped | Plain equivalent |
 | --- | --- | --- |
@@ -1178,7 +1197,7 @@ technical term, so their rows give the plainest form [^347].
 [^106]: Uncited: checkable against the vendors' pages; opinion on the last clause. Supports: two.
 [^107]: Opinion: a judgment, not a checkable fact.
 [^108]: Opinion: a judgment, not a checkable fact.
-[^109]: Verifiable: https://www.cloudflare.com/network/, read 2026-09-05. Supports: 348, 95%, 50, one.
+[^109]: Verifiable: https://www.cloudflare.com/network/, read 2026-09-05. Supports: 348, 95%, 50, one; the same note serves the sentence that the platform is the one the free plan gives every zone, which carries no figure.
 [^110]: Verifiable: https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/.
 [^111]: Verifiable: https://developers.cloudflare.com/ddos-protection/; https://developers.cloudflare.com/waf/; https://developers.cloudflare.com/bots/; https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/; https://developers.cloudflare.com/workers/observability/logs/workers-logs/; docs/reference/log-events.md; https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/; https://www.cloudflare.com/products/registrar/. Supports: $20, one.
 [^112]: Opinion: a judgment, not a checkable fact.
@@ -1305,7 +1324,7 @@ technical term, so their rows give the plainest form [^347].
 [^233]: Supported: Lulla et al., https://arxiv.org/abs/2601.20404. Supports: 28.64%, 16.58%.
 [^234]: Supported: the studies above; Stack Overflow 2025 via docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 2; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, "The narrowest sentence". Supports: 14.1%, 2025, 52%.
 [^235]: Supported: Li et al.; GitHub Octoverse 2025; verifiable: docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md, section 4.
-[^236]: Verifiable: skills/cairn-admin-screens/, package.json `files`. Supports: One, 114, 28, six, 212, 206, 1,255.
+[^236]: Verifiable: skills/cairn-admin-screens/, package.json `files`. Supports: One, 114, 28, seven, 212, 206, 1,255.
 [^237]: Verifiable: src/lib/doctor/check-skill.ts:15.
 [^238]: Verifiable: src/lib/doctor/check-skill.ts:38,123.
 [^239]: Verifiable: packages/create-cairn-site/, ROADMAP.md:74. Supports: one, 2026-09-04.
@@ -1338,7 +1357,7 @@ technical term, so their rows give the plainest form [^347].
 [^266]: Opinion: a judgment, not a checkable fact.
 [^267]: Verifiable: the case-report table's commands; opinion on "further along".
 [^268]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-spec.md. Supports: one.
-[^269]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-commit-stat.txt. Supports: 34, 51, 198,039, 113, one, 27, 9, 1, 5, 31.
+[^269]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-commit-stat.txt. Supports: 34, 51, 198,039, 113, one, 27, 9, 1, 5, 31, 540, 157.
 [^270]: Verifiable: the measurement, the implementer's report.
 [^271]: Verifiable: the same.
 [^272]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md, BLOCKING and NON-BLOCKING. Supports: five.
@@ -1350,70 +1369,77 @@ technical term, so their rows give the plainest form [^347].
 [^278]: Verifiable: the same, the rulings paragraph.
 [^279]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Fix round". Supports: one, 45, 6, 272,681, 213, 4, 0385, 27, 9, 1.
 [^280]: Verifiable: the same.
-[^281]: Verifiable: the same, "Gates". Supports: 0, 2, 142, 13, 747, 849, 120.
+[^281]: Verifiable: the same, "Gates". Supports: 0, 2, 142, 13, 747, 849, 120, 155, 157.
 [^282]: Verifiable: the same, "Defects the round uncovered". Supports: three.
 [^283]: Verifiable: the same. Supports: Two, 79, 57, 470,720, 326, two, one.
 [^284]: Verifiable: the same, "Second review". Supports: eleven, twelve, two, four.
-[^285]: Opinion: a judgment, not a checkable fact.
-[^286]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, sections 2 and 3. Supports: one.
-[^287]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, section 2. Supports: 10%, three, 61.8%, 21, 40.
-[^288]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, "Where searches found nothing".
-[^289]: Opinion: a judgment, not a checkable fact.
-[^290]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md. Supports: five.
-[^291]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md (every named gate passed) and docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md (verdict escalate on five items).
-[^292]: Verifiable: the case-report table. Supports: two, eight.
-[^293]: Verifiable: one production site's docs/HISTORY.md:9-12; internal. Supports: 2026-08-25, eleven.
-[^294]: Verifiable: the measurement and review above. Supports: 35.
-[^295]: Verifiable: one production site's docs/HISTORY.md:102,151,198-199; internal. Supports: 1.4, 2.3.
+[^285]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round". Supports: 2026-09-05T07:46:54Z, 2026-09-05T08:23:12Z, 36 min 18 s, 132,982, 99, a05fb6d3, 5, 20, 43.
+[^286]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round", "Applied". Supports: one (the one-line ctx type).
+[^287]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round", "Gates". Supports: 0/0, 0/0, 2, 4927, 1354, 0.
+[^288]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round", "Not fixed, stated".
+[^289]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round", "Measurement caveat".
+[^290]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round", the three-round total. Supports: 116 min 15 s, 603,702, 425, three, two.
+[^291]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md, "Third round", the closing paragraph. Supports: 20, 43, a third.
+[^292]: Opinion: the reading the measurement record itself states; a judgment about where a fix round's cost sits.
+[^293]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, sections 2 and 3. Supports: one.
+[^294]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, section 2. Supports: 10%, three, 61.8%, 21, 40.
+[^295]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md, "Where searches found nothing".
 [^296]: Opinion: a judgment, not a checkable fact.
-[^297]: Opinion: a judgment, not a checkable fact.
-[^298]: Verifiable: the author disclosure in the case report, `git log --format=%an | sort | uniq -c` (799 of 838 commits). Supports: one.
-[^299]: Verifiable: aksailingclub-org docs/2026-07-15-mw-cutover-runbook.md, CLAUDE.md "Member-data imports". Supports: two.
-[^300]: Verifiable: aksailingclub-org src/routes/admin/club/, `wc -l`.
-[^301]: Verifiable: aksailingclub-org src/, the table beneath.
-[^302]: Opinion: a judgment, not a checkable fact.
-[^303]: Verifiable: a parse of each `import {...} from '@glw907/cairn-cms/admin-toolkit'` statement over those two directories, `.test.ts` excluded; src/routes/admin/+layout.svelte:8-22. Supports: 907, four, 16, 12, 11, 9, 8, 7, 6, 4.
-[^304]: Verifiable: aksailingclub-org src/hooks.server.ts:18,54. Supports: 1.
-[^305]: Verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279, migrations/asc-auth/.
-[^306]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E. Supports: 2026-09-04.
-[^307]: Verifiable: `grep "from '@glw907/cairn-cms"` per directory under aksailingclub-org src/routes/admin/club/. Supports: One, Ten, eleven, two, four.
-[^308]: Verifiable: examples/showcase/src/routes/admin/signups/.
-[^309]: Verifiable: aksailingclub-org src/admin-club/. Supports: 8,930, eleven.
-[^310]: Verifiable: the table. Supports: 90, 3,100.
-[^311]: Verifiable: `wc -l` over cairn-cms src/lib/*/ on `main`; the production site's imports.
-[^312]: Verifiable: `wc -l` over `src/lib`. Supports: 68,644.
-[^313]: Verifiable: `wc -l` over those paths. Supports: 35,888, 176, 8,930, 12,415, 4,997, 5,655, 914, 610, 814, 1,553.
-[^314]: Verifiable: `find`; `npm test` on `main`. Supports: 446.
-[^315]: Verifiable: `find`, `wc -l`. Supports: 172, 32,420.
-[^316]: Verifiable: scripts/checks/. Supports: 33.
-[^317]: Verifiable: aksailingclub-org CLAUDE.md. Supports: 2.
-[^318]: Verifiable: package.json `exports`. Supports: 18.
-[^319]: Verifiable: `grep` over `src/`. Supports: 11, 57, 44, 27, 22, 18, 9, 6, 4, 2.
-[^320]: Verifiable: package.json `files`, docs/extend/what-the-scaffold-wrote.md. Supports: 3.
-[^321]: Verifiable: `find`, `wc -l`. Supports: 125, 2,844, 2,997.
-[^322]: Verifiable: CHANGELOG.md, `git tag`, `git log`. Supports: 87, 0.22, 0, 0.96, 73, 2026-08-22, 4,000, 2026-05-24, 2026-09-04.
-[^323]: Verifiable: aksailingclub-org docs/HISTORY.md. Supports: 838, 2026-07-06, 2026-08-30.
-[^324]: Verifiable: `grep "from '@glw907/cairn-cms"` over the membership directories. Supports: 1.
-[^325]: Verifiable: aksailingclub-org docs/HISTORY.md, lines 9 to 12 and 117. Supports: 2026-08-25, eleven.
-[^326]: Verifiable: examples/showcase/src/routes/admin/signups/, examples/showcase/migrations-app/0000_signups.sql. Supports: 90, two, 9.
-[^327]: Verifiable: aksailingclub-org src/tests/ file names. Supports: 35,888, 68,644, four.
-[^328]: Opinion: a judgment, not a checkable fact.
-[^329]: Verifiable: the import list above. Supports: 1, 11.
-[^330]: Opinion: a judgment, not a checkable fact.
-[^331]: Verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-200. Supports: 2.1, 1.5, 2.2, 3.5, 2, 1.35, six.
-[^332]: Verifiable: aksailingclub-org docs/HISTORY.md:153.
-[^333]: Opinion: a judgment, not a checkable fact.
-[^334]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, "Where searches found nothing". Supports: one, 2.
-[^335]: Verifiable: this section's tables. Supports: one.
-[^336]: Opinion: a judgment, not a checkable fact.
+[^297]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md. Supports: five.
+[^298]: Verifiable: docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md (every named gate passed) and docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md (verdict escalate on five items).
+[^299]: Verifiable: the case-report table. Supports: two, eight.
+[^300]: Verifiable: one production site's docs/HISTORY.md:9-12; internal. Supports: 2026-08-25, eleven.
+[^301]: Verifiable: the measurement and review above. Supports: 35.
+[^302]: Verifiable: one production site's docs/HISTORY.md:102,151,198-199; internal. Supports: 1.4, 2.3.
+[^303]: Opinion: a judgment, not a checkable fact.
+[^304]: Opinion: a judgment, not a checkable fact.
+[^305]: Verifiable: the author disclosure in the case report, `git log --format=%an | sort | uniq -c` (799 of 838 commits). Supports: one.
+[^306]: Verifiable: aksailingclub-org docs/2026-07-15-mw-cutover-runbook.md, CLAUDE.md "Member-data imports". Supports: two.
+[^307]: Verifiable: aksailingclub-org src/routes/admin/club/, `wc -l`.
+[^308]: Verifiable: aksailingclub-org src/, the table beneath.
+[^309]: Opinion: a judgment, not a checkable fact.
+[^310]: Verifiable: a parse of each `import {...} from '@glw907/cairn-cms/admin-toolkit'` statement over those two directories, `.test.ts` excluded; src/routes/admin/+layout.svelte:8-22. Supports: 907, four, 16, 12, 11, 9, 8, 7, 6, 4.
+[^311]: Verifiable: aksailingclub-org src/hooks.server.ts:18,54. Supports: 1.
+[^312]: Verifiable: aksailingclub-org src/member-auth/lib/auth.ts:6-14,279, migrations/asc-auth/.
+[^313]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, 1E. Supports: 2026-09-04.
+[^314]: Verifiable: `grep "from '@glw907/cairn-cms"` per directory under aksailingclub-org src/routes/admin/club/. Supports: One, Ten, eleven, two, four.
+[^315]: Verifiable: examples/showcase/src/routes/admin/signups/.
+[^316]: Verifiable: aksailingclub-org src/admin-club/. Supports: 8,930, eleven.
+[^317]: Verifiable: the table. Supports: 90, 3,100.
+[^318]: Verifiable: `wc -l` over cairn-cms src/lib/*/ on `main`; the production site's imports.
+[^319]: Verifiable: `wc -l` over `src/lib`. Supports: 68,644.
+[^320]: Verifiable: `wc -l` over those paths. Supports: 35,888, 176, 8,930, 12,415, 4,997, 5,655, 914, 610, 814, 1,553.
+[^321]: Verifiable: `find`; `npm test` on `main`. Supports: 446.
+[^322]: Verifiable: `find`, `wc -l`. Supports: 172, 32,420.
+[^323]: Verifiable: scripts/checks/. Supports: 33.
+[^324]: Verifiable: aksailingclub-org CLAUDE.md. Supports: 2.
+[^325]: Verifiable: package.json `exports`. Supports: 18.
+[^326]: Verifiable: `grep` over `src/`. Supports: 11, 57, 44, 27, 22, 18, 9, 6, 4, 2.
+[^327]: Verifiable: package.json `files`, docs/extend/what-the-scaffold-wrote.md. Supports: 3.
+[^328]: Verifiable: `find`, `wc -l`. Supports: 125, 2,844, 2,997.
+[^329]: Verifiable: CHANGELOG.md, `git tag`, `git log`. Supports: 87, 0.22, 0, 0.96, 73, 2026-08-22, 4,000, 2026-05-24, 2026-09-04.
+[^330]: Verifiable: aksailingclub-org docs/HISTORY.md. Supports: 838, 2026-07-06, 2026-08-30.
+[^331]: Verifiable: `grep "from '@glw907/cairn-cms"` over the membership directories. Supports: 1.
+[^332]: Verifiable: aksailingclub-org docs/HISTORY.md, lines 9 to 12 and 117. Supports: 2026-08-25, eleven.
+[^333]: Verifiable: examples/showcase/src/routes/admin/signups/, examples/showcase/migrations-app/0000_signups.sql. Supports: 90, two, 9.
+[^334]: Verifiable: aksailingclub-org src/tests/ file names. Supports: 35,888, 68,644, four.
+[^335]: Opinion: a judgment, not a checkable fact.
+[^336]: Verifiable: the import list above. Supports: 1, 11.
 [^337]: Opinion: a judgment, not a checkable fact.
-[^338]: Opinion: a judgment, not a checkable fact.
-[^339]: Verifiable: that path. Supports: twenty, one, 2026-08-11, 4.
+[^338]: Verifiable: aksailingclub-org docs/HISTORY.md:102,151,198-200. Supports: 2.1, 1.5, 2.2, 3.5, 2, 1.35, six.
+[^339]: Verifiable: aksailingclub-org docs/HISTORY.md:153.
 [^340]: Opinion: a judgment, not a checkable fact.
-[^341]: Opinion: a judgment, not a checkable fact.
-[^342]: Opinion: a judgment, not a checkable fact.
+[^341]: Verifiable: docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md, "Where searches found nothing". Supports: one, 2.
+[^342]: Verifiable: this section's tables. Supports: one.
 [^343]: Opinion: a judgment, not a checkable fact.
 [^344]: Opinion: a judgment, not a checkable fact.
-[^345]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/. Supports: two, one.
-[^346]: Verifiable: the "found nothing" sections of those records. Supports: four.
-[^347]: Verifiable: docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabulary maps.
+[^345]: Opinion: a judgment, not a checkable fact.
+[^346]: Verifiable: that path. Supports: twenty, one, 2026-08-11, 4.
+[^347]: Opinion: a judgment, not a checkable fact.
+[^348]: Opinion: a judgment, not a checkable fact.
+[^349]: Opinion: a judgment, not a checkable fact.
+[^350]: Opinion: a judgment, not a checkable fact.
+[^351]: Opinion: a judgment, not a checkable fact.
+[^352]: Verifiable: docs/internal/record/2026-09-04-cairn-case/14-evidence-round-3-cost-speed.md; docs/internal/record/2026-09-04-cairn-case/15-evidence-round-3-shape.md; docs/internal/record/2026-09-04-cairn-case/17-evidence-round-4-telemetry.md; docs/internal/record/2026-09-04-cairn-case/19-evidence-round-4-shaped-tools.md; docs/internal/record/2026-09-04-cairn-case/16-measured-build/. Supports: two, one.
+[^353]: Verifiable: the "found nothing" sections of those records. Supports: four.
+[^354]: Verifiable: docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md, the five vocabulary maps.

@@ -95,3 +95,10 @@ and how the document addresses each audience (the evaluator profile plus the fiv
 run as the register editor, the voice reviewer, and a Fable audience reader in parallel. Only
 after that does the document freeze and the derivation begin (first-person front-door prose,
 the revised why-cairn.md, the concept figure).
+
+Cadence is a measured criterion in revision 9 and the final review (Geoff, 2026-09-05): sentence
+length variance per section with the tags stripped (the voice reviewer's coefficient of variation,
+target at or above the 0.62 the derivable set held before the revision-5 splits flattened it),
+runs of same-length clauses named by line, no paragraph without a short sentence, and the
+ratified why-cairn.md opener as the ear. Splitting long sentences is not a fix by itself; it
+removes the long tail and leaves a monotone.

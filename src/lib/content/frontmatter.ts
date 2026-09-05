@@ -181,8 +181,17 @@ export function frontmatterFromForm(
       case 'icon':
         data[field.name] = form.get(field.name) ?? '';
         break;
-      default:
-        unreachable(field, 'frontmatter.frontmatterFromForm');
+      default: {
+        // Compile-time exhaustiveness proof: every FieldDescriptor member has an explicit case
+        // above, so `field` is typed `never` here; adding a member without a case fails
+        // `npm run check` on the line below. This is a save request path, so a gap defeated only
+        // by an unsafe cast degrades to the same permissive scalar read as the enumerated arms
+        // above (FormData.get normalized to '') rather than throwing, matching decodeField's
+        // reasoning.
+        field satisfies never;
+        const name = (field as NamedField).name;
+        data[name] = form.get(name) ?? '';
+      }
     }
   }
   return data;
@@ -303,40 +312,73 @@ export function formValues(
   const out: Record<string, unknown> = {};
   for (const field of fields) {
     const value = frontmatter[field.name];
-    if (field.type === 'date') out[field.name] = dateInputValue(value);
-    // A datetime round-trips as text; a value gray-matter parsed into a Date reformats to the
-    // naive-local minute-precision string the datetime-local input wants.
-    else if (field.type === 'datetime') out[field.name] = datetimeInputValue(value);
-    else if (field.type === 'boolean') out[field.name] = value === true;
-    else if (field.type === 'multiselect') out[field.name] = multiselectFormValue(value);
-    // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
-    // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
-    else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
-    // A reference canonicalizes through the shared coercer: a YAML-parsed Date becomes its UTC-sliced
-    // id, never String(Date) timezone garbage.
-    else if (field.type === 'reference') out[field.name] = referenceIdFromValue(value);
-    // An object recurses one level into a nested form-ready record.
-    else if (field.type === 'object') {
-      const raw = value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-      out[field.name] = formValues(namedLeaves(field.fields), raw);
-    }
-    else if (field.type === 'array') {
-      // An array(reference) canonicalizes through the shared coercer: a lone scalar becomes a
-      // single-element list rather than dropping to [], and each element is UTC-sliced.
-      if (field.item.type === 'reference') out[field.name] = referenceIdsFromValue(value);
-      else {
-        const elements = Array.isArray(value) ? value : [];
-        const item = field.item;
-        out[field.name] = elements.map((el) =>
-          item.type === 'object'
-            ? formValues(namedLeaves(item.fields), el !== null && typeof el === 'object' ? (el as Record<string, unknown>) : {})
-            : oneLeafFormValue(item, el),
-        );
+    switch (field.type) {
+      case 'date':
+        out[field.name] = dateInputValue(value);
+        break;
+      // A datetime round-trips as text; a value gray-matter parsed into a Date reformats to the
+      // naive-local minute-precision string the datetime-local input wants.
+      case 'datetime':
+        out[field.name] = datetimeInputValue(value);
+        break;
+      case 'boolean':
+        out[field.name] = value === true;
+        break;
+      case 'multiselect':
+        out[field.name] = multiselectFormValue(value);
+        break;
+      // A hero is a nested object; the plain-string arm below would corrupt it to
+      // '[object Object]'. Hand the stored object back as-is so the editor reads
+      // .src/.alt/.caption on open.
+      case 'image':
+        out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
+        break;
+      // A reference canonicalizes through the shared coercer: a YAML-parsed Date becomes its
+      // UTC-sliced id, never String(Date) timezone garbage.
+      case 'reference':
+        out[field.name] = referenceIdFromValue(value);
+        break;
+      // An object recurses one level into a nested form-ready record.
+      case 'object': {
+        const raw = value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+        out[field.name] = formValues(namedLeaves(field.fields), raw);
+        break;
       }
+      case 'array': {
+        // An array(reference) canonicalizes through the shared coercer: a lone scalar becomes a
+        // single-element list rather than dropping to [], and each element is UTC-sliced.
+        if (field.item.type === 'reference') out[field.name] = referenceIdsFromValue(value);
+        else {
+          const elements = Array.isArray(value) ? value : [];
+          const item = field.item;
+          out[field.name] = elements.map((el) =>
+            item.type === 'object'
+              ? formValues(namedLeaves(item.fields), el !== null && typeof el === 'object' ? (el as Record<string, unknown>) : {})
+              : oneLeafFormValue(item, el),
+          );
+        }
+        break;
+      }
+      // text, textarea, number, select, url, email, icon: a plain string input. A nullish value
+      // reads as empty, anything else stringifies (a string passes through unchanged).
+      case 'text':
+      case 'textarea':
+      case 'number':
+      case 'select':
+      case 'url':
+      case 'email':
+      case 'icon':
+        out[field.name] = value == null ? '' : String(value);
+        break;
+      default:
+        // Compile-time exhaustiveness proof: every FieldDescriptor member has an explicit case
+        // above, so `field` is typed `never` here; adding a member without a case fails
+        // `npm run check` on the line below. This feeds a form load, so a gap defeated only by an
+        // unsafe cast degrades to the same plain-string coercion as the enumerated arms above
+        // rather than throwing.
+        field satisfies never;
+        out[(field as NamedField).name] = value == null ? '' : String(value);
     }
-    // Every other type is a plain string input: a nullish value reads as empty, anything else
-    // stringifies (a string passes through unchanged).
-    else out[field.name] = value == null ? '' : String(value);
   }
   return out;
 }

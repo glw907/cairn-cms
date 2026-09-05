@@ -233,7 +233,9 @@ export function previewValues(def: ComponentDef): ComponentValues {
 }
 
 /** The descriptor types that serialize to a single directive-attribute string (decision 2). */
-const ATTRIBUTE_TYPES = new Set(['text', 'textarea', 'number', 'select', 'url', 'email', 'date', 'datetime', 'boolean', 'icon']);
+const ATTRIBUTE_TYPES: Set<FieldDescriptor['type']> = new Set([
+  'text', 'textarea', 'number', 'select', 'url', 'email', 'date', 'datetime', 'boolean', 'icon',
+]);
 
 /** Reject an attribute type that cannot serialize to a single directive-attribute string (decision 2). */
 function checkComponentAttributes(name: string, attributes: Record<string, FieldDescriptor>): void {

@@ -205,6 +205,18 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
       glyph: '',
     });
   });
+
+  // frontmatterFromForm's switch over field.type is exhaustive over FieldDescriptor at compile
+  // time; the default arm is reachable only via an unsafe cast (a descriptor type the union does
+  // not name). It must degrade to the same permissive FormData.get read the enumerated
+  // text/select/... arms use, never throw, since this runs on the save request path.
+  it('degrades an out-of-union descriptor to a plain FormData.get read rather than throwing', () => {
+    const mystery: NamedField = { type: 'mystery', name: 'x', label: 'X' } as unknown as NamedField;
+    const form = new FormData();
+    form.set('x', 'a value');
+    expect(frontmatterFromForm([mystery], form)).toEqual({ x: 'a value' });
+    expect(frontmatterFromForm([mystery], new FormData())).toEqual({ x: '' });
+  });
 });
 
 // `decodeField` (the nested-use sibling: object leaves, array rows) shares the same default arm,
@@ -393,6 +405,16 @@ describe('formValues', () => {
       { type: 'multiselect', name: 'tags', label: 'Tags' },
     ];
     expect(formValues(fields, {})).toEqual({ title: '', tags: [] });
+  });
+
+  // formValues' switch over field.type is exhaustive over FieldDescriptor at compile time; the
+  // default arm is reachable only via an unsafe cast (a descriptor type the union does not name).
+  // It must degrade to the same plain-string coercion the enumerated text/select/... arms use,
+  // never throw, since this feeds a form load.
+  it('degrades an out-of-union descriptor to a String() coercion rather than throwing', () => {
+    const mystery: NamedField = { type: 'mystery', name: 'x', label: 'X' } as unknown as NamedField;
+    expect(formValues([mystery], { x: 42 })).toEqual({ x: '42' });
+    expect(formValues([mystery], {})).toEqual({ x: '' });
   });
 });
 

@@ -800,7 +800,7 @@ function main() {
       }
     }
   }
-  process.exitCode = failed ? 1 : 0;
+  if (failed) process.exitCode = 1;
 }
 
 runIfMain(main, import.meta.url);

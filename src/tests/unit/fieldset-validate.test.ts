@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fields } from '../../lib/content/fields.js';
+import type { FieldDescriptor } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const fs = defineFieldset({
@@ -272,5 +273,26 @@ describe('fieldset refine', () => {
 
   it('passes when refine returns nothing', () => {
     expect(fs.validate({ title: 'x', date: '2026-02-01', updated: '2026-02-02' }, '').ok).toBe(true);
+  });
+});
+
+// validateField's switch over field.type is exhaustive over FieldDescriptor at compile time; the
+// default arm is reachable only via an unsafe cast (a descriptor type the union does not name). It
+// must degrade to the same bare-string, no-further-validation value the datetime/icon arms return,
+// never throw, since this runs on the save-validation request path.
+describe('validateField default arm (an out-of-union descriptor, cast through unknown)', () => {
+  it('degrades to a trimmed bare-string value rather than throwing', () => {
+    const mystery = { type: 'mystery', label: 'Mystery' } as unknown as FieldDescriptor;
+    const mysteryFieldset = defineFieldset({ mystery });
+    expect(mysteryFieldset.validate({ mystery: '  value  ' }, '')).toEqual({
+      ok: true,
+      data: { mystery: 'value' },
+    });
+  });
+
+  it('drops an empty value as not provided', () => {
+    const mystery = { type: 'mystery', label: 'Mystery' } as unknown as FieldDescriptor;
+    const mysteryFieldset = defineFieldset({ mystery });
+    expect(mysteryFieldset.validate({}, '')).toEqual({ ok: true, data: {} });
   });
 });

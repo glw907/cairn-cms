@@ -184,7 +184,7 @@ function main() {
       failed = true;
     }
   }
-  process.exitCode = failed ? 1 : 0;
+  if (failed) process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

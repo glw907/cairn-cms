@@ -9,8 +9,11 @@
  *  narrowing the parameter's static type to `never`; adding a new arm to the union then fails
  *  `npm run check` right here, at the one place that must grow to match it. `context` names the
  *  dispatcher (and field, when relevant) so the thrown error, reached only if that compile-time
- *  proof is ever defeated by a cast, identifies which caller still needs the missing case.
+ *  proof is ever defeated by a cast, identifies which caller still needs the missing case. The
+ *  message reads `value`'s own `type` discriminant rather than serializing the whole descriptor,
+ *  since a descriptor can carry an author-supplied `label` or `default` not safe to echo back.
  */
 export function unreachable(value: never, context: string): never {
-  throw new Error(`cairn: unreachable arm in ${context}: ${JSON.stringify(value)}`);
+  const type = (value as { type?: unknown }).type;
+  throw new Error(`cairn: unreachable arm in ${context}: field type "${String(type)}"`);
 }

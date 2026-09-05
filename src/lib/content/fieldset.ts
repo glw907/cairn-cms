@@ -9,7 +9,6 @@ import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 import { datetimeInputValue, dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import { isValidId } from './ids.js';
-import { unreachable } from './unreachable.js';
 import { log } from '../log/index.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
@@ -308,7 +307,13 @@ function validateField(
     case 'icon':
       return { value: text, issues: [] };
     default:
-      return unreachable(field, 'fieldset.validateField');
+      // Compile-time exhaustiveness proof: every FieldDescriptor member has an explicit case
+      // above, so `field` is typed `never` here; adding a member without a case fails
+      // `npm run check` on the line below. This is a save-validation request path, so a gap
+      // defeated only by an unsafe cast degrades to the same bare-string, no-further-validation
+      // value as the datetime/icon arms above, rather than throwing.
+      field satisfies never;
+      return { value: text, issues: [] };
   }
 }
 

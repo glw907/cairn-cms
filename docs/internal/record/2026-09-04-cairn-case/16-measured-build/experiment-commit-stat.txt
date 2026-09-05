@@ -1,0 +1,34 @@
+27a9e1f57f9b9dabaa103ed565c0f90e43c44924 2026-09-04 22:40:26 -0800
+
+ examples/showcase/e2e/admin-nav-layout.spec.ts     |   1 +
+ .../admin-edit-page-1440-linux.png                 | Bin 59645 -> 60153 bytes
+ .../admin-edit-page-dark-linux.png                 | Bin 57442 -> 57756 bytes
+ .../admin-edit-page-light-linux.png                | Bin 57286 -> 57906 bytes
+ .../admin-editors-dark-linux.png                   | Bin 62101 -> 62235 bytes
+ .../admin-editors-light-linux.png                  | Bin 61465 -> 61959 bytes
+ .../admin-media-dark-linux.png                     | Bin 88165 -> 86947 bytes
+ .../admin-media-detail-dark-linux.png              | Bin 106740 -> 105778 bytes
+ .../admin-media-detail-light-linux.png             | Bin 104177 -> 103712 bytes
+ .../admin-media-light-linux.png                    | Bin 86790 -> 86138 bytes
+ .../admin-office-dark-linux.png                    | Bin 82522 -> 80755 bytes
+ .../admin-office-light-linux.png                   | Bin 82207 -> 80814 bytes
+ .../vocabulary-dark-linux.png                      | Bin 91610 -> 89326 bytes
+ .../vocabulary-light-linux.png                     | Bin 91290 -> 89212 bytes
+ examples/showcase/e2e/volunteers.spec.ts           |  45 +++++++++++
+ .../migrations-volunteers/0000_volunteer.sql       |  12 +++
+ examples/showcase/src/app.d.ts                     |   3 +
+ examples/showcase/src/hooks.server.ts              |   6 ++
+ .../src/routes/admin/volunteers/+page.server.ts    |  60 ++++++++++++++
+ .../src/routes/admin/volunteers/+page.svelte       |  69 ++++++++++++++++
+ examples/showcase/src/theme/cairn.config.ts        |   1 +
+ examples/showcase/src/volunteers/dev-wiring.ts     |  87 +++++++++++++++++++++
+ examples/showcase/wrangler.jsonc                   |   9 +++
+ .../migrations-volunteers/0000_volunteer.sql       |  12 +++
+ templates/waymark/src/app.d.ts                     |   3 +
+ templates/waymark/src/hooks.server.ts              |   6 ++
+ .../src/routes/admin/volunteers/+page.server.ts    |  60 ++++++++++++++
+ .../src/routes/admin/volunteers/+page.svelte       |  69 ++++++++++++++++
+ templates/waymark/src/theme/cairn.config.ts        |   1 +
+ templates/waymark/src/volunteers/dev-wiring.ts     |  87 +++++++++++++++++++++
+ templates/waymark/wrangler.jsonc                   |   9 +++
+ 31 files changed, 540 insertions(+)

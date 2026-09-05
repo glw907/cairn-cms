@@ -225,6 +225,40 @@
   resolved-path-stays-under-cwd containment assert covering every relative read it does, not only
   this one. Internal tooling and CLI hardening only; no consumer action.
 
+- New standing gate `check:idioms` (internals-C pass, Task 2): bans leading-tab indentation across
+  `src/lib` and `scripts` (`*.ts`/`*.svelte`/`*.mjs`), bans `process.exit(` inside
+  `scripts/checks/*.mjs` in favor of `process.exitCode` plus an explicit flow guard, and enforces
+  one self-identity spelling per gate. Task 3b adds three more rules scoped to `src/lib` comments:
+  a ban on `docs/superpowers/` path citations, a ban on pass-scoped process references, and a
+  ban on a bare production hostname literal (matched by shape, never by an enumerated private
+  hostname list). Born green on the tree it gates, including its own file. Internal tooling only;
+  no consumer action.
+
+- `check:surface`'s F-1 leak-class rider now walks the `/components` subpath's plain type exports
+  mechanically instead of skipping it outright (internals-C pass, Task 9), so a type reachable
+  only through another export's expanded shape on that subpath is caught the same way every other
+  subpath already was. Internal tooling only; no consumer action.
+
+- `FieldDescriptor`'s five dispatch sites (`decodeField`, `frontmatterFromForm`, `validateField`,
+  `formValues`, and the two template `{:else}` render branches) now enumerate every arm of the
+  15-member union explicitly instead of falling through a generic default, with a compile-time-only
+  `field satisfies never` exhaustiveness proof at each site (internals-C pass, Task 1). No arm's
+  runtime behavior changes: the permissive scalar fallback the generic default used to apply now
+  sits on the final enumerated arm instead, so a save, validate, or form-load request path throws
+  in no case it did not already throw in before. Consumers must: nothing.
+
+- Four gate scripts (`check-custom-surface`, `check-public-tokens`, `reference-coverage`,
+  `check-reference-signatures`) no longer clear an earlier nonzero `process.exitCode` with a
+  `failed ? 1 : 0` ternary at their tail; they only ever raise it (internals-C pass, Task 2 and its
+  pass-end fix round). The eighteen files in `scripts/checks/` calling `process.exit(` directly
+  convert to `process.exitCode` plus an explicit flow guard everywhere the exit was doing
+  early-return duty, proven red-on-failure per gate against a fixture. Internal tooling only; no
+  consumer action.
+
+- The test config now sets `unstubGlobals: true` (internals-C pass, Task 5), so `vi.stubGlobal`
+  no longer leaks a stub across test files; `vi.restoreAllMocks` never restored globals. Internal
+  test-harness fix only; no consumer action.
+
 ### Changed
 
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,

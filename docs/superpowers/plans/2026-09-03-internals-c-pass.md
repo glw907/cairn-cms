@@ -503,3 +503,86 @@ post-mortem here; both budgets scored.
 - **Polish:** unchanged list plus whatever the sweeps surface.
 - **Release:** the window holds; ONE cut after polish, carrying this pass's
   `Consumers must:` line (`ec-*`) and internals' `formatTimestamp` line.
+
+## Post-mortem
+
+**What was built.** Task 1 enumerated `FieldDescriptor`'s 15-arm union at all five dispatch
+sites (`decodeField`, `frontmatterFromForm`, `validateField`, and the `FieldInput`/
+`ComponentForm` template branches), replacing each generic default with explicit arms and a
+`field satisfies never` (or `unreachable()`) exhaustiveness proof; `src/lib/content/unreachable.ts`
+is the one shared helper, called only from `decodeField`. Task 2 landed `check:idioms` born
+green: leading-tab indentation banned in `src/lib` and `scripts`, `process.exit(` banned inside
+`scripts/checks/*.mjs` in favor of a flow-preserving `process.exitCode`, and one self-identity
+spelling per gate. Tasks 3a/3b purged the pass-scoped comment register (process citations,
+`docs/superpowers/` paths, consumer hostnames by shape) across all of `src/lib` and landed the
+three register rules inside `check:idioms`. Task 4 renamed the render pipeline's emitted
+`ec-*` classes to `cairn-*` across the chassis, the docs, and the baked template, the pass's one
+`Consumers must:` event. Task 5 built the `testEvent` builder and converted the five heaviest
+`as never` files; Tasks 6a/6b/6c retired the rest of `src/tests`' `as never` casts (881 to 0,
+minus the annotated escape hatch) and landed the idioms gate rule banning them. Task 7 fixed the
+contradicted module headers, unified the `logCommitFailed` call style at
+`content-routes-entry.ts` (leaving `content-routes-media.ts:668`'s bound-method call as a filed
+polish item), and headered `render/`'s ten M1 files. Task 8 wrote
+`docs/internal/src-lib-map.md`, the contributor map, and fixed the four docs disagreeing on
+`cairn.config.ts`'s location. Task 9 exported `readPublicOrigin` and routed `csrfSecure` through
+it at platform depth only, and derived the `/components` subpath's leak model mechanically in
+`check-surface-leaks.mjs`. Task 10 repositioned the `createSectionAction` docs, closed the
+monolith line, and recorded the chassis ruling.
+
+**Escalations the conductor ruled.** Task 8's map location: `docs/internal/src-lib-map.md`
+rather than `src/lib/README.md`, since `svelte-package` copies non-source `src/lib` files into
+`dist` and a contributor map would otherwise ship in the public tarball. Task 3b's register-rule
+widening: the hostname rule matches by shape (a bare production hostname literal), never by an
+enumerated private-hostname list in a public repo's gate file. Task 7's header
+reconciliation: a header mismatch that revealed a real defect routes to the conductor rather
+than a silent fix; none did.
+
+**What was verified.** Every task cleared its own gate through the implementer/diff-reviewer/gate
+chain before its commit. `code-simplifier` landed `6462b2fc` (the gate scanners and the shared
+origin reader). The three-reviewer pass-end fan-out (`cloudflare-workers-reviewer`,
+`web-auth-security-reviewer`, `svelte-reviewer`) found no blocking architectural defect; their
+fix-now findings folded into `994bf8e5`, and the conductor's own exhaustiveness rule resolved
+the one tension between the Workers and Svelte findings: exhaustiveness stays a compile-time-only
+proof, and no arm on a Worker request path (save, validate, form load) gains a runtime throw this
+pass, so `frontmatterFromForm`'s, `validateField`'s, and `formValues`' default arms restore the
+permissive runtime fallback the pre-exhaustiveness code had rather than throwing. At pass end:
+the 22 named gates green by name (`check:comments`, `check:reference:signatures`,
+`check:surface`, `check:snippets`, `check:transcripts`, `check:symbols`, `check:idioms`,
+`check:cm-internals`, `check:chassis-boundary`, `check:public-tokens`, plus the standing set),
+`npm test` exit 0, and a from-scratch showcase install/build proving this worktree's engine
+rather than a stale symlinked one, with the e2e suite (155 tests) passing from the committed
+lockfile. Two false failures surfaced and were correctly not treated as defects: a load-induced
+60-second timeout during a concurrently running suite, and a missing Playwright browser
+immediately after a lockfile-changing install (resolved by reinstalling browsers, not by
+changing test code).
+
+**A known asymmetry, recorded rather than fixed.** `decodeField`'s default arm
+(`src/lib/content/frontmatter.ts:75`) still throws `unreachable()` on the nested save path
+(object leaves via its own recursion, array rows via `decodeRows`), while
+`frontmatterFromForm`, `validateField`, and `formValues` all degrade permissively in their
+default arm after the pass-end fix round. The fresh-context `diff-reviewer` that accepted
+`994bf8e5` flagged this as non-blocking: `unreachable()`'s one live caller was sanctioned to
+keep the hard throw by the conductor's own exhaustiveness rule, and `decodeField`'s switch
+already enumerates all 15 real `FieldDescriptor` arms explicitly (the throw is genuinely
+unreachable for any real value today), but the posture now differs from its three siblings. The
+next pass touching a field descriptor's dispatch sites should decide this deliberately —
+harmonize `decodeField` onto the permissive-fallback posture, or document why the recursive save
+path earns a stricter one — rather than rediscovering the split from scratch.
+
+**Decisions locked.** Exhaustiveness is proven at compile time with permissive runtime
+fallbacks preserved on every Worker request path; a throw is reserved for `decodeField`'s one
+caller, per the asymmetry above. `main` stayed the drawn default branch throughout (no branch
+switch during the pass).
+
+**Blockers.** None.
+
+**What a later pass would be wrong to rediscover.** The overnight suspend: the workstation
+reported AC power offline mid-pass and GNOME's 15-minute-on-battery rule suspended it for 8
+hours 13 minutes; the runaway-work battery guard (the inhibitor plus the battery watchdog) was
+never armed for this run, which is why the suspend happened rather than a checkpoint-and-save.
+Arm both guards before any unattended run past roughly 30 minutes, battery or not.
+
+**Budgets scored.** Ceiling: 6.5M tokens. Planning misses: 1 (Task 8's config-location question
+surfaced only after approval, resolved as an escalation rather than a planning question).
+Execution sittings: 0 (no mid-execution pull-in to Geoff beyond the escalations the conductor
+itself ruled). The token spend figure is recorded at STATUS close, not here.

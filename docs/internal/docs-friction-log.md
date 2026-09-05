@@ -52,14 +52,10 @@ all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearin
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-- **contributor:** `scripts/checks/check-snippets.mjs` (around :63-66) stubs every `$`-prefixed
-  and relative import specifier to `any`, so the snippet gate can never catch a wrong adapter
-  path in a documented snippet. This migration's `cairn.config` spelling misses were invisible
-  to it.
-- **contributor:** `content-routes-media.ts:668` still calls `ctx.logCommitFailed(commitFields,
-  err)`, the bound-method style, while `content-routes-entry.ts` was unified onto the
-  `logCommitFailed` module import (`content-routes-entry.ts:42, 1109, 1591`). The two call
-  styles now read as contradictory in the same subsystem. Routed to polish.
+None open. The internals-C whole-log triage (2026-09-05) cleared the two entries this section
+previously carried: the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later
+tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction folded into
+`ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
 
 ## Clearings
 
@@ -89,6 +85,7 @@ history holds every pruned entry in full.
 | 2026-09-01 | the 4b conformance pass's whole-log sweep | the showcase chip-blindness finding folded into the existing "showcase visual suite... corpus gap" entry in `ROADMAP.md`'s Now tier as a second instance of the same gap; `cairn-text-error` and `MediaPicker`'s empty-state `<li>` findings, having no other home, promoted whole to `ROADMAP.md`'s Next tier; `list-role`'s and `panel-width`'s own already-recorded routing to the any-site audit remediation initiative (confirmed by the harvest-detection pass's post-mortem) is why those two entries are deleted rather than re-filed; `AdminTable`'s scroll-wrapper finding folded as a refinement into the pre-existing "Three admin-toolkit accessibility gaps" `ROADMAP.md` entry (filed 2026-08-18, predating this finding) |
 | 2026-09-02 | the internals pass Task 4 | the editors-page quote-drift finding shipped: `check:editor-quotes` extracts every bolded double-quoted sentence from `docs/editors/when-something-goes-wrong.md` and fails when no shipped `src/lib` string grounds it, wired into `npm test` and CI |
 | 2026-09-03 | the internals pass's whole-log sweep | the ASC CSRF entry deleted (every named mechanism verified shipped; the residual WATCH moved to `docs/STATUS.md`'s active watches); the Platform-watch-heading entry deleted as a duplicate of `ROADMAP.md`'s own inline trigger; `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` promoted whole to `ROADMAP.md`'s Later tier with their triggers |
+| 2026-09-05 | the internals-C pass's whole-log triage | the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later tier with its trigger; the `ctx.logCommitFailed` call-style contradiction (filed at internals-C's Task 10 close, 2026-09-04) folded into `ROADMAP.md`'s existing polish-slice bullet |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

@@ -106,11 +106,12 @@ behind and its sheet says to run it as a numbered site pass.
 - **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
   is the source the front-door figure and `why-cairn.md` derive from; inputs and reviews banked
   beside it in `docs/internal/record/2026-09-04-cairn-case/`. Rounds 1 (RETHINK), 2 (C+), 3 (B-), 4 (B), and
-  5 (B+, SOUND), and 6 (B+) are folded; the exit criterion (B+) is met. Revision 10
-  (`bdb9d3b0`: note apparatus repaired, 43 filler sentences removed, the final prose, structure,
-  and audience reviews folded, the fix round's numbers filled) is under a fresh-context
-  pass/fail verification; FREEZE on pass, then the first-person front-door derivation. The
-  measured build's third round (branch `experiment-screen`, never merging) is running. Overnight
+  5 (B+, SOUND), and 6 (B+) are folded; the exit criterion (B+) is met. FROZEN at revision 12
+  (`dcb11bd3`, 2026-09-05) after two fresh-context verification reads; 354 notes, apparatus
+  clean. The measured build is complete at three rounds (`experiment-screen`, never merging;
+  record at `16-measured-build/experiment-measurement.md`, `b0423fac`). In flight: the
+  first-person front-door derivation, written to `25-front-door-proposal.md` UNCOMMITTED for
+  Geoff's read, and a read-only check of the concept figure's labels against the frozen case. Overnight
   decisions (Geoff, 2026-09-05, defaults accepted): the concept figure is built as an
   uncommitted prototype in the one-system-with-its-boundary form on the existing review page;
   the front-door prose is drafted in first person in the why-cairn.md voice as an uncommitted

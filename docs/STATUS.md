@@ -19,33 +19,49 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**Execute chassis-A** (audit-remediation slice 8, structural). Internals-C is MERGED (PR #49,
-`3e4ba6eb`, CI green); its ledger entry is in HISTORY and its post-mortem is appended to
-`docs/superpowers/plans/2026-09-03-internals-c-pass.md`. Spec
-`docs/superpowers/specs/2026-09-04-chassis-passes-design.md`; plan
-`docs/superpowers/plans/2026-09-04-chassis-a-pass.md` (12 sequential tasks, ceiling 7.5M,
-checkpoints 4/8/12, one chain, `~/.claude/workflows/pass-execute-chains.js`). Anchors were
-reconciled against the internals-C head on 2026-09-05 (`efe97fbd`, one Task 7 edit), so the
-plan dispatches as written. **APPROVED (Geoff, 2026-09-04, "add this work to the existing
-workflow"; "the plan to stand as written") with full git authorization: push the branch, open
-the PR, merge on green CI.** The seven conductor calls the plan records need no re-confirmation.
+**Resume chassis-A** (audit-remediation slice 8, structural) from Task 3. The pass is
+EXECUTING on branch `chassis-a` in `.claude/worktrees/chassis-a` (showcase from-scratch
+installed and repointed 2026-09-05). Tasks 1 and 2 are accepted and committed (`e2aceffe`
+the mechanical Prettier reformat, `8fecf730` the scaffold format check). The first run
+(workflow `wf_6fd88891-0a4`, one chain, 2026-09-05) halted at Task 2 on an ESCALATE that was
+about Task 1, not Task 2: the reformat reflowed the one-line `backend: githubApp({...})`
+literal in `examples/showcase/src/theme/cairn.config.ts` into six lines, and
+`packages/create-cairn-site/src/github/finalize.mjs:20-21` pins that exact one-line string
+(`TEMPLATE_GITHUB_APP_LITERAL`), so every real scaffold run now fails at finalize and the
+CLI's rot gate (`npm --prefix packages/create-cairn-site test`, 805/806) is red. Neither the
+plan's per-task gate nor the dispatched gate ran that suite, which is why it survived two
+task gates.
 
-Before dispatch: create `.claude/worktrees/chassis-a` off `main`; from-scratch showcase `npm ci`
-in the worktree before trusting any e2e (the symlink gotcha in CLAUDE.md); arm the workflow
-runaway guard AND the sleep inhibitor plus battery watchdog whenever the run is unattended,
-regardless of what the power source reports (`~/.claude/docs/unattended-work-guards.md`; born
-2026-09-05: GNOME's battery rule suspended the machine for 8 h 13 m while the charger was
-connected, because the kernel reported the AC line offline). Two concurrent full gates is the
-machine's ceiling. Never let two writers share one worktree. On any blocker, stop, WIP-commit,
-write STATUS with the resume state.
+**Conductor ruling (2026-09-07):** land the remedy as a follow-on fix commit on the branch
+(a `// prettier-ignore` line above the `backend:` entry, the call collapsed back to the exact
+string finalize.mjs pins, `format`, `emit:template`, then `check:template` green and the CLI
+suite 806/806), never a rewrite of `e2aceffe`. Add `npm --prefix packages/create-cairn-site
+test` to the per-task gate for every remaining task, and record the omission in the Task 12
+harvest. Then run Tasks 3 to 12 as a FRESH `pass-execute-chains` workflow (a resume of the
+old run ID only works in the session that launched it); the args file shape is in the
+plan's Execution section and the task criteria in the plan itself.
 
-Resume prompt: "In ~/Projects/cairn-cms, invoke cairn-pass and execute the approved chassis-A
-plan (docs/superpowers/plans/2026-09-04-chassis-a-pass.md) as one chain: create the worktree,
-arm the guards, run the pass and its full ritual, push, PR, merge on green CI. The approval and
-the git authorization are recorded in this STATUS entry. Then author chassis-B's plan from the
-spec's Chassis-B section."
+Approval and git authorization stand as recorded (Geoff, 2026-09-04: push, PR, merge on green
+CI). Before dispatch, re-arm the FULL guard set (`~/.claude/docs/unattended-work-guards.md`):
+both sleep inhibitors, the battery watchdog, and the runaway guard on the new workflow's
+transcript dir; the 2026-09-05 set died with its session. Two concurrent full gates is the
+machine's ceiling. Never let two writers share one worktree. On any blocker, stop,
+WIP-commit, write STATUS with the resume state.
 
-After chassis-A: chassis-B (plan authored after A lands), then polish, then ONE release cut.
+Resume prompt: "In ~/Projects/cairn-cms, invoke cairn-pass and resume the chassis-A pass
+(docs/superpowers/plans/2026-09-04-chassis-a-pass.md) per STATUS: apply the Task 1
+prettier-ignore fix commit in .claude/worktrees/chassis-a, then run Tasks 3 to 12 as a fresh
+pass-execute-chains workflow with the CLI test suite added to the gate, then the full
+pass-end ritual, push, PR, merge on green CI. Then author and execute chassis-B."
+
+**After chassis-A: chassis-B, plan authorship AND execution granted (Geoff, 2026-09-05).**
+Author its plan from the spec's Chassis-B section with the three-lens adversarial plan review
+in place of Geoff's read; two taste calls are settled: the thirteen new posts are REAL short
+posts (150 to 300 words, the existing trail-notes voice, through the site content method),
+and the merge gate STAYS (run to a green PR with the before/after captures and the
+visual-verifier verdict banked; Geoff merges after his five-viewport read). Then polish (not
+granted), then ONE release cut. The Go `cairn` tool Pass A is deferred "until later" (Geoff,
+2026-09-05).
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

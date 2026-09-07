@@ -523,13 +523,8 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: githubApp({
-    owner: 'showcase',
-    repo: 'demo',
-    branch: 'main',
-    appId: '1',
-    installationId: '2',
-  }),
+  // prettier-ignore
+  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
   // R2 double rides platform.env in dev; a real site binds it in wrangler.jsonc and mounts the

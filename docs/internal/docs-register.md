@@ -364,6 +364,17 @@ audience lands, and they carry the whole cairn story.
 - **Stack reasoning is welcome.** Explaining why cairn uses SvelteKit, DaisyUI, and
   Cloudflare is in-register here, in short form; the full argument, including the honest
   trade-offs, stays in `docs/why-cairn.md`.
+- **The voice is technical and academic (Geoff, 2026-09-08).** The front door, and
+  `docs/why-cairn.md` above all, reads as a technical report or a systems paper's
+  introduction: measured, precise, with qualification carried inside the sentence rather
+  than split off, and a restrained first person only where the author's own evidence is
+  stated. It is not a blog post and it is not graded against general written norms. The
+  comparison set for any read of it is technical and academic writing (SQLite's "Appropriate
+  uses" page, a systems paper's introduction, a standards document's overview section, a
+  mature database's own description of itself), and the cadence to match is theirs: longer
+  sentences than a blog, fewer of them, each carrying one qualified claim. Chatty asides,
+  imperatives to the reader, and staccato runs of short sentences are out of register even
+  when every word is true.
 
 ## Calibration specimens
 

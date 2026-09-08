@@ -119,8 +119,9 @@ The standard is adopted in four parts, held by a review chain, and switched on b
 requirements are normative. A page that does not meet one must record the deviation in its page
 brief with a reason, in the form the register's "when a Vale finding is wrong" rule sets.
 
-The work divides into five units across two pass plans. Plan one builds the toolset and runs the
-harvest; plan two rewrites the pages. The harvest must finish before a brief is written, because a
+The work divides into five units across plan one (the Claude infrastructure), pass 2a (the toolset
+and the demonstration page), and five per-track stages that each harvest, rewrite, and tune one
+track. A track's harvest must finish before any of its briefs is written, because a
 rebuild's drafter never opens the page it replaces and the ledger (the fact ledger, defined under
 unit 1) stands in its place. The corpus
 must exist before a draft, because a page type with no approved exemplar has no draft and a review
@@ -151,6 +152,19 @@ in.
 sentence would make the published markdown unreadable for the reader the standard exists to serve.
 A sibling brief file carries the same information, resolves by convention for every gate, satisfies
 the rule that a page must not name its own type, and never ships in the tarball.
+
+**Why the docs are updated in stages, with a tuning checkpoint between each (owner direction,
+2026-09-08).** The earlier shape harvested all 76 pages in one pass and then rewrote them. That shape
+commits the ledger schema, the templates, the brief schema, and every gate threshold before a single
+track has been rewritten against them, so a wrong ledger field or a bad template is discovered after
+all five tracks have been built on it. Staging the work inverts that: one small track is harvested,
+rewritten, and measured, the tooling is tuned against what that track showed, and the next stage's
+plan is authored against the tuned tooling. The cost is five checkpoints and five plan-authoring
+sittings instead of one. The return is that every mistake in the standard's own machinery is paid for
+once, on the cheapest track that can reveal it, rather than five times. The stages are ordered by how
+hard the track is to write well, easiest first, so the tuning happens where the writing risk is
+lowest and the front door, the page set whose rejection produced this initiative, meets the system
+last.
 
 ## Design details
 
@@ -282,16 +296,18 @@ predictive measures:
   structured line per review. It is the signal that attributes a failure to the type the drafter was
   handed rather than to the subject matter, which is the question this registry actually asks.
 
-**The review triggers.** A review runs at the close of every rewrite plan. A review also runs on any
-page brief that cannot name a type. And a review runs on a type whose outline-review failure count
-rises against its own prior record by a stated margin for two consecutive reviews.
+**The review triggers.** Four. A review runs at **the close of every stage**, as the first part of
+that stage's tuning checkpoint. A review runs at the close of every rewrite plan. A review also runs
+on any page brief that cannot name a type. And a review runs on a type whose outline-review failure
+count rises against its own prior record by a stated margin for two consecutive reviews.
 
-That third trigger compares a type against itself, never against the other types. A threshold set at
+That last trigger compares a type against itself, never against the other types. A threshold set at
 the registry median retires half the registry by construction, and the practitioner literature holds
 that a documentation metric is goal-specific per type, so a task guide's failure count and a
 reference entry's are not comparable quantities. Two bounds keep the trigger from firing on noise. It
 needs an absolute floor of at least three outline-review failures in the review window, and a minimum
-sample of at least three pages of that type. Below either bound the trigger cannot fire. The anatomy
+sample of at least three pages of that type. Below either bound the trigger cannot fire. It therefore
+cannot fire at the first stage's checkpoint, and the earliest it can fire is the third. The anatomy
 report therefore reports per-type failure counts and page counts, and never a cross-type ranking.
 
 **The rulings.** Add a type when two or more pages need a whole-page shape no type gives, and only
@@ -301,7 +317,8 @@ its sections. Record each ruling in `docs/internal/page-type-rulings.md`, in the
 `docs/internal/engine-rulings.md` uses: the ruling, the evidence, and what would reopen it.
 
 **The first review.** It runs at the demonstration page in pass 2a, against that page's measured
-template cost.
+template cost. Every review after it is the first part of a stage's tuning checkpoint, and it draws
+its per-type numbers from that stage's record rather than counting them a second time.
 
 **What here is precedented and what is not.** The field survey at
 [`research-agent-run-docs-lifecycle.md`](../../internal/record/2026-09-08-polish-inputs/research-agent-run-docs-lifecycle.md)
@@ -700,7 +717,7 @@ means more.
 | 11 | Approve the `add-a-custom-admin-screen.md` demonstration before the rewrite is planned | small | 4 |
 | 12 | Rebuild each page rather than edit it, with reference entries the one exception (owner direction 2026-09-08) | small as a rule; its cost sits in unit 5 | 5 |
 | 13 | Harvest each track's facts into a ledger before any brief is written, and keep drafters out of the page they replace (owner direction 2026-09-08) | large, 2.0 to 4.5 million tokens | 1 |
-| 14 | Ship the work as **three** pass plans: plan one, the Claude infrastructure, in the dotfiles and poplar repositories; plan two, the toolset and the harvest, in cairn; plan three, the rewrite (owner direction 2026-09-08, amended 2026-09-08 when unit 3c moved out of cairn) | small | Implementation |
+| 14 | Ship the work as **plan one; pass 2a; five per-track stages**: plan one, the Claude infrastructure, in the dotfiles and poplar repositories; pass 2a, the toolset and the demonstration page, in cairn; then five stages, each one pass with its own plan, worktree, pull request, and ceiling, each authored only after the previous stage's tuning checkpoint (owner direction 2026-09-08, amended twice on 2026-09-08, first when unit 3c moved out of cairn and again when the rewrite became five staged passes) | small | Implementation |
 
 ## Compatibility
 
@@ -738,32 +755,125 @@ published set carries 432 intra-docs anchor links and 99 references to published
 
 ## Implementation
 
-**Three pass plans run in order.** Decision row 14 records the split, which supersedes the earlier
-two-plan shape and the 1a/1b concurrent-document structure that shape carried.
+**Plan one, then pass 2a, then five per-track stages.** Decision row 14 records the split. It
+supersedes the earlier two-plan shape, the 1a/1b concurrent-document structure that shape carried,
+and the single plan three the previous revision named.
 
 **Plan one, the Claude infrastructure.** Unit 3c alone, run in the owner's `~/.dotfiles` and
 `~/Projects/poplar` repositories rather than in cairn. It moved out because cairn's implementer chain
 grades a task by `git diff` plus `npm test` and neither reaches `~/.claude/`, `~/.dotfiles/`, or
 `~/Projects/poplar/`, so the work moved rather than shrinking to a brief.
 
-**Plan two, the toolset and the harvest.** Units 1, 2, 3a, 3b, and 4, as **one** plan document with
-several chains, which is the shape `~/.claude/workflows/pass-execute-chains.js` takes. The 1a/1b
-split is withdrawn. Units 1, 2, and 3 are genuinely independent, share no file, and consume nothing
-from one another; the only real edge is unit 4, which joins them. Every artifact two chains would
-otherwise both create is built in a preflight chain on `main` before any chain branches, so the
-contended set reduces to `package.json`, the CI workflow, and the records the closing chain writes.
+**Pass 2a, the toolset and the demonstration page.** Units 2, 3a, 3b, and 4 in full, plus unit 1's
+ledger schema, its harvest tool, its drafting-dispatch fragment, and the harvest of the one page unit
+4 rebuilds. One plan document with several chains, which is the shape
+`~/.claude/workflows/pass-execute-chains.js` takes. The 1a/1b split is withdrawn. Units 1, 2, and 3
+are genuinely independent, share no file, and consume nothing from one another; the only real edge is
+unit 4, which joins them. Every artifact two chains would otherwise both create is built in a
+preflight chain on `main` before any chain branches, so the contended set reduces to `package.json`,
+the CI workflow, and the records the closing chain writes. The pass closes with the baseline record
+and the first tuning checkpoint.
 
-**Plan three, the rewrite.** Unit 5, authored only after plan two lands and the owner reads the
-demonstration page, so every brief cites real ledger ids and runs against real gates. It is four to
-five plan documents, one per track plus the front door, each with its own worktree, its own pull
-request, and its own ceiling, merged as each lands. Never one long-lived rebuild branch.
+**Five stages, the harvest and the rewrite together.** Unit 1's four remaining track harvests and all
+of unit 5, as **five passes, one per track**, each with its own plan document, worktree, pull
+request, and ceiling. Each stage's plan is authored **only after the previous stage's tuning
+checkpoint**, against the tooling that checkpoint amended, so no stage inherits a schema, a template,
+or a threshold that the previous stage's evidence has already contradicted. Never one long-lived
+rebuild branch, and never one plan spanning two tracks.
 
-Two sequencing constraints sit outside this spec. Polish-C, the breaking window, renames and removes
+The order is by **difficulty of writing the track well**, easiest first, so the tooling is tuned where
+the writing risk is lowest:
+
+| Stage | Track | Pages | Why it sits here |
+|---|---|---|---|
+| 1 | reference | 24 | The shape is fixed by `check:reference` and `check:reference:signatures`, the prose is a sentence or two per entry, and the pages are edited in place, so the stage proves the harvest and the brief on real pages at the lowest writing risk. |
+| 2 | extend | 30 | The developer register the drafter is most fluent in, with the facts heavily gated by `check:snippets` and `check:reference:signatures`. |
+| 3 | admin | 8 | An operator reader between the developer and the editor, with the transcripts fixture-gated by `check:transcripts`. |
+| 4 | editors | 7 | Hardest to write: a non-technical reader, the Microsoft register, and plain-language demands the gates see only partly, so the reader test is the judge. |
+| 5 | front door | 7 | Last: the page set whose rejection produced this initiative, under the strictest register ruling, with every claim traced to the owner brief. It meets the system after four stages of tuning. |
+
+The five partition the 76 published pages. Each track's `README.md` sits in stage 5 with the other
+index and evaluator pages, because the front-door stage rewrites the whole index layer together.
+
+Each stage runs seven steps in order: harvest the track against the amended ledger schema; the
+owner's unverified-claim rulings for that track, one sitting, batched with that stage's other owner
+items; rewrite the track's pages from briefs against the ledger, under the quarantine; the coverage
+diff per page; the fresh review; the reader test for that stage's pages; then the tuning checkpoint.
+
+### The tuning checkpoint
+
+Defined here once. Every stage's plan references this definition rather than restating it, so there
+is one copy to amend. Pass 2a runs it too, as the stage-zero checkpoint.
+
+1. **The registry review**, per the registry lifecycle above. The close of every stage is a review
+   trigger.
+2. **The questions log, rolled up.** Every question the owner, an agent, or a reviewer had to ask
+   about a page during the stage, rolled up per page type into `docs/internal/page-types.md`.
+3. **The reviewer-miss feedback, rolled up per template.** What the fresh reviewer changed on each
+   drafted page, each miss attributed to the template or to the subject.
+4. **The gates' thresholds and the Vale rules, revised where the stage's evidence says so.** A rule
+   that fired only on true findings may tighten; a rule whose findings the stage overrode every time
+   loosens or comes out. The override count is the evidence.
+5. **The ledger schema and the brief schema, amended where the harvest or the drafting showed a
+   gap**, each amendment carrying a **migration note** stating what earlier ledgers and briefs now
+   lack and whether they are backfilled or left as they are.
+6. **The templates, revised** where the reviewer misses or the outline-review failures cluster on one
+   section.
+7. **A one-page record** at `docs/internal/record/docs-rebuild/stage-<n>-tuning.md`, stating what
+   changed, why, and which of the stage's evidence produced it.
+
+### Gauging and iterating
+
+How the initiative measures whether the tuning is working. Every stage plan references this
+subsection. It is internal and not prose-graded.
+
+**Baselines** come from the demonstration page in pass 2a, recorded in
+`docs/internal/record/docs-rebuild/baseline.md`.
+
+**Per-page measures, the same set at every stage:** loops to first accept, counting implementer and
+fresh-reviewer rounds; reviewer misses counted by cause, one of `template`, `subject`, or `register`;
+coverage-diff misses against the ledger; questions anyone had to ask about the page during the stage;
+the reader-test outcome where one was run; and the tokens and owner sittings the page cost.
+
+**The lever map, one lever per measure:**
+
+| Measure | Lever |
+|---|---|
+| Template-cause reviewer misses | Move the template. |
+| Subject-cause reviewer misses | Move the ledger schema, or the brief's `needs` list. |
+| Register-cause reviewer misses | Move the drafting-dispatch fragment, or the corpus entry. |
+| Coverage-diff misses | Move the harvest task shape, or the ledger's definition of proven. |
+| A rising loop count with no dominant cause | **Stop and read.** This is not a tuning signal. |
+
+**The stage record format.** `stage-<n>-tuning.md` carries the per-page table beside the baseline,
+the lever pulled with its reason, and **the prediction**: what the next stage's numbers show if the
+pull was right. The following stage's record confirms or refutes it.
+
+**Stop rules.** The tooling counts as **tuned** when a stage's pages accept in one loop at or under
+the baseline miss rate; later stages then skip the checkpoint's tooling revisions and keep only the
+registry review and the records. A stage is **re-run rather than tuned** when its coverage diff shows
+the harvest lost facts, the threshold being any `unverified` claim that reached a published page.
+
+The registry lifecycle's outcome record draws its per-type numbers from these stage records, so the
+two are one measurement rather than two.
+
+### Sequencing constraints
+
+Two sit outside this spec. Polish-C, the breaking window, renames and removes
 across 365 in-tree files and four sites' route files, and every rename invalidates ledger entries in
-exactly the class the ledger exists to guarantee. **Polish-C must land entirely before the harvest
-branches.** And `check:figures`, its script under `scripts/figures/`, and the figure assets are
-uncommitted working-tree state today, so that work must land on `main` before any unit 3b plan is
-written, and decisions 5, 5a, and 6 re-verified against the merged state.
+exactly the class the ledger exists to guarantee. **Polish-C must land entirely before the first
+stage's harvest branches.** It does not gate pass 2a, whose only harvest is the one demonstration
+page and whose purpose there is to break the schema, not to hold a track's facts; that page's entries
+are re-derived at the extend stage. By the same rule, **every stage re-derives its track's pages at
+its own sha**, so page edits from the identity-seam and chassis passes are harvested as they stand
+rather than tracked.
+
+And `check:figures`, its script under `scripts/figures/`, and the figure assets are
+uncommitted working-tree state today, so that work must land on `main` before pass 2a's preflight,
+and decisions 5, 5a, and 6 re-verified against the merged state. **`check:figures` must grow its
+seven assertions before any figure is graded**, which is the extend stage, the first stage with a
+figure to grade; pass 2a takes that work instead only if the assertions have landed on `main` by its
+second invocation for another reason.
 
 ### Sizing
 
@@ -786,10 +896,16 @@ checkpoint.
 
 ### Unit 1: the fact harvest
 
-Harvest every claim the published pages make into a fact ledger, one track at a time: admin,
-editors, extend, reference, and the front door. Each track's ledger is one file at
-`docs/internal/record/docs-rebuild/<track>-facts.md`. That path carries no date, so unit 5 can
+Harvest every claim the published pages make into a fact ledger, one track at a time: reference,
+extend, admin, editors, and the front door. Each track's ledger is one file at
+`docs/internal/record/docs-rebuild/<track>-facts.md`. That path carries no date, so a stage can
 resolve it months later.
+
+**The unit splits across the passes.** Pass 2a builds the ledger schema, `check:fact-coverage`, the
+drafting-dispatch fragment, and the ledger for the one page unit 4 rebuilds, which exists to break
+the schema before a track is harvested against it. **Each track's harvest is then its own stage's
+first work**, against the schema the previous stage's tuning checkpoint amended. No pass harvests a
+track it does not also rewrite.
 
 **Claim granularity.** One entry per checkable proposition: a statement that could be false and
 whose falseness a reader would act on. Version numbers, counts, paths, export names, defaults,
@@ -842,12 +958,15 @@ Acceptance criteria:
 - Every gated block in the published set has an entry carrying the fence verbatim and its fixture
   path.
 - Every page has an anchor map and the five keep classes harvested.
-- Every published page has a page type assigned, recorded in the ledger. The harvest is the only
-  chain that reads all 75 pages, so it is the producer of this artifact.
+- Every published page has a page type assigned, recorded in
+  `docs/internal/record/docs-rebuild/page-types.md`. Pass 2a enumerates every page there and assigns
+  the demonstration page's type; **each stage assigns its own track's types at its harvest**, since
+  the harvest is the only work that reads the pages and since a type fixed before the registry has
+  been tuned would be re-derived anyway.
 - A `check:ledger` script re-resolves every `read` entry's `file:line` and fails when the path is
   gone.
 - This unit commits a drafting-dispatch prompt fragment carrying the quarantine and the readable-file
-  list, so plan two's dispatches inherit it.
+  list, in pass 2a, so every stage's dispatches inherit it.
 
 ### Unit 2: the corpus
 
@@ -895,7 +1014,8 @@ Acceptance criteria:
   templates, fixed before this unit starts rather than split inside it.
 - `docs/internal/page-types.md` carries one row per type with the outcome-record columns, and
   `docs/internal/page-type-rulings.md` exists with its header, so the registry lifecycle has a
-  record to write into from the first review onward.
+  record to write into from the first review onward, and so every stage's checkpoint writes into the
+  same two files.
 
 ### Unit 3b: the receipt and provenance gates
 
@@ -964,11 +1084,17 @@ by id, `check:provenance` resolves every claim on the drafted page, and the cove
 what the page dropped. The existing block gates prove that each carried snippet, signature, and
 transcript still holds.
 
-**The first page is `docs/why-cairn.md`**, the page whose rejection produced this initiative and the
-best-prepared page in the set, since its author brief already exists as the source
-`check:provenance` resolves against. Polish-D's front-door task moves here rather than being
-authored twice. Polish-D's substrate commit and its figure and form tasks stay where they are, and
-its `docs/README.md` route-order item becomes an index-page question this standard governs.
+**The unit runs as the five stages, in the order the Implementation section fixes**, easiest track to
+write first: reference, extend, admin, editors, then the front door. `docs/why-cairn.md` is the
+**last** page set rather than the first. An earlier revision made it first, on the ground that its
+author brief already exists as the source `check:provenance` resolves against. That advantage is
+real and it is not the binding constraint: the front door is the hardest thing in the set to write,
+it is the page whose rejection produced this initiative, and it carries the strictest register
+ruling, so it should meet the standard after four stages have tuned it rather than while the tooling
+is still being corrected. Polish-D's front-door task moves into stage five rather than being authored
+twice. Polish-D's substrate commit and its figure and form tasks stay where they are, and its
+`docs/README.md` route-order item becomes an index-page question this standard governs, answered in
+the same stage.
 
 **Polish-B folds here except its code half.** Tasks 2, 8, and 9 and the `check:reference` change in
 task 5 stay in polish-B, which merges before the harvest branches. Its D1 through D30 and F7 through
@@ -976,14 +1102,21 @@ F10 prose findings become authoritative ledger input. The harvest records the tr
 proving source and marks the old page's claim superseded. Then the rebuild emits the corrected page
 once, instead of editing a page and rebuilding it afterwards.
 
-Reference entries under `docs/reference/` are the named exception, and they are edited in place. The
+Reference entries under `docs/reference/` are the named exception, and they are edited in place. They
+are also stage one, because a fixed shape under the signature gate and a sentence or two of prose per
+entry is the least demanding writing in the set, which is what makes the track the right place to
+prove the harvest, the brief, and the coverage diff on real pages. The
 signature gate already fixes their shape, so the structural risk the rebuild answers does not reach
 them. The prose around each signature is small enough that an edit reaches the same result for less
 work. Each reference page's brief records the exception and its reason.
 
-The unit runs one track at a time, one worktree and one pull request per track. Every page in a
+The unit runs one track at a time, one worktree, one pull request, and one plan per track, and each
+stage closes with its tuning checkpoint. Every page in a
 track has its outline read against its type before a paragraph of that track is drafted. The unit
-carries decision 6 and, depending on owner decision 1, decision 3's clearing work.
+carries decision 6, split across two stages, since the ownership map lands on
+`docs/extend/architecture.md` in stage two and the concept figure comes off `docs/why-cairn.md` in
+stage five; and, depending on owner decision 1, decision 3's clearing work, which lands in the
+editors and admin stages where those tracks are rewritten.
 
 Acceptance criteria:
 
@@ -1005,14 +1138,20 @@ Acceptance criteria:
 - The concept figure is off `docs/why-cairn.md` and the ownership map is on
   `docs/extend/architecture.md`.
 - The reader test has run on the pages owner decision 4 names, with each result in that page's
-  receipt.
-- `ROADMAP.md`'s claims-verification row is marked done and removed, and
+  receipt. Its nine sittings are allocated one to the demonstration page and eight across the stages,
+  weighted to where the reader is furthest from the writer: editors three, front door three, extend
+  one, admin one, reference none.
+- `ROADMAP.md`'s claims-verification row is marked done and removed at the fifth stage, not before,
+  since the row is complete only when every track's claims are verified, and
   `docs/internal/docs-friction-log.md` is triaged for entries this standard resolves.
+- Every stage closed with a tuning checkpoint whose record is
+  `docs/internal/record/docs-rebuild/stage-<n>-tuning.md`, and each record's prediction was confirmed
+  or refuted by the next stage's record.
 
-### What plan one hands plan two
+### What plan one hands pass 2a
 
-Three artifacts, all outside this repository, which plan two's preflight verifies by name and
-records as present or absent. A missing one degrades a named criterion in plan two rather than
+Three artifacts, all outside this repository, which pass 2a's preflight verifies by name and
+records as present or absent. A missing one degrades a named criterion in 2a rather than
 stopping it:
 
 1. The **tellgrader docs-register profile**: the profile flag accepted by the installed binary and
@@ -1022,26 +1161,46 @@ stopping it:
 3. The **two changed skills**: `cairn-figure`'s figure production path and the `writing-voice`
    skill's author-facing prose section.
 
-Plan one's own record also carries the four setup pieces plan two does not verify: the output style,
+Plan one's own record also carries the four setup pieces pass 2a does not verify: the output style,
 the voice files, the review agents, and the global `CLAUDE.md`.
 
-### What plan two hands plan three
+### What pass 2a hands stage one
 
-Plan three cannot be authored until all nine exist at fixed paths. These are plan two's closing
-criteria:
+Stage one cannot be authored until all nine exist at fixed paths. These are 2a's closing criteria.
+**The five ledgers and the page-type assignment for un-harvested tracks are not on this list**: 2a
+harvests one page, and each stage harvests its own track.
 
-1. The five ledgers at `docs/internal/record/docs-rebuild/<track>-facts.md`, with the id format, the
-   verdict tiers, the per-page anchor maps, the keep classes, and the verbatim gated blocks.
-2. The page-type assignment for every published page, 76 today.
-3. `docs/internal/corpus/` and its manifest, approval column filled, every registry type covered by
+1. `docs/internal/corpus/` and its manifest, approval column filled, every registry type covered by
    an approved or reference-only entry.
-4. `docs/internal/templates/`, the nine page templates, each heading marked required or optional.
-5. The brief schema, its parser, and one worked brief.
-6. The gate estate, wired into `package.json` and CI, each gate with its scope and the named
-   plan-three track plan that removes each relaxation.
-7. The Vale rules with their must-fire fixtures, verified on the CI-pinned binary.
-8. The drafting-dispatch prompt fragment carrying the quarantine and the readable-file list.
-9. The demonstration page's measured cost in tokens and sittings, which is what sizes plan three.
+2. `docs/internal/templates/`, the nine page templates, each heading marked required or optional, as
+   the checkpoint amended them.
+3. The brief schema, its parser, and one worked brief, as the checkpoint amended them.
+4. The ledger schema at `docs/internal/record/docs-rebuild/ledger-schema.md`, as the checkpoint
+   amended it and with its migration note, plus `check:fact-coverage` and the one harvested page as
+   the worked example a stage's harvest copies.
+5. The gate estate, wired into `package.json` and CI, each gate with its scope and the named stage
+   that removes each relaxation.
+6. The Vale rules with their must-fire fixtures, verified on the CI-pinned binary.
+7. The drafting-dispatch prompt fragment carrying the quarantine and the readable-file list.
+8. The demonstration page's measured cost in tokens and sittings, at
+   `docs/internal/record/docs-rebuild/demonstration-cost.md`, which is what sizes stage one.
+9. The baseline at `docs/internal/record/docs-rebuild/baseline.md` and the stage-zero tuning record
+   at `docs/internal/record/docs-rebuild/stage-0-tuning.md`, carrying the measure set, the lever map,
+   the stop rules, and the prediction stage one's record confirms or refutes.
+
+### What each stage hands the next
+
+Three artifacts, plus everything in the list above:
+
+1. Its track's ledger at `docs/internal/record/docs-rebuild/<track>-facts.md`, complete, with its
+   anchor maps, keep classes, gated blocks, and the owner's rulings on its unverified entries
+   applied.
+2. Its tuning record at `docs/internal/record/docs-rebuild/stage-<n>-tuning.md`, with the per-page
+   measures beside the baseline, the lever pulled, and the prediction.
+3. The amended ledger schema and brief schema, each amendment carrying its migration note.
+
+A stage's plan is authored against those three and against 2a's hand-off, never against 2a's
+hand-off alone.
 
 ## Risks
 
@@ -1066,8 +1225,9 @@ criteria:
   run.
 - **The attended cost.** Forty to seventy-five sittings sit in unit 5 alone, and owner decision 4
   sets the count. A plan that does not schedule them stalls at its last acceptance criterion.
-- **Plan two is large.** Eight to twelve million tokens across four to five plan documents. Re-size
-  it from the demonstration page's measured cost before authoring, never from this estimate.
+- **The stages are large in total.** Eight to twelve million tokens across five stage plans by the
+  earlier estimate. Size each stage from the previous stage's record and the demonstration page's
+  measured cost before authoring it, never from this estimate.
 - **Templates and gates drifting apart.** Two copies of a section order will diverge. `check:anatomy`
   reads the templates as its only source, which unit 3a's criteria require.
 - **The registry may lack a type a page needs.** A glossary, a migration guide, a release-notes page

@@ -461,12 +461,21 @@ records which, if any, polish-B applied as an edit before this amendment landed.
 the substrate commit now lands before the toolset pass's preflight rather than before that pass's
 figures task, because `docs/extend` is in `package.json`'s `files` array and the commit changes the
 published-page count every later chain derives from. **Its task 1, `docs/why-cairn.md`, moves to the
-rewrite plan as that plan's first page.** The reason: authoring the front door now repeats the exact
-failure the standard exists to stop, since the rejected front-door draft is what produced the
-initiative. Its `docs/README.md` route-order item becomes an index-page question the standard
-governs.
+rewrite as the rewrite's LAST stage.** Amended 2026-09-08: an earlier wording made it the rewrite's
+first page. Two reasons overturn that. Authoring the front door in polish-D repeats the exact failure
+the standard exists to stop, since the rejected front-door draft is what produced the initiative, and
+that half stands unchanged. But the front door is also the hardest thing in the published set to
+write: a mixed evaluator audience, the strictest register ruling, and every claim traced to the owner
+brief rather than to code. The rewrite now runs as five stages ordered by difficulty of writing the
+track well, easiest first, each closing with a tuning checkpoint that amends the templates, the
+schemas, and the gate thresholds. The front door therefore meets the standard after four stages have
+tuned it, not while the tooling is still being corrected. Its `docs/README.md` route-order item
+becomes an index-page question the standard governs, answered in that same last stage.
 
-**The cost of clause 3, named.** The front door stays as it is until the rewrite's first page lands,
-and any cairn.pub work depending on new front-door copy waits with it.
+**The cost of clause 3, named.** The front door stays as it is until **stage five** of the rewrite
+lands, which is the end of the initiative rather than its first page, and any cairn.pub work
+depending on new front-door copy waits with it. That is a longer wait than the earlier wording
+implied, and it is the deliberate price of letting the hardest page set be written by a tuned
+system.
 
 Nothing here changes polish-A's or polish-C's own task lists.

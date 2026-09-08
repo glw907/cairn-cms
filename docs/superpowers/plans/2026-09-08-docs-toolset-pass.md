@@ -1,90 +1,120 @@
-# Docs Standard, Plan Two of Three: the toolset and the harvest
+# Docs Standard, Pass 2a: the toolset and the demonstration page
 
-> **Plan two of three; plan one is the Claude infrastructure pass, which lands first.** Plan one
-> is the owner's dotfiles and poplar pass carrying spec unit 3c: the workstation setup and the
-> tellgrader docs-register profile. Unit 3c and its chain are removed from this plan entirely.
-> Plan three is the docs rewrite, spec unit 5.
+> **This is pass 2a of the docs standard.** Plan one is the Claude infrastructure pass, the owner's
+> dotfiles and poplar pass carrying spec unit 3c: the workstation setup and the tellgrader
+> docs-register profile. It lands first, and unit 3c and its chain are removed from this plan
+> entirely.
 >
-> **REVISION 2, authored 2026-09-08** against spec revision 3
+> **The rewrite that follows this pass is five per-track stages, not one plan three.** Each stage is
+> one pass with its own plan document, its own worktree, its own pull request, and its own ceiling,
+> and **each stage's plan is authored only after the previous stage's tuning checkpoint**, against
+> the tooling that checkpoint amended. The order is by difficulty of writing the track well, easiest
+> first: reference, extend, admin, editors, front door. "Stages that follow" at the end of this
+> document names what each carries, why it sits where it does, and the task shapes each reuses.
+>
+> **REVISION 3, authored 2026-09-08.** Revision 2 was one toolset pass split into two runs, 2a and
+> 2b, with the whole 76-page harvest in 2b. The owner's direction of 2026-09-08 dissolved 2b and
+> moved the harvest into the per-track stages, so the docs system is tuned as it is used. Revision 2
+> was authored against spec revision 3
 > (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`) and the six adversarial reviews of
 > revision 1 under `docs/internal/record/2026-09-08-polish-inputs/` (`plan2-review-coverage.md`,
-> `-plannability.md`, `-executor.md`, `-sequencing.md`, `-charter.md`, `-benchmark.md`). What each
-> finding became is recorded in "Review disposition" at the end of this document.
+> `-plannability.md`, `-executor.md`, `-sequencing.md`, `-charter.md`, `-benchmark.md`); that spec's
+> Implementation section now carries the staged shape. What each review finding became is recorded in
+> "Review disposition" at the end of this document, and what the restructure changed is recorded
+> there too.
 >
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` -> `diff-reviewer` -> gate), workflow mode via
-> `~/.claude/workflows/pass-execute-chains.js`. The plan runs as **two workflow invocations** with
+> `~/.claude/workflows/pass-execute-chains.js`. The pass runs as **two workflow invocations** with
 > one owner sitting between them, because the workflow has no wait primitive. Chain P and every
 > task marked **conductor task** run in the main loop, not under the workflow. Steps use checkbox
 > syntax for tracking.
 
-**Goal:** hand plan three, the docs rewrite, the nine artifacts it cannot be authored without: five
-fact ledgers, a page type for every published page, an approved corpus, nine templates, a brief
+**Goal:** hand stage one, the reference rewrite, everything a stage cannot be authored without: an
+approved corpus, nine templates, the page-type registry with its two lifecycle records, a brief
 schema with a parser, the gate estate with its path scopes, Vale rules with must-fire fixtures, a
-drafting-dispatch fragment, and one page rebuilt end to end with its measured cost.
+fact-ledger schema proved on one real page, a drafting-dispatch fragment, one page rebuilt end to
+end with its measured cost, and the first tuning checkpoint.
 
 **Architecture:** one preflight that builds every shared substrate before any fork, then four
 concurrent producers, one consumer, and a records chain. P verifies the sequencing preconditions,
 re-derives the published-page set, and commits every file two chains would otherwise both create.
-H harvests every published page's checkable claims into five ledgers under
-`docs/internal/record/docs-rebuild/`; after its third task it splits into H-A (admin, editors,
-front door) and H-B (extend, reference). C assembles the corpus the reviews grade against. G1
+H builds the harvest spine and proves it on one page: the fact-coverage tool, the demonstration
+page's ledger under `docs/internal/record/docs-rebuild/`, and the drafting-dispatch fragment. The
+other four tracks are harvested inside their own stages, against the schema each previous
+checkpoint amended. C assembles the corpus the reviews grade against. G1
 builds the structure spine: the nine templates and the markdownlint-cli2 runner that carries
 anatomy, heading order, the front-door and index shapes, brief presence, and the alt-text hole. G2
 builds the prose and receipt spine: the Vale rule set with its golden fixtures, `check:provenance`,
-`check:prose-read`, `check:ledger`, the quality checklist, and the figure assertions. D rebuilds
+`check:prose-read`, `check:ledger`, and the quality checklist. D rebuilds
 `docs/extend/add-a-custom-admin-screen.md` through the whole chain and measures what one page
-costs. Unit 3c is plan one's and is not built here; unit 5, the rewrite, is plan three.
+costs. R records the pass and runs the first tuning checkpoint, which is the artifact stage one is
+authored against. Unit 3c is plan one's and is not built here; unit 5, the rewrite, is the five
+stages.
 
 **Tech stack:** `markdownlint-cli2` (MIT) with cairn custom rules as the docs linter runner; Vale
 3.15.1 (the CI pin) for prose and heading rules; Node ESM scripts under `scripts/checks/` with
 co-located vitest specs for the four gates no linter can carry; the `yaml` package already in `dependencies` for the brief parser.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-docs-standard-design.md` (revision 3, units 1, 2,
-3a, 3b, and 4; unit 3c belongs to plan one). Inputs: `docs/internal/record/2026-09-08-polish-inputs/`,
+**Spec:** `docs/superpowers/specs/2026-09-08-docs-standard-design.md` (revision 3 with the
+2026-09-08 staged Implementation section; units 2, 3a, 3b, and 4 in full, unit 1's schema and tools,
+and the first tuning checkpoint. Unit 3c belongs to plan one; unit 1's four remaining track harvests
+and unit 5 belong to the stages). Inputs: `docs/internal/record/2026-09-08-polish-inputs/`,
 above all `docs-spec-review-plannability.md`, `front-door-author-brief.md`,
 `front-door-net-failure.md`, `docs-sweep.md`, and `exports-sweep.md`.
 
-**Token ceiling: 6.5M**, recomputed from the revised chains. The consolidation onto
-`markdownlint-cli2` and Vale removes two bespoke scripts, a verb lexicon, an explainer page, and
-roughly forty fixtures; the corpus defaults to reference-only, which removes most of the licensing
-work; the reference and extend harvests are split by source-word budget rather than by halves,
-which raises the task count and lowers the per-task waste. Per chain: P 0.30M, H run one 0.35M,
-C 0.45M, G1 1.00M, G2 1.50M, D 0.45M, H-A 0.45M, H-B 1.60M, H12 0.10M, R 0.20M. That sums to
-6.40M against the 6.5M ceiling, leaving 0.10M slack. Decision 2's nine-type registry takes three
-templates out of chain G1 and adds G1-7, the per-type outcome report; the two offset to under
-0.05M, so every figure above stands and the ceiling is not recomputed. **The cut point is named: run one is plan 2a,
-run two is plan 2b.** If the ceiling binds, 2b is the half that leaves, because 2a already produces
-every gate, the corpus, the templates, and the measured per-page cost.
+**Token ceiling: 4.75M**, recomputed for 2a alone. Revision 2 carried 6.5M across two runs, of
+which run one was about 3.8M. Four things changed. The fourteen track-harvest tasks, H12, and
+`check:figures`' seven assertions left for the stages, which removes about 2.35M. D3 and chain R
+moved in from run two, which adds about 0.20M. The baseline record and the tuning checkpoint are new,
+and together they are this pass's one genuinely new cost at about 0.30M, because they instantiate the
+measure set and the lever map, then amend two schemas and the templates. Per chain: P 0.30M, H 0.35M,
+C 0.45M, G1 1.00M, G2 1.35M, D 0.45M, R 0.45M. That sums to 4.35M against the 4.75M ceiling, leaving
+0.40M slack.
 
-**Checkpoint interval:** four tasks per chain, three in H-B. At each checkpoint the conductor
+**Each of the five stages carries its own ceiling, set when its plan is authored** from the previous
+stage's measured cost and, for stage one, from `demonstration-cost.md`. Do not pre-number them here;
+a ceiling written for a plan nobody has authored is a phantom, the way `0.77.0` was. The rough total
+to expect across the five is **10 to 17M**: the plannability review's ranges for unit 1 (2.0 to 4.5M)
+and unit 5 (8 to 12M) sum to 10.0 to 16.5M, 2a absorbs about 0.35M of unit 1 as the harvest spine and
+the demonstration page's own ledger, and the five tuning checkpoints add about 1.0M. That is a range
+for a sizing conversation, never a commitment; the first stage's measured cost replaces it.
+
+**Checkpoint interval:** four tasks per chain. At each checkpoint the conductor
 writes STATUS (task ledger, decisions taken, spend against the ceiling, next task). At 80 percent
-of 6.5M the conductor finishes the running task in every chain, writes STATUS, and asks one
+of 4.75M the conductor finishes the running task in every chain, writes STATUS, and asks one
 combined question.
 
-## The two runs
+**Cut points.** 2a's own cut point is unchanged in principle and unused in practice: if the ceiling
+binds, chain D's demonstration page is the last work to leave, because everything else is what a
+stage plan is authored against. Beyond that, **each stage is its own pass**, which is the point of
+the restructure: a wrong ledger field or a bad template is found after one small track rather than
+after all five.
+
+## The two workflow invocations and the two owner sittings
 
 The workflow has no wait primitive, so a task that stops for the owner ends its chain for that
-invocation. The plan therefore runs as two invocations with one owner sitting between them.
+invocation. The pass therefore runs as two invocations with one owner sitting between them. These
+are invocations, not passes: 2a is one pass with one ceiling and one pull-request set.
 
-**Run one (plan 2a, about 3.8M):** P (main loop), then chains C (C1 through C4), G1 (all six), G2
-(G2-1 through G2-9), and H (H1 through H3) concurrently, then D1 and D2 as conductor tasks after
-those chains merge.
+**Invocation one:** P (main loop), then chains C (C1 through C4), G1 (all seven), G2 (all nine), and
+H (H1 through H3) concurrently, then D1 and D2 as conductor tasks after those chains merge.
 
 **The mid sitting (owner).** One batched sitting carrying C5's corpus approval, the CLAUDE.md line
 displacement owed from plan one, and ratification of the provisional corpus approval D1 ran against
 (C5's notes).
 
-**Run two (plan 2b, about 2.6M):** chains H-A and H-B concurrently, then H12 (conductor task),
-G2-10 once the figures substrate is committed, then D3 and chain R.
+**Invocation two:** D3, then chain R in order: R1, T1 (the baseline record), T2 (the tuning
+checkpoint), R2, R3.
 
-**The closing sitting (owner).** H12's unverified rulings, D3's reader test, and the demonstration
-read, presented together.
+**The closing sitting (owner).** D3's reader test, the demonstration read, and the demonstration
+page's own unverified-claim rulings, presented together. The rest of the unverified list does not
+exist yet: each track's unverified rulings are one sitting inside that track's stage, batched with
+that stage's other owner items.
 
-Two owner sittings, not one. The ruling asked for one; H12's input is the whole harvest and the
-whole harvest is run two, so H12 cannot be presented at the mid sitting. The plan records that
-rather than pretending otherwise. Everything that can batch does: C5 and the CLAUDE.md displacement
-at the mid sitting, H12 and D3 at the closing one.
+Two owner sittings, which is what this pass batches to. Everything that can batch does: C5 and the
+CLAUDE.md displacement at the mid sitting, D3 and the one page's unverified rulings at the closing
+one.
 
 ## Ruled inputs (recorded; no task re-derives them)
 
@@ -99,14 +129,16 @@ at the mid sitting, H12 and D3 at the closing one.
   `docs/internal/page-type-rulings.md` carries each ruling in the shape
   `docs/internal/engine-rulings.md` uses. The
   receipt is a pull-request artifact plus one ledger row per page, never a per-page committed file
-  with a content hash (decision 3). The reader test runs on nine pages in plan three, one of which
-  is the demonstration page here (decision 4). The `ROADMAP.md` claims-verification row is absorbed
+  with a content hash (decision 3). **The reader test runs on nine pages across the initiative
+  (decision 4), allocated one to the demonstration page here and eight across the five stages**, per
+  the allocation in "Stages that follow". The `ROADMAP.md` claims-verification row is absorbed
   and its after-`beta.1` sequencing overruled, with the overrule recorded (decision 5). No rendered
   docs preview is added (decision 6). The new scanner measures live in the workstation's tellgrader
   behind a docs-register profile, so they are plan one's work (decision 7). **Decision 2's earlier
   "review after the demonstration page shows what a template costs" note is superseded by the
   registry lifecycle's first review, which D3 runs at the demonstration page and records as a
-  ruling.**
+  ruling.** **The registry lifecycle gains a fourth review trigger, the close of every stage**, which
+  is the tuning checkpoint's first part; the spec's registry lifecycle carries it.
 - **The gate estate is consolidated onto two runners plus four bespoke scripts.**
   `markdownlint-cli2` (MIT, `DavidAnson/markdownlint-cli2`) is the runner for page anatomy, heading
   order, the front-door and index shapes, brief presence, and the missing-alt hole (MD045). Vale
@@ -135,20 +167,24 @@ at the mid sitting, H12 and D3 at the closing one.
 - **Ledger entries re-resolve by anchor plus claim string, never by line.** `line` stays in the
   schema as an advisory locator recorded at the preflight sha; `check:ledger` re-resolves a `read`
   entry by its anchor and its recorded claim. A reflow therefore does not invalidate the harvest,
-  which matters here (markdownlint) and matters more in plan three, where every page moves.
-  **Markdownlint's reflowing rules are disabled on the harvested published pages until plan
-  three**, per glob, each disable naming the track plan that removes it.
+  which matters here (markdownlint) and matters more in the stages, where every page moves.
+  **Markdownlint's reflowing rules are disabled on the published pages until their stage rewrites
+  them**, per glob, each disable naming the stage that removes it.
 - **Unit 3c is plan one's, and this plan consumes it rather than building it.** cairn's chain grades
   a task by `git diff` plus `npm test` and neither reaches `~/.claude/`, `~/.dotfiles/`, or
   `~/Projects/poplar/`. **P1 records what plan one landed and what it did not; a missing plan-one
   output degrades a named criterion and never stops the pass.** Nothing in this plan mechanically
   consumes the Vale hook or the two skills, and the tell scanner is not invoked from CI at all in
   this revision.
-- **Polish-C gates chain H alone.** Its renames invalidate ledger entries in exactly the class the
-  ledger exists to guarantee. That is true of the harvest and false of the corpus, the templates,
-  the linter config, and the prose rules, all of which work against fixtures. P1 records the
-  polish-C state; **H1 stops chain H if polish-C has not merged**, and C, G1, and G2 branch either
-  way.
+- **Polish-C gates the stages' harvests, not this pass.** Its renames invalidate ledger entries in
+  exactly the class the ledger exists to guarantee, which is why **polish-C must land before stage
+  one's harvest branches**. It does not gate 2a: the only harvest here is H2's one page, which exists
+  to break the schema, and a schema is not invalidated by a rename. P1 records the polish-C state and
+  **stops nothing**; H2 records that its entries are provisional against polish-C and are re-derived
+  at the extend stage's harvest, which is the same treatment the identity-seam and chassis passes'
+  page edits get. **Every stage's harvest re-derives its track's pages against merged `main` at that
+  stage's own sha**, so a page edited by any pass between 2a and that stage is harvested as it then
+  stands, never as `preflight.md` recorded it.
 - **The one true pass stop is the figures substrate.** `check:figures`, `scripts/figures/`,
   `docs/internal/site-figures.*`, and `docs/extend/assets/` are uncommitted working-tree state
   today, and `docs/extend` is in `package.json`'s `files` array, so that commit changes the
@@ -160,8 +196,10 @@ at the mid sitting, H12 and D3 at the closing one.
   `docs/internal/record/2026-09-08-polish-inputs/docs-sweep.md` are numbered **1 through 30 with no
   prefix**; `F7` through `F10` live in **`exports-sweep.md`**, not the docs sweep. P1 re-resolves
   every finding number against merged `main`, records which polish-B already applied as edits, and
-  writes the finding-to-harvest-task map that H-A and H-B read. A finding that no longer resolves is
-  reported, never silently dropped.
+  writes the **finding-to-track map** each stage's harvest reads. Revision 2 mapped findings to
+  harvest tasks; the harvest tasks now live in stage plans nobody has authored, so the map's unit is
+  the track and the stage's own plan assigns each finding to a task. A finding that no longer
+  resolves is reported, never silently dropped.
 - **A published page is never a proving source.** That circularity is what let the front door assert
   a workflow that never happened. The verdict tiers are **five**: `gate`, `read`, `owner`,
   `unverified`, and `retired`. Revision 1 said four in eight places and then used a fifth;
@@ -175,14 +213,28 @@ at the mid sitting, H12 and D3 at the closing one.
   ledger.** The spec's unit 1
   acceptance criterion 5 says the ledger records it. The ledger is per track and the assignment is
   one table over all 76 pages, so the assignment is one file. Recorded as a deliberate change.
+  **P2 enumerates every published page into that file and assigns a type only to the pages 2a
+  harvests**, which is the demonstration page. Every other row carries its path and its track with an
+  empty `type`, and **each stage assigns its own track's types at its harvest**, against the registry
+  as that stage received it. A type assigned before the registry has been tuned by the stages ahead
+  of it would be re-derived anyway, and 2a hands forward no type assignment for a track it did not
+  harvest.
 - **The published-page set is defined once, in P1, and is 76 today.** Nine admin, eight editors,
   thirty-one extend, twenty-five reference, and three front door (`docs/README.md`,
   `docs/why-cairn.md`, and the root `README.md`). `CHANGELOG.md` and `skills/*.md` ship in the
   tarball and are **not** published documentation pages; P1 states that exclusion. Every later task
-  reads P1's number and no task re-derives it.
+  reads P1's number and no task re-derives it. **The stage partition regroups the same 76**: each
+  track's own `README.md` moves into the front-door stage with the other index and evaluator pages,
+  so the stage counts are reference 24, extend 30, admin 8, editors 7, and front door 7. The
+  directory counts above define the set; the stage counts assign it. Both appear in P2's header, and
+  the two must sum to the same 76.
 - **The spec's own 1a/1b split is superseded.** The spec's Implementation section shapes plan one as
   two concurrently launched documents. This is one document with several chains, which is the shape
   `pass-execute-chains` takes. The companion edit to the spec records that.
+- **The rewrite is five stages, not one plan three, and the tuning checkpoint is defined once in the
+  spec.** The spec's Implementation section carries the checkpoint's definition, the gauging and
+  iterating subsection, and the lever map, and every stage references all three; this plan does not
+  restate them, so there is one copy to amend. T1 records the baseline and T2 runs the checkpoint.
 - **Release:** no version bump, no publish. The window holds and `CHANGELOG.md` gains one entry
   under `## Unreleased`.
 
@@ -199,17 +251,22 @@ at the mid sitting, H12 and D3 at the closing one.
 
   | Chain | Gate |
   |---|---|
-  | H, H-A, H-B | `npm run check:ledger && npx vitest run scripts/checks` |
+  | H | `npm run check:docs` |
   | C | `npm run check:docs` |
   | G1, G2 | `npm run check && npx vitest run scripts/checks && npm run check:docs && npm run check:vale` |
 
-  Chain H's gate is real in run two, where `check:ledger` has merged. In run one, H1 through H3 run
-  concurrently with G2-8, so their gate is `npm run check:docs`, and the conductor runs
-  `check:ledger` over their output at the run-one join, where D2 performs the first real run anyway.
-  D and R run in the main loop and name their own gates on the task.
+  Chain H cannot gate on `check:ledger` here, because H1 through H3 run concurrently with G2-8, which
+  is the task that builds it. The conductor runs `check:ledger` over H's output at the invocation-one
+  join, where D2 performs its first real run anyway. **Every stage's harvest chain gates on
+  `npm run check:ledger && npm run check:fact-coverage && npx vitest run scripts/checks`**, which is
+  the gate this pass could not run and every stage can. D and R run in the main loop and name their
+  own gates on the task.
 - **Every new unit test is co-located at `scripts/checks/<name>.test.ts`**, and P4 adds
   `scripts/checks/**/*.test.ts` to the vitest `unit` project's `include`. That is what makes
   `npx vitest run scripts/checks` resolve to anything.
+- **The tuning checkpoint may change any threshold in this section, and a stage inherits the changed
+  value.** Nothing below is fixed for the initiative; it is fixed for this pass, and T1 and every
+  later checkpoint revise it against measured evidence.
 - **Length rules warn and never gate** (decision 1). No task clears a sentence to satisfy a length
   number. The 25-word ceiling on admin and editors, the 40-word ceiling everywhere, and the
   paragraph bounds all ship at warning level with no promotion path.
@@ -261,10 +318,12 @@ None of these is a numbered task; all run in the main loop and are recorded in `
    Bash, Grep, Glob` and no `WebFetch`, no `WebSearch`, no `Agent`, no `Skill`, and a sandboxed
    shell. Chain C's candidates and their license pages are fetched by the conductor and handed over
    as local files. Chain C reads local files only, and C1's notes say so.
-5. **Calibrate `check:fact-coverage`** after H1 merges and before H-A dispatches: run its `--report`
+5. **Calibrate `check:fact-coverage`** after H1 merges and before H2 dispatches: run its `--report`
    mode over one admin page and one reference page and record the token count per page in
    `preflight.md`. If a reference page yields more than roughly 200 tokens, the token classes or the
-   granularity rule change before fourteen harvest tasks build on them.
+   granularity rule change here, in the pass whose whole purpose is to break the schema before a
+   stage harvests a track against it. T2 re-runs the calibration over the demonstration page and
+   records whether it held.
 6. **Confirm the local `vale --version`** and record the disposition beside the CI pin.
 7. **Pre-extract the spec's nine section orders and its brief field table** into the scratchpad,
    so G1-2 through G1-4 and P3 do not each scan the spec to find them. The reference-entry order
@@ -279,23 +338,23 @@ ordinary line merge.
 
 | File | Chains that write it | Reconciliation |
 |---|---|---|
-| `package.json` (`scripts` only) | H1, G1-5, G2-2, G2-4, G2-5, G2-7, G2-8, G2-10 | Three-way with the owner's figures line, which lands before P1. Each chain appends its own script lines adjacent to its own block; the conductor reconciles at each merge. |
+| `package.json` (`scripts` only) | H1, G1-5, G2-2, G2-4, G2-5, G2-7, G2-8 | Three-way with the owner's figures line, which lands before P1. Each chain appends its own script lines adjacent to its own block; the conductor reconciles at each merge. |
 | `package.json` (`files`, `devDependencies`) | P3, P4, G1-5 | P3 adds the `!docs/**/*.brief.yml` negation; G1-5 adds `markdownlint-cli2`. Positional. |
 | `.github/workflows/test.yml` | G1-5, G2-4, G2-9 | P4 creates the empty `docs-gates` job with a named anchor comment; each task appends its own step block inside it. |
 | `.markdownlint-cli2.yaml` | G1-5, G1-6 | Same chain, sequential. P4 stubs it. |
 | `.vale.ini` | G2-2, G2-3, G2-4 | Same chain, sequential. |
-| `docs/internal/record/docs-rebuild/README.md` | P, H, H-A, H-B, D, R, G2-7 | P1 creates it with one pre-written unchecked row per artifact. A task ticks its own row rather than appending, so several worktrees do not append to one table. |
-| `docs/internal/docs-register.md` | G2-1, G2-9, G2-10, R2 | R2 runs after every chain merges and writes the standard's section whole. |
+| `docs/internal/record/docs-rebuild/README.md` | P, H, D, R, G2-7 | P1 creates it with one pre-written unchecked row per artifact. A task ticks its own row rather than appending, so several worktrees do not append to one table. |
+| `docs/internal/docs-register.md` | G2-1, G2-9, R2 | R2 runs after every chain merges and writes the standard's section whole. |
 | `docs/STATUS.md` | R2 only, plus the conductor's checkpoint writes on `main` | The conductor never edits STATUS from inside a worktree. |
 | `ROADMAP.md`, `CHANGELOG.md`, `docs/HISTORY.md` | R1 (the ROADMAP row), R2 (the rest) | No contention. |
-| `docs/internal/record/docs-rebuild/*-facts.md` | H, H-A, H-B | Each ledger file is chain-private. `extend-facts.md` is appended by H2 then H-B1 through H-B4 in sequence; `reference-facts.md` by H-B5 through H-B11 in sequence. Positional. |
+| `docs/internal/record/docs-rebuild/*-facts.md` | H | Only `extend-facts.md` exists in this pass, written by H2 alone. The four other ledgers are each written by their own stage, one file per stage, so no two passes ever append to one ledger. |
 | `docs/internal/corpus/manifest.md` | C1 through C5 | One chain, sequential. |
-| `docs/internal/page-types.md`, `docs/internal/page-type-rulings.md` | P2, G1-7, D3 | P2 creates both with their headers and the nine type rows. G1-7 fills the computed columns and D3 writes the first review's rows and its ruling, both after chain G1 merges. Sequential, no contention. |
+| `docs/internal/page-types.md`, `docs/internal/page-type-rulings.md` | P2, G1-7, D3, T2 | P2 creates both with their headers and the nine type rows. G1-7 fills the computed columns, D3 writes the first review's rows and its ruling, and T2 rolls up the questions log and the reviewer misses from T1's baseline. Sequential, no contention. |
 
 Merge order: **P, then C, G1, G2, H in any order, then D, then R.** G1 merges before G2 by default,
 since G1-5 creates the `.markdownlint-cli2.yaml` that G1-6 and the register both cite. **G2-6 and
 G2-8 take a rebase on merged `main` as their step 0**, since both consume a file chain H or chain P
-produced.
+produced. Chain R is sequential: R1, T1, T2, R2, R3.
 
 ---
 
@@ -330,13 +389,15 @@ ground.
   and report the block.** This is the plan's one hard stop.
 - [ ] **Step 2:** record the polish-C state: whether its `Consumers must:` list is in `CHANGELOG.md`
   and whether the ten renames in the polish spec's table resolve to their new names in `src/lib/`.
-  Record the result; do not stop the pass. H1 carries the block for chain H.
+  Record the result; do not stop the pass and do not stop chain H. **State in `preflight.md` that
+  polish-C gates stage one's harvest, not this pass**, and that H2's entries are provisional against
+  it.
 - [ ] **Step 3:** record plan one's three consumed outputs as present or absent, each with the
   command or path that proved it, and name the criterion each absence degrades. Do not stop the
   pass.
 - [ ] **Step 4:** re-derive the published-page set and count; re-resolve every `docs-sweep.md`
   finding number and every `exports-sweep.md` `F` number this plan cites, and write the
-  finding-to-harvest-task map; record the `main` sha; commit.
+  finding-to-track map; record the `main` sha; commit.
 
 **Acceptance criteria:**
 - `preflight.md` states the published-page definition once, as the four track directories plus
@@ -350,9 +411,11 @@ ground.
   command run and its output pasted, since a verification recorded as prose is one `diff-reviewer`
   cannot confirm. A verification recorded as assumed rather than run fails this task.
 - It carries a table mapping every `docs-sweep.md` finding (1 through 30, no prefix) and every
-  `exports-sweep.md` finding (F7 through F10) to the harvest task that consumes it, with **every
-  finding assigned**. Revision 1 left findings 16 and 21 unassigned. A finding polish-B already
-  applied as an edit is marked applied, with its page.
+  `exports-sweep.md` finding (F7 through F10) to **the page it concerns and the track whose stage
+  consumes it**, with **every finding assigned**. Revision 1 left findings 16 and 21 unassigned. A
+  finding polish-B already applied as an edit is marked applied, with its page. The map's unit is the
+  track, not the task, because the harvest tasks live in stage plans that do not exist yet; each
+  stage's plan assigns its track's findings to its own tasks.
 - It records the current value of `package.json`'s `check` script verbatim, so no later task assumes
   a composite, and records the four plan-one outputs P1 does not verify (the output style, the voice
   files, the review agents, and the global `CLAUDE.md`) as plan one's own record's to carry.
@@ -360,8 +423,10 @@ ground.
   tasks tick rather than append.
 - No file outside this repository is modified, and the report says so.
 
-**Notes:** this is the one task that can stop the whole pass, and it stops on one thing only. It is
-cheap and it runs alone.
+**Notes:** this is the one task that can stop the whole pass, and it stops on one thing only, the
+figures substrate. It is cheap and it runs alone. Every other precondition it records rather than
+enforces, because the pass ahead of it builds tools and gates against fixtures, not against the
+published pages.
 
 ### Task P2: The ledger schema and the page-type assignment
 
@@ -384,7 +449,8 @@ names the full path.
 - Produces: `ledger-schema.md`, read by every harvest task, by `check:fact-coverage` (H1), and by
   `check:ledger` (G2-8). Revision 1 left this in chain H and made it the one declared cross-chain
   edge; in P it is not a cross-chain edge at all. `docs/internal/record/docs-rebuild/page-types.md`,
-  hand-off artifact 2, read by G1-1's registry table and by plan three's brief authoring.
+  the enumerated published set with the demonstration page's type filled and every other row's type
+  empty, read by G1-1's registry table and filled one track at a time by each stage's harvest.
   `docs/internal/page-types.md` and `docs/internal/page-type-rulings.md`, the registry lifecycle's
   two records, written by G1-7, D3, and every later review.
 - Consumes: the spec's unit 1 section, its registry table, and its registry lifecycle;
@@ -392,8 +458,11 @@ names the full path.
 
 **Steps:**
 - [ ] **Step 1:** write `ledger-schema.md` with an example row for each shape it fixes.
-- [ ] **Step 2:** enumerate the published set from `preflight.md`'s definition and assign a type to
-  each page from the nine canonical ids, with a one-line reason naming the reader's job.
+- [ ] **Step 2:** enumerate the published set from `preflight.md`'s definition, one row per page
+  with its path and its track. **Assign a type only to `docs/extend/add-a-custom-admin-screen.md`**,
+  the page this pass rebuilds, with a one-line reason naming the reader's job. Leave every other
+  row's `type` and `reason` empty, and write the rule in the file's header: each stage fills its own
+  track's rows at its harvest, against the registry as that stage received it.
 - [ ] **Step 3:** create `docs/internal/page-types.md` with its outcome-record columns and one row
   per type, and `docs/internal/page-type-rulings.md` with its header and no rulings.
 - [ ] **Step 4:** `check:docs`, `check:arm-indexes`; commit.
@@ -407,8 +476,8 @@ names the full path.
   `file:line` plus the preflight sha; for `owner`, the brief file and its line; for `unverified` and
   `retired`, empty), and `note`.
 - **The schema states that re-resolution is by `anchor` plus `claim`, and that `line` is advisory.**
-  A reflow of the page must not invalidate an entry. The schema states the reason: this plan reflows
-  pages and plan three moves every page.
+  A reflow of the page must not invalidate an entry. The schema states the reason: this pass reflows
+  pages and every stage moves every page in its track.
 - **The `tokens` column is what `check:fact-coverage` matches against**, and the schema says so in
   those words, together with the reason: `claim` is a paraphrase written deliberately not to
   resemble the page, so matching extracted page tokens against it would push entries toward
@@ -430,27 +499,34 @@ names the full path.
   its marker comment, and the fixture path its gate replays against. A verbatim fence is the one
   exception to the no-old-prose rule, because a fence is not prose.
 - The anchor map is specified as a per-page table, old heading slug to new heading slug or to
-  `retired`, and named as the artifact plan three repairs inbound links from.
+  `retired`, and named as the artifact each stage repairs inbound links from.
 - The five ledger paths are `docs/internal/record/docs-rebuild/<track>-facts.md` and carry no date.
 
 **Acceptance criteria (page types):**
 - One row per published page: `path`, `track`, `type`, `reason`. The count is stated in the first
   line and equals `preflight.md`'s number.
-- Every `type` is one of the nine canonical ids: `task-guide`, `tutorial-milestone`, `concept`,
-  `architecture-overview`, `reference-entry`, `reference-table`, `index`, `front-door-evaluator`,
-  `front-door-track-index`.
-- **A recovery page, which revision 2 would have typed `condition-entry` or `symptom-row`, is
-  `reference-entry`**, and its `reason` names which of the two section shapes it uses. Neither id
-  appears anywhere in the file.
-- `docs/why-cairn.md` and the root `README.md` are `front-door-evaluator`; `docs/README.md` and the
-  four track `README.md` files are `front-door-track-index`.
-- Every `track` is one of `admin`, `editors`, `extend`, `reference`, `front-door`, and `front-door`
-  is exactly `docs/README.md`, `docs/why-cairn.md`, and the root `README.md`. A track README stays
-  in its own track.
-- A closing section, "types the registry may lack", lists every page whose type has no exemplar in
-  the spec's registry, with the nearest type named. That section is input to R2 and to the registry
-  lifecycle's first review in D3, not a blocker. A page listed there is a review trigger under the
-  lifecycle, which the section states.
+- **Exactly one row carries a filled `type`**, `docs/extend/add-a-custom-admin-screen.md` as
+  `task-guide`. Every other row's `type` and `reason` are empty, and the header states that each
+  stage fills its own track's rows at its harvest. This pass hands forward no type assignment for a
+  track it did not harvest.
+- The header fixes the vocabulary a stage assigns from: every `type` is one of the nine canonical
+  ids, `task-guide`, `tutorial-milestone`, `concept`, `architecture-overview`, `reference-entry`,
+  `reference-table`, `index`, `front-door-evaluator`, `front-door-track-index`. **A recovery page,
+  which revision 2 would have typed `condition-entry` or `symptom-row`, is `reference-entry`**, and
+  its `reason` names which of the two section shapes it uses; neither id appears anywhere in the
+  file. `docs/why-cairn.md` and the root `README.md` are `front-door-evaluator`; `docs/README.md` and
+  the four track `README.md` files are `front-door-track-index`.
+- Every `track` is one of `admin`, `editors`, `extend`, `reference`, `front-door`. **`front-door` is
+  `docs/README.md`, `docs/why-cairn.md`, the root `README.md`, and the four track `README.md`
+  files**, seven pages, because the front-door stage rewrites every index and evaluator page together
+  and no track stage should rewrite its own index in isolation. Each track README's `reason` names
+  the directory it indexes. The header states the per-stage page counts that follow, so the five
+  stages partition the 76 pages with no page in two stages and no page in none.
+- A closing section, "types the registry may lack", is opened with its heading and the demonstration
+  page's finding, if any, and the header states that **each stage appends its own track's findings at
+  its harvest**. That section is input to R2, to the registry lifecycle's first review in D3, and to
+  every stage's tuning checkpoint; it is not a blocker. A page listed there is a review trigger under
+  the lifecycle, which the section states.
 
 **Acceptance criteria (the registry outcome record):**
 - `docs/internal/page-types.md` is a markdown table with one row per type, nine rows, keyed by the
@@ -468,19 +544,22 @@ names the full path.
 - **The `helpful votes` column is marked future work and stays empty.** It starts when cairn.pub
   carries a voting widget, and no task in this plan builds one. The header states that a vote is read
   against the page's type and never pooled across types.
-- The header states the three review triggers and the four rulings from the spec's registry
-  lifecycle, and points at the spec section rather than restating its reasoning. It states the third
-  trigger's shape in full: a type is compared against its own prior record, never against the other
-  types, and the trigger cannot fire below three outline-review failures in the window or below three
-  pages of that type.
+- The header states the **four** review triggers and the four rulings from the spec's registry
+  lifecycle, and points at the spec section rather than restating its reasoning. The four triggers
+  are the close of every stage, the close of every rewrite plan, a page brief that cannot name a
+  type, and a type whose own outline-review failure count rises for two consecutive reviews. It
+  states that last trigger's shape in full: a type is compared against its own prior record, never
+  against the other types, and the trigger cannot fire below three outline-review failures in the
+  window or below three pages of that type.
 - `docs/internal/page-type-rulings.md` carries the header, the column set, and no rulings. Its
   columns are the shape `docs/internal/engine-rulings.md` uses: the ruling, the evidence, and what
   would reopen it. The header states that D3 writes the first row.
 - `npm run check:rulings-format` is green if it reaches the new file, and the task reports whether it
   does.
 
-**Notes:** the type ids here and G1-1's registry table are one interface. G1-1 grades against
-`docs/internal/record/docs-rebuild/page-types.md`, which exists on `main` before G1 branches.
+**Notes:** the type ids here and G1-1's registry table are one interface. G1-1 grades against the
+nine ids in the header of `docs/internal/record/docs-rebuild/page-types.md`, which exists on `main`
+before G1 branches, and never against the per-page rows, which are empty by design.
 
 ### Task P3: The brief schema, the parser, and the packaging negation
 
@@ -591,14 +670,16 @@ names the full path.
 
 ---
 
-## Chain H: the harvest spine (unit 1, run one)
+## Chain H: the harvest spine (unit 1's schema and tools)
 
 Three tasks. Produces the harvest tool, the demonstration page's ledger, and the drafting-dispatch
-fragment.
+fragment. **The four remaining track harvests are each their own stage's first work**, against the
+schema the previous stage's tuning checkpoint amended. This chain exists to make that schema
+survivable.
 
 ### Task H1: `check:fact-coverage`, the harvest-time tool
 
-**Chain:** H. **Depends on:** P4. **Deliverables:** 3. **Chain-stopping:** polish-C.
+**Chain:** H. **Depends on:** P4. **Deliverables:** 3.
 
 **Files:**
 - Create: `scripts/checks/check-fact-coverage.mjs`,
@@ -612,8 +693,8 @@ fragment.
 - Consumes: `ledger-schema.md`'s column names; `measure-prose.mjs`'s splitter.
 
 **Steps:**
-- [ ] **Step 1:** re-verify polish-C has merged. **If it has not, stop the chain and report the
-  block.** Record the branch-point `main` sha beside `preflight.md`'s.
+- [ ] **Step 1:** record the branch-point `main` sha beside `preflight.md`'s. Polish-C does not gate
+  this chain; it gates stage one's harvest, and P1 has recorded its state.
 - [ ] **Step 2:** write the failing unit test against both fixtures; write the extractor and the
   resolver; run green.
 - [ ] **Step 3:** wire the script; commit.
@@ -633,10 +714,14 @@ fragment.
   names the uncovered token and its line.
 - Code fences are excluded from token extraction except where the page has a `kind: block` entry, in
   which case the fence must match that entry's verbatim body byte for byte.
-- A missing ledger file for a requested track is an error, not a pass.
+- A missing ledger file for a requested track is an error, not a pass. **Four of the five ledgers do
+  not exist when this pass ends**, so the error names the stage that produces the missing track's
+  ledger rather than reading as a defect.
 - **The script's header states that it is not a CI gate and why**: it is a completeness instrument
   for a harvest task working the uncovered-token list, and standing it up over 76 pages would push
-  entries toward satisfying the extractor. `grep` proves it appears in no `test.yml` step.
+  entries toward satisfying the extractor. `grep` proves it appears in no `test.yml` step. The header
+  also states that **every stage's harvest chain gates on it over that stage's own track**, which is a
+  scoped run at harvest time and not a standing assertion over the published set.
 - The script asserts the ledger's header row against `ledger-schema.md`'s stated column set and
   fails on a mismatch, so the chain that mutates the schema is the chain that detects the mutation.
 
@@ -645,8 +730,8 @@ fragment.
 **Chain:** H. **Depends on:** H1. **Deliverables:** 2.
 
 **Files:**
-- Create: `docs/internal/record/docs-rebuild/extend-facts.md` (this page's entries only; H-B1
-  through H-B4 append)
+- Create: `docs/internal/record/docs-rebuild/extend-facts.md` (this page's entries only; the extend
+  stage appends the rest of the track)
 - Modify: `docs/internal/record/docs-rebuild/ledger-schema.md` (any schema correction this first
   real harvest forces, noted in the header)
 
@@ -672,10 +757,14 @@ fragment.
 - Every fenced block the repository's gates replay (`check:snippets`, `check:transcripts`,
   `check:symbols`) has a `kind: block` entry carrying the fence verbatim and its fixture path.
 - Any schema change this task forces is recorded in `ledger-schema.md`'s header with its reason, and
-  H-A and H-B use the corrected schema.
+  every stage uses the corrected schema.
 - Every `read`-tier `source` cites `preflight.md`'s sha, not a worktree HEAD.
+- **The ledger's header records that these entries are provisional against polish-C** and against any
+  identity-seam or chassis page edit landing after this sha, and that **the extend stage re-derives
+  them** when it harvests the rest of the track. A re-derived entry keeps its id.
 
-**Notes:** this task exists to break the schema before fourteen more harvest tasks build on it. An
+**Notes:** this task exists to break the schema before any stage harvests a track against it, which
+is why the schema and the demonstration page stay in this pass while the harvest leaves. An
 implementer that finds nothing to correct says so explicitly in its report.
 
 ### Task H3: The drafting-dispatch fragment
@@ -686,9 +775,8 @@ implementer that finds nothing to correct says so explicitly in its report.
 - Create: `docs/internal/record/docs-rebuild/drafting-dispatch.md`
 
 **Interfaces:**
-- Produces: the checked-in prompt block plan three's drafting dispatches inherit verbatim. Hand-off
-  artifact 8. Consumed by D1 in run one, which is why this task sits in run one rather than after
-  the full harvest.
+- Produces: the checked-in prompt block every stage's drafting dispatches inherit verbatim. Consumed
+  by D1 in this pass, which is why it sits here rather than after a track harvest.
 - Consumes: `ledger-schema.md`; the spec's quarantine rule.
 
 **Steps:**
@@ -712,184 +800,7 @@ implementer that finds nothing to correct says so explicitly in its report.
 
 ---
 
-## Chain H-A: the harvest, admin and editors and the front door (run two)
-
-Three tasks, one ledger file each, each bounded well inside the roughly 12,000-word budget. Each
-harvests one page per read, ids continuing monotonically, closing every uncovered token with
-`check:fact-coverage`.
-
-### Task H-A1: Harvest the admin track
-
-**Chain:** H-A. **Depends on:** H2. **Deliverables:** 1.
-
-**Files:** Create `docs/internal/record/docs-rebuild/admin-facts.md`.
-
-**Source:** the nine pages under `docs/admin/`, 11,448 words.
-
-**Acceptance criteria:**
-- `check:fact-coverage -- --track admin` exits 0.
-- Every one of the nine pages has entries, an anchor map, and the six keep classes.
-- `docs/admin/create-your-site.md` and `docs/admin/is-it-working.md` each carry a `kind: block`
-  entry for every transcript block `check:transcripts`' `PAGE_FLOORS` map requires, with the fixture
-  path under `packages/create-cairn-site/test/fixtures/transcripts/` named.
-- Every sweep finding `preflight.md` maps to this track is recorded as the true claim with its
-  proving source, and the old page's claim carries `superseded by <id>` in its `note`. A finding
-  `preflight.md` marks already applied by polish-B is recorded as applied, not re-recorded as
-  superseded.
-- No `unverified` entry lacks a one-line statement of what would prove it.
-
-### Task H-A2: Harvest the editors track
-
-**Chain:** H-A. **Depends on:** H-A1. **Deliverables:** 1.
-
-**Files:** Create `docs/internal/record/docs-rebuild/editors-facts.md`.
-
-**Source:** the eight pages under `docs/editors/`, 6,767 words.
-
-**Acceptance criteria:**
-- `check:fact-coverage -- --track editors` exits 0.
-- The reader-tested editor glosses keep class is populated for this track specifically: every
-  banned-vocabulary substitution the track carries is an entry, since the substitution is the thing
-  a fresh drafter would lose.
-- Every `check:editor-quotes` assertion that keys off a page has a `kind: block` entry.
-- Every one of the eight pages has entries, an anchor map, and the six keep classes.
-
-### Task H-A3: Harvest the front door
-
-**Chain:** H-A. **Depends on:** H-A2. **Deliverables:** 1.
-
-**Files:** Create `docs/internal/record/docs-rebuild/front-door-facts.md`.
-
-**Source:** `docs/README.md`, `docs/why-cairn.md`, and the root `README.md`, 1,965 words.
-
-**Acceptance criteria:**
-- `check:fact-coverage -- --track front-door` exits 0.
-- Every claim about the owner or about cairn's stance carries the `owner` tier and cites a line in
-  `front-door-author-brief.md`, or carries `unverified`. No such claim carries `read` or `gate`.
-- The ratified specimens keep class carries the why-cairn opener verbatim, since the owner approved
-  that sentence.
-- The deliberate omissions keep class carries the vendor-link rule.
-- The rejected draft's editors-emailing-the-owner story is recorded as an `unverified` entry whose
-  note states that it resolves to no line in the author brief. **That entry is the fixture G2-6
-  reproduces.** Revision 1 pointed at G2-5.
-
-**Notes:** the two current front-door pages are the pages whose rejection produced this initiative.
-Harvest what is true, not what reads well.
-
----
-
-## Chain H-B: the harvest, extend and reference (run two)
-
-Eleven tasks, split by source-word budget rather than by halves, so no task exceeds one context
-window. Revision 1's reference harvest asked one dispatch to read 51,403 words, hold the schema,
-hold seven sweep findings, and drive a gate to zero, at "Deliverables: 1". Every group below is
-named page by page, so the partition is reproducible and "every page in this group has entries" is
-checkable; revision 1's "the first half of the track, in path order" fixed no boundary.
-
-Each task appends to its track's ledger in sequence, so the append is positional and no
-reconciliation is needed. Ids continue monotonically with no gap and no reuse. Each task closes
-every uncovered token with `check:fact-coverage -- --track <track>` scoped to its own pages, and
-each track's final task runs it over the whole track.
-
-**Every task in this chain carries the same four criteria**, plus its own below: every page in the
-group has entries, an anchor map, and the six keep classes; no `claim` value appears as a substring
-of its source page; every sweep finding `preflight.md` maps to a page in the group is recorded with
-its proving source and the superseded note; every fenced block a repository gate replays has a
-`kind: block` entry. **Deliverables: 1** each.
-
-| Task | Pages | Words |
-|---|---|---|
-| H-B1 | `add-an-island`, `add-a-second-audience`, `add-cairn-to-a-sveltekit-app`, `announce-on-publish`, `architecture`, `auth-channel-security-model`, `build-a-site-by-hand`, `choose-an-ai-posture`, `configure-rendering`, `content-model` | 12,237 |
-| H-B2 | `data-tiers`, `debug-your-site`, `declare-your-own-concept`, `define-an-adapter-and-schema`, `design-your-site`, `enable-tidy`, `link-content-with-references`, `migrate-existing-content`, `migration-notes` | 10,858 |
-| H-B3 | `organize-your-admin-nav`, `README`, `render-safety`, `restrict-admin-access`, `reuse-content-across-entries`, `rotate-the-github-app-key`, `share-a-draft-preview` | 7,292 |
-| H-B4 | `security-model`, `upgrade-cairn`, `what-the-scaffold-wrote`, `wire-the-delivery-surface` | 7,471 |
-| H-B5 | `admin-grammar-tokens`, `admin-routes`, `admin-toolkit` | 11,062 |
-| H-B6 | `ambient`, `auth-channel`, `auth-crypto`, `auth-store`, `cli-cairn-manifest`, `cli-cairn-media-seed`, `cloudflare` | 8,743 |
-| H-B7 | `cairn-audit`, `islands`, `media`, `README`, `render`, `vite` | 11,081 |
-| H-B8 | `components`, `delivery`, `delivery-data` | 12,624 |
-| H-B9 | `core`, `doctor` | 12,868 |
-| H-B10 | `log-events`, `reproductions`, `supported-toolchain` | 8,035 |
-| H-B11 | `sveltekit` | 20,865 |
-
-H-B1 through H-B4 are `docs/extend/` and append to `extend-facts.md`, which H2 created;
-`add-a-custom-admin-screen.md` is H2's and appears in no group. H-B5 through H-B11 are
-`docs/reference/` and append to `reference-facts.md`, which H-B5 creates. Task dependencies are
-strictly sequential within the chain: H-B1 depends on H2, and each later task on the one before.
-
-**Task-specific criteria:**
-
-- **H-B1:** `docs/extend/architecture.md`'s figure, its alt text, its caption, and its text
-  alternative are recorded as keep-class entries, since the ownership map moves onto this page in
-  plan three. Every recipe page's code fences that `check:snippets` compiles have `kind: block`
-  entries. The Vale suppression keep class carries, for each suppression, the comment that states
-  why it is right.
-- **H-B4:** `check:fact-coverage -- --track extend` exits 0 over the whole track, and every page
-  under `docs/extend/` appears in `page-types.md` and carries at least one entry.
-- **H-B5:** creates `reference-facts.md`. Every signature block `check:reference:signatures` asserts
-  is a `kind: block` entry carrying the signature verbatim.
-- **H-B7:** every export name in `docs/internal/api-surface.md` that this group's pages document
-  resolves to at least one `gate`-tier entry naming `check:reference` or
-  `check:reference:signatures`.
-- **H-B10:** every `## Types` section the `check:reference` change in polish-B's task 5 asserts is
-  recorded as a keep-class deviation or a structural entry, so plan three's in-place edits do not
-  drop it. The `exports-sweep.md` findings F7 through F10 are consumed here.
-- **H-B11:** `docs/reference/sveltekit.md` alone is 20,865 words and is the one group over the
-  12,000-word budget, because it is one file. If the implementer's report says the page exceeded its
-  context, the conductor splits it at its top-level headings and re-dispatches; that escalation is
-  expected and is not a failure. `check:fact-coverage -- --track reference` exits 0 over the whole
-  track at the end of this task, and every page under `docs/reference/` appears in `page-types.md`
-  and carries at least one entry.
-
-**Notes:** reference pages are edited in place in plan three rather than rebuilt, so their ledgers
-serve `check:provenance` and the coverage diff rather than a fresh draft. Harvest them at the same
-granularity anyway; the provenance gate reads the same ledger either way.
-
----
-
-## Task H12: The unverified list and the closing owner sitting
-
-**Conductor task**, run in the main loop after H-A and H-B merge. **Depends on:** H-A3, H-B4,
-H-B11. **Deliverables:** 2. **Owner-blocked** at step 3.
-
-**Files:**
-- Create: `docs/internal/record/docs-rebuild/unverified.md`
-- Modify: the five `*-facts.md` files (tier changes the owner rules; nothing else)
-
-**Interfaces:**
-- Produces: `unverified.md`, one row per `unverified` entry: `id`, `claim`, `page`, `what would
-  prove it`, `recommendation`, `owner ruling`.
-- Consumes: all five ledgers, read through `check:ledger --json` rather than by reading the files.
-
-**Steps:**
-- [ ] **Step 1:** extract every `unverified` row across the five ledgers with
-  `npm run check:ledger -- --json`, grouped by track and ordered by how much a reader would act on
-  the claim's falseness. **Extract with the script, never by reading five ledgers covering 76
-  pages**, which does not fit one context.
-- [ ] **Step 2:** for each, state in one line what would prove it and what the conductor recommends:
-  true, aspirational, or comes out.
-- [ ] **Step 3:** **present the list to the owner as one combined question, batched with D3's reader
-  test and the demonstration read.** Do not guess a ruling.
-- [ ] **Step 4:** apply each ruling: a claim ruled true gets its tier and proving source; a claim
-  ruled aspirational or out keeps `unverified` with the ruling in its note.
-- [ ] **Step 5:** `check:fact-coverage` over every track; `check:ledger`; commit.
-
-**Gate:** `npm run check:ledger && npm run check:fact-coverage && npm run check:docs`.
-
-**Acceptance criteria:**
-- Every `unverified` entry in every ledger appears exactly once in `unverified.md`.
-- Every row carries a "what would prove it" line and the conductor's recommendation before the
-  sitting.
-- After the sitting, every row carries an owner ruling, and every entry the owner ruled true has
-  moved to `gate`, `read`, or `owner` with its proving source recorded.
-- No entry the owner ruled aspirational or out has changed tier.
-- `check:fact-coverage` exits 0 over all five tracks and `check:ledger` exits 0.
-
-**Notes:** this is the front-door failure generalized to 76 pages, and it is the highest-value
-attended sitting in the initiative. Batch it whole; do not ask about entries one at a time.
-
----
-
-## Chain C: the corpus (unit 2, run one)
+## Chain C: the corpus (unit 2)
 
 Four tasks in the chain plus one conductor task at the mid sitting.
 
@@ -933,7 +844,7 @@ read.
   `hinged pairs` column.** The spec-level benchmark recommended dropping it, on the spec's own
   evidence that the definition moved twice and that a splitter change moves a track figure by 17
   points; revision 1 carried the column anyway. The share stays a reported number in reviewer
-  reports, never a recorded manifest figure plan three drafts against.
+  reports, never a recorded manifest figure a stage drafts against.
 - `mode` is one of `reference-only`, `excerpt`, or `structure-only`, and the manifest states what
   each means in a line above the table. **`reference-only` is the default and `excerpt` is the
   exception**, taken only where the license permits redistribution and where a side-by-side read
@@ -1077,8 +988,8 @@ the owner rejects.
 - **The `task-guide` entry D1 drafted against is either ratified or replaced.** If replaced, D2's
   one redraft round re-runs against the ratified entry and the report says so.
 
-**Notes:** D1 and D2 run at the end of run one, before this sitting, so the one `task-guide` entry
-they need carries `provisional <date>` in the `approved` column, written by the conductor at D1's
+**Notes:** D1 and D2 run at the end of invocation one, before this sitting, so the one `task-guide`
+entry they need carries `provisional <date>` in the `approved` column, written by the conductor at D1's
 dispatch and recorded in `preflight.md`. G1-6's brief-presence rule treats `provisional` as
 unapproved for every page except the demonstration page, which is named in a glob override with this
 task as its remover. The spec suggests a time-boxed default-to-accept window, since an unapproved
@@ -1086,7 +997,7 @@ entry blocks work rather than protecting anything. Offer it in the same question
 
 ---
 
-## Chain G1: the structure spine (unit 3a, run one)
+## Chain G1: the structure spine (unit 3a)
 
 Seven tasks. Three fewer templates than revision 2 planned, since the registry is nine types, and
 one new task, G1-7, which reports the registry lifecycle's per-type measurements.
@@ -1102,10 +1013,11 @@ one new task, G1-7, which reports the registry lifecycle's per-type measurements
 
 **Acceptance criteria:**
 - The registry table has nine rows, one per canonical type id, each naming the reader's job it
-  serves and its exemplars. **The type ids match `docs/internal/record/docs-rebuild/page-types.md`
-  exactly, checked by name.** That file is on `main` before this chain branches, so the check is
-  runnable here; revision 1 asked a G1 task to grade against a chain-H file its worktree did not
-  contain.
+  serves and its exemplars. **The type ids match the nine listed in the header of
+  `docs/internal/record/docs-rebuild/page-types.md` exactly, checked by name.** That file is on
+  `main` before this chain branches, so the check is runnable here; revision 1 asked a G1 task to
+  grade against a chain-H file its worktree did not contain. The check is against the header's
+  vocabulary, not against the per-page rows, which are empty until each stage fills its track's.
 - The marker syntax for required-or-optional headings is stated once, in one fixed form, and is
   identical across all nine templates.
 - `index.md` carries the four-section index order and the rule that an index groups its children
@@ -1190,18 +1102,19 @@ one new task, G1-7, which reports the registry lifecycle's per-type measurements
   empty markdown alt and an over-long alt; the real hole is narrower than revision 1 stated: an
   `<img>` carrying **no `alt` attribute at all** matches neither `HTML_IMG_ALT_RE` nor
   `MD_IMAGE_RE`, is never counted in `imageCount`, and is never flagged. MD045 covers exactly that
-  case off the shelf, one chain earlier than G2-10, and G2-10 therefore spends nothing on it.
+  case off the shelf, and the extend stage's `check:figures` task therefore spends nothing on it.
 - `MD044 proper-names` carries cairn's product-name allowlist, and the config's comment states which
   of `MD044` and `.vale.ini`'s `Vocab = Cairn` owns a name, so the two lists are not maintained
   twice.
-- **Reflowing rules are disabled on the harvested published pages** through glob overrides, each
-  naming the plan-three track plan that removes it. The disable's comment states the reason: a
-  reflow moves a page's lines and the ledgers record a `line`.
+- **Reflowing rules are disabled on the published pages** through glob overrides, each naming the
+  stage that removes it. The disable's comment states the reason: a reflow moves a page's lines and
+  the ledgers record a `line`.
 - **In-scope paths at the end of this task are `docs/internal/**` and the demonstration page only.**
-  Every other published path carries a glob override relaxing the new rules, each naming its
-  plan-three track plan as remover. This task clears nothing beyond that scope; plan three's track
-  plans widen it as each track is rebuilt. Revision 1's "clear or scope every existing violation"
-  over 76 pages was the largest unsized item in the plan.
+  Every other published path carries a glob override relaxing the new rules, each naming **the stage
+  that removes it**, by track name rather than by a plan filename, since no stage plan exists yet.
+  This task clears nothing beyond that scope; each stage widens it as its track is rebuilt.
+  Revision 1's "clear or scope every existing violation" over 76 pages was the largest unsized item
+  in the plan.
 - `check:docs-standard-globs` fails an override with no named remover, and both fixtures run in the
   unit test. This is the named-remover discipline `docs-standard-scope.json` carried, on the file
   that now holds the scoping.
@@ -1269,6 +1182,12 @@ one new task, G1-7, which reports the registry lifecycle's per-type measurements
   `CAIRN001 page-anatomy` finding by the page's type from
   `docs/internal/record/docs-rebuild/page-types.md`, and prints one line per type: the pages
   assigned and the outline-review failure count.
+- **A page whose `type` is empty is grouped as `untyped` and counted separately**, never assigned to
+  a nearest type and never dropped. At this pass exactly one page is typed, so the report is almost
+  entirely `untyped`, and the script's header says so plainly with the reason: each stage types its
+  own track at its harvest, and each stage's tuning checkpoint re-runs this report as the typed share
+  grows. A report that hid the untyped share would read as a measurement of a registry nobody has
+  populated.
 - **It reports, per type, the failure count and the page count, and nothing that ranks one type
   against another.** No median, no registry-wide rate, no ordering. The spec's registry lifecycle
   compares a type against its own prior record, because a threshold set at the registry median
@@ -1293,9 +1212,11 @@ one new task, G1-7, which reports the registry lifecycle's per-type measurements
 
 ## Chain G2: the prose, provenance, and receipt spine (unit 3b)
 
-Ten tasks. G2-1 through G2-9 run in run one; **G2-10 is run two and is last in the chain**, so an
-owner block on the figures substrate defers nothing. Revision 1 placed the figures task seventh of
-eight, which deferred the CI wiring and transitively stopped chain D.
+Nine tasks. **The figures task is not here.** Revision 2 carried `check:figures`' seven assertions
+as G2-10; it moves to the extend stage, the first stage with a figure to grade, per the spec's staged
+Implementation section. If the seven assertions land on `main` before this pass's second invocation
+for any other reason, this pass takes them as a tenth G2 task and the extend stage drops the item;
+the conductor records which happened in `preflight.md`.
 
 ### Task G2-1: The register's prose standard section
 
@@ -1383,8 +1304,8 @@ findings.
   `MD001`, already carried by G1-5. No cairn rule reimplements either, and a `grep` for a
   level-count check across `.vale/styles/Cairn/` and `.markdownlint/rules/` returns nothing.
 - The clearing edits change heading capitalization only. Every changed slug is listed in the task
-  report so H-A and H-B harvest against the post-clearing state. This task runs in run one, before
-  H-A and H-B branch, which is why the ordering holds.
+  report, and each stage harvests against the post-clearing state, since every stage branches after
+  this pass merges.
 
 ### Task G2-4: The length and paragraph rules, and the warning report
 
@@ -1516,7 +1437,7 @@ findings.
 - **`quality-checklist.md` commits the spec's twelve rows**, each naming the gate or the person that
   answers it, and its header states that every page walks it before its receipt is written.
   `brief-schema.md` names its path. The spec makes the checklist normative and revision 1 committed
-  it nowhere, so plan three's reviewers would have cited a document that did not exist.
+  it nowhere, so a stage's reviewers would have cited a document that did not exist.
 - `receipts.md` and the checklist are under `docs/internal/`, so neither ships;
   `npm run check:package` proves it.
 - Both fixtures run in the unit test.
@@ -1535,7 +1456,8 @@ findings.
 
 **Interfaces:**
 - Produces: `npm run check:ledger [-- --json]`. The `--json` mode emits every entry as structured
-  data, which is what H12 extracts the unverified rows with rather than reading five ledgers.
+  data, which is what each stage's unverified sitting extracts its rows with rather than reading a
+  ledger end to end.
 - Consumes: `docs/internal/record/docs-rebuild/ledger-schema.md` (P2), on `main` before this chain
   branches. Revision 1 made this the one declared cross-chain edge and told the task to "wait",
   which is not a thing an implementer in a sequential chain can do.
@@ -1552,8 +1474,10 @@ findings.
 - The validator reads its column names from `ledger-schema.md`'s stated set and fails when a
   ledger's header row does not match, so the schema and the gate cannot drift apart.
 - The script tolerates a missing ledger file with a clear message naming which track has not been
-  harvested yet, so it is green in run one before H-A and H-B exist.
-- `--json` emits every entry with its tier, which H12's extraction depends on.
+  harvested yet. **Four tracks are unharvested when this pass ends and each is harvested a stage
+  later**, so this tolerance is permanent behavior rather than a temporary accommodation, and the
+  script's header says so.
+- `--json` emits every entry with its tier, which every stage's unverified sitting depends on.
 - All three fixtures run in the unit test.
 
 ### Task G2-9: The G2 CI wiring and the weekly link check
@@ -1584,39 +1508,13 @@ findings.
 - No `check:cadence` script exists; a `grep` for `check:cadence` in `package.json` returns nothing.
 - The register's gate estate section lists every gate this plan adds, its runner, and its scope.
 
-### Task G2-10: `check:figures`, the seven assertions
-
-**Chain:** G2, **run two**, last in the chain. **Depends on:** G2-9. **Deliverables:** 3.
-
-**Files:**
-- Modify: `scripts/figures/` (the seven assertions), `docs/internal/docs-register.md` (the figure
-  section), `package.json` if the figure script's flags change
-- Create: `scripts/checks/fixtures/docs-standard/figures/` (one fixture per assertion, pass and
-  fail), `scripts/checks/check-figures.test.ts`
-
-**Acceptance criteria:**
-- `check:figures` runs seven mechanical assertions, each named in the script's header and each with a
-  fixture that fires and a fixture that passes: every figure has a committed source; every figure has
-  a committed generating script; the rendered output is not stale against its source; every figure
-  has alt text; every figure has a caption paragraph; every figure has a text alternative reachable
-  from the page; and no third figure tool is used beyond mermaid in the page and hand-authored SVG.
-- **The `check:visuals` alt hole is not touched here.** MD045 closed it in G1-5, one chain earlier.
-- The register gains the two figure tests as a person's checks beside the seven mechanical
-  assertions: the test for a figure that should not be there (remove it; if the text still makes the
-  point without a new sentence, it was decoration) and the test for a figure that is missing (a
-  paragraph carrying containment words, direction words, or a branch is the text alternative of a
-  diagram nobody drew). The register also states the two-lane routing rule, mermaid in the page by
-  default and hand-authored SVG as the exception, with no third tool.
-- The re-verification of spec decisions 5, 5a, and 6 against merged `main` is recorded in the task's
-  report, and any decision that changed is recorded in R2.
-- Every fixture runs in the unit test.
-
 ---
 
 ## Chain D: the demonstration page (unit 4)
 
 Three tasks, all **conductor tasks** in the main loop, because each dispatches a subagent or stops
-for the owner and `cairn-implementer` has no `Agent` tool. D1 and D2 close run one; D3 is run two.
+for the owner and `cairn-implementer` has no `Agent` tool. D1 and D2 close invocation one; D3 opens
+invocation two.
 
 ### Task D1: The brief, the outline, and the quarantined draft
 
@@ -1681,8 +1579,10 @@ for the owner and `cairn-implementer` has no `Agent` tool. D1 and D2 close run o
 npm run check:vale && npm run lint:markdown && npm run check:provenance && npm run check:ledger`.
 
 **Acceptance criteria:**
-- Every named gate exits 0 on the page. **`check:figures` is not among them**, since G2-10 is run
-  two; D3 re-runs the page's gates after it merges.
+- Every named gate exits 0 on the page. **`check:figures`' seven assertions are not among them**,
+  since that work is the extend stage's; the page's current `check:figures` run is whatever the
+  committed figures substrate already asserts, and **the extend stage re-runs this page's full gate
+  set after the seven assertions land**, which its plan carries as a criterion.
 - `check:provenance` passes with every sentence classified and every cited id resolving; no sentence
   carries `no-claim` while stating a checkable proposition, which the reviewer's report addresses
   explicitly.
@@ -1699,32 +1599,38 @@ npm run check:vale && npm run lint:markdown && npm run check:provenance && npm r
 
 ### Task D3: The reader test, the receipt, the measured cost, and the first registry review
 
-**Conductor task**, run two. **Depends on:** D2, G2-10, H12. **Deliverables:** 4.
-**Owner-blocked**: the reader test and the demonstration read are part of the closing sitting.
+**Conductor task**, invocation two. **Depends on:** D2, C5. **Deliverables:** 4.
+**Owner-blocked**: the reader test, the demonstration read, and the page's unverified rulings are the
+closing sitting.
 
 **Files:**
 - Modify: `docs/internal/record/docs-rebuild/receipts.md` (the first row),
   `docs/internal/page-types.md` (the rows the review fills),
-  `docs/internal/page-type-rulings.md` (the first ruling)
+  `docs/internal/page-type-rulings.md` (the first ruling),
+  `docs/internal/record/docs-rebuild/extend-facts.md` (the tier changes the owner rules on this
+  page's own `unverified` entries)
 - Create: `docs/internal/record/docs-rebuild/demonstration-cost.md`
 
 The registry review is one deliverable, counted as the artifact it is: the review with its outcome
 rows and its ruling. The task stays at four.
 
 **Steps:**
-- [ ] **Step 1:** re-run the page's full gate set now that `check:figures` has merged.
+- [ ] **Step 1:** re-run the page's full gate set on merged `main`.
 - [ ] **Step 2:** run the reader test: someone who is not the author does the task from the page, one
   sitting. Record every place the page was unclear.
 - [ ] **Step 3:** write the receipt row and the comparison artifact, with the conductor supplying the
   token spend per step, which an implementer cannot observe.
 - [ ] **Step 4:** run the registry lifecycle's first review against the measured template cost, and
   record its ruling.
-- [ ] **Step 5:** present the rebuilt page beside the original to the owner, batched with H12's
-  rulings. **The owner's read and approval to proceed is the plan's closing gate, not this task's
-  criterion.**
+- [ ] **Step 5:** present the rebuilt page beside the original to the owner, batched with the
+  demonstration page's own `unverified` entries, each carrying what would prove it and the
+  conductor's recommendation of true, aspirational, or comes out. Apply each ruling: a claim ruled
+  true gets its tier and proving source, and a claim ruled aspirational or out keeps `unverified`
+  with the ruling in its note. **The owner's read and approval to proceed is the pass's closing gate,
+  not this task's criterion.**
 
 **Gate:** `npm run check:prose-read && npm run check && npx vitest run scripts/checks &&
-npm run check:figures`.
+npm run check:ledger && npm run check:fact-coverage -- --track extend`.
 
 **Acceptance criteria:**
 - `receipts.md` carries one row for `docs/extend/add-a-custom-admin-screen.md` with every column
@@ -1733,10 +1639,18 @@ npm run check:figures`.
 - `demonstration-cost.md` carries the rebuilt page beside the original, the token spend end to end
   broken down by step (brief, outline review, draft, gates, fresh reviewer, coverage diff, reader
   test), and the attended sitting count.
-- The cost document states the per-page figure plan three multiplies, and names the pages it does not
-  apply to: the reference entries, which are edited in place.
+- The cost document states the per-page figure a stage multiplies to set its ceiling, and names the
+  pages it does not apply to: the reference entries, which are edited in place. **It states plainly
+  that this is one page of one type on one track**, so stage one sizes from it and stage two sizes
+  from stage one's measured cost instead.
 - The reader test's result is in the receipt row and its findings are listed in the cost document,
-  whether or not they were folded.
+  whether or not they were folded. **This is one of the nine reader-test sittings decision 4 funds**,
+  and the cost document records that eight remain, allocated across the five stages per "Stages that
+  follow".
+- **Every `unverified` entry on this page carries an owner ruling**, and every entry ruled true has
+  moved to `gate`, `read`, or `owner` with its proving source recorded. No entry ruled aspirational
+  or out has changed tier. `check:ledger` and `check:fact-coverage -- --track extend` exit 0
+  afterwards.
 - **The registry lifecycle's first review runs here, and it is a review rather than an owner
   question.** Decision 2 is settled: the registry is nine types. The review's input is what a
   template cost on the demonstration page, and it fills the demonstration page's type row in
@@ -1748,18 +1662,23 @@ npm run check:figures`.
   review that changes nothing still writes a ruling saying so, with the cost figure as its evidence.
   Neither of the two count-changing rulings can fire on one page, so the ruling is either "no change"
   or a template revision on a section the findings cluster on, and the task says which.
-- The review records the two bounds it could not test on one page: the third trigger needs three
-  failures and three pages of a type, so no type is flagged here, and the row is a baseline for the
-  next review rather than a comparison. R2 records the outcome.
+- The review records the two bounds it could not test on one page: the failure-count trigger needs
+  three failures and three pages of a type, so no type is flagged here, and the row is a baseline for
+  the next review rather than a comparison. T1, T2, and R2 record the outcome.
 - The document does not assert the owner's approval. It states that the read is pending or records
   the date it happened.
 
 ---
 
-## Chain R: records and the hand-off (run two)
+## Chain R: the tuning checkpoint, the records, and the hand-off
 
-Three tasks, last. **Gate:** `npm run check:docs && npm run check:vale &&
+Five tasks, last, in order: R1, T1, T2, R2, R3. **Gate:** `npm run check:docs && npm run check:vale &&
 npm run check:rulings-format && npm run check:arm-indexes`.
+
+**T1 and T2 sit between R1 and R2 deliberately.** T1 records the baseline every stage measures
+against, and T2 amends the ledger schema, the brief schema, the templates, and the gate thresholds
+against it. R2 and R3 then record and hand forward what T2 amended. A checkpoint run after the
+hand-off would hand stage one the unamended tooling.
 
 ### Task R1: The roadmap absorption
 
@@ -1778,13 +1697,16 @@ initiative and lands as a dated amendment section in
 Revision 1 had the last task of this plan writing instructions to passes that, by its own stated
 ordering (A, B, D, C, then this plan), had already finished; polish-B would have folded its thirty
 prose findings into the pages as edits and polish-D would have authored the front door, which is
-exactly what the amendment exists to prevent, and which would have falsified H-A3's premise as well.
+exactly what the amendment exists to prevent, and which would have falsified the front-door stage's
+premise as well.
 
 **Acceptance criteria:**
-- `ROADMAP.md`'s docs claims-verification row is marked absorbed, names the five ledger files as
-  where the sweep's output lives, and states plainly that **this harvest absorbs the
-  extract-and-verify half and plan three absorbs the fold half**, since "absorbed by this harvest"
-  overstates what merges here.
+- `ROADMAP.md`'s docs claims-verification row is marked absorbed, names the five ledger paths as
+  where the sweep's output lives, and states plainly that **this pass builds the ledger schema and
+  the tools and proves them on one page, each stage extracts and verifies its own track, and each
+  stage's rewrite folds the corrections**, since "absorbed by this harvest" overstates what merges
+  here. The row names the stage order, so a reader can tell when the sweep is complete: it is
+  complete when the fifth stage merges, not when this pass does.
 - The row **records the overrule of its ratified after-`beta.1` sequencing, and the recorded reason
   answers the row's own stated rationale.** That rationale is that the audit runs after `beta.1` "so
   its inputs exist": stranger issues, the friction log, and Topo's docs-effectiveness signal. The
@@ -1797,17 +1719,115 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
 - The row's status as a blocking gate before `1.0.0` is restated, not dropped.
 - The overrule is filed as a row in `docs/internal/engine-rulings.md`, which is where this repository
   records a ruling that reverses a ratified position, and `check:rulings-format` is green.
-- **`ROADMAP.md` carries the registry lifecycle's rewrite-close trigger as a standing item**, in the
-  tier where it bites, which is the tier plan three's track plans sit in. The item states the
-  trigger, not the action: the close of every rewrite plan runs a registry review, whose record is
-  `docs/internal/page-types.md` and whose rulings go to `docs/internal/page-type-rulings.md`. It
-  names the other two triggers and points at the spec's registry lifecycle for their bounds. It is a
-  standing item, so it is not marked done by this pass.
+- **`ROADMAP.md` carries the registry lifecycle's stage-close trigger as a standing item**, in the
+  tier where it bites, which is the tier the five stages sit in. The item states the trigger, not the
+  action: **the close of every stage runs a tuning checkpoint, whose registry review is its first
+  part**, recorded in `docs/internal/page-types.md` with its rulings in
+  `docs/internal/page-type-rulings.md` and its one-page record at
+  `docs/internal/record/docs-rebuild/stage-<n>-tuning.md`. It names the other three triggers and
+  points at the spec's registry lifecycle for their bounds and at the spec's Implementation section
+  for the checkpoint's definition. It is a standing item, so it is not marked done by this pass.
+- **`ROADMAP.md` carries the five stages as the initiative's live work**, in order, each with the
+  single line naming what makes that track hard to write well, and states that **a stage's plan is
+  authored only after the previous stage's tuning checkpoint**. No stage carries a ceiling in the
+  roadmap, since a ceiling for an unauthored plan is a phantom.
 - No item this plan shipped is still listed in a live ROADMAP tier.
+
+### Task T1: The baseline record
+
+**Conductor task.** **Chain:** R. **Depends on:** R1. **Deliverables:** 1.
+
+**Files:** Create `docs/internal/record/docs-rebuild/baseline.md`. Modify
+`docs/internal/record/docs-rebuild/README.md` (tick its row).
+
+**Interfaces:**
+- Produces: the baseline every stage measures its pages against, and the instantiated measure set and
+  lever map the spec's "Gauging and iterating" subsection defines.
+- Consumes: `demonstration-cost.md`, `demonstration-review.md`, the coverage-diff report, and D3's
+  reader-test findings. The conductor supplies the token and sitting figures, which an implementer
+  cannot observe.
+
+**Steps:**
+- [ ] **Step 1:** fill the per-page measure set for `docs/extend/add-a-custom-admin-screen.md` from
+  the artifacts above, one row.
+- [ ] **Step 2:** copy the lever map from the spec's subsection into the file as the standing table,
+  and record which lever, if any, this one page's numbers would have pulled.
+- [ ] **Step 3:** `check:docs`, `check:arm-indexes`; commit.
+
+**Acceptance criteria:**
+- The file carries one row for the demonstration page with **every measure the spec's subsection
+  names**: loops to first accept, reviewer misses by cause (template, subject, register),
+  coverage-diff misses against the ledger, questions anyone had to ask about the page, the
+  reader-test outcome, and the tokens and owner sittings the page cost.
+- Every number is sourced to the artifact it came from, named by path. A number that could not be
+  measured is recorded as not measured with the reason, never estimated.
+- The lever map is present in full, and the file states that a stage record confirms or refutes the
+  prediction attached to each pull.
+- The file states the stop rules verbatim from the spec: **the tooling counts as tuned when a stage's
+  pages accept in one loop at or under this baseline's miss rate**, and **a stage is re-run rather
+  than tuned when its coverage diff shows the harvest lost facts**, the stated threshold being any
+  `unverified` claim that reached a published page.
+- It states plainly that a baseline of one page of one type on one track is thin, and that stage one
+  replaces it as the comparison for stage two.
+
+**Notes:** this is the pass's only measurement artifact, and every stage's record is read against it.
+Write the numbers even where they look bad; the trend is the signal.
+
+### Task T2: The tuning checkpoint
+
+**Conductor task.** **Chain:** R. **Depends on:** T1. **Deliverables:** 4.
+
+**Files:** Create `docs/internal/record/docs-rebuild/stage-0-tuning.md`. Modify
+`docs/internal/record/docs-rebuild/ledger-schema.md`, `docs/internal/templates/brief-schema.md` and
+`scripts/checks/brief.schema.json`, `docs/internal/templates/` (the templates the evidence revises),
+`docs/internal/page-types.md`, `docs/internal/page-type-rulings.md`, and `.vale.ini` or
+`.markdownlint-cli2.yaml` where a threshold changes.
+
+**Interfaces:**
+- Produces: the amended tooling stage one is authored against, and the record that says what changed
+  and why.
+- Consumes: `baseline.md`; the spec's "The tuning checkpoint" and "Gauging and iterating"
+  subsections, which are the definition this task executes.
+
+**Steps:**
+- [ ] **Step 1:** run the checkpoint's seven parts in the order the spec states them.
+- [ ] **Step 2:** write `stage-0-tuning.md` in the stage-record format, with the per-page table
+  beside the baseline, the lever pulled with its reason, and the prediction stage one's record
+  confirms or refutes.
+- [ ] **Step 3:** re-run the `check:fact-coverage` calibration over the demonstration page and record
+  whether the token classes held.
+- [ ] **Step 4:** run the full gate; commit.
+
+**Gate:** `npm run check && npx vitest run scripts/checks && npm run check:docs &&
+npm run check:vale && npm run lint:markdown && npm run check:ledger && npm run check:provenance &&
+npm run check:rulings-format`.
+
+**Acceptance criteria:**
+- **Every one of the checkpoint's seven parts is addressed in the record**, and a part with nothing
+  to change says so with its evidence, never by omission.
+- Each schema amendment carries a **migration note** stating what earlier ledgers or briefs now lack
+  and whether they are backfilled or left as they are. The only earlier ledger is
+  `extend-facts.md`, so the note says which of its entries need re-derivation at the extend stage.
+- Each revised template names the finding that revised it, and each unrevised template is recorded as
+  unrevised with the count that left it alone.
+- Each threshold or Vale rule change carries the count that justified it: a rule that fired only on
+  true findings may tighten, and a rule whose findings were overridden every time loosens or comes
+  out.
+- The record is named `stage-0-tuning.md`, since this pass is the stage-zero baseline in the same
+  series the five stages continue, and its header says so.
+- Every gate above exits 0 after the amendments, so the amended tooling is proved before stage one
+  inherits it.
+- The record carries the prediction explicitly, in the form "if this pull was right, stage one's
+  record shows X".
+
+**Notes:** the deliverable count is four because two schemas, the templates, and the record are four
+artifacts; the registry review's rows are D3's deliverable, not this task's. If the evidence would
+pull more than four levers, the conductor pulls the two with the strongest counts and records the
+rest as candidates for stage one's checkpoint.
 
 ### Task R2: STATUS, HISTORY, ROADMAP, CHANGELOG, the friction log, and the register
 
-**Chain:** R. **Depends on:** R1. **Deliverables:** 4.
+**Chain:** R. **Depends on:** T2. **Deliverables:** 4.
 
 **Files:** Modify `docs/STATUS.md`, `docs/HISTORY.md`, `ROADMAP.md`, `CHANGELOG.md`,
 `docs/internal/docs-friction-log.md`, `docs/internal/docs-register.md`.
@@ -1820,9 +1840,15 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
   the spec's five-script table is superseded by this shape with its reason.
 - It records that the registry is nine types, that decision 2 settled it on 2026-09-08, and that the
   registry is maintained on outcome from here. It names the two lifecycle records,
-  `docs/internal/page-types.md` and `docs/internal/page-type-rulings.md`, and the three review
+  `docs/internal/page-types.md` and `docs/internal/page-type-rulings.md`, and the **four** review
   triggers, and it records D3's first review and its ruling.
-- `ROADMAP.md` carries the docs standard as an Active initiative with plan three named.
+- **The register records the measurement system in one paragraph**: the baseline at
+  `docs/internal/record/docs-rebuild/baseline.md`, the per-stage records at
+  `stage-<n>-tuning.md`, and the rule that the registry's per-type numbers are drawn from those stage
+  records rather than counted a second time. It points at the spec's "Gauging and iterating"
+  subsection for the measure set, the lever map, and the stop rules, and restates none of them.
+- `ROADMAP.md` carries the docs standard as an Active initiative with **the five stages named in
+  order**, and states that each stage's plan is authored after the previous stage's checkpoint.
 - `CHANGELOG.md` gains one entry under `## Unreleased` with no `Consumers must:` line for the
   engine's public surface, **and one line noting that `docs/extend/add-a-custom-admin-screen.md` was
   rebuilt with a changed anchor set**, since that page ships in the tarball and cairn.pub renders it
@@ -1831,11 +1857,13 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
 - `docs/internal/docs-friction-log.md` is triaged for entries this standard resolves: each is fixed
   and deleted, promoted to the ROADMAP tier where it bites, or deleted as no longer true. No entry is
   left with an unchanged status.
-- `docs/STATUS.md` is present tense only, at most 60 lines, and **its next action is authoring plan
-  three**. Revision 1 said plan two, which is this plan. Anything historical this plan produced is in
+- `docs/STATUS.md` is present tense only, at most 60 lines, and **its next action is authoring stage
+  one, the reference rewrite**, against the tooling T2 amended. It names the four remaining stages in
+  order and carries no ceiling for any of them. Anything historical this pass produced is in
   `docs/HISTORY.md`.
-- `docs/HISTORY.md` gains one entry naming what landed, what the gate caught, and what plan three
-  would be wrong to rediscover from scratch.
+- `docs/HISTORY.md` gains one entry naming what landed, what the gate caught, and what a stage would
+  be wrong to rediscover from scratch, **including the baseline's numbers**, which are the thing a
+  later stage most needs and would otherwise re-measure.
 
 ### Task R3: The hand-off manifest
 
@@ -1845,24 +1873,37 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
 `docs/internal/record/docs-rebuild/README.md` (tick the last rows).
 
 **Acceptance criteria:**
-- `hand-off.md` lists all nine artifacts with a verified path each:
-  1. The five ledgers at `docs/internal/record/docs-rebuild/<track>-facts.md`.
-  2. The page-type assignment at `docs/internal/record/docs-rebuild/page-types.md`, covering every
-     published page.
-  3. `docs/internal/corpus/` and its manifest, approval column filled, every one of the nine types
+- `hand-off.md` lists the artifacts stage one is authored against, with a verified path each. **The
+  five ledgers and the page-type assignment for un-harvested tracks are not on this list**, because
+  this pass does not produce them; each stage harvests its own track. The list is:
+  1. `docs/internal/corpus/` and its manifest, approval column filled, every one of the nine types
      covered.
-  4. `docs/internal/templates/`, nine templates, each heading marked required or optional, plus the
-     registry's two lifecycle records with the first review's rows and ruling in them.
-  5. The brief schema, `scripts/checks/brief.mjs`, and one worked brief.
-  6. The gate estate: `markdownlint-cli2` with its cairn rules, the Vale rule set, and the four
-     scripts, wired into `package.json` and CI, **each with its scope and the named plan-three track
-     plan that removes each override**. `check:fact-coverage` is listed with its scope recorded as
-     "harvest tool, not wired to CI", so the hand-off does not assert a scope it does not have.
-  7. The Vale rules with their golden fixtures, verified on 3.15.1 in CI.
-  8. The drafting-dispatch fragment.
-  9. The demonstration page's measured cost.
-- Each of the nine is verified by a command whose output the task pastes, not asserted.
-- **The cairn.pub consultation is recorded as owed now, not at plan three's first track merge.** This
+  2. `docs/internal/templates/`, nine templates, each heading marked required or optional, **as T2
+     amended them**, plus the registry's two lifecycle records with the first review's rows and
+     ruling in them.
+  3. The brief schema, `scripts/checks/brief.mjs`, and one worked brief, **as T2 amended them**.
+  4. The ledger schema at `docs/internal/record/docs-rebuild/ledger-schema.md`, **as T2 amended it**,
+     with its migration note, plus `check:fact-coverage` and the extend ledger's one page as the
+     worked example a stage's harvest copies.
+  5. The gate estate: `markdownlint-cli2` with its cairn rules, the Vale rule set, and the four
+     scripts, wired into `package.json` and CI, **each with its scope and the named stage that
+     removes each override**. `check:fact-coverage` is listed with its scope recorded as "harvest
+     tool, not wired to CI, run per track inside each stage's harvest gate", so the hand-off does not
+     assert a scope it does not have.
+  6. The Vale rules with their golden fixtures, verified on 3.15.1 in CI.
+  7. The drafting-dispatch fragment.
+  8. The demonstration page's measured cost at
+     `docs/internal/record/docs-rebuild/demonstration-cost.md`.
+  9. The baseline at `docs/internal/record/docs-rebuild/baseline.md` and the tuning record at
+     `docs/internal/record/docs-rebuild/stage-0-tuning.md`, which carry the measure set, the lever
+     map, the stop rules, and the prediction stage one's record confirms or refutes.
+- Each item is verified by a command whose output the task pastes, not asserted.
+- **The file states what each stage hands the next**, in one line: its track's ledger, its tuning
+  record, and the amended ledger and brief schemas. A stage's plan is authored against those three
+  and against this hand-off, never against this hand-off alone.
+- **The page-type assignment is listed as partial**, with the count of assigned and unassigned rows,
+  so no stage plan reads it as complete.
+- **The cairn.pub consultation is recorded as owed now, not at the first stage's merge.** This
   pass rebuilds a published page whose anchor set changed, and cairn.pub renders the doc arms from
   its installed engine version, so a rename or removal breaks its navigation at the next pin bump.
 
@@ -1877,29 +1918,91 @@ plus the repository's own `check:docs`, `check:reference`, `check:reference:sign
 `check:snippets`, `check:transcripts`, `check:symbols`, `check:editor-quotes`, `check:arm-indexes`,
 `check:visuals`, `check:figures`, `check:package`, `check:readiness`, `npm run check`,
 `npx vitest run scripts/checks`, and the full `npm test`. Both budgets scored: tokens against the
-**6.5M** ceiling, and attended time as planning misses plus execution sittings, the two owner
-sittings counting as two. STATUS, HISTORY, ROADMAP, CHANGELOG per R2. The post-mortem lives here
-beside the plan. The `cairn-*` memories refreshed. Push, one pull request per chain, merge on green
-CI. Plan three is authored only after the owner's demonstration read.
+**4.75M** ceiling, and attended time as planning misses plus execution sittings, the two owner
+sittings counting as two. **The scored numbers go into `baseline.md` as well as into the
+post-mortem**, since the initiative's measurement system reads them. STATUS, HISTORY, ROADMAP,
+CHANGELOG per R2. The post-mortem lives here beside the plan. The `cairn-*` memories refreshed. Push,
+one pull request per chain, merge on green CI. **Stage one's plan is authored only after the owner's
+demonstration read and T2's checkpoint**, against the tooling T2 amended.
 
 ## What this pass hands forward
 
-- **Plan three, the rewrite** (unit 5): four to five plan documents, one per track plus the front
-  door, each with its own worktree, its own pull request, and its own ceiling, **re-sized from
-  `demonstration-cost.md` rather than from the spec's estimate**. `docs/why-cairn.md` is its first
-  page. Reference entries are edited in place, the one exception to the rebuild rule, and each
-  reference brief records the exception with its reason.
-- **The glob overrides**, each naming the plan-three track plan that removes it. Plan three's closing
-  criterion is that `.markdownlint-cli2.yaml` and `.vale.ini` carry no relaxation override for a
-  published path.
+- **The five stages** (unit 5 plus unit 1's four remaining track harvests), listed below.
+- **The glob overrides**, each naming the stage that removes it. The fifth stage's closing criterion
+  is that `.markdownlint-cli2.yaml` and `.vale.ini` carry no relaxation override for a published
+  path.
 - **The cairn.pub consultation**, owed now (R3).
-- **The registry gaps** P2 recorded under "types the registry may lack": a glossary, a migration
-  guide, a release-notes page, or an FAQ has no type. The escape is a brief-recorded deviation naming
-  the nearest type, pending an owner-approved registry addition with its exemplar. Each such brief is
-  a review trigger under the registry lifecycle, and plan three's track plans each close with a
-  registry review.
+- **The registry gaps** P2 opened under "types the registry may lack": a glossary, a migration
+  guide, a release-notes page, or an FAQ may have no type. The escape is a brief-recorded deviation
+  naming the nearest type, pending an owner-approved registry addition with its exemplar. Each such
+  brief is a review trigger under the registry lifecycle, and every stage closes with a registry
+  review inside its tuning checkpoint.
 - **Plan one's own follow-ups**, if the Claude infrastructure pass left any.
 - **Release:** the window holds. This pass does not bump or publish.
+
+---
+
+## Stages that follow
+
+Five stages, each **one pass** with its own plan document, worktree, pull request, and ceiling.
+**A stage's plan is authored only after the previous stage's tuning checkpoint**, against the tooling
+that checkpoint amended. The order is by **difficulty of writing the track well**, easiest first,
+because the system is tuned as it is used and a wrong ledger field or a bad template should surface on
+the track that can absorb it.
+
+| Stage | Track | Pages | Why it sits here |
+|---|---|---|---|
+| 1 | reference | 24 (`docs/reference/` less its `README.md`) | Easiest to write: the shape is fixed by `check:reference` and `check:reference:signatures`, the prose is a sentence or two per entry, and the pages are edited in place, so the stage proves the harvest and the brief on real pages with the writing risk at its lowest. |
+| 2 | extend | 30 (`docs/extend/` less its `README.md`) | The developer register the drafter is most fluent in, and the facts are heavily gated by `check:snippets` and `check:reference:signatures`, so a claim that drifts fails a test rather than reaching a reader. |
+| 3 | admin | 8 (`docs/admin/` less its `README.md`) | An operator reader sits between the developer and the editor, so the register shifts without leaving familiar ground, and the transcripts are fixture-gated by `check:transcripts`. |
+| 4 | editors | 7 (`docs/editors/` less its `README.md`) | Hardest to write: a non-technical reader, the Microsoft register, and plain-language demands the gates see only partly, so the reader test is the real judge rather than a check. |
+| 5 | front door | 7 (`docs/README.md`, `docs/why-cairn.md`, the root `README.md`, and the four track `README.md` files) | Last: this is the page set whose rejection produced the initiative, under the strictest register ruling, with every claim traced to the owner brief. It meets the system after four stages of tuning. |
+
+The five partition the 76 published pages with no page in two stages and none in none. `docs/extend/add-a-custom-admin-screen.md` is rebuilt in this pass and re-derived at stage 2.
+
+**Every stage runs the same seven steps, in this order:**
+
+1. **Harvest the track** into `docs/internal/record/docs-rebuild/<track>-facts.md`, against the
+   ledger schema as the previous stage's checkpoint amended it. Task shape: one task per page group,
+   **bounded at roughly 12,000 source words**, each group named page by page in the plan so the
+   partition is reproducible. Each task's criteria are the ones this plan's harvest tasks carried:
+   every page in the group has entries, an anchor map, and the six keep classes; no `claim` value
+   appears as a substring of its source page; every sweep finding `preflight.md` maps to the track is
+   recorded with its proving source and the superseded note; every fenced block a repository gate
+   replays has a `kind: block` entry; `check:fact-coverage -- --track <track>` exits 0 over the whole
+   track at the last task. The harvest also **fills the track's rows in
+   `docs/internal/record/docs-rebuild/page-types.md`** and appends to its "types the registry may
+   lack" section. **A page any pass edited since 2a is harvested as it now stands**, at the stage's
+   own sha, which is how the identity-seam and chassis passes' edits and polish-C's renames are
+   re-derived rather than tracked.
+2. **The owner's unverified-claim rulings for that track**, one sitting, batched with that stage's
+   other owner items. The rows are extracted with `check:ledger -- --json`, never by reading the
+   ledger end to end, each carrying what would prove it and the conductor's recommendation of true,
+   aspirational, or comes out.
+3. **Rewrite the track's pages from briefs against the ledger**, under the quarantine, one section
+   per read, with the outline reviewed before any prose. Reference entries are edited in place, the
+   one exception, and each reference brief records the exception with its reason.
+4. **The coverage diff per page**, run by a separate agent, never the drafter, against the track's
+   ledger, with every reported miss restored or recorded in the brief's `deviations`.
+5. **The fresh review**, a different context and a different model family from the drafter, naming
+   the corpus entry it graded against and carrying the measurement table.
+6. **The reader test for that stage's pages**, per the allocation below.
+7. **The tuning checkpoint**, defined once in the spec's Implementation section
+   (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`, "The tuning checkpoint" and
+   "Gauging and iterating"). Its record is
+   `docs/internal/record/docs-rebuild/stage-<n>-tuning.md`. This plan does not restate the
+   definition, so there is one copy to amend.
+
+**The nine reader-test sittings (decision 4), allocated.** One is spent here, on the demonstration
+page. The remaining eight go where the reader is furthest from the writer and where a gate sees least:
+**editors 3, front door 3, extend 1, admin 1, reference 0.** Reference gets none because its entries
+are edited in place under a shape the signature gate already fixes, and decision 9 names the front
+door and the task guides as what the reader test is for. A stage that wants a sitting it was not
+allocated takes it from a later stage's allocation and records the trade in its tuning record; the
+total stays nine.
+
+**What each stage hands the next:** its track's ledger, its tuning record, and the amended ledger and
+brief schemas. Plus this pass's hand-off manifest, which every stage reads.
 
 ---
 
@@ -1931,7 +2034,7 @@ plan-lint cut (6); the no-self-naming and nine-item rules (7); every reconciled 
 classes, the five tiers, the 1a/1b supersession, and the page-types disclosure (8). Plannability and
 executor: the per-chain gate and the conductor pre-tasks; the two-run split for owner blocks; the
 conductor's pre-fetch; the `measure-prose.mjs` export; the fact-coverage calibration and `--page`
-flag; named H-B partitions; the C1 link repair; the scope file deleted; conductor tasks for subagent
+flag; named harvest partitions, which the stages now carry; the C1 link repair; the scope file deleted; conductor tasks for subagent
 dispatch and token accounting; the worktree install step; the sweep id mapping; the sha rule; the
 deliverable-counting rule; the G2-6 rebase step; every pointer and wording correction.
 
@@ -1952,10 +2055,10 @@ deliverable-counting rule; the G2-6 rebase step; every pointer and wording corre
 - **Charter 10, harvest reference at reduced granularity.** Reference stays at full granularity. The
   bound applied instead is source words per task, which is what made revision 1's reference tasks
   unexecutable. Reduced granularity would also weaken `check:provenance` on the track whose in-place
-  edits plan three still has to prove.
-- **Charter 14, defer `check:prose-read` to plan three.** It stays here, in the decided
+  edits the reference stage still has to prove.
+- **Charter 14, defer `check:prose-read` to the rewrite.** It stays here, in the decided
   pull-request-artifact-plus-ledger-row form. D3 needs the row and the shape, and a gate whose first
-  real assertion is one row is still the gate plan three's 76 rows accumulate into.
+  real assertion is one row is still the gate the stages' 76 rows accumulate into.
 - **Benchmark 8's second half, rewriting the markdown substrate onto `Intl.Segmenter` and an mdast
   AST.** Only the first half is applied: `measure-prose.mjs` exports one splitter and every consumer
   imports it. Replacing the splitter would move every measured corpus number mid-initiative, and the
@@ -1964,5 +2067,30 @@ deliverable-counting rule; the G2-6 rebase step; every pointer and wording corre
 - **Plannability's suggestion to renumber `docs-sweep.md`.** P1 records the mapping once instead,
   since renumbering a committed sweep would invalidate every citation of it in the other review
   records.
-- **Ruling E's "one owner sitting".** Two sittings, because H12's input is the whole harvest and the
-  whole harvest is run two. Everything that can batch does.
+- **Ruling E's "one owner sitting".** Two sittings, because the corpus approval must precede the
+  demonstration draft and the demonstration read must follow it. Everything that can batch does.
+
+## What the 2026-09-08 restructure changed
+
+The owner's direction dissolved pass 2b and moved the harvest into the per-track stages, so the docs
+system is tuned as it is used: a wrong ledger field or a bad template is found after one small track
+rather than after all five. What moved, and where:
+
+- **H-A's three tasks and H-B's eleven** become each stage's harvest, task-shaped the same way and
+  bounded the same way, against the schema the previous checkpoint amended.
+- **H12, the unverified list and its sitting**, becomes one owner sitting inside each stage, batched
+  with that stage's other owner items. **What is genuinely lost is the cross-track ordering**: H12
+  ranked every unverified claim across all five ledgers by how much a reader would act on its
+  falseness, and five per-track lists cannot reproduce that ranking. The mitigation is that the
+  ordering was a convenience for one sitting, not an artifact anything downstream reads.
+- **G2-10, `check:figures`' seven assertions**, moves to the extend stage, the first stage with a
+  figure to grade, unless the assertions land on `main` earlier for another reason.
+- **Chain R's records tasks** run at this pass's close for its own records, and again at every stage
+  close.
+- **P1's finding map** now maps each sweep finding to its page and track rather than to a harvest
+  task, since the harvest tasks live in plans nobody has authored.
+- **P2 assigns a type only to the demonstration page**, and each stage assigns its own track's, so
+  no type is fixed before the registry it comes from has been tuned.
+- **The hand-off list drops the five ledgers and the full page-type assignment**, and gains the
+  demonstration page's measured cost, the baseline, the tuning record, and the amended schemas.
+- **The registry lifecycle gains a fourth trigger**, the close of every stage.

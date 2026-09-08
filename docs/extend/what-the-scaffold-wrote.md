@@ -126,7 +126,7 @@ you have something to look at, edit, and delete before you write your own.
 | `site-config.ts` | Parses `site.config.yaml` with [`parseSiteConfig`](../reference/core.md#parsesiteconfig). |
 | `site.config.yaml` | Site name, description, nav menus, and the tag vocabulary. See [Manage your tag vocabulary](../editors/manage-your-tag-vocabulary.md) for the editor side of that file. |
 | `theme.css`, `site.css` | The theme's own design tokens and page-level styling, layered over the chassis's generic defaults. See [Design your site](./design-your-site.md). |
-| `components/` | The theme's registered markdown components (`ArticleView`, `Carousel`, and the rest) and the public-facing chrome (`SiteHeader`, `SiteFooter`). |
+| `components/` | The theme's article renderer (`ArticleView`) and public-facing chrome (`SiteHeader`, `SiteFooter`). The registered markdown components live in the adapter's component list in `cairn.config.ts`. |
 | `islands/` | The one hydrated component the scaffold ships (`Banner.svelte`) as a worked example. See [Add an island](./add-an-island.md). |
 
 ## Admin routes (`src/routes/admin/`)

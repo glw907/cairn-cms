@@ -1,17 +1,28 @@
 # A documentation standard for cairn: design
 
-**Status:** revision 1, 2026-09-08. Derived from the approved proposal at
+**Status:** revision 2, 2026-09-08. Derived from the approved proposal at
 [`docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md`](../../internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md).
 The proposal carries the evidence and the reasoning behind every rule here, and its reviews and
-research sit beside it in the same directory. This spec restates the approved decisions as
-requirements, orders them into units a pass plan can take, and states what each unit must satisfy
-before it is done. Plans follow through `writing-plans`, one per unit.
+research sit beside it in the same directory. This spec restates two things as requirements: the
+eleven decisions the owner adopted with the proposal, and three further directions the owner gave on
+2026-09-08 after that approval. Those three directions are:
+
+- (a) A page is rebuilt, never edited, with reference entries the one exception.
+- (b) A fact harvest runs per track before any page brief is written, and drafters never open the
+  page they replace.
+- (c) The work ships as two pass plans, the toolset first and the rewrite second.
+
+Rows 12, 13, and 14 of the decisions table carry them, each marked as an owner direction of
+2026-09-08.
+Everything else below restates what the proposal already argued. A claim here that carries no link
+resolves to the section of the proposal with the same heading.
 
 **Page brief.** Type: design spec, internal. Reader: the implementer who writes the pass plans from
 this document, and the owner checking it against the proposal. This page needs the four parts of
 the standard stated as requirements, with the eleven page types and their section orders. It also
 needs the adopted decisions with their sizes, an implementation order in pass-sized units, the
-acceptance criteria for each unit, the risks, and the items the owner still owes. Exemplars: the Go design document for monotonic time
+acceptance criteria for each unit, the risks, the decisions the owner still owes, and the items the
+owner still owes. Exemplars: the Go design document for monotonic time
 ([`corpus-sample-go-design.md`](../../internal/record/2026-09-08-polish-inputs/corpus-sample-go-design.md))
 and KEP-2400
 ([`corpus-sample-kep-node-swap.md`](../../internal/record/2026-09-08-polish-inputs/corpus-sample-kep-node-swap.md)).
@@ -20,22 +31,30 @@ rationale, compatibility, implementation. Deviations, each with its reason:
 
 - A design spec is not one of the eleven page types the standard names, so no template governs it
   and the exemplar rule applies instead.
-- Goals and non-goals, risks, and open items come from the KEP spine, because the Go document has
-  no section for any of the three and the owner's brief requires all three.
-- Rationale is absent. The proposal holds the reasoning for every rule, and repeating it here would
-  produce a second copy that drifts.
-- The decisions table and the acceptance criteria are this repository's own spec convention, held
-  by every spec under `docs/superpowers/specs/`.
+- Design details, goals and non-goals, risks, and open items come from the KEP spine, because the Go
+  document has no section for any of the four and the owner's brief requires all four.
+- Rationale is present but short. It carries only the reasoning this document adds beyond the
+  proposal; repeating the proposal's own reasoning would produce a second copy that drifts.
+- The decisions table, the owner-decisions table, and the acceptance criteria are this repository's
+  own spec convention, held by every spec under `docs/superpowers/specs/`. Decisions sits before
+  Compatibility because Compatibility is written against the adopted set. Risks sits after
+  Implementation because most risks are unit risks.
+- The registry splits the proposal's combined "condition entry and symptom row" bullet into two
+  types, which reaches the eleven types the proposal already claims.
+- This page names its own type and carries its brief inline. An internal spec has no separate brief
+  file and no reader it could mislead, and the no-self-naming rule binds published pages.
 
 ## Abstract
 
-cairn's published documentation has no written standard for how a page is built. The code has its
-conventions and its gates, and the prose has a style floor that reads one line at a time. The front
-door passed every gate and the owner rejected it as a useless disaster. This spec adopts a
-documentation standard in four parts. The prose rules govern sentences and paragraphs. The
-structure rules govern which pages exist, what sections each page type carries, and how a section
-is built. The figure rules govern when a diagram or a screenshot earns its place. The review chain
-gives a page the sequence of checks a code change gets, and ends in a receipt a gate can verify.
+cairn's published documentation has no written standard for how a page is built. A **receipt**, the
+record of a page's measurements, reviewer, and reader result, does not exist for any page. The code
+has its conventions and its gates, and the prose has a style floor that reads one line at a time. The
+front door passed every gate and the owner rejected it as a useless disaster.
+
+This spec adopts a documentation standard in four parts. Prose rules govern sentences and paragraphs.
+Structure rules govern which pages exist, what sections each page type carries, and how a section is
+built. Figure rules govern when a diagram or a screenshot earns its place. The review chain gives a
+page the sequence of checks a code change gets, and ends in a receipt a gate can verify.
 
 Two rules stand above the four parts:
 
@@ -50,27 +69,28 @@ The failure that produced this standard is recorded in
 [`front-door-net-failure.md`](../../internal/record/2026-09-08-polish-inputs/front-door-net-failure.md).
 The rejected front-door draft opened with a story about editors emailing the owner changes, and
 that never happened. It said that starting a cairn site needs a developer, which the admin track's
-own promise contradicts. Its sentences were built as hinged pairs at twice the rate of any human
-page measured during the proposal. A hinged pair is two clauses joined by a comma and a
-coordinator, by a colon, by a semicolon, by a spaced dash, or by a chain of relative clauses.
+own promise contradicts. Its sentences were built as hinged pairs at a rate no human page then
+measured came near. A hinged pair is two clauses joined by a comma and a coordinator, by a colon, by
+a semicolon, by a spaced dash, or by a chain of relative clauses.
 
-The gates missed the faults in three places. Vale and the tell scanner both read words and
-punctuation, and the draft was written to pass them. Nothing checked the draft's facts against the
-owner. Nobody but the author read the page before the owner did. The two rules above answer the
-first two places. The review chain in this spec answers the third.
+Three places let the faults through. Vale and the tell scanner both read words and punctuation, and
+the draft was written to pass them. Nothing checked the draft's facts against the owner. Nobody but
+the author read the page before the owner did. Rule 1 answers the second place and rule 2 the third.
+The structure rules and the outline review answer the first.
 
 The rhythm problem reaches past that one page. On the instrument the proposal's receipt uses, the
 extend track builds 54 percent of its sentences as hinged pairs and the reference track builds 58
-percent. The SQLite scope excerpt vendored as the first corpus sample builds none. Sample sizes are
-small enough that the intervals overlap, so the proposal treats the gap as a direction rather than
-a finding. The sentence-length gap is firmer. The reference track averages 22 words with one
-sentence at 151 words, where PostgreSQL, MDN, and the Rust reference average 12 to 18 words with
-almost nothing over 40.
+percent. Three human pages measure 41 percent (the Go design document), 18 percent (KEP-2400), and
+zero (the SQLite scope excerpt). Sample sizes are small enough that the intervals overlap, so the
+proposal treats the gap as a direction rather than a finding. The rejected draft's own figure was
+never recorded, so no multiplier can be stated. The sentence-length gap is firmer. The reference
+track averages 22 words with one sentence at 151 words, where PostgreSQL, MDN, and the Rust
+reference average 12 to 18 words with almost nothing over 40.
 
 ## Goals and non-goals
 
-The goal is prose an expert reader accepts as well written and true, produced mostly by Claude,
-with the front-door failure unable to recur. The standard reaches that goal by making a page's
+Prose an expert reader accepts as well written and true, produced mostly by Claude, with the
+front-door failure unable to recur: that is the goal. The standard reaches it by making a page's
 shape, its facts, and its reviewer all checkable before the page ships. Every rule below closes one
 of the three holes the rejected front-door draft fell through.
 
@@ -78,30 +98,57 @@ Four things are not goals:
 
 - A readability gate. Controlled studies since the 1960s found that rewriting to a sentence-length
   number does not improve comprehension. Every number in this spec locates a passage for a person
-  to judge.
-- A new taxonomy. The four tracks stay as they are, and no published page cites Diátaxis.
-- A rewrite of the corpus tooling into a scoring system. The bands stay advisory until a track has
-  twenty documents and three hundred sentences behind it.
-- The docs pass itself, sized by the proposal's cost review at six to nine million tokens. The
-  implementation order below places it last and sizes it as its own initiative.
+  to judge. Owner decision 1 settles whether decision 3's ceiling is the one exception.
+- A new taxonomy, and no reorganization of the four tracks. The tracks stay as they are, their
+  membership stays as it is, and no published page cites Diátaxis. Rebuilding the pages inside a
+  track is in scope; moving a page between tracks is not.
+- A rewrite of the corpus tooling into a scoring system. A **band**, the range a track's corpus
+  entries set for one measurement, stays advisory until that track has twenty documents and three
+  hundred sentences behind it.
+- A single pass. The rewrite is its own plan with its own ceiling, and the toolset lands first.
 
 ## Proposal
 
-The standard is adopted in four parts, held by a review chain, and switched on by the decisions
-the "Decisions adopted" section lists. Each part below states requirements a page must meet. The
+The standard is adopted in four parts, held by a review chain, and switched on by the decisions the
+"Decisions adopted" section lists. Each part below states requirements a page must meet. The
 requirements are normative. A page that does not meet one must record the deviation in its page
 brief with a reason, in the form the register's "when a Vale finding is wrong" rule sets.
 
-The work divides into five units. The fact harvest comes first, because a rebuild's drafter must
-never open the page it replaces, and the ledger is what stands in its place. The corpus comes
-second, because a page type with no approved exemplar has no draft and a review that cites no
-corpus entry does not count. The templates and the scripts come third, because they hold the
-structure rules the docs work is graded against. The demonstration page comes fourth, as the
-evidence the owner reads before any docs pass is planned. The docs rebuild comes last.
+The work divides into five units across two pass plans. Plan one builds the toolset and runs the
+harvest; plan two rewrites the pages. The harvest must finish before a brief is written, because a
+rebuild's drafter never opens the page it replaces and the ledger stands in its place. The corpus
+must exist before a draft, because a page type with no approved exemplar has no draft and a review
+that cites no corpus entry does not count. The templates and the scripts hold the structure rules
+the work is graded against. The demonstration page is the evidence the owner reads before the
+rewrite is planned.
+
+## Rationale
+
+Three choices in this document go beyond what the proposal argued. Each is answered here rather than
+left to a plan author. The proposal holds the reasoning for everything else.
+
+**Why rebuild rather than edit.** Editing keeps every structural choice the old pages made, and
+those choices were made with no page type, no brief, and no outline review, which is the failure
+this standard exists to stop. The measured support is one data point: the proposal converged in
+eight revisions from an edited draft and reached the same gate state in three loops from scratch.
+One point is thin, which is why the demonstration page exists to test the method on a real docs page
+before the rewrite is planned.
+
+**Why a quarantine plus a coverage diff, rather than a diff alone.** A drafter that reads the old
+page inherits its organization and its rhythm, so the quarantine holds. But a claim the harvest
+missed is then caught by nothing, and asserting the harvest is complete does not make it so. A
+separate agent, never the drafter, compares the drafted page's claims to the ledger after the draft
+exists and reports the misses. The quarantine keeps the prose out; the coverage diff keeps the facts
+in.
+
+**Why the ids live in a brief file rather than in the page.** Footnote markers on every claim-bearing
+sentence would make the published markdown unreadable for the reader the standard exists to serve.
+A sibling brief file carries the same information, resolves by convention for every gate, satisfies
+the rule that a page must not name its own type, and never ships in the tarball.
 
 ## Design details
 
-### The prose rules
+### Prose rules
 
 The Federal Plain Language Guidelines, March 2011 revision, are the prose standard. The repository
 must vendor the PDF, because plainlanguage.gov now redirects to digital.gov and the live guides
@@ -125,22 +172,22 @@ these:
 - Part V, test. A page must be tested with a reader before it ships, in the form the reader test
   below sets.
 
-The guidelines give no sentence-length number. The numbers below are cairn's own, and each names its
-source:
+No sentence-length number comes from the guidelines. The numbers below are cairn's own, and each
+names its source:
 
 | Measure | Target | Source | Status |
 |---|---|---|---|
 | Average sentence length | 15 to 20 words | OPM plain-language guidance | measured and reported, never gated |
-| Longest sentence | under 40 words, no exception | Cutts, Oxford Guide to Plain English | gated per track once that track's existing violations are cleared |
-| Sentence ceiling, admin and editors tracks | 25 words | ASD-STE100 | gated, through a Cairn rule that sets its own level |
+| Longest sentence | under 40 words | Cutts, Oxford Guide to Plain English | level set by owner decision 1 |
+| Sentence ceiling, admin and editors tracks | 25 words | ASD-STE100 | level set by owner decision 1, through a Cairn rule that sets its own level |
 | Paragraph length | 3 to 8 sentences and 150 words, hard limit 250 | the guidelines, Part III | gated |
 
 ASD-STE100 sets 20 words for a sentence that gives an instruction and 25 for one that describes. The
 admin and editors tracks take the 25, because most of their sentences describe a screen or a state.
-One number per track is what a linter can hold. The Microsoft sentence-length rule has run on the
-editors track at suggestion level all along, so its findings were advisory. The vendored Google and
-Microsoft packages must stay unedited and pinned in CI, so a Cairn rule sets the level and the
-number for the two tracks.
+One number per track is what a linter can hold. Microsoft's sentence-length rule has run on the
+editors track at suggestion level all along, so its findings were advisory. Both vendored packages
+must stay unedited and pinned in CI, so a Cairn rule sets the level and the number for the two
+tracks.
 
 Three safeguards keep the numbers from doing harm:
 
@@ -152,24 +199,24 @@ Three safeguards keep the numbers from doing harm:
 - The average must never become a gate. Writing to it produces amputated sentences, which revision 2
   of the proposal demonstrated on itself.
 
-### The structure rules
+### Structure rules
 
 Structure is where the front door failed first. Its sections existed because a chain of derivations
-produced them, and no gate looked at the order. The standard sets structure at three levels, and
-each level gets its own gate. The docs set decides which pages exist. The page decides its own
-sections and their order. The section decides how one block of text is built.
+produced them, and no gate looked at the order. Three levels each get their own gate. The docs set
+decides which pages exist. The page decides its own sections and their order. The section decides
+how one block of text is built.
 
-#### The docs set
+#### Docs-set level
 
-Every published page must have one track and one page type. The four tracks stay as they are. A page
-must look like what it is, so that a reader who knows the genre recognizes the page on sight. Each
-page type must name a published exemplar of its genre, and the corpus must carry an excerpt of it. A
-page whose type has no approved exemplar must not be written. The page brief must name the exemplar
-the page was drafted against.
+Every published page must have one track and one page type. A page must look like what it is, so
+that a reader who knows the genre recognizes the page on sight. Each page type must name a published
+exemplar of its genre, and the **corpus**, the set of human-written excerpts defined below, must
+carry an excerpt of it. A page whose type has no approved exemplar must not be written. The page
+brief must name the exemplar the page was drafted against.
 
-A page type is a named shape. The standard names eleven, ten published and one internal. Each is
-listed with the reader's job it serves and its exemplars, because a page whose job nobody can state
-in one line is two pages. This list is the registry a page brief cites.
+A page type is a named shape. Eleven are named, ten published and one internal. Each is listed with
+the reader's job it serves and its exemplars, because a page whose job nobody can state in one line
+is two pages. This list is the registry a page brief cites.
 
 | Page type | The reader's job | Exemplars |
 |---|---|---|
@@ -185,6 +232,10 @@ in one line is two pages. This list is the registry a page brief cites.
 | Front door | An evaluator is deciding whether cairn fits | SQLite's scope page; Kubernetes' overview. The editors track's welcome page is a front door for its own reader, with a GOV.UK guidance page and a Mozilla support article as its exemplars |
 | Proposal (internal) | The owner is deciding | the Rust RFC template; the Kubernetes enhancement proposal template |
 
+Type 11 is the one internal type, and it stays outside the Vale gates that `.vale.ini` exempts for
+`docs/internal/**` and `docs/superpowers/**`. Its template governs shape, not prose. `check:anatomy`
+and `check:headings` are scoped to published paths only.
+
 Four rules hold at this level:
 
 - A page must do one job, stated in its first sentence.
@@ -194,11 +245,13 @@ Four rules hold at this level:
 - An index must group its children once it lists more than nine siblings, which is Horn's chunking
   bound.
 
-#### The page
+#### Page level
 
 Each page type gets a fixed section order, held in a template under `docs/internal/templates/`. A
 new `check:anatomy` script must read each template and fail a page whose required headings are
-missing or out of order, so a template and its gate cannot drift apart. The orders are:
+missing or out of order, so a template and its gate cannot drift apart. The reference-entry template
+is derived from the shape `check:reference` and `check:reference:signatures` already fix, never a
+second copy of it. The orders are:
 
 **Task guide**, under 800 words:
 
@@ -235,18 +288,9 @@ missing or out of order, so a template and its gate cannot drift apart. The orde
 4. One section per part, stating its job and its boundary.
 5. What sits outside the system, and who owns it.
 
-**Reference entry**:
-
-1. Export name.
-2. Signature block.
-3. A summary of one to three sentences.
-4. Parameters.
-5. Returns.
-6. Defaults.
-7. Failure modes.
-8. Stability tier.
-9. Example.
-10. See also.
+**Reference entry**. Identity: (1) export name, (2) signature block, (3) a summary of one to three
+sentences. Contract: (4) parameters, (5) returns, (6) defaults, (7) failure modes, (8) stability
+tier. Use: (9) example, (10) see also.
 
 **Reference table**. The prose rules apply to the lead sentence and the notes only:
 
@@ -276,60 +320,76 @@ gains a field in this spec, since the recovery pages already carry the fields th
 7. A short checklist the reader answers.
 8. Where to go next.
 
-**Proposal**:
-
-1. Summary.
-2. Motivation.
-3. Goals and non-goals.
-4. Proposal.
-5. Design details.
-6. Drawbacks.
-7. Alternatives considered.
-8. Prior art.
-9. Unresolved questions.
-10. Decisions, each with a cost.
-11. A receipt, when the document grades itself.
+**Proposal**, grouped in two. The argument: (1) summary, (2) motivation, (3) goals and non-goals,
+(4) proposal, (5) design details. The decision: (6) drawbacks, (7) alternatives considered, (8) prior
+art, (9) unresolved questions, (10) decisions with their costs, (11) a receipt when the document
+grades itself.
 
 No page may name its own type or track, which extends the standing rule that no page cites
-Diátaxis. A page must state its type by following it. The template is the only place a type is
-written down.
+Diátaxis. A page must state its type by following it. The template and the brief file are the only
+places a type is written down.
 
-#### The section
+#### Section level
 
 A section must cover one idea and state it in its first sentence, and so must each paragraph in it.
-A list must be grouped once it passes nine items. A paragraph must run three to eight sentences,
-which is Google's rule kept. A heading must either tell the reader to do something or explain
-something. The first kind starts with a bare verb, and the second is a noun phrase. Siblings at one
-level must share one form. A question heading is allowed only in the editors track, where the
-question is the reader's own. A section that carries an instruction must end where the reader can
-act, or must name the page that tells them how.
+A list must be grouped once it passes nine items, and a template's section order is a shape rather
+than a list a reader scans, so it is exempt. A paragraph must run three to eight sentences, which is
+Google's rule kept. A heading must either tell the reader to do something or explain something. The
+first kind starts with a bare verb, and the second is a noun phrase. Siblings at one level must
+share one form. A question heading is allowed only in the editors track, where the question is the
+reader's own. A section that carries an instruction must end where the reader can act, or must name
+the page that tells them how.
 
-A new `check:headings` script must hold the heading rules. Those are sentence case, one level-one
-heading, no skipped levels, no leading -ing form, verb-first for task sections and noun phrases for
-the rest, siblings in one form, and question headings only under `docs/editors/`. The
-`Cairn.TwoHeadedHeading` Vale rule holds one shape of one fault and nothing more. Vale sees one line
-at a time, and parallelism needs the whole page, which is why the script must exist.
+Seven heading rules must hold, and a new `check:headings` script must carry them:
 
-#### The page brief and the outline review
+1. Sentence case.
+2. One level-one heading.
+3. No skipped levels.
+4. No leading -ing form.
+5. Verb-first for task sections, noun phrases for the rest.
+6. Siblings in one form.
+7. Question headings only under `docs/editors/`.
 
-Every page must start with a brief of four lines, written before the outline and kept beside the
-page. The brief answers four questions:
+Rules 1 through 4 and 7 are mechanical. Rules 5 and 6 need a decision about whether a heading's first
+word is a verb. They ship against a committed lexicon of the imperative verbs cairn's docs use, with
+an allowlist escape. A heading outside the lexicon warns rather than fails, and parallelism is
+checked only where every sibling resolves.
 
-- What does a page of this type include in general, and which exemplar shows it?
-- Which track and reader does it serve?
-- What must this page carry that its type does not say?
-- Does it deviate from the standard, and how?
+Markdownlint carries rules 2 and 3 under its stock `MD025` and `MD001`, so `check:headings` does not
+reimplement them. The `Cairn.TwoHeadedHeading` Vale rule holds one shape of one fault and nothing
+more. Vale sees one line at a time, and parallelism needs the whole page, which is why the script
+must exist.
 
-A brief that cannot name an exemplar must stop the draft until one is found. A deviation is allowed
-only when the brief records it with its reason. A page with no brief has no outline to check
-against.
+#### Page brief and outline review
+
+Every page must have a brief, written before the outline, and the brief is a file rather than a
+prose note. It lives at `docs/<track>/<page>.brief.yml`, one per published page, outside
+`package.json`'s `files` array so it never ships in the tarball. Every gate resolves it by
+convention. Its fields:
+
+| Field | What it carries |
+|---|---|
+| `type` | the page type from the registry |
+| `track` | admin, editors, extend, reference, or front-door |
+| `exemplar` | the published page the draft was written against |
+| `corpus_entry` | the corpus id the review grades against |
+| `needs` | the ledger ids this page must carry |
+| `keep` | the ledger ids of the keep classes below, which the page must carry verbatim or preserve |
+| `deviations` | each departure from the standard, with its reason |
+| `sentences` | one line per drafted sentence, each a ledger id or the literal `no-claim` |
+
+Four questions sit behind those fields. What does a page of this type include, and which exemplar
+shows it? Which track and reader does it serve? What must this page carry that its type does not say?
+How does it deviate? A brief that cannot name an exemplar must stop the draft until one is
+found. A deviation is allowed only when the brief records it with its reason. A page with no brief
+has no outline to check against.
 
 The outline must be reviewed against the brief before any sentence is reviewed. A reviewer, and
 `check:anatomy` behind the reviewer, reads the page type, the title, the headings, and the section
 order first. A page whose shape is wrong goes back before its prose is graded, because prose work on
 a page with the wrong shape is wasted.
 
-### The figure rules
+### Figure rules
 
 A figure is a diagram or a screenshot, and pages rarely need one. A figure may appear only where
 prose would have to state a relation among three or more parts as a series, or where the fact is a
@@ -348,13 +408,14 @@ them:
   paragraph are the signal. On a task page, an instruction that says where a control is without
   showing it is a missing screenshot.
 
-Three further requirements follow. Mermaid in the page stays the default and hand-authored SVG stays
-the exception, with no third tool. `check:figures` must grow from a staleness check to seven
-mechanical assertions. `check:visuals` must close the hole where an image with no alt attribute
-passes unseen. On the front door, the concept figure comes off, and the site's ownership map moves
-to the architecture overview, where the page type expects it.
+Four further requirements follow. Mermaid in the page stays the default and hand-authored SVG stays
+the exception, with no third tool, and every figure's source and its generating script are
+committed. `check:figures` must grow from a staleness check to seven mechanical assertions.
+`check:visuals` must close the hole where an image with no alt attribute passes unseen. On
+`docs/why-cairn.md` the concept figure comes off, and the site's ownership map moves to
+`docs/extend/architecture.md`, where the page type expects it.
 
-### The corpus
+### Corpus
 
 The corpus is the set of human-written excerpts the docs are measured against. It must meet these
 constraints:
@@ -362,12 +423,17 @@ constraints:
 - `docs/internal/corpus/` holds one excerpt per entry, at most 400 words.
 - A manifest records each entry's source, license, fetch date, page type and track, measured
   numbers, and the date the owner approved it.
+- An entry whose license does not permit a 400-word excerpt is recorded as reference-only: URL,
+  fetch date, and measured numbers, with no excerpt committed. Where two candidates serve one page
+  type, the permissively licensed one wins.
 - Two entries per page type is the ceiling, and one is the floor. A page type with no entry has no
   draft.
 - An entry for a table-shaped page is marked structure-only. A review of such a page compares column
   order, row completeness, and the lead sentence rather than cadence.
 - An entry the owner rejects is deleted and its id retired.
-- A review must cite a corpus entry beside its verdict. A verdict that cites none does not count.
+- A review must cite a corpus entry beside its verdict. A verdict that cites none does not count. A
+  page whose brief names two entries is compared against the closer of the two, and the report names
+  both.
 
 The proposal names the candidate entries per page type, with the excerpt each would carry. Approving
 them, or naming the ones to swap, is decision 7 and remains the owner's action. Three entries exist
@@ -377,57 +443,97 @@ KEP-2400 excerpt, all in
 A second editors entry is owed and must be chosen by hand, because the Mozilla support articles
 block automated reads.
 
-### The review chain
+### Review chain
 
-The review chain gives a page the steps a code change gets. The outline comes first, because prose
-work on a page with the wrong shape is wasted. A page for a published path must be drafted at that
-path on a branch, never under `docs/internal/record`. The steps run in this order:
+The review chain gives a page the steps a code change gets. Shape comes first, for the reason the
+outline review gives. A page for a published path must be drafted at that path on a branch, never
+under `docs/internal/record`. The steps run in this order:
 
-1. Claude writes the page brief, four lines.
+1. Claude writes the page brief file.
 2. Claude drafts the page where it will live, so Vale and the save hook run the right styles from the
    first save.
 3. CI runs the outline scripts, `check:anatomy` and `check:headings`, then `check:docs`,
    `check:visuals`, and `check:figures`. A reviewer reads the outline at the same point, before any
    sentence, and returns a page whose type, title, or section order is wrong.
-4. CI runs the linters under the severity contract below.
+4. CI runs the linters and markdownlint under the severity contract below.
 5. The tell scanner reports the sentence numbers, the hinged-pair share, and the short-sentence share
-   beside the corpus entry's numbers. A hinged-pair share more than fifteen points above the entry's
-   is called out in the report. Nothing gates on any of it.
-6. `check:provenance` runs. Every sentence on the front door that states a fact about the owner or
-   about cairn's stance must carry a footnote id. The script fails on an id that does not resolve to
-   a line in the author brief. On a rebuilt page the same check generalizes: every claim must carry
-   an id that resolves to a fact ledger entry, in the shape unit 1 produces.
+   beside the corpus entry's numbers. Nothing gates on any of it.
+6. `check:provenance` runs, in the deny-by-default shape below.
 7. A fresh reviewer grades the page against its corpus entry. The reviewer must be a different
    context from the drafter, and a different model family where one is available. Its report carries
    the page type, the corpus entry, the measurement table, and the verdict.
-8. The owner or a volunteer runs the reader test.
-9. `check:prose-read` verifies the receipt. A file beside the page carries the page's content hash,
-   the measurement table, the corpus entry, the reviewer's verdict, and the reader's result. The gate
-   fails when a published page's hash has no matching receipt.
+8. A separate agent, never the drafter, runs the coverage diff: it compares the drafted page's
+   claims against the track ledger and reports every ledger entry the page dropped.
+9. The owner or a volunteer runs the reader test.
+10. `check:prose-read` verifies the receipt against the page.
 
 The severity contract governs step 4. An error fails the build. A warning shows in the review. A
 suggestion stays local. A rule may move to error only after every existing violation is cleared,
-which is GitLab's rule and the reason the 40-word ceiling cannot ship as an error today.
+which is GitLab's rule.
 
 The chain caps revision at two rounds, which is the workstation's own per-task chain rule applied to
-prose (`~/.claude/CLAUDE.md`, "Conducting a pass"). A reviewer verdict of fix sends the page back
-once. A second fix verdict on the same page is the owner's decision, and the page must not enter a
-third automatic round. The cap applies to step 3 and to step 7 separately, because an outline
-returned at step 3 has not yet been graded as prose.
+prose (`~/.claude/CLAUDE.md`, "Conducting a pass"). One round is steps 3 through 7 run once. A fix
+verdict buys one redraft and one second run of those steps. A second fix verdict goes to the owner,
+and the page must not enter a third automatic round. There is one cap on the whole chain, not one
+per step.
 
-#### The quality checklist
+#### Provenance
+
+`check:provenance` is deny-by-default. Its unit of judgment is the sentence, and its record is the
+brief's `sentences` list. Every drafted sentence must appear there, carrying either a ledger id or
+the literal `no-claim`. A sentence the drafter did not classify fails the build. That is what makes
+the check see an absence: a script cannot decide which sentences state facts, but it can refuse a
+page whose author declined to decide.
+
+The gate then checks two things. Every id in the brief must resolve to a ledger entry. And every
+machine-extractable fact in the page (numerals, version strings, file paths, commands and flags,
+export and config names, and the product claims listed in the ledger's `owner` tier) must appear in
+at least one cited entry. Everything the extractor cannot reach is left to the fresh reviewer at
+step 7, who reads the brief beside the page. Ids never appear in the published markdown.
+
+The rejected front-door draft would fail this check. Its editors-emailing-the-owner story resolves
+to no line in
+[`front-door-author-brief.md`](../../internal/record/2026-09-08-polish-inputs/front-door-author-brief.md),
+so the sentence carries no id it could cite, and leaving it unclassified fails the build outright.
+Marking it `no-claim` would pass the script and fail the reviewer, because a narrative assertion
+recorded as claiming nothing is visible in the brief rather than invisible in the prose. The check
+converts a silent omission into either a red build or a written falsehood a person reads.
+
+### Gates
+
+Four new scripts carry the standard, alongside the gates the repository already runs:
+
+| Script | What it does | State |
+|---|---|---|
+| `check:anatomy` | Reads each template and fails a page whose brief is missing or unparseable, or whose required headings are missing or out of order | new |
+| `check:headings` | Holds the seven heading rules, with rules 5 and 6 against the verb lexicon | new |
+| `check:provenance` | Fails an unclassified sentence, an unresolved ledger id, or a machine-extractable fact no cited entry carries | new |
+| `check:prose-read` | Fails a published page whose receipt is missing or stale | new |
+
+No `check:cadence` script exists. Cadence is the tell scanner's job under decision 10, and the
+scanner is the workstation's instrument rather than cairn's. CI invokes it in report mode over
+changed docs paths where it is available, and its absence never fails a build, because nothing it
+reports gates.
+
+Markdownlint joins the gate set with its stock rules, which carry heading increment, single H1,
+duplicate headings, code-fence language tags, list markers, and table integrity. An external
+link-rot check runs on a schedule rather than per pull request, per this repository's watch-item
+rule, and reports rather than fails. The must-fire Vale fixtures run on every CI run, not once, so a
+future pin bump fails loudly.
+
+#### Quality checklist
 
 Every page walks one checklist before its receipt is written. The reviewer records each item as met,
 not met, or not applicable. Beneath each question sits what answers it, a gate or a person:
 
 | Question | What answers it |
 |---|---|
-| Who is the intended reader, and does the page address that reader alone? | The page brief names the track and reader; a person checks the vocabulary against the track's list |
+| Who is the intended reader, and does the page address that reader alone? | The brief names the track and reader; a person checks the vocabulary against the track's list |
 | What is the page for, and does its first sentence say so? | A person |
 | Which standard governs this page, and does the page follow it? | The brief names the page type; `check:anatomy` holds the section order and `check:headings` the heading grammar |
 | Is the page organized logically for that reader, with the general case before the exception and each section on one idea? | A person, at the outline review, before any prose is read |
 | Does the page deviate from its standard anywhere, and is each deviation recorded with its reason? | The brief; a person |
-| Is every claim true and traceable? | `check:provenance` on the front door; facts about the code checked against the code; `check:docs` for links and anchors |
+| Is every claim true and traceable? | `check:provenance`; the coverage diff for what the page dropped; `check:docs` for links and anchors |
 | Is every term the reader is not expected to know defined where it first appears? | A person, against the track's vocabulary list |
 | Are requirements stated as requirements and facts as facts? | A person |
 | Is the prose within its limits? | Vale holds the sentence ceiling and the paragraph bounds; the tell scanner reports the measurements beside the corpus entry's |
@@ -435,17 +541,15 @@ not met, or not applicable. Beneath each question sits what answers it, a gate o
 | Did someone other than the author read it against a named exemplar, and did a reader use it? | Both recorded in the receipt |
 | Does the receipt exist and match the page? | `check:prose-read` |
 
-### The reader test
+### Reader test
 
 For a task guide, someone who is not the author must do the task from the page. For a concept page
 or the front door, the reader reads it once and paraphrases it back. Every mismatch between the
 paraphrase and the page is a place the page was unclear. This is Part V of the guidelines, and
-DigitalOcean's editors run each tutorial before it ships. The test applies to the task guides in the
-admin and extend tracks and to the front door, which today number about forty pages. It never
-applies to reference entries. The test costs the owner's time or a volunteer's, and the sittings
-remain an owner action under decision 9.
+DigitalOcean's editors run each tutorial before it ships. The test never applies to reference
+entries. It costs the owner's time or a volunteer's, and how many pages get one is owner decision 4.
 
-### The Claude setup
+### Claude setup
 
 Seven pieces of the Claude setup change. The list is short on purpose, because an instruction file
 Claude ignores half of is worse than a short one. Anthropic's own guidance makes that point, and the
@@ -453,7 +557,8 @@ proposal dropped a memory paragraph on the strength of it. The register stays th
 anything the seven pieces do not carry.
 
 - Both `CLAUDE.md` files gain four lines. Both already sit at the length that Anthropic's guidance
-  warns about, so the four lines must replace four others rather than add to them.
+  warns about, so the four lines must replace four others rather than add to them. Which four leave
+  is a taste call and an owner action, taken at the same sitting that approves the corpus.
 - The writing-voice output style gains three tells: the two-headed heading, the abstract noun
   standing in for the concrete thing, and the page describing itself. Nothing else is added, because
   a longer list of prohibitions narrows what a model avoids without changing what it produces.
@@ -461,7 +566,8 @@ anything the seven pieces do not carry.
   their audience and the advisory bands.
 - The tell scanner gains the hinged-pair share and the short-sentence share, in report mode, with
   the bands in a small file per audience. The cost review sizes this at about 285 lines of Go with
-  no new dependency.
+  no new dependency. Every new measure is scoped to the docs register and must not fire on site
+  content, which `CLAUDE.md` holds in its own personal voice.
 - The Vale hook grades a draft by its path, which step 2 of the review chain makes sufficient.
 - The review agents change their dispatch shape. The register editor and the voice reviewer must be
   given a corpus entry and must report the measurement table. The diff reviewer runs the scanner on
@@ -469,37 +575,56 @@ anything the seven pieces do not carry.
 - Two skills change. `cairn-figure` holds the production path for figures, and the writing-voice
   skill gains an author-facing prose section holding the brief-first, one-section-per-read protocol.
 
-Five scripts carry the standard, three of them new:
+## Where each piece lives
 
-| Script | What it does | State |
-|---|---|---|
-| `check:cadence` | Runs the prose measurements and reports them beside the page's corpus entry. Never gates | new |
-| `check:anatomy` | Reads each template and fails a page whose required headings are missing or out of order | new |
-| `check:headings` | Holds sentence case, one level-one heading, no skipped levels, no leading -ing form, verb-first for task sections, sibling parallelism, and question headings only under `docs/editors/` | new |
-| `check:provenance` | Fails a front-door claim about the owner or about cairn's stance whose footnote id does not resolve to a line in the author brief, and fails a rebuilt page's claim whose id does not resolve to a fact ledger entry | new |
-| `check:prose-read` | Fails a published page whose content hash has no matching receipt | new |
+Applying the charter's premise check divides this standard between two owners. A plan must not treat
+the second half as cairn work. The split runs like this:
+
+- **Cairn's, and gradeable by this repository's gate.** The corpus entries and their manifest, the
+  page-type registry, the templates, the brief files, and the fact ledgers. The four new scripts,
+  the Cairn Vale rules with their fixtures, markdownlint, the link-rot routine, and every published
+  page.
+- **The workstation's, and an owner action rather than a cairn task.** The measurement instrument as
+  a shared definition, the tell scanner and every new measure in it, and the review protocol. The
+  writing-voice output style, the voice files, the skills, the review agents, and the global
+  `CLAUDE.md`.
+
+Every workstation item would serve ecxc-ski, 907-life, aksailingclub-org, cairn-pub, and Topo on
+identical terms. The authoring charter at `~/.claude/docs/authoring-charter.md` is already their
+umbrella. cairn's pass chain grades a task by `git diff` plus `npm test`, and neither reaches any of
+them. Two consequences follow.
+
+Unit 3c below carries the workstation half. It runs in the main loop rather than through the repo
+chain, and it is graded by the workstation's own budget hook and poplar's `make check` rather than
+by cairn's gate. The new scanner measures ship behind a docs-register profile that is off outside
+docs paths, so cairn's bands never reach a site's own content.
 
 ## Decisions adopted
 
-Every decision below is approved. Small means a file or two, under a quarter million tokens. Medium
-means a script or a tuned package, under two million tokens. No decision is large.
+Decisions 1 through 11 are approved as the proposal states them. Decisions 12 through 14 record the
+owner's directions of 2026-09-08, given after that approval. Small means a file or two, under a
+quarter million tokens. Medium means a script or a tuned package, under two million tokens. Large
+means more.
 
 | # | Decision | Size | Unit |
 |---|---|---|---|
-| 1 | Adopt the Federal Plain Language Guidelines, 2011 revision, as the prose standard, and vendor the PDF | small | 3 |
-| 2 | Hold the paragraph numbers and the 40-word ceiling as gated rules, and the average sentence length as a reported measurement that never gates | small | 3 |
-| 3 | Add a Cairn rule that fails a sentence over 25 words on the admin and editors tracks | small for the rule; medium for clearing the 135 admin and 61 editors sentences that exceed it, which must come first under the severity contract | 3, then 5 |
-| 4 | Adopt the three structure levels, the page types with their section orders, and the outline-first review | small | 3 |
-| 4a | Write the templates and the two new structure scripts | medium | 3 |
-| 5 | Adopt the two figure tests and the two-lane routing rule, and commit the figure source and script | small | 3 |
-| 5a | Grow `check:figures` to the seven assertions and close the `check:visuals` hole | medium | 3 |
-| 6 | Take the concept figure off the front door and move the ownership map to the architecture overview | small | 5 |
+| 1 | Adopt the Federal Plain Language Guidelines, 2011 revision, as the prose standard, and vendor the PDF | small | 3b |
+| 2 | Hold the paragraph numbers and the 40-word ceiling as gated rules, and the average sentence length as a reported measurement that never gates | small | 3b |
+| 3 | Add a Cairn rule that fails a sentence over 25 words on the admin and editors tracks | small for the rule; the clearing work depends on owner decision 1 | 3b, then 5 |
+| 4 | Adopt the three structure levels, the page types with their section orders, and the outline-first review | small | 3a |
+| 4a | Write the templates and the two new structure scripts | medium | 3a |
+| 5 | Adopt the two figure tests and the two-lane routing rule, and commit the figure source and script | small | 3b |
+| 5a | Grow `check:figures` to the seven assertions and close the `check:visuals` hole | medium | 3b |
+| 6 | Take the concept figure off `docs/why-cairn.md` and move the ownership map to `docs/extend/architecture.md` | small | 5 |
 | 7 | Approve the corpus entries, or name the ones to swap | small | 2, owner action |
-| 8 | Adopt the review chain and its severity contract | small | 3 |
-| 8a | Write `check:provenance` and `check:prose-read` | medium each | 3 |
-| 9 | Adopt the reader test for the roughly forty task guides and the front door | small in tokens; about forty attended sittings, one per page | 5, owner action |
-| 10 | Approve the Claude setup changes as listed | small; the scanner change is about 285 lines | 3 |
-| 11 | Approve the `add-a-custom-admin-screen.md` demonstration before any docs pass is planned | small | 4 |
+| 8 | Adopt the review chain and its severity contract | small | 3b |
+| 8a | Write `check:provenance` and `check:prose-read` | medium each | 3b |
+| 9 | Adopt the reader test for the front door and the task guides | small in tokens; the sitting count is owner decision 4 | 5, owner action |
+| 10 | Approve the Claude setup changes as listed | small; the scanner change is about 285 lines | 3c |
+| 11 | Approve the `add-a-custom-admin-screen.md` demonstration before the rewrite is planned | small | 4 |
+| 12 | Rebuild each page rather than edit it, with reference entries the one exception (owner direction 2026-09-08) | small as a rule; its cost sits in unit 5 | 5 |
+| 13 | Harvest each track's facts into a ledger before any brief is written, and keep drafters out of the page they replace (owner direction 2026-09-08) | large, 2.0 to 4.5 million tokens | 1 |
+| 14 | Ship the work as two pass plans, the toolset first and the rewrite second (owner direction 2026-09-08) | small | Implementation |
 
 ## Compatibility
 
@@ -507,9 +632,8 @@ The standard lands on a documentation set that does not meet it. Three compatibi
 gates from failing the build on day one:
 
 - A new rule ships at warning level. It moves to error only after every existing violation in the
-  tracks it covers is cleared. The 40-word ceiling and the 25-word track ceiling both start at
-  warning for this reason.
-- The vendored Google and Microsoft packages stay unedited and pinned. Every cairn rule lives under
+  tracks it covers is cleared.
+- Both vendored packages stay unedited and pinned. Every cairn rule lives under
   `.vale/styles/Cairn/` and sets its own level.
 - Vale's rule mechanics differ between the pinned CI version and the workstation version. Every rule
   file must ship with a fixture that fires, and CI's pinned version governs any disagreement.
@@ -520,208 +644,401 @@ scope itself to the tracks that unit rebuilt. Each scope must then widen as late
 unit 5 removes the last exclusion. A plan that adds a scope exclusion must name the unit that
 removes it again.
 
+Two further rules govern the rewrite's blast radius. Measured on the working tree at 2026-09-08, the
+published set carries 432 intra-docs anchor links and 99 references to published doc paths from
+`src/`, `README.md`, and `package.json`. Both numbers are what a fresh draft puts at risk.
+
+- **Anchors.** Each track ledger carries a per-page anchor map, old heading to new heading or to
+  retired. A page is rebuilt and its inbound links repaired in the same task, so the branch is green
+  after each task rather than after each track. `check:docs` and `check:readiness` are the gates
+  that prove it.
+- **Renames and redirects.** A published page's path is stable unless the owner approves the rename.
+  An approved rename leaves a stub page at the old path linking to the new one for one minor
+  version. A markdown tarball has no redirect mechanism, and readers arrive from search, from the
+  admin's help link, and from npm.
+- **cairn.pub.** That site renders the doc arms from its installed engine version, so a rebuild on a
+  branch stays invisible to the live docs until a release and a pin bump. A rename or removal breaks
+  its navigation at the bump. The pub repo gets a consultation before the first track merges.
+
 ## Implementation
 
-Five units, in order. Each is one pass plan. A unit must not start before the unit above it merges,
-because each depends on what the one above produces.
+Two pass plans run in order. Plan one builds what the rewrite needs and harvests what it must carry.
+Plan two writes the pages.
+
+**Plan one, the toolset and the harvest.** Two plan documents launched concurrently under one
+ceiling: **1a**, the toolset (units 2, 3a, 3b, 3c, and the unit 4 join), and **1b**, the harvest
+(unit 1). Units 1, 2, and 3 are genuinely independent, share no file, and consume nothing from one
+another, so the earlier claim that each unit depends on the one above it is withdrawn. The only real
+edge inside plan one is unit 4, which joins all three. The contended resources are `package.json`,
+the CI workflow, `docs/STATUS.md`, `ROADMAP.md`, `CHANGELOG.md`, and
+`docs/internal/docs-register.md`; whichever chain merges second rebases.
+
+**Plan two, the rewrite.** Unit 5, authored only after plan one lands, so every brief cites real
+ledger ids and runs against real gates. It is four to five plan documents, one per track plus the
+front door, each with its own worktree, its own pull request, and its own ceiling, merged as each
+lands. Never one long-lived rebuild branch.
+
+Two sequencing constraints sit outside this spec. Polish-C, the breaking window, renames and removes
+across 365 in-tree files and four sites' route files, and every rename invalidates ledger entries in
+exactly the class the ledger exists to guarantee. **Polish-C must land entirely before the harvest
+branches.** And `check:figures`, its script under `scripts/figures/`, and the figure assets are
+uncommitted working-tree state today, so that work must land on `main` before any unit 3b plan is
+written, and decisions 5, 5a, and 6 re-verified against the merged state.
+
+### Sizing
+
+| Unit | Tokens | Attended sittings |
+|---|---|---|
+| 1, harvest | 2.0 to 4.5M | 2 to 4 |
+| 2, corpus | 0.3 to 0.6M | 1 to 3 |
+| 3a and 3b, rules and gates | 2.5 to 4.5M | 2 to 4 |
+| 3c, Claude setup | 0.3 to 0.6M | 1 to 2 |
+| 4, demonstration page | 0.3 to 0.5M | 1 to 2 |
+| 5, the rewrite | 8 to 12M | 40 to 75 |
+| **Total** | **13.5 to 22.5M** | **47 to 90** |
+
+These figures roughly double the six-to-nine-million estimate the proposal's cost review gave, for
+two reasons. That estimate sized the rewrite alone and counted nothing ahead of it, and the four
+units ahead add five to ten million. And it counted only the reader-test sittings, where the
+unverified list, the corpus approvals, the `CLAUDE.md` taste calls, and the demonstration read add
+seven to seventeen more. Each unit's owner decisions batch into one scheduled sitting at that unit's
+checkpoint.
 
 ### Unit 1: the fact harvest
 
-Harvest every claim the published pages make into a fact ledger, one track at a time. The tracks are
-admin, editors, extend, reference, and the front door. The harvest runs once per track and runs
-before any page brief is written, so no drafter is ever exposed to the old prose or the old
-organization.
+Harvest every claim the published pages make into a fact ledger, one track at a time: admin,
+editors, extend, reference, and the front door. Each track's ledger is one file at
+`docs/internal/record/docs-rebuild/<track>-facts.md`. That path carries no date, so unit 5 can
+resolve it months later.
 
-Each track's ledger is one file at `docs/internal/record/<date>-docs-rebuild/<track>-facts.md`. It
-carries one entry per claim, and each entry carries an id, the claim, the old file and line it came
-from, and the source that proves it. A proving source is a code path, a config key, a wrangler or
-Cloudflare record, a recorded transcript fixture, or an owner brief such as
-[`front-door-author-brief.md`](../../internal/record/2026-09-08-polish-inputs/front-door-author-brief.md).
-A claim with no proving source is listed under a heading named "Unverified" and must not enter any
-brief. A gated block is a ledger entry that points at the fixture its gate checks, which covers the
-typechecked snippets, the reference signatures, and the recorded admin transcripts.
+**Claim granularity.** One entry per checkable proposition: a statement that could be false and
+whose falseness a reader would act on. Version numbers, counts, paths, export names, defaults,
+behaviors, and promises about who does what all qualify. Transitions, motivation, and restatements
+do not. A proposition is sentence-level, recorded in a normalized form under fifteen words rather
+than as a lifted sentence, so the ledger does not become the old prose delivered one line at a time.
 
-One rule governs every later drafting dispatch. The drafting agent reads the ledger and the page
-type's exemplar, and must never open the old page. A brief's "this page needs" list is built from
-ledger entries by id, and `check:provenance` resolves each id against the ledger.
+**Proven.** An entry is proven when it points at one of: a code path with its `file:line` and the
+commit sha, a config key, a wrangler or Cloudflare record, a recorded test fixture, or a line in an
+owner brief. **A published page is never a proving source**, which is the circularity that let the
+front door assert a workflow that never happened. Verdict tiers: `gate` (an existing gate or fixture
+asserts it, named), `read` (an agent read it, with `file:line` and sha), `owner` (an owner brief
+line), and `unverified`. An `unverified` entry must not enter any brief.
+
+**Ids.** An id is `<track>-NNNN`, monotonic and unique within its file. Ids are never reused.
+Retired entries stay as tombstones.
+
+**Keep entries.** A drafter who never opens the old page loses more than claims, so five further
+entry classes are harvested per page and cited in the brief's `keep` list:
+
+- **Anchors** that the readiness and link gates depend on, and every heading slug with an inbound
+  link, as the anchor map the Compatibility section requires.
+- **Vale suppressions** with the comment that states why each is right.
+- **Recorded deviations** the page carries locally.
+- **Ratified specimens**, sentences the owner approved verbatim, such as the why-cairn opener.
+- **Deliberate omissions**, most importantly the vendor-link rule, whose signal is what a page did
+  not restate.
+- **Reader-tested editor glosses**, the editors track's banned-vocabulary substitutions.
+
+A gated block is its own entry kind. Its entry carries the fence verbatim, its language tag, its
+marker comment, and the fixture path its gate replays against. A verbatim code fence is the one
+exception to the no-old-prose rule, because a fence is not prose.
+
+**The quarantine and the coverage diff.** The drafting agent reads the ledger and the page type's
+exemplar, and does not open the page it replaces. The quarantine holds; the coverage diff at chain
+step 8 closes the hole it leaves. A separate agent, never the drafter, compares the drafted page's
+claims against the ledger after the draft exists and reports every entry the page dropped.
+
+**The roadmap row.** `ROADMAP.md`'s "Toward 1.0" carries the docs claims-verification audit (Geoff,
+2026-08-02), an adversarial sweep tracing every factual claim to the code, recorded to run after
+`beta.1`. This harvest is that sweep with a ledger format attached, and it absorbs the row. Whether
+the after-`beta.1` sequencing still stands is owner decision 5.
 
 Acceptance criteria:
 
-- Every published page's claims are accounted for in its track's ledger, each as verified with its
-  proving source or listed under the "Unverified" heading.
-- Every ledger entry carries an id, the claim, the old file and line, and either a proving source or
-  the "Unverified" heading.
-- Every gated block in the published set has a ledger entry naming the fixture its gate checks.
-- No drafting dispatch in a later unit reads an old published page, and each unit's plan states that
-  constraint in the dispatch it writes.
-- The ledger ids are stable and citable, so a page brief can name an entry without repeating it.
+- Every published page has a ledger entry for every extractable fact token it contains (version,
+  path, export name, numeral, config key), checked by script rather than asserted.
+- Every ledger entry carries an id matching `^<track>-\d{4}$`, the normalized claim, the old file and
+  line, and either a verdict tier with its proving source or the `unverified` tier.
+- Every gated block in the published set has an entry carrying the fence verbatim and its fixture
+  path.
+- Every page has an anchor map and the five keep classes harvested.
+- Every published page has a page type assigned, recorded in the ledger. The harvest is the only
+  chain that reads all 75 pages, so it is the producer of this artifact.
+- A `check:ledger` script re-resolves every `read` entry's `file:line` and fails when the path is
+  gone.
+- This unit commits a drafting-dispatch prompt fragment carrying the quarantine and the readable-file
+  list, so plan two's dispatches inherit it.
 
 ### Unit 2: the corpus
 
 Assemble `docs/internal/corpus/` and its manifest. Fetch one or two excerpts per page type from the
 sources the proposal names, each at most 400 words, each with its source, license, and fetch date.
-Mark the table-shaped entries structure-only. Measure every entry with
-`scripts/checks/measure-prose.mjs` and record the numbers in the manifest. Choose the second editors
-entry by hand, since automated reads are blocked. Present the assembled set to the owner for
-approval.
+Mark the table-shaped entries structure-only and the redistribution-blocked ones reference-only.
+Measure every entry with `scripts/checks/measure-prose.mjs` and record the numbers in the manifest.
+Choose the second editors entry by hand, since automated reads are blocked. Present the assembled set
+to the owner for approval.
 
 Acceptance criteria:
 
-- `docs/internal/corpus/` holds at least one entry per page type in the registry above, and at most
-  two.
+- `docs/internal/corpus/` holds at least one entry per page type in the registry, and at most two.
 - The manifest carries source, license, fetch date, page type, track, measured numbers, and an
   approval column for every entry.
-- Every entry is at most 400 words and carries a `## Source` section in the shape of
+- Every committed entry is at most 400 words and carries a `## Source` section in the shape of
   [`corpus-sample-sqlite.md`](../../internal/record/2026-09-08-polish-inputs/corpus-sample-sqlite.md).
-- Every table-shaped entry is marked structure-only.
+- Every table-shaped entry is marked structure-only, and every entry whose license blocks
+  redistribution is marked reference-only with its numbers and no excerpt.
 - The three existing samples are migrated into the corpus directory or superseded, and the record
   directory keeps no second copy.
-- The approval column is empty at merge. The owner fills it, and no later unit drafts a page against
-  an unapproved entry.
+- `check:anatomy` refuses a brief naming an entry whose manifest approval column is empty.
 
-### Unit 3: the rules and the gates
+### Unit 3a: the structure gates
 
-Write everything that holds the standard. This unit produces the templates, the five scripts, the
-Vale rules, and the Claude setup changes. It changes no published page.
+The brief format and its parser, the eleven templates, `check:anatomy`, `check:headings` with its
+verb lexicon, markdownlint, and the CI wiring. Roughly six tasks. This is what unit 4 needs to prove
+the shape.
+
+Acceptance criteria:
+
+- `docs/<track>/<page>.brief.yml` has a published schema, a parser, and one worked brief.
+- `docs/internal/templates/` holds one template per page type, each carrying that type's section
+  order from this spec, with each heading marked required or optional. The reference-entry template
+  is derived from the shape `check:reference` already fixes.
+- `check:anatomy` reads the templates as its only source, fails a page with a missing or unparseable
+  brief first, then fails missing or out-of-order required headings.
+- `check:headings` holds the seven rules numbered above, with rules 5 and 6 against the committed
+  verb lexicon at warning level, and a fixture per rule.
+- Markdownlint runs with its stock rules and `check:headings` reimplements none of them.
+- Both gates are scoped to published paths and wired into `package.json` and CI.
+
+### Unit 3b: the receipt and provenance gates
+
+`check:provenance`, `check:prose-read`, the Vale rules with their must-fire fixtures, the vendored
+guidelines PDF, `check:figures`' seven assertions, and the `check:visuals` alt-attribute hole.
+Roughly six tasks. It can land while unit 4 runs.
 
 Acceptance criteria:
 
 - The 2011 guidelines PDF is vendored and referenced from the register.
-- `docs/internal/templates/` holds one template per page type in the registry, each carrying that
-  type's section order from this spec.
-- `check:anatomy` reads the templates rather than a second copy of the orders, and fails a page whose
-  required headings are missing or out of order.
-- `check:headings` holds all eight heading rules named above.
-- `check:cadence` reports the measurements beside a named corpus entry and exits 0 regardless of the
-  numbers.
-- `check:provenance` fails an unresolved footnote id and passes a resolved one.
-- `check:prose-read` fails a published page whose content hash has no matching receipt.
+- `check:provenance` fails an unclassified sentence, an unresolved id, and a machine-extractable fact
+  no cited entry carries, and passes a fully classified page. A fixture reproduces the front-door
+  failure case.
+- `check:prose-read` fails a published page whose receipt is missing or stale, in the receipt
+  mechanism owner decision 3 settles.
 - `check:figures` runs the seven mechanical assertions, and `check:visuals` fails an image with no
   alt attribute.
-- Every new or changed Vale rule ships a fixture that fires, and the fixture is verified on the
-  pinned CI version.
-- Every new gate is wired into `package.json` and into CI, scoped per the compatibility section.
+- Every new or changed Vale rule ships a fixture that fires, and the fixture suite runs on every CI
+  run against the pinned binary.
+- The external link-rot routine is scheduled and reports rather than fails.
+- Every new gate is wired into `package.json` and into CI, scoped per the Compatibility section.
 - The register records the standard and points at this spec.
-- The Claude setup changes land as listed, with both `CLAUDE.md` files net-neutral in line count.
+
+### Unit 3c: the workstation setup
+
+The seven Claude setup pieces plus the tellgrader change, all outside this repository. Run as a
+dotfiles pass in the main loop, not through cairn's implementer chain, and not graded by cairn's
+gate. Roughly three to four tasks.
+
+Acceptance criteria:
+
+- The output style, the voice files, the review agents, the two skills, and the Vale hook change as
+  the Claude setup section lists.
+- The scanner's new measures ship behind a docs-register profile and do not fire on site content,
+  proved by a fixture.
+- Both `CLAUDE.md` files stay within the workstation's budget hook, with the four displaced lines
+  chosen by the owner.
+- The tellgrader change clears poplar's own `make check`.
 
 ### Unit 4: the demonstration page
 
 Rebuild `docs/extend/add-a-custom-admin-screen.md` through the full review chain, against its
-task-guide corpus entry. The page measures 76 percent hinged pairs, which is the worst figure in the
-extend track. The rebuild follows unit 5's shape on a single page, so that shape is proved before it
-is planned across the whole published set. This page is the evidence the owner reads beside the
-original.
+task-guide corpus entry. The page measures 76 percent hinged pairs, the worst figure in the extend
+track. Harvest that one page as the harvest chain's first task, so the demonstration exercises the
+ledger schema before the full harvest commits to it.
 
 Acceptance criteria:
 
-- The page has a brief, an outline reviewed before its prose, and a receipt.
-- Every gate from unit 3 passes on the page.
+- The page has a brief file, an outline reviewed before its prose, a coverage diff, and a receipt.
+- Every gate from units 3a and 3b passes on the page.
 - The fresh reviewer's report names the corpus entry and carries the measurement table.
-- The owner has read the rebuilt page beside the original and has approved unit 5 to proceed.
+- The reader test has run on the page, one sitting, and its result is in the receipt.
+- The page was drafted one section per read, recorded in the dispatch.
+- The comparison artifact exists: the rebuilt page beside the original, with the measured token and
+  sitting cost of one page end to end. The owner's read and approval to proceed is the plan's
+  closing gate rather than a task criterion.
 
-### Unit 5: the docs rebuild
+### Unit 5: the rewrite
 
-Rebuild the published pages against the standard. This unit is a rebuild, and never an edit. For
-each page, Claude writes the brief and the outline from the track's fact ledger, then drafts fresh
-against the page type's exemplar. The drafter never opens the page it replaces. The brief's "this
-page needs" list cites ledger entries by id, and `check:provenance` resolves every claim on the
-drafted page to one of those ids. The existing block gates prove that each carried snippet,
-signature, and transcript still holds.
+Rebuild the published pages against the standard, as decision 12 directs. For each page, Claude
+writes the brief file and the outline from the track's fact ledger, then drafts fresh against the
+page type's exemplar, under the quarantine unit 1 sets. The brief's `needs` list cites ledger entries
+by id, `check:provenance` resolves every claim on the drafted page, and the coverage diff reports
+what the page dropped. The existing block gates prove that each carried snippet, signature, and
+transcript still holds.
 
-The reasoning is measured. The proposal converged in eight revisions from an edited draft, and the
-from-scratch draft reached the same gate state in three loops. Editing keeps every structural choice
-the old pages made, and those choices were made with no page type, no brief, and no outline review,
-which is the failure this standard exists to stop.
+**The first page is `docs/why-cairn.md`**, the page whose rejection produced this initiative and the
+best-prepared page in the set, since its author brief already exists as the source
+`check:provenance` resolves against. Polish-D's front-door task moves here rather than being
+authored twice. Polish-D's substrate commit and its figure and form tasks stay where they are, and
+its `docs/README.md` route-order item becomes an index-page question this standard governs.
+
+**Polish-B folds here except its code half.** Tasks 2, 8, and 9 and the `check:reference` change in
+task 5 stay in polish-B, which merges before the harvest branches. Its D1 through D30 and F7 through
+F10 prose findings become authoritative ledger input. The harvest records the true claim with its
+proving source and marks the old page's claim superseded. Then the rebuild emits the corrected page
+once, instead of editing a page and rebuilding it afterwards.
 
 Reference entries under `docs/reference/` are the named exception, and they are edited in place. The
 signature gate already fixes their shape, so the structural risk the rebuild answers does not reach
 them. The prose around each signature is small enough that an edit reaches the same result for less
 work. Each reference page's brief records the exception and its reason.
 
-The unit runs one track at a time. The outline of every page in a track is read against its type
-before a single paragraph of that track is drafted. The unit carries the front-door changes from
-decision 6 and the sentence-ceiling clearing from decision 3. It must be planned with its own token
-ceiling, since it is by a wide margin the largest of the five units.
+The unit runs one track at a time, one worktree and one pull request per track. Every page in a
+track has its outline read against its type before a paragraph of that track is drafted. The unit
+carries decision 6 and, depending on owner decision 1, decision 3's clearing work.
 
 Acceptance criteria:
 
-- Every published page has a track, a page type, a brief, and a receipt.
-- Every published page outside `docs/reference/` was drafted fresh against its exemplar, by an agent
-  that did not open the page it replaces, and its brief's "this page needs" list cites the ledger
-  entries by id.
+- Every published page has a track, a page type, a brief file, and a receipt.
+- Every published page outside `docs/reference/` was drafted fresh against its exemplar under the
+  quarantine, its dispatch id recorded in the receipt, and its brief cites the ledger entries by id.
 - Every page under `docs/reference/` was edited in place, and the exception is recorded in each
   brief.
-- `check:snippets`, `check:reference:signatures`, `check:transcripts`, and `check:docs` pass, proving
-  every carried block still holds.
+- The coverage diff has run on every rebuilt page and every reported miss is resolved or recorded.
+- The full `npm test` gate passes, which includes `check:snippets`, `check:reference`,
+  `check:reference:signatures`, `check:transcripts` with its per-page block floors,
+  `check:editor-quotes`, `check:symbols`, `check:arm-indexes`, `check:visuals`, `check:figures`,
+  `check:prose`, and `check:docs`.
 - `check:anatomy`, `check:headings`, `check:provenance`, and `check:prose-read` pass across the whole
-  published set, with no path-scoped exclusions left from the compatibility section.
-- The 40-word ceiling and the 25-word track ceiling are at error level, with zero violations.
-- The concept figure is off the front door and the ownership map is on the architecture overview.
-- The reader test has run on the task guides in the admin and extend tracks and on the front door,
-  with each result in that page's receipt.
+  published set, with no path-scoped exclusions left from the Compatibility section.
+- Every anchor in each track's anchor map either survives or has its inbound links repaired in the
+  same task, and every approved rename leaves a stub.
+- The concept figure is off `docs/why-cairn.md` and the ownership map is on
+  `docs/extend/architecture.md`.
+- The reader test has run on the pages owner decision 4 names, with each result in that page's
+  receipt.
+- `ROADMAP.md`'s claims-verification row is marked done and removed, and
+  `docs/internal/docs-friction-log.md` is triaged for entries this standard resolves.
+
+### What plan one hands plan two
+
+Plan two cannot be authored until all nine exist at fixed paths. These are plan one's closing
+criteria:
+
+1. The five ledgers at `docs/internal/docs-rebuild/<track>-facts.md`, with the id format, the four
+   verdict tiers, the per-page anchor maps, the keep classes, and the verbatim gated blocks.
+2. The page-type assignment for all 75 published pages.
+3. `docs/internal/corpus/` and its manifest, approval column filled, every registry type covered by
+   an approved or reference-only entry.
+4. `docs/internal/templates/`, eleven templates, each heading marked required or optional.
+5. The brief schema, its parser, and one worked brief.
+6. The four scripts plus markdownlint, wired into `package.json` and CI, each with its path scope and
+   the named unit that removes the scope exclusion.
+7. The Vale rules with their must-fire fixtures, verified on the CI-pinned binary.
+8. The drafting-dispatch prompt fragment carrying the quarantine and the readable-file list.
+9. The demonstration page's measured cost in tokens and sittings, which is what sizes plan two.
 
 ## Risks
 
-- **Fact loss and prose infection in the rebuild.** A fresh draft can drop a fact the old page
-  carried, and a drafter that reads the old page inherits its organization and its rhythm. Unit 1
-  controls both. The fact ledger accounts for every claim before any brief is written, so nothing
-  reaches a draft only by having been read, and the drafter never opens the page it replaces. The
-  outline review checks the brief's cited ledger ids against the outline before drafting starts. The
-  existing block gates catch a dropped snippet, signature, or transcript, and `check:provenance`
-  catches a claim that resolves to no ledger entry. A claim the harvest missed entirely is caught by
-  nothing, which is why the harvest's first acceptance criterion is completeness per page.
+- **Fact loss in the rewrite.** A fresh draft can drop a fact the old page carried. The ledger
+  accounts for every claim before any brief is written, and the outline review checks the cited ids
+  against the outline. The block gates catch a dropped snippet, signature, or transcript.
+  `check:provenance` catches a claim resolving to no entry, and the coverage diff catches an entry
+  the page dropped. What remains uncovered is a claim the harvest never recorded, which is why unit
+  1's first criterion is machine-checked rather than asserted.
 - **The measurement instrument is unsettled.** It moved twice during the proposal, and each move
   changed the numbers by more than the width of the human band. No cadence number may become a gate
   until the definition in `measure-prose.mjs` is fixed and a track has twenty documents and three
   hundred sentences behind its band.
+- **The hinge count is gameable, and it is published.** Parentheses carry the same qualification and
+  count as nothing. Dropping the comma before "and" removes a hinge from the count and not from the
+  prose. Splitting a pair into two sentences lowers the hinge share and raises the short-sentence
+  share, which produces the staccato the register's front-door voice ruling bans. The count is a
+  locator, never a score, and a reviewer must not return a fix verdict whose only support is a
+  non-gating measurement.
 - **A Vale rule that enforces nothing.** A rule written as a section override can silently disable
-  itself on the pinned CI version. The must-fire fixture is the only control, which is why unit 3
-  makes it a requirement for every rule.
-- **The attended cost.** The reader test is about forty sittings and is the largest attended cost in
-  the table. A unit 5 plan that does not schedule those sittings will stall at its last acceptance
-  criterion.
-- **Unit 5 is large.** The proposal's cost review sizes the full docs pass at six to nine million
-  tokens and 31 to 73 attended sittings. It must be planned as its own initiative with its own
-  ceiling, one track at a time, and never folded into another pass.
-- **Templates and gates drifting apart.** Two copies of a section order will diverge. The control is
-  that `check:anatomy` reads the templates as its only source, which unit 3's acceptance criteria
-  require.
+  itself on the pinned CI version. The must-fire fixture is the only control, and it runs on every CI
+  run.
+- **The attended cost.** Forty to seventy-five sittings sit in unit 5 alone, and owner decision 4
+  sets the count. A plan that does not schedule them stalls at its last acceptance criterion.
+- **Plan two is large.** Eight to twelve million tokens across four to five plan documents. Re-size
+  it from the demonstration page's measured cost before authoring, never from this estimate.
+- **Templates and gates drifting apart.** Two copies of a section order will diverge. `check:anatomy`
+  reads the templates as its only source, which unit 3a's criteria require.
+- **The registry may lack a type a page needs.** A glossary, a migration guide, a release-notes page
+  or an FAQ has no type here, and the rule forbids writing a page whose type has no exemplar. The
+  escape is a brief-recorded deviation naming the nearest type, pending an owner-approved registry
+  addition with its exemplar.
+
+## Owner decisions
+
+Seven decisions the reviews raise are the owner's, not the implementer's. Each recommendation below
+is the conductor's, and none is taken. No unit blocks on them, but three change what a unit builds.
+
+| # | Decision | Options | Reviewers' evidence | Conductor's recommendation |
+|---|---|---|---|---|
+| 1 | Sentence-length gate level: decision 3's 25-word ceiling on admin and editors, and the 40-word ceiling | Error after clearing 196 sentences, or warning permanently | Benchmark: GitLab and Red Hat both run sentence length at suggestion, and no surveyed program gates a length number. Conformance: both banked exemplars fail a gated rule, the KEP at 44 words and both at the paragraph floor. Charter: the spec's own non-goals say rewriting to a length number does not improve comprehension, which contradicts buying 196 rewrites | Warning permanently, no promotion path; drop the 196-sentence clearing; keep the paragraph ceiling at error |
+| 2 | Page-type count | Keep eleven, or collapse to about six | Benchmark: Kubernetes runs four types over a thousand-plus pages, Microsoft five, Red Hat three; eleven for 75 pages is roughly four times the field ratio. Plannability: eleven templates will not fit one dispatch and drive unit 3's task count | Keep eleven for plan one's registry, then review after the demonstration page shows what a template costs |
+| 3 | Receipt mechanism | Per-page committed receipt verified by content hash, or a pull-request artifact plus one ledger row per page | Benchmark: no surveyed program commits a per-page review artifact; Microsoft's nearest analogue lives in the PR check. Charter: a hash gate makes a typo fix unmergeable by a contributor who cannot run a reader test, and a receipt beside a published page ships in the npm tarball. Plannability: no hash algorithm, normalization, path, or staleness policy is specified | PR artifact plus one row per page in a docs ledger, gate failing only on a missing row; if the file form is kept, hash prose only and define fresh, prose-stale, and structure-stale |
+| 4 | Reader-test sittings | Forty, one per task guide and the front door, or nine with a next-rewrite trigger | Benchmark: DigitalOcean's precedent is paid staff editors, and Kubernetes gets volunteers; cairn has one owner. Charter and plannability: the spec predicts its own stall at this criterion, and the sitting total reaches 47 to 90 across the initiative | Nine: the front door, the track index pages, and the six highest-traffic task guides, with the rest triggered by the next substantive rewrite |
+| 5 | Harvest sequencing against the roadmap | Honor the ratified after-`beta.1` sequencing, or overrule it and run the harvest with plan one | Charter: `ROADMAP.md` records the claims-verification audit as running after `beta.1` so its inputs exist, and as a blocking gate before `1.0.0`; the spec plans it first without citing the row. Plannability: polish-C's renames invalidate ledger entries wholesale | Absorb the row and run the harvest when plan one runs, recording the overrule with its reason; polish-C lands entirely first |
+| 6 | Rendered docs preview per branch | Add one, or defer | Benchmark: Kubernetes reviews on Netlify previews and its checklist names the preview explicitly; Cloudflare builds one per commit; no step in cairn's chain reads a rendered page, which matters most for the figure rules. Against: cairn.pub renders from the installed tarball, so the docs already have a real renderer | Defer; revisit if the figure grading at unit 4 proves it needs one |
+| 7 | Home for the new scanner measures | The workstation's tellgrader, or cairn's own scripts | Charter: the tell scanner is shared writing infrastructure every family repo would want on identical terms, and cairn's own bands must not reach site content, which `CLAUDE.md` holds in its personal voice. Plannability: a poplar change is graded by `make check`, which cairn's chain cannot see | tellgrader, behind a docs-register profile that is off outside docs paths |
 
 ## Open items
 
-Three items are owed by the owner, and no unit that depends on one may start before it arrives:
+Four items are owed by the owner, and no unit that depends on one may start before it arrives:
 
 - **The corpus approvals (decision 7).** The candidate entries are named in the proposal and none is
-  approved. Unit 2 assembles them and unit 4 cannot draft against an unapproved entry.
+  approved. Unit 2 assembles them and unit 4 cannot draft against an unapproved entry. Consider a
+  time-boxed default-to-accept window, since an unapproved entry blocks work rather than protecting
+  anything.
 - **The second editors corpus entry.** The Mozilla support articles block automated reads, so the
   entry must be chosen by hand and approved separately.
-- **The reader-test sittings (decision 9).** About forty sittings, one per page, across the admin and
-  extend task guides and the front door. They are scheduled inside unit 5 and remain unrun.
+- **The demonstration read (decision 11).** The owner's read of the rebuilt page beside the original,
+  and the approval that opens plan two.
+- **The reader-test sittings (decision 9).** Scheduled inside unit 5 and unrun; owner decision 4 sets
+  the count.
 
 Two items are unresolved in the proposal and stay unresolved here. The hinged-pair definition in
 `measure-prose.mjs` is fixed for now and no number built on it is a rule yet. The proposal's revision
 8 has not been reader-tested, and the register grade of its revision 5 raised sixteen findings whose
 answers are unverified.
 
+One more sits with the register rather than with the owner. `docs-register.md` treats
+`docs/README.md`, `docs/why-cairn.md`, and the root `README.md` as one front-door surface and
+requires five routes in the first screenful, which one template cannot hold alongside an evaluator's
+argument. Unit 3a must split the front-door type into an evaluator type and a routing-index type,
+and state how `check:anatomy` reaches a root `README.md` that sits outside `docs/`. The register's
+2026-09-08 front-door voice ruling outranks the cadence report on that surface.
+
 ## Receipt
 
 Measured with `scripts/checks/measure-prose.mjs` over everything above this section, with list items
-included and then excluded. The corpus columns measure the two exemplar excerpts the same way, each
-with `--until "## Source"`. Vale ran with the Google package forced on, over a copy of this file at
-a path `.vale.ini` globs onto Google, since the specs directory is style-exempt; the local binary is
-3.20.0 and CI pins 3.15.1, so CI governs any disagreement. Every cell below comes from script
-output.
+included and then excluded. The exemplar columns measure the two corpus samples the same way, each
+with `--until "## Source"`, and every comparison below is prose-only against prose-only. Vale ran
+with the community Google-style package forced on, over a copy of everything above this section at a
+path `.vale.ini` globs onto Google, since the specs directory is style-exempt. That package states in
+its own README that it is neither maintained nor endorsed by Google, so it is a community port of the
+guide rather than Google's own gate. The local binary is 3.20.0 and CI pins 3.15.1, so CI governs any
+disagreement. Every cell below comes from script output.
 
-| Measure | All sentences | Prose only | Go exemplar | KEP exemplar | Target | Status |
+| Measure | All sentences | Prose only | Go exemplar, prose only | KEP exemplar, prose only | Target | Status |
 |---|---|---|---|---|---|---|
-| Sentences | 429 | 217 | 17 | 22 | | count only |
-| Average length | 13.9 words | 14.6 words | 22.1 words | 16.4 words | 15 to 20 | miss, 0.4 words below the floor on prose. The page is heavily listed and states most requirements in one short sentence each |
-| Longest sentence | 35 words | 34 words | 39 words | 44 words | under 40 | pass |
-| Hinged pairs | 28 percent | 35 percent | 41 percent | 18 percent | at or under the exemplar plus 15 points | pass against the Go exemplar; 35 against the KEP's 18 is 17 points over, which step 5 of the chain reports and nothing gates on |
-| Sentences under 8 words | 22 percent | 19 percent | 12 percent | 27 percent | reported | reported |
-| Paragraphs | 68 | 68 | 8 | 6 | | count only |
+| Sentences | 612 | 337 | 17 | 10 | | count only |
+| Average length | 14.5 words | 15.1 words | 22.1 words | 21.3 words | 15 to 20 | pass on prose, at the floor |
+| Longest sentence | 40 words | 40 words | 39 words | 44 words | under 40 | at the ceiling, not under it. The KEP exemplar exceeds it |
+| Hinged pairs | 30 percent | 35 percent | 41 percent | 20 percent | reported, never gated | 6 points under the Go exemplar and 15 over the KEP. Step 5 reports it and nothing gates on it |
+| Sentences under 8 words | 20 percent | 19 percent | 12 percent | 20 percent | reported | reported |
+| Paragraphs | 103 | 103 | 8 | 6 | | count only |
 | Paragraphs over 8 sentences or 150 words | 0 | 0 | 0 | 0 | 0 | pass |
-| Paragraphs under 3 sentences, list lead-ins exempt | 0 | 0 | 6 | 3 | 0 | pass |
-| Vale, Google package forced | 0 errors, 35 warnings, 166 suggestions | | | | errors 0 | pass. The warnings are contractions, Oxford commas, and word-list items from the Google package, which this internal spec does not adopt for itself |
-| Tell scanner findings | 0 | | | | 0 | pass |
-| Three-item lists the scanner counted | 5 | | | | each a real list | counted, not flagged; the scanner returned no finding |
+| Paragraphs under 3 sentences, list lead-ins exempt | 0 | 0 | 6 | 3 | 0 | pass. Both exemplars fail it |
+| Vale, community Google-style package forced | 0 errors, 43 warnings, 269 suggestions | | | | errors 0 | pass. The 43 warnings are `Google.OxfordComma` (17), `Google.WordListCase` (15), `Google.Will` (6), and `Google.Colons` (5), none of which this internal spec adopts for itself |
+| Tell scanner findings | 0 | | | | 0 | pass, at 0 tells per thousand words and a cadence coefficient of variation of 1.31 |
+| Tricolons the scanner counted | 13 | | | | each a real list | counted, not flagged; the scanner returned no finding |
+
+Two of the numbers this spec adopts fail on its own named exemplars, and the receipt says so rather
+than hiding it. KEP-2400's longest sentence is 44 words against the 40-word ceiling, and both
+exemplars carry paragraphs under the three-sentence floor, six of eight and three of six. Those two
+numbers are cairn's, not the genre's. A rule that the best human page in its genre would fail is
+either the wrong rule or a rule that must ship at warning level, which is exactly what owner
+decision 1 settles; unit 3b must ship both with fixtures recording the exemplar failures.

@@ -4,12 +4,14 @@
 // the route 404s; it has no surface in a real deploy. The E2E hits this to assert the editor is the
 // commit author and the committer is absent.
 import { json, error } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
 
-export async function GET() {
+/** Return the last commit the fake-github double recorded. */
+export const GET: RequestHandler = async () => {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { lastRecordedCommit } = await import('@glw907/cairn-cms-dev');
     return json(lastRecordedCommit());
   }
   error(404, 'Not found');
-}
+};

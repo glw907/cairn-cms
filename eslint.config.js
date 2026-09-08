@@ -1,6 +1,7 @@
 import jsdoc from 'eslint-plugin-jsdoc';
 import tsdoc from 'eslint-plugin-tsdoc';
 import tseslint from 'typescript-eslint';
+import svelteParser from 'svelte-eslint-parser';
 
 // Local house rule: ban the em dash in code comments. A comment is a keyboard, grep, and
 // monospace medium, so the character (which TSDoc does not address) does not belong there.
@@ -27,10 +28,16 @@ const houseComments = {
   },
 };
 
-// The comment gate covers src/lib and the dev-package source (packages/cairn-cms-dev/src), so the
-// TSDoc and em-dash rules reach both. check:comments lints src/lib; check:dev-package lints the
-// dev-package paths against this same config.
-const COMMENT_GLOBS = ['src/lib/**/*.ts', 'packages/cairn-cms-dev/src/**/*.ts'];
+// The comment gate covers src/lib, the dev-package source (packages/cairn-cms-dev/src), and the
+// showcase's own .ts and e2e sources, so the TSDoc and em-dash rules reach all three.
+// check:comments lints src/lib and the showcase; check:dev-package lints the dev-package paths
+// against this same config.
+const COMMENT_GLOBS = [
+  'src/lib/**/*.ts',
+  'packages/cairn-cms-dev/src/**/*.ts',
+  'examples/showcase/src/**/*.ts',
+  'examples/showcase/e2e/**/*.ts',
+];
 
 export default [
   { files: COMMENT_GLOBS, ...jsdoc.configs['flat/recommended-typescript-error'] },
@@ -62,6 +69,25 @@ export default [
       // require-yields wants an `@yields` tag, and TSDoc's own tag set does not define one. A
       // generator function describes what it yields in prose instead.
       'jsdoc/require-yields': 'off',
+    },
+  },
+  // The showcase's .svelte files get the same four comment rules the .ts block carries, scoped
+  // to this one glob. svelte-eslint-parser hands the <script> block to typescript-eslint's
+  // parser so the comment rules see TypeScript comments; eslint-plugin-svelte's own rule sets
+  // (a11y, reactivity) are deliberately not enabled here, since this block is a comment gate,
+  // not a component linter, and its files glob would otherwise reach src/lib/components too.
+  {
+    files: ['examples/showcase/src/**/*.svelte'],
+    languageOptions: {
+      parser: svelteParser,
+      parserOptions: { parser: tseslint.parser },
+    },
+    plugins: { jsdoc, tsdoc, house: houseComments },
+    rules: {
+      'house/no-em-dash-in-comments': 'error',
+      'jsdoc/no-types': 'error',
+      'tsdoc/syntax': 'error',
+      'jsdoc/informative-docs': 'warn',
     },
   },
 ];

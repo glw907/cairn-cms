@@ -1,4 +1,4 @@
-// cairn-cms: the showcase's member login route, the separate request/confirm/logout routes
+// The showcase's member login route, the separate request/confirm/logout routes
 // (docs/extend/add-a-second-audience.md) folded onto one page as two named form actions,
 // since this fixture needs no route beyond it. Both actions pass the raw SvelteKit `RequestEvent`
 // straight to `memberChannel.actions.*`: it satisfies the actions' own `CairnEvent` constraint

@@ -1,4 +1,4 @@
-// cairn-cms: the showcase's members login channel, the worked exemplar for
+// The showcase's members login channel, the worked exemplar for
 // docs/extend/add-a-second-audience.md. Two named divergences from that page, stated here so
 // "living exemplar" does not overclaim: the module lives under src/members/ rather than
 // src/lib/server/ (the showcase keeps no src/lib), and `challenge` is `insecureTestChallenge`

@@ -60,7 +60,10 @@ const FLIP_TRANSITION_TIMEOUT_MS = 300;
  * root's `transitionend` (with a timeout fallback, in case no matched property actually transitions
  * on a given page). Instant, no class at all, under `prefers-reduced-motion`.
  */
-export function toggleThemeWithTransition<T extends string>(config: ThemeToggleConfig<T>, current: T): T {
+export function toggleThemeWithTransition<T extends string>(
+  config: ThemeToggleConfig<T>,
+  current: T,
+): T {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return toggleTheme(config, current);
   }

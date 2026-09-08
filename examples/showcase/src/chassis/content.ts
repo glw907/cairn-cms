@@ -21,10 +21,30 @@ const fragmentsRaw = import.meta.glob('/src/content/fragments/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw, fragments: fragmentsRaw });
+const indexes = createSiteIndexes(cairn, siteConfig, {
+  posts: postsRaw,
+  pages: pagesRaw,
+  fragments: fragmentsRaw,
+});
 
 export const site = indexes.site;
 export const posts = indexes.posts;
 
-export const ORIGIN = 'https://showcase.test';
-export const SITE_DESCRIPTION = 'The cairn showcase site.';
+// The build-time origin, a literal by design: this is the reader Vite bakes into the static
+// build (robots.txt, the sitemap, the feed). `PUBLIC_ORIGIN` in wrangler.jsonc is the Worker's
+// own runtime value for the same host, read where a handler needs the live request's origin.
+const ORIGIN = 'https://showcase.test';
+
+// Read through `siteMeta` below, the one composed identity every caller imports.
+const SITE_DESCRIPTION = 'The cairn showcase site.';
+
+/**
+ * The site's identity, composed once. `PublicRoutesConfig`'s `siteName`/`description` fields,
+ *  robots.txt, the sitemap, and the feed all read this rather than each composing
+ *  `siteConfig.siteName`, `SITE_DESCRIPTION`, and `ORIGIN` on their own.
+ */
+export const siteMeta = {
+  title: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+  origin: ORIGIN,
+};

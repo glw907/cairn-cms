@@ -4,9 +4,8 @@
 // two routes.
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-// Entries per archive page. Derived against the 220-post review fixture: at this size the home
-// document's entry markup stays well under the audit's 100KB weight flag (measured well under half
-// of it), while still reading as a substantial archive page rather than a token sliver.
+// Entries per archive page. The showcase's own corpus fits on page one, so a site adopting this
+// chassis sizes the constant against its own archive.
 export const ARCHIVE_PAGE_SIZE = 50;
 
 /** One year's entries, newest first within the year. */
@@ -15,17 +14,14 @@ export interface ArchiveYearGroup {
   entries: ContentSummary[];
 }
 
-/** One paginated archive segment: the page number actually served, the total page count, and the
- *  year-grouped entries for that page alone. */
+/**
+ * One paginated archive segment: the page number actually served, the total page count, and the
+ *  year-grouped entries for that page alone.
+ */
 export interface ArchivePage {
   page: number;
   totalPages: number;
   years: ArchiveYearGroup[];
-}
-
-/** Sort entries newest first. An undated entry has no year marker to sort by, so it sorts last. */
-export function sortNewestFirst(entries: ContentSummary[]): ContentSummary[] {
-  return [...entries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 }
 
 /**
@@ -33,7 +29,11 @@ export function sortNewestFirst(entries: ContentSummary[]): ContentSummary[] {
  * `[1, totalPages]`, so an out-of-range request (page 0, or past the last page) still returns a
  * real page rather than an empty one.
  */
-export function paginateArchive(entries: ContentSummary[], page: number, pageSize = ARCHIVE_PAGE_SIZE): ArchivePage {
+export function paginateArchive(
+  entries: ContentSummary[],
+  page: number,
+  pageSize = ARCHIVE_PAGE_SIZE,
+): ArchivePage {
   const totalPages = Math.max(1, Math.ceil(entries.length / pageSize));
   const clampedPage = Math.min(Math.max(1, Math.trunc(page) || 1), totalPages);
   const start = (clampedPage - 1) * pageSize;

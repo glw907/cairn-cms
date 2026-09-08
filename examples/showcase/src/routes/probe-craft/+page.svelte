@@ -1,11 +1,10 @@
-<!-- @component The craft chapter's acceptance fixture (design infrastructure Pass 3, Task 11):
+<!-- @component The craft chapter's acceptance fixture:
      a small admin-shaped screen assembled entirely from stock DaisyUI v5 components, importing no
-     cairn token, recipe, or component. This route exists only to prove the craft chapter's
-     acceptance test (spec section 12, criterion 5): a fresh agent given this fixture and the
-     chapter alone should be able to move it measurably toward the cairn feel, with no human art
-     direction. It is a STANDING fixture across acceptance rounds; the markup below stays as-is
-     between runs so every round starts from the same "before" state, and a chapter amendment gets
-     re-tested against this same page rather than a new one.
+     cairn token, recipe, or component. This route exists only to prove that a fresh agent given
+     this fixture and the chapter alone can move it measurably toward the cairn feel, with no
+     human art direction. It is a STANDING fixture across acceptance rounds; the markup below
+     stays as-is between runs so every round starts from the same "before" state, and a chapter
+     amendment gets re-tested against this same page rather than a new one.
 
      Deliberately un-cairn: no `cairn-admin.css`, no `admin-toolkit` import, no
      grammar token (`type-*`/`gap-*`), no `StatusChip`. `probe-craft.css` is this route's own

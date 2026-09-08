@@ -46,7 +46,6 @@ built from hast:
 
 ```ts
 import { defineComponent, fields } from '@glw907/cairn-cms';
-import { cardShell, headRow } from '@glw907/cairn-cms/render';
 import { h } from 'hastscript';
 
 const callout = defineComponent({
@@ -54,9 +53,13 @@ const callout = defineComponent({
   label: 'Callout',
   description: 'A highlighted note with an optional tone.',
   build: (ctx) =>
-    cardShell(['callout'], [
-      headRow(ctx.slot('title')),
-      h('div', { className: ['callout-body'] }, ctx.slot('body')),
+    h('section', { className: ['callout'] }, [
+      h('div', { className: ['site-callout-body'] }, [
+        h('div', { className: ['cairn-head'] }, [
+          h('h2', { className: ['site-callout-title'] }, ctx.slot('title')),
+        ]),
+        h('div', { className: ['callout-body'] }, ctx.slot('body')),
+      ]),
     ]),
   attributes: {
     tone: fields.select({ label: 'Tone', required: true, options: ['note', 'tip', 'warning'] }),
@@ -73,6 +76,13 @@ transform, once per occurrence, so it can't `await` anything. If a component nee
 doesn't already have, fetch it outside the render pipeline (at content build time, or in the
 adapter's own resolver) and pass the result through `attributes`.
 
+Name a component's own inner classes apart from any DaisyUI component name (`card-body`,
+`card-title`, and the like), as this example's `site-callout-body`/`site-callout-title` do.
+DaisyUI's plugin generates a component's CSS for any matching class name it finds anywhere in a
+site's scanned source, not only markup a component-typed element wraps, so a directive that
+reuses one of those names gets silently restyled by DaisyUI if the site enables that component
+elsewhere.
+
 `attributes` accepts exactly ten `fields.*` descriptors, the ones that serialize to a single
 directive-attribute string: `text`, `textarea`, `number`, `select`, `url`, `email`, `date`,
 `datetime`, `boolean`, and `icon`. Everything else, including `multiselect`, `object`, `array`,
@@ -81,10 +91,10 @@ fields use validates attributes too. `slots` name the content regions the
 component's directive can carry: `title` and `body` are conventional names the editor's
 component-insert dialog treats specially, but any name works.
 
-`cardShell` and `headRow`, imported from [`/render`](../reference/render.md), are hast-building
-helpers for the common "bordered box with a heading" shape; `iconSpan` rounds out the toolkit for
-a component that builds its own glyph, and `ctx.attr(key)` reads a declared string attribute off
-the context `build` receives. Reach for them instead of hand-walking hast yourself.
+There is no hast-building helper toolkit beyond hastscript's own `h()`: a component's `build`
+constructs whatever markup it needs directly, and `ctx.attr(key)` reads a declared string
+attribute off the context `build` receives. See [`/render`](../reference/render.md)'s emitted
+classes for the names a site's own prose CSS can target.
 
 Register it on the same registry your renderer builds from:
 

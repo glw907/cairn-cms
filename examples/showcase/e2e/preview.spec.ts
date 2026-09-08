@@ -50,8 +50,10 @@ function assertPreviewHeaders(headers: Record<string, string>): void {
   }
 }
 
-/** Select every character of the CodeMirror body editor and retype it, waiting for the hidden
- *  input the form submits to catch up (the mirror-input idiom every other spec in this suite uses). */
+/**
+ * Select every character of the CodeMirror body editor and retype it, waiting for the hidden
+ *  input the form submits to catch up (the mirror-input idiom every other spec in this suite uses).
+ */
 async function setBody(page: Page, text: string): Promise<void> {
   const editor = page.locator('.cm-content');
   await expect(editor).toBeVisible();
@@ -83,11 +85,15 @@ async function discard(page: Page, expectEnded: boolean): Promise<void> {
   const dialog = page.locator('dialog[aria-labelledby="cairn-discard-dialog-title"]');
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Discard', exact: true }).click();
-  await expect(page).toHaveURL(expectEnded ? /discarded=1/ : /\/admin\/posts$/, { timeout: 10_000 });
+  await expect(page).toHaveURL(expectEnded ? /discarded=1/ : /\/admin\/posts$/, {
+    timeout: 10_000,
+  });
 }
 
-/** Every field but the title lives behind the Details slide-over (closed by default); open it once,
- *  idempotent against a page that already has it open. */
+/**
+ * Every field but the title lives behind the Details slide-over (closed by default); open it once,
+ *  idempotent against a page that already has it open.
+ */
 async function openDetails(page: Page) {
   const details = page.getByRole('region', { name: 'Entry details' });
   if (!(await details.isVisible().catch(() => false))) {
@@ -112,7 +118,9 @@ async function mintPreview(page: Page): Promise<{ url: string; token: string }> 
 async function revokeAll(page: Page): Promise<void> {
   const details = await openDetails(page);
   await details.getByRole('button', { name: 'Revoke all links' }).click();
-  await expect(details.getByText(/Revoked \d+|No preview links to revoke/)).toBeVisible({ timeout: 10_000 });
+  await expect(details.getByText(/Revoked \d+|No preview links to revoke/)).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 /**
@@ -131,9 +139,14 @@ async function deleteFromList(page: Page, title: string): Promise<void> {
   await expect(page.getByRole('link', { name: title, exact: true })).toHaveCount(0);
 }
 
-/** Create a fresh, self-contained post through the admin UI, save it (a pending draft, never
- *  published), and leave the editor open on it. Returns the entry's id. */
-async function createDraftPost(page: Page, opts: { slug: string; title: string; body: string }): Promise<string> {
+/**
+ * Create a fresh, self-contained post through the admin UI, save it (a pending draft, never
+ *  published), and leave the editor open on it. Returns the entry's id.
+ */
+async function createDraftPost(
+  page: Page,
+  opts: { slug: string; title: string; body: string },
+): Promise<string> {
   await page.goto('/admin/posts');
   await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
@@ -149,16 +162,20 @@ async function createDraftPost(page: Page, opts: { slug: string; title: string; 
   return id;
 }
 
-/** Open the seeded twin-render fixture, apply the one-word edit, and save it. Idempotent: calling
- *  this more than once across tests just resaves the same body. */
+/**
+ * Open the seeded twin-render fixture, apply the one-word edit, and save it. Idempotent: calling
+ *  this more than once across tests just resaves the same body.
+ */
 async function ensureHelloDraft(page: Page): Promise<void> {
   await page.goto(HELLO_EDIT_PATH);
   await setBody(page, helloBody('initial'));
   await save(page);
 }
 
-/** The `<article class="prose">...</article>` fragment of a rendered page's HTML, the portion the
- *  twin-render comparison cares about (independent of `<head>` differences the preview flag adds). */
+/**
+ * The `<article class="prose">...</article>` fragment of a rendered page's HTML, the portion the
+ *  twin-render comparison cares about (independent of `<head>` differences the preview flag adds).
+ */
 function articleFragment(html: string): string {
   const match = html.match(/<article class="prose">[\s\S]*?<\/article>/);
   expect(match, 'expected an <article class="prose"> fragment').toBeTruthy();
@@ -198,20 +215,40 @@ test.describe('public preview for a non-editor', () => {
     expect(publicHtml).toContain('type="text/markdown"');
   });
 
-  test('computed style on the alert component matches between the preview and the public page', async ({ page }) => {
+  test('computed style on the alert component matches between the preview and the public page', async ({
+    page,
+  }) => {
     await page.goto(HELLO_PUBLIC_PATH);
-    const publicStyle = await page.locator('.alert.alert-caution').first().evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { border: s.border, borderRadius: s.borderRadius, background: s.backgroundColor, padding: s.padding, color: s.color };
-    });
+    const publicStyle = await page
+      .locator('.alert.alert-caution')
+      .first()
+      .evaluate((el) => {
+        const s = getComputedStyle(el);
+        return {
+          border: s.border,
+          borderRadius: s.borderRadius,
+          background: s.backgroundColor,
+          padding: s.padding,
+          color: s.color,
+        };
+      });
 
     await ensureHelloDraft(page);
     const { url } = await mintPreview(page);
     await page.goto(url);
-    const previewStyle = await page.locator('.alert.alert-caution').first().evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { border: s.border, borderRadius: s.borderRadius, background: s.backgroundColor, padding: s.padding, color: s.color };
-    });
+    const previewStyle = await page
+      .locator('.alert.alert-caution')
+      .first()
+      .evaluate((el) => {
+        const s = getComputedStyle(el);
+        return {
+          border: s.border,
+          borderRadius: s.borderRadius,
+          background: s.backgroundColor,
+          padding: s.padding,
+          color: s.color,
+        };
+      });
 
     expect(previewStyle).toEqual(publicStyle);
   });
@@ -269,7 +306,11 @@ test.describe('public preview for a non-editor', () => {
     assertPreviewHeaders(unknown.headers());
 
     const slug = `headers-ended-${Date.now()}`;
-    await createDraftPost(page, { slug, title: 'Headers ended', body: 'A throwaway body for the headers check.' });
+    await createDraftPost(page, {
+      slug,
+      title: 'Headers ended',
+      body: 'A throwaway body for the headers check.',
+    });
     const { url: endedUrl } = await mintPreview(page);
     await publish(page);
     const ended = await request.get(endedUrl);
@@ -295,7 +336,11 @@ test.describe('public preview for a non-editor', () => {
     // file exists on main, so the ended page renders, and its copy claims only that the preview
     // ended, never that the discarded edit went live.
     const liveSlug = `discard-live-${Date.now()}`;
-    await createDraftPost(page, { slug: liveSlug, title: 'Discard live', body: 'The published body.' });
+    await createDraftPost(page, {
+      slug: liveSlug,
+      title: 'Discard live',
+      body: 'The published body.',
+    });
     await publish(page);
     await setBody(page, 'An edit that will be discarded.');
     await save(page);
@@ -310,7 +355,11 @@ test.describe('public preview for a non-editor', () => {
 
     // Publish (not discard) also ends the preview once the branch is gone.
     const publishedSlug = `published-ended-${Date.now()}`;
-    await createDraftPost(page, { slug: publishedSlug, title: 'Published ended', body: 'A body that will publish.' });
+    await createDraftPost(page, {
+      slug: publishedSlug,
+      title: 'Published ended',
+      body: 'A body that will publish.',
+    });
     const { url: publishedUrl } = await mintPreview(page);
     await publish(page);
     const afterPublish = await request.get(publishedUrl);

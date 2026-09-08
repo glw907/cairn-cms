@@ -30,7 +30,9 @@ test('a rendered table sits in a labeled, focusable scroll region and keeps its 
   expect(await wrapper.evaluate((el) => getComputedStyle(el).display)).toBe('block');
 });
 
-test('at 320px the table scrolls its wrapper instead of wrapping its cells mid-token', async ({ page }) => {
+test('at 320px the table scrolls its wrapper instead of wrapping its cells mid-token', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto('/posts/the-reading-surface');
 

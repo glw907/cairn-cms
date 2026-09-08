@@ -1,9 +1,8 @@
 // cairn-cms: the rehype step that turns a component directive's stamped hast markers (from
 // remark-directives.ts) into the site's own rendered markup, by looking up the directive's name in
-// the ComponentRegistry and calling its declared `render`. `iconSpan` and the small hast-reading
-// helpers below back that render call.
+// the ComponentRegistry and calling its declared `render`. The small hast-reading helpers below
+// back that render call.
 import type { Root, Element, ElementContent } from 'hast';
-import { h } from 'hastscript';
 import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';
 
 /** Narrow a hast node to an Element, false for a text node, a comment, or undefined. */
@@ -20,32 +19,8 @@ export function strProp(node: Element, name: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-/** Wrap a pre-built glyph in a cairn-icon span; secondary role adds the modifier. */
-export function iconSpan(glyphEl: Element, role?: string): Element {
-  const className = role === 'secondary' ? ['cairn-icon', 'cairn-icon-secondary'] : ['cairn-icon'];
-  return h('span', { className }, [glyphEl]);
-}
-
 /** A site's icon factory: turn a stamped icon name + role into a hast element. */
 export type MakeIcon = (name: string, role?: string) => Element;
-
-/** Section wrapper: `<section class=…><div class="card-body">…</div></section>`. */
-export function cardShell(classes: string[], body: ElementContent[]): Element {
-  return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
-}
-
-/**
- * Card head row: `<div class="cairn-head">[icon]<hN class="card-title">{title}</hN></div>`.
- *  Pass the title's inline children, an optional pre-built icon element, and an optional heading
- *  level (default 2). This factors the icon-plus-heading head that a titled component build would
- *  otherwise rebuild by hand (the shape the removed `splitHead` produced).
- */
-export function headRow(title: ElementContent[], icon?: Element, level: number = 2): Element {
-  const children: ElementContent[] = [];
-  if (icon) children.push(icon);
-  children.push(h(`h${level}`, { className: ['card-title'] }, title));
-  return h('div', { className: ['cairn-head'] }, children);
-}
 
 /**
  * Tag the first <ul> among children with `cairn-grid` and strip its whitespace-only

@@ -40,7 +40,9 @@ test('at desktop width, scrolling a long entry list never moves the sidebar', as
   expect(after!.x).toBe(before!.x);
 });
 
-test('at desktop width, the persistent sidebar stays open across an ordinary nav click', async ({ page }) => {
+test('at desktop width, the persistent sidebar stays open across an ordinary nav click', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 800 });
   await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin\/posts$/);
@@ -54,7 +56,9 @@ test('at desktop width, the persistent sidebar stays open across an ordinary nav
   await expect(page.locator('.drawer-side')).toBeVisible();
 });
 
-test('at mobile width, the drawer still opens on demand and auto-closes after a nav click', async ({ page }) => {
+test('at mobile width, the drawer still opens on demand and auto-closes after a nav click', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 700 });
   await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin\/posts$/);
@@ -83,10 +87,14 @@ test('at 1440, a desk route persists the sidebar the same as an office route', a
   await expect(drawer).toHaveClass(/xl:drawer-open/);
   await expect(page.locator('.drawer-side')).toBeVisible();
   // The toggle stands in for the sidebar once it persists, so it hides rather than dangling beside it.
-  await expect(page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]')).toBeHidden();
+  await expect(
+    page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]'),
+  ).toBeHidden();
 });
 
-test('at 768, a desk route recedes the sidebar behind the toggle, same as below lg on an office route', async ({ page }) => {
+test('at 768, a desk route recedes the sidebar behind the toggle, same as below lg on an office route', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();

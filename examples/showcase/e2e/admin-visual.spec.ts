@@ -16,7 +16,9 @@ test('admin office shell — light', async ({ page, context, baseURL }) => {
 });
 
 test('admin office shell — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/posts');
   await expect(page).toHaveScreenshot('admin-office-dark.png', { fullPage: true });
@@ -33,7 +35,9 @@ test('admin vocabulary screen — light', async ({ page, context, baseURL }) => 
 });
 
 test('admin vocabulary screen — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/vocabulary');
   await expect(page).toHaveScreenshot('vocabulary-dark.png', { fullPage: true });
@@ -54,7 +58,9 @@ test('admin login page — light', async ({ page, context, baseURL }) => {
 });
 
 test('admin login page — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/login');
   await expect(page.getByRole('button', { name: 'Send sign-in link' })).toBeVisible();
@@ -70,7 +76,9 @@ test('admin confirm page — light', async ({ page, context, baseURL }) => {
 });
 
 test('admin confirm page — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/auth/confirm?token=preview-token');
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
@@ -88,15 +96,17 @@ test('admin editors page — light', async ({ page, context, baseURL }) => {
 });
 
 test('admin editors page — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/editors');
   await expect(page.getByRole('heading', { level: 1, name: 'Editors' })).toBeVisible();
   await expect(page).toHaveScreenshot('admin-editors-dark.png', { fullPage: true });
 });
 
-// The edit page (desk chrome), swept in Phase 4. The subject is the chrome — the topbar desk cluster, the
-// Write/Preview tabs, the format toolbar, the footer environment strip — so the live CodeMirror content is
+// The edit page (desk chrome), swept in Phase 4. The subject is the chrome (the topbar desk cluster, the
+// Write/Preview tabs, the format toolbar, the footer environment strip), so the live CodeMirror content is
 // masked (it is the walled editor theme, not the swept surface). The Write tab settles the DOM; do not focus
 // any chrome element (a focus ring would pollute the captured chrome). The editor mounts unfocused, so no
 // caret paints; the mask guards the seeded body text.
@@ -105,15 +115,23 @@ test('admin edit page — light', async ({ page, context, baseURL }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
-  await expect(page).toHaveScreenshot('admin-edit-page-light.png', { fullPage: true, mask: [page.locator('.cm-content')] });
+  await expect(page).toHaveScreenshot('admin-edit-page-light.png', {
+    fullPage: true,
+    mask: [page.locator('.cm-content')],
+  });
 });
 
 test('admin edit page — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
-  await expect(page).toHaveScreenshot('admin-edit-page-dark.png', { fullPage: true, mask: [page.locator('.cm-content')] });
+  await expect(page).toHaveScreenshot('admin-edit-page-dark.png', {
+    fullPage: true,
+    mask: [page.locator('.cm-content')],
+  });
 });
 
 // The desk rider's width matrix (spec §5): the edit page persists its sidebar at xl (1280px+) and
@@ -128,7 +146,10 @@ test('admin edit page — 1440 (sidebar present)', async ({ page, context, baseU
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
   await expect(page.locator('.drawer-side')).toBeVisible();
-  await expect(page).toHaveScreenshot('admin-edit-page-1440.png', { fullPage: true, mask: [page.locator('.cm-content')] });
+  await expect(page).toHaveScreenshot('admin-edit-page-1440.png', {
+    fullPage: true,
+    mask: [page.locator('.cm-content')],
+  });
 });
 
 test('admin edit page — 768 (receded)', async ({ page, context, baseURL }) => {
@@ -138,7 +159,10 @@ test('admin edit page — 768 (receded)', async ({ page, context, baseURL }) => 
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
   await expect(page.locator('.drawer-side')).toBeHidden();
-  await expect(page).toHaveScreenshot('admin-edit-page-768.png', { fullPage: true, mask: [page.locator('.cm-content')] });
+  await expect(page).toHaveScreenshot('admin-edit-page-768.png', {
+    fullPage: true,
+    mask: [page.locator('.cm-content')],
+  });
 });
 
 // The media library browse view (CairnMediaLibrary grid/triage), swept in Phase 5. The dev backend seeds
@@ -152,7 +176,9 @@ test('admin media library — light', async ({ page, context, baseURL }) => {
 });
 
 test('admin media library — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/media');
   await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
@@ -175,7 +201,9 @@ test('admin media detail panel — light', async ({ page, context, baseURL }) =>
 });
 
 test('admin media detail panel — dark', async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await context.addCookies([
+    { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+  ]);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/admin/media');
   await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();

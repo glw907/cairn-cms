@@ -5,22 +5,26 @@
 // this branch reads directly ($chassis/dev-gate.ts), so a default production build drops it and the
 // route 404s; it has no surface in a real deploy.
 //
-// This overlays the record the way Phase 2b's preview path will: the committed manifest is empty at
-// build, so an in-flight upload's record is layered on top of it for the render rather than waiting
-// for the save to land.
+// The committed manifest is empty at build, so an in-flight upload's record is layered on top of
+// it for the render rather than waiting for the save to land.
 import { json, error } from '@sveltejs/kit';
 import { normalizeAssets, createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
 import { cairn } from '$theme/cairn.config.js';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
+import type { RequestHandler } from './$types';
 
-export async function POST({ request }) {
+/** Render the posted body with the in-flight media record overlaid onto the resolver. */
+export const POST: RequestHandler = async ({ request }) => {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { body, record } = (await request.json()) as { body: string; record: MediaEntry };
     // One-row manifest from the posted record, overlaid onto the (empty) committed manifest.
     const manifest = { [record.hash]: record };
-    const resolveMedia = createMediaResolver(manifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
+    const resolveMedia = createMediaResolver(
+      manifest,
+      normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
+    );
     const html = await cairn.rendering.render({ body, resolveMedia });
     return json({ html });
   }
   error(404, 'Not found');
-}
+};

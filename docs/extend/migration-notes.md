@@ -13,6 +13,19 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
+  (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
+  'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and
+  `cardShell`'s body (`h('section', { className: classes }, [h('div', { className:
+  ['cairn-alert-body'] }, body)])`) at their call sites, and re-home `headRow` as your own code
+  with its signature unchanged; see `CHANGELOG.md`'s entry for the exact shape. The removed
+  `cardShell` and `headRow` helpers carried the `card-body` and `card-title` literals. The
+  preceding worked example already shows the rename the DaisyUI collision requires
+  (`cairn-alert-body`/`cairn-head-title`), so if you keep DaisyUI's `card` component enabled for
+  other markup, carry that same rename into your own re-homed code and update any prose CSS that
+  targets it. Re-homing the helpers verbatim, literals included, moves `card-body`/`card-title`
+  into your own Tailwind-scanned source, where DaisyUI's own `.card-body`/`.card-title` rules
+  restyle the alert.
 - **Seventeen type-only names moved to their canonical home.** The engine now publishes each
   exported name from exactly one subpath. Re-point these imports away from
   `@glw907/cairn-cms/delivery` and `@glw907/cairn-cms/delivery/data`, which no longer carry them:

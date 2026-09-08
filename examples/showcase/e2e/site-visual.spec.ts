@@ -5,9 +5,9 @@ import { test, expect, type Page } from '@playwright/test';
 // late image swap keeps shifting the page between polls. Waiting for every <img> to report `complete`
 // first removes that source of flake instead of papering over it with a longer timeout.
 async function waitForImagesToLoad(page: Page): Promise<void> {
-	await page.waitForFunction(() =>
-		Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0),
-	);
+  await page.waitForFunction(() =>
+    Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0),
+  );
 }
 
 // The five-viewport responsive bar (the family-wide standard: 320, 390, 768, 1440, 2560), in both
@@ -24,35 +24,41 @@ const VIEWPORT_WIDTHS = [320, 390, 768, 1440, 2560];
 const COLOR_SCHEMES = ['light', 'dark'] as const;
 
 for (const colorScheme of COLOR_SCHEMES) {
-	for (const width of VIEWPORT_WIDTHS) {
-		test(`site home — ${colorScheme} — ${width}px`, async ({ page }) => {
-			await page.setViewportSize({ width, height: 800 });
-			await page.emulateMedia({ colorScheme });
-			await page.goto('/');
-			await expect(page).toHaveScreenshot(`site-home-${colorScheme}-${width}.png`, { fullPage: true });
-		});
+  for (const width of VIEWPORT_WIDTHS) {
+    test(`site home — ${colorScheme} — ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/');
+      await expect(page).toHaveScreenshot(`site-home-${colorScheme}-${width}.png`, {
+        fullPage: true,
+      });
+    });
 
-		test(`reading-surface article — ${colorScheme} — ${width}px`, async ({ page }) => {
-			await page.setViewportSize({ width, height: 800 });
-			await page.emulateMedia({ colorScheme });
-			await page.goto('/posts/the-reading-surface');
-			await expect(page.getByRole('heading', { level: 1, name: 'The reading surface' })).toBeVisible();
-			await waitForImagesToLoad(page);
-			await expect(page).toHaveScreenshot(`site-article-${colorScheme}-${width}.png`, {
-				fullPage: true,
-				timeout: 20000,
-			});
-		});
+    test(`reading-surface article — ${colorScheme} — ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/posts/the-reading-surface');
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'The reading surface' }),
+      ).toBeVisible();
+      await waitForImagesToLoad(page);
+      await expect(page).toHaveScreenshot(`site-article-${colorScheme}-${width}.png`, {
+        fullPage: true,
+        timeout: 20000,
+      });
+    });
 
-		test(`styleguide — ${colorScheme} — ${width}px`, async ({ page }) => {
-			await page.setViewportSize({ width, height: 800 });
-			await page.emulateMedia({ colorScheme });
-			await page.goto('/styleguide');
-			// The masthead heading anchors the page; wait for it so the screenshot captures the settled DOM.
-			await expect(page.getByRole('heading', { level: 1, name: 'Styleguide' })).toBeVisible();
-			await expect(page).toHaveScreenshot(`styleguide-${colorScheme}-${width}.png`, { fullPage: true });
-		});
-	}
+    test(`styleguide — ${colorScheme} — ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/styleguide');
+      // The masthead heading anchors the page; wait for it so the screenshot captures the settled DOM.
+      await expect(page.getByRole('heading', { level: 1, name: 'Styleguide' })).toBeVisible();
+      await expect(page).toHaveScreenshot(`styleguide-${colorScheme}-${width}.png`, {
+        fullPage: true,
+      });
+    });
+  }
 }
 
 // The clamp-slope check, beyond the five-viewport bar. The root clamp is a continuous `vw`
@@ -64,12 +70,15 @@ for (const colorScheme of COLOR_SCHEMES) {
 // gets this baseline: its long paragraphs re-wrap visibly on a font-size drift, a sharper signal
 // than the home page's cards.
 test('reading-surface article — light — 1920px (mid, active clamp slope)', async ({ page }) => {
-	await page.setViewportSize({ width: 1920, height: 800 });
-	await page.emulateMedia({ colorScheme: 'light' });
-	await page.goto('/posts/the-reading-surface');
-	await expect(page.getByRole('heading', { level: 1, name: 'The reading surface' })).toBeVisible();
-	await waitForImagesToLoad(page);
-	await expect(page).toHaveScreenshot('site-article-light-1920.png', { fullPage: true, timeout: 20000 });
+  await page.setViewportSize({ width: 1920, height: 800 });
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/posts/the-reading-surface');
+  await expect(page.getByRole('heading', { level: 1, name: 'The reading surface' })).toBeVisible();
+  await waitForImagesToLoad(page);
+  await expect(page).toHaveScreenshot('site-article-light-1920.png', {
+    fullPage: true,
+    timeout: 20000,
+  });
 });
 
 // Two Waymark-audit findings asserted as computed-style/geometry checks rather than screenshots,
@@ -83,37 +92,67 @@ test('reading-surface article — light — 1920px (mid, active clamp slope)', a
 // grow to fill the remaining space and pin the footer at the viewport bottom instead of leaving its
 // own background exposed below the footer as a seam.
 test('a short page pins the footer with no background seam below it', async ({ page }) => {
-	await page.emulateMedia({ colorScheme: 'light' });
-	await page.goto('/about');
-	const footer = page.locator('footer.site-footer');
-	await expect(footer).toBeVisible();
-	const { footerBottom, documentBottom } = await page.evaluate(() => {
-		const rect = document.querySelector('footer.site-footer')!.getBoundingClientRect();
-		return {
-			footerBottom: window.scrollY + rect.bottom,
-			documentBottom: document.documentElement.scrollHeight,
-		};
-	});
-	// A one-pixel tolerance covers sub-pixel layout rounding; anything more is a real gap.
-	expect(Math.abs(documentBottom - footerBottom)).toBeLessThanOrEqual(1);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/about');
+  const footer = page.locator('footer.site-footer');
+  await expect(footer).toBeVisible();
+  const { footerBottom, documentBottom } = await page.evaluate(() => {
+    const rect = document.querySelector('footer.site-footer')!.getBoundingClientRect();
+    return {
+      footerBottom: window.scrollY + rect.bottom,
+      documentBottom: document.documentElement.scrollHeight,
+    };
+  });
+  // A one-pixel tolerance covers sub-pixel layout rounding; anything more is a real gap.
+  expect(Math.abs(documentBottom - footerBottom)).toBeLessThanOrEqual(1);
+});
+
+// The alert directive's inner classes are inlined at this site's own call site
+// (`markdown-components.ts`/`render.ts`'s `headRow`), not built by an engine helper, so nothing
+// but the theme's own code enforces that the inlined literals stay `cairn-alert-body`/
+// `cairn-head-title` rather than drifting back to DaisyUI's own `card-body`/`card-title` names.
+// This asserts the inlined shape directly against the rendered DOM, not against source text.
+test('the rendered alert carries its own inlined classes, not DaisyUI card classes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/posts/the-reading-surface');
+  const alertBody = page.locator('.prose .alert > .cairn-alert-body');
+  await expect(alertBody).toBeVisible();
+  const headTitle = page.locator('.prose .alert .cairn-head-title');
+  await expect(headTitle).toBeVisible();
+  // Built by concatenation, not as bare `card-body`/`card-title` literals: this e2e directory is
+  // inside the Tailwind class scan root, so a literal string here would itself be a candidate
+  // class the collision guard above exists to catch.
+  const cardBody = 'card' + '-body';
+  const cardTitle = 'card' + '-title';
+  const strayCardClasses = await page.$$eval(
+    '.prose .alert *',
+    (elements, [body, title]) =>
+      elements.filter((el) => el.classList.contains(body) || el.classList.contains(title)).length,
+    [cardBody, cardTitle],
+  );
+  expect(strayCardClasses).toBe(0);
 });
 
 // The home lead entry's title link must carry its own designed focus-visible treatment, not
 // whatever outline the browser draws by default; `.focus()` reliably triggers `:focus-visible` on
 // an anchor in Chromium (unlike a button or input, an anchor is not on the UA's mouse-focus
 // suppression list), so this needs no simulated Tab traversal.
-test('the home lead title gets a styled focus-visible ring, not the browser default', async ({ page }) => {
-	await page.emulateMedia({ colorScheme: 'light' });
-	await page.goto('/');
-	const leadTitleLink = page.locator('.lead__title a').first();
-	await expect(leadTitleLink).toBeVisible();
-	await leadTitleLink.focus();
-	const { hasOutline, hasBoxShadow } = await leadTitleLink.evaluate((el) => {
-		const style = getComputedStyle(el);
-		return {
-			hasOutline: style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0,
-			hasBoxShadow: style.boxShadow !== 'none',
-		};
-	});
-	expect(hasOutline || hasBoxShadow).toBe(true);
+test('the home lead title gets a styled focus-visible ring, not the browser default', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/');
+  const leadTitleLink = page.locator('.lead__title a').first();
+  await expect(leadTitleLink).toBeVisible();
+  await leadTitleLink.focus();
+  const { hasOutline, hasBoxShadow } = await leadTitleLink.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      hasOutline: style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0,
+      hasBoxShadow: style.boxShadow !== 'none',
+    };
+  });
+  expect(hasOutline || hasBoxShadow).toBe(true);
 });

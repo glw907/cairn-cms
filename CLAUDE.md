@@ -6,8 +6,9 @@ editor (client-only, behind the `MarkdownEditor` seam) with a live preview. Savi
 on a per-entry `cairn/<concept>/<id>` branch, and a deliberate Publish copies it to `main` via a
 **GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library is design-agnostic. Each site supplies an adapter: its GitHub and email
 config, the frontmatter field schema for each concept, and its own `render(md)`, the one renderer the
-editor preview and every public page call. Content is a
-fixed set of first-class concepts (Posts and Pages), not open-ended collections.
+editor preview and every public page call. Content has one
+fixed concept shape; the set is the site's to declare (Posts and Pages out of the box), never an
+open-ended collection model.
 
 This is a standalone repo at `~/Projects/cairn-cms`. It publishes to public npm as
 `@glw907/cairn-cms` (MIT), and consumer sites install it from the registry by version range. The
@@ -17,8 +18,8 @@ site that consumes the package through the relative `file:../..` path.
 ## What cairn is (canonical scope — read before any scope-affecting change)
 
 cairn is a lean, opinionated markdown CMS for SvelteKit + Cloudflare: magic-link editor login,
-raw-markdown editing with live preview, and GitHub-App publishing, over a fixed set of content concepts
-(Posts, Pages). Its admin skeleton and getting-started scaffold are built with **DaisyUI + Tailwind**,
+raw-markdown editing with live preview, and GitHub-App publishing, over site-declared content concepts
+of one fixed shape (Posts and Pages out of the box). Its admin skeleton and getting-started scaffold are built with **DaisyUI + Tailwind**,
 the idiom a developer extends the admin in, while public output stays design-agnostic (each site brings
 its own `render`). cairn does its one job well and gets out of the way.
 
@@ -27,7 +28,8 @@ The governing boundary, which adjudicates any scope question:
 **cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
 Everything a site needs beyond that, its own functionality, actors, auth, data, and domain logic, belongs
 to the developer, and cairn serves it with a thin seam, not a built-in feature.** The seams are a narrow,
-versioned, enforced contract, so a developer's work survives engine updates; breaking it is a deliberate
+versioned contract with every break disclosed, so a developer's work survives engine updates with the
+changes named; from 1.0, breaking it is a deliberate
 major-version event, not an everyday one, and the surface stays narrow precisely to keep that promise
 cheap to keep. Owner/editor and magic-link are the zero-config defaults, not ceilings: a developer can
 replace the auth and override the authorization through documented seams.
@@ -309,7 +311,8 @@ Do not remove the step or strip `lang="ts"`. Full post-mortem:
 Claude's drafting on this repo follows the workstation authoring charter at
 `~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard, with no
 house voice. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by `npm run
-check:comments` over `src/lib`): `eslint-plugin-tsdoc` validates TSDoc syntax, `eslint-plugin-jsdoc`
+check:comments` over `src/lib` plus the showcase's `.ts`/`e2e`/`.svelte`):
+`eslint-plugin-tsdoc` validates TSDoc syntax, `eslint-plugin-jsdoc`
 holds the doc-block shape and forbids `{type}` tags, `jsdoc/informative-docs` flags a comment that only
 restates the symbol name (the paraphrase tell), and a local `house/no-em-dash-in-comments` rule bans
 the em dash in comments (a keyboard, grep, and monospace hygiene rule TSDoc does not carry). Write the
@@ -320,18 +323,18 @@ vendored Google package over the published doc arms only (the in-tree `.vale.ini
 `docs/**/*.md` onto Google, overrides `docs/editors/**` to Microsoft since that track grades
 under the plainer editor voice, and excludes the internal planning docs, since the Google
 standard governs published documentation, not write-once specs, plans, post-mortems, the rolling
-STATUS, or the friction log); the global `vale-hook` surfaces its findings on
-save and itself skips any `superpowers/` path, and the em dash is allowed there, since Google recommends
-it with no surrounding spaces. On top of the Google floor, every published docs page follows the
+STATUS, or the friction log); the global `vale-hook` surfaces findings on save and skips any
+`superpowers/` path, where the em dash is allowed (Google's own recommendation, no surrounding
+spaces). On top of the Google floor, every published docs page follows the
 register standard at [`docs/internal/docs-register.md`](docs/internal/docs-register.md) (the arm
 registers, the front-door register, and the no-pitch keystone); read it before writing or reviewing
-docs prose. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
-serves editors, not Claude.
+docs prose. Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte
-`@component` convention for the component block. ESLint does not parse `.svelte` yet (the TypeScript
-sub-parser is unwired), so Svelte comments rely on the standard and a fresh-context review rather than
-a deterministic linter.
+`@component` convention for the component block. ESLint's `svelte-eslint-parser` block reaches
+the showcase's `.svelte` sources, giving those comments a deterministic gate; the engine's own
+`src/lib/components/*.svelte` stays unwired (filed to polish), relying on the standard and a
+fresh-context review instead.
 
 One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented, so an
 exported symbol keeps its minimal one-line doc even when self-evident; the write-only-when-it-helps

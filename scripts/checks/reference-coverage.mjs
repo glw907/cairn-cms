@@ -602,18 +602,10 @@ function knownNamesByPage(entries) {
 // than a claim that it lives here. Each entry names its page, the foreign names it shows, and the
 // reason, the same fail-unless-recorded idiom `check:surface`'s leak registry uses, so a carve-out
 // is self-explaining rather than silent.
+// Empty today: the render trio that once justified an entry here is re-homed to site-owned code,
+// and no current page shows a foreign name.
 /** @type {{ page: string, names: string[], reason: string }[]} */
-export const NARRATIVE_CONTEXT_ALLOWLIST = [
-  {
-    page: 'docs/reference/core.md',
-    names: ['cardShell', 'headRow', 'iconSpan'],
-    reason:
-      "the Component-author helpers section shows the /render hast-building trio beside the " +
-      "root-barrel renderGlyph export, in the alert component's worked build() example. " +
-      'Re-homing is deferred to the chassis pass: engine-rulings.md\'s ' +
-      "f1-return-position-leak-sanction row carries the trio as list (c) Tier 4, chassis-coupled.",
-  },
-];
+export const NARRATIVE_CONTEXT_ALLOWLIST = [];
 
 // Every allowlist entry must carry a non-empty reason: a recorded exception that does not explain
 // itself is a bug in the allowlist, not a silent pass-through.

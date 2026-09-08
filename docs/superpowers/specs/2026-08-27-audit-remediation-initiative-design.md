@@ -111,12 +111,15 @@ done: 14 findings, none rewrite-tier). PLUS the second in-tree consumer the orig
 left unassigned: `templates/waymark` (20+ engine imports, compiled by the scaffold CI job,
 the tree `create-cairn-site` bakes, and the base for the beta-path site rebuilds). Each
 earlier slice keeps waymark compiling as part of its own gate (`check:consumers` and the
-scaffold job make breakage loud); this slice does waymark's deliberate adaptation and the
-final rebake before the cut.
+scaffold job make breakage loud); the chassis work does waymark's deliberate adaptation and
+the final rebake before the cut. Sizing split the chassis work into three passes: chassis-A
+(structural, `docs/superpowers/plans/2026-09-04-chassis-a-pass.md`), then chassis-B1 and
+chassis-B2 (the paint-changing half, split at the plan review's fold on 2026-09-07;
+`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` and `-b2-pass.md`).
 
 ## The publish ruling
 
-**One cut, after the chassis pass.** Geoff's call: the whole remediation ships in a single
+**One cut, after the polish slice.** Geoff's call: the whole remediation ships in a single
 release with one `Consumers must:` list; `main` stays releasable throughout and the
 already-open window (toolkit-seams, harvest-detection) rolls into the same cut.
 

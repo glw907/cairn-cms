@@ -6,23 +6,39 @@ import { defineRegistry, type ComponentContext } from '../../lib/render/registry
 import { fields } from '../../lib/content/fields.js';
 import { renderGlyph } from '../../lib/render/glyph.js';
 import {
-  cardShell,
-  headRow,
   markFirstList,
-  iconSpan,
   isElement,
   strProp,
   type MakeIcon,
 } from '../../lib/render/rehype-dispatch.js';
 
+// Local fixture copies of the render trio the engine retired, kept byte-for-byte so this suite's
+// byte-identical lock stands on no engine export beyond the ones the engine still ships. A real
+// site's copy lives beside its own icon renderer, e.g. examples/showcase/src/chassis/render.ts.
+function fixtureIconSpan(glyphEl: Element, role?: string): Element {
+  const className = role === 'secondary' ? ['cairn-icon', 'cairn-icon-secondary'] : ['cairn-icon'];
+  return h('span', { className }, [glyphEl]);
+}
+
+function fixtureCardShell(classes: string[], body: ElementContent[]): Element {
+  return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
+}
+
+function fixtureHeadRow(title: ElementContent[], icon?: Element, level: number = 2): Element {
+  const children: ElementContent[] = [];
+  if (icon) children.push(icon);
+  children.push(h(`h${level}`, { className: ['card-title'] }, title));
+  return h('div', { className: ['cairn-head'] }, children);
+}
+
 // A representative fixture registry. Stands in for a site's registry so the
 // byte-identical lock lives in the engine suite with no consumer dependency.
 const ICONS = { flag: 'M16 16 240 16 240 240 16 240Z' };
-const makeIcon: MakeIcon = (name, role) => iconSpan(renderGlyph(name, ICONS), role);
+const makeIcon: MakeIcon = (name, role) => fixtureIconSpan(renderGlyph(name, ICONS), role);
 
 // Local fixture helper: pull the <h2> out as the head's title and build the .cairn-head row with
 // an optional icon read from the declared attribute path. Mirrors what a real site build does
-// with headRow now that the engine ships it.
+// with the fixture headRow above.
 function fixtureHead(ctx: ComponentContext, icon: MakeIcon): { head: Element; rest: ElementContent[] } {
   const children = ctx.node.children as ElementContent[];
   const i = children.findIndex((c) => isElement(c) && c.tagName === 'h2');
@@ -31,7 +47,7 @@ function fixtureHead(ctx: ComponentContext, icon: MakeIcon): { head: Element; re
   const iconName = typeof ctx.attributes.icon === 'string' ? ctx.attributes.icon : undefined;
   const role = strProp(ctx.node, 'dataRole');
   const iconEl = iconName ? icon(iconName, role) : undefined;
-  return { head: headRow(h2.children as ElementContent[], iconEl), rest };
+  return { head: fixtureHeadRow(h2.children as ElementContent[], iconEl), rest };
 }
 
 const registry = defineRegistry({
@@ -44,7 +60,7 @@ const registry = defineRegistry({
       attributes: { icon: fields.icon({ label: 'Icon' }) },
       build: (ctx) => {
         const { head, rest } = fixtureHead(ctx, makeIcon);
-        return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
+        return fixtureCardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
     {
@@ -57,7 +73,7 @@ const registry = defineRegistry({
         const children = ctx.node.children as Element['children'];
         markFirstList(children);
         const { head, rest } = fixtureHead(ctx, makeIcon);
-        return cardShell(['grid'], [head, h('div', { className: ['section-body'] }, rest)]);
+        return fixtureCardShell(['grid'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
   ],

@@ -2,7 +2,6 @@ import type { LayoutServerLoad } from './$types';
 
 /**
  * A minimal fixture field for the preview pass's leak-sentinel e2e (preview.spec.ts).
- *
  * @remarks
  * A parent layout load runs on every route under it, the preview route included, with no session
  * and no route-specific gate: SvelteKit serializes its returned data into the page payload the same

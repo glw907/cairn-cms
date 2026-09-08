@@ -61,10 +61,8 @@ your-site/
 │   │   │   ├── archive/[page]/
 │   │   │   ├── preview/[token]/
 │   │   │   ├── styleguide/
-│   │   │   ├── +layout.server.ts
 │   │   │   ├── +layout.svelte
 │   │   │   └── +page.server.ts, +page.svelte
-│   │   ├── probe-craft/
 │   │   ├── feed.json/
 │   │   ├── feed.xml/
 │   │   ├── healthz/
@@ -77,7 +75,9 @@ your-site/
 │   └── theme/
 │       ├── cairn.config.ts
 │       ├── components/
+│       ├── icons.ts
 │       ├── islands/
+│       ├── markdown-components.ts
 │       ├── site-config.ts
 │       ├── site.config.yaml
 │       ├── site.css
@@ -96,7 +96,7 @@ site scaffolded from the published package carries both.*
 The tree above is complete; the map below is not. It covers the entries that are cairn-specific
 or otherwise need explaining, and skips the tooling and plain SvelteKit files a developer already
 recognizes (`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, the `src/chassis/` files
-not named below, and the root and route-group `+layout.server.ts`/`+layout.svelte`/home
+not named below, and the root and `admin` `+layout.server.ts`/`+layout.svelte`/home
 `+page.server.ts`/`+page.svelte` files SvelteKit's own routing expects). Two files it skips are
 not plain: `src/hooks.server.ts` mounts `createAuthGuard()` behind the dev-backend gate, and
 `src/app.d.ts` declares the platform bindings and `__CAIRN_DEV_BUILD__`. [Build a site by
@@ -124,11 +124,13 @@ you have something to look at, edit, and delete before you write your own.
 
 | File | What it is |
 | --- | --- |
-| `cairn.config.ts` | The adapter: concepts, fields, the render pipeline, registered components, the backend, and the icon set. See [Define an adapter and schema](./define-an-adapter-and-schema.md) and [Configure rendering](./configure-rendering.md). |
+| `cairn.config.ts` | The adapter: concepts, fields, the render pipeline, the backend, and `navLayout`. See [Define an adapter and schema](./define-an-adapter-and-schema.md) and [Configure rendering](./configure-rendering.md). |
+| `icons.ts` | The icon set the registered components and the picker fields draw from. |
+| `markdown-components.ts` | The registered markdown components (`defineComponent` declarations) the adapter's `rendering.components` registry lists. |
 | `site-config.ts` | Parses `site.config.yaml` with [`parseSiteConfig`](../reference/core.md#parsesiteconfig). |
 | `site.config.yaml` | Site name, description, nav menus, and the tag vocabulary. See [Manage your tag vocabulary](../editors/manage-your-tag-vocabulary.md) for the editor side of that file. |
 | `theme.css`, `site.css` | The theme's own design tokens and page-level styling, layered over the chassis's generic defaults. See [Design your site](./design-your-site.md). |
-| `components/` | The theme's registered markdown components (`ArticleView`, `Carousel`, and the rest) and the public-facing chrome (`SiteHeader`, `SiteFooter`). |
+| `components/` | The theme's article renderer (`ArticleView`) and public-facing chrome (`SiteHeader`, `SiteFooter`). The registered markdown components live in `markdown-components.ts`, not here. |
 | `islands/` | The one hydrated component the scaffold ships (`Banner.svelte`) as a worked example. See [Add an island](./add-an-island.md). |
 
 ## Admin routes (`src/routes/admin/`)
@@ -150,7 +152,6 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing; it 
 | `(site)/archive/[page]/` | A paginated post archive, built on the chassis's `archive.ts` slicing helper. |
 | `(site)/preview/[token]/` | The [share-a-draft-preview](./share-a-draft-preview.md) landing page. |
 | `(site)/styleguide/` | A living reference of the theme's own components and typography; useful while you're editing the theme, safe to delete otherwise. |
-| `probe-craft/` | A leftover fixture from the engine's own admin design work, stock DaisyUI with none of cairn's own styling. It carries no content, and nothing else in the scaffold links to it; safe to delete. |
 | `feed.xml/`, `feed.json/` | RSS and JSON Feed, via [`rssResponse`/`jsonFeedResponse`](../reference/delivery-data.md#rssresponse). |
 | `sitemap.xml/` | Via [`sitemapResponse`](../reference/delivery-data.md#sitemapresponse). |
 | `robots.txt/` | Via [`robotsResponse`](../reference/delivery-data.md#robotsresponse); see [Choose an AI posture](./choose-an-ai-posture.md) for the `posture` option it reads. |

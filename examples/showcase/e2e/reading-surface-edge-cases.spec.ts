@@ -1,22 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-// Five bugs the Waymark design review found on the reading-surface article and the styleguide's
-// banner demo, each reproducible without any special setup:
-//   1. a standalone `:::icon` directive fell back to the browser's default SVG box (about 280px),
-//      because prose.css sized `.cairn-glyph` only inside a nested component (alert, video-facade,
-//      cta-link, faq-marker), never a bare top-level icon.
-//   2. the inline CTA's `.cta-primary` reused the panel-button token pair (`--cairn-cta-btn-*`),
-//      which resolves to the page's own paper color in the light theme, so the button vanished; it
-//      only read fine in dark mode because that pair happens to resolve to the accent there.
-//   3. a hero/wide/full figure image carried no height cap, so an extreme-ratio photo could blow the
-//      column height out.
-//   4. `.prose` had no `overflow-wrap`, so a long unbroken token (a bare URL) overflowed its
-//      container; the body's `overflow-x: clip` (the full-bleed-figure guard) then hid the overflow
-//      instead of showing a scrollbar, silently swallowing the token.
-//   5. a hydrate component always serialized its full attributes into `data-cairn-props`, even once
-//      build() had already decided the banner is permanently expired, leaking the message and date
-//      into the static markup.
-test.describe('Waymark design-review fixes', () => {
+// Five edge cases on the reading-surface article and the styleguide's banner demo, each
+// reproducible without any special setup:
+//   1. a standalone `:::icon` directive must size at a modest, text-height scale rather than the
+//      browser's default replaced-element SVG box, since prose.css sizes `.cairn-glyph` only inside
+//      a nested component (alert, video-facade, cta-link, faq-marker) unless the article also
+//      styles the bare top-level case.
+//   2. the inline CTA's background must read distinct from the page background in both themes,
+//      since the panel-button token pair (`--cairn-cta-btn-*`) it reuses can resolve to the page's
+//      own paper color in one theme and the accent in the other.
+//   3. a hero/wide/full figure image must carry a height cap, so an extreme-ratio photo cannot blow
+//      the column height out.
+//   4. `.prose` must wrap a long unbroken token (a bare URL) inside the column rather than
+//      overflowing it, since the body's `overflow-x: clip` (the full-bleed-figure guard) would
+//      otherwise hide the overflow instead of showing a scrollbar, silently swallowing the token.
+//   5. an expired banner's hydrate island must not serialize its message or expiry into
+//      `data-cairn-props`, even though `build()` already decided the banner is permanently expired.
+test.describe('Reading surface edge cases', () => {
   test('a standalone icon directive renders at a modest, text-height scale', async ({ page }) => {
     await page.goto('/posts/the-reading-surface');
     // The direct-child selector matches only the standalone `:::icon{name="flag"}` in this article,

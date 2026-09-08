@@ -110,6 +110,8 @@ test('bake prunes showcase-only scripts and devDependencies, keeping the rest', 
   assert.ok('build' in pkg.scripts);
   assert.ok('check' in pkg.scripts);
   assert.ok('cairn:manifest' in pkg.scripts);
+  assert.ok('format' in pkg.scripts);
+  assert.ok('format:check' in pkg.scripts);
 });
 
 test('bake emits a tree with no showcase-only .claude directory, and scripts/ holds exactly dev.mjs', async (t) => {

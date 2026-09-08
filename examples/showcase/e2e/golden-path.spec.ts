@@ -7,7 +7,10 @@ import { test, expect } from '@playwright/test';
 // clicking the list entry (not a hard-coded edit URL) so a wrong editor-route path would fail here.
 // The fake-github.ts double records the last commit and serves it from /test/last-commit.
 
-test('an editor opens a post from the list, edits, saves, and the commit carries the right author', async ({ page, request }) => {
+test('an editor opens a post from the list, edits, saves, and the commit carries the right author', async ({
+  page,
+  request,
+}) => {
   // Land on the admin: indexLoad sends /admin -> /admin/posts (the first concept's list).
   await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin\/posts$/);
@@ -46,7 +49,9 @@ test('an editor opens a post from the list, edits, saves, and the commit carries
   expect(commit.content).toContain('An edited body line.');
 });
 
-test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, sticky save', async ({ page }) => {
+test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, sticky save', async ({
+  page,
+}) => {
   // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
   // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
   // click races the entry count. Navigating straight to the edit URL is order-independent.
@@ -118,12 +123,16 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await save.click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
   await expect(
-    page.locator('.alert', { hasText: 'Saved. Your site keeps showing the published version until you publish.' }),
+    page.locator('.alert', {
+      hasText: 'Saved. Your site keeps showing the published version until you publish.',
+    }),
   ).toBeVisible();
   await expect(page.locator('.navbar .cairn-save-state')).toHaveText('Saved');
 });
 
-test('a link inside the preview frame never navigates the admin away from the edits', async ({ page }) => {
+test('a link inside the preview frame never navigates the admin away from the edits', async ({
+  page,
+}) => {
   // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
   // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
   // click races the entry count. Navigating straight to the edit URL is order-independent.
@@ -137,9 +146,12 @@ test('a link inside the preview frame never navigates the admin away from the ed
   await editor.click();
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('Visit the [home page](/) for more.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('Visit the [home page](/) for more.', {
-    timeout: 2000,
-  });
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'Visit the [home page](/) for more.',
+    {
+      timeout: 2000,
+    },
+  );
 
   await page.getByRole('tab', { name: 'Preview' }).click();
   const frame = page.frameLocator('#cairn-pane-preview iframe[title="Page preview"]');
@@ -155,7 +167,10 @@ test('a link inside the preview frame never navigates the admin away from the ed
   await expect(page.locator('.cairn-preview-frame')).toBeVisible();
 });
 
-test('the publish workflow round-trips: create, save, New, publish, edit, Edited, discard', async ({ page, request }) => {
+test('the publish workflow round-trips: create, save, New, publish, edit, Edited, discard', async ({
+  page,
+  request,
+}) => {
   // A unique slug per run: the fake repo lives in the server process, and a local run may reuse
   // an existing server (reuseExistingServer), so a fixed slug would collide on the second run.
   const slug = `race-report-${Date.now()}`;
@@ -180,7 +195,9 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('The first body.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('The first body.', { timeout: 2000 });
+  await expect(page.locator('input[name="body"]')).toHaveValue('The first body.', {
+    timeout: 2000,
+  });
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
   const savedCommit = await (await request.get('/test/last-commit')).json();
@@ -199,7 +216,9 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await page.locator('.navbar').getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
   // The flash text also lands in the sr-only live region, so target the visible alert.
-  await expect(page.locator('.alert', { hasText: 'Published. The live site is rebuilding.' })).toBeVisible();
+  await expect(
+    page.locator('.alert', { hasText: 'Published. The live site is rebuilding.' }),
+  ).toBeVisible();
   const publishCommit = await (await request.get('/test/last-commit')).json();
   expect(publishCommit.branch).toBe('main');
   expect(publishCommit.path).toBe(`src/content/posts/${id}.md`);
@@ -214,7 +233,9 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await editor.click();
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('A second body line.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A second body line.', { timeout: 2000 });
+  await expect(page.locator('input[name="body"]')).toHaveValue('A second body line.', {
+    timeout: 2000,
+  });
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
   await page.goto('/admin/posts');
@@ -236,7 +257,9 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await expect(row.getByText('Published', { exact: true })).toBeVisible();
 });
 
-test('the office triage: the publish-state filters carry counts, Pending edits narrows, and a row shows its summary', async ({ page }) => {
+test('the office triage: the publish-state filters carry counts, Pending edits narrows, and a row shows its summary', async ({
+  page,
+}) => {
   // The list reads through the GitHub double's main tree. The seeded post (2026-06-hello) is on
   // main and carries a body, so deriveExcerpt fills its row summary line. A prior test may have
   // left it on a pending branch (status edited), so this test keeps its assertions partition-
@@ -281,7 +304,10 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A pending draft body for the triage.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A pending draft body for the triage.', { timeout: 2000 });
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'A pending draft body for the triage.',
+    { timeout: 2000 },
+  );
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 
@@ -301,7 +327,9 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   await expect(draftRow).toHaveCount(0);
 });
 
-test('zen round trip: the footer toggle hides the band, the chip carries the way out, Escape restores', async ({ page }) => {
+test('zen round trip: the footer toggle hides the band, the chip carries the way out, Escape restores', async ({
+  page,
+}) => {
   // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
   // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
   // click races the entry count. Navigating straight to the edit URL is order-independent.
@@ -337,7 +365,9 @@ test('zen round trip: the footer toggle hides the band, the chip carries the way
   await editor.click();
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('A line written under zen.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A line written under zen.', { timeout: 2000 });
+  await expect(page.locator('input[name="body"]')).toHaveValue('A line written under zen.', {
+    timeout: 2000,
+  });
   await expect(chip.locator('.cairn-save-state')).toContainText('Unsaved changes');
 
   // Escape exits zen and the band returns, with the persistent sidebar beside it.
@@ -351,7 +381,9 @@ test('zen round trip: the footer toggle hides the band, the chip carries the way
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 });
 
-test('the editors view runs against the dev AUTH_DB double: list the seeds, add one', async ({ page }) => {
+test('the editors view runs against the dev AUTH_DB double: list the seeds, add one', async ({
+  page,
+}) => {
   await page.goto('/admin/editors');
 
   // The fake-auth-db seeds: the fixture session's owner plus one plain editor. A reused local
@@ -373,7 +405,9 @@ test('the editors view runs against the dev AUTH_DB double: list the seeds, add 
   await expect(rows).toHaveCount(before + 1);
 });
 
-test('the component picker groups the catalog, opens the callout two-pane with its live preview, and inserts the directive', async ({ page }) => {
+test('the component picker groups the catalog, opens the callout two-pane with its live preview, and inserts the directive', async ({
+  page,
+}) => {
   // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
   // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
   // click races the entry count. Navigating straight to the edit URL is order-independent.
@@ -391,7 +425,9 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   // growing (Media, Quotes, Actions, and Structure have since joined Callouts and Notices), so assert
   // the two groups this test exercises by name and relative order rather than the full list, so a
   // newly registered component group elsewhere in the catalog does not break this test.
-  const headingTexts = await dialog.locator('[data-testid="cairn-pk-group-heading"]').allTextContents();
+  const headingTexts = await dialog
+    .locator('[data-testid="cairn-pk-group-heading"]')
+    .allTextContents();
   expect(headingTexts).toContain('Callouts');
   expect(headingTexts).toContain('Notices');
   expect(headingTexts.indexOf('Callouts')).toBeLessThan(headingTexts.indexOf('Notices'));
@@ -401,10 +437,14 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   await dialog.locator('[data-testid="cairn-pk-row"]', { hasText: 'Callout' }).click();
   await expect(dialog.locator('h2#cairn-insert-dialog-title')).toHaveText('Callout');
   await expect(dialog.locator('[data-testid="cairn-pk-preview"]')).toBeVisible();
-  const previewFrame = page.frameLocator('[data-testid="cairn-pk-preview"] iframe[title="Component preview"]');
+  const previewFrame = page.frameLocator(
+    '[data-testid="cairn-pk-preview"] iframe[title="Component preview"]',
+  );
   // The preview seeds from the sample, so the rendered frame carries the sample title through the
   // site's own render() path.
-  await expect(previewFrame.locator('.callout-title')).toContainText('A worked example', { timeout: 5000 });
+  await expect(previewFrame.locator('.callout-title')).toContainText('A worked example', {
+    timeout: 5000,
+  });
 
   // Insert. The serialized directive lands at the editor cursor (callout has a nested slot, so the
   // grammar opens it with a four-colon fence).
@@ -413,7 +453,9 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   await expect(editor).toContainText('::::callout[A worked example]');
 });
 
-test('the component round-trips: place a callout, the caret enables Edit block, Update rewrites the same block in place', async ({ page }) => {
+test('the component round-trips: place a callout, the caret enables Edit block, Update rewrites the same block in place', async ({
+  page,
+}) => {
   // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
   // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
   // click races the entry count. Navigating straight to the edit URL is order-independent.
@@ -443,7 +485,9 @@ test('the component round-trips: place a callout, the caret enables Edit block, 
   // With the caret on the plain prose line (not on any component), the Edit-block control carries
   // its disabled label and is disabled.
   await editor.locator('.cm-line', { hasText: 'A plain prose line.' }).click();
-  await expect(page.getByRole('button', { name: 'Place the cursor in a component to edit it' })).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Place the cursor in a component to edit it' }),
+  ).toBeDisabled();
 
   // Put the text cursor inside the callout block by clicking its opener line.
   await editor.locator('.cm-line', { hasText: '::::callout[A worked example]' }).click();
@@ -499,7 +543,9 @@ test('an entry opens with its component blocks folded, and the safety invariant 
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('Intro line.\n\n:::note\nHidden detail one.\nHidden detail two.\n:::');
-  await expect(page.locator('input[name="body"]')).toHaveValue(/Hidden detail two\./, { timeout: 2000 });
+  await expect(page.locator('input[name="body"]')).toHaveValue(/Hidden detail two\./, {
+    timeout: 2000,
+  });
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 
@@ -521,7 +567,9 @@ test('an entry opens with its component blocks folded, and the safety invariant 
   await expect(editor).toContainText('Hidden detail one.');
 });
 
-test('the v2 status select round-trips: set it, save, reload, the value persists', async ({ page }) => {
+test('the v2 status select round-trips: set it, save, reload, the value persists', async ({
+  page,
+}) => {
   // A unique slug per run so a reused local server (reuseExistingServer) does not collide.
   const slug = `status-roundtrip-${Date.now()}`;
 
@@ -551,9 +599,12 @@ test('the v2 status select round-trips: set it, save, reload, the value persists
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the status round-trip.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A body for the status round-trip.', {
-    timeout: 2000,
-  });
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'A body for the status round-trip.',
+    {
+      timeout: 2000,
+    },
+  );
 
   // Change the select to published and save. The frontmatter encode (frontmatterFromForm) writes
   // the chosen value, and the commit carries it.
@@ -597,9 +648,12 @@ test('reference fields round-trip through the editor, commit their edges, and re
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the reference round-trip.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A body for the reference round-trip.', {
-    timeout: 2000,
-  });
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'A body for the reference round-trip.',
+    {
+      timeout: 2000,
+    },
+  );
 
   // Every field but the title lives behind the Details slide-over (closed by default), so open it.
   await page.getByRole('button', { name: 'Details' }).click();
@@ -678,7 +732,10 @@ test('reference fields round-trip through the editor, commit their edges, and re
   await expect(authorLink).toHaveAttribute('href', '/about');
   // The related edge resolves to its target post's title, linked to its permalink.
   const relatedNav = page.getByTestId('post-related');
-  await expect(relatedNav.getByRole('link', { name: 'A second post' })).toHaveAttribute('href', '/posts/second');
+  await expect(relatedNav.getByRole('link', { name: 'A second post' })).toHaveAttribute(
+    'href',
+    '/posts/second',
+  );
 });
 
 // The Mode 1 coexistence proof this spec used to run against the template's own /calendar stub

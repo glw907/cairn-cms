@@ -1,5 +1,5 @@
 /* ============================================================================
-   cairn bespoke reading surface — the signature B2 deliverable.
+   cairn bespoke reading surface.
 
    The article's prose, every element bound to the DaisyUI roles and the cairn
    tokens in theme.css, so one token edit re-skins the chrome AND the article in
@@ -19,10 +19,10 @@
        because it is @import-ed into theme.css, the one sheet the (site) layout and
        the preview config both link (the parity rule; see site.css's header).
 
-   The directive components (the engine's render output) are styled here too. They
-   carry the real engine class names, NOT the mockup's BEM names: a callout is
+   The directive components (the engine's render output) are styled here too, by the
+   real engine class names: a callout is
    `.callout > .callout-title + .callout-body + .callout-points`, an alert is
-   `.alert > .card-body > (.cairn-head > .card-title) + .alert-body`. Every rule is
+   `.alert > .cairn-alert-body > (.cairn-head > .cairn-head-title) + .alert-body`. Every rule is
    scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component
    classes (theme.css bundles DaisyUI for the public layer) on specificity.
 
@@ -125,9 +125,9 @@
     font-weight: 650;
   }
   /* Rest identity: the accent ink plus an underline a shade lighter than the ink itself, so a link
-     reads as a link even before it is touched (previously indistinguishable from surrounding text).
-     Hover deepens the underline to the full accent; active (the pressed instant) recedes toward the
-     body ink, the same "receding" cue every other pressed control in this sheet uses. */
+     reads as a link even before it is touched. Hover deepens the underline to the full accent;
+     active (the pressed instant) recedes toward the body ink, the same "receding" cue every other
+     pressed control in this sheet uses. */
   .prose a {
     font-weight: 500;
     color: var(--color-primary);
@@ -499,9 +499,12 @@
   }
 
   /* Alert: the second directive, built from the cairn render helpers (a section
-     with a card-body, a cairn-head holding an optional icon and the card-title,
-     and an alert-body). DaisyUI's .alert grid is overridden here. Roles note /
-     caution; caution leans on the warning ink so it reads as a caution. */
+     with a cairn-alert-body, a cairn-head holding an optional icon and the
+     cairn-head-title, and an alert-body). DaisyUI's .alert grid is overridden here.
+     The inner classes are the site's own (renamed away from DaisyUI's .card-body/
+     .card-title so the .card component's Tailwind-scanned rules never restyle
+     the alert). Roles note / caution; caution leans on the warning ink so it
+     reads as a caution. */
   .prose .alert {
     display: block;
     grid-template-columns: none;
@@ -517,7 +520,7 @@
     border-left-color: var(--cairn-warning-ink);
     background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
   }
-  .prose .alert .card-body {
+  .prose .alert .cairn-alert-body {
     padding: var(--spacing-s) var(--spacing-m);
   }
   .prose .alert .cairn-head {
@@ -526,14 +529,14 @@
     gap: 0.5rem;
     margin-bottom: var(--spacing-3xs);
   }
-  .prose .alert .card-title {
+  .prose .alert .cairn-head-title {
     font-family: var(--font-body);
     font-weight: 650;
     font-size: var(--text-step-0);
     margin: 0;
     color: var(--cairn-info-ink);
   }
-  .prose .alert-caution .card-title {
+  .prose .alert-caution .cairn-head-title {
     color: var(--cairn-warning-ink);
   }
   .prose .alert .cairn-icon {

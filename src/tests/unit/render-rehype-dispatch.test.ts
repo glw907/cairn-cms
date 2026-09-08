@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Root, Element, ElementContent } from 'hast';
-import { rehypeDispatch, cardShell, headRow, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
+import { rehypeDispatch, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 import type { ComponentContext } from '../../lib/render/registry.js';
 
@@ -17,6 +17,12 @@ function fixtureHead(node: Element): { head: Element; rest: ElementContent[] } {
   return { head: h('div', { className: ['cairn-head'] }, [h2]), rest };
 }
 
+// Local fixture copy of the retired cardShell:
+// `<section class=…><div class="card-body">…</div></section>`.
+function fixtureCardShell(classes: string[], body: ElementContent[]): Element {
+  return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
+}
+
 const reg = defineRegistry({
   components: [
     {
@@ -26,7 +32,7 @@ const reg = defineRegistry({
       insertTemplate: '',
       build: (ctx) => {
         const { head, rest } = fixtureHead(ctx.node);
-        return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
+        return fixtureCardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
   ],
@@ -161,38 +167,5 @@ describe('ctx.attr', () => {
   });
 });
 
-describe('headRow', () => {
-  it('builds a cairn-head with an h2.card-title and no icon when none is given', () => {
-    const row = headRow([{ type: 'text', value: 'Hello' }]);
-    expect(row.tagName).toBe('div');
-    expect(row.properties?.className).toEqual(['cairn-head']);
-    expect(row.children).toHaveLength(1);
-    const heading = row.children[0] as Element;
-    expect(heading.tagName).toBe('h2');
-    expect(heading.properties?.className).toEqual(['card-title']);
-    expect((heading.children[0] as { value: string }).value).toBe('Hello');
-  });
-
-  it('places a pre-built icon before the heading when given', () => {
-    const icon = h('span', { className: ['cairn-icon'] }, []);
-    const row = headRow([{ type: 'text', value: 'Hi' }], icon);
-    expect(row.children).toHaveLength(2);
-    const first = row.children[0] as Element;
-    expect(first.tagName).toBe('span');
-    expect(first.properties?.className).toEqual(['cairn-icon']);
-    expect((row.children[1] as Element).tagName).toBe('h2');
-  });
-});
-
-describe('headRow heading level', () => {
-  it('defaults to an h2', () => {
-    const row = headRow([{ type: 'text', value: 'Title' }]);
-    const heading = row.children.find((c) => c.type === 'element');
-    expect((heading as { tagName: string }).tagName).toBe('h2');
-  });
-  it('uses the given level', () => {
-    const row = headRow([{ type: 'text', value: 'Title' }], undefined, 3);
-    const heading = row.children.find((c) => c.type === 'element');
-    expect((heading as { tagName: string }).tagName).toBe('h3');
-  });
-});
+// headRow's own unit coverage moved with it: it is chassis-owned code now
+// (examples/showcase/src/chassis/render.ts), not an engine export this suite proves.

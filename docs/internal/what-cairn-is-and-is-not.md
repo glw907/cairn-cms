@@ -19,7 +19,8 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   Svelte's own `mount()`; the engine reaches for D1/R2/Workers directly. No framework- or host-agnostic
   layer. (The full stack list and the scaffold-copy site-template direction are in the
   `cairn-scope-opinionated-stack` memory.)
-- **Content is markdown in git**, a fixed set of first-class concepts (Posts, Pages). No runtime content
+- **Content is markdown in git**, in one fixed concept shape (`defineConcept`); the set is the site's to
+  declare, with Posts and Pages out of the box, and never an open-ended collection model. No runtime content
   database; querying is build-time over a committed manifest.
 - **A cairn site feeds AIs easily.** Making a site's content trivial for a machine to read and organize is
   a first-class goal, and cairn is well-placed for it: the content is already markdown in git (the cleanest
@@ -45,7 +46,7 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   a positioning question this doc used to hold open: whether the audit's design-conformance rules were
   consumer product or engine-internal apparatus, with a hypothesized split (consumer rules ship, engine
   ones don't) as the likely answer. The rule inventory dissolved that split on evidence rather than
-  confirming it: all 23 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's
+  confirming it: all 28 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's
   admin toolkit, so conformance to cairn's own design system is exactly the product being audited, not
   apparatus that measures the engine from outside. See `docs/reference/cairn-audit.md` for what the
   package ships and what stays engine-side.
@@ -67,14 +68,16 @@ This single rule adjudicates any scope question without an enumerated denylist:
   dues, a directory, is the developer's to build on cairn, in their own routes, data, and auth. cairn
   never names or models a domain actor; it only ever knows owner/editor.
 - **Seam, not feature.** When a real extension need appears, the answer is the thinnest seam that lets the
-  developer build it, plus an enforced, versioned public surface so their work survives engine updates.
+  developer build it, plus a versioned public surface, with every break disclosed, so their work survives
+  engine updates with the changes named.
   cairn provides the frame; the developer provides the functionality.
-- **The contract is stable.** The seams form a narrow, versioned, enforced public surface across the
+- **The contract is stable, and every break is disclosed.** The seams form a narrow, versioned public surface across the
   kind-based export subpaths, held by a public-surface snapshot gate plus gated Extension-API/Scaffold-API
   stability tiers (not a single `./extend` subpath; see the 2026-06-28 developer-extensibility redesign
-  design); cairn evolves its internals freely behind it, so a developer's work survives ordinary updates. A
-  breaking change to that surface is a deliberate, signposted major-version event, not an everyday
-  occurrence. Keeping the surface narrow is what keeps that promise cheap to honor, one more reason the
+  design); cairn evolves its internals freely behind it. Until 1.0 the gate detects and discloses a break
+  (the changelog's `Consumers must:` line and the migration notes), never prevents one, and two
+  Extension-tier breaks have shipped inside 0.x minors (0.86.0, 0.94.0); from 1.0 a breaking change to
+  that surface is a deliberate, signposted major-version event, not an everyday occurrence. Keeping the surface narrow is what keeps that promise cheap to honor, one more reason the
   answer to a new need is the thinnest seam.
 
 ### The `cairn` tool is the operator's cockpit, not engine surface

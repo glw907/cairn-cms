@@ -25,7 +25,7 @@ the mechanism.
 | --- | --- |
 | `content.ts` | The delivery content layer: globs the markdown, builds the site/posts indexes through `createSiteIndexes`. |
 | `feed.ts` | Maps the site's posts index into `cairn-cms/delivery`'s `FeedItem` shape, shared by the RSS and JSON Feed routes. |
-| `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route and the preview route so their rendering config can never drift apart. |
+| `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route, the raw-markdown route, and the preview route so their rendering config can never drift apart. |
 | `entry-data.ts` | The reference-edge resolution layered onto `EntryData`/`PreviewData`, shared the same way as `public-routes.ts`. |
 | `cairn.server.ts` | The one server-side runtime composition point (`composeRuntime`, `createCairnAdmin`); every server route that needs the runtime imports it from here. |
 | `dev-gate.ts` | The runtime half of the dev-backend gate (`CAIRN_DEV_BACKEND=1`), read by hooks and the runtime composition; its build-time half is the `__CAIRN_DEV_BUILD__` define in `vite.config.ts`. |
@@ -49,7 +49,8 @@ image of `$chassis` for everything that is not genre-free.
 **Adapter and delivery wiring.** `content.ts`, `feed.ts`, and `cairn.server.ts` take a theme's own
 `cairn.config.ts` adapter (concepts, fields, registered components, backend) as input; none of
 them declares any content model or component of their own. A theme with a different set of
-concepts, fields, or components changes only `cairn.config.ts`.
+concepts or fields changes only `cairn.config.ts`; a different set of registered components
+changes `markdown-components.ts` (and `icons.ts` for a different glyph set).
 
 **The token system (`tokens.css`).** Every design-scale key (`--font-*`, `--text-step-*`,
 `--spacing-*`, `--leading-*`, `--tracking-*`, `--container-measure*`, `--color-muted`,
@@ -101,9 +102,14 @@ diamond list bullet, the margin-hanging pull quote) sits behind `.prose[data-flo
 default; a theme opts in by adding one `data-flourish` attribute to its `.prose` root, no CSS edit.
 
 **Component-grammar wiring (`render.ts`).** `makeIconRenderer(icons)` wires a theme's own icon set
-into the engine's `iconSpan`/`glyph` helpers; a theme's `defineComponent()` build functions call
-the returned function and never import `iconSpan`/`glyph` directly. Swapping the icon set (the
-`icons: IconSet` object in `cairn.config.ts`) never touches a component's `build()`.
+into the engine's `renderGlyph` helper; a theme's `defineComponent()` build functions call the
+returned function and never import `renderGlyph` directly. This file also exports `headRow`, the
+icon-plus-heading head a titled component's `build()` calls (the alert directive is the one call
+site); both helpers are chassis-owned, not engine exports. `headRow` stamps `cairn-head-title` on
+its heading element, and the alert directive's own build function (`markdown-components.ts`)
+stamps `cairn-alert-body` on its wrapper; both are chassis-owned class names, not part of the
+engine's emitted-classes registry (`docs/reference/render.md`). Swapping the icon set (the
+`icons: IconSet` object in `icons.ts`) never touches a component's `build()`.
 
 **The prose-typography seam (`render.ts`).** `proseTypography` is a `createRenderer`
 `remarkPlugins` entry (`remark-smartypants`, configured `dashes: 'oldschool'`) that smartens
@@ -187,7 +193,7 @@ a build it silently breaks) fails this file's own promise.
 | `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's own mapping); nothing else references it. |
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |
-| `render.ts` | `cairn.config.ts` (the one `makeIconRenderer` call and the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon import, and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
+| `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
 | `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
 | `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with its own slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |

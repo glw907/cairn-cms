@@ -23,7 +23,9 @@ would be served by the asset layer with the Worker, and therefore the guard, nev
   <title>Member account</title>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-200 p-4 text-base-content">
+<div
+  class="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-200 p-4 text-base-content"
+>
   <div class="card w-full max-w-sm bg-base-100 shadow">
     <div class="flex flex-col gap-4 p-6">
       <h1 class="text-lg font-semibold">Signed in</h1>

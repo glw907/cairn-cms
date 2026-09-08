@@ -1,12 +1,12 @@
 <!-- @component
-The /styleguide route: the single growing demo surface that shows every part of the public theme
-shipped so far, so the template is a working component library, not a blog skeleton. B3 and B4 add
-their feature and option components to this same page. It auto-themes through `prefers-color-scheme`
-(the manual light/dark toggle is B4), so a reader in dark mode sees the dark theme here too.
+The /styleguide route: the single growing demo surface that shows every part of the public theme,
+so the template is a working component library, not a blog skeleton. It auto-themes through
+`prefers-color-scheme`, and the manual light/dark toggle in the header overrides that from then on,
+so a reader in dark mode sees the dark theme here too.
 
 Four sections: the color tokens (a swatch per DaisyUI role and on-surface ink), the type scale (each
 named step at size, plus the three faces), the reading surface (the real prose output, rendered
-server-side through the adapter `render` and wrapped in `.prose`), and the B2 core component set (the
+server-side through the adapter `render` and wrapped in `.prose`), and the core component set (the
 markdown directive components plus the own-it components a page composes from).
 
 Token-backed throughout: every color reads a DaisyUI role utility or a `var(--color-*)`/`var(--cairn-*)`
@@ -73,22 +73,55 @@ or extend it; nothing here is a literal a re-skin would miss.
   /** One labeled face: the font token, the family role name, and what it sets. */
   type Face = { token: string; label: string; use: string; sample: string };
   const faces: Face[] = [
-    { token: '--font-display', label: 'display (Figtree)', use: 'headings, pull-quotes', sample: 'Stacked one stone at a time' },
-    { token: '--font-body', label: 'body (Source Sans 3)', use: 'body, UI, captions', sample: 'The quick brown fox jumps over the lazy dog' },
-    { token: '--font-mono', label: 'mono (Source Code Pro)', use: 'code', sample: 'const cairn = renderMarkdown(md);' },
+    {
+      token: '--font-display',
+      label: 'display (Figtree)',
+      use: 'headings, pull-quotes',
+      sample: 'Stacked one stone at a time',
+    },
+    {
+      token: '--font-body',
+      label: 'body (Source Sans 3)',
+      use: 'body, UI, captions',
+      sample: 'The quick brown fox jumps over the lazy dog',
+    },
+    {
+      token: '--font-mono',
+      label: 'mono (Source Code Pro)',
+      use: 'code',
+      sample: 'const cairn = renderMarkdown(md);',
+    },
   ];
 
   /** The accordion is a native <details>; track which is open only for the demo, not for behavior. */
   const accordion = [
-    { summary: 'What is a callout?', body: 'A callout pulls one idea out of the flow of a post. It ships in three tones: note, tip, and warning.' },
-    { summary: 'How do I re-skin the theme?', body: 'Edit the role tokens in theme.css. About fourteen values cover a full re-brand, the prose surface included.' },
+    {
+      summary: 'What is a callout?',
+      body: 'A callout pulls one idea out of the flow of a post. It ships in three tones: note, tip, and warning.',
+    },
+    {
+      summary: 'How do I re-skin the theme?',
+      body: 'Edit the role tokens in theme.css. About fourteen values cover a full re-brand, the prose surface included.',
+    },
   ];
 
   /** A small tab bar following the APG pattern: roving state, arrow keys, aria-controls to a panel. */
   const tabs = [
-    { id: 'write', label: 'Write', body: 'The editing surface. You type raw markdown on the left.' },
-    { id: 'preview', label: 'Preview', body: 'The rendered output, on the same reading surface your readers see.' },
-    { id: 'publish', label: 'Publish', body: 'A deliberate step that copies your draft to the live site.' },
+    {
+      id: 'write',
+      label: 'Write',
+      body: 'The editing surface. You type raw markdown on the left.',
+    },
+    {
+      id: 'preview',
+      label: 'Preview',
+      body: 'The rendered output, on the same reading surface your readers see.',
+    },
+    {
+      id: 'publish',
+      label: 'Publish',
+      body: 'A deliberate step that copies your draft to the live site.',
+    },
   ];
   let activeTab = $state(tabs[0].id);
 
@@ -96,7 +129,10 @@ or extend it; nothing here is a literal a re-skin would miss.
   function onTabKeydown(event: KeyboardEvent, index: number) {
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
     event.preventDefault();
-    const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+    const next =
+      event.key === 'ArrowRight'
+        ? (index + 1) % tabs.length
+        : (index - 1 + tabs.length) % tabs.length;
     activeTab = tabs[next].id;
     const el = document.getElementById(`cairn-sg-tab-${tabs[next].id}`);
     el?.focus();
@@ -152,8 +188,8 @@ or extend it; nothing here is a literal a re-skin would miss.
 
     <h3 class="sg-h3">On-surface inks</h3>
     <p class="sg-note">
-      A fill tone fails as small text, so each status word reads a darker ink than its matching fill.
-      Each sample below is the ink painted as text on the page paper.
+      A fill tone fails as small text, so each status word reads a darker ink than its matching
+      fill. Each sample below is the ink painted as text on the page paper.
     </p>
     <div class="sg-inks">
       {#each inks as s (s.token)}
@@ -169,8 +205,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   <section class="sg-section" aria-labelledby="sg-type">
     <h2 id="sg-type" class="sg-h2">Type scale</h2>
     <p class="sg-note">
-      A fluid editorial scale on a fixed ratio, authored with <code>clamp()</code> so the display
-      scales while the body stays readable. Each row is one named step.
+      A fluid editorial scale on a fixed ratio, authored with <code>clamp()</code> so the display scales
+      while the body stays readable. Each row is one named step.
     </p>
     <div class="sg-steps">
       {#each typeSteps as step (step.token)}
@@ -205,15 +241,15 @@ or extend it; nothing here is a literal a re-skin would miss.
   <section class="sg-section" aria-labelledby="sg-prose">
     <h2 id="sg-prose" class="sg-h2">The reading surface</h2>
     <p class="sg-note">
-      A representative markdown sample run through the same <code>render</code> the article route
-      calls. This is the bespoke, token-bound prose surface, not stock typography.
+      A representative markdown sample run through the same <code>render</code> the article route calls.
+      This is the bespoke, token-bound prose surface, not stock typography.
     </p>
     <div class="prose">
       {@html data.proseHtml}
     </div>
   </section>
 
-  <!-- 4. Components: the B2 core set. The directive components are shown in the reading surface above
+  <!-- 4. Components: the core set. The directive components are shown in the reading surface above
        (callout note/tip/warning, alert); here are the own-it components a page composes from. Every
        one is a DaisyUI primitive styled on the tokens, an editable file a site owner adopts. -->
   <section class="sg-section" aria-labelledby="sg-components">

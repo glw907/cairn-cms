@@ -104,7 +104,9 @@ test('orphan round-trip: the orphaned byte purges with the typed confirm, the br
   await page.getByRole('button', { name: 'Find orphaned files' }).click();
   const dialog = page.getByTestId('cairn-orphan-dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('heading', { name: 'Orphaned files and broken references' })).toBeVisible();
+  await expect(
+    dialog.getByRole('heading', { name: 'Orphaned files and broken references' }),
+  ).toBeVisible();
 
   // The Orphaned files section lists the orphaned byte by its R2 key. Target it specifically rather
   // than asserting a total, since other specs may leave their own byte-rows behind.
@@ -139,7 +141,9 @@ test('orphan round-trip: the orphaned byte purges with the typed confirm, the br
   // is still listed (the purge is R2-only and read-only on broken refs).
   await page.getByRole('button', { name: 'Find orphaned files' }).click();
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('heading', { name: 'Orphaned files and broken references' })).toBeVisible();
+  await expect(
+    dialog.getByRole('heading', { name: 'Orphaned files and broken references' }),
+  ).toBeVisible();
   await expect(dialog.getByText(ORPHAN_BYTE.key, { exact: true })).toHaveCount(0);
   const brokenAfter = dialog.getByTestId('cairn-broken-refs');
   await expect(brokenAfter.getByText(MISSING.slug, { exact: true })).toBeVisible();

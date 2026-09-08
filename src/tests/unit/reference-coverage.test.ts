@@ -273,7 +273,7 @@ describe('checkOne (per-subpath stale-name rescope)', () => {
   it('defaults allowlist to NARRATIVE_CONTEXT_ALLOWLIST when omitted', () => {
     const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalKnownNames });
     // fromB is foreign to entryA's page and NOT covered by the real narrative-context allowlist
-    // (which only excuses cardShell/headRow/iconSpan on core.md), so it still reports as stale.
+    // (empty since the render trio was re-homed to site-owned code), so it still reports as stale.
     expect(result.stale).toEqual(['fromB']);
   });
 });
@@ -394,7 +394,7 @@ describe('the indexed-access retrofit is complete on its two target pages (Task 
   });
 });
 
-describe('NARRATIVE_CONTEXT_ALLOWLIST (the render trio, F-1 list (c) Tier 4)', () => {
+describe('NARRATIVE_CONTEXT_ALLOWLIST', () => {
   it('is reasoned: every entry carries a non-empty reason', () => {
     expect(() => assertAllowlistReasoned(NARRATIVE_CONTEXT_ALLOWLIST)).not.toThrow();
   });
@@ -405,9 +405,8 @@ describe('NARRATIVE_CONTEXT_ALLOWLIST (the render trio, F-1 list (c) Tier 4)', (
     ).toThrow(/no reason/);
   });
 
-  it('records core.md as the render trio\'s narrative-context page', () => {
-    const coreEntry = NARRATIVE_CONTEXT_ALLOWLIST.find((e) => e.page === 'docs/reference/core.md');
-    expect(coreEntry?.names).toEqual(['cardShell', 'headRow', 'iconSpan']);
+  it('carries no entries now that the render trio is re-homed', () => {
+    expect(NARRATIVE_CONTEXT_ALLOWLIST).toEqual([]);
   });
 });
 

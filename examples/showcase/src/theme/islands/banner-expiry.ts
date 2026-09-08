@@ -1,4 +1,4 @@
-// The expiring-announcement banner island's one shared rule: cairn.config.ts's build() (the server
+// The expiring-announcement banner island's one shared rule: markdown-components.ts's build() (the server
 // fallback) and Banner.svelte (the live component) both call this, so the two independently agree on
 // "expired" without sharing any state across the server/client boundary. Each evaluates it fresh, at
 // its own render or hydration moment, which is what lets a banner that expires between build and view

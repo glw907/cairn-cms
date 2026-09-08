@@ -13,10 +13,15 @@
        the actual named themes (`@plugin "daisyui/theme"`, the DaisyUI role colors and geometry) are
        100% a theme's own choice and never declared here.
      - The COMPONENT SET is scoped to what the public template genuinely renders, not DaisyUI's full
-       library: `button`, `badge`, `alert`, and `card` (the last two because the engine's alert
-       directive, cairn.config.ts's `cardShell`/`headRow`, emits real `card-body`/`card-title`/`alert`
-       classes that prose.css only partially overrides, so the rest of a theme's directive styling
-       leans on their base declarations). Everything else DaisyUI ships (accordion-style `collapse`,
+       library: `button`, `badge`, `alert`, and `card`. `alert` is the directive's own `.alert`/
+       `.alert-<role>` classes, which `prose.css` only partially overrides, so the rest of a theme's
+       directive styling leans on the base declarations; the directive's two inner classes are the
+       site's own `cairn-alert-body`/`cairn-head-title`, named apart from DaisyUI's `.card-body`/
+       `.card-title` so this same `card` activation cannot restyle them, and the alert no longer
+       emits card classes at all. `card` stays enabled because the showcase's own members fixture
+       renders one (`routes/members`), a route the template excludes; a scaffolded site with no
+       `.card` in its own markup may exclude it too.
+       Everything else DaisyUI ships (accordion-style `collapse`,
        `modal`, `navbar`, form controls, and so on) never appears in a chassis-descended template's
        markup and is excluded so the compiled theme.css does not carry ~50 component families of dead
        weight. A theme that adopts a currently-excluded component (a `.tooltip`, a `.modal`) drops its

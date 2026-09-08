@@ -14,53 +14,159 @@ Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
 (slice 1), foundations A (2a), foundations B (2b), retires (3), conventions (4a, PR #43),
 conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and internals-C (7, merged 2026-09-05 at
-`3e4ba6eb`, PR #49, CI green); the window holds until the polish slice per the amended
-initiative design. CI on `main` is fully green.
+`3e4ba6eb`, PR #49, CI green); the window holds until the polish slice per the initiative
+design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
+passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action
 
-**Resume chassis-A** (audit-remediation slice 8, structural) from Task 3. The pass is
-EXECUTING on branch `chassis-a` in `.claude/worktrees/chassis-a` (showcase from-scratch
-installed and repointed 2026-09-05). Tasks 1 and 2 are accepted and committed (`e2aceffe`
-the mechanical Prettier reformat, `8fecf730` the scaffold format check). The first run
-(workflow `wf_6fd88891-0a4`, one chain, 2026-09-05) halted at Task 2 on an ESCALATE that was
-about Task 1, not Task 2: the reformat reflowed the one-line `backend: githubApp({...})`
-literal in `examples/showcase/src/theme/cairn.config.ts` into six lines, and
-`packages/create-cairn-site/src/github/finalize.mjs:20-21` pins that exact one-line string
-(`TEMPLATE_GITHUB_APP_LITERAL`), so every real scaffold run now fails at finalize and the
-CLI's rot gate (`npm --prefix packages/create-cairn-site test`, 805/806) is red. Neither the
-plan's per-task gate nor the dispatched gate ran that suite, which is why it survived two
-task gates.
+**Chassis-A (audit-remediation slice 8, structural) is EXECUTING**: Tasks 3 to 12 run as
+workflow `wf_855c925b-ae2` (session 9215acac, launched 2026-09-07 about 16:00 AKDT, one chain,
+branch `chassis-a` in `.claude/worktrees/chassis-a`). Tasks 1 and 2 are accepted (`e2aceffe`,
+`8fecf730`) and the Task 1 remedy landed as `de93536c` (a `// prettier-ignore` line pinning the
+one-line `githubApp({...})` literal that `packages/create-cairn-site/src/github/finalize.mjs`
+matches byte-for-byte; diff-reviewer accepted; CLI suite 806/806). Every remaining task's gate
+carries `npm --prefix packages/create-cairn-site run prepack && npm --prefix
+packages/create-cairn-site test`; the args file shape is in the plan's Execution section.
 
-**Conductor ruling (2026-09-07):** land the remedy as a follow-on fix commit on the branch
-(a `// prettier-ignore` line above the `backend:` entry, the call collapsed back to the exact
-string finalize.mjs pins, `format`, `emit:template`, then `check:template` green and the CLI
-suite 806/806), never a rewrite of `e2aceffe`. Add `npm --prefix packages/create-cairn-site
-test` to the per-task gate for every remaining task, and record the omission in the Task 12
-harvest. Then run Tasks 3 to 12 as a FRESH `pass-execute-chains` workflow (a resume of the
-old run ID only works in the session that launched it); the args file shape is in the
-plan's Execution section and the task criteria in the plan itself.
+**Task 8 ruling (2026-09-07, about 19:45 AKDT):** Tasks 3 to 7 accepted and committed
+(`c2290d69`, `b126d892`, `274374f2`, `615d4d1f`, `6c16334c`). Task 8's implementer returned
+gate-red and uncommitted (25 files): inlining `cardShell` moved the literals `card-body` and
+`card-title` from the unscanned npm package into scanned showcase source, so Tailwind generates
+DaisyUI's card rules into the public CSS and every alert directive grows about 26 px (HTML
+byte-identical). Ruling: DaisyUI `card` stays enabled (the members pages use it); the inlined
+alert's two inner classes are renamed `cairn-alert-body`/`cairn-alert-title` with the prose.css
+selectors and the render.md registry following, paint proven identical by every baseline
+unchanged; the `Consumers must:` line carries the rename and its scan reason (ecxc-ski and
+xcathletes-org import `cardShell` today). The diff-reviewer on Task 8 ran an obfuscation
+experiment on the tree (`['card' + '-body']`) that the fix-round implementer reverts first.
+Relaunch Tasks 8 to 12 as a fresh `pass-execute-chains` run from the args at the session
+scratchpad's `chassis-a-args-8to12.json` (the Task 8 notes carry the ruling verbatim) once the
+halted run `wf_855c925b-ae2` reports. DONE: relaunched as run `wf_5ac6ef7f-5a7` (session
+9215acac, 2026-09-07 about 20:00 AKDT); the first run spent 1.23M subagent tokens over Tasks 3
+to 8, and the escalate also found the emitted `render.ts` hand-edited (the fix round re-emits).
+Run `wf_5ac6ef7f-5a7` landed Task 8 as `8fc1343d` (every gate green, no baseline moved) and
+escalated on the changelog inventory (three `cardShell` importers, not two; `headRow` in two
+sites) and on the generic `headRow` stamping an alert-named class; fix round dispatched about
+20:50 with the rulings (inventory corrected, `cairn-head-title`, the chassis classes out of the
+engine registry, the worked example off DaisyUI names, one e2e assertion). Tasks 9 to 12 relaunch
+from the scratchpad's `args9.min.json` after the fix round is reviewed. DONE: Task 8 accepted
+at `33340c67` (three commits: `8fc1343d` the landing, `017a9a1e` the naming and registry fixes,
+`d9322615` and `33340c67` the inventory and e2e); Tasks 9 to 12 launched as run
+`wf_bd778850-d87` about 21:40 AKDT. That run (ended 2026-09-08 about 00:20) accepted Task 9
+(`ee29cecf`), Task 10 after one fix (`ae71d945`, `25dbcaca`), and halted Task 11 on a second `fix`
+(`c88e18d3`, `91f65e77`; two history-narration comments left); conductor ruling: one more fix
+dispatch (landed `6eb07602`, Task 11 closed), then Task 12 as its own run: launched as
+`wf_99383a26-bd8` 2026-09-08 about 00:35 AKDT, carrying the `hastscript` manifest fix. Ritual items
+carried from the reviews: declare `hastscript` in the showcase and template manifests (the
+re-homed `render.ts` and its test import it, resolving only by hoisting); the `.js` specifier
+check is closed (Task 10 covered the five `$theme/cairn.config` sites). Spend on chassis-A's execution so far: about 1.9M
+subagent tokens.
 
+When the workflow reports: read the per-task records, decide any needs-decision or escalate,
+check the five bare `$theme/cairn.config` specifiers Task 10's grep cannot match
+(`(site)/+page.server.ts`, `feed.xml/+server.ts`, `feed.json/+server.ts`,
+`(site)/[...path=md]/+server.ts`, `(site)/styleguide/+page.server.ts`; a survivor is a fix
+commit in the ritual), then the full pass-end ritual (`cairn-pass`: simplifier, the six CI-only gates by name plus
+`check:idioms` and `check:cm-internals`, the reviewer fan-out the plan names, from-scratch
+showcase install and e2e, a fresh scaffold built and unit-tested, whole-log friction triage,
+STATUS/HISTORY/ROADMAP, post-mortem, both budgets scored), push, PR, merge on green CI.
 Approval and git authorization stand as recorded (Geoff, 2026-09-04: push, PR, merge on green
-CI). Before dispatch, re-arm the FULL guard set (`~/.claude/docs/unattended-work-guards.md`):
-both sleep inhibitors, the battery watchdog, and the runaway guard on the new workflow's
-transcript dir; the 2026-09-05 set died with its session. Two concurrent full gates is the
-machine's ceiling. Never let two writers share one worktree. On any blocker, stop,
-WIP-commit, write STATUS with the resume state.
+CI). Guards armed 2026-09-07 with the session: both sleep inhibitors and the battery watchdog
+to 09:00 on 2026-09-08, the runaway guard on the workflow's transcript dir. A resumed cold
+session re-arms the FULL set (`~/.claude/docs/unattended-work-guards.md`) and, if the
+workflow is dead, relaunches Tasks not yet accepted as a FRESH `pass-execute-chains` run
+(`resumeFromRunId` only works in the launching session); check `git log` on the branch for
+what landed. Two concurrent full gates is the machine's ceiling. Never let two writers share
+one worktree. On any blocker, stop, WIP-commit, write STATUS with the resume state.
 
 Resume prompt: "In ~/Projects/cairn-cms, invoke cairn-pass and resume the chassis-A pass
-(docs/superpowers/plans/2026-09-04-chassis-a-pass.md) per STATUS: apply the Task 1
-prettier-ignore fix commit in .claude/worktrees/chassis-a, then run Tasks 3 to 12 as a fresh
-pass-execute-chains workflow with the CLI test suite added to the gate, then the full
-pass-end ritual, push, PR, merge on green CI. Then author and execute chassis-B."
+(docs/superpowers/plans/2026-09-04-chassis-a-pass.md) per STATUS: check which of Tasks 3 to 12
+landed on branch chassis-a, relaunch the rest as a fresh pass-execute-chains workflow with the
+CLI test suite in the gate, then the full pass-end ritual, push, PR, merge on green CI. Then
+author and execute chassis-B."
+
+**Overnight organization (Geoff, 2026-09-07, about 22:20 AKDT):** B2 STACKS on B1's branch
+(worktree `chassis-b2` off `chassis-b`, not off `main`), so both PRs wait for one sitting of
+Geoff's five-viewport read. The **identity-seam pass** runs in its own worktree off `main` in
+PARALLEL with B1 (engine and extend docs versus showcase; two gates is the machine's ceiling),
+with authorship AND execution granted and its merge gate ruled: green CI plus the
+`web-auth-security-reviewer`'s accept plus the docs gates, Geoff reading the extend page after
+the fact. Brainstorm settled 2026-09-07: the target is Google Workspace and Microsoft 365 for
+nonprofits, met THROUGH CLOUDFLARE ACCESS (Access in front of `/admin` with the org's IdP; cairn
+ships one built-in resolver verifying the Access JWT header plus the generic resolver seam; no
+OIDC client in cairn); working assumptions stated and unobjected: the roster stays the
+authorization source (Access proves the email, the roster assigns owner or editor), a configured
+resolver turns magic-link off for that site (one identity path per admin), and the shell's logout
+hands off to Access's logout URL. Spec and plan EACH get a strong adversarial review, folded in before the next
+step (Geoff, 2026-09-07: "I'm leaving judgement to you. Consider cairn philosophy and
+precedent when making decisions": the charter's leanness test and the rulings ledger govern
+every call); merge order at the end: A, then B1 and B2 after Geoff's read, then the
+identity seam on its own gate.
+
+**Pictures initiative (Geoff, 2026-09-07 late; PAUSED for his morning read).** Two designs,
+brainstormed and settled on the modern-convention research (record to be banked under
+`docs/internal/record/2026-09-08-pictures/`): (A) a ROW of two or three pictures inside the
+engine's reserved `figure` directive, equal heights, ONE shared caption (Geoff's call), stacking
+below 768, authored by wrapping consecutive pictures with the existing figure button; (B) a post
+GALLERY rendered from the showcase's existing `gallery` field with a caption per picture and a
+site-island viewer that cycles the set, working without scripting as links. Both after B2 as one
+pictures pass, engine half first. DONE overnight: spec revision 2 at
+`docs/superpowers/specs/2026-09-08-pictures-design.md`, folded from a three-lens review (record
+`docs/internal/record/2026-09-08-pictures/`), now TWO passes (the row, seven tasks; the gallery,
+five) with SIX taste calls parked in its last section for Geoff (the row's height rule, the
+stacking rule, the `sizes` posture, swipe, grid captions, the dialog as a chassis primitive).
+NO plan and NO execution until Geoff reads the spec and rules on the six.
+
+**Identity seam EXECUTING** (launched 2026-09-08 about 00:10 AKDT as run `wf_b310f457-1bf`,
+session 9215acac, worktree `.claude/worktrees/identity-seam` off `main` at `f7daa6cb`, seven
+tasks at 5.5M, in parallel with chassis-A's last tasks). Spec revision 3 (`79261f74`) and plan
+revision 2 (`f7daa6cb`) are the folded artifacts; the four-lens plan review, its fold brief,
+and the spec review are banked under `docs/internal/record/2026-09-07-identity-seam/`. Task 5a
+reports `REVIEW ROUNDS PENDING`; the conductor then dispatches the `prose-voice-reviewer` and
+the `web-auth-security-reviewer` (its accept is blocking) before Task 5b. Merge gate as ruled.
+A cold resume checks `git log` on `identity-seam` and relaunches the tasks not yet accepted as a
+fresh run from the scratchpad's `identity-args.json` shape.
+
+**Identity seam, earlier state (2026-09-07 about 23:30 AKDT):** spec at
+`docs/superpowers/specs/2026-09-07-identity-seam-design.md` revision 2 (`de2bf1cb`), folded from
+a three-lens review; plan drafted at `docs/superpowers/plans/2026-09-07-identity-seam-pass.md`
+(`b58b5d2e`, 6 tasks, 4.5M); its four-lens review (grounding, security, hygiene, charter) is
+RUNNING and folds before the first dispatch. Fold rulings on the spec: the generic seam ships,
+the Access verifier is a snippet-gated recipe (the `isuniqueviolation-cloudflare` precedent),
+no guard-side bootstrap, no CSRF change, one config point read through `locals.cairnIdentity`,
+the doctor probe inverted. Worktree `.claude/worktrees/identity-seam` off `main`, launched after
+the fold, in parallel with B1.
+
+**Chassis-B execution GRANTED (Geoff, 2026-09-07):** once the four-lens review is folded
+into the plan, run chassis-B as a `pass-execute-chains` workflow through its pass-end ritual to
+a green PR with the captures and the visual-verifier verdict banked; the merge stays Geoff's.
+If the fold splits B into two passes, both halves run under this grant. B starts after
+chassis-A's ritual, PR, and merge.
+
+**Chassis-B plan FOLDED and SPLIT** (2026-09-07): the four-lens adversarial review (record
+`docs/internal/record/2026-09-04-chassis-inputs/chassis-b-plan-review.md`, fold brief
+`chassis-b-fold-brief.md`, 89 corrections) split the pass at the adoption/corpus boundary into
+**B1** `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` (matrix, shell, primitives, focus
+ring, entry row; 6M) and **B2** `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md` (corpus,
+archive, identity, footer nav, CSS, idioms, rebake; 6M), both under the execution grant. Rulings
+taken in the fold: the `createSectionAction` adoption deferred to polish (the showcase has no
+access map and the dev handle attaches none); the thirteen posts excluded from the scaffold by
+path; the members adoption and the alignment spec cut; the width matrix moved to B1's Task 2;
+`.cairn-card` proven on the styleguide only. Before B1's first dispatch: re-verify anchors
+against post-A `main` (each plan's Reconciliation block) and assemble the chain's `criteria`
+strings with the paint protocol verbatim. The committed intended-moves manifest
+(`chassis-b-intended-moves.md`) is the recovery artifact for a cold resume mid-pass.
 
 **After chassis-A: chassis-B, plan authorship AND execution granted (Geoff, 2026-09-05).**
 Author its plan from the spec's Chassis-B section with the three-lens adversarial plan review
 in place of Geoff's read; two taste calls are settled: the thirteen new posts are REAL short
 posts (150 to 300 words, the existing trail-notes voice, through the site content method),
 and the merge gate STAYS (run to a green PR with the before/after captures and the
-visual-verifier verdict banked; Geoff merges after his five-viewport read). Then polish (not
-granted), then ONE release cut. The Go `cairn` tool Pass A is deferred "until later" (Geoff,
+visual-verifier verdict banked; Geoff merges after his five-viewport read). Then B2, then the **identity
+seam** pass (Geoff, 2026-09-07: before polish so polish's family and docs reads see it;
+brainstorm and spec first; ROADMAP's audit-remediation entry carries the shape), then polish
+(not granted), then ONE release cut. The Go `cairn` tool Pass A is deferred "until later" (Geoff,
 2026-09-05).
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is

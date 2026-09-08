@@ -17,7 +17,9 @@ import { test, expect } from '@playwright/test';
 const FRAGMENT_TEXT = 'Check current avalanche and trail conditions before you set out';
 
 test.describe('fragments: reusable content included across entries', () => {
-  test('an included fragment renders on the consuming post and the consuming page', async ({ page }) => {
+  test('an included fragment renders on the consuming post and the consuming page', async ({
+    page,
+  }) => {
     await page.goto('/posts/callout');
     await expect(page.locator('article.prose')).toContainText(FRAGMENT_TEXT);
 

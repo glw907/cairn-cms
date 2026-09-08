@@ -7,7 +7,9 @@ const ACTIVE_MESSAGE = 'Trail conditions updates move to the new radio channel n
 const EXPIRED_MESSAGE = 'Early registration for the spring clinic has closed.';
 
 test.describe('content islands', () => {
-  test('renders the active banner and hides the expired one, without JavaScript', async ({ browser }) => {
+  test('renders the active banner and hides the expired one, without JavaScript', async ({
+    browser,
+  }) => {
     // A no-JS context: the island boundary must still carry real content (the build() fallback), and
     // the expired banner's fallback must already be hidden at this point, since build() checks expiry
     // on the server before the client ever runs.
@@ -22,7 +24,9 @@ test.describe('content islands', () => {
     await context.close();
   });
 
-  test('mounts the live island for the active banner and keeps the expired one hidden', async ({ page }) => {
+  test('mounts the live island for the active banner and keeps the expired one hidden', async ({
+    page,
+  }) => {
     await page.goto('/styleguide');
     const live = page.getByTestId('banner-live');
     await expect(live).toHaveCount(1);
@@ -42,7 +46,10 @@ test.describe('content islands', () => {
     // navigate away and back, in-app both ways, so afterNavigate fires a second time over a fresh DOM.
     // The showcase home link is labelled "Writing" (href "/"), not "Home", and it appears in both the
     // primary nav and the footer, so scope the back-hop to the primary nav to keep the locator strict.
-    await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Writing' }).click();
+    await page
+      .getByRole('navigation', { name: 'Primary' })
+      .getByRole('link', { name: 'Writing' })
+      .click();
     await page.getByRole('link', { name: 'Styleguide' }).click();
     // exactly one live banner, not a stacked duplicate from the second hydrate pass (the teardown works)
     await expect(page.getByTestId('banner-live')).toHaveCount(1);

@@ -29,6 +29,13 @@ A SvelteKit site usually imports the shared symbols through this barrel. The `fe
 `sitemap.xml`, and `robots.txt` showcase servers all reach `rssResponse`, `sitemapResponse`, and
 `robotsResponse` through `@glw907/cairn-cms/delivery`.
 
+**Ordering contract:** a `ContentIndex`'s `all()` already returns entries in the engine's own order,
+so a caller never re-sorts it. A dated concept, one whose `routing.dated` is true, such as Posts,
+gets entries newest first by `date`, with an undated entry sorting last. An undated concept, such as
+Pages, gets entries sorted by `title`. The `examples/showcase` home and archive routes rely on this
+directly: they read `posts.all()` and build their paginated, year-grouped view from it without a
+separate sort step.
+
 ---
 
 ## `createPublicRoutes`

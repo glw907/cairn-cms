@@ -11,7 +11,9 @@ import { parseSiteConfig, readMenu } from '@glw907/cairn-cms';
 
 const configPath = fileURLToPath(new URL('../src/theme/site.config.yaml', import.meta.url));
 
-test('the public header renders every top-level entry declared in menus.primary, in order', async ({ page }) => {
+test('the public header renders every top-level entry declared in menus.primary, in order', async ({
+  page,
+}) => {
   const raw = readFileSync(configPath, 'utf-8');
   const config = parseSiteConfig(raw);
   const primaryNav = readMenu(config, 'primary', 2);

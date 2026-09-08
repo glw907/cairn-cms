@@ -118,9 +118,12 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the gallery round-trip.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A body for the gallery round-trip.', {
-    timeout: 2000,
-  });
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'A body for the gallery round-trip.',
+    {
+      timeout: 2000,
+    },
+  );
 
   // Open Details, then add a gallery row. The row auto-expands to its image field, whose empty state
   // is a dropzone CTA derived from the field label ("Add image" for the gallery item).

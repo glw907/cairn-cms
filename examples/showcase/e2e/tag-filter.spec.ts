@@ -6,7 +6,9 @@ import { test, expect } from '@playwright/test';
 // the index to that tag's posts, and the All reset restores the whole list. This is the public-site
 // surface, distinct from the admin vocabulary screen.
 
-test('the size-gated tag filter narrows the archive and the All reset restores it', async ({ page }) => {
+test('the size-gated tag filter narrows the archive and the All reset restores it', async ({
+  page,
+}) => {
   await page.goto('/');
 
   // The filter is present (the archive is above the threshold). Scope to its group so the option

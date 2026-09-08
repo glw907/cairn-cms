@@ -1,0 +1,15 @@
+# This file serves editor format-on-save; the npm format/format:check scripts glob only
+# ts/js/svelte and never read this file.
+
+# Every stylesheet, at any depth: the token, prose, and theme sheets are hand-aligned.
+*.css
+
+# The bake writes these fresh (bake-template.mjs) or rewrites them in place
+# (emit-template.mjs), or the emit-template-dir overlay replaces or appends onto them
+# (emit-template-dir.mjs); none of these are the showcase's own formatted sources.
+README.md
+scripts/dev.mjs
+package.json
+LICENSE
+.dev.vars.example
+.gitignore

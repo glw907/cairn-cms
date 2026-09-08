@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@glw907/cairn-cms": "file:../..",
+    "hastscript": "^9.0.1",
     "remark-smartypants": "^3.0.2"
   },
   "devDependencies": {

@@ -14,8 +14,9 @@ Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
 (slice 1), foundations A (2a), foundations B (2b), retires (3), conventions (4a, PR #43),
 conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and internals-C (7, merged 2026-09-05 at
-`3e4ba6eb`, PR #49, CI green); the window holds until the polish slice per the amended
-initiative design. CI on `main` is fully green.
+`3e4ba6eb`, PR #49, CI green); the window holds until the polish slice per the initiative
+design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
+passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action
 

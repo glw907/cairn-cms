@@ -318,10 +318,23 @@ The original decision framing, for the record:
     so such a declaration silently escapes the gate.
   - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
     `examples/showcase` gets its round of improvement against the changed engine, as its own
-    pass in this initiative. Its review half is done (14 findings, none rewrite-tier; rank
-    1 is the never-executing paginated archive and its permanent build-gate exception).
-    Internals-B's own close routes one more item here: the showcase exemplar half of audit
-    finding 8.
+    pass series in this initiative, split into three: chassis-A (structural), then chassis-B1
+    and chassis-B2 (the paint-changing half, split at the plan review's fold on 2026-09-07).
+    Chassis-A shipped the structural half: the mechanical Prettier reformat and its scaffold
+    format check, the comment gate reaching the showcase, the fixture job excluded from the
+    emitted scaffold, dead code removed, the `cairn.config.ts` monolith split, the public
+    routes and site metadata single-sourced, the render trio (`cardShell`, `headRow`,
+    `iconSpan`) re-homed per the audit's retire rulings, a unit-test suite for the chassis's
+    pure logic, one idiom across the tree, and the shipped comments purged of process
+    narration. What carries forward, named by plan: chassis-B1
+    (`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`) takes the CSS format half, the
+    capture tool and before set, the width matrix, the site shell and the five composition
+    primitives, one focus ring, and the entry row written once; chassis-B2
+    (`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`) takes the archive proof (27 posts
+    at page size 13), site identity and one title convention, the footer nav out of code, CSS
+    conformance, small idioms, and waymark's deliberate adaptation and final rebake.
+    Internals-B's own close routed one more item here (the showcase exemplar half of audit
+    finding 8), landed in chassis-A.
   - **The polish slice**: routed items from internals-B's close, filed here so a later pass
     does not have to rediscover them. A ruling on `ShareLinkPanel`'s busy-button idiom against
     `EditPage`'s own rule: `ShareLinkPanel`'s share/revoke buttons use `aria-disabled` for busy
@@ -337,7 +350,12 @@ The original decision framing, for the record:
     err)`, the bound-method style, while `content-routes-entry.ts` was unified onto the
     `logCommitFailed` module import (`content-routes-entry.ts:42, 1109, 1591`); the two call
     styles now read as contradictory in the same subsystem (filed 2026-09-04, internals-C's
-    Task 10 close, from the docs-friction-log).
+    Task 10 close, from the docs-friction-log). Chassis-A's close routes two more items here:
+    the engine's own `src/lib/components/*.svelte` Svelte lint wiring (chassis-A wired the
+    parser and the comment rules over `examples/showcase/src/**/*.svelte` only, deliberately
+    leaving the engine's admin components unwired); and the `createSectionAction` adoption in
+    `admin/signups/+page.server.ts` with its dev-package seam, deferred past both chassis
+    passes because adopting the helper changes its auth and audit path.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -735,19 +753,20 @@ The original decision framing, for the record:
   Filed 2026-08-06 from the fix's own review; the defect filing is
   [`docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md`](docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md).
 
-- **Decide whether the chassis safelists the classes the engine's rendered markdown emits.**
-  Surfaced 2026-08-04 by the auth-channel consumer proof; evidence and the measurement in
-  [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/record/2026-08-04-auth-channel-consumer-proof-harvest.md),
-  finding 1. `src/lib/render/rehype-dispatch.ts` writes `card-body` and `card-title` into runtime
-  HTML, and the alert directive writes `alert` and its variants. Tailwind scans source files and
-  never runtime output, so DaisyUI ships those base rules only when some source file happens to
-  name the same class. The showcase chassis keeps the `card` and `alert` families expecting those
-  declarations to be there; they are not. A fixture page in pass 2 named `card-title` once and every
-  callout on the site restyled, wrapping a heading and shifting 26px down every page below it.
-  Deciding this changes the approved visual baseline, so it runs through the `visual-fidelity` gate
-  with Geoff's before/after, not as a side effect of another pass. The mechanically detectable
-  half, that every class the engine emits is either safelisted or independently styled, belongs in
-  `cairn-audit`.
+- **CLOSED (chassis-A, Task 8, 2026-09-07): whether the chassis safelists the classes the
+  engine's rendered markdown emits.** Surfaced 2026-08-04 by the auth-channel consumer proof
+  (`docs/internal/record/2026-08-04-auth-channel-consumer-proof-harvest.md`, finding 1):
+  `src/lib/render/rehype-dispatch.ts` wrote `card-body` and `card-title` into runtime HTML,
+  classes Tailwind never scans there, so DaisyUI shipped those base rules only when some source
+  file happened to name the same class. The retire ruling (`engine-rulings.md`,
+  `audit-render-cardshell`/`headrow`/`iconspan`) resolved the decision by deleting the
+  engine-owned helper: `cardShell` and `iconSpan` are inlined at their single showcase call
+  sites and `headRow` is re-homed as a chassis-local export, so the classes now live in the
+  showcase's own scanned source. Inlining first surfaced the exact hazard this item warned
+  about (DaisyUI's `card` rules restyled the alert once the literals landed in scanned
+  source), fixed by renaming the alert's two inner classes to `cairn-alert-body`/
+  `cairn-head-title` (the seam-fit addendum in `engine-rulings.md` has the full account). No
+  engine-emitted class remains for a consumer to safelist.
 
 - **The ambient-defaults audit: RUN 2026-08-03.** Report:
   [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/record/2026-08-03-ambient-defaults-audit.md).

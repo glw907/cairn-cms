@@ -309,7 +309,8 @@ Do not remove the step or strip `lang="ts"`. Full post-mortem:
 Claude's drafting on this repo follows the workstation authoring charter at
 `~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard, with no
 house voice. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by `npm run
-check:comments` over `src/lib`): `eslint-plugin-tsdoc` validates TSDoc syntax, `eslint-plugin-jsdoc`
+check:comments` over `src/lib` plus the showcase's `.ts`/`e2e`/`.svelte`):
+`eslint-plugin-tsdoc` validates TSDoc syntax, `eslint-plugin-jsdoc`
 holds the doc-block shape and forbids `{type}` tags, `jsdoc/informative-docs` flags a comment that only
 restates the symbol name (the paraphrase tell), and a local `house/no-em-dash-in-comments` rule bans
 the em dash in comments (a keyboard, grep, and monospace hygiene rule TSDoc does not carry). Write the
@@ -320,18 +321,18 @@ vendored Google package over the published doc arms only (the in-tree `.vale.ini
 `docs/**/*.md` onto Google, overrides `docs/editors/**` to Microsoft since that track grades
 under the plainer editor voice, and excludes the internal planning docs, since the Google
 standard governs published documentation, not write-once specs, plans, post-mortems, the rolling
-STATUS, or the friction log); the global `vale-hook` surfaces its findings on
-save and itself skips any `superpowers/` path, and the em dash is allowed there, since Google recommends
-it with no surrounding spaces. On top of the Google floor, every published docs page follows the
+STATUS, or the friction log); the global `vale-hook` surfaces findings on save and skips any
+`superpowers/` path, where the em dash is allowed (Google's own recommendation, no surrounding
+spaces). On top of the Google floor, every published docs page follows the
 register standard at [`docs/internal/docs-register.md`](docs/internal/docs-register.md) (the arm
 registers, the front-door register, and the no-pitch keystone); read it before writing or reviewing
-docs prose. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
-serves editors, not Claude.
+docs prose. Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte
-`@component` convention for the component block. ESLint does not parse `.svelte` yet (the TypeScript
-sub-parser is unwired), so Svelte comments rely on the standard and a fresh-context review rather than
-a deterministic linter.
+`@component` convention for the component block. ESLint's `svelte-eslint-parser` block reaches
+the showcase's `.svelte` sources, giving those comments a deterministic gate; the engine's own
+`src/lib/components/*.svelte` stays unwired (filed to polish), relying on the standard and a
+fresh-context review instead.
 
 One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented, so an
 exported symbol keeps its minimal one-line doc even when self-evident; the write-only-when-it-helps

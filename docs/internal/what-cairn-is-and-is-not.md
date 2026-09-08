@@ -45,7 +45,7 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   a positioning question this doc used to hold open: whether the audit's design-conformance rules were
   consumer product or engine-internal apparatus, with a hypothesized split (consumer rules ship, engine
   ones don't) as the likely answer. The rule inventory dissolved that split on evidence rather than
-  confirming it: all 23 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's
+  confirming it: all 28 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's
   admin toolkit, so conformance to cairn's own design system is exactly the product being audited, not
   apparatus that measures the engine from outside. See `docs/reference/cairn-audit.md` for what the
   package ships and what stays engine-side.

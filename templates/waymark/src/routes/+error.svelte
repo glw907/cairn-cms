@@ -23,10 +23,10 @@
   <title>{page.status} | Waymark</title>
 </svelte:head>
 
-<div class="site-shell flex min-h-screen flex-col bg-base-100 font-body text-base-content">
+<div class="cairn-site-shell site-shell bg-base-100 font-body text-base-content">
   <SiteHeader />
 
-  <main id="main" class="site-main flex-1">
+  <main id="main" class="cairn-site-main site-main">
     <div class="mx-auto max-w-measure px-m py-2xl text-center">
       <h1 class="text-step-5 font-bold text-base-content">{page.status}</h1>
       <p class="mt-s text-step-1 text-muted">

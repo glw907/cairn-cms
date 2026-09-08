@@ -60,3 +60,18 @@ first-time addition (no prior baseline existed to diff against).
   the consumer's own custom admin screen (built on the packaged admin toolkit) meets the
   five-viewport bar through the `cairn-admin-theme` cookie, the same as the engine's own admin
   screens / adds `admin-signups-{light,dark}-{320,390,768,1440,2560}.png` (10 files, all new).
+
+### Task 3: the shell from the chassis
+
+Paint-neutral by design: `(site)/+layout.svelte` and `+error.svelte` swap their hand-rolled
+`flex min-h-screen flex-col` / `flex-1` classes for `.cairn-site-shell` / `.cairn-site-main`
+(`src/chassis/composition.css`), and `site.css`'s `.site-main` drops the `width: 100%` /
+`min-width: 0` declarations the chassis pair now supplies. The chassis rule reproduces the same
+computed geometry (`display: flex; flex-direction: column; min-height: 100vh` on the shell;
+`flex: 1 1 0%; width: 100%; min-width: 0` on main), so no surface moves.
+
+- `home` / `article` / `styleguide` / `error404` 320/390/768/1440/2560 light and dark (plus
+  `article` 1920 light): nothing moves / the chassis shell pair reproduces the hand-rolled
+  flex-column geometry byte-for-byte / no baseline names change; `magick compare -metric AE`
+  is 0 on every one of the 203 compared before/after tiles and the full `site-visual.spec.ts`
+  suite (44 tests) passes unmodified against the existing baselines.

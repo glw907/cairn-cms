@@ -8,9 +8,9 @@ stylesheets link by their ?url-resolved URL rather than a static import, so the 
 frame can link the very same assets (the header comment in site.css explains why a static import
 would break that).
 
-The `.site-shell` wrapper is a flex column at least the viewport tall, and `<main>` grows to fill it
-(`flex-1`), so a short page still pushes the footer to the viewport bottom instead of leaving its own
-background exposed as a seam below it.
+The wrapper is a flex column at least the viewport tall (`cairn-site-shell`, chassis/composition.css),
+and `<main>` grows to fill it (`cairn-site-main`), so a short page still pushes the footer to the
+viewport bottom instead of leaving its own background exposed as a seam below it.
 
 Navigation carries a root cross-fade view transition and a scroll-reset guard, each degrading to a
 no-op under its own failure condition; see the comments above `onNavigate` and
@@ -68,7 +68,7 @@ no-op under its own failure condition; see the comments above `onNavigate` and
   <link rel="stylesheet" href={siteCss} />
 </svelte:head>
 
-<div class="site-shell flex min-h-screen flex-col bg-base-100 font-body text-base-content">
+<div class="cairn-site-shell site-shell bg-base-100 font-body text-base-content">
   <a
     href="#main"
     class="skip-link absolute left-s -top-xl z-50 rounded-field bg-primary px-xs py-2xs font-semibold text-primary-content no-underline focus:top-s"
@@ -82,7 +82,7 @@ no-op under its own failure condition; see the comments above `onNavigate` and
        content" moves keyboard focus here, not only the scroll position (WCAG 2.4.1; Firefox and Safari
        move focus to a non-interactive target only when it is focusable). The focus is programmatic, so
        the ring is suppressed below; real controls keep their `:focus-visible` rings. -->
-  <main id="main" tabindex="-1" class="site-main flex-1">
+  <main id="main" tabindex="-1" class="cairn-site-main site-main">
     {@render children()}
   </main>
 

@@ -72,10 +72,12 @@ all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearin
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-None open. The internals-C whole-log triage (2026-09-05) cleared the two entries this section
-previously carried: the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later
-tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction folded into
-`ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
+None open. The identity-seam pass's own two findings, discovered and shipped in the same pass
+(the locals hand-off pattern from Task 2, the doctor probe's missing `redirect: 'manual'` from
+Task 4), are cleared already; the internals-C whole-log triage (2026-09-05) cleared the two
+entries this section previously carried: the `check:snippets` stub finding promoted whole to
+`ROADMAP.md`'s Later tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction
+folded into `ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
 
 ## Clearings
 
@@ -107,6 +109,7 @@ history holds every pruned entry in full.
 | 2026-09-03 | the internals pass's whole-log sweep | the ASC CSRF entry deleted (every named mechanism verified shipped; the residual WATCH moved to `docs/STATUS.md`'s active watches); the Platform-watch-heading entry deleted as a duplicate of `ROADMAP.md`'s own inline trigger; `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` promoted whole to `ROADMAP.md`'s Later tier with their triggers |
 | 2026-09-05 | the internals-C pass's whole-log triage | the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later tier with its trigger; the `ctx.logCommitFailed` call-style contradiction (filed at internals-C's Task 10 close, 2026-09-04) folded into `ROADMAP.md`'s existing polish-slice bullet |
 | 2026-09-08 | chassis-A's whole-log triage (Task 12) | the `contributor` finding (2026-09-04, the cairn-case round-2 review) fixed: `what-cairn-is-and-is-not.md:48` said "all 23 registered rules" against the tree's actual 28; the sentence now reads 28 |
+| 2026-09-08 | the identity-seam pass, Task 6 | its own two findings, both shipped in the pass that found them and recorded in `docs/internal/record/2026-09-07-identity-seam/harvest.md`: the locals hand-off pattern (Task 2) and the doctor probe's `redirect: 'manual'` fix (Task 4) |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

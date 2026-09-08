@@ -36,6 +36,11 @@ The release step sets the version number at the cut and renames this section to 
   and to `@glw907/cairn-cms/media` for `MediaRef`. All are type-only, so a missed one is a type
   error at build, never a runtime failure. `MediaRef`, `MediaResolve`, and `SiteRender` are still
   importable from `@glw907/cairn-cms/delivery`, whose `PublicRoutesConfig` names all three.
+- **`LoginData` is now a discriminated union.** `createAuthGuard`'s new `identity` option adds a
+  second shape to `LoginData` (`/sveltekit`), the type `loginLoad` returns. A site that typed a
+  custom `/admin/login` route against `LoginData` and reads `csrf` or `error` directly now needs
+  to narrow on `'identity' in data` first; a site that has not built a custom login route needs
+  no change.
 - **`VariantSpec` and `AssetConfig.variants` are retired.** A site's evidence sweep found zero
   reachable runtime consumers: no family site declared a custom transform preset, and
   `presetUrl`, the only reader, had no non-test caller. The built-in `thumb`, `inline`, `card`,

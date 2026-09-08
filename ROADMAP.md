@@ -335,24 +335,6 @@ The original decision framing, for the record:
     conformance, small idioms, and waymark's deliberate adaptation and final rebake.
     Internals-B's own close routed one more item here (the showcase exemplar half of audit
     finding 8), landed in chassis-A.
-  - **The identity seam (before polish; Geoff, 2026-09-07):** the charter promises a developer
-    can replace the admin auth, cairn then minting no session and reading an owner/editor
-    identity "through a defined hand-off", and no such seam exists (`AuthGuardOptions` carries
-    `roles`, `access`, `includeSubDomains`; `createAuthChannel` admits nothing to `/admin`;
-    the friction log's 2026-09-07 `extender` entry has the evidence). Lands as its own small
-    pass between chassis-B2 and polish so polish's family read of the exports and its
-    cover-to-cover docs read see it. Lean shape: an identity resolver option on the guard
-    that, when set, mints no session and reads the editor from the site's own hook or an
-    Access-style header, with an extend page, a reference row, the security-model section,
-    the `web-auth-security-reviewer` at its gate, and one showcase proof. The pass also carries the
-    two "bring your own" doors the 2026-09-07 charter audit found undiscoverable: the email sender
-    (`CairnAdminConfig.auth.send`, Extension tier, taught nowhere) and the backend
-    (`BackendProvider` is swappable at the type level while `why-cairn.md` says no swap exists;
-    decide the promise and fix the other doc). The resolver must bypass the cookie read, the
-    D1-typed store, and the `AUTH_DB` refusal together, and state the roster screens' posture
-    under a site-owned identity. Brainstorm and spec first (new public surface, auth-critical). Until it ships, the front door states the
-    default's assumption (the CMS is the editors' identity system) and not the stronger claim
-    (post-freeze note 4 on the cairn case).
   - **The polish slice**: routed items from internals-B's close, filed here so a later pass
     does not have to rediscover them. A ruling on `ShareLinkPanel`'s busy-button idiom against
     `EditPage`'s own rule: `ShareLinkPanel`'s share/revoke buttons use `aria-disabled` for busy
@@ -2045,6 +2027,16 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **An engine-shipped Cloudflare Access verifier**, replacing the recipe
+  `docs/extend/sign-in-through-your-organization.md` teaches today
+  (`docs/internal/engine-rulings.md`'s `identity-seam-access-verifier` row, declined for now).
+  **Trigger:** a second consumer hand-rolling this verifier, an engine-internal consumer of it,
+  or an evidenced defect in a family site's own resolver.
+- **Group-to-role mapping for the identity seam.** `IdentityResolver` resolves an email today;
+  a resolver that also reads its gate's group or claim membership and maps it to a cairn role
+  would let a site skip roster maintenance for role assignment, but no consuming site needs it
+  yet. **Trigger:** a consuming site that needs group-to-role mapping.
 
 - **Three pieces of engine hygiene the reproduction seam surfaced, none urgent.** `CairnAdminShell`
   writes `<svelte:head><title>` and injects a `body { margin: 0 }` style into the host document, which

@@ -52,9 +52,11 @@ export function liveProbeCheck(url?: string): DoctorCheck {
       const primary = await runPrimary(ctx, origin);
       const { exposure, skipNote } = await probeWorkersDevExposure(ctx, origin, primary.sawGate);
       if (exposure !== null) {
-        // Both arms failing independently is more informative reported together than either
-        // detail alone would be.
-        if (exposure.status === 'fail' && primary.result.status === 'fail') {
+        // A failing primary probe is never downgraded by the arm's own info result: an info
+        // exposure finding does not disprove a broken primary, so the fail must win. Reported
+        // with the exposure detail appended, since both facts are more informative together
+        // than either alone.
+        if (primary.result.status === 'fail') {
           return fail(`${primary.result.detail}; ${exposure.detail}`);
         }
         return exposure;
@@ -177,9 +179,7 @@ async function classifyLoginResponse(
       return classifyLoginResponse(ctx, origin, next, true);
     }
     return {
-      result: info(
-        `GET /admin/login redirected (status ${res.status}) to ${location ?? 'a response with no Location header'}, an off-site destination this probe does not follow`
-      ),
+      result: info(redirectNotFollowedDetail(res.status, location, resolved, origin, followed)),
       sawGate: false,
     };
   }
@@ -228,6 +228,31 @@ async function classifyLoginResponse(
     result: await postRequestAction(ctx, origin, `${cookieName}=${cookieValue}`, field),
     sawGate: false,
   };
+}
+
+/**
+ * The info detail for a redirect this probe does not follow further: a missing `Location`
+ * header, a `Location` header it cannot parse as a URL, a second same-site redirect after the
+ * one follow this probe allows, or an off-site destination it never follows at all.
+ */
+function redirectNotFollowedDetail(
+  status: number,
+  location: string | null,
+  resolved: URL | null,
+  origin: URL,
+  followed: boolean
+): string {
+  const prefix = `GET /admin/login redirected (status ${status})`;
+  if (location === null) {
+    return `${prefix} with no Location header, so this probe cannot classify the destination`;
+  }
+  if (resolved === null) {
+    return `${prefix} to ${location}, a Location header this probe cannot parse as a URL`;
+  }
+  if (followed && isSameSite(resolved, origin)) {
+    return `${prefix} to ${location}, a second same-site redirect after the one follow this probe allows`;
+  }
+  return `${prefix} to ${location}, an off-site destination this probe does not follow`;
 }
 
 /**

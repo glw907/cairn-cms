@@ -644,6 +644,85 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('did not run');
   });
 
+  it('never lets the workers.dev arm\'s info downgrade a failing primary probe', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response('boom', { status: 500 });
+      if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
+        return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
+      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') {
+        return new Response(null, { status: 303, headers: { location: '/admin/login' } });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('500');
+    expect(result.detail).toContain('workers_dev: false');
+  });
+
+  it('never lets the workers.dev arm\'s info downgrade a primary probe that threw', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) throw new Error('getaddrinfo ENOTFOUND site.example');
+      if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
+        return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
+      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') {
+        return new Response(null, { status: 303, headers: { location: '/admin/login' } });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('ENOTFOUND');
+    expect(result.detail).toContain('workers_dev: false');
+  });
+
+  it('reports info naming an unparseable Location header', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, { status: 302, headers: { location: 'http://[bad' } });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('cannot parse');
+    expect(result.detail).not.toContain('off-site');
+  });
+
+  it('reports info naming a second same-site redirect after the one follow this probe allows', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, { status: 302, headers: { location: '/sso/start' } });
+      }
+      if (url === `${ORIGIN}/sso/start`) {
+        return new Response(null, { status: 302, headers: { location: '/sso/again' } });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('second');
+    expect(result.detail).not.toContain('off-site');
+  });
+
   it('skips the workers.dev arm when workers_dev is false, never fetching the account subdomain', async () => {
     const { fetch, calls } = probeFetch(loginResponse(), actionJson('sent'));
     const result = await liveProbeCheck(ORIGIN).run(

@@ -216,7 +216,9 @@ since a real gate exists and this route bypasses it. When the primary hostname c
 of its own (plain magic-link mode), the same redirect reports info naming the remedy instead,
 since it most likely just reflects the same, already-ungated site reachable at its own
 workers.dev address rather than a second, distinct bypass. Every other redirect fails naming the
-exposure. When
+exposure. A failing primary probe is never downgraded by this arm's info result: when the primary
+arm itself fails, the check reports fail with both details together, whatever this arm found.
+When
 `CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` is unset, the wrangler config names no `name`
 or one shaped unlike a valid subdomain label, the probed origin is local, or the account
 subdomain lookup itself fails, the arm never runs at all; the primary result's detail then

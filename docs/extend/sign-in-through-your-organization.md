@@ -271,12 +271,10 @@ way today's zero-config guard does; nothing else about wiring the guard changes.
 
 ```ts
 // src/hooks.server.ts
-import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { accessIdentity } from './access-identity.js';
-import { theme } from './theme-handle.js';
+import { accessIdentity } from './lib/access-identity.js';
 
-export const handle = sequence(theme, createAuthGuard({ identity: accessIdentity }));
+export const handle = createAuthGuard({ identity: accessIdentity });
 ```
 
 ## The roster's role, and logging out

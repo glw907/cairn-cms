@@ -2,11 +2,11 @@
 // `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
 import { redirect, error, type Handle } from '@sveltejs/kit';
-import { resolveSession } from '../auth/store.js';
+import { resolveSession, findEditor } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
 import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
-import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
+import { renderConditionResponse, REASON_CONDITION, IDENTITY_UNKNOWN_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
 import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
@@ -108,6 +108,10 @@ export interface IdentityRefusal {
    */
   reason: string;
 }
+
+// A refusal reason that locks out the whole roster (a misconfigured gate), not just this one
+// request, so it logs at error rather than warn.
+const IDENTITY_OPERATOR_FAULT_REASONS = new Set(['audience', 'issuer', 'keys', 'error']);
 
 const LOGOUT_URL_PATTERN = /^\/(?![\\/])/;
 // The forbidden set is deliberately every control character (0x00-0x1f, 0x7f), a backslash, and
@@ -275,7 +279,70 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       }
     }
 
-    if (!isPublicAdminPath(pathname)) {
+    if (!isPublicAdminPath(pathname) && identity) {
+      // identity mode replaces session-cookie resolution entirely: resolveSession is never
+      // called, and the site's own gate proves who is asking. A throw from resolve() is an
+      // operator fault (a misbehaving gate), never a 500: log it and refuse the same as any
+      // other identity refusal.
+      let resolved: ResolvedIdentity | IdentityRefusal;
+      try {
+        resolved = await identity.resolve(event);
+      } catch (err) {
+        const message = (err instanceof Error ? err.message : String(err)).slice(0, 300);
+        log.error('guard.rejected', {
+          reason: 'identity',
+          path: pathname,
+          conditionId: REASON_CONDITION.identity,
+          detail: 'error',
+          error: message,
+        });
+        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+      }
+      if (!resolved.ok) {
+        const level = IDENTITY_OPERATOR_FAULT_REASONS.has(resolved.reason) ? 'error' : 'warn';
+        log[level]('guard.rejected', {
+          reason: 'identity',
+          path: pathname,
+          conditionId: REASON_CONDITION.identity,
+          detail: resolved.reason,
+        });
+        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+      }
+      if (typeof resolved.email !== 'string' || resolved.email.trim() === '') {
+        log.warn('guard.rejected', {
+          reason: 'identity',
+          path: pathname,
+          conditionId: REASON_CONDITION.identity,
+          detail: 'invalid',
+        });
+        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+      }
+      // Normalized again inside findEditor, the store's own invariant; normalizing here too
+      // keeps the log record and the unrostered page showing what the lookup actually matched
+      // against.
+      const email = resolved.email.trim().toLowerCase();
+      const row = await findEditor(env.AUTH_DB, email);
+      if (!row) {
+        // Capped at 320 characters, the same bound auth.link.requested applies, since this email
+        // reaches both the log record and the rendered page.
+        const rendered = email.slice(0, 320);
+        log.warn('auth.identity.unknown', { email: rendered });
+        return renderConditionResponse(IDENTITY_UNKNOWN_CONDITION, { email: rendered, label: identitySnapshot?.label });
+      }
+      if (!Object.hasOwn(vocabulary, row.role)) {
+        log.warn('auth.role.unknown', { email: row.email, role: row.role });
+      }
+      // The roster row's displayName wins; the resolver's is advisory only, used solely when the
+      // roster row's is empty, since it reaches the commit author and is never trusted over the
+      // roster.
+      event.locals.cairnEditor = {
+        email: row.email,
+        displayName: row.displayName || resolved.displayName || row.email,
+        role: row.role,
+        capability: resolveCapability(vocabulary, row.role),
+      };
+      event.locals.cairnAccess = access ?? {};
+    } else if (!isPublicAdminPath(pathname)) {
       // Same csrfSecure derivation as the hasSession read above: unreachable to differ
       // from the bare protocol check on a guarded admin path, since the https-help-page check
       // above already refused every http, non-local request before this line runs.

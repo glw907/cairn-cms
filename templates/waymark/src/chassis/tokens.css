@@ -148,6 +148,29 @@
   --cairn-cta-border: transparent;
   --cairn-cta-btn-bg: var(--color-base-100);
   --cairn-cta-btn-content: var(--color-base-content);
+
+  /* The one focus-ring language, read by prose.css's directive sites, the cairn-focus-ring
+     utility below, and every hand-written :focus-visible rule the theme still needs for a
+     descendant selector a class cannot reach. --cairn-focus-ring-radius is the theme-tunable
+     one of the three: theme.css redeclares it as its own chrome geometry default, and a theme
+     may override it again per component. */
+  --cairn-focus-ring-outline: 2px solid var(--color-primary);
+  --cairn-focus-ring-offset: 2px;
+  --cairn-focus-ring-radius: 2px;
+}
+
+/* Tailwind's @utility must sit at a stylesheet's top level, outside any @layer block, so this
+   one lives here rather than inside composition.css's @layer components body. A theme's markup
+   reaches for `cairn-focus-ring` instead of hand-writing the outline pair on every interactive
+   element. It carries only the outline pair, never the radius: several call sites already set
+   their own unconditional border-radius (a pill, a DaisyUI field radius), and this utility must
+   not fight that on focus. A theme that wants the rounded corner too reads
+   --cairn-focus-ring-radius directly, the way SiteHeader/SiteFooter's .site-nav a already does. */
+@utility cairn-focus-ring {
+  &:focus-visible {
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
+  }
 }
 
 @layer components {

@@ -149,8 +149,8 @@
      4px page-coloured halo under the ring keeps it readable on every ground (the focus-visible
      criterion). */
   .prose a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
     border-radius: 2px;
     box-shadow: 0 0 0 4px var(--color-base-100);
   }
@@ -384,8 +384,8 @@
     background-attachment: local, scroll;
   }
   .prose .table-scroll:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .prose table {
     display: table;
@@ -627,8 +627,8 @@
     background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-200));
   }
   .prose .video-facade-link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .prose .video-facade-thumb {
     display: inline-flex;
@@ -727,8 +727,8 @@
     height: 0.9em;
   }
   .prose .cta-link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
 
   /* Micro CTA: the cta's compact sibling, a further-reading chip rather than a button. A hairline
@@ -758,8 +758,8 @@
     border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
   }
   .prose .micro-cta-link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .prose .micro-cta-label {
     /* The ratified recipe reads --font-sans, a Tailwind default the showcase's own token layer
@@ -815,8 +815,8 @@
     color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
   }
   .prose .faq-question:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .prose .faq-marker {
     display: inline-flex;

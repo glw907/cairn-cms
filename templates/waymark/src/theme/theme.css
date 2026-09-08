@@ -281,12 +281,13 @@
   --cairn-cta-btn-content: var(--color-base-content);
 
   /* Scheme-invariant chrome geometry, declared once here rather than as an identical literal in
-     every consumer (the header, footer, and reading-surface focus rings, and the article/archive
-     date and nav-link tracking). The tracking value is the header nav's tracked eyebrow letter-
-     spacing (SiteHeader's `.site-nav a` reads it directly, at every width, not just the mobile
-     lockup); it is deliberately narrower than `--tracking-eyebrow` (0.12em), which is the wider,
-     all-caps label device used above the home listing and archive ("Latest", "Archive"). */
-  --cairn-focus-ring-radius: 2px;
+     every consumer (the article/archive date and nav-link tracking). The tracking value is the
+     header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a` reads it directly, at
+     every width, not just the mobile lockup); it is deliberately narrower than
+     `--tracking-eyebrow` (0.12em), which is the wider, all-caps label device used above the home
+     listing and archive ("Latest", "Archive"). --cairn-focus-ring-radius now lives in
+     chassis/tokens.css, whose 2px default this theme happens to want unchanged; a theme that
+     wants a different focus-ring corner redeclares it here. */
   --cairn-caption-tracking: 0.09em;
 }
 

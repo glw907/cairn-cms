@@ -3,8 +3,8 @@
 // copy: a real site's roster-removal flow (docs/reference/auth-channel.md's `revokeSessions`)
 // revokes an admin-chosen subject from an authenticated admin action, which is
 // a different caller entirely from the subject being revoked. A route that let ANY caller name an
-// arbitrary victim subject would be exactly the shape pass 1's rule forbids: no control keyed on
-// the victim's identity may deny, delay, or destroy anything; denial keys on the requester. Here
+// arbitrary victim subject would violate the rule that no control keyed on the victim's
+// identity may deny, delay, or destroy anything; denial keys on the requester. Here
 // the "requester" and the "victim" are deliberately the same person, by construction, because the
 // subject comes from `memberChannel.resolveSubject(event)` (the caller's own session cookie), not
 // from a posted field.

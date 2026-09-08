@@ -331,8 +331,13 @@ The original decision framing, for the record:
     cover-to-cover docs read see it. Lean shape: an identity resolver option on the guard
     that, when set, mints no session and reads the editor from the site's own hook or an
     Access-style header, with an extend page, a reference row, the security-model section,
-    the `web-auth-security-reviewer` at its gate, and one showcase proof. Brainstorm and spec
-    first (new public surface, auth-critical). Until it ships, the front door states the
+    the `web-auth-security-reviewer` at its gate, and one showcase proof. The pass also carries the
+    two "bring your own" doors the 2026-09-07 charter audit found undiscoverable: the email sender
+    (`CairnAdminConfig.auth.send`, Extension tier, taught nowhere) and the backend
+    (`BackendProvider` is swappable at the type level while `why-cairn.md` says no swap exists;
+    decide the promise and fix the other doc). The resolver must bypass the cookie read, the
+    D1-typed store, and the `AUTH_DB` refusal together, and state the roster screens' posture
+    under a site-owned identity. Brainstorm and spec first (new public surface, auth-critical). Until it ships, the front door states the
     default's assumption (the CMS is the editors' identity system) and not the stronger claim
     (post-freeze note 4 on the cairn case).
   - **The polish slice**: routed items from internals-B's close, filed here so a later pass

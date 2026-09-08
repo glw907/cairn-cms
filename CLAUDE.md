@@ -6,8 +6,9 @@ editor (client-only, behind the `MarkdownEditor` seam) with a live preview. Savi
 on a per-entry `cairn/<concept>/<id>` branch, and a deliberate Publish copies it to `main` via a
 **GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library is design-agnostic. Each site supplies an adapter: its GitHub and email
 config, the frontmatter field schema for each concept, and its own `render(md)`, the one renderer the
-editor preview and every public page call. Content is a
-fixed set of first-class concepts (Posts and Pages), not open-ended collections.
+editor preview and every public page call. Content has one
+fixed concept shape; the set is the site's to declare (Posts and Pages out of the box), never an
+open-ended collection model.
 
 This is a standalone repo at `~/Projects/cairn-cms`. It publishes to public npm as
 `@glw907/cairn-cms` (MIT), and consumer sites install it from the registry by version range. The
@@ -17,8 +18,8 @@ site that consumes the package through the relative `file:../..` path.
 ## What cairn is (canonical scope — read before any scope-affecting change)
 
 cairn is a lean, opinionated markdown CMS for SvelteKit + Cloudflare: magic-link editor login,
-raw-markdown editing with live preview, and GitHub-App publishing, over a fixed set of content concepts
-(Posts, Pages). Its admin skeleton and getting-started scaffold are built with **DaisyUI + Tailwind**,
+raw-markdown editing with live preview, and GitHub-App publishing, over site-declared content concepts
+of one fixed shape (Posts and Pages out of the box). Its admin skeleton and getting-started scaffold are built with **DaisyUI + Tailwind**,
 the idiom a developer extends the admin in, while public output stays design-agnostic (each site brings
 its own `render`). cairn does its one job well and gets out of the way.
 
@@ -27,7 +28,8 @@ The governing boundary, which adjudicates any scope question:
 **cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
 Everything a site needs beyond that, its own functionality, actors, auth, data, and domain logic, belongs
 to the developer, and cairn serves it with a thin seam, not a built-in feature.** The seams are a narrow,
-versioned, enforced contract, so a developer's work survives engine updates; breaking it is a deliberate
+versioned contract with every break disclosed, so a developer's work survives engine updates with the
+changes named; from 1.0, breaking it is a deliberate
 major-version event, not an everyday one, and the surface stays narrow precisely to keep that promise
 cheap to keep. Owner/editor and magic-link are the zero-config defaults, not ceilings: a developer can
 replace the auth and override the authorization through documented seams.

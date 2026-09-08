@@ -156,6 +156,20 @@ interface WorkersDevExposure {
 
 const NO_EXPOSURE: WorkersDevExposure = { exposure: null };
 
+/** The arm's non-verdict when it never ran, carrying the reason as the caller's `skipNote`. */
+function didNotRun(why: string): WorkersDevExposure {
+  return { exposure: null, skipNote: `the workers.dev exposure arm did not run: ${why}` };
+}
+
+/**
+ * A definitive exposure fail, `detail` naming what the Worker did on the workers.dev hostname.
+ */
+function exposed(detail: string): WorkersDevExposure {
+  return {
+    exposure: fail(`the Worker ${detail}, a hostname the Access application does not cover`),
+  };
+}
+
 /**
  * The second arm: a Worker reachable on its account's workers.dev hostname bypasses whatever
  * gate covers the primary hostname, since neither an Access policy nor its revocation reaches
@@ -182,49 +196,29 @@ async function probeWorkersDevExposure(ctx: DoctorContext): Promise<WorkersDevEx
     if (facts?.workersDev === false) return NO_EXPOSURE;
     if (typeof facts?.name !== 'string') return NO_EXPOSURE;
     if (!ctx.cfToken || !ctx.cfAccountId) {
-      return {
-        exposure: null,
-        skipNote:
-          'the workers.dev exposure arm did not run: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to enable it',
-      };
+      return didNotRun('set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to enable it');
     }
     // GET /accounts/{account_id}/workers/subdomain, { result: { subdomain } } out.
     // https://developers.cloudflare.com/api/resources/workers/subresources/subdomain/
     const subdomainRes = await cfGet(ctx, `/accounts/${ctx.cfAccountId}/workers/subdomain`);
-    const subdomainFailNote = {
-      exposure: null,
-      skipNote: 'the workers.dev exposure arm did not run: the account subdomain lookup failed',
-    };
-    if (!subdomainRes.ok) return subdomainFailNote;
+    if (!subdomainRes.ok) return didNotRun('the account subdomain lookup failed');
     const body = (await subdomainRes.json()) as { result?: { subdomain?: string } };
     const subdomain = body.result?.subdomain;
-    if (typeof subdomain !== 'string') return subdomainFailNote;
+    if (typeof subdomain !== 'string') return didNotRun('the account subdomain lookup failed');
     const host = `${facts.name}.${subdomain}.workers.dev`;
     const origin = new URL(`https://${host}`);
     const res = await ctx.fetch(String(new URL('/admin', origin)), { redirect: 'manual' });
     if (GATE_REDIRECT_STATUSES.has(res.status)) {
       if (accessGateHost(res, origin) !== null) return NO_EXPOSURE;
       const to = redirectHost(res, origin) ?? 'a response with no Location header';
-      return {
-        exposure: fail(
-          `the Worker redirects from /admin on ${host} to ${to}, a hostname the Access application does not cover`
-        ),
-      };
+      return exposed(`redirects from /admin on ${host} to ${to}`);
     }
     if (res.status === 200) {
-      return {
-        exposure: fail(
-          `the Worker serves /admin directly on ${host}, a hostname the Access application does not cover`
-        ),
-      };
+      return exposed(`serves /admin directly on ${host}`);
     }
     const html = await res.text();
     if (carriesCairnAdminMarker(html)) {
-      return {
-        exposure: fail(
-          `the Worker serves its own branded admin page (status ${res.status}) on ${host}, a hostname the Access application does not cover`
-        ),
-      };
+      return exposed(`serves its own branded admin page (status ${res.status}) on ${host}`);
     }
     return NO_EXPOSURE;
   } catch {

@@ -132,28 +132,25 @@ const LOGOUT_URL_FORBIDDEN = /[\\\x00-\x1f\x7f\s]/;
  * than admitting an open redirect at request time.
  */
 function validateLogoutUrl(logoutUrl: string): void {
-  const unsafe = (): never => {
-    throw new Error(`cairn: identity.logoutUrl is not a safe redirect target: ${JSON.stringify(logoutUrl)}`);
-  };
-  if (LOGOUT_URL_FORBIDDEN.test(logoutUrl)) unsafe();
+  if (isSafeLogoutUrl(logoutUrl)) return;
+  throw new Error(`cairn: identity.logoutUrl is not a safe redirect target: ${JSON.stringify(logoutUrl)}`);
+}
+
+/** The predicate {@link validateLogoutUrl} throws on, split out so every rejection is one `false`. */
+function isSafeLogoutUrl(logoutUrl: string): boolean {
+  if (LOGOUT_URL_FORBIDDEN.test(logoutUrl)) return false;
   if (LOGOUT_URL_PATTERN.test(logoutUrl)) {
-    let decoded: string;
     try {
-      decoded = decodeURIComponent(logoutUrl);
+      return LOGOUT_URL_PATTERN.test(decodeURIComponent(logoutUrl));
     } catch {
-      unsafe();
-      return;
+      return false;
     }
-    if (LOGOUT_URL_PATTERN.test(decoded)) return;
-    unsafe();
-    return;
   }
   try {
-    if (new URL(logoutUrl).protocol === 'https:') return;
+    return new URL(logoutUrl).protocol === 'https:';
   } catch {
-    // fall through to the throw below
+    return false;
   }
-  unsafe();
 }
 
 /**
@@ -285,6 +282,19 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     }
 
     if (!isPublicAdminPath(pathname) && identity) {
+      // Every identity refusal serves the same branded page under the same log event; only the
+      // level, the detail word, and (on a thrown resolve) the error text differ.
+      function refuseIdentity(level: 'warn' | 'error', detail: string, error?: string): Response {
+        log[level]('guard.rejected', {
+          reason: 'identity',
+          path: pathname,
+          conditionId: REASON_CONDITION.identity,
+          detail,
+          ...(error === undefined ? {} : { error }),
+        });
+        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+      }
+
       // identity mode replaces session-cookie resolution entirely: resolveSession is never
       // called, and the site's own gate proves who is asking. A throw from resolve() is an
       // operator fault (a misbehaving gate), never a 500: log it and refuse the same as any
@@ -294,33 +304,14 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
         resolved = await identity.resolve(event);
       } catch (err) {
         const message = (err instanceof Error ? err.message : String(err)).slice(0, 300);
-        log.error('guard.rejected', {
-          reason: 'identity',
-          path: pathname,
-          conditionId: REASON_CONDITION.identity,
-          detail: 'error',
-          error: message,
-        });
-        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+        return refuseIdentity('error', 'error', message);
       }
       if (!resolved.ok) {
         const level = IDENTITY_OPERATOR_FAULT_REASONS.has(resolved.reason) ? 'error' : 'warn';
-        log[level]('guard.rejected', {
-          reason: 'identity',
-          path: pathname,
-          conditionId: REASON_CONDITION.identity,
-          detail: resolved.reason,
-        });
-        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+        return refuseIdentity(level, resolved.reason);
       }
       if (typeof resolved.email !== 'string' || resolved.email.trim() === '') {
-        log.warn('guard.rejected', {
-          reason: 'identity',
-          path: pathname,
-          conditionId: REASON_CONDITION.identity,
-          detail: 'invalid',
-        });
-        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+        return refuseIdentity('warn', 'invalid');
       }
       // Normalized again inside findEditor, the store's own invariant; normalizing here too
       // keeps the log record and the unrostered page showing what the lookup actually matched

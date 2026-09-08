@@ -9,7 +9,8 @@ without appending its row here is a blocking finding at the diff gate.
 Captured `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` Task 1, Step 2, at the branch
 point, before any paint task ran:
 
-- **Commit:** `2025689bee1ea45ec83d55eb40c8068408fccc5c`
+- **Commit:** `f223994f80f3cc3b67f771211e2f4c4437889be8` (the branch point; the capture tool
+  lands in e7721c37 and changes no rendered output)
 - **Location:** `~/.cache/cairn-chassis-b/pass/before/`
 - **Tool:** `examples/showcase/scripts/capture-surfaces.mjs`, full surface matrix (no `--only`)
 - **Surfaces:** `home`, `article` (plus its light-only 1920 extra), `styleguide`, `archive2`,

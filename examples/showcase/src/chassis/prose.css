@@ -202,7 +202,7 @@
     text-indent: -0.6em;
   }
   .prose .pullquote::before {
-    content: '\201C';
+    content: "\201C";
     color: var(--color-primary);
   }
   @media (min-width: 64rem) {
@@ -293,7 +293,7 @@
     position: relative;
   }
   .prose[data-flourish] ul > li::before {
-    content: '';
+    content: "";
     position: absolute;
     left: -1.1em;
     top: 0.62em;
@@ -336,7 +336,7 @@
   .prose .task-list-item::before {
     content: none;
   }
-  .prose .task-list-item input[type='checkbox'] {
+  .prose .task-list-item input[type="checkbox"] {
     margin-right: var(--spacing-2xs);
     width: 1.05em;
     height: 1.05em;
@@ -429,7 +429,7 @@
     text-align: center;
   }
   .prose[data-flourish] hr::after {
-    content: '';
+    content: "";
     display: inline-block;
     width: 1.4rem;
     height: 1.4rem;
@@ -672,7 +672,7 @@
     color: var(--color-muted);
   }
   .prose .pull-quote-attribution::before {
-    content: '\2014\0020';
+    content: "\2014\0020";
   }
 
   /* CTA: a restrained button-link, not the fuller marketing panel the styleguide's `.sg-cta` shows.

@@ -44,9 +44,9 @@
      - prose.css (the reading-surface foundation) and composition.css (the card/band/section/hero/
        sidebar primitives) both import here, so a theme gets both by importing this one file.
    ============================================================================ */
-@import 'tailwindcss';
-@import './prose.css';
-@import './composition.css';
+@import "tailwindcss";
+@import "./prose.css";
+@import "./composition.css";
 
 @plugin "daisyui" {
   themes: false;
@@ -68,9 +68,9 @@
 
 @theme {
   /* Generic system-font defaults; a theme overrides these three with its own face choices. */
-  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   /* A modest, non-fluid default scale (no clamp math of its own): legible, but a theme almost
      always wants its own fluid formula here. The named utilities (`text-step-*`) generate from

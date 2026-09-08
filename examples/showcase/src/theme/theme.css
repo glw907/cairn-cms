@@ -79,7 +79,7 @@
        declares the same keys with generic defaults, and this block overrides every one with
        Waymark's real numbers.
    ============================================================================ */
-@import '../chassis/tokens.css';
+@import "../chassis/tokens.css";
 
 /* The editorial pairing, self-hosted via Fontsource variable packages so the real faces are the
    default first paint (CLS-safe, the performance dimension) with no third-party font origin. These
@@ -87,14 +87,14 @@
    Fontsource registers each family as "<Name> Variable"; the `--font-*` tokens below name them
    exactly. Loading them here, not in the layout, means the editor preview frame links this same sheet
    and gets the same faces (the parity rule). All three faces here need only the `wght` axis. */
-@import '@fontsource-variable/figtree/index.css';
-@import '@fontsource-variable/source-sans-3/index.css';
-@import '@fontsource-variable/source-code-pro/index.css';
+@import "@fontsource-variable/figtree/index.css";
+@import "@fontsource-variable/source-sans-3/index.css";
+@import "@fontsource-variable/source-code-pro/index.css";
 
 /* The light theme (default). DaisyUI 5 reads these role tokens at point of use,
    so every `bg-base-100` / `text-primary` utility and every component tracks them. */
 @plugin "daisyui/theme" {
-  name: 'cairn';
+  name: "cairn";
   default: true;
   prefersdark: false;
   color-scheme: light;
@@ -142,7 +142,7 @@
    hue-free base ladder as the light theme, so light and dark read as one theme. Status fills
    lift to a lighter tone and take dark content, the admin's dark convention. */
 @plugin "daisyui/theme" {
-  name: 'cairn-dark';
+  name: "cairn-dark";
   default: false;
   prefersdark: true;
   color-scheme: dark;
@@ -184,9 +184,9 @@
    `font-mono` token overrides Tailwind's default mono utility, which is intended (the template's
    own face). Every key here overrides the chassis default of the same name (chassis/tokens.css). */
 @theme {
-  --font-display: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: "Figtree Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Source Sans 3 Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Source Code Pro Variable", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds.
      In @theme so Tailwind generates the `text-step-*` utilities the chrome markup folds onto; the
@@ -322,7 +322,7 @@
   }
 }
 
-:root[data-theme='cairn-dark'] {
+:root[data-theme="cairn-dark"] {
   --color-muted: oklch(70% 0.012 76);
   --cairn-success-ink: oklch(78% 0.11 150);
   --cairn-warning-ink: oklch(82% 0.12 76);

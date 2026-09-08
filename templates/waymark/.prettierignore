@@ -1,5 +1,5 @@
-# This file serves editor format-on-save; the npm format/format:check scripts glob CSS too now
-# (chassis-B), so this file's own rules must stay in step with package.json's target set.
+# This file serves editor format-on-save; the npm format/format:check scripts glob CSS too now,
+# so this file's own rules must stay in step with package.json's target set.
 
 # The bake writes these fresh (bake-template.mjs) or rewrites them in place
 # (emit-template.mjs), or the emit-template-dir overlay replaces or appends onto them

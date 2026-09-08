@@ -3,7 +3,10 @@
 // writes a manifest a later pass can diff against. Derived from the 2026-08-15 reference-capture
 // tool (`git show 274374f2^:examples/showcase/scripts/reference-capture.mjs`), which already
 // solved the preview-server recipe and the admin theme cookie; this tool generalizes that shape
-// into a surface/width/scheme matrix instead of a fixed screen list.
+// into a surface/width/scheme matrix instead of a fixed screen list. It starts its own preview
+// server (the exact `playwright.config.ts` webServer recipe) and tears it down on exit, rather
+// than connecting to a server the caller happens to have running, so a capture always proves the
+// current build.
 //
 // AVAILABILITY UNDER `vite preview` (checked 2026-09-08 against a `VITE_CAIRN_E2E=1 npm run
 // build` + `npm run preview -- --port 4173` server with `CAIRN_DEV_BACKEND=1`):
@@ -19,14 +22,19 @@
 //     Unlike archive2, this surface's whole point is to capture that rendered error page, so a
 //     404 status here is captured as content rather than written as `.missing`.
 import { chromium } from 'playwright-core';
-import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 
 const run = promisify(execFile);
-const BASE = 'http://localhost:4173';
+const SHOWCASE_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const PORT = 4173;
+const BASE = `http://localhost:${PORT}`;
+// Matches playwright.config.ts's webServer timeout exactly, since this tool runs the identical
+// build-then-preview recipe and a slower machine needs the same budget the e2e suite gets.
+const SERVER_TIMEOUT_MS = 120_000;
 const WIDTHS = [320, 390, 768, 1440, 2560];
 const SCHEMES = ['light', 'dark'];
 
@@ -102,11 +110,21 @@ const SURFACES = [
 
 function parseArgs(argv) {
   const args = { out: null, only: null, focus: null };
+  const requireValue = (flag, i) => {
+    const value = argv[i];
+    if (value === undefined || value.startsWith('--')) {
+      throw new Error(`${flag} requires a value`);
+    }
+    return value;
+  };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--out') args.out = argv[++i];
-    else if (arg === '--only') args.only = argv[++i].split(',').map((s) => s.trim());
-    else if (arg === '--focus') args.focus = argv[++i];
+    if (arg === '--out') args.out = requireValue(arg, ++i);
+    else if (arg === '--only') {
+      args.only = requireValue(arg, ++i)
+        .split(',')
+        .map((s) => s.trim());
+    } else if (arg === '--focus') args.focus = requireValue(arg, ++i);
     else throw new Error(`Unrecognized argument: ${arg}`);
   }
   if (!args.out) throw new Error('--out <dir> is required');
@@ -128,7 +146,6 @@ function computeTiles(height) {
 }
 
 async function sha256(filePath) {
-  const { readFile } = await import('node:fs/promises');
   const buffer = await readFile(filePath);
   return createHash('sha256').update(buffer).digest('hex');
 }
@@ -245,14 +262,87 @@ async function captureOne(browser, outDir, surface, width, scheme, focusSelector
   }
 }
 
+/** Poll `url` until it answers (any status short of a connection failure counts as up), or
+ *  throw once `timeoutMs` elapses. */
+async function waitForServer(url, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      await fetch(url);
+      return;
+    } catch {
+      // Not up yet; keep polling.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`Server at ${url} did not answer within ${timeoutMs}ms`);
+}
+
+/** True if something already answers at `url`. Used before spawning, so a stray server never
+ *  gets captured against silently: this tool always proves the build it just started. */
+async function isServerUp(url) {
+  try {
+    await fetch(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Starts the showcase preview server with the exact `playwright.config.ts` webServer recipe
+ *  (`VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173`, `CAIRN_DEV_BACKEND=1`),
+ *  detached into its own process group so the whole group can be killed on teardown, and waits
+ *  for it to answer within the config's 120s budget. Refuses to run if port 4173 already has a
+ *  listener, since capturing against a server this tool did not start is a silent-wrong-build
+ *  hazard. */
+async function startServer() {
+  if (await isServerUp(BASE)) {
+    throw new Error(
+      `Something is already listening on port ${PORT}; refusing to capture against an unknown ` +
+        `server. Stop it first, then rerun so this tool starts the server itself.`,
+    );
+  }
+  const child = spawn(
+    'sh',
+    ['-c', `VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port ${PORT}`],
+    {
+      cwd: SHOWCASE_DIR,
+      env: { ...process.env, CAIRN_DEV_BACKEND: '1' },
+      detached: true,
+      stdio: 'ignore',
+    },
+  );
+  try {
+    await waitForServer(BASE, SERVER_TIMEOUT_MS);
+  } catch (error) {
+    stopServer(child);
+    throw error;
+  }
+  return child;
+}
+
+/** Kills the whole process group the server was spawned into, so `npm run build && npm run
+ *  preview`'s child processes (the actual preview server) die too, not just the shell. */
+function stopServer(child) {
+  if (!child.pid) return;
+  try {
+    process.kill(-child.pid, 'SIGTERM');
+  } catch {
+    // Already exited.
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const outDir = path.resolve(args.out);
-  await mkdir(outDir, { recursive: true });
-  const existing = await readdir(outDir);
+  const existing = await readdir(outDir).catch((error) => {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  });
   if (existing.length > 0) {
     throw new Error(`--out ${outDir} is not empty; capture directories are write-once`);
   }
+  await mkdir(outDir, { recursive: true });
 
   const surfaces = args.only
     ? SURFACES.filter((surface) => args.only.includes(surface.name))
@@ -263,6 +353,7 @@ async function main() {
     );
   }
 
+  const server = await startServer();
   const browser = await chromium.launch();
   const manifest = [];
   try {
@@ -278,6 +369,7 @@ async function main() {
     }
   } finally {
     await browser.close();
+    stopServer(server);
   }
 
   await writeFile(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2));

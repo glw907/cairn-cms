@@ -15,3 +15,14 @@ derivation surfaced and defer the decision to reopen.
 3. The figure check (2026-09-05) found four labels behind revision 12 and one front-door
    obligation missing (the Email Sending beta and paid boundary). All were applied to the figure
    source and sidecars; the case needed no change.
+4. Identity (Geoff, 2026-09-07). The case, the front-door proposal (`25-front-door-proposal.md`,
+   the two-roles paragraph), and the live `why-cairn.md` describe the default as a small
+   coordinated team with two roles and say a larger pool is built on the auth seams. None says
+   the assumption underneath: with the zero-config default, the CMS is the organization's
+   identity system for its editors, which holds for a small organization and rarely for a larger
+   one. The truthful sentence today is the assumption plus the fact that a second audience runs
+   on the site's own auth. The stronger sentence, that the admin login itself can run on an
+   organization's identity system, is a charter promise with no seam behind it yet (friction log,
+   `extender`, 2026-09-07); the front door may carry it only after that seam ships and is
+   documented. When the case next reopens, add the assumption to the audience leg beside `[^33]`
+   and `[^37]`, and keep the stronger claim out until the seam exists.

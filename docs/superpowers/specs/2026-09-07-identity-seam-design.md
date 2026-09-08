@@ -1,8 +1,8 @@
 # Identity seam design (the admin login on an organization's own identity)
 
-> Status: REVISION 2, folded 2026-09-07 from the three-lens adversarial review (security, charter
-> and precedent, grounding and feasibility; record
-> `docs/internal/record/2026-09-07-identity-seam/spec-review.md`). Authored under Geoff's grant
+> Status: REVISION 3, folded 2026-09-07 from the three-lens spec review and the four-lens plan
+> review (records `docs/internal/record/2026-09-07-identity-seam/{spec-review,plan-review}.md`
+> and the fold brief `plan-fold-brief.md`). Authored under Geoff's grant
 > of the same day ("I'm leaving judgement to you. Consider cairn philosophy and precedent").
 > Inputs banked beside the review. The plan follows in the same record directory.
 
@@ -54,6 +54,8 @@ The conductor, 2026-09-07 (the fold), each on the charter or the ledger:
    `auth.bootstrapOwner` in any case (it lives on the routes' config). The first owner is
    seeded out of band, as the scaffold already does (`create-cairn-site`'s bootstrap INSERT,
    or `wrangler d1 execute`), and the doctor's `auth.store` names that remedy.
+   `AuthRoutesConfig.bootstrapOwner` is inert under identity mode, since its only call site is
+   the 404'd `requestAction`; the first owner must be seeded BEFORE `identity` is enabled.
 7. **One configuration point, read through `locals`.** `identity` is set once, on
    `createAuthGuard`; the guard publishes `locals.cairnIdentity` on every admin path it
    handles in identity mode, and the login, confirm, request, and logout handlers read only
@@ -75,8 +77,8 @@ interface AuthGuardOptions {
 
 interface IdentityResolver {
   /** Prove who is making this request, or say why it could not be proven. */
-  resolve(event: RequestEvent): Promise<ResolvedIdentity | IdentityRefusal>;
-  /** Where the shell's logout sends the editor; the gate owns the session, cairn only redirects. Same-origin path or absolute URL; validated at construction. */
+  resolve(event: CairnEvent): Promise<ResolvedIdentity | IdentityRefusal>;  // the structural event every engine seam takes (guard.ts:1-3); the full event because it must read request headers
+  /** Where the shell's logout sends the editor; the gate owns the session, cairn only redirects. A root-relative path or an https: URL; validated at construction (below). */
   logoutUrl: string;
   /** The gate's name for the hand-off page and the doctor ("Cloudflare Access"). */
   label?: string;
@@ -85,12 +87,12 @@ interface IdentityResolver {
 interface ResolvedIdentity {
   ok: true;
   email: string;        // the guard normalizes it (trim, lowercase), the store's invariant
-  displayName?: string; // falls back to the roster row's, then to the email
+  displayName?: string; // advisory: the roster row's wins; used only when the roster row's is empty, capped at the store's bound; it reaches the commit author, so never trusted over the roster
 }
 
 interface IdentityRefusal {
   ok: false;
-  /** For the log only, never rendered: 'missing', 'invalid', 'audience', 'expired', 'no-email', or a site's own word. */
+  /** For the log only, never rendered: 'missing', 'invalid', 'audience', 'issuer', 'expired', 'no_email', 'keys', or a site's own word; every reason is snake_case (events.ts:5-7). */
   reason: string;
 }
 ```
@@ -117,21 +119,35 @@ Of the five pieces the `audit-sveltekit-createauthguard` row lists:
 2. **CSRF authority.** Unchanged (decision 8).
 3. **Session resolution: the replaced piece.** Instead of reading the session cookie and
    calling `resolveSession`, the guard calls `identity.resolve(event)`.
-   - A refusal renders the registered condition `identity.unresolved` (a plain page naming
+   - A refusal renders the registered condition `auth.identity-unresolved` (a plain page naming
      the gate's label, "this request did not arrive through <label>") and logs
      `guard.rejected` with `reason: 'identity'` and the refusal's `reason` in `detail`. No
      redirect to `/admin/login`: a refusal here means the gate was bypassed or misconfigured,
      and the condition's remediation says so.
    - A resolved email with no roster row renders the registered condition
-     `identity.unknown` ("ask the site's owner to add <email>"; the renderer escapes it, and
-     the email shown is the requester's own, so nothing is disclosed) and logs
-     `auth.identity.unknown` with `email`. This is the roster doing its job.
+     `auth.identity-unknown` ("ask the site's owner to add <email>"; the renderer escapes the
+     email and the site-supplied label, the email is capped at 320 characters, and the email
+     shown is the requester's own, so nothing is disclosed) and logs `auth.identity.unknown`
+     with `email`; the pair reads across the way `auth.unknown-role` / `auth.role.unknown` does.
+     This is the roster doing its job.
+   - The guard does not trust the seam it calls: `identity.resolve` runs inside a try/catch (a
+     throw is a refusal rendering `auth.identity-unresolved` with `detail: 'error'` and the
+     message capped at 300 characters, never a 500), and a `ResolvedIdentity` whose `email` is
+     not a string or is empty after normalization is a refusal, not a roster lookup. The log
+     level is `warn` for a request-shaped refusal (`missing`, `invalid`, `expired`, `no_email`)
+     and `error` for an operator fault (`audience`, `issuer`, `keys`, `error`), since those lock
+     out the whole roster. With `identity` set the guard never reads the session cookie and never
+     calls `resolveSession`, on any path; pre-existing `session` rows are inert.
    - A resolved email with a roster row builds the same `Editor` the session path builds and
      sets `locals.cairnEditor` and `locals.cairnAccess` exactly as today. The roster is read
      on every request, so a removed editor loses access on the next one, the contract
      `resolveSession`'s inner join gives today.
-   - In every case the guard also sets `locals.cairnIdentity = { label, logoutUrl }`, the
-     signal the routes read.
+   - In every case the guard also sets `locals.cairnIdentity = { label, logoutUrl }`, and it
+     does so for EVERY admin path, the public ones (`/admin/login`, `/admin/auth/**`) included,
+     immediately after the bindings refusal and before the CSRF stage, since the magic-link
+     handlers live only on public paths; `identity.resolve` is called only on guarded paths. The
+     guard is the only writer of the field, and the value is the snapshot validated at
+     construction.
 4. **Capability resolution.** Unchanged.
 5. **Security headers and the dev-backend refusal.** Unchanged.
 
@@ -144,23 +160,36 @@ why, remediation, docs anchor, log event), so `check:readiness`, `check:docs`, a
 The handlers detect identity mode by `locals.cairnIdentity` alone:
 
 - `loginLoad` renders a one-paragraph hand-off page ("This site signs in through <label>")
-  with a link to `/admin`, carrying a `data-cairn-identity` marker the doctor reads.
-- `requestAction` and `confirmAction` return 404, so a stray link cannot mint a token.
+  with a link to `/admin`, carrying a `data-cairn-identity` marker the doctor reads, minting no
+  pending-login nonce and issuing no CSRF token (the page carries no form; a site rendering its
+  own login page against `LoginData` may keep drawing a form, and that form is inert because of
+  the 404s below).
+- `requestAction`, `confirmAction`, and `confirmLoad` return 404, so `/admin/auth/**` serves
+  nothing and the hand-off page is the only public admin surface; the 404 is raised before
+  `requireDb`, before `request.formData()`, and before any cookie write, so a stray link cannot
+  mint a token and the confirm page cannot reflect a `?token=` value into an admin-origin page.
 - `logoutAction` skips the session delete (there is none), clears cairn's own cookies if
-  present, and redirects to `identity.logoutUrl`. The shell's logout form posts to
-  `/admin?/logout` unchanged. `logoutUrl` is validated at guard construction as a same-origin
-  path or an absolute `https:` URL, closing the open-redirect reading.
+  present, and redirects to the `logoutUrl` snapshot the guard validated at construction. The
+  shell's logout form posts to `/admin?/logout` unchanged. `logoutUrl` validation: a
+  root-relative path matching `/^\/(?![\\/])/` after rejecting any value containing a
+  backslash, a control character, or whitespace, or an absolute URL whose parsed `protocol` is
+  exactly `https:`; anything else throws at `createAuthGuard`, which closes the open-redirect and
+  post-construction-mutation readings.
 
 ## The doctor
 
-`admin.login-probe` today asserts an unauthenticated GET of `/admin/login` returns 200 with
-the magic-link form. Under a correctly placed gate that request is redirected by Access
-before cairn sees it, so the probe gains a second arm: a redirect to the gate (a 302 whose
-location is the team's `cloudflareaccess.com` domain, or any 401/403) is PASS with the
-identity label; a 200 carrying the `data-cairn-identity` marker is FAIL, "the origin answers
-without the gate" (the exposure the whole design exists to close); a 200 with the form is
-the magic-link PASS as today. The probe needs no site config to know the mode; it reads the
-page. `auth.store` keeps its owner-row requirement and names the out-of-band seed.
+`admin.login-probe` fetches with `redirect: 'manual'`, since the runtime otherwise follows the
+gate's 302 and the classifier never sees it. A 301/302/303/307 whose `Location` parses and whose
+`host` matches `/^[a-z0-9-]+\.cloudflareaccess\.com$/i` is PASS with the identity label. A 401
+or 403 is INFO, consistent with a gate but not proof of one (a WAF block or a broken deploy
+reads the same). A 200 carrying the `data-cairn-identity` marker, or a 200 carrying no
+`?/request` form, is FAIL, "the origin answers without the gate". A 200 with the form is the
+magic-link PASS as today, continuing into the existing POST arm. A second arm reads
+`workers_dev` from the wrangler config and, when it is not `false`, probes the `workers.dev`
+hostname's `/admin` the same way, failing on a 200: the exposure this design exists to close
+is a Worker reachable on a hostname the Access application does not cover. The marker is a
+documented contract between the page and the CLI. `auth.store` keeps its owner-row requirement
+and names the out-of-band seed and its ordering (seed before enabling `identity`).
 
 ## The extend page and the Access recipe
 
@@ -174,8 +203,30 @@ a mismatch is refused as `unknown` the moment identity mode is on, and the remed
 roster screen or `wrangler d1 execute`; the resolver recipe; the roster's role; logout; then
 the generic contract for any other gate.
 
-The recipe, a fenced `ts` block `check:snippets` typechecks against the built package
-(`jose` declared in the block per the snippet gate's convention):
+**Which login methods are safe** (a required section, before the recipe). The email claim is
+the entire join between the gate and the roster, so the Access application must enable only
+methods that prove control of the address they assert (a Workspace or Entra directory, or
+Access's own One-time PIN). Enabling a second method widens the floor to the weakest one, since
+every enabled method's token carries the same `aud` and verifies identically. Never enable a
+social IdP or a generic OIDC connection whose `email` claim the end user can edit on an
+application that gates a cairn admin; cairn cannot distinguish a directory-asserted address
+from a self-asserted one.
+
+The page also states, as operating instructions: admission is double-maintained by design and
+can drift (the gate says who may reach `/admin`, the roster says who may edit); the free plan's
+50-user cap counts editors who authenticate through Access, and the paid plan lifts it; seed the
+first owner before enabling `identity`; no Cloudflare cache rule may match `/admin`; the Access
+application must cover `/admin` exactly, `/admin/__data.json`, and the shell's form-action URLs,
+and must not cover `/preview/<token>`; leave the application's CORS settings off; on an ungated
+origin `/admin` becomes an unauthenticated endpoint doing an RSA verify per request, and the
+site's rate limit is its own remedy; never branch inside `resolve` for local development (a
+site's dev build replaces the guard behind its own build-time conditional, the shape the
+showcase uses); and the seam's tier (Unstable; promotion on the first production consumer).
+
+The recipe, a fenced `ts` block checked by `check:snippets` for its cairn-facing shape only
+(`jose` is not a dependency, so the gate rewrites its imports to untyped stand-ins; the
+verification logic is proven by the `web-auth-security-reviewer`'s read, a blocking criterion
+on the page's task, and the page says so in one sentence):
 
 - reads the `Cf-Access-Jwt-Assertion` header only (no cookie fallback: the `CF_Authorization`
   cookie is a bearer token replayable until its `exp`, and the header is what Access
@@ -184,8 +235,16 @@ The recipe, a fenced `ts` block `check:snippets` typechecks against the built pa
   `/cdn-cgi/access/certs`, with `issuer`, `audience`, and `algorithms: ['RS256']` pinned;
 - accepts only a payload whose `email` is a non-empty string (a service token verifies and
   carries none; it is refused `no-email`);
-- returns `{ ok: false, reason }` per failure class (`missing`, `invalid`, `audience`,
-  `expired`, `no-email`) so the log distinguishes a mistyped AUD from a stranger;
+- checks `payload.type === 'app'`, refusing Access's team-scoped `org` session token whatever
+  its audience says; takes the team domain as a bare hostname (Cloudflare's own sample includes
+  the scheme, which yields a doubled `https://` and a roster-wide `issuer` lockout) and the AUD
+  tag, not the application id, validating both at construction;
+- returns `{ ok: false, reason }` per failure class (`missing`, `invalid`, `audience`, `issuer`,
+  `expired`, `no_email`, `keys`) mapped from `jose`'s error classes, with `keys` covering a JWKS
+  fetch failure so a certs outage never reads as an intrusion; `jwtVerify` with no
+  `clockTolerance`; `createRemoteJWKSet` constructed once per resolver with explicit
+  `timeoutDuration`, `cooldownDuration`, and `cacheMaxAge`; key selection JWKS-only, a token's own
+  `jwk`/`jku`/`x5u` headers never consulted;
 - runs on every admin request, since the assertion is the only proof the request passed the
   gate; and states the posture: Access must gate the `/admin` path on the same hostname the
   Worker serves, a `workers.dev` hostname that bypasses the gate must be disabled, and the
@@ -198,20 +257,28 @@ Geoff's accepted routing; the pass-sizing rule is honored by the bound.
 
 ## Documentation and surface
 
-- `docs/reference/sveltekit.md`: `AuthGuardOptions.identity`, `IdentityResolver`,
-  `ResolvedIdentity`, `IdentityRefusal`, `locals.cairnIdentity` (with the ambient
-  declaration on `./ambient`); `docs/extend/security-model.md`: "Identity from a gate" under
-  the session material, naming the replaced piece, the rotation residual, and the doctor arm;
+- `docs/reference/sveltekit.md`: `AuthGuardOptions.identity` with its own tier note (Unstable
+  inside the frozen Scaffold-tier interface), `IdentityResolver`, `ResolvedIdentity`,
+  `IdentityRefusal`, `locals.cairnIdentity` (both `locals` declarations, `src/lib/ambient.ts`
+  and `src/lib/sveltekit/types.ts`, kept in step; the guard is the only writer);
+  `docs/extend/security-model.md`: "Identity from a gate" under the session material, plus a
+  sweep in which every statement the spec review's table lists is corrected or scoped to the
+  magic-link path (the replaced piece, the rotation residual with its shared-browser shape, the
+  doctor arms, the never-reads-the-session-cookie property, `hasSession`'s meaning under
+  identity, and the effective session lifetime being the Access application's operator-set
+  duration, advised short);
   `docs/reference/doctor.md`: the probe's second arm; `docs/reference/log-events.md`: the
   `identity` reason on `guard.rejected` and the new `auth.identity.unknown` row;
   `docs/extend/README.md`'s auth list; `docs/why-cairn.md`'s identity paragraph (the
-  assumption, then "or sign in through your organization"); post-freeze note 4 on the cairn
+  assumption first, then "or, behind Cloudflare Access, sign in with your organization's
+  Google or Microsoft accounts"); post-freeze note 4 on the cairn
   case closed by pointing here; `docs/internal/engine-rulings.md`: the seam's accept row and
   the Access verifier's declined-for-now row.
 - `check:surface -- --update` with the regenerated snapshot; `check:snippets`;
   `check:reference:signatures`; `check:readiness`; the six CI-only gates by name.
-- `CHANGELOG.md` under `## Unreleased`: new surface, additive, no `Consumers must:`; the
-  migration note says a site with no `identity` option sees no change.
+- `CHANGELOG.md` under `## Unreleased`: new surface, additive, no `Consumers must:` line, and
+  therefore no `docs/extend/migration-notes.md` entry (that page records only releases that
+  stated consumer action); `check:surface` also records `LoginData`'s discriminated addition.
 
 ## Proof
 
@@ -248,8 +315,9 @@ who may reach the door, the roster says who may edit).
   `missing`), so the failure is closed; the doctor's inverted probe detects the exposure.
 - **Revocation lag.** Access propagates a revoked session within about thirty seconds; the
   roster's live read is the stronger lever for removing an editor, stated on the page.
-- **The recipe is site code.** A site that edits it badly owns the defect; the reopen trigger
-  on the declined row is exactly that evidence, and the security reviewer reads the recipe as
-  shipped.
+- **The recipe is site code, and its verification logic is not machine-verified.** The
+  declined ledger row records that assurance level; a site that edits it badly owns the
+  defect, and the row reopens on a second consumer hand-rolling the verifier, an
+  engine-internal consumer, or an evidenced defect in a family site's own resolver.
 - **Console drift.** Cloudflare can move the Access console; the page carries concepts and
   links Cloudflare's steps.

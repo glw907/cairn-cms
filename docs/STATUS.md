@@ -127,6 +127,14 @@ five) with SIX taste calls parked in its last section for Geoff (the row's heigh
 stacking rule, the `sizes` posture, swipe, grid captions, the dialog as a chassis primitive).
 NO plan and NO execution until Geoff reads the spec and rules on the six.
 
+**Identity seam: Tasks 1 and 2 ACCEPTED** (`b44aee8b`; `bd9c2fc8` and `d6388333`), run
+`wf_b310f457-1bf` halted on Task 2's escalate (the resolver's `displayName` TSDoc claimed a
+store bound that does not exist); conductor ruling 2026-09-08 about 02:30: cap at 120
+characters (the media routes' display-name bound) in the guard with a test, fix dispatched; then
+Tasks 3 to 6 relaunch as a fresh run from the scratchpad's `identity-args-3to6.json`. Implementer
+decisions accepted: both conditions render 403; a malformed `ok: true` identity logs `invalid`
+at `warn`; an unlisted refusal word defaults to `warn`.
+
 **Identity seam EXECUTING** (launched 2026-09-08 about 00:10 AKDT as run `wf_b310f457-1bf`,
 session 9215acac, worktree `.claude/worktrees/identity-seam` off `main` at `f7daa6cb`, seven
 tasks at 5.5M, in parallel with chassis-A's last tasks). Spec revision 3 (`79261f74`) and plan

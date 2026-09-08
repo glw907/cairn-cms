@@ -44,6 +44,12 @@ scratchpad's `chassis-a-args-8to12.json` (the Task 8 notes carry the ruling verb
 halted run `wf_855c925b-ae2` reports. DONE: relaunched as run `wf_5ac6ef7f-5a7` (session
 9215acac, 2026-09-07 about 20:00 AKDT); the first run spent 1.23M subagent tokens over Tasks 3
 to 8, and the escalate also found the emitted `render.ts` hand-edited (the fix round re-emits).
+Run `wf_5ac6ef7f-5a7` landed Task 8 as `8fc1343d` (every gate green, no baseline moved) and
+escalated on the changelog inventory (three `cardShell` importers, not two; `headRow` in two
+sites) and on the generic `headRow` stamping an alert-named class; fix round dispatched about
+20:50 with the rulings (inventory corrected, `cairn-head-title`, the chassis classes out of the
+engine registry, the worked example off DaisyUI names, one e2e assertion). Tasks 9 to 12 relaunch
+from the scratchpad's `args9.min.json` after the fix round is reviewed.
 
 When the workflow reports: read the per-task records, decide any needs-decision or escalate,
 check the five bare `$theme/cairn.config` specifiers Task 10's grep cannot match

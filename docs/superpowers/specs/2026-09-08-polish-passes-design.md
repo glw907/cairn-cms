@@ -432,3 +432,41 @@ decision 11), so execution carries no known pull-in.
 - **Polish-A's sixteen tasks are the largest pass since the internals pass.** The
   independent block is marked so the workflow can take it in parallel with the splits if the
   machine allows, and the 7M ceiling carries one escalation.
+
+## Amendment 2026-09-08
+
+The docs standard initiative (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`) changes
+what three of these passes should carry. This amendment is a **precondition of the initiative**, not
+a record written afterwards: it must be on `main` before polish-B's plan is authored, since two of
+its three clauses instruct passes that would otherwise already have run. Each clause carries its
+reason.
+
+**1. Polish-C lands entirely before the docs harvest branches.** Polish-C renames and removes across
+365 in-tree files, and every rename invalidates a fact-ledger entry in exactly the class the ledger
+exists to guarantee. The harvest therefore runs after polish-C, never between the harvest and the
+rewrite and never concurrently with either. This orders the whole sequence: A, B, D, C, then the
+docs toolset pass.
+
+**2. Polish-B splits.** Its code work keeps tasks 2, 8, and 9 and the `check:reference` change in
+task 5, and merges before the harvest branches. **Its prose findings are not run as edits.** They
+become authoritative input to the fact ledgers, where the ledger records the true claim with its
+proving source and marks the old page's claim superseded. The reason: a rebuild from a correct
+ledger emits the corrected page once, whereas editing a page now and rebuilding it in the rewrite
+pays for the same correction twice and leaves the edited text to be quarantined from the drafter
+anyway. Polish-B's findings are numbered 1 through 30 in `docs-sweep.md` with no prefix, and F7
+through F10 live in `exports-sweep.md`; the toolset pass's preflight re-resolves every number and
+records which, if any, polish-B applied as an edit before this amendment landed.
+
+**3. Polish-D splits.** Its substrate commit and its figure and form tasks stay where they are, and
+the substrate commit now lands before the toolset pass's preflight rather than before that pass's
+figures task, because `docs/extend` is in `package.json`'s `files` array and the commit changes the
+published-page count every later chain derives from. **Its task 1, `docs/why-cairn.md`, moves to the
+rewrite plan as that plan's first page.** The reason: authoring the front door now repeats the exact
+failure the standard exists to stop, since the rejected front-door draft is what produced the
+initiative. Its `docs/README.md` route-order item becomes an index-page question the standard
+governs.
+
+**The cost of clause 3, named.** The front door stays as it is until the rewrite's first page lands,
+and any cairn.pub work depending on new front-door copy waits with it.
+
+Nothing here changes polish-A's or polish-C's own task lists.

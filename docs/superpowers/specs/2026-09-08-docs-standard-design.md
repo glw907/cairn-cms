@@ -635,7 +635,7 @@ means more.
 | 11 | Approve the `add-a-custom-admin-screen.md` demonstration before the rewrite is planned | small | 4 |
 | 12 | Rebuild each page rather than edit it, with reference entries the one exception (owner direction 2026-09-08) | small as a rule; its cost sits in unit 5 | 5 |
 | 13 | Harvest each track's facts into a ledger before any brief is written, and keep drafters out of the page they replace (owner direction 2026-09-08) | large, 2.0 to 4.5 million tokens | 1 |
-| 14 | Ship the work as two pass plans, the toolset first and the rewrite second (owner direction 2026-09-08) | small | Implementation |
+| 14 | Ship the work as **three** pass plans: plan one, the Claude infrastructure, in the dotfiles and poplar repositories; plan two, the toolset and the harvest, in cairn; plan three, the rewrite (owner direction 2026-09-08, amended 2026-09-08 when unit 3c moved out of cairn) | small | Implementation |
 
 ## Compatibility
 
@@ -673,21 +673,25 @@ published set carries 432 intra-docs anchor links and 99 references to published
 
 ## Implementation
 
-Two pass plans run in order. Plan one builds what the rewrite needs and harvests what it must carry.
-Plan two writes the pages.
+**Three pass plans run in order.** Decision row 14 records the split, which supersedes the earlier
+two-plan shape and the 1a/1b concurrent-document structure that shape carried.
 
-**Plan one, the toolset and the harvest.** Two plan documents launched concurrently under one
-ceiling: **1a**, the toolset (units 2, 3a, 3b, 3c, and the unit 4 join), and **1b**, the harvest
-(unit 1). Units 1, 2, and 3 are genuinely independent, share no file, and consume nothing from one
-another, so the earlier claim that each unit depends on the one above it is withdrawn. The only real
-edge inside plan one is unit 4, which joins all three. The contended resources are `package.json`,
-the CI workflow, `docs/STATUS.md`, `ROADMAP.md`, `CHANGELOG.md`, and
-`docs/internal/docs-register.md`; whichever chain merges second rebases.
+**Plan one, the Claude infrastructure.** Unit 3c alone, run in the owner's `~/.dotfiles` and
+`~/Projects/poplar` repositories rather than in cairn. It moved out because cairn's implementer chain
+grades a task by `git diff` plus `npm test` and neither reaches `~/.claude/`, `~/.dotfiles/`, or
+`~/Projects/poplar/`, so the work moved rather than shrinking to a brief.
 
-**Plan two, the rewrite.** Unit 5, authored only after plan one lands, so every brief cites real
-ledger ids and runs against real gates. It is four to five plan documents, one per track plus the
-front door, each with its own worktree, its own pull request, and its own ceiling, merged as each
-lands. Never one long-lived rebuild branch.
+**Plan two, the toolset and the harvest.** Units 1, 2, 3a, 3b, and 4, as **one** plan document with
+several chains, which is the shape `~/.claude/workflows/pass-execute-chains.js` takes. The 1a/1b
+split is withdrawn. Units 1, 2, and 3 are genuinely independent, share no file, and consume nothing
+from one another; the only real edge is unit 4, which joins them. Every artifact two chains would
+otherwise both create is built in a preflight chain on `main` before any chain branches, so the
+contended set reduces to `package.json`, the CI workflow, and the records the closing chain writes.
+
+**Plan three, the rewrite.** Unit 5, authored only after plan two lands and the owner reads the
+demonstration page, so every brief cites real ledger ids and runs against real gates. It is four to
+five plan documents, one per track plus the front door, each with its own worktree, its own pull
+request, and its own ceiling, merged as each lands. Never one long-lived rebuild branch.
 
 Two sequencing constraints sit outside this spec. Polish-C, the breaking window, renames and removes
 across 365 in-tree files and four sites' route files, and every rename invalidates ledger entries in
@@ -938,22 +942,37 @@ Acceptance criteria:
 
 ### What plan one hands plan two
 
-Plan two cannot be authored until all nine exist at fixed paths. These are plan one's closing
+Three artifacts, all outside this repository, which plan two's preflight verifies by name and
+records as present or absent. A missing one degrades a named criterion in plan two rather than
+stopping it:
+
+1. The **tellgrader docs-register profile**: the profile flag accepted by the installed binary and
+   the `MEASURES.md` definition file readable beside the scanner.
+2. The **Vale hook's path-grading change**, so an on-save run grades an editor-track page under
+   Microsoft and every other published page under Google.
+3. The **two changed skills**: `cairn-figure`'s figure production path and the `writing-voice`
+   skill's author-facing prose section.
+
+Plan one's own record also carries the four setup pieces plan two does not verify: the output style,
+the voice files, the review agents, and the global `CLAUDE.md`.
+
+### What plan two hands plan three
+
+Plan three cannot be authored until all nine exist at fixed paths. These are plan two's closing
 criteria:
 
-1. The five ledgers at `docs/internal/record/docs-rebuild/<track>-facts.md`, with the id format, the four
+1. The five ledgers at `docs/internal/record/docs-rebuild/<track>-facts.md`, with the id format, the
    verdict tiers, the per-page anchor maps, the keep classes, and the verbatim gated blocks.
-2. The page-type assignment for all 75 published pages.
+2. The page-type assignment for every published page, 76 today.
 3. `docs/internal/corpus/` and its manifest, approval column filled, every registry type covered by
    an approved or reference-only entry.
-4. `docs/internal/templates/`, the page templates (eleven now, twelve after 3a), each heading marked
-   required or optional.
+4. `docs/internal/templates/`, the twelve page templates, each heading marked required or optional.
 5. The brief schema, its parser, and one worked brief.
-6. The five scripts plus markdownlint, wired into `package.json` and CI, each with its path scope and
-   the named unit that removes the scope exclusion.
+6. The gate estate, wired into `package.json` and CI, each gate with its scope and the named
+   plan-three track plan that removes each relaxation.
 7. The Vale rules with their must-fire fixtures, verified on the CI-pinned binary.
 8. The drafting-dispatch prompt fragment carrying the quarantine and the readable-file list.
-9. The demonstration page's measured cost in tokens and sittings, which is what sizes plan two.
+9. The demonstration page's measured cost in tokens and sittings, which is what sizes plan three.
 
 ## Risks
 

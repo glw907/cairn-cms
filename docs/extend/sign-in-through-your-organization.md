@@ -86,8 +86,8 @@ recipe below has no way to recover a distinction the gate itself didn't enforce.
   serves `/admin` without the gate in front of it, every request becomes an unauthenticated
   endpoint doing a JWT verify per request. That's a request the recipe below always refuses (no
   header means no identity means no session), but it's still a request the origin has to spend a
-  cycle answering; the doctor's probe (below) is how you find such an origin, and your site's own
-  rate limit is the remedy once you have.
+  cycle answering; the doctor's [live probe](../reference/doctor.md#the-opt-in-live-probe) is how
+  you find such an origin, and your site's own rate limit is the remedy once you have.
 - **Never branch inside `resolve` for local development.** A conditional that checks for a
   development environment inside the resolver you hand to `identity` is a code path that runs in
   production too, whatever you intended. Swap the whole guard behind your own build-time
@@ -97,8 +97,9 @@ recipe below has no way to recover a distinction the gate itself didn't enforce.
 ## The verifier
 
 The recipe below is regular application code you write and own, not an engine export: cairn ships
-no OIDC client, and `jose` is not one of its dependencies, so this repo's own doc gate cannot
-typecheck the block against a real copy of `jose` and checks only its cairn-facing shape. Its
+no OIDC client, and [`jose`](https://github.com/panva/jose) is not one of its dependencies, so
+this repo's own doc gate cannot typecheck the block against a real copy of `jose` and checks only
+its cairn-facing shape. Its
 verification logic is proven by this pass's security review alone, never by an automated check;
 read it as carefully as you would any other authentication code you commit to your own
 repository.
@@ -165,11 +166,13 @@ export const accessIdentity: IdentityResolver = {
       return { ok: false, reason: reasonFor(err) };
     }
 
-    // A service token verifies and carries no `type` or `email` claim at all; refusing it here
-    // as `no_email` keeps the roster lookup from ever seeing a token that was never a person.
+    // Refuses Access's team-scoped `org` session token whatever its audience says: only an
+    // application-scoped `app` token carries the email of the person the application admitted.
     if (payload.type !== 'app') {
       return { ok: false, reason: 'invalid' };
     }
+    // A service token verifies and carries no `email` claim at all; refusing it here as
+    // `no_email` keeps the roster lookup from ever seeing a token that was never a person.
     if (typeof payload.email !== 'string' || payload.email.length === 0) {
       return { ok: false, reason: 'no_email' };
     }
@@ -209,7 +212,7 @@ function reasonFor(err: unknown): string {
 This runs on every admin request; the assertion is the only proof a request already passed the
 gate, so there is no session to cache it against.
 
-`audience`, `issuer`, and `keys` are operator faults: each one means every request from every
+`audience`, `issuer`, `keys`, and `error` are operator faults: each one means every request from every
 editor is about to be refused, not just this one, so alert on them rather than treating them as
 routine sign-in noise. `missing`, `invalid`, `expired`, and `no_email` are request-shaped and need
 no alert on their own; a spike in them is still worth a look. `guard.rejected`'s `reason: identity`

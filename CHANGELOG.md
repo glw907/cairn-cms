@@ -273,16 +273,18 @@
   className: ['cairn-head'] }, [icon, h('h' + level, { className: ['cairn-head-title'] },
   title)])`, icon omitted when absent), the shape `examples/showcase/src/chassis/render.ts` now
   ships beside `makeIconRenderer`. The emitted classes read `cairn-*` (`cairn-icon`,
-  `cairn-icon-secondary`, `cairn-head`) since internals-C's rename. Inlining `cardShell` moves its
-  two inner class literals out of the unscanned engine package and into the consuming site's own
-  Tailwind-scanned source, so a site that keeps DaisyUI's `card` component enabled for other markup
-  (a members-area card, say) will have DaisyUI's own `.card-body`/`.card-title` rules generated and
-  applied to the alert too unless the two literals are renamed away from those names; the showcase
-  renames them to `cairn-alert-body`/`cairn-head-title` (and its `prose.css` selectors to match)
-  as the worked example. Every family site that imports `cardShell` needs the same inner-class
-  rename at its own call site if it enables DaisyUI's `card` component. Today: `ecxc-ski`,
-  `xcathletes-org`, and `cairn-pub` import `cardShell`; `ecxc-ski` and `aksailingclub-org` import
-  `headRow`; all four sites import `iconSpan` in their own `src/chassis/render.ts`.
+  `cairn-icon-secondary`, `cairn-head`) since internals-C's rename. `cardShell`'s inlined form
+  carries the `card-body` literal, moving it out of the unscanned engine package and into the
+  consuming site's own Tailwind-scanned source; `headRow`'s re-homed form carries the `card-title`
+  literal the same way. A site that keeps DaisyUI's `card` component enabled for other markup (a
+  members-area card, say) will have DaisyUI's own `.card-body`/`.card-title` rules generated and
+  applied to the alert too unless it renames whichever literal it re-homes; the showcase renames
+  them to `cairn-alert-body`/`cairn-head-title` (and its `prose.css` selectors to match) as the
+  worked example. Every family site that imports `cardShell` or `headRow` needs the same
+  inner-class rename at its own call site if it enables DaisyUI's `card` component. Today:
+  `ecxc-ski`, `xcathletes-org`, and `cairn-pub` import `cardShell`; all four sites, `ecxc-ski`,
+  `xcathletes-org`, `cairn-pub`, and `aksailingclub-org`, import `headRow` and `iconSpan` in their
+  own `src/chassis/render.ts`.
 
 ### Changed
 

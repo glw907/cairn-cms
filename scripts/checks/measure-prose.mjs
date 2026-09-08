@@ -66,7 +66,7 @@ function measure(sel) {
     const ss = splitSentences(b.text);
     sents.push(...ss);
     if (!b.list) {
-      const para = { sentences: ss.length, words: b.text.split(/\s+/).length, leadIn: /[:]$/.test(b.text.trim()) };
+      const para = { sentences: ss.length, words: b.text.split(/\s+/).length, leadIn: /[:]$/.test(b.text.trim()), start: b.text.slice(0, 60) };
       paras.push(para);
       if (showParas && sel === 'all' && (para.sentences > 8 || para.words > 150)) console.error(`long paragraph (${para.sentences} sentences, ${para.words} words): ${b.text.slice(0, 90)}`);
     }
@@ -77,7 +77,8 @@ function measure(sel) {
   const hinge = sents.filter(isHinged).length;
   const short = lens.filter((l) => l < 8).length;
   const longPara = paras.filter((p) => p.sentences > 8 || p.words > 150).length;
-  const shortPara = paras.filter((p) => p.sentences < 3 && !p.leadIn).length;
+  const shortList = paras.filter((p) => p.sentences < 3 && !p.leadIn).map((p) => p.start);
+  const shortPara = shortList.length;
   return {
     sentences: n,
     mean: Math.round(mean * 10) / 10,
@@ -86,6 +87,7 @@ function measure(sel) {
     shortPct: n ? Math.round((100 * short) / n) : 0,
     longParagraphs: longPara,
     shortParagraphs: shortPara,
+    shortParagraphStarts: shortList,
     paragraphs: paras.length,
   };
 }

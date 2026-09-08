@@ -1,7 +1,7 @@
 # A documentation standard for cairn
 
-Revision 5, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
-Revisions 2 to 4 went through the review chain this document proposes, and each revision
+Revision 6, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
+Revisions 2 to 5 went through the review chain this document proposes, and each revision
 folds the findings. The reviews and research are the `proposal-review-*.md` and
 `proposal-research-*.md` files in this directory.
 
@@ -22,15 +22,18 @@ the register, which is the repository's own style document at
 The standard has four parts. The prose rules say how sentences and paragraphs must be
 written. They adopt the Federal Plain Language Guidelines, a published United States
 government style standard. Which pages exist, what sections each kind of page carries, and
-how a section is built are the structure rules. When a diagram or screenshot earns its
-place, how it is made, and how it is graded are the figure rules. Last, the review chain
+how a section is built are the structure rules. The figure rules cover when a diagram or
+screenshot earns its place. They also say how it is made and how it is graded. Last, the
+review chain
 gives a page the sequence of checks a code change gets, ending in a receipt that records the
 review so a gate can verify it happened.
 
-Two rules stand above the four parts, and they answer the two faults no gate caught.
+Two rules stand above the four parts. The first answers the facts nobody checked, and the
+second answers how the draft was written, in one autonomous run:
 
 1. Any claim about you or about cairn's stance must come from a brief you wrote or approved
-   (today's is [front-door-author-brief.md](front-door-author-brief.md)), and a script must check that every such claim points at a line in that brief.
+   (today's is [front-door-author-brief.md](front-door-author-brief.md)), and a script must
+   check that every such claim points at a line in that brief.
 2. A page for an outside reader must be drafted one section per read, never end to end in an
    autonomous run.
 
@@ -43,7 +46,8 @@ sentences were built as hinged pairs at twice the rate of any human page I measu
 hinged pair here is two clauses joined by a comma and a coordinator, a colon, a semicolon, a
 dash, or a chain of relative clauses. When I split them the page turned staccato, and when I recast
 it against technical pages the same rhythm moved from the comma to the colon. The
-measurement now counts all five hinge forms, so a rewrite cannot pass by moving the hinge.
+measurement now counts every hinge form the script defines, so a rewrite cannot pass by
+moving the hinge.
 
 The gates missed the draft's faults in three places. Vale, the prose linter, and the tell
 scanner, the workstation's own checker for the habits of machine-written prose, both read
@@ -54,9 +58,11 @@ The rhythm problem is not confined to one page. On the instrument this document'
 uses, which counts every hinge form and excludes serial lists, the extend track, the
 developers' track, builds 54 percent of its sentences as hinged pairs, and the reference
 track builds 58 percent. The one human page vendored so far, SQLite's scope excerpt, builds
-none. The earlier figures of 48 and 44 percent, and the 19-to-44 band from five pages, were
-taken on a narrower instrument and are not comparable. Re-measuring the other pages waits
-on the corpus, because their text is not in the repository.
+none. The corpus, defined fully below, is the set of human-written excerpts the docs are
+measured against, and a band is the range a track's corpus entries set for a measurement.
+The earlier figures of 48 and 44 percent, and the 19-to-44 band from five pages, were taken
+on a narrower instrument and are not comparable. Re-measuring the other pages waits on the
+corpus, because their text is not in the repository.
 
 The samples are small enough that intervals overlap, so treat the gap as a direction rather
 than a finding ([the cost review](proposal-review-cost.md) carries the intervals). The
@@ -125,7 +131,8 @@ The standard sets structure at three levels, and each level would get its own ga
 top, the docs set decides which pages exist. Below it, each page decides its own sections
 and their order, and each section decides how one block of text is built. The research behind this compared Diátaxis, DITA,
 Information Mapping, Every Page Is Page One, and the reference conventions of PostgreSQL,
-MDN, and Rust ([the structure research](proposal-research-structure.md)). Each system
+MDN, and Rust; [the structure research](proposal-research-structure.md) describes and links
+each. Each system
 contributes one level, and none is adopted whole.
 
 #### The docs set
@@ -153,7 +160,7 @@ stay under 800 words and a concept page under 1,500. No page may name its own ty
 
 The front door is a page type of its own, and `why-cairn.md` takes the shape that SQLite's
 scope page, Kubernetes' overview, and Astro's "Why Astro" share. The closing checklist is
-SQLite's device, and it is what makes the reader decide. The sections, in order:
+SQLite's device, and it gives the reader something to answer. The sections, in order:
 
 - your account of where cairn came from
 - what cairn does
@@ -167,9 +174,9 @@ SQLite's device, and it is what makes the reader decide. The sections, in order:
 #### The section
 
 A section must cover one idea and state it in its first sentence. A list must be grouped
-once it passes nine items. A heading that tells the reader to do something must start with a
-bare verb, while one that explains must be a noun phrase, and siblings at one level must
-share a form. A new `check:headings` script would hold all three rules. The two-headed-heading Vale
+once it passes nine items. A heading either tells the reader to do something or explains. The
+first kind starts with a bare verb and the second is a noun phrase. Siblings at one level
+share one form. A new `check:headings` script would hold all three rules. The two-headed-heading Vale
 rule that landed today,
 [`TwoHeadedHeading.yml`](../../../../.vale/styles/Cairn/TwoHeadedHeading.yml), holds one
 shape of one fault and nothing more.
@@ -181,7 +188,7 @@ relation among three or more parts as a series, or where the fact is a branch be
 A set of items must be a table, a linear sequence must be a numbered list, and code the
 reader will type must be a code block.
 
-The pages people write set the bar high. Ten of the fourteen pages the structure research
+The corpus entries set the bar high. Ten of the fourteen pages the structure research
 surveyed carry no
 explanatory figure, every "why" page carries none, and the reference pages of PostgreSQL,
 MDN, and Rust carry none ([the figure survey](proposal-research-figures.md)). Across 24 Astro
@@ -194,8 +201,8 @@ of any screenshot. An editors track for readers with no code cannot borrow that,
 the one place cairn's docs will carry screenshots the upstream never needed.
 
 The register ruled most of this on 2026-08-15
-([the visual-layer rulings](../2026-08-15-docs-visual-layer-rulings.md)), and eleven Mermaid
-figures ship under that ruling. Two tests were missing, one in each direction, and the
+([the visual-layer rulings](../2026-08-15-docs-visual-layer-rulings.md)). It kept twelve
+figures, and eleven of them ship today as Mermaid fences in the published tracks. Two tests were missing, one in each direction, and the
 standard adds them:
 
 - A figure that should not be there. Remove it, and if the text still makes the point
@@ -235,9 +242,7 @@ architecture page.
 
 ### The corpus
 
-The docs must be compared against pages people wrote, and this document calls that set the
-corpus. A band, throughout, is the range a track's corpus entries set for a measurement. The
-corpus has these constraints.
+The docs must be compared against pages people wrote, the corpus, under these constraints:
 
 - `docs/internal/corpus/` holds one excerpt per entry, at most 400 words.
 - A manifest records each entry's source, license, fetch date, page type and track,
@@ -246,7 +251,7 @@ corpus has these constraints.
 - An entry you reject is deleted and its id retired.
 - A review must cite a corpus entry beside its verdict, and a verdict that cites none does
   not count. The first entry exists as a sample,
-[corpus-sample-sqlite.md](corpus-sample-sqlite.md), so the receipt below can cite it.
+  [corpus-sample-sqlite.md](corpus-sample-sqlite.md), so the receipt below can cite it.
 
 The proposed entries, with the excerpt each would carry:
 
@@ -275,22 +280,27 @@ The proposed entries, with the excerpt each would carry:
 
 ### The review chain
 
-Docs get the chain code has. The steps run in this order, and each names who or what runs
+The review chain gives a page the same steps a code change gets. The steps run in this order, and each names who or what runs
 it. A page for a published path is drafted at that path on a branch, never under
 `docs/internal/record`; this proposal is not a published page, which is why it lives here.
 
 1. I draft the page where it will live, so Vale and the save hook run the right styles from
    the first save.
-2. CI runs the template scripts, `check:anatomy` and `check:headings`, with `check:docs`,
-   `check:visuals`, and `check:figures`.
+2. CI runs the outline scripts first, `check:anatomy` and `check:headings`, then
+   `check:docs`, `check:visuals`, and `check:figures`. A reviewer reads the outline at the
+   same point, before any sentence, and returns a page whose type, title, or section order
+   is wrong.
 3. CI runs the linters under a severity contract. An error fails the build, a warning shows
    in the review, and a suggestion stays local. A rule may move to error only after every
    existing violation is cleared, which is
    [GitLab's rule](https://docs.gitlab.com/development/documentation/testing/) and the
    reason the 40-word ceiling cannot ship as an error today.
 4. The tell scanner reports the sentence numbers, the hinged-pair share, and the
-   short-sentence share beside the corpus entry's numbers. Nothing gates on them. The bands
-   stay advisory until a track has a thousand sentences from ten documents behind them.
+   short-sentence share beside the corpus entry's numbers. A hinged-pair share more than
+   fifteen points above the entry's is called out in the report. Nothing gates on any of
+   it. The bands stay advisory until a track has twenty documents and three hundred
+   sentences behind them, which is the cost review's threshold for a band whose endpoints
+   stop moving when one specimen is swapped.
 5. `check:provenance` runs on the front door. Every sentence there that states a fact about
    you or about cairn's stance must carry a footnote id, and the script fails on an id that
    does not resolve to a line in the brief.
@@ -336,7 +346,7 @@ seven:
   entries for their audience and the advisory bands.
 - The tell scanner gains the hinged-pair share and the short-sentence share, in report mode,
   with the bands in a small file per audience. The cost review sizes this at about 285 lines
-  of Go with no new dependency.
+  of Go with no new dependency, and calls it small.
 - The Vale hook grades a draft by its path, which step 1 of the review chain makes
   sufficient.
 - The review agents change their dispatch shape. The register editor and the voice reviewer
@@ -373,13 +383,13 @@ five pages and a reviewer's comparison is whatever it fetched. Assembling the co
 first task after approval.
 
 The measurement script, [`measure-prose.mjs`](../../../../scripts/checks/measure-prose.mjs),
-defines a hinged pair by four patterns. They are a comma followed by a subordinator or a
-relative word, a colon or semicolon followed by text, a spaced dash, and a comma followed by
+defines a hinged pair by four patterns. They are a comma followed by a coordinator,
+subordinator, or relative word, a colon or semicolon followed by text, a spaced dash, and a comma followed by
 "and" or "or" when no earlier comma sits in the sentence. That last clause is what excludes
-serial lists, and it was added in this revision after the revision 3 grade found the count
-inflated by them. The receipt names this definition, and the definition is fixed in the
-script before any number becomes a rule. The instrument change moved this document's own
-prose figure by ten points between revisions. The cost review found that changing the
+serial lists. Revision 4 added it after the revision 3 grade found the count inflated by
+them, and it moved this document's own prose figure from 46 percent to 36. The receipt names
+this definition, and the definition is fixed in the script before any number becomes a
+rule. The cost review found that changing the
 sentence splitter moves a track figure by 17 points, wider than the human band. No number
 here is a rule yet.
 
@@ -387,8 +397,8 @@ Vale's rule mechanics were tested on the pinned CI version and on the workstatio
 and they disagree. A rule that passes on one and not the other is caught only by the
 must-fire fixture, which is why the fixture is not optional. This revision has not been
 reader-tested. Revision 4 was, and its paraphrase matched the document; the terms it met
-before their definitions are now defined at first use. The register grade of revision 4
-raised seventeen findings, and this revision answers each, but the answers are unverified
+before their definitions are now defined at first use. The register grade of revision 5
+raised sixteen findings, and this revision answers each, but the answers are unverified
 until the next grade.
 
 ## The decisions
@@ -402,17 +412,18 @@ and Part II's most-important-first rule yields to that on a proposal.
 | # | Decision | Size |
 |---|---|---|
 | 1 | Adopt the Federal Plain Language Guidelines, 2011 revision, as the prose standard, and vendor the PDF | small |
-| 2 | Hold the paragraph numbers as gated rules and the sentence numbers as reported measurements | small |
+| 2 | Hold the paragraph numbers and the 40-word ceiling as gated rules, and the average sentence length as a reported measurement that never gates | small |
 | 3 | Add a Cairn rule that fails a sentence over 25 words on the admin and editors tracks | small for the rule; medium for clearing the 135 admin and 61 editors sentences that exceed it, which must come first under the severity contract |
-| 4 | Adopt the three structure levels, the eight page types, three templates now and five later, and the two new scripts | medium |
+| 4 | Adopt the three structure levels and the eight page types | small |
+| 4a | Write three templates now and five later, and the two new scripts | medium |
 | 5 | Adopt the two figure tests and the two-lane routing rule, and commit the figure source and script | small |
 | 5a | Grow `check:figures` to the seven assertions and close the `check:visuals` hole | medium |
 | 6 | Take the concept figure off the front door and move the ownership map to the architecture page | small |
 | 7 | Approve the corpus entries above, or name the ones to swap | small |
 | 8 | Adopt the review chain and its severity contract | small |
 | 8a | Write `check:provenance` and `check:prose-read` | medium each |
-| 9 | Adopt the reader test for the roughly forty task guides and the front door | your reading, one page at a time |
-| 10 | Approve the Claude setup changes as listed | small, except the scanner change, which is medium |
+| 9 | Adopt the reader test for the roughly forty task guides and the front door | small in tokens; about forty attended sittings, one per page, the largest attended cost in this table |
+| 10 | Approve the Claude setup changes as listed | small; the cost review sizes the scanner change at 285 lines and small |
 | 11 | Approve the `add-a-custom-admin-screen.md` demonstration before any docs pass is planned | small |
 
 ## The receipt
@@ -420,20 +431,22 @@ and Part II's most-important-first rule yields to that on a proposal.
 Measured with `scripts/checks/measure-prose.mjs` over everything above this section, with
 list items included and then excluded, and every hinge form counted, serial lists excluded.
 The corpus column measures the SQLite sample the same way. A paragraph that ends with a colon
-introduces a list and is exempt from the paragraph floor. Vale ran with the Google package
-forced on, since this path is style-exempt, and all three levels are reported.
+introduces a list and is exempt from the paragraph floor, and the script names any short
+paragraph it counts. Vale ran with the Google package forced on, since this path is
+style-exempt, and all three levels are reported. Every cell below is written by the script's
+output, never by hand.
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 237 | 152 | 6 | | count only |
-| Average length | 16.1 words | 17.1 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Sentences | 242 | 155 | 6 | | count only |
+| Average length | 16.2 words | 17 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 38 words | 38 words | 33 words | under 40 | pass |
-| Hinged pairs | 35 percent | 38 percent | 0 percent | at or under the corpus entry plus 15 points | fail; 38 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Hinged pairs | 35 percent | 35 percent | 0 percent | at or under the corpus entry plus 15 points, per step 4 | fail; 35 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 19 percent | 13 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 | | | 0 | pass |
-| Paragraphs under 3 sentences, list lead-ins exempt | 2 | | | 0 | fail; the two are the paragraphs that carry the paragraph table lead-in and the decisions legend |
-| Paragraph lengths, shortest to longest, in sentences | 1 to 7, across 37 paragraphs | | | varied | pass |
-| Vale, Google package forced | 0 errors, 25 warnings and 128 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Paragraphs under 3 sentences, list lead-ins exempt | 0 | | | 0 | pass |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 7, across 37 paragraphs | | | a spread of at least 3 | pass |
+| Vale, Google package forced | 0 errors, 26 warnings and 134 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 0 | | | 0 | pass |
 | Three-item lists the scanner counted | 5 | | | each a real list | each checked by hand and each a list of things that number three |
 
@@ -442,6 +455,7 @@ Provenance: the account of the front-door failure is
 [proposal-review-readers.md](proposal-review-readers.md) and, on the fixed instrument, in
 this document's own "The failure it answers"; the citation corrections are in
 [proposal-review-self.md](proposal-review-self.md) and
-[proposal-review-peers.md](proposal-review-peers.md); the revision 3 grade is
-[proposal-review-rev3.md](proposal-review-rev3.md) and the revision 4 grade is
-[proposal-review-rev4.md](proposal-review-rev4.md).
+[proposal-review-peers.md](proposal-review-peers.md); the grades of revisions 3, 4, and 5 are
+[proposal-review-rev3.md](proposal-review-rev3.md),
+[proposal-review-rev4.md](proposal-review-rev4.md), and
+[proposal-review-rev5.md](proposal-review-rev5.md).

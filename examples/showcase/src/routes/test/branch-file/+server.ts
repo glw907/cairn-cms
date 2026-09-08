@@ -6,9 +6,10 @@
 // last-commit recorder captures only the `.md` entry).
 import { json, error } from '@sveltejs/kit';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
+import type { RequestHandler } from './$types';
 
 /** Return the fake-github double's content for the requested branch and path, or 404. */
-export async function GET({ url }) {
+export const GET: RequestHandler = async ({ url }) => {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { committedFile } = await import('@glw907/cairn-cms-dev');
     const branch = url.searchParams.get('branch') ?? '';
@@ -18,4 +19,4 @@ export async function GET({ url }) {
     return json({ branch, path, content });
   }
   error(404, 'Not found');
-}
+};

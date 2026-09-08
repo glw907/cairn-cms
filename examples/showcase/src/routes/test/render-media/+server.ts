@@ -12,9 +12,10 @@ import { json, error } from '@sveltejs/kit';
 import { normalizeAssets, createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
 import { cairn } from '$theme/cairn.config.js';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
+import type { RequestHandler } from './$types';
 
 /** Render the posted body with the in-flight media record overlaid onto the resolver. */
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { body, record } = (await request.json()) as { body: string; record: MediaEntry };
     // One-row manifest from the posted record, overlaid onto the (empty) committed manifest.
@@ -27,4 +28,4 @@ export async function POST({ request }) {
     return json({ html });
   }
   error(404, 'Not found');
-}
+};

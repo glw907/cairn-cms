@@ -172,6 +172,17 @@ describe('readWranglerConfig', () => {
     expect(toml?.r2Buckets).toEqual([]);
   });
 
+  it('reads workers_dev from toml past a trailing inline comment', async () => {
+    const withComment = await readWranglerConfig(
+      ctx({ 'wrangler.toml': 'name = "site"\nworkers_dev = false  # comment\n' }).readFile
+    );
+    expect(withComment?.workersDev).toBe(false);
+    const trueWithComment = await readWranglerConfig(
+      ctx({ 'wrangler.toml': 'name = "site"\nworkers_dev = true  # comment\n' }).readFile
+    );
+    expect(trueWithComment?.workersDev).toBe(true);
+  });
+
   it('throws a clean error on malformed jsonc, echoing none of the content', async () => {
     const broken = '{ "name": "site", "send_email": [ { SECRET-LOOKING-GARBAGE';
     await expect(readWranglerConfig(ctx({ 'wrangler.jsonc': broken }).readFile)).rejects.toThrow(

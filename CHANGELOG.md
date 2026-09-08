@@ -1510,10 +1510,20 @@
   of the existing magic-link shape and a new identity hand-off shape (`{ identity: { label:
   string } }`), additive on the wire but a type-level change for any site importing the type
   directly (a custom `/admin/login` route built against `LoginData` narrows on the `identity`
-  member before reading a magic-link-only field). Consumers must: nothing to build, deploy, or
+  member before reading a magic-link-only field). The login probe's workers.dev arm now also
+  follows a same-site redirect off `/admin/login` once before classifying, tolerates 308, and
+  carries a request timeout on every fetch it issues. Consumers must: nothing to build, deploy, or
   configure differently; a site that has typed a custom login route against the exported
-  `LoginData` union narrows on `'identity' in data` before reading `csrf` or `error`. See
-  [`docs/extend/sign-in-through-your-organization.md`](docs/extend/sign-in-through-your-organization.md).
+  `LoginData` union narrows on `'identity' in data` before reading `csrf` or `error`. A site
+  reading the `admin.login-probe` check's exit status programmatically must: treat the workers.dev
+  arm's exposure finding as `info`, not `fail`, on a plain magic-link site (no gate of its own)
+  that still leaves `workers_dev` enabled and gets the ordinary unauthenticated redirect to
+  `/admin/login` there; the fix is `workers_dev: false` (and `preview_urls: false`) in the
+  wrangler config, which the info detail now names. A site that treated a 401 or 403 answering
+  `GET /admin/login` as a probe failure must: read it as `info` instead, since a WAF rule or a
+  broken deploy answers the same way as a real gate and the check cannot tell them apart; the info
+  detail now says so and names the deploy-fault possibility directly.
+  See [`docs/extend/sign-in-through-your-organization.md`](docs/extend/sign-in-through-your-organization.md).
 
 ## 0.96.0
 

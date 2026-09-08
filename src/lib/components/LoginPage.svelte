@@ -38,6 +38,10 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
     return 'identity' in d;
   }
 
+  /** The magic-link shape of `data`, or null under identity mode; hoisted so the template reads
+   * one narrowed value instead of repeating `!isIdentity(data) ? data.x : ...` at each site. */
+  const magicLink = $derived(isIdentity(data) ? null : data);
+
   let rootEl = $state<HTMLElement>();
   // Lets a mistyped address go back to the form without a reload, even though the server still
   // reports `sent`. The success copy never reveals whether the email was on the allowlist.
@@ -49,7 +53,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   // A fresh action result supersedes the GET-time error, so a resubmit into a throttle, a send
   // failure, or an unexpected failure never shows the stale link alert alongside the new state.
   // Identity mode carries no `error` field at all, so it reads as no link error.
-  const linkError = $derived(!isIdentity(data) && !form?.status && !form?.error ? data.error : null);
+  const linkError = $derived(magicLink && !form?.status && !form?.error ? magicLink.error : null);
   // The page title is the one landing signal a JS-free arrival gets before reading anything: the
   // redirect that lands here carries its reason only in a query string, and a screen reader
   // announces the title first. Each refusal names itself, the way ConfirmPage swaps its h1.
@@ -87,7 +91,11 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       <!-- The hand-off page: identity mode's own gate is the sign-in surface, so this renders no
            form and mints nothing. data-cairn-identity is the marker the doctor's login probe
            reads (docs/reference/doctor.md) to tell this page apart from the magic-link one. -->
-      <p data-cairn-identity class="text-center type-body">
+      <div class="mb-6 flex justify-center">{@render brand()}</div>
+      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">
+        Sign in through {data.identity.label}
+      </h1>
+      <p data-cairn-identity class="mt-2 text-center type-body">
         This site signs in through {data.identity.label}. <a href="/admin" class="link link-primary">Go to /admin</a>.
       </p>
     {:else if (form?.status === 'sent' || form?.sent) && !dismissed}
@@ -122,7 +130,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       </div>
     {:else}
       <div class="mb-6 flex justify-center">{@render brand()}</div>
-      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {!isIdentity(data) ? data.siteName : ''}</h1>
+      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {magicLink?.siteName ?? ''}</h1>
       <p class="mt-1 mb-5 text-center type-body text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
       <!-- tabindex="-1" on every message panel below, without exception, so an assistive
            technology reaching this page can move to whichever message it carries rather than
@@ -153,7 +161,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         </div>
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
-        <CsrfField token={!isIdentity(data) ? data.csrf : ''} />
+        <CsrfField token={magicLink?.csrf ?? ''} />
         <label class="flex flex-col gap-label">
           <span class="type-body font-medium">Email</span>
           <input

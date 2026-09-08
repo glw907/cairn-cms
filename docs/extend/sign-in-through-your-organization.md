@@ -264,6 +264,21 @@ carries this same split as its log level (see
 [log events](../reference/log-events.md), `guard.rejected`); `auth.identity.unknown` is a separate
 event for a proven identity the roster doesn't recognize (see the migration step above).
 
+## Wire it into `hooks.server.ts`
+
+Hand the verifier to `createAuthGuard`'s `identity` option. It composes with `sequence` the same
+way today's zero-config guard does; nothing else about wiring the guard changes.
+
+```ts
+// src/hooks.server.ts
+import { sequence } from '@sveltejs/kit/hooks';
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { accessIdentity } from './access-identity.js';
+import { theme } from './theme-handle.js';
+
+export const handle = sequence(theme, createAuthGuard({ identity: accessIdentity }));
+```
+
 ## The roster's role, and logging out
 
 The gate answers who; the roster still answers whether that person may edit, and at what
@@ -275,8 +290,11 @@ normalized email; add the row and the very next request succeeds, no restart req
 cairn mints no session under `identity`, so its own logout has nothing to end: it clears its
 cookies and redirects to `logoutUrl`, the address `IdentityResolver` declares, which triggers
 Access's own [logout endpoint](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/),
-`/cdn-cgi/access/logout`. Ending the gate's session is the Access application's own job, and it is
-not instant in either direction. That page states the range directly for this user-initiated
+`/cdn-cgi/access/logout`. Reaching the logout link at all requires the guard to resolve an
+identity first, so a stale tab opened after the gate's own session already ended shows the
+identity-unresolved page instead: the guard refuses every guarded page under an ended session the
+same way, and the "log out" affordance lives on one of them. Ending the gate's session is the
+Access application's own job, and it is not instant in either direction. That page states the range directly for this user-initiated
 path: a logout clears the browser's authorization cookie immediately, and Access stops accepting
 previously issued tokens within 20 to 30 seconds, so "about thirty seconds" is the top of that
 window. An administrator manually revoking a user's Access token is a separate path whose lockout

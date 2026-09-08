@@ -171,8 +171,11 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
   // The published snapshot below is what every admin path reads; identity.logoutUrl is never
   // re-read per request.
   if (identity) validateLogoutUrl(identity.logoutUrl);
+  // Frozen so a downstream handler cannot mutate the published snapshot: a plain write would
+  // otherwise silently poison it for every later request the same isolate serves, since the
+  // guard closes over one instance for its whole lifetime rather than rebuilding it per request.
   const identitySnapshot = identity
-    ? { label: identity.label ?? "your organization's sign-in", logoutUrl: identity.logoutUrl }
+    ? Object.freeze({ label: identity.label ?? "your organization's sign-in", logoutUrl: identity.logoutUrl })
     : undefined;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
@@ -284,13 +287,13 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     if (!isPublicAdminPath(pathname) && identity) {
       // Every identity refusal serves the same branded page under the same log event; only the
       // level, the detail word, and (on a thrown resolve) the error text differ.
-      function refuseIdentity(level: 'warn' | 'error', detail: string, error?: string): Response {
+      function refuseIdentity(level: 'warn' | 'error', detail: string, errorMessage?: string): Response {
         log[level]('guard.rejected', {
           reason: 'identity',
           path: pathname,
           conditionId: REASON_CONDITION.identity,
           detail,
-          ...(error === undefined ? {} : { error }),
+          ...(errorMessage === undefined ? {} : { error: errorMessage }),
         });
         return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
       }
@@ -307,8 +310,12 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
         return refuseIdentity('error', 'error', message);
       }
       if (!resolved.ok) {
-        const level = IDENTITY_OPERATOR_FAULT_REASONS.has(resolved.reason) ? 'error' : 'warn';
-        return refuseIdentity(level, resolved.reason);
+        // Coerced rather than trusted verbatim: IdentityRefusal declares reason a string, but a
+        // resolver outside the type system (plain JS, a mistyped ambient) can hand back null or
+        // undefined, which would otherwise reach the log record and the Set lookup untyped.
+        const reason = String(resolved.reason ?? 'invalid');
+        const level = IDENTITY_OPERATOR_FAULT_REASONS.has(reason) ? 'error' : 'warn';
+        return refuseIdentity(level, reason);
       }
       if (typeof resolved.email !== 'string' || resolved.email.trim() === '') {
         return refuseIdentity('warn', 'invalid');
@@ -322,7 +329,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
         // Capped at 320 characters, the same bound auth.link.requested applies, since this email
         // reaches both the log record and the rendered page.
         const rendered = email.slice(0, 320);
-        log.warn('auth.identity.unknown', { email: rendered });
+        log.warn('auth.identity.unknown', { email: rendered, path: pathname });
         return renderConditionResponse(IDENTITY_UNKNOWN_CONDITION, { email: rendered, label: identitySnapshot?.label });
       }
       if (!Object.hasOwn(vocabulary, row.role)) {

@@ -23,12 +23,15 @@ export interface WranglerFacts {
   r2Buckets: string[];
   /**
    * The wrangler config's top-level `name`, the Worker script name; the login probe's
-   *  workers.dev arm builds the account's workers.dev hostname from it.
+   *  workers.dev arm builds the account's workers.dev hostname from it. Only the top-level value
+   *  is read, never a per-`env` override; a site whose deployed environment overrides `name`
+   *  reads as though it declared none.
    */
   name?: string;
   /**
-   * `workers_dev`, explicit `false` disabling the account's workers.dev route. Undefined or
-   *  `true` leaves the route enabled, matching wrangler's own default.
+   * The top-level `workers_dev`, explicit `false` disabling the account's workers.dev route.
+   *  Undefined or `true` leaves the route enabled, matching wrangler's own default. Only the
+   *  top-level value is read, never a per-`env` override, the same limitation as {@link name}.
    */
   workersDev?: boolean;
 }
@@ -265,8 +268,12 @@ function factsFromToml(text: string): WranglerFacts {
     } else if (section === '' && key === 'name' && str !== undefined) {
       facts.name = str;
     } else if (section === '' && key === 'workers_dev') {
+      // Matches the observability boolean's own read above: startsWith tolerates a trailing
+      // inline comment (`workers_dev = false  # comment`), which an exact-equality trim would
+      // reject as neither "true" nor "false" and silently leave workersDev undefined.
       const trimmed = value.trim();
-      if (trimmed === 'true' || trimmed === 'false') facts.workersDev = trimmed === 'true';
+      if (trimmed.startsWith('true')) facts.workersDev = true;
+      else if (trimmed.startsWith('false')) facts.workersDev = false;
     }
   }
   flushD1();

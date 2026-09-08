@@ -352,15 +352,40 @@ describe('admin.login-probe', () => {
   it('fails when the workers.dev arm gets a bare 200 from /admin', async () => {
     const result = await runWorkersDevArm(new Response('exposed', { status: 200 }));
     expect(result.status).toBe('fail');
-    expect(result.detail).toContain('Access application does not cover');
+    expect(result.detail).toContain('gate in front of the primary hostname does not cover');
   });
 
-  it('fails when the workers.dev arm gets a 303 to /admin/login (magic-link mode, no gate)', async () => {
+  it('reports info, not fail, on a 303 to /admin/login when the primary hostname carries no gate of its own (magic-link mode)', async () => {
     const result = await runWorkersDevArm(
       new Response(null, { status: 303, headers: { location: '/admin/login' } })
     );
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('workers_dev: false');
+    expect(result.detail).toContain('preview_urls: false');
+  });
+
+  it('fails the same 303 to /admin/login when the primary arm saw gate evidence', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response('forbidden', { status: 401 });
+      if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
+        return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
+      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') {
+        return new Response(null, { status: 303, headers: { location: '/admin/login' } });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
     expect(result.status).toBe('fail');
-    expect(result.detail).toContain('Access application does not cover');
+    expect(result.detail).toContain('gate in front of the primary hostname does not cover');
   });
 
   it('fails when the workers.dev arm gets a 403 branded cairn admin page (identity mode, no gate)', async () => {
@@ -371,7 +396,7 @@ describe('admin.login-probe', () => {
       )
     );
     expect(result.status).toBe('fail');
-    expect(result.detail).toContain('Access application does not cover');
+    expect(result.detail).toContain('gate in front of the primary hostname does not cover');
   });
 
   it('does not fail the workers.dev arm when /admin redirects to a Cloudflare Access host', async () => {
@@ -423,7 +448,7 @@ describe('admin.login-probe', () => {
       })
     );
     expect(result.status).toBe('fail');
-    expect(result.detail).toContain('Access application does not cover');
+    expect(result.detail).toContain('gate in front of the primary hostname does not cover');
     expect(result.detail).toContain('500');
   });
 
@@ -465,6 +490,158 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('sent');
     expect(result.detail).toContain('did not run');
     expect(result.detail).toContain('CLOUDFLARE_API_TOKEN');
+  });
+
+  it('follows a same-origin redirect off /admin/login exactly once and classifies the resolved response', async () => {
+    const { fetch, calls } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, { status: 302, headers: { location: '/sso/start' } });
+      }
+      if (url === `${ORIGIN}/sso/start`) return loginResponse();
+      if (url === `${ORIGIN}/admin/login?/request`) return actionJson('sent');
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('pass');
+    expect(calls.map((c) => c.url)).toEqual([
+      `${ORIGIN}/admin/login`,
+      `${ORIGIN}/sso/start`,
+      `${ORIGIN}/admin/login?/request`,
+    ]);
+  });
+
+  it('follows a redirect to the same registrable domain on a different subdomain', async () => {
+    const { fetch, calls } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: 'https://sso.site.example/start' },
+        });
+      }
+      if (url === 'https://sso.site.example/start') return loginResponse();
+      if (url === `${ORIGIN}/admin/login?/request`) return actionJson('sent');
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('pass');
+    expect(calls[1].url).toBe('https://sso.site.example/start');
+  });
+
+  it('reports info naming the Location, never following, when a non-Access 30x redirects off-site', async () => {
+    const { fetch, calls } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: 'https://elsewhere.example/login' },
+        });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('elsewhere.example/login');
+    expect(calls).toHaveLength(1);
+  });
+
+  it('reports info naming a same-origin redirect with no Location header', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response(null, { status: 302 });
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('no Location header');
+  });
+
+  it('sends a timeout signal on the primary GET, the POST, and the workers.dev GET and subdomain lookup', async () => {
+    const { fetch, calls } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return loginResponse();
+      if (url === `${ORIGIN}/admin/login?/request`) return actionJson('sent');
+      if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
+        return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
+      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') {
+        return new Response(
+          null,
+          { status: 302, headers: { location: 'https://myteam.cloudflareaccess.com/x' } }
+        );
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(calls).toHaveLength(4);
+    for (const call of calls) {
+      expect(call.init?.signal).toBeInstanceOf(AbortSignal);
+    }
+  });
+
+  it("adds a deploy-fault hint to the 401/403 info detail, since a site may not sit behind a gate at all", async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response('forbidden', { status: 401 });
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('deploy fault');
+  });
+
+  it('skips the workers.dev arm on a local probe origin, never fetching the account subdomain', async () => {
+    const { fetch, calls } = probeFetch(
+      loginResponse({ cookie: 'cairn_csrf=cookie-token; Path=/; HttpOnly; SameSite=Lax' }),
+      actionJson('sent')
+    );
+    const result = await liveProbeCheck('http://localhost:8788').run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(calls.some((c) => c.url.includes('workers.dev'))).toBe(false);
+    expect(calls.some((c) => c.url.includes('/workers/subdomain'))).toBe(false);
+  });
+
+  it('skips the workers.dev arm on an invalid wrangler config name, noting why in a non-fail primary detail', async () => {
+    const { fetch } = probeFetch(loginResponse(), actionJson('sent'));
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "Not_Valid!", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('did not run');
+    expect(result.detail).toContain('not a valid workers.dev subdomain label');
+  });
+
+  it('appends the skip note to an info primary result, not only a pass', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response('forbidden', { status: 401 });
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('info');
+    expect(result.detail).toContain('did not run');
   });
 
   it('skips the workers.dev arm when workers_dev is false, never fetching the account subdomain', async () => {

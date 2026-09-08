@@ -76,6 +76,18 @@ describe('createAuthGuard: identity option, construction-time validation', () =>
   }
 });
 
+describe('createAuthGuard: identity refusal reason coercion', () => {
+  it('coerces a malformed (non-string) resolver reason to a string rather than throwing or crashing the Set lookup', async () => {
+    // A resolver outside the type system (plain JS, a mistyped ambient) can hand back a reason
+    // that is not a string at all; the cast simulates exactly that runtime shape.
+    const resolve = (async () => ({ ok: false, reason: null })) as unknown as IdentityResolver['resolve'];
+    const handle = asHandle(createAuthGuard({ identity: { resolve, logoutUrl: '/goodbye' } }));
+    const ev = event('/admin');
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('createAuthGuard: locals.cairnIdentity', () => {
   it('sets no locals.cairnIdentity when no identity option is configured', async () => {
     const handle = asHandle(createAuthGuard());
@@ -93,5 +105,19 @@ describe('createAuthGuard: locals.cairnIdentity', () => {
     await handle({ event: ev, resolve: async () => OK });
     expect(ev.locals.cairnIdentity).toEqual({ label: 'Acme SSO', logoutUrl: '/goodbye' });
     expect(resolve).not.toHaveBeenCalled();
+  });
+
+  it('publishes a frozen locals.cairnIdentity, so a downstream write throws rather than poisoning the shared snapshot', async () => {
+    const handle = asHandle(
+      createAuthGuard({
+        identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl: '/goodbye', label: 'Acme SSO' },
+      }),
+    );
+    const ev = event('/admin/login');
+    await handle({ event: ev, resolve: async () => OK });
+    expect(Object.isFrozen(ev.locals.cairnIdentity)).toBe(true);
+    expect(() => {
+      ev.locals.cairnIdentity!.label = 'tampered';
+    }).toThrow();
   });
 });

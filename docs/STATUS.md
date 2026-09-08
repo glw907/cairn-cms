@@ -19,40 +19,34 @@ initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**Resume chassis-A** (audit-remediation slice 8, structural) from Task 3. The pass is
-EXECUTING on branch `chassis-a` in `.claude/worktrees/chassis-a` (showcase from-scratch
-installed and repointed 2026-09-05). Tasks 1 and 2 are accepted and committed (`e2aceffe`
-the mechanical Prettier reformat, `8fecf730` the scaffold format check). The first run
-(workflow `wf_6fd88891-0a4`, one chain, 2026-09-05) halted at Task 2 on an ESCALATE that was
-about Task 1, not Task 2: the reformat reflowed the one-line `backend: githubApp({...})`
-literal in `examples/showcase/src/theme/cairn.config.ts` into six lines, and
-`packages/create-cairn-site/src/github/finalize.mjs:20-21` pins that exact one-line string
-(`TEMPLATE_GITHUB_APP_LITERAL`), so every real scaffold run now fails at finalize and the
-CLI's rot gate (`npm --prefix packages/create-cairn-site test`, 805/806) is red. Neither the
-plan's per-task gate nor the dispatched gate ran that suite, which is why it survived two
-task gates.
+**Chassis-A (audit-remediation slice 8, structural) is EXECUTING**: Tasks 3 to 12 run as
+workflow `wf_855c925b-ae2` (session 9215acac, launched 2026-09-07 about 16:00 AKDT, one chain,
+branch `chassis-a` in `.claude/worktrees/chassis-a`). Tasks 1 and 2 are accepted (`e2aceffe`,
+`8fecf730`) and the Task 1 remedy landed as `de93536c` (a `// prettier-ignore` line pinning the
+one-line `githubApp({...})` literal that `packages/create-cairn-site/src/github/finalize.mjs`
+matches byte-for-byte; diff-reviewer accepted; CLI suite 806/806). Every remaining task's gate
+carries `npm --prefix packages/create-cairn-site run prepack && npm --prefix
+packages/create-cairn-site test`; the args file shape is in the plan's Execution section.
 
-**Conductor ruling (2026-09-07):** land the remedy as a follow-on fix commit on the branch
-(a `// prettier-ignore` line above the `backend:` entry, the call collapsed back to the exact
-string finalize.mjs pins, `format`, `emit:template`, then `check:template` green and the CLI
-suite 806/806), never a rewrite of `e2aceffe`. Add `npm --prefix packages/create-cairn-site
-test` to the per-task gate for every remaining task, and record the omission in the Task 12
-harvest. Then run Tasks 3 to 12 as a FRESH `pass-execute-chains` workflow (a resume of the
-old run ID only works in the session that launched it); the args file shape is in the
-plan's Execution section and the task criteria in the plan itself.
-
+When the workflow reports: read the per-task records, decide any needs-decision or escalate,
+then the full pass-end ritual (`cairn-pass`: simplifier, the six CI-only gates by name plus
+`check:idioms` and `check:cm-internals`, the reviewer fan-out the plan names, from-scratch
+showcase install and e2e, a fresh scaffold built and unit-tested, whole-log friction triage,
+STATUS/HISTORY/ROADMAP, post-mortem, both budgets scored), push, PR, merge on green CI.
 Approval and git authorization stand as recorded (Geoff, 2026-09-04: push, PR, merge on green
-CI). Before dispatch, re-arm the FULL guard set (`~/.claude/docs/unattended-work-guards.md`):
-both sleep inhibitors, the battery watchdog, and the runaway guard on the new workflow's
-transcript dir; the 2026-09-05 set died with its session. Two concurrent full gates is the
-machine's ceiling. Never let two writers share one worktree. On any blocker, stop,
-WIP-commit, write STATUS with the resume state.
+CI). Guards armed 2026-09-07 with the session: both sleep inhibitors and the battery watchdog
+to 09:00 on 2026-09-08, the runaway guard on the workflow's transcript dir. A resumed cold
+session re-arms the FULL set (`~/.claude/docs/unattended-work-guards.md`) and, if the
+workflow is dead, relaunches Tasks not yet accepted as a FRESH `pass-execute-chains` run
+(`resumeFromRunId` only works in the launching session); check `git log` on the branch for
+what landed. Two concurrent full gates is the machine's ceiling. Never let two writers share
+one worktree. On any blocker, stop, WIP-commit, write STATUS with the resume state.
 
 Resume prompt: "In ~/Projects/cairn-cms, invoke cairn-pass and resume the chassis-A pass
-(docs/superpowers/plans/2026-09-04-chassis-a-pass.md) per STATUS: apply the Task 1
-prettier-ignore fix commit in .claude/worktrees/chassis-a, then run Tasks 3 to 12 as a fresh
-pass-execute-chains workflow with the CLI test suite added to the gate, then the full
-pass-end ritual, push, PR, merge on green CI. Then author and execute chassis-B."
+(docs/superpowers/plans/2026-09-04-chassis-a-pass.md) per STATUS: check which of Tasks 3 to 12
+landed on branch chassis-a, relaunch the rest as a fresh pass-execute-chains workflow with the
+CLI test suite in the gate, then the full pass-end ritual, push, PR, merge on green CI. Then
+author and execute chassis-B."
 
 **After chassis-A: chassis-B, plan authorship AND execution granted (Geoff, 2026-09-05).**
 Author its plan from the spec's Chassis-B section with the three-lens adversarial plan review

@@ -114,6 +114,8 @@ export const ALLOWLIST = new Set([
   // leading-dot/slash trim, so the literal `main` value from a Cloudflare `wrangler.jsonc`
   // (`.svelte-kit/cloudflare/_worker.js`) is checked here as the token the trim actually produces.
   'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/build-a-site-by-hand.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
+  'file-path:src/lib/access-identity.ts', // docs/extend/sign-in-through-your-organization.md's illustrative Access-verifier module, by convention
+  'file-path:admin/__data.json', // docs/extend/sign-in-through-your-organization.md, SvelteKit's own data-only fetch path, never a file on disk
 
   // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
   // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits

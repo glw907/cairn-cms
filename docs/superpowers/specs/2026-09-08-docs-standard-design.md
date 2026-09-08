@@ -19,7 +19,8 @@ resolves to the section of the proposal with the same heading.
 
 **Page brief.** Type: design spec, internal. Reader: the implementer who writes the pass plans from
 this document, and the owner checking it against the proposal. This page needs the four parts of
-the standard stated as requirements, with the eleven page types and their section orders. It also
+the standard stated as requirements, with the page types (eleven now, twelve after 3a) and their
+section orders. It also
 needs the adopted decisions with their sizes, an implementation order in pass-sized units, the
 acceptance criteria for each unit, the risks, the decisions the owner still owes, and the items the
 owner still owes. Exemplars: the Go design document for monotonic time
@@ -29,8 +30,8 @@ and KEP-2400
 The section order below is the Go document's spine, which runs abstract, background, proposal,
 rationale, compatibility, implementation. Deviations, each with its reason:
 
-- A design spec is not one of the eleven page types the standard names, so no template governs it
-  and the exemplar rule applies instead.
+- A design spec is not one of the page types the standard names (eleven now, twelve after 3a), so no
+  template governs it and the exemplar rule applies instead.
 - Design details, goals and non-goals, risks, and open items come from the KEP spine, because the Go
   document has no section for any of the four and the owner's brief requires all four.
 - Rationale is present but short. It carries only the reasoning this document adds beyond the
@@ -40,9 +41,11 @@ rationale, compatibility, implementation. Deviations, each with its reason:
   Compatibility because Compatibility is written against the adopted set. Risks sits after
   Implementation because most risks are unit risks.
 - The registry splits the proposal's combined "condition entry and symptom row" bullet into two
-  types, which reaches the eleven types the proposal already claims.
+  types, which reaches the eleven types (twelve after 3a) the proposal already claims.
 - This page names its own type and carries its brief inline. An internal spec has no separate brief
   file and no reader it could mislead, and the no-self-naming rule binds published pages.
+- The page carries one 40-word sentence and, on the all-sentences measure, an average sentence length
+  under the 15-word floor. Both are reported in the receipt and neither gates.
 
 ## Abstract
 
@@ -80,8 +83,8 @@ The structure rules and the outline review answer the first.
 
 The rhythm problem reaches past that one page. On the instrument the proposal's receipt uses, the
 extend track builds 54 percent of its sentences as hinged pairs and the reference track builds 58
-percent. Three human pages measure 41 percent (the Go design document), 18 percent (KEP-2400), and
-zero (the SQLite scope excerpt). Sample sizes are small enough that the intervals overlap, so the
+percent. Three human pages measure 41 percent (the Go design document), 20 percent, prose-only
+(KEP-2400), and zero (the SQLite scope excerpt). Sample sizes are small enough that the intervals overlap, so the
 proposal treats the gap as a direction rather than a finding. The rejected draft's own figure was
 never recorded, so no multiplier can be stated. The sentence-length gap is firmer. The reference
 track averages 22 words with one sentence at 151 words, where PostgreSQL, MDN, and the Rust
@@ -116,7 +119,8 @@ brief with a reason, in the form the register's "when a Vale finding is wrong" r
 
 The work divides into five units across two pass plans. Plan one builds the toolset and runs the
 harvest; plan two rewrites the pages. The harvest must finish before a brief is written, because a
-rebuild's drafter never opens the page it replaces and the ledger stands in its place. The corpus
+rebuild's drafter never opens the page it replaces and the ledger (the fact ledger, defined under
+unit 1) stands in its place. The corpus
 must exist before a draft, because a page type with no approved exemplar has no draft and a review
 that cites no corpus entry does not count. The templates and the scripts hold the structure rules
 the work is graded against. The demonstration page is the evidence the owner reads before the
@@ -214,9 +218,11 @@ exemplar of its genre, and the **corpus**, the set of human-written excerpts def
 carry an excerpt of it. A page whose type has no approved exemplar must not be written. The page
 brief must name the exemplar the page was drafted against.
 
-A page type is a named shape. Eleven are named, ten published and one internal. Each is listed with
-the reader's job it serves and its exemplars, because a page whose job nobody can state in one line
-is two pages. This list is the registry a page brief cites.
+A page type is a named shape. Eleven are named now, ten published and one internal; twelve after unit
+3a lands, when the front-door type splits into "front door, evaluator" (`docs/why-cairn.md`, the root
+`README.md`) and "front door, track index" (`docs/README.md` and the four track READMEs). Each is
+listed with the reader's job it serves and its exemplars, because a page whose job nobody can state in
+one line is two pages. This list is the registry a page brief cites.
 
 | Page type | The reader's job | Exemplars |
 |---|---|---|
@@ -491,6 +497,10 @@ export and config names, and the product claims listed in the ledger's `owner` t
 at least one cited entry. Everything the extractor cannot reach is left to the fresh reviewer at
 step 7, who reads the brief beside the page. Ids never appear in the published markdown.
 
+`check:provenance` was scoped to the front door alone when the proposal first sized it; owner
+direction (b) widens it to every rebuilt page, since the harvest it depends on now runs per track
+rather than for one page.
+
 The rejected front-door draft would fail this check. Its editors-emailing-the-owner story resolves
 to no line in
 [`front-door-author-brief.md`](../../internal/record/2026-09-08-polish-inputs/front-door-author-brief.md),
@@ -501,7 +511,7 @@ converts a silent omission into either a red build or a written falsehood a pers
 
 ### Gates
 
-Four new scripts carry the standard, alongside the gates the repository already runs:
+Five new scripts carry the standard, alongside the gates the repository already runs:
 
 | Script | What it does | State |
 |---|---|---|
@@ -509,6 +519,7 @@ Four new scripts carry the standard, alongside the gates the repository already 
 | `check:headings` | Holds the seven heading rules, with rules 5 and 6 against the verb lexicon | new |
 | `check:provenance` | Fails an unclassified sentence, an unresolved ledger id, or a machine-extractable fact no cited entry carries | new |
 | `check:prose-read` | Fails a published page whose receipt is missing or stale | new |
+| `check:ledger` | Validates the ledger files: unique ids, and every entry carries an origin and a proving source or sits under `unverified` | new |
 
 No `check:cadence` script exists. Cadence is the tell scanner's job under decision 10, and the
 scanner is the workstation's instrument rather than cairn's. CI invokes it in report mode over
@@ -581,7 +592,7 @@ Applying the charter's premise check divides this standard between two owners. A
 the second half as cairn work. The split runs like this:
 
 - **Cairn's, and gradeable by this repository's gate.** The corpus entries and their manifest, the
-  page-type registry, the templates, the brief files, and the fact ledgers. The four new scripts,
+  page-type registry, the templates, the brief files, and the fact ledgers. The five new scripts,
   the Cairn Vale rules with their fixtures, markdownlint, the link-rot routine, and every published
   page.
 - **The workstation's, and an owner action rather than a cairn task.** The measurement instrument as
@@ -609,7 +620,7 @@ means more.
 | # | Decision | Size | Unit |
 |---|---|---|---|
 | 1 | Adopt the Federal Plain Language Guidelines, 2011 revision, as the prose standard, and vendor the PDF | small | 3b |
-| 2 | Hold the paragraph numbers and the 40-word ceiling as gated rules, and the average sentence length as a reported measurement that never gates | small | 3b |
+| 2 | Hold the paragraph numbers and the 40-word ceiling as gated rules, and the average sentence length as a reported measurement that never gates; ceiling level pending owner decision 1 | small | 3b |
 | 3 | Add a Cairn rule that fails a sentence over 25 words on the admin and editors tracks | small for the rule; the clearing work depends on owner decision 1 | 3b, then 5 |
 | 4 | Adopt the three structure levels, the page types with their section orders, and the outline-first review | small | 3a |
 | 4a | Write the templates and the two new structure scripts | medium | 3a |
@@ -618,7 +629,7 @@ means more.
 | 6 | Take the concept figure off `docs/why-cairn.md` and move the ownership map to `docs/extend/architecture.md` | small | 5 |
 | 7 | Approve the corpus entries, or name the ones to swap | small | 2, owner action |
 | 8 | Adopt the review chain and its severity contract | small | 3b |
-| 8a | Write `check:provenance` and `check:prose-read` | medium each | 3b |
+| 8a | Write `check:provenance` and `check:prose-read` | check:prose-read medium; check:provenance medium for the script, plus the per-page cost carried in unit 5 | 3b |
 | 9 | Adopt the reader test for the front door and the task guides | small in tokens; the sitting count is owner decision 4 | 5, owner action |
 | 10 | Approve the Claude setup changes as listed | small; the scanner change is about 285 lines | 3c |
 | 11 | Approve the `add-a-custom-admin-screen.md` demonstration before the rewrite is planned | small | 4 |
@@ -695,13 +706,13 @@ written, and decisions 5, 5a, and 6 re-verified against the merged state.
 | 3c, Claude setup | 0.3 to 0.6M | 1 to 2 |
 | 4, demonstration page | 0.3 to 0.5M | 1 to 2 |
 | 5, the rewrite | 8 to 12M | 40 to 75 |
-| **Total** | **13.5 to 22.5M** | **47 to 90** |
+| **Total** | **13.4 to 22.7M** | **47 to 90** |
 
 These figures roughly double the six-to-nine-million estimate the proposal's cost review gave, for
 two reasons. That estimate sized the rewrite alone and counted nothing ahead of it, and the four
 units ahead add five to ten million. And it counted only the reader-test sittings, where the
 unverified list, the corpus approvals, the `CLAUDE.md` taste calls, and the demonstration read add
-seven to seventeen more. Each unit's owner decisions batch into one scheduled sitting at that unit's
+seven to fifteen more. Each unit's owner decisions batch into one scheduled sitting at that unit's
 checkpoint.
 
 ### Unit 1: the fact harvest
@@ -793,7 +804,8 @@ Acceptance criteria:
 
 ### Unit 3a: the structure gates
 
-The brief format and its parser, the eleven templates, `check:anatomy`, `check:headings` with its
+The brief format and its parser, the page templates (eleven now, twelve after 3a), `check:anatomy`,
+`check:headings` with its
 verb lexicon, markdownlint, and the CI wiring. Roughly six tasks. This is what unit 4 needs to prove
 the shape.
 
@@ -809,6 +821,10 @@ Acceptance criteria:
   verb lexicon at warning level, and a fixture per rule.
 - Markdownlint runs with its stock rules and `check:headings` reimplements none of them.
 - Both gates are scoped to published paths and wired into `package.json` and CI.
+- This unit splits the front-door type into "front door, evaluator" (`docs/why-cairn.md`, the root
+  `README.md`) and "front door, track index" (`docs/README.md` and the four track READMEs), bringing
+  the registry to twelve types and twelve templates. `check:anatomy` is extended to reach the root
+  `README.md`, which sits outside `docs/`.
 
 ### Unit 3b: the receipt and provenance gates
 
@@ -834,8 +850,8 @@ Acceptance criteria:
 
 ### Unit 3c: the workstation setup
 
-The seven Claude setup pieces plus the tellgrader change, all outside this repository. Run as a
-dotfiles pass in the main loop, not through cairn's implementer chain, and not graded by cairn's
+The seven Claude setup pieces, one of which is the tellgrader change, all outside this repository. Run
+as a dotfiles pass in the main loop, not through cairn's implementer chain, and not graded by cairn's
 gate. Roughly three to four tasks.
 
 Acceptance criteria:
@@ -900,7 +916,8 @@ Acceptance criteria:
 
 - Every published page has a track, a page type, a brief file, and a receipt.
 - Every published page outside `docs/reference/` was drafted fresh against its exemplar under the
-  quarantine, its dispatch id recorded in the receipt, and its brief cites the ledger entries by id.
+  quarantine, one section per read, its dispatch id recorded in the receipt, and its brief cites the
+  ledger entries by id.
 - Every page under `docs/reference/` was edited in place, and the exception is recorded in each
   brief.
 - The coverage diff has run on every rebuilt page and every reported miss is resolved or recorded.
@@ -924,14 +941,15 @@ Acceptance criteria:
 Plan two cannot be authored until all nine exist at fixed paths. These are plan one's closing
 criteria:
 
-1. The five ledgers at `docs/internal/docs-rebuild/<track>-facts.md`, with the id format, the four
+1. The five ledgers at `docs/internal/record/docs-rebuild/<track>-facts.md`, with the id format, the four
    verdict tiers, the per-page anchor maps, the keep classes, and the verbatim gated blocks.
 2. The page-type assignment for all 75 published pages.
 3. `docs/internal/corpus/` and its manifest, approval column filled, every registry type covered by
    an approved or reference-only entry.
-4. `docs/internal/templates/`, eleven templates, each heading marked required or optional.
+4. `docs/internal/templates/`, the page templates (eleven now, twelve after 3a), each heading marked
+   required or optional.
 5. The brief schema, its parser, and one worked brief.
-6. The four scripts plus markdownlint, wired into `package.json` and CI, each with its path scope and
+6. The five scripts plus markdownlint, wired into `package.json` and CI, each with its path scope and
    the named unit that removes the scope exclusion.
 7. The Vale rules with their must-fire fixtures, verified on the CI-pinned binary.
 8. The drafting-dispatch prompt fragment carrying the quarantine and the readable-file list.
@@ -984,6 +1002,9 @@ is the conductor's, and none is taken. No unit blocks on them, but three change 
 | 6 | Rendered docs preview per branch | Add one, or defer | Benchmark: Kubernetes reviews on Netlify previews and its checklist names the preview explicitly; Cloudflare builds one per commit; no step in cairn's chain reads a rendered page, which matters most for the figure rules. Against: cairn.pub renders from the installed tarball, so the docs already have a real renderer | Defer; revisit if the figure grading at unit 4 proves it needs one |
 | 7 | Home for the new scanner measures | The workstation's tellgrader, or cairn's own scripts | Charter: the tell scanner is shared writing infrastructure every family repo would want on identical terms, and cairn's own bands must not reach site content, which `CLAUDE.md` holds in its personal voice. Plannability: a poplar change is graded by `make check`, which cairn's chain cannot see | tellgrader, behind a docs-register profile that is off outside docs paths |
 
+Decided 2026-09-08: the owner accepted all seven recommendations as written. Plan one is
+drafted on that basis, and decision 1 settles decision 2's ceiling clause at warning.
+
 ## Open items
 
 Four items are owed by the owner, and no unit that depends on one may start before it arrives:
@@ -1025,7 +1046,7 @@ disagreement. Every cell below comes from script output.
 | Measure | All sentences | Prose only | Go exemplar, prose only | KEP exemplar, prose only | Target | Status |
 |---|---|---|---|---|---|---|
 | Sentences | 612 | 337 | 17 | 10 | | count only |
-| Average length | 14.5 words | 15.1 words | 22.1 words | 21.3 words | 15 to 20 | pass on prose, at the floor |
+| Average length | 14.5 words | 15.1 words | 22.1 words | 21.3 words | 15 to 20 | reported, at the floor |
 | Longest sentence | 40 words | 40 words | 39 words | 44 words | under 40 | at the ceiling, not under it. The KEP exemplar exceeds it |
 | Hinged pairs | 30 percent | 35 percent | 41 percent | 20 percent | reported, never gated | 6 points under the Go exemplar and 15 over the KEP. Step 5 reports it and nothing gates on it |
 | Sentences under 8 words | 20 percent | 19 percent | 12 percent | 20 percent | reported | reported |

@@ -3942,7 +3942,7 @@ scan is why the showcase's compiled `theme.css` started generating DaisyUI's `.c
 `.card-title` component rules once the literals landed there: DaisyUI's `card` component reads any
 matching class name it finds in scanned source, not only markup a `.card`-typed element wraps. The
 showcase keeps `card` enabled (the members pages render a real `.card`), so the fix is not to
-disable it; it is to rename the alert's two inner classes to `cairn-alert-body`/`cairn-alert-title`,
+disable it; it is to rename the alert's two inner classes to `cairn-alert-body`/`cairn-head-title`,
 names DaisyUI's component set does not read, closing the collision without touching `card`'s
 availability to the rest of the template. The re-homing itself stays correct per the three rows
 above; this addendum records the one thing the re-homing changed that none of the three rulings'

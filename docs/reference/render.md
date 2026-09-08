@@ -34,15 +34,15 @@ built-in directives.
 - `cairn-glyph` (`renderGlyph`) is the inline SVG glyph itself.
 - `cairn-grid` (`markFirstList`) marks the first `<ul>` inside a component's stamped children.
   `markFirstList` has no public export, but the class it stamps is still a real, emitted name.
-- `cairn-alert-body` and `cairn-alert-title` are the showcase alert directive's own inner classes
-  (`examples/showcase/src/theme/markdown-components.ts` and `render.ts`'s `headRow`), named apart
-  from DaisyUI's `.card-body`/`.card-title` so a site that keeps DaisyUI's `card` component active
-  for other markup never has it restyle the alert. Not every site names these two the same; they
-  are the shape a site's own inlined directive typically needs, not an engine-emitted contract.
+
+A site's own component code stamps its own additional classes on top of these. The example
+adapter's alert directive's inner classes (`cairn-alert-body`, `cairn-head-title`) are one
+instance. They are chassis-owned, not engine-emitted, so they are documented in the chassis's own
+README rather than here.
 
 **Registration.** `cairn-*` is a shared namespace. The admin sheet also owns roughly sixty of its
 own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`, and similar), documented in
 [the admin design system](../internal/admin-design-system.md). This page is the emitted-markup
 side's registry; a new name on either side should check the other's list before landing, so the
 two vocabularies never collide. `cairn-icon-label`, an admin toolkit label class, is an
-admin-sheet neighbor, not one of the four names above; no render helper emits it.
+admin-sheet neighbor, not one of the names above; no render helper emits it.

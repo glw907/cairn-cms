@@ -107,6 +107,24 @@ test('a short page pins the footer with no background seam below it', async ({ p
   expect(Math.abs(documentBottom - footerBottom)).toBeLessThanOrEqual(1);
 });
 
+// The alert directive's inner classes are inlined at this site's own call site
+// (`markdown-components.ts`/`render.ts`'s `headRow`), not built by an engine helper, so nothing
+// but the theme's own code enforces that the inlined literals stay `cairn-alert-body`/
+// `cairn-head-title` rather than drifting back to DaisyUI's own `card-body`/`card-title` names.
+// This asserts the inlined shape directly against the rendered DOM, not against source text.
+test('the rendered alert carries its own inlined classes, not DaisyUI card classes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/posts/the-reading-surface');
+  const alertBody = page.locator('.prose .alert > .cairn-alert-body');
+  await expect(alertBody).toBeVisible();
+  const strayCardClasses = await page
+    .locator('.prose .alert .card-body, .prose .alert .card-title')
+    .count();
+  expect(strayCardClasses).toBe(0);
+});
+
 // The home lead entry's title link must carry its own designed focus-visible treatment, not
 // whatever outline the browser draws by default; `.focus()` reliably triggers `:focus-visible` on
 // an anchor in Chromium (unlike a button or input, an anchor is not on the UA's mouse-focus

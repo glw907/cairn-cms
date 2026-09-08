@@ -105,7 +105,10 @@ default; a theme opts in by adding one `data-flourish` attribute to its `.prose`
 into the engine's `renderGlyph` helper; a theme's `defineComponent()` build functions call the
 returned function and never import `renderGlyph` directly. This file also exports `headRow`, the
 icon-plus-heading head a titled component's `build()` calls (the alert directive is the one call
-site); both helpers are chassis-owned, not engine exports. Swapping the icon set (the
+site); both helpers are chassis-owned, not engine exports. `headRow` stamps `cairn-head-title` on
+its heading element, and the alert directive's own build function (`markdown-components.ts`)
+stamps `cairn-alert-body` on its wrapper; both are chassis-owned class names, not part of the
+engine's emitted-classes registry (`docs/reference/render.md`). Swapping the icon set (the
 `icons: IconSet` object in `icons.ts`) never touches a component's `build()`.
 
 **The prose-typography seam (`render.ts`).** `proseTypography` is a `createRenderer`

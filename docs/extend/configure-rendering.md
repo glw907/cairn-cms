@@ -54,9 +54,9 @@ const callout = defineComponent({
   description: 'A highlighted note with an optional tone.',
   build: (ctx) =>
     h('section', { className: ['callout'] }, [
-      h('div', { className: ['card-body'] }, [
+      h('div', { className: ['site-callout-body'] }, [
         h('div', { className: ['cairn-head'] }, [
-          h('h2', { className: ['card-title'] }, ctx.slot('title')),
+          h('h2', { className: ['site-callout-title'] }, ctx.slot('title')),
         ]),
         h('div', { className: ['callout-body'] }, ctx.slot('body')),
       ]),
@@ -75,6 +75,13 @@ const callout = defineComponent({
 transform, once per occurrence, so it can't `await` anything. If a component needs data it
 doesn't already have, fetch it outside the render pipeline (at content build time, or in the
 adapter's own resolver) and pass the result through `attributes`.
+
+Name a component's own inner classes apart from any DaisyUI component name (`card-body`,
+`card-title`, and the like), as this example's `site-callout-body`/`site-callout-title` do.
+DaisyUI's plugin generates a component's CSS for any matching class name it finds anywhere in a
+site's scanned source, not only markup a component-typed element wraps, so a directive that
+reuses one of those names gets silently restyled by DaisyUI if the site enables that component
+elsewhere.
 
 `attributes` accepts exactly ten `fields.*` descriptors, the ones that serialize to a single
 directive-attribute string: `text`, `textarea`, `number`, `select`, `url`, `email`, `date`,

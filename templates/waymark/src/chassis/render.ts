@@ -25,7 +25,7 @@ export function makeIconRenderer(icons: IconSet): (name: string, role?: string) 
 }
 
 /**
- * Card head row: `<div class="cairn-head">[icon]<hN class="cairn-alert-title">{title}</hN></div>`. Pass
+ * Card head row: `<div class="cairn-head">[icon]<hN class="cairn-head-title">{title}</hN></div>`. Pass
  * the title's inline children, an optional pre-built icon element, and an optional heading level
  * (default 2). A titled component's build() (the alert directive is the one call site) calls this
  * rather than rebuilding the icon-plus-heading shape by hand.
@@ -33,7 +33,7 @@ export function makeIconRenderer(icons: IconSet): (name: string, role?: string) 
 export function headRow(title: ElementContent[], icon?: Element, level: number = 2): Element {
   const children: ElementContent[] = [];
   if (icon) children.push(icon);
-  children.push(h(`h${level}`, { className: ['cairn-alert-title'] }, title));
+  children.push(h(`h${level}`, { className: ['cairn-head-title'] }, title));
   return h('div', { className: ['cairn-head'] }, children);
 }
 

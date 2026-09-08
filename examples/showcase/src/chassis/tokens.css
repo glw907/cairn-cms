@@ -16,7 +16,7 @@
        library: `button`, `badge`, `alert`, and `card`. `alert` is the directive's own `.alert`/
        `.alert-<role>` classes, which `prose.css` only partially overrides, so the rest of a theme's
        directive styling leans on the base declarations; the directive's two inner classes are the
-       site's own `cairn-alert-body`/`cairn-alert-title`, named apart from DaisyUI's `.card-body`/
+       site's own `cairn-alert-body`/`cairn-head-title`, named apart from DaisyUI's `.card-body`/
        `.card-title` so this same `card` activation cannot restyle them. `card` itself is enabled for
        the members pages (`routes/members`), the one place the template renders a real `.card`.
        Everything else DaisyUI ships (accordion-style `collapse`,

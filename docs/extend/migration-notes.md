@@ -22,7 +22,7 @@ The release step sets the version number at the cut and renames this section to 
   `cardShell` moves its two inner class literals into your own Tailwind-scanned source, so if you
   keep DaisyUI's `card` component enabled for other markup, rename the literals away from
   `card-body`/`card-title` (the preceding worked example uses
-  `cairn-alert-body`/`cairn-alert-title`) and update any prose CSS that targets them; otherwise
+  `cairn-alert-body`/`cairn-head-title`) and update any prose CSS that targets them; otherwise
   DaisyUI's own `.card-body`/`.card-title` rules restyle the alert.
 - **Seventeen type-only names moved to their canonical home.** The engine now publishes each
   exported name from exactly one subpath. Re-point these imports away from

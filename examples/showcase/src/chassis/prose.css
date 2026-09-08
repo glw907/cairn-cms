@@ -22,7 +22,7 @@
    The directive components (the engine's render output) are styled here too. They
    carry the real engine class names, NOT the mockup's BEM names: a callout is
    `.callout > .callout-title + .callout-body + .callout-points`, an alert is
-   `.alert > .cairn-alert-body > (.cairn-head > .cairn-alert-title) + .alert-body`. Every rule is
+   `.alert > .cairn-alert-body > (.cairn-head > .cairn-head-title) + .alert-body`. Every rule is
    scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component
    classes (theme.css bundles DaisyUI for the public layer) on specificity.
 
@@ -500,7 +500,7 @@
 
   /* Alert: the second directive, built from the cairn render helpers (a section
      with a cairn-alert-body, a cairn-head holding an optional icon and the
-     cairn-alert-title, and an alert-body). DaisyUI's .alert grid is overridden here.
+     cairn-head-title, and an alert-body). DaisyUI's .alert grid is overridden here.
      The inner classes are the site's own (renamed away from DaisyUI's .card-body/
      .card-title so the .card component's Tailwind-scanned rules never restyle
      the alert). Roles note / caution; caution leans on the warning ink so it
@@ -529,14 +529,14 @@
     gap: 0.5rem;
     margin-bottom: var(--spacing-3xs);
   }
-  .prose .alert .cairn-alert-title {
+  .prose .alert .cairn-head-title {
     font-family: var(--font-body);
     font-weight: 650;
     font-size: var(--text-step-0);
     margin: 0;
     color: var(--cairn-info-ink);
   }
-  .prose .alert-caution .cairn-alert-title {
+  .prose .alert-caution .cairn-head-title {
     color: var(--cairn-warning-ink);
   }
   .prose .alert .cairn-icon {

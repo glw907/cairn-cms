@@ -10,21 +10,23 @@ follows the standard it proposes, and its receipt is the last section.
 This document proposes a standard for cairn's published documentation. By a standard I
 mean the written rules a page is drafted against and checked against before it ships,
 the way the code has its conventions and its gates. The docs are already split into four
-reader groups, which the repository calls tracks: editors who write in the admin and never
-see a terminal, site admins who run a site without writing code, developers who extend
-cairn, and the reference, which both of the last two look things up in. The standard covers
-all four, plus the front door, which is the set of pages an evaluator lands on first.
+reader groups, which the repository calls tracks. Editors write in the admin and never see a
+terminal. Site admins run a site without writing code. Developers extend cairn. The reference
+is where the last two look things up. The standard covers all four, plus the front door,
+which is the set of pages an evaluator lands on first.
 
 The standard has four parts. The prose part says how sentences and paragraphs are written.
 It adopts the Federal Plain Language Guidelines, a published United States government style
 standard, with its paragraph numbers held as rules and cairn's own sentence numbers held as
-measurements. The structure part says which pages exist, what sections each kind of page
-carries and in what order, and how a section is built. The figures part says when a diagram
+measurements.
+
+The structure part says which pages exist, what sections each kind of page carries and in
+what order, and how a section is built. The figures part says when a diagram
 or screenshot earns its place, how it is made, and how it is graded. The review part gives
-a page the same chain a code change gets: a check against its template, the linters,
-measurements against a small set of pages people wrote, a fresh reviewer who cites those
-pages, a reader who tries the page, and a receipt that records the review so a gate can
-verify it happened.
+a page the same chain a code change gets. The page is checked against its template and run
+through the linters. It is measured against a small set of pages people wrote. A fresh
+reviewer cites those pages in the verdict. A reader tries the page. A receipt records all of
+that, so a gate can verify the review happened.
 
 Two rules sit above the four parts. Any claim about you or about cairn's stance comes from a
 brief you wrote or approved, and a script checks that every such claim points at a line in
@@ -45,8 +47,8 @@ two prose gates, Vale and the tell scanner, check words and punctuation, and the
 the author read it before you did.
 
 The cadence problem is not confined to one page. The extend track, the developers' track, builds 48 percent of its
-sentences as hinged pairs (two clauses joined on a comma) and the reference track 44 percent, against 19 to 44 percent in
-the human specimens and under 30 in the best of them. The reference track's average sentence
+sentences as hinged pairs, meaning two clauses joined on a comma. The reference track builds
+44 percent. The human specimens run 19 to 44 percent, and the best of them under 30. The reference track's average sentence
 runs 22 words with one sentence at 151, where PostgreSQL, MDN, and the Rust reference run 12
 to 18 with almost nothing over 40.
 
@@ -138,19 +140,32 @@ that landed today.
 #### The front door
 
 `why-cairn.md` takes the shape the three strongest "why" pages share. Its
-sections, in order: your account of where cairn came from; what cairn does; where it fits;
-what it is not, as its own section; why this stack; the trade-offs; a short checklist the
-reader answers; and where to go next. The checklist is SQLite's closing device and the one
+sections, in order:
+
+- your account of where cairn came from
+- what cairn does
+- where it fits
+- what it is not, as its own section
+- why this stack
+- the trade-offs
+- a short checklist the reader answers
+- where to go next
+
+The checklist is SQLite's closing device and the one
 instrument on that page that turns an argument into the reader's decision.
 
 ### Figures
 
 A figure, meaning a diagram or a screenshot, appears only where the fact being taught is a relation among three or more parts,
-or a branch between paths, that prose would have to state as a series. Ten of the fourteen
+or a branch between paths, that prose would have to state as a series.
+
+The exemplars set the bar high. Ten of the fourteen
 exemplar pages carry no explanatory figure. Every "why" page carries none. The reference
 pages of PostgreSQL, MDN, and Rust carry none. Across 24 Astro docs pages there are two: a
 box diagram built in CSS on the islands page and one screenshot in the tutorial's first
-hands-on step. Across 21 Svelte and SvelteKit pages there are none. Their tutorial uses a live
+hands-on step.
+
+Across 21 Svelte and SvelteKit pages there are none. Their tutorial uses a live
 editor in place of any screenshot, which an editors track for readers with no code cannot
 borrow, and that is the one place cairn's docs will carry screenshots the upstream never
 needed. A set of items is a table and a linear
@@ -176,9 +191,17 @@ typeface, with one stroke weight for ordinary edges. SVG is never edited in plac
 from `docs/internal/site-figures.svg` by the existing script. No third tool.
 
 Grading has a mechanical half and a judged half. `check:figures` grows from a staleness check
-to seven assertions: staleness, a 12-pixel legibility floor measured from the rendered
-figure, no overflow past the figure's own box, contrast in both schemes, every color a theme
-token, the node budget, and SVG hygiene. `check:visuals` closes the hole where an image with
+to seven assertions:
+
+- the emitted file matches its source
+- the smallest text in the rendered figure is at least 12 pixels
+- nothing overflows the figure's own box
+- text and strokes clear the contrast floor in both color schemes
+- every color is a theme token
+- the node count stays under the register's budget
+- the SVG carries no script, no foreign object, and no external reference
+
+`check:visuals` closes the hole where an image with
 no alt attribute at all passes unseen. A fresh-context reviewer, never the drawer, grades
 the figure by the register's existing method and records a receipt beside the page. On the
 front door, the concept figure does not earn its place by these tests and comes off. The
@@ -319,13 +342,13 @@ package forced on, since this path is style-exempt, and all three levels are rep
 
 | Measure | All sentences | Prose only | Target |
 |---|---|---|---|
-| Sentences | 214 | 125 | |
-| Average length | 14.5 words | 16.5 words | 15 to 20 |
-| Longest sentence | 56 words | 56 words | under 40 |
-| Hinged pairs, all families | 35 percent | 38 percent | reported |
-| Sentences under 8 words | 24 percent | 18 percent | reported |
-| Paragraphs over 8 sentences or 150 words | 1 | | 0 |
-| Vale, Google package forced | 0 errors, 16 warnings and 110 suggestions | | errors 0 |
+| Sentences | 240 | 137 | |
+| Average length | 13.1 words | 14.6 words | 15 to 20 |
+| Longest sentence | 37 words | 37 words | under 40 |
+| Hinged pairs, all families | 31 percent | 34 percent | reported |
+| Sentences under 8 words | 28 percent | 20 percent | reported |
+| Paragraphs over 8 sentences or 150 words | 0 | | 0 |
+| Vale, Google package forced | 0 errors, 16 warnings and 105 suggestions | | errors 0 |
 | Tell scanner | 0 tells per 1,000 words; counts {'tricolon': 7} | | reported |
 
 Corpus entries cited while drafting: SQLite, Appropriate Uses (structure and the closing

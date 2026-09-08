@@ -8,6 +8,7 @@ const file = args.find((a) => !a.startsWith('--'));
 const untilIdx = args.indexOf('--until');
 const until = untilIdx >= 0 ? args[untilIdx + 1] : null;
 const asJson = args.includes('--json');
+const showParas = args.includes('--paras');
 if (!file) {
   console.error('usage: measure-prose.mjs <file.md> [--until "## Heading"] [--json]');
   process.exit(2);
@@ -55,7 +56,11 @@ function measure(sel) {
     if (sel === 'prose' && b.list) continue;
     const ss = splitSentences(b.text);
     sents.push(...ss);
-    if (!b.list) paras.push({ sentences: ss.length, words: b.text.split(/\s+/).length });
+    if (!b.list) {
+      const para = { sentences: ss.length, words: b.text.split(/\s+/).length };
+      paras.push(para);
+      if (showParas && sel === 'all' && (para.sentences > 8 || para.words > 150)) console.error(`long paragraph (${para.sentences} sentences, ${para.words} words): ${b.text.slice(0, 90)}`);
+    }
   }
   const lens = sents.map((s) => s.split(/\s+/).length);
   const n = lens.length;

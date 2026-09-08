@@ -172,10 +172,12 @@ system contributes one level, and none is adopted whole.
 #### The docs set
 
 Every published page must have one track and one page type. The four tracks stay as they
-are. A page must look like what it is: a technical proposal must read as a technical
-proposal, an API entry as an API entry, and an editor's welcome page as a welcome page, so
-that a reader who knows the genre recognizes the page on sight. To hold that, each page type
+are. A page must look like what it is. A technical proposal must read as a technical
+proposal, an API entry as an API entry, and an editor's welcome page as a welcome page. A
+reader who knows the genre must recognize the page on sight. To hold that, each page type
 names a published exemplar of its genre, and the corpus carries an excerpt of it. A page
+whose type has no exemplar yet is not written until one or more are found and approved, and
+the page brief names the exemplar it was drafted against. A page
 type is a named shape, and the standard names eleven, ten published and one internal. Each
 is listed here with the reader's job it serves and its exemplar, because a page whose job you
 cannot state in one line is two pages.
@@ -323,9 +325,10 @@ whole page, which is why the script exists.
 #### The page brief and the outline review
 
 Every page starts with a brief of four lines, written before the outline and kept beside
-the page. The brief answers four questions. What does a page of this type include in general? Which
-track and reader does it serve? What must this page carry that its type does not say? Does
-it deviate from the standard, and how? A deviation is allowed only when the
+the page. The brief answers four questions. What does a page of this type include in general, and
+which exemplar shows it? Which track and reader does it serve? What must this page carry
+that its type does not say? Does it deviate from the standard, and how? A brief that cannot
+name an exemplar stops the draft until one is found. A deviation is allowed only when the
 brief records it with its reason, and the register's "when a Vale finding is wrong" rule
 is the model for that record. A page with no brief has no outline to check against.
 
@@ -375,7 +378,8 @@ The docs must be compared against pages people wrote, the corpus, under these co
 - `docs/internal/corpus/` holds one excerpt per entry, at most 400 words.
 - A manifest records each entry's source, license, fetch date, page type and track,
   measured numbers, and the date you approved it.
-- Two entries per page type is the ceiling.
+- Two entries per page type is the ceiling, and one is the floor: a page type with no
+  entry has no draft.
 - An entry for a table-shaped page is marked structure-only. A review of such a page compares
   column order, row completeness, and the lead sentence rather than cadence.
 - An entry you reject is deleted and its id retired.
@@ -632,12 +636,12 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 356 | 187 | 6 |  | count only |
-| Average length | 16 words | 18.5 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
-| Longest sentence | 46 words | 46 words | 33 words | under 40 | FAIL |
+| Sentences | 360 | 191 | 6 |  | count only |
+| Average length | 16 words | 18.4 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Longest sentence | 39 words | 39 words | 33 words | under 40 | pass |
 | Hinged pairs | 43 percent | 45 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
-| Sentences under 8 words | 20 percent | 10 percent | 17 percent | reported | reported |
-| Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
+| Sentences under 8 words | 19 percent | 10 percent | 17 percent | reported | reported |
+| Paragraphs over 8 sentences or 150 words | 2 |  |  | 0 | FAIL |
 | Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
 | Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 41 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
 | Vale, Google package forced | 0 errors, 48 warnings and 187 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |

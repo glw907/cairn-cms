@@ -29,6 +29,15 @@ matches byte-for-byte; diff-reviewer accepted; CLI suite 806/806). Every remaini
 carries `npm --prefix packages/create-cairn-site run prepack && npm --prefix
 packages/create-cairn-site test`; the args file shape is in the plan's Execution section.
 
+**Chassis-A: ALL TWELVE TASKS ACCEPTED (2026-09-08 about 02:00 AKDT); pass-end ritual in
+progress** on `chassis-a`: Task 12 landed `e02c0525` plus `950290c8`; `main` merged into the
+branch with two docs conflicts (ROADMAP, friction log) resolved by dispatch; next the
+code-simplifier over the pass diff, the reviewer fan-out the plan names, the gates by name, the
+from-scratch showcase and fresh-scaffold proofs, HISTORY/STATUS/ROADMAP, the post-mortem, push,
+PR, merge on green CI (authorized). Ritual calls carried from the Task 12 review: the ROADMAP
+rehype-dispatch CLOSED block moves to the post-mortem and leaves the tier; the identity-seam
+finding duplicated in the friction log and ROADMAP is the identity pass's Task 6 to triage.
+
 **Task 8 ruling (2026-09-07, about 19:45 AKDT):** Tasks 3 to 7 accepted and committed
 (`c2290d69`, `b126d892`, `274374f2`, `615d4d1f`, `6c16334c`). Task 8's implementer returned
 gate-red and uncommitted (25 files): inlining `cardShell` moved the literals `card-body` and

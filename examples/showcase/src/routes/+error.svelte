@@ -27,19 +27,21 @@
   <SiteHeader />
 
   <main id="main" class="cairn-site-main site-main">
-    <div class="mx-auto max-w-measure px-m py-2xl text-center">
-      <h1 class="text-step-5 font-bold text-base-content">{page.status}</h1>
-      <p class="mt-s text-step-1 text-muted">
-        {page.status === 404
-          ? 'This page doesn’t exist. It may have moved, or the link took a wrong turn.'
-          : (page.error?.message ?? 'Something went wrong.')}
-      </p>
-      <a
-        href="/"
-        class="mt-m inline-flex h-11 items-center justify-center rounded-field bg-primary px-5 text-step--1 font-bold text-primary-content no-underline hover:opacity-90"
-      >
-        Return to homepage
-      </a>
+    <div class="cairn-band text-center">
+      <div class="mx-auto max-w-measure px-m">
+        <h1 class="text-step-5 font-bold text-base-content">{page.status}</h1>
+        <p class="mt-s text-step-1 text-muted">
+          {page.status === 404
+            ? 'This page doesn’t exist. It may have moved, or the link took a wrong turn.'
+            : (page.error?.message ?? 'Something went wrong.')}
+        </p>
+        <a
+          href="/"
+          class="mt-m inline-flex h-11 items-center justify-center rounded-field bg-primary px-5 text-step--1 font-bold text-primary-content no-underline hover:opacity-90"
+        >
+          Return to homepage
+        </a>
+      </div>
     </div>
   </main>
 

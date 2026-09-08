@@ -128,8 +128,12 @@ its own config.
 **Composition primitives (`composition.css`).** `.cairn-card`, `.cairn-band`, `.cairn-section`,
 `.cairn-hero`, `.cairn-sidebar-layout` are the "generous, not minimal" ruling made concrete: a
 theme reaches for one of these instead of hand-rolling its own card or two-column layout from
-scratch. Nothing in this showcase's current markup uses any of them yet; adopting one is a
-theme's choice, never a requirement. Each primitive exposes its own `--cairn-<primitive>-*` custom
+scratch. Three are real site uses: the styleguide masthead is `.cairn-hero`, the home page's
+`.lead` and `.index` are `.cairn-section`, and the root error page's message block is
+`.cairn-band`. `.cairn-card` and `.cairn-sidebar-layout` have no real site use in this theme (the
+members pages are template-excluded fixtures, the home lead is not a card, and `related` renders
+as a block in the reading flow rather than a sidebar-shaped region); adopting either is a theme's
+choice, never a requirement. Each primitive exposes its own `--cairn-<primitive>-*` custom
 properties (for example `--cairn-card-padding`, `--cairn-band-bg`, `--cairn-sidebar-width`) for a
 per-instance override, layered on top of the shared design-scale tokens they default from. A media
 query condition cannot read a custom property, so `.cairn-sidebar-layout`'s 48rem breakpoint is a
@@ -192,7 +196,7 @@ a build it silently breaks) fails this file's own promise.
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
-| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`). | Not a bare deletion while the site shell is in use: a theme dropping this file replaces both call sites' shell markup with its own flex column, and loses `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero`/`.cairn-sidebar-layout`, none of which this showcase's markup uses yet. |
+| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); `(site)/styleguide/+page.svelte` (`.cairn-hero`); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with its own flex column, and replaces the hero, section, and band markup at their call sites with hand-rolled equivalents, losing `.cairn-card`/`.cairn-sidebar-layout` too (neither has a real call site in this theme). |
 
 Two of these notes are verified verbatim, in a scratch copy of this showcase, as part of the
 chassis restructure's own acceptance pass: `composition.css` (the zero-current-dependents case)

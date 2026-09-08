@@ -75,3 +75,42 @@ computed geometry (`display: flex; flex-direction: column; min-height: 100vh` on
   flex-column geometry byte-for-byte / no baseline names change; `magick compare -metric AE`
   is 0 on every one of the 203 compared before/after tiles and the full `site-visual.spec.ts`
   suite (44 tests) passes unmodified against the existing baselines.
+
+### Task 4a: the composition primitives, site adoptions
+
+Three real site uses: `.cairn-hero` on the styleguide masthead, `.cairn-section` on the home
+page's `.lead` and `.index`, `.cairn-band` on the root error page's message block (all
+`src/chassis/composition.css`). Before set: symlinked to the pass before set
+(`~/.cache/cairn-chassis-b/pass/before/`), since Task 3 (the only predecessor to touch these
+surfaces) is itself paint-neutral, confirmed by its own row above.
+
+- `styleguide` 320/390/768/1440/2560 light and dark: no move / the masthead's `<header>`/`<h1>`/
+  `<p>` move onto `.cairn-hero`/`.cairn-hero-title`/`.cairn-hero-lead`, and the scoped
+  `.sg-title`/`.sg-lead` rules are deleted; the primitive's flex-column gap
+  (`--cairn-hero-gap`, `--spacing-s`, 1rem) reproduces the deleted `.sg-lead`'s former
+  `margin-top: var(--spacing-s)` exactly, and `.cairn-hero-title` carries no explicit
+  `color: var(--color-base-content)` (unlike the deleted `.sg-title`) but inherits the
+  identical value from `.cairn-site-shell`'s `text-base-content` class / no baseline names
+  change; `magick compare -metric AE` is 0 on every one of the 44 compared before/after tiles.
+- `home` 320/390/768/1440/2560 light and dark: `.cairn-section`'s `--cairn-section-gap`
+  (`--spacing-l`, 2rem) adds a `.lead` top margin it never had and replaces its former
+  non-collapsing `padding-bottom: var(--spacing-l)` with the primitive's collapsible
+  `margin-block-end`; on `.index` (previously no box geometry of its own) the primitive adds a
+  top and bottom `margin-block` of `--spacing-l` plus a `> * + *` rule opening a `--spacing-l`
+  gap between `.index__head` and the tag filter, year heading, or entry that follows it (most
+  already carried their own `--spacing-l` top spacing via unlayered rules of equal value and
+  absorb the primitive unchanged; the entry immediately under `.index__head`, and any entry
+  following another entry with no year heading between them, gains the new gap, since `.entry`
+  itself declares no margin-top) / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png`
+  (10 files).
+- `error404` 320/390/768/1440/2560 light and dark: the message block moves onto `.cairn-band`
+  wrapping a centered `.mx-auto max-w-measure px-m` child; `--cairn-band-padding-block`
+  (`--spacing-xl`, 3rem/48px) replaces the former `py-2xl` (`--spacing-2xl`, 4rem/64px), a
+  16px reduction top and bottom, and the band gains its ground, `--color-base-200`, where the
+  block previously painted transparent over `--color-base-100` / moves
+  `error404-{light,dark}-{320,390,768,1440,2560}.png` (10 files).
+
+The implementer's own read against the redesign rule: the home page change is a modest
+loosening of vertical rhythm (added top/bottom margins at existing spacing values), with no
+change to layout structure, color, or type; a `diff-reviewer` read confirms or overturns this
+at the gate, and an overturn's reason and revert land here in the same commit as the fix.

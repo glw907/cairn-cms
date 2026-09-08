@@ -148,9 +148,9 @@ or extend it; nothing here is a literal a re-skin would miss.
 </svelte:head>
 
 <div class="sg">
-  <header class="sg-masthead">
-    <h1 class="sg-title">Styleguide</h1>
-    <p class="sg-lead">
+  <header class="cairn-hero sg-masthead">
+    <h1 class="cairn-hero-title">Styleguide</h1>
+    <p class="cairn-hero-lead">
       Everything the public theme ships so far, on the tokens a site owner re-skins. The page
       auto-themes with your system light or dark setting.
     </p>
@@ -375,24 +375,12 @@ or extend it; nothing here is a literal a re-skin would miss.
     margin-inline: auto;
   }
 
+  /* The masthead now sits on .cairn-hero (src/chassis/composition.css): the primitive's own
+     flex-column gap replaces the lead's former top margin, and the -title/-lead classes replace
+     the deleted .sg-title/.sg-lead rules. Only the section-spacing margin below the header stays
+     scoped here, since that rhythm belongs to this page, not the hero primitive. */
   .sg-masthead {
     margin-bottom: var(--spacing-xl);
-  }
-  .sg-title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--text-step-5);
-    line-height: var(--leading-tight);
-    letter-spacing: var(--tracking-tight);
-    color: var(--color-base-content);
-  }
-  .sg-lead {
-    margin: var(--spacing-s) 0 0;
-    max-width: var(--container-measure);
-    font-size: var(--text-step-1);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
   }
 
   .sg-section {

@@ -96,6 +96,16 @@ precedent when making decisions": the charter's leanness test and the rulings le
 every call); merge order at the end: A, then B1 and B2 after Geoff's read, then the
 identity seam on its own gate.
 
+**Identity seam, state (2026-09-07 about 23:30 AKDT):** spec at
+`docs/superpowers/specs/2026-09-07-identity-seam-design.md` revision 2 (`de2bf1cb`), folded from
+a three-lens review; plan drafted at `docs/superpowers/plans/2026-09-07-identity-seam-pass.md`
+(`b58b5d2e`, 6 tasks, 4.5M); its four-lens review (grounding, security, hygiene, charter) is
+RUNNING and folds before the first dispatch. Fold rulings on the spec: the generic seam ships,
+the Access verifier is a snippet-gated recipe (the `isuniqueviolation-cloudflare` precedent),
+no guard-side bootstrap, no CSRF change, one config point read through `locals.cairnIdentity`,
+the doctor probe inverted. Worktree `.claude/worktrees/identity-seam` off `main`, launched after
+the fold, in parallel with B1.
+
 **Chassis-B execution GRANTED (Geoff, 2026-09-07):** once the four-lens review is folded
 into the plan, run chassis-B as a `pass-execute-chains` workflow through its pass-end ritual to
 a green PR with the captures and the visual-verifier verdict banked; the merge stays Geoff's.

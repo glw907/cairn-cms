@@ -410,6 +410,63 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('sent');
   });
 
+  it('does not fail the workers.dev arm on an unmarked 403, an Access denial page on a covered hostname', async () => {
+    const result = await runWorkersDevArm(new Response('forbidden', { status: 403 }));
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('sent');
+  });
+
+  it('fails the workers.dev arm on a marked 500 (a bindings-missing page is still the Worker answering)', async () => {
+    const result = await runWorkersDevArm(
+      new Response('<html><body><p class="foot">Powered by Cairn</p></body></html>', {
+        status: 500,
+      })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('Access application does not cover');
+    expect(result.detail).toContain('500');
+  });
+
+  it('fails the workers.dev arm on a 30x with no Location header, naming the missing header', async () => {
+    const result = await runWorkersDevArm(new Response(null, { status: 302 }));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('no Location header');
+  });
+
+  it('passes the workers.dev arm on a 308 redirect naming the Cloudflare Access gate host', async () => {
+    const result = await runWorkersDevArm(
+      new Response(null, {
+        status: 308,
+        headers: { location: 'https://myteam.cloudflareaccess.com/cdn-cgi/access/login' },
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('sent');
+  });
+
+  it('names the redirect Location host in the exposure detail, distinguishing /admin/login from the gated primary host', async () => {
+    const result = await runWorkersDevArm(
+      new Response(null, { status: 303, headers: { location: 'https://site.example/admin/login' } })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('site.example');
+  });
+
+  it('notes in the primary pass detail that the workers.dev arm did not run when credentials are missing', async () => {
+    const { fetch } = probeFetch(loginResponse(), actionJson('sent'));
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('sent');
+    expect(result.detail).toContain('did not run');
+    expect(result.detail).toContain('CLOUDFLARE_API_TOKEN');
+  });
+
   it('skips the workers.dev arm when workers_dev is false, never fetching the account subdomain', async () => {
     const { fetch, calls } = probeFetch(loginResponse(), actionJson('sent'));
     const result = await liveProbeCheck(ORIGIN).run(

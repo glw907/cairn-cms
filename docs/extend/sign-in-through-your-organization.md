@@ -98,13 +98,18 @@ email.
   site's wrangler config, since the Worker is otherwise reachable at
   `<name>.<subdomain>.workers.dev/admin`, which no Access application covers unless it was told to,
   and make sure every custom hostname and route that reaches this Worker is covered by the
-  application. `workers_dev: false` does not by itself close a
+  application. Closing the hostname is one option; covering it is the other, since an Access
+  application can also be configured to gate the workers.dev and preview hostnames directly (see
+  Cloudflare's [preview URLs
+  page](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/) for
+  exactly which hostname each mode serves) instead of only the custom domain. `workers_dev: false`
+  does not by itself close a
   [preview URL](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/):
   Wrangler defaults `preview_urls` to `workers_dev`'s own value, but a site that set
   `preview_urls: true` explicitly, or has previews toggled on in the dashboard on an older
   Wrangler, still serves `/admin` on an `<alias>-<name>.<subdomain>.workers.dev` hostname no
   Access application covers; set `preview_urls: false` too, and confirm it, since this is
-  yours to close, not something the doctor checks probe. Then run `cairn-doctor --probe`
+  yours to close, not something the doctor's probe checks. Then run `cairn-doctor --probe`
   with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set (see
   [the doctor's live probe](../reference/doctor.md#the-opt-in-live-probe) for what those
   credentials unlock), whose second arm probes the workers.dev hostname and fails on any
@@ -274,8 +279,8 @@ Access's own [logout endpoint](https://developers.cloudflare.com/cloudflare-one/
 not instant in either direction. That page states the range directly for this user-initiated
 path: a logout clears the browser's authorization cookie immediately, and Access stops accepting
 previously issued tokens within 20 to 30 seconds, so "about thirty seconds" is the top of that
-window. An administrator manually revoking a user's Access token is a separate, slower path: the
-same page states that user can't sign back in for up to a minute. At the origin the exposure is
+window. An administrator manually revoking a user's Access token is a separate path whose lockout
+is up to a minute: the same page states that user can't sign back in until then. At the origin the exposure is
 weaker than either figure: the recipe verifies a signature, an issuer, an audience, and an expiry,
 never Access's revocation list, so a token already issued stays cryptographically valid to the
 Worker until its own `exp`, whichever revocation path triggered it. Revocation is enforced by

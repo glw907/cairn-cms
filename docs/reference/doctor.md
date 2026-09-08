@@ -195,15 +195,22 @@ the doctor resolves the account's workers.dev subdomain and issues a credential-
 <name>.<subdomain>.workers.dev/admin`. A credential-free `/admin` never answers 200 on a gated
 cairn deploy, so the arm treats any response the Worker itself serves there as exposure: a bare
 200, a redirect that does not name Cloudflare Access's own `<team>.cloudflareaccess.com` host
-(magic-link mode's own 303 to `/admin/login` included), or a 403 carrying the cairn admin page's
-own marker (identity mode's branded refusal page). Only a redirect naming the Access gate host, or
-a connection failure, counts as not exposed, and the check fails naming the exposure, even when
-the primary hostname passed. Setting `workers_dev: false` in the wrangler config skips the arm
-entirely, since the route no longer exists; setting `preview_urls: true` (or leaving Wrangler's
-`preview_urls = workers_dev` default active on an older Wrangler with previews toggled on in the
-dashboard) can still leave a `<alias>-<name>.<subdomain>.workers.dev` preview URL serving `/admin`
-on an uncovered hostname the arm never probes; closing that is the operator's to confirm, not this
-check's to detect.
+(magic-link mode's own 303 to `/admin/login` included), or any other non-redirect status carrying
+the cairn admin page's own marker (a branded 403, 404, or 500 is still the Worker answering, not
+Access's own denial page). Exactly three cases count as not exposed: a redirect naming the Access
+gate host, an unmarked non-200 response (Access's own denial page on a hostname the application
+does cover), or a connection failure. Every other case fails naming the exposure, even when the
+primary hostname passed. When CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is unset, or the
+account subdomain lookup itself fails, the arm never runs at all; the primary pass detail then
+carries a note saying so, so "probed and clean" and "never probed" stay distinguishable. Setting
+`workers_dev: false` in the wrangler config skips the arm entirely, since the route no longer
+exists. That alone does not close every preview URL, and the two Cloudflare behaviors it depends
+on are separate cases: on the current Wrangler, `preview_urls` defaults to `workers_dev`'s own
+value, so setting `workers_dev: false` without also setting `preview_urls: false` explicitly
+leaves a preview URL live; on an older Wrangler, previews toggled on in the dashboard serve
+regardless of the `workers_dev` setting. Either way a `<alias>-<name>.<subdomain>.workers.dev`
+preview URL can still serve `/admin` on an uncovered hostname the arm never probes; closing that
+is the operator's to confirm, not this check's to detect.
 
 Run it after the first deploy, after an edge or auth change, or whenever an editor reports a
 sign-in problem. A probe failure has many possible causes, so its detail line names the failed

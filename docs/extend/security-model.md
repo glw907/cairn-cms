@@ -269,9 +269,9 @@ method.
 **The ungated-hostname residual.** The gate proves who is asking only on the hostnames its
 application actually covers. A Worker that answers on another hostname reaching the same
 deployment, its account's `workers.dev` address or an unclosed preview URL, hands anyone holding a
-still-unexpired token full editor capability there with no gate in the path at all, since the
-token replay the verifier catches only depends on the token itself, never on which hostname
-carried it. [The ungated-hostname
+still-unexpired token full editor capability there with no gate in the path at all, since what the
+verifier accepts depends only on the token itself, never on which hostname carried it. [The
+ungated-hostname
 bullet](./sign-in-through-your-organization.md#operating-instructions) covers the close in full:
 `workers_dev: false`, `preview_urls: false`, and confirming every custom hostname sits behind the
 application.
@@ -282,10 +282,11 @@ hostname passes, a 200 that answers with cairn's page directly fails, since the 
 request's path at all, the misconfiguration the check exists to catch. The second arm targets the
 residual above directly: it resolves the account's `workers.dev` hostname and probes its `/admin`
 with no credentials, treating any response the Worker itself serves there, a 200, an unguarded
-redirect, or the branded refusal page identity mode itself serves on an uncovered hostname, as a
-fail, and a redirect naming the gate's own hostname as the only pass (see [the doctor's live
-probe](../reference/doctor.md#the-opt-in-live-probe)). The `auth.store` check separately fails when
-the roster holds no owner-capability row, since the guard performs no bootstrap write under
+redirect, or a marked branded page (identity mode's own refusal page, whatever status it carries)
+on an uncovered hostname, as a fail. Exactly three cases count as not exposed: a redirect naming
+the gate's own hostname, an unmarked non-200 response, or a connection failure (see [the doctor's
+live probe](../reference/doctor.md#the-opt-in-live-probe)). The `auth.store` check separately fails
+when the roster holds no owner-capability row, since the guard performs no bootstrap write under
 `identity`; seed the first owner out of band, before enabling `identity`, never after.
 
 ## CSRF: cairn owns it, not the framework

@@ -12,7 +12,7 @@ import { cfGet } from './cloudflare-api.js';
 import { readWranglerConfig } from './wrangler-config.js';
 
 /** A 30x whose `Location` names Cloudflare Access's own hostname; the probe never follows it. */
-const GATE_REDIRECT_STATUSES = new Set([301, 302, 303, 307]);
+const GATE_REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const ACCESS_HOST = /^[a-z0-9-]+\.cloudflareaccess\.com$/i;
 
 const NO_URL: CheckResult = skip(
@@ -42,13 +42,35 @@ export function liveProbeCheck(url?: string): DoctorCheck {
         // The workers.dev arm runs independently of the primary result: exposure on the
         // account's workers.dev hostname is a real gap even when the primary hostname is
         // properly gated, so a fail here always overrides whatever the primary arm found.
-        const exposure = await probeWorkersDevExposure(ctx);
-        return exposure ?? result;
+        const { exposure, skipNote } = await probeWorkersDevExposure(ctx);
+        if (exposure !== null) return exposure;
+        // A missing credential or a failed subdomain lookup means the arm never ran at all, a
+        // state indistinguishable from "ran and found nothing" unless the primary detail says
+        // so; the note rides on the primary pass rather than changing its status.
+        if (skipNote !== undefined && result.status === 'pass') {
+          return pass(`${result.detail} (${skipNote})`);
+        }
+        return result;
       } catch (err) {
         return fail(err instanceof Error ? err.message : String(err));
       }
     },
   };
+}
+
+/**
+ * The `Location` host of a 30x response, or null when the status isn't a redirect, no
+ * `Location` is set, or it doesn't parse against the probed origin.
+ */
+function redirectHost(res: Response, origin: URL): string | null {
+  if (!GATE_REDIRECT_STATUSES.has(res.status)) return null;
+  const location = res.headers.get('location');
+  if (location === null) return null;
+  try {
+    return new URL(location, origin).hostname;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -58,16 +80,8 @@ export function liveProbeCheck(url?: string): DoctorCheck {
  * label never matches, since the regex anchors both ends).
  */
 function accessGateHost(res: Response, origin: URL): string | null {
-  if (!GATE_REDIRECT_STATUSES.has(res.status)) return null;
-  const location = res.headers.get('location');
-  if (location === null) return null;
-  let host: string;
-  try {
-    host = new URL(location, origin).hostname;
-  } catch {
-    return null;
-  }
-  return ACCESS_HOST.test(host) ? host : null;
+  const host = redirectHost(res, origin);
+  return host !== null && ACCESS_HOST.test(host) ? host : null;
 }
 
 /** GET /admin/login and assert the sign-in envelope, then hand the harvested token pair on. */
@@ -129,58 +143,92 @@ function carriesCairnAdminMarker(html: string): boolean {
   return html.includes('data-cairn-identity') || html.includes('Powered by Cairn');
 }
 
+/** The workers.dev exposure arm's outcome: a definitive fail, or a note on why it didn't run. */
+interface WorkersDevExposure {
+  /** A fail result when the arm found exposure; null when it found nothing (or didn't run). */
+  exposure: CheckResult | null;
+  /**
+   * A one-line reason the arm never ran, present only for a missing-credential or a failed
+   * subdomain lookup, the two cases an operator can't tell apart from "ran clean" otherwise.
+   */
+  skipNote?: string;
+}
+
+const NO_EXPOSURE: WorkersDevExposure = { exposure: null };
+
 /**
  * The second arm: a Worker reachable on its account's workers.dev hostname bypasses whatever
  * gate covers the primary hostname, since neither an Access policy nor its revocation reaches
  * that address. A credential-free `GET /admin` against an exposed cairn Worker never answers
  * 200: identity mode refuses with a branded 403, magic-link mode redirects 303 to
  * `/admin/login`, so exposure is any response the Worker itself serves there, not only a 200 -
- * a 200, a redirect that does not name Cloudflare Access's own gate host, or a 403 carrying the
- * cairn admin page's own marker all count. Only a redirect to a `*.cloudflareaccess.com` host
- * (an Access application actually covering this hostname) or a connection failure counts as not
- * exposed. Returns null when the arm does not apply (`workers_dev: false`, no wrangler config
- * `name`, or no Cloudflare credentials to resolve the account's subdomain), when the hostname is
- * gated, or when the response is neither a redirect, a 200, nor a marked 403, so the caller falls
- * back to the primary result unchanged. Any thrown error (a rejected fetch, an unreachable
- * Cloudflare API) also falls back to null rather than propagating, since this arm's own failure
- * to run must never turn a correctly gated primary hostname into a check-wide FAIL.
+ * a bare 200 always counts (a credential-free `/admin` never answers 200 on a gated cairn
+ * deploy), and any other non-redirect status carrying the cairn admin page's own marker counts
+ * too (a marked 403, 404, or 500 is still the Worker answering, not Access's own denial page).
+ * An unmarked non-200 (Access's own denial page on a hostname the application DOES cover, just
+ * not with this credential-free request) is not exposure. Only a redirect to a
+ * `*.cloudflareaccess.com` host (an Access application actually covering this hostname) or a
+ * connection failure counts as not exposed. `exposure` is null when the arm does not apply
+ * (`workers_dev: false`, no wrangler config `name`), when the hostname is gated, or when the
+ * response carries no marker, so the caller falls back to the primary result unchanged. Any
+ * thrown error (a rejected fetch, an unreachable Cloudflare API) also falls back to null rather
+ * than propagating, since this arm's own failure to run must never turn a correctly gated
+ * primary hostname into a check-wide FAIL; a missing credential or a failed subdomain lookup
+ * additionally carries `skipNote` so the caller can say the arm never ran.
  */
-async function probeWorkersDevExposure(ctx: DoctorContext): Promise<CheckResult | null> {
+async function probeWorkersDevExposure(ctx: DoctorContext): Promise<WorkersDevExposure> {
   try {
     const facts = await readWranglerConfig(ctx.readFile);
-    if (facts?.workersDev === false) return null;
-    if (typeof facts?.name !== 'string') return null;
-    if (!ctx.cfToken || !ctx.cfAccountId) return null;
+    if (facts?.workersDev === false) return NO_EXPOSURE;
+    if (typeof facts?.name !== 'string') return NO_EXPOSURE;
+    if (!ctx.cfToken || !ctx.cfAccountId) {
+      return {
+        exposure: null,
+        skipNote:
+          'the workers.dev exposure arm did not run: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to enable it',
+      };
+    }
     // GET /accounts/{account_id}/workers/subdomain, { result: { subdomain } } out.
     // https://developers.cloudflare.com/api/resources/workers/subresources/subdomain/
     const subdomainRes = await cfGet(ctx, `/accounts/${ctx.cfAccountId}/workers/subdomain`);
-    if (!subdomainRes.ok) return null;
+    const subdomainFailNote = {
+      exposure: null,
+      skipNote: 'the workers.dev exposure arm did not run: the account subdomain lookup failed',
+    };
+    if (!subdomainRes.ok) return subdomainFailNote;
     const body = (await subdomainRes.json()) as { result?: { subdomain?: string } };
     const subdomain = body.result?.subdomain;
-    if (typeof subdomain !== 'string') return null;
+    if (typeof subdomain !== 'string') return subdomainFailNote;
     const host = `${facts.name}.${subdomain}.workers.dev`;
     const origin = new URL(`https://${host}`);
     const res = await ctx.fetch(String(new URL('/admin', origin)), { redirect: 'manual' });
     if (GATE_REDIRECT_STATUSES.has(res.status)) {
-      if (accessGateHost(res, origin) !== null) return null;
-      return fail(
-        `the Worker redirects from /admin on ${host}, a hostname the Access application does not cover`
-      );
+      if (accessGateHost(res, origin) !== null) return NO_EXPOSURE;
+      const to = redirectHost(res, origin) ?? 'a response with no Location header';
+      return {
+        exposure: fail(
+          `the Worker redirects from /admin on ${host} to ${to}, a hostname the Access application does not cover`
+        ),
+      };
     }
     if (res.status === 200) {
-      return fail(`the Worker serves /admin directly on ${host}, a hostname the Access application does not cover`);
+      return {
+        exposure: fail(
+          `the Worker serves /admin directly on ${host}, a hostname the Access application does not cover`
+        ),
+      };
     }
-    if (res.status === 403) {
-      const html = await res.text();
-      if (carriesCairnAdminMarker(html)) {
-        return fail(
-          `the Worker serves its own branded admin page on ${host}, a hostname the Access application does not cover`
-        );
-      }
+    const html = await res.text();
+    if (carriesCairnAdminMarker(html)) {
+      return {
+        exposure: fail(
+          `the Worker serves its own branded admin page (status ${res.status}) on ${host}, a hostname the Access application does not cover`
+        ),
+      };
     }
-    return null;
+    return NO_EXPOSURE;
   } catch {
-    return null;
+    return NO_EXPOSURE;
   }
 }
 

@@ -46,8 +46,8 @@ a fresh `pass-execute-chains` run (`resumeFromRunId` works only in the launching
 ## Parallel tracks
 
 - **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b, 5 (internals), and 6
-  (internals-B), and 7 (internals-C) MERGED. Next: chassis-A (immediate next action above),
-  chassis-B, then the final **polish** slice (Geoff, 2026-09-01: a full-surface
+  (internals-B), and 7 (internals-C) MERGED. Next: chassis-A, then chassis-B1 and chassis-B2
+  (immediate next action above), then the final **polish** slice (Geoff, 2026-09-01: a full-surface
   cleanliness-and-beauty sweep, reading the exports as a family, the docs cover to cover,
   and the rendered admin against the design system; it also carries the OfficeList
   outright-retire question ruling-first, the `aria-disabled`-versus-native-`disabled`

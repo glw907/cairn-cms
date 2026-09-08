@@ -229,3 +229,14 @@ surfaces to check).
   compared tiles across `home` and `article` in both schemes; the unmodified visual suite
   (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green (74 passed) with zero failing
   snapshot names, so no baseline moves.
+
+## `.missing` reconciliation (Task 7)
+
+The pass before set listed ten `.missing` entries, all `archive2` at every width in both
+schemes. None of the six landed tasks (2 through 6) touch `archive2`: it never joins the
+width matrix in Task 2 (only `error404` and `signups` do), and no paint task's surfaces list
+names it. The marker is unchanged and expected to remain unchanged through this pass's own
+after set for the reason recorded above: `ARCHIVE_PAGE_SIZE` is 50 and the showcase's own
+corpus fits on page one, so `/archive/2` has no real page to render until B2's archive proof
+(27 posts at page size 13) gives it one. `archive2` is B2's surface by the reconciliation
+block at the top of this plan's Task 7, not an unaccounted-for gap in B1's own after set.

@@ -263,4 +263,108 @@ describe('admin.login-probe', () => {
     expect(liveProbeCheck().conditionId).toBe('admin.login-probe-failed');
     expect(liveProbeCheck().id).toBe('admin.login-probe');
   });
+
+  it('issues the GET with redirect: manual and passes when it redirects to a Cloudflare Access host', async () => {
+    const { fetch, calls } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: 'https://myteam.cloudflareaccess.com/cdn-cgi/access/login' },
+        });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('myteam.cloudflareaccess.com');
+    expect(calls[0].init?.redirect).toBe('manual');
+  });
+
+  it('does not pass when the redirect Location is a lookalike Cloudflare Access host', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: 'https://evilcloudflareaccess.com/x' },
+        });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).not.toBe('pass');
+  });
+
+  it('reports info, never pass, on a 401', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response('forbidden', { status: 401 });
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+  });
+
+  it('reports info, never pass, on a 403', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return new Response('forbidden', { status: 403 });
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('info');
+  });
+
+  it('fails when a 200 carries the identity hand-off marker, meaning /admin answers with no gate', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) {
+        return new Response(
+          '<html><body><p data-cairn-identity>This site signs in through Acme.</p></body></html>',
+          { status: 200 }
+        );
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('without the gate');
+  });
+
+  it('fails when the workers.dev arm finds /admin exposed on the account subdomain', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return loginResponse();
+      if (url === `${ORIGIN}/admin/login?/request`) return actionJson('sent');
+      if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
+        return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
+      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') {
+        return new Response('exposed', { status: 200 });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('Access application does not cover');
+  });
+
+  it('skips the workers.dev arm when workers_dev is false, never fetching the account subdomain', async () => {
+    const { fetch, calls } = probeFetch(loginResponse(), actionJson('sent'));
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": false}' : null,
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(calls.some((c) => c.url.includes('workers.dev'))).toBe(false);
+    expect(calls.some((c) => c.url.includes('/workers/subdomain'))).toBe(false);
+  });
 });

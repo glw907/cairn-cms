@@ -157,17 +157,28 @@ config and credential checks. Bare `--probe` resolves the URL from the `PUBLIC_O
 wrangler config vars first, then the environment variable. The probe does not run at all without
 the flag, since it is a network POST against a production site.
 
-The probe asserts the envelope a working sign-in presents, in two steps:
+The GET is issued with `redirect: 'manual'`, so a gate's own redirect never gets silently
+followed, and the response classifies first:
 
-1. `GET <url>/admin/login` answers 200, sets the CSRF cookie (`__Host-cairn_csrf` when the probed
-   origin is https, bare `cairn_csrf` on a local http origin), and serves a page carrying the
-   `name="csrf"` hidden field with a value and a form posting the `?/request` action. The expected
-   cookie name derives from the PROBED origin's own scheme, deliberately, never from a separately
-   resolved `PUBLIC_ORIGIN`: it's a cross-check on what the deployed runtime actually presents,
-   immune to a `--url` override diverging from the wrangler config's own value.
-2. `POST <url>/admin/login?/request` with the cookie and field echoed answers the serialized
-   action result for a sent request. A `throttled` answer also passes, since a re-run inside a
-   real editor's cooldown window still proves the path; the detail line says so.
+- A 301, 302, 303, or 307 whose `Location` host matches `<team>.cloudflareaccess.com` passes,
+  naming the host: the site sits behind Cloudflare Access. A lookalike host
+  (`evilcloudflareaccess.com`) never matches, since the check anchors both ends of the hostname.
+- A 401 or 403 reports info, never pass: consistent with a gate, but not proof of one, since a
+  WAF block or a broken deploy answers the same way.
+- A 200 carrying the identity hand-off page's `data-cairn-identity` marker, or a 200 carrying no
+  form posting the `?/request` action, fails: the origin answers without a gate in front of it.
+- A 200 carrying the magic-link form continues into the same two-step assertion this page
+  described before identity mode existed:
+
+  1. `GET <url>/admin/login` sets the CSRF cookie (`__Host-cairn_csrf` when the probed origin is
+     https, bare `cairn_csrf` on a local http origin) and serves the `name="csrf"` hidden field
+     with a value. The expected cookie name derives from the PROBED origin's own scheme,
+     deliberately, never from a separately resolved `PUBLIC_ORIGIN`: it's a cross-check on what
+     the deployed runtime actually presents, immune to a `--url` override diverging from the
+     wrangler config's own value.
+  2. `POST <url>/admin/login?/request` with the cookie and field echoed answers the serialized
+     action result for a sent request. A `throttled` answer also passes, since a re-run inside a
+     real editor's cooldown window still proves the path; the detail line says so.
 
 The probe is side-effect free by construction. It submits a random non-editor address at the
 reserved `example.invalid` domain, and the engine's non-leak design answers a non-editor exactly
@@ -175,13 +186,25 @@ like a successful send while sending no email and minting no token, so nothing l
 and nothing changes on the site. A `send_error` answer fails the check, which catches a deployed
 site whose send path is broken without spending a real delivery.
 
+A second arm, run independently of the first, closes the exposure a gated primary hostname alone
+doesn't cover: the same Worker often stays reachable on its account's
+`<name>.<subdomain>.workers.dev` address, which no Access application covers unless it was told
+to. With
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set and the wrangler config declaring a `name`,
+the doctor resolves the account's workers.dev subdomain and probes that hostname's `/admin` the
+same way; a 200 there fails the whole check, naming the exposure, even when the primary hostname
+passed. Setting `workers_dev: false` in the wrangler config skips the arm entirely, since the
+route no longer exists.
+
 Run it after the first deploy, after an edge or auth change, or whenever an editor reports a
 sign-in problem. A probe failure has many possible causes, so its detail line names the failed
 assertion and the remediation points back at the rest of the doctor and the deploy guide.
 
 Under identity mode (`createAuthGuard`'s `identity` option), `/admin/login` serves the hand-off
 page instead of the magic-link form, marked with a `data-cairn-identity` attribute on its
-paragraph; the probe reads that attribute to tell the two pages apart.
+paragraph; the probe reads that attribute to tell the two pages apart. Seed the site's first
+owner out of band before turning `identity` on, never after: `auth.store` keeps requiring an
+owner-capability row in the roster and names this ordering in its own remedy.
 
 ## The `--fix` skill install
 

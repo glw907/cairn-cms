@@ -100,6 +100,7 @@ describe('readWranglerConfig', () => {
       publicOrigin: 'https://example.com',
       accountId: 'cf-acct-1',
       r2Buckets: ['MEDIA_BUCKET'],
+      name: 'site',
     });
   });
 
@@ -113,6 +114,7 @@ describe('readWranglerConfig', () => {
       publicOrigin: 'https://example.org',
       accountId: 'cf-acct-2',
       r2Buckets: ['MEDIA_BUCKET'],
+      name: 'site',
     });
   });
 

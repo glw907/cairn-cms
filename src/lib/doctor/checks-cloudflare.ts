@@ -196,7 +196,9 @@ export const authStore: DoctorCheck = {
       if (typeof n === 'number' && n >= 1) {
         return pass(`auth schema present with ${n} owner-capability row(s)`);
       }
-      return fail('the editor table holds no owner-capability row');
+      return fail(
+        'the editor table holds no owner-capability row: seed the first owner out of band, before enabling identity mode, never after'
+      );
     } catch (err) {
       return fail(err instanceof Error ? err.message : String(err));
     }

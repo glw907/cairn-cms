@@ -4,11 +4,16 @@
 // non-editor with the identical sent body while sending no email and minting no token, so the
 // probe leaves nothing behind on the site. A factory rather than a check constant, the same
 // shape as the live send: the check exists only when the bin receives --probe.
-import { fail, pass, skip } from './types.js';
+import { fail, info, pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { csrfCookieName } from '../auth/crypto.js';
 import { csrfSecure } from '../sveltekit/csrf.js';
+import { cfGet } from './cloudflare-api.js';
 import { readWranglerConfig } from './wrangler-config.js';
+
+/** A 30x whose `Location` names Cloudflare Access's own hostname; the probe never follows it. */
+const GATE_REDIRECT_STATUSES = new Set([301, 302, 303, 307]);
+const ACCESS_HOST = /^[a-z0-9-]+\.cloudflareaccess\.com$/i;
 
 const NO_URL: CheckResult = skip(
   'pass --probe <url>, set PUBLIC_ORIGIN in the wrangler vars, or set PUBLIC_ORIGIN in the environment'
@@ -33,7 +38,12 @@ export function liveProbeCheck(url?: string): DoctorCheck {
         return fail(`probe URL does not parse: ${base}`);
       }
       try {
-        return await probe(ctx, origin);
+        const result = await probe(ctx, origin);
+        // The workers.dev arm runs independently of the primary result: exposure on the
+        // account's workers.dev hostname is a real gap even when the primary hostname is
+        // properly gated, so a fail here always overrides whatever the primary arm found.
+        const exposure = await probeWorkersDevExposure(ctx);
+        return exposure ?? result;
       } catch (err) {
         return fail(err instanceof Error ? err.message : String(err));
       }
@@ -41,11 +51,52 @@ export function liveProbeCheck(url?: string): DoctorCheck {
   };
 }
 
+/**
+ * The `Location` host of a 30x response, when it matches Cloudflare Access's own hostname
+ * shape; null when the status isn't a redirect, no `Location` is set, it doesn't parse, or the
+ * host does not carry that shape (a look-alike host with an extra prefix run into the same
+ * label never matches, since the regex anchors both ends).
+ */
+function accessGateHost(res: Response, origin: URL): string | null {
+  if (!GATE_REDIRECT_STATUSES.has(res.status)) return null;
+  const location = res.headers.get('location');
+  if (location === null) return null;
+  let host: string;
+  try {
+    host = new URL(location, origin).hostname;
+  } catch {
+    return null;
+  }
+  return ACCESS_HOST.test(host) ? host : null;
+}
+
 /** GET /admin/login and assert the sign-in envelope, then hand the harvested token pair on. */
 async function probe(ctx: DoctorContext, origin: URL): Promise<CheckResult> {
-  const res = await ctx.fetch(String(new URL('/admin/login', origin)));
+  // redirect: 'manual' is required: the runtime fetch otherwise follows the gate's own 302
+  // and this classifier never sees it.
+  const res = await ctx.fetch(String(new URL('/admin/login', origin)), { redirect: 'manual' });
+  const gateHost = accessGateHost(res, origin);
+  if (gateHost !== null) {
+    return pass(`gated by ${gateHost}`);
+  }
+  if (res.status === 401 || res.status === 403) {
+    return info(
+      'the origin refused this request, which is consistent with a gate but does not prove one'
+    );
+  }
   if (res.status !== 200) {
     return fail(`GET /admin/login returned ${res.status}, expected 200`);
+  }
+  const html = await res.text();
+  if (html.includes('data-cairn-identity')) {
+    return fail(
+      'the origin answers without the gate: /admin is reachable directly (the page carries the identity hand-off marker, data-cairn-identity, with no gate in front of it)'
+    );
+  }
+  if (!/<form[^>]*action="[^"]*\?\/request"/.test(html)) {
+    return fail(
+      'the origin answers without the gate: /admin is reachable directly (the login page carries no form posting the ?/request action, an unrecognized page this probe does not know how to read)'
+    );
   }
   // Deliberately NOT folded onto a config-aware derivation (F8/N3): the expected cookie
   // name derives from the PROBED origin's own scheme, an external CROSS-CHECK on what the
@@ -61,15 +112,36 @@ async function probe(ctx: DoctorContext, origin: URL): Promise<CheckResult> {
   if (cookieValue === undefined) {
     return fail(`GET /admin/login set no ${cookieName} cookie`);
   }
-  const html = await res.text();
   const field = csrfFieldValue(html);
   if (field === undefined) {
     return fail('the login page carries no name="csrf" hidden field with a value');
   }
-  if (!/<form[^>]*action="[^"]*\?\/request"/.test(html)) {
-    return fail('the login page carries no form posting the ?/request action');
-  }
   return postRequestAction(ctx, origin, `${cookieName}=${cookieValue}`, field);
+}
+
+/**
+ * The second arm: a Worker reachable on its account's workers.dev hostname bypasses whatever
+ * gate covers the primary hostname, since neither an Access policy nor its revocation reaches
+ * that address. Returns null when the arm does not apply (`workers_dev: false`, no wrangler
+ * config `name`, or no Cloudflare credentials to resolve the account's subdomain) or when the
+ * hostname does not answer 200, so the caller falls back to the primary result unchanged.
+ */
+async function probeWorkersDevExposure(ctx: DoctorContext): Promise<CheckResult | null> {
+  const facts = await readWranglerConfig(ctx.readFile);
+  if (facts?.workersDev === false) return null;
+  if (typeof facts?.name !== 'string') return null;
+  if (!ctx.cfToken || !ctx.cfAccountId) return null;
+  // GET /accounts/{account_id}/workers/subdomain, { result: { subdomain } } out.
+  // https://developers.cloudflare.com/api/resources/workers/subresources/subdomain/
+  const subdomainRes = await cfGet(ctx, `/accounts/${ctx.cfAccountId}/workers/subdomain`);
+  if (!subdomainRes.ok) return null;
+  const body = (await subdomainRes.json()) as { result?: { subdomain?: string } };
+  const subdomain = body.result?.subdomain;
+  if (typeof subdomain !== 'string') return null;
+  const host = `${facts.name}.${subdomain}.workers.dev`;
+  const res = await ctx.fetch(`https://${host}/admin`, { redirect: 'manual' });
+  if (res.status !== 200) return null;
+  return fail('the Worker serves /admin on a hostname the Access application does not cover');
 }
 
 /** The named cookie's value from the Set-Cookie lines, or undefined when no line names it. */

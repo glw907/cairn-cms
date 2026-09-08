@@ -21,6 +21,16 @@ export interface WranglerFacts {
    *  bucketBinding against this. Not part of the hard config.bindings check (decision 9).
    */
   r2Buckets: string[];
+  /**
+   * The wrangler config's top-level `name`, the Worker script name; the login probe's
+   *  workers.dev arm builds the account's workers.dev hostname from it.
+   */
+  name?: string;
+  /**
+   * `workers_dev`, explicit `false` disabling the account's workers.dev route. Undefined or
+   *  `true` leaves the route enabled, matching wrangler's own default.
+   */
+  workersDev?: boolean;
 }
 
 /**
@@ -192,6 +202,8 @@ function factsFromJsonc(text: string): WranglerFacts {
   const vars = config.vars as { PUBLIC_ORIGIN?: unknown } | undefined;
   if (typeof vars?.PUBLIC_ORIGIN === 'string') facts.publicOrigin = vars.PUBLIC_ORIGIN;
   if (typeof config.account_id === 'string') facts.accountId = config.account_id;
+  if (typeof config.name === 'string') facts.name = config.name;
+  if (typeof config.workers_dev === 'boolean') facts.workersDev = config.workers_dev;
   return facts;
 }
 
@@ -250,6 +262,11 @@ function factsFromToml(text: string): WranglerFacts {
       facts.publicOrigin = str;
     } else if (section === '' && key === 'account_id' && str !== undefined) {
       facts.accountId = str;
+    } else if (section === '' && key === 'name' && str !== undefined) {
+      facts.name = str;
+    } else if (section === '' && key === 'workers_dev') {
+      const trimmed = value.trim();
+      if (trimmed === 'true' || trimmed === 'false') facts.workersDev = trimmed === 'true';
     }
   }
   flushD1();

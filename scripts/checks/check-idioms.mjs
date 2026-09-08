@@ -305,6 +305,7 @@ const HOSTNAME_ALLOWED_HOSTS = new Set([
   'github.com',
   'workers.dev',
   'cloudflare.com',
+  'cloudflareaccess.com',
   'anthropic.com',
   'standardschema.dev',
   'example.com',

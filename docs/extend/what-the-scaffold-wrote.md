@@ -75,7 +75,9 @@ your-site/
 │   └── theme/
 │       ├── cairn.config.ts
 │       ├── components/
+│       ├── icons.ts
 │       ├── islands/
+│       ├── markdown-components.ts
 │       ├── site-config.ts
 │       ├── site.config.yaml
 │       ├── site.css
@@ -122,11 +124,13 @@ you have something to look at, edit, and delete before you write your own.
 
 | File | What it is |
 | --- | --- |
-| `cairn.config.ts` | The adapter: concepts, fields, the render pipeline, registered components, the backend, and the icon set. See [Define an adapter and schema](./define-an-adapter-and-schema.md) and [Configure rendering](./configure-rendering.md). |
+| `cairn.config.ts` | The adapter: concepts, fields, the render pipeline, the backend, and `navLayout`. See [Define an adapter and schema](./define-an-adapter-and-schema.md) and [Configure rendering](./configure-rendering.md). |
+| `icons.ts` | The icon set the registered components and the picker fields draw from. |
+| `markdown-components.ts` | The registered markdown components (`defineComponent` declarations) the adapter's `rendering.components` registry lists. |
 | `site-config.ts` | Parses `site.config.yaml` with [`parseSiteConfig`](../reference/core.md#parsesiteconfig). |
 | `site.config.yaml` | Site name, description, nav menus, and the tag vocabulary. See [Manage your tag vocabulary](../editors/manage-your-tag-vocabulary.md) for the editor side of that file. |
 | `theme.css`, `site.css` | The theme's own design tokens and page-level styling, layered over the chassis's generic defaults. See [Design your site](./design-your-site.md). |
-| `components/` | The theme's article renderer (`ArticleView`) and public-facing chrome (`SiteHeader`, `SiteFooter`). The registered markdown components live in the adapter's component list in `cairn.config.ts`. |
+| `components/` | The theme's article renderer (`ArticleView`) and public-facing chrome (`SiteHeader`, `SiteFooter`). The registered markdown components live in `markdown-components.ts`, not here. |
 | `islands/` | The one hydrated component the scaffold ships (`Banner.svelte`) as a worked example. See [Add an island](./add-an-island.md). |
 
 ## Admin routes (`src/routes/admin/`)

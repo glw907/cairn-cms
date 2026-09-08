@@ -119,7 +119,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
         type="button"
         onclick={toggleTheme}
         aria-label={theme === 'cairn-dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-        class="theme-toggle order-1 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content md:order-none"
+        class="theme-toggle cairn-focus-ring order-1 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content md:order-none"
       >
         {#if theme === 'cairn-dark'}
           <!-- Sun: shown while dark is active, click to switch to light. -->
@@ -162,15 +162,11 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
     transition: color 0.15s;
   }
   .site-nav a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .theme-toggle {
     transition: color 0.15s;
-  }
-  .theme-toggle:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
   }
   /* The brand link gets the same hover-and-transition idiom as the sibling nav links, so the
      wordmark reads as tappable rather than inert chrome. */

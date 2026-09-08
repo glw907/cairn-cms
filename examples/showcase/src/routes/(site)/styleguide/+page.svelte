@@ -301,7 +301,7 @@ or extend it; nothing here is a literal a re-skin would miss.
             aria-selected={activeTab === tab.id}
             aria-controls="cairn-sg-panel-{tab.id}"
             tabindex={activeTab === tab.id ? 0 : -1}
-            class="sg-tab"
+            class="sg-tab cairn-focus-ring"
             class:sg-tab-active={activeTab === tab.id}
             onclick={() => (activeTab = tab.id)}
             onkeydown={(e) => onTabKeydown(e, i)}
@@ -327,7 +327,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     <div class="sg-accordion">
       {#each accordion as item (item.summary)}
         <details class="sg-details">
-          <summary class="sg-summary">{item.summary}</summary>
+          <summary class="sg-summary cairn-focus-ring">{item.summary}</summary>
           <p class="sg-details-body">{item.body}</p>
         </details>
       {/each}
@@ -344,7 +344,7 @@ or extend it; nothing here is a literal a re-skin would miss.
       <!-- rel="external" keeps SvelteKit's prerender crawler from queuing /admin (it answers a
            build-time crawl with an error by design) and opts the link out of the client-side
            router, the same isAdminHref-decided pattern SiteHeader and SiteFooter use. -->
-      <a href="/admin" rel="external" class="sg-cta-btn">Open the editor</a>
+      <a href="/admin" rel="external" class="sg-cta-btn cairn-focus-ring">Open the editor</a>
     </div>
 
     <h3 class="sg-h3">Stat</h3>
@@ -634,10 +634,6 @@ or extend it; nothing here is a literal a re-skin would miss.
     border-bottom-color: var(--color-primary);
     font-weight: 600;
   }
-  .sg-tab:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
   .sg-tabpanel {
     padding-top: var(--spacing-s);
     font-size: var(--text-step-0);
@@ -681,10 +677,6 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   .sg-details[open] .sg-summary::after {
     content: '\2212';
-  }
-  .sg-summary:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
   }
   .sg-details-body {
     margin: var(--spacing-2xs) 0 0;
@@ -731,10 +723,6 @@ or extend it; nothing here is a literal a re-skin would miss.
     color: var(--cairn-cta-btn-content);
     font-weight: 600;
     text-decoration: none;
-  }
-  .sg-cta-btn:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
   }
 
   /* Stat: a display-face number over a muted label, the index/landing accent treatment. */

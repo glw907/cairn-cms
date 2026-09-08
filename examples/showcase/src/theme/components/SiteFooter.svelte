@@ -68,8 +68,8 @@ this file; the look re-skins from `theme.css`.
     transition: color 0.15s;
   }
   .site-nav a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   /* The brand link gets the same hover-and-transition idiom as the sibling nav links. */
   .brand-link {

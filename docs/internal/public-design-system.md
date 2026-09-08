@@ -180,8 +180,10 @@ inline-code chip; the `pre.shiki` code block (colors from the `.cairn-tok-*` rul
 standard `ul` marker and a display-face-number `ol` marker; GFM task lists styling the real disabled
 checkbox (the engine adds its `aria-label` through `rehypeTaskListA11y`); bordered, zebra tables; the
 `hr` as a plain hairline; and figures on the `center`/`wide`/`full` contract. Every `.prose a` and future
-interactive control gets the `:focus-visible` ring (2px `primary`, 2px offset) plus a `base-100` halo so
-the ring reads against the tinted callout grounds. The directive components (callout note/tip/warning,
+interactive control gets the `:focus-visible` ring (2px `primary`, 2px offset, both read from
+`chassis/tokens.css`'s `--cairn-focus-ring-outline`/`--cairn-focus-ring-offset`, the one source for the
+whole site) plus a `base-100` halo so the ring reads against the tinted callout grounds. The directive
+components (callout note/tip/warning,
 alert) are styled under `.prose` so they beat DaisyUI's bundled `.alert`/`.card`, each tone reading its
 `--cairn-*-ink`.
 

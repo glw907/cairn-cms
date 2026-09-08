@@ -175,3 +175,33 @@ reproduce that same after set.)
   that index is new, appended past the former page length) / moves
   `styleguide-{light,dark}-{320,390,768,1440,2560}.png` (10 files, the same ten Task 3/4a left
   unchanged).
+
+### Task 5: one focus ring
+
+Before set at `~/.cache/cairn-chassis-b/task-5/before/`, a fresh capture at ff3320e3 (Task 4's
+fix commit, the clean parent of this task), covering every surface the tool knows (home,
+article, styleguide, archive2, error404, signups); after set at
+`~/.cache/cairn-chassis-b/task-5/after/`. The re-derived grep count
+(`grep -rn "outline: 2px solid var(--color-primary)" examples/showcase/src`) was 20 (6 in
+prose.css, 14 across the theme and route files), matching the spec's number.
+
+- No surface moves. `tokens.css` defines `--cairn-focus-ring-outline`/`-offset`/`-radius` and a
+  top-level `@utility cairn-focus-ring` (outline and offset only, deliberately no radius: several
+  call sites already carry their own unconditional border-radius, a pill or a DaisyUI field
+  radius, and a radius bundled into the utility's `:focus-visible` state would fight that on
+  focus). `theme.css` drops its own `--cairn-focus-ring-radius` (the chassis default is already
+  2px, so the value is unchanged, only its owning file moves). prose.css's six directive sites and
+  seven descendant-selector sites (`.lead__title a`, `.lead__link`, `.entry__title a` on the home
+  and archive pages, `.site-nav a` on SiteHeader and SiteFooter, `.meta a` on ArticleView) read
+  the two tokens in place; seven element-direct sites (`.tag-filter__option`, `.pagination__link`
+  on the home and archive pages, `.sg-tab`, `.sg-summary`, `.sg-cta-btn`, `.theme-toggle`) drop
+  their hand-written rule and take the `cairn-focus-ring` class in markup instead. `magick compare
+  -metric AE` is 0 on every one of the 227 compared tiles across home, article, styleguide,
+  error404, and signups except two sub-pixel outliers with no visible content
+  (`signups-light-2560-00`: AE 0.27 of 2,048,000 px, normalized 1.3e-07; `signups-dark-320-00`: AE
+  0.0065, normalized 2.6e-08), both on the admin signups page, which this task's file set never
+  touches; a diff render of the larger outlier shows no visible pixels, consistent with render
+  timing/anti-aliasing noise rather than a paint change. `archive2` stayed `.missing` in both sets
+  (the known page-two 404, unrelated to this task). The unmodified visual suite
+  (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green (74 passed) with zero failing
+  snapshot names, so no baseline moves.

@@ -51,13 +51,13 @@
   <nav class="pagination" aria-label="Archive pages">
     <a
       href={data.archive.page - 1 === 1 ? '/' : `/archive/${data.archive.page - 1}`}
-      class="pagination__link"
+      class="pagination__link cairn-focus-ring"
     >
       <span aria-hidden="true">&larr; </span>Newer
     </a>
     <span class="pagination__status">Page {data.archive.page} of {data.archive.totalPages}</span>
     {#if data.archive.page < data.archive.totalPages}
-      <a href={`/archive/${data.archive.page + 1}`} class="pagination__link">
+      <a href={`/archive/${data.archive.page + 1}`} class="pagination__link cairn-focus-ring">
         Older<span aria-hidden="true"> &rarr;</span>
       </a>
     {/if}
@@ -135,8 +135,8 @@
     color: var(--color-primary);
   }
   .entry__title a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .entry__excerpt {
     margin: 0;
@@ -165,10 +165,6 @@
   }
   .pagination__link:hover {
     text-decoration: underline;
-  }
-  .pagination__link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
   }
   .pagination__status {
     font-size: var(--text-step--1);

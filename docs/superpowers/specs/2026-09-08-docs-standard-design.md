@@ -1,6 +1,6 @@
 # A documentation standard for cairn: design
 
-**Status:** revision 2, 2026-09-08. Derived from the approved proposal at
+**Status:** revision 3, 2026-09-08. Derived from the approved proposal at
 [`docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md`](../../internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md).
 The proposal carries the evidence and the reasoning behind every rule here, and its reviews and
 research sit beside it in the same directory. This spec restates two things as requirements: the

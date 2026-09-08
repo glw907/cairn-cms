@@ -54,20 +54,26 @@ a green PR with the captures and the visual-verifier verdict banked; the merge s
 If the fold splits B into two passes, both halves run under this grant. B starts after
 chassis-A's ritual, PR, and merge.
 
-**Chassis-B plan DRAFTED** (2026-09-07, `docs/superpowers/plans/2026-09-07-chassis-b-pass.md`,
-12 tasks, ceiling 6M, one chain; inputs banked at
-`docs/internal/record/2026-09-04-chassis-inputs/chassis-b-inputs.md`). Drafted against `main`
-at `d565ab77` plus chassis-A's plan as the known delta, so after chassis-A merges and before
-the first dispatch: re-verify every anchor against post-A `main`, then run the three-lens
-adversarial plan review (grounding, risk, hygiene and sizing) in place of Geoff's read, fold
-it, commit, and execute. Settled 2026-09-07: the thirteen posts are dated across 2025.
+**Chassis-B plan FOLDED and SPLIT** (2026-09-07): the four-lens adversarial review (record
+`docs/internal/record/2026-09-04-chassis-inputs/chassis-b-plan-review.md`, fold brief
+`chassis-b-fold-brief.md`, 89 corrections) split the pass at the adoption/corpus boundary into
+**B1** `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` (matrix, shell, primitives, focus
+ring, entry row; 6M) and **B2** `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md` (corpus,
+archive, identity, footer nav, CSS, idioms, rebake; 6M), both under the execution grant. Rulings
+taken in the fold: the `createSectionAction` adoption deferred to polish (the showcase has no
+access map and the dev handle attaches none); the thirteen posts excluded from the scaffold by
+path; the members adoption and the alignment spec cut; the width matrix moved to B1's Task 2;
+`.cairn-card` proven on the styleguide only. Before B1's first dispatch: re-verify anchors
+against post-A `main` (each plan's Reconciliation block) and assemble the chain's `criteria`
+strings with the paint protocol verbatim. The committed intended-moves manifest
+(`chassis-b-intended-moves.md`) is the recovery artifact for a cold resume mid-pass.
 
 **After chassis-A: chassis-B, plan authorship AND execution granted (Geoff, 2026-09-05).**
 Author its plan from the spec's Chassis-B section with the three-lens adversarial plan review
 in place of Geoff's read; two taste calls are settled: the thirteen new posts are REAL short
 posts (150 to 300 words, the existing trail-notes voice, through the site content method),
 and the merge gate STAYS (run to a green PR with the before/after captures and the
-visual-verifier verdict banked; Geoff merges after his five-viewport read). Then the **identity
+visual-verifier verdict banked; Geoff merges after his five-viewport read). Then B2, then the **identity
 seam** pass (Geoff, 2026-09-07: before polish so polish's family and docs reads see it;
 brainstorm and spec first; ROADMAP's audit-remediation entry carries the shape), then polish
 (not granted), then ONE release cut. The Go `cairn` tool Pass A is deferred "until later" (Geoff,

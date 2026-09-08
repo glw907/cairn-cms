@@ -1,4 +1,4 @@
-# Chassis-B Pass Implementation Plan (audit remediation, slice 9: the exemplar uses its chassis)
+# Chassis-B plan, draft 1 (superseded 2026-09-07 by the B1 and B2 plans; kept for the review record's line citations)
 
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via

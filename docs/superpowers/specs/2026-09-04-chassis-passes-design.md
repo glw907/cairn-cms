@@ -205,9 +205,18 @@ Ceiling 7.5M (twelve tasks with a heavier gate than internals-C's, above the obs
 per task, with two tasks of unbounded finding volume); checkpoints at 4, 8, 12; the three-lens
 adversarial plan review folded 2026-09-04 (banked as `plan-review.md` in the inputs record).
 
-## Chassis-B: the exemplar uses its chassis (slice 9)
+## Chassis-B: the exemplar uses its chassis (slice 9, executed as two passes B1 and B2)
 
-Branches off `main` after chassis-A merges. Worktree `.claude/worktrees/chassis-b`. This is
+> Amended 2026-09-07 from the four-lens plan review (record
+> `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-plan-review.md`, fold brief
+> `chassis-b-fold-brief.md`): the scope splits at the adoption/corpus boundary into B1
+> (`2026-09-07-chassis-b1-pass.md`: matrix, shell, primitives, focus ring, entry row) and B2
+> (`2026-09-07-chassis-b2-pass.md`: corpus, archive, identity, footer nav, CSS, idioms,
+> rebake), each at 6M, because the corrections removed about one task of work and added the
+> tile protocol, the committed manifest, the contact sheets, and a third CI regen.
+
+Branches off `main` after chassis-A merges. Worktree `.claude/worktrees/chassis-b` (B1), then
+`.claude/worktrees/chassis-b2` off post-B1 `main`. This is
 visual work: the `visual-fidelity` skill governs it (reference capture before the build, the
 fresh-context `visual-verifier` gate, the one-check deploy rule, the five-viewport standard).
 
@@ -216,17 +225,24 @@ Scope:
 1. **The shell from the chassis.** `(site)/+layout.svelte` and `+error.svelte` use
    `.cairn-site-shell`/`.cairn-site-main`; the triplicated gotcha prose collapses to the one
    place the chassis states it. Recorded rank 8, review 2.7.
-2. **The remaining five composition primitives used and proven.** Each appears in showcase
-   markup, is baselined, and is proven at 320 and 2560. Review 5.5.
+2. **The remaining five composition primitives used and proven.** Each appears in showcase markup,
+   is baselined, and is proven at 320 and 2560. The article carries no sidebar-shaped region, so
+   `.cairn-sidebar-layout` is proven on the styleguide composition section; `.cairn-card`'s real
+   adoption lands on a surface the scaffold receives, never on the excluded `src/routes/members`
+   fixtures, or the pass records that this theme has no real use for it. Review 5.5.
 3. **One focus ring.** A chassis primitive replaces the 20 hand-written rings that remain after
    A's deletions, and as a primitive it meets item 2's proof rule. Review 4.2.
 4. **The archive proven and the entry row once.** Thirteen new posts (written under the site
-   content method; the showcase has no content guide of its own), `ARCHIVE_PAGE_SIZE` 13,
-   the home page's pagination block and `/archive/2` baselined at the five viewports in both
-   schemes, the `admin-office-*` baselines regenerated for the longer posts list, the
-   `svelte.config.js` exception kept; and the `<article class="entry">` block written three
-   times and its CSS twice become one component with one stylesheet. Both carried here from
-   A because they change baselined pages. Recorded ranks 1 and 6.
+   content method; the showcase has no content guide of its own), `ARCHIVE_PAGE_SIZE` 13, the
+   home page's pagination block and `/archive/2` baselined at the five viewports in both
+   schemes, the `admin-office-*` baselines regenerated, the `svelte.config.js` exception kept;
+   and the `<article class="entry">` block written three times and its CSS twice become one
+   component with one stylesheet. The archive route paginates the same `entries.slice(1)` the
+   home route does, so 27 posts give exactly two pages and `/archive/3` correctly 404s. Whether
+   the thirteen ship to the scaffold or are excluded by path is ruled in the plan's Ruled
+   inputs, since `src/content/` is in no exclude list today and the corpus would otherwise
+   double in every scaffolded site (B2 rules: excluded). Both carried here from A because they
+   change baselined pages. Recorded ranks 1 and 6.
 5. **Site identity from `siteConfig`.** The five hardcoded "Waymark" sites (header, footer,
    error page, archive, styleguide) read `siteConfig.siteName`; the two unexplained origin
    literals are explained or derived; the footer nav stops forking from the header nav.
@@ -234,14 +250,19 @@ Scope:
 6. **CSS conformance.** The two degenerate `clamp()` declarations, the two theme-only chrome
    tokens a second theme would dangle, `site.css` literals brought under the token gate, a
    stated class namespace convention, one page-title separator. Review 4.1 to 4.6, 5.2.
-7. **Width matrix coverage.** The four unproven surfaces including the 404 baseline enter the
-   matrix; the documented screenshot floor is compensated or the doc says why not. Review 5.3,
-   5.6.
+7. **Width matrix coverage.** The unproven emitted public surfaces including the 404 baseline
+   enter the matrix, early in B1 so every adoption has a before. The documented screenshot
+   floor is not compensated by a new test: the 2026-08 measurement found zero public rows
+   above the 2 px bar, so `public-design-system.md` records that fact and the trigger that
+   would make a compensation test worth writing. Review 5.3, 5.6.
 8. **Small idiom items.** `siteConfig` imported through one door; `feed.ts`'s mixed optional
    chaining and non-null assertions; the three `platform!` assertions in the custom-screen
    exemplar; the design-system doc's stale file paths; the CSS half of the Prettier adoption;
-   `createSectionAction` adopted in `admin/signups` if internals-C's Task 10 left the docs
-   teaching it, test-first against `e2e/custom-screen.spec.ts`. Review 1.2 to 1.4, 2.8.
+   `createSectionAction` adopted in `admin/signups` ONLY if the pass also lands the access-map
+   declaration and the dev-package `cairnAccess` attachment the adoption requires (the showcase
+   declares no map and `packages/cairn-cms-dev/src/handle.ts` attaches none); otherwise the raw
+   shape stays with its comment and the adoption is filed to polish with the seam it needs
+   named (the 2026-09-07 review's ruling: deferred). Review 1.2 to 1.4, 2.8.
 9. **Waymark's deliberate adaptation and final rebake.** The initiative design's item 6 second
    half: `templates/waymark` adapted to the changed engine on purpose, not only kept compiling,
    then the final `emit:template` before the release window closes.
@@ -249,9 +270,10 @@ Scope:
     chassis first, the engine where deeper; the polish slice's inputs filed, including the
     engine's own `src/lib/components` Svelte lint wiring.
 
-Ceiling 6M with a stated screenshot budget per task (image reads dominate); checkpoints every
-four tasks; the three-lens review; Geoff's before/after on the rendered showcase at the five
-viewports before merge.
+Ceiling 6M per pass (B1 and B2), with the screenshot budget counted in TILES and the pass-end
+verifier's per-iteration image count stated in each plan header; checkpoints every four tasks,
+each writing STATUS; the four-lens review; Geoff's before/after read from committed contact
+sheets before merge.
 
 ## Out of scope for both
 
@@ -272,3 +294,19 @@ acted on.
   as mechanical so no later review reads reflow.
 - Chassis-A and internals-C both touch `examples/showcase/src/chassis/prose.css` (the `ec-*`
   rename); A branches only after C merges, so there is no contention.
+- (Chassis-B) The primitive adoptions can force a visible redesign: `.cairn-section` adds box
+  geometry to a home-page block that has none, and `.cairn-card` doubles the padding of a card
+  whose padding sits on an inner wrapper. The task enumerates each delta with numbers and
+  reports rather than forces a redesign.
+- (Chassis-B) The exemplar's custom-screen adoption changes the signups route's authorization
+  over a D1 table of names and email addresses, and the showcase declares no access map while
+  the dev backend attaches none. The adoption lands only with an access map admitting the same
+  role set as today's `requireOwner` and the dev-package seam that attaches it; otherwise it is
+  deferred to polish by name.
+- (Chassis-B) Thirteen new posts would enter every scaffolded site's starter corpus, since
+  `src/content/` is in no exclude list. The corpus decision is ruled explicitly (excluded by
+  path) rather than made inside an execution pass.
+- (Chassis-B) Baselines are regenerated locally per task and CI-canonically only at
+  checkpoints, and local and CI renders share one filename, so sub-floor drift below the 120 px
+  floor can accumulate invisibly. Each CI regen's diff over the committed local baselines is
+  READ and any differing surface is named.

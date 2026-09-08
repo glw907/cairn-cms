@@ -205,3 +205,27 @@ prose.css, 14 across the theme and route files), matching the spec's number.
   (the known page-two 404, unrelated to this task). The unmodified visual suite
   (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green (74 passed) with zero failing
   snapshot names, so no baseline moves.
+
+### Task 6: the entry row once
+
+Before set at `~/.cache/cairn-chassis-b/task-6/before/`, a symlink to `~/.cache/cairn-chassis-b/
+task-5/after/` (Task 5's own after set, captured at the same commit, `c4c396ad`, this task's
+clean parent; no predecessor since Task 5 moved paint under this task's surfaces, so a fresh
+capture would only reproduce that same after set); after set at `~/.cache/cairn-chassis-b/
+task-6/after/`, a `--only home,article` capture (this task's file set touches only the home page
+and the `/archive/[page]` route's markup, both feeding into the new `EntryRow` component; the
+archive route is not itself a baselined surface, so `home` and `article` are the tile-bearing
+surfaces to check).
+
+- `home` and `article` 320/390/768/1440/2560 (plus `article-light-1920`) light and dark: NO
+  surface moves. `src/theme/components/EntryRow.svelte` is created, carrying the `.site-entry*`
+  markup and stylesheet (renamed from `.entry*`) and the `@media (max-width: 34rem)` narrow-width
+  block, moved byte-for-byte from the home page's and the archive route's own `<style>` blocks;
+  the three `<article class="entry">` call sites (two on the home page: the filtered list and the
+  year-grouped archive; one on `/archive/[page]`) are replaced by `<EntryRow {post} />`; the
+  title link now carries `cairn-focus-ring` in place of its own hand-written
+  `.entry__title a:focus-visible` rule (the same token pair Task 5 already wired), a pure rename
+  and relocation with no value change. `magick compare -metric AE` is 0 on every one of the 115
+  compared tiles across `home` and `article` in both schemes; the unmodified visual suite
+  (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green (74 passed) with zero failing
+  snapshot names, so no baseline moves.

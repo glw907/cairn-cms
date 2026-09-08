@@ -7,6 +7,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { formatDate } from '$chassis/date.js';
+  import EntryRow from '$theme/components/EntryRow.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -114,19 +115,7 @@
 
     {#if filtered}
       {#each filtered as post (post.id)}
-        <article class="entry" class:entry--undated={!post.date} data-cairn-post>
-          {#if post.date}
-            <div class="entry__date">{formatDate(post.date)}</div>
-          {/if}
-          <div>
-            <h2 class="entry__title">
-              <a href={post.permalink}>{post.title}</a>
-            </h2>
-            {#if post.fields.description}
-              <p class="entry__excerpt">{post.fields.description}</p>
-            {/if}
-          </div>
-        </article>
+        <EntryRow {post} />
       {/each}
     {:else}
       <!-- Year-grouped archive: a year marker opens each run of same-year entries, in the page's
@@ -135,19 +124,7 @@
       {#each data.archive.years as group, i (group.year)}
         <h3 class="index__year" class:index__year--first={i === 0}>{group.year}</h3>
         {#each group.entries as post (post.id)}
-          <article class="entry" class:entry--undated={!post.date} data-cairn-post>
-            {#if post.date}
-              <div class="entry__date">{formatDate(post.date)}</div>
-            {/if}
-            <div>
-              <h2 class="entry__title">
-                <a href={post.permalink}>{post.title}</a>
-              </h2>
-              {#if post.fields.description}
-                <p class="entry__excerpt">{post.fields.description}</p>
-              {/if}
-            </div>
-          </article>
+          <EntryRow {post} />
         {/each}
       {/each}
     {/if}
@@ -327,55 +304,6 @@
     }
   }
 
-  .entry {
-    display: grid;
-    grid-template-columns: 7.5rem 1fr;
-    gap: var(--spacing-m);
-    align-items: start;
-    padding: var(--spacing-m) 0;
-    border-bottom: var(--border) solid var(--color-card-border);
-  }
-  /* An undated post drops the date column and reads as a single column. */
-  .entry--undated {
-    grid-template-columns: 1fr;
-  }
-
-  .entry__date {
-    padding-top: 0.5rem;
-    font-size: var(--text-step--1);
-    color: var(--color-muted);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
-  }
-
-  .entry__title {
-    margin: 0 0 0.35rem;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--text-step-2);
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-tight);
-  }
-  .entry__title a {
-    color: inherit;
-    text-decoration: none;
-    border-radius: 2px;
-  }
-  .entry__title a:hover {
-    color: var(--color-primary);
-  }
-  .entry__title a:focus-visible {
-    outline: var(--cairn-focus-ring-outline);
-    outline-offset: var(--cairn-focus-ring-offset);
-  }
-
-  .entry__excerpt {
-    margin: 0;
-    font-size: var(--text-step-0);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
-  }
-
   /* Pagination: a plain, centered row (a status label between the two direction links), reading
      the same tokens as the rest of the index. */
   .pagination {
@@ -403,16 +331,5 @@
     font-size: var(--text-step--1);
     color: var(--color-muted);
     font-variant-numeric: tabular-nums;
-  }
-
-  /* Below the narrow breakpoint the date stacks above the title in one column. */
-  @media (max-width: 34rem) {
-    .entry {
-      grid-template-columns: 1fr;
-      gap: 0.4rem;
-    }
-    .entry__date {
-      padding-top: 0;
-    }
   }
 </style>

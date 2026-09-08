@@ -302,6 +302,12 @@ one.
   Playwright preview and no task here runs the showcase e2e. The worktree showcase `node_modules`
   symlink trap needs no defence for the same reason: nothing here proves the engine through the
   showcase. Do not reinstall the showcase.
+- **"Paragraphs outside the bounds" in the review agents' measurement table has no defined bounds
+  until G2-4's Vale paragraph rule ships.** `prose-voice-reviewer` and `cairn-register-editor` both
+  carry "any paragraph you judge disproportionate for the register" with no number behind
+  "disproportionate," because no rule has stated one yet. G2-4 ships `Cairn.ParagraphBounds` and
+  states the bounds it sets, three to eight sentences and 150 words with 250 as the hard limit, and
+  a reviewer reading that cell before G2-4 lands treats it as an open column, never a silent zero.
 
 ## Conductor pre-tasks (before P1 dispatches)
 
@@ -374,22 +380,26 @@ ground.
 **Gate for every P task:** `npm run check:docs && npm run check:arm-indexes`, plus
 `npx vitest run scripts/checks` from P3 onward.
 
-### Task P1: Verify the preconditions and re-derive the baseline
+### Task P1: Verify the preconditions, re-derive the baseline, and wire the docs-register profile
 
-**Chain:** P. **Depends on:** nothing. **Deliverables:** 3.
+**Chain:** P. **Depends on:** nothing. **Deliverables:** 4, which is the cap.
 
 **Files:**
 - Create: `docs/internal/record/docs-rebuild/README.md` (the directory's arm index, one pre-written
   row per artifact this plan produces, each unchecked),
-  `docs/internal/record/docs-rebuild/preflight.md`
+  `docs/internal/record/docs-rebuild/preflight.md`, `.tellgrader.json`
 - Modify: `docs/internal/README.md` (the record arm's index line, if `check:arm-indexes` requires
   one)
 
 **Interfaces:**
 - Produces: `preflight.md`, the verified baseline every chain's `read`-tier citation resolves
-  against: the `main` sha, the published-page set and its count, the polish-C result, the plan-one
-  result, and the sweep finding map.
-- Consumes: the polish spec's rename table; `docs-sweep.md`; `exports-sweep.md`.
+  against: the `main` sha, the published-page set and its count, the polish-C result, the six
+  plan-one hand-off artifacts' presence, and the sweep finding map. `.tellgrader.json`, the
+  discovery file that fires the docs-register profile without an explicit flag; consumed by
+  `check:provenance` (G2-5) and by any later scanner run over this repository.
+- Consumes: the polish spec's rename table; `docs-sweep.md`; `exports-sweep.md`;
+  `~/.dotfiles/docs/superpowers/plans/2026-09-08-docs-standard-claude-infra-handoff.md`, plan
+  one's hand-off, which names the six artifacts and gives the verification commands step 3 runs.
 
 **Steps:**
 - [ ] **Step 1:** verify the figures substrate is committed to `main`. **If it is not, stop the pass
@@ -399,13 +409,16 @@ ground.
   Record the result; do not stop the pass and do not stop chain H. **State in `preflight.md` that
   polish-C gates stage one's harvest, not this pass**, and that H2's entries are provisional against
   it.
-- [ ] **Step 3:** record plan one's three consumed outputs as present or absent, each with the
-  command or path that proved it, and name the criterion each absence degrades. Do not stop the
-  pass.
-- [ ] **Step 4:** re-derive the published-page set and count; re-resolve every `docs-sweep.md`
+- [ ] **Step 3:** run the hand-off's own verification command for each of the six artifacts it
+  names, and record each as present or absent with the command and its output pasted. Do not stop
+  the pass on any absence; name the criterion each absence degrades.
+- [ ] **Step 4:** create `.tellgrader.json` at the repository root with exactly
+  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/superpowers/**"]}`,
+  and prove discovery fires by path rather than by an explicit flag.
+- [ ] **Step 5:** re-derive the published-page set and count; re-resolve every `docs-sweep.md`
   finding number and every `exports-sweep.md` `F` number this plan cites, and write the
   finding-to-track map; record the `main` sha; commit.
-- [ ] **Step 5:** add an empty `## Questions` section to `preflight.md`, with a one-line conductor
+- [ ] **Step 6:** add an empty `## Questions` section to `preflight.md`, with a one-line conductor
   instruction above the (empty) list: append one line per question, as it lands, in the shape
   "`<date>` `<chain/task>`: `<question>` -> `<answer>`". This is the standing questions log the
   `questions asked` measure counts from; T1 rolls it up rather than re-deriving it.
@@ -418,9 +431,9 @@ ground.
   not corrected to match this plan.
 - It records the `main` sha. Every later `read`-tier `source` in every ledger cites that sha, not a
   worktree HEAD, and `preflight.md` says so in those words.
-- It records the polish-C verification result and the plan-one verification result, each with the
-  command run and its output pasted, since a verification recorded as prose is one `diff-reviewer`
-  cannot confirm. A verification recorded as assumed rather than run fails this task.
+- It records the polish-C verification result, each with the command run and its output pasted,
+  since a verification recorded as prose is one `diff-reviewer` cannot confirm. A verification
+  recorded as assumed rather than run fails this task.
 - It carries a table mapping every `docs-sweep.md` finding (1 through 30, no prefix) and every
   `exports-sweep.md` finding (F7 through F10) to **the page it concerns and the track whose stage
   consumes it**, with **every finding assigned**. Revision 1 left findings 16 and 21 unassigned. A
@@ -428,8 +441,29 @@ ground.
   track, not the task, because the harvest tasks live in stage plans that do not exist yet; each
   stage's plan assigns its track's findings to its own tasks.
 - It records the current value of `package.json`'s `check` script verbatim, so no later task assumes
-  a composite, and records the four plan-one outputs P1 does not verify (the output style, the voice
-  files, the review agents, and the global `CLAUDE.md`) as plan one's own record's to carry.
+  a composite.
+- `preflight.md` carries a table with exactly the hand-off's six artifacts, one row each (the
+  profile flag, the discovery schema, the measure definition, the Vale hook change, the two
+  skills, the figure-verifier agent), each row stating present or absent, the command run, and the
+  criterion the absence degrades. **The verification runs the hand-off's own commands**: for the
+  profile flag, `tellgrader --profile docs-register <file>` against a committed docs page and
+  `tellgrader --profile none` against the same page; for the Vale hook change, `grep -n "config
+  root" bin/.local/bin/vale-hook` and `uv run --with pytest --no-project python -m pytest
+  tests/test_vale_hook.py -q` from `~/.dotfiles`; for the two skills, `readlink -f
+  ~/.claude/skills/cairn-figure/SKILL.md` and `grep -n "^## Author-facing prose"
+  ~/.dotfiles/claude/.claude/skills/writing-voice/SKILL.md`; for the figure-verifier agent,
+  `readlink -f ~/.claude/agents/figure-verifier.md` and `grep -n "earns its place\|decoration\|should
+  be a table\|should be a numbered\|missing figure" ~/.dotfiles/claude/.claude/agents/figure-verifier.md`.
+  The hand-off gives no standalone command for the discovery schema or the measure definition, so
+  this task checks the discovery schema against the `.tellgrader.json` step 4 creates, and checks
+  the measure definition by `test -f
+  ~/.claude/skills/writing-voice/evals/tellgrader/MEASURES.md` plus `grep -n "Divergences from
+  cairn's measure-prose.mjs" ~/.claude/skills/writing-voice/evals/tellgrader/MEASURES.md`.
+- `.tellgrader.json` is committed at the repository root with exactly
+  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/superpowers/**"]}`,
+  and the report pastes the output proving `tellgrader --register docs docs/why-cairn.md` then
+  reports a `measures` object and `tellgrader --register docs docs/internal/docs-register.md` does
+  not, so discovery, not an explicit flag, is what fires the profile on one path and not the other.
 - `docs/internal/record/docs-rebuild/README.md` carries one unchecked row per artifact, so later
   tasks tick rather than append.
 - `preflight.md` carries a `## Questions` section with the append-one-line-per-question instruction,
@@ -439,7 +473,9 @@ ground.
 **Notes:** this is the one task that can stop the whole pass, and it stops on one thing only, the
 figures substrate. It is cheap and it runs alone. Every other precondition it records rather than
 enforces, because the pass ahead of it builds tools and gates against fixtures, not against the
-published pages.
+published pages. **`.tellgrader.json` moves here from P3** because plan one's hand-off names its
+absence as the sole reason the docs-register profile is dead on arrival in this repository, and P1
+is where the repository's baseline first exists to commit against.
 
 ### Task P2: The ledger schema and the page-type assignment
 
@@ -576,14 +612,14 @@ before G1 branches, and never against the per-page rows, which are empty by desi
 
 ### Task P3: The brief schema, the parser, and the packaging negation
 
-**Chain:** P. **Depends on:** P2. **Deliverables:** 4.
+**Chain:** P. **Depends on:** P2. **Deliverables:** 3.
 
 **Files:**
 - Create: `docs/internal/templates/brief-schema.md`, `scripts/checks/brief.mjs`,
   `scripts/checks/brief.schema.json`,
   `scripts/checks/fixtures/docs-standard/brief-valid.yml`,
   `scripts/checks/fixtures/docs-standard/brief-invalid.yml`,
-  `scripts/checks/brief.test.ts`, `.tellgrader.json`
+  `scripts/checks/brief.test.ts`
 - Modify: `package.json` (`files` gains the negation
   `!docs/**/*.brief.yml`), `scripts/checks/check-package-files.mjs` (the new assertion)
 
@@ -599,7 +635,7 @@ before G1 branches, and never against the per-page rows, which are empty by desi
   parser over the `yaml` package; run green.
 - [ ] **Step 2:** add the `files` negation and the `check:package` assertion; prove no
   `*.brief.yml` reaches the tarball.
-- [ ] **Step 3:** write `brief-schema.md` and cairn's `.tellgrader.json`; commit.
+- [ ] **Step 3:** write `brief-schema.md`; commit.
 
 **Acceptance criteria:**
 - The parser uses the **`yaml`** package for parsing and a JSON Schema check for validation, and the task adds
@@ -634,9 +670,11 @@ before G1 branches, and never against the per-page rows, which are empty by desi
 - The schema states that ids never appear in published markdown, and that the brief is the only
   place a page's type is written down beside its template. It names the path of the twelve-row
   quality checklist G2-7 commits.
-- `.tellgrader.json` is committed at the repository root with exactly
-  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/superpowers/**"]}`.
 - `npx vitest run scripts/checks` and `npm run check:package` are green.
+
+**Notes:** `.tellgrader.json` is P1's, not this task's, since P1 is where the repository's
+baseline first exists to commit against and plan one's hand-off names its absence as the sole
+reason the docs-register profile is dead on arrival here.
 
 ### Task P4: The shared substrate, the stubs, and the sentence splitter
 
@@ -1597,7 +1635,13 @@ invocation two.
   drafter, for the coverage diff against the extend ledger, and record its report as a
   `## Coverage diff` section of `demonstration-review.md`, not a separate file. One redraft round at
   most; a second fix verdict goes to the owner.
-- [ ] **Step 4:** run `check:ledger` over every ledger that exists, its first real run; commit.
+- [ ] **Step 4:** dispatch the `figure-verifier` agent (`~/.claude/agents/figure-verifier.md`) if the
+  drafted page carries any figure, and record its per-figure verdicts in a `## Figure verification`
+  section of `demonstration-review.md`. The demonstration page carries no figure, so this step
+  records "no figure" and instead runs `figure-verifier` once on `docs/extend/architecture.md`'s two
+  mermaid figures (lines 5 and 90), recording those verdicts in the same section, so the hand-off's
+  figure-verifier artifact is exercised at least once in this pass.
+- [ ] **Step 5:** run `check:ledger` over every ledger that exists, its first real run; commit.
 
 **Gate:** `npm run check && npx vitest run scripts/checks && npm run check:docs &&
 npm run check:vale && npm run lint:markdown && npm run check:provenance && npm run check:ledger`.
@@ -1619,6 +1663,12 @@ npm run check:vale && npm run lint:markdown && npm run check:provenance && npm r
   in this task's Files, and lists every ledger entry for this page the drafted page dropped, each
   restored or recorded in the brief's `deviations` with a reason. This is the path T1's "sourced by
   path" criterion cites for the coverage-diff figures.
+- `demonstration-review.md` carries a `## Figure verification` section. The demonstration page
+  carries no figure, so the section states "no figure" for it and carries `figure-verifier`'s two
+  verdicts, one per mermaid figure, for `docs/extend/architecture.md`, each with a `file:line` and
+  one of the five verdict values from the agent's own table (earns its place, decoration, should be
+  a table, should be a numbered list, missing figure). This is the hand-off's sixth artifact, proven
+  once against a real page in this pass rather than left unexercised for a stage to discover.
 - The revision cap held: at most one redraft, and the report says how many rounds ran.
 - The type ids in `docs/internal/record/docs-rebuild/page-types.md`, the template filenames, and the
   brief's `type` agree exactly.

@@ -34,7 +34,15 @@ granted; B1 and B2 end at green PRs for Geoff's five-viewport read, the seam mer
 **Identity seam: Tasks 1 and 2 ACCEPTED** (`b44aee8b`; `bd9c2fc8`, `d6388333`, cap fix
 `0b99192a`); Task 3 landed (`5a534016`, `e028eac8`) and its run `wf_774752b5-aba` halted on a second
 `fix` (a vacuous console spy); conductor ruling: one more fix dispatch (landed `a5c59523`, Task 3 closed), then Tasks 4 to 6
-relaunched as run `wf_d399a13c-700` (2026-09-08 about 04:45 AKDT). Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
+relaunched as run `wf_d399a13c-700` (2026-09-08 about 04:45 AKDT); Task 4 landed (`56b7c231`,
+`02e43b85`), Task 5a's page landed (`fb757009`) and its two review rounds ran: the prose read
+returned fix (16 findings, register discipline) and the security read returned fix (4 blocking:
+a false safety claim on the ungated-origin bullet, the revocation residual and the session-duration
+advice missing, the service-token comment wrong about `no_email` and the `org` token, and
+`reasonFor` switching on `err.name` which a minified bundle collapses; switch on `err.code`).
+Reports in the session scratchpad (`identity-page-*-review.md`). The page fix dispatches AFTER
+the run ends (one writer per worktree), then the security re-read (its accept is the merge gate),
+then the pass-end ritual. Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
 the `prose-voice-reviewer` and the `web-auth-security-reviewer` (its accept is blocking) before 5b.
 Merge gate: green CI plus the security accept plus the docs gates.
 

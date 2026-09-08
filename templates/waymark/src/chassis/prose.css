@@ -125,9 +125,9 @@
     font-weight: 650;
   }
   /* Rest identity: the accent ink plus an underline a shade lighter than the ink itself, so a link
-     reads as a link even before it is touched (previously indistinguishable from surrounding text).
-     Hover deepens the underline to the full accent; active (the pressed instant) recedes toward the
-     body ink, the same "receding" cue every other pressed control in this sheet uses. */
+     reads as a link even before it is touched. Hover deepens the underline to the full accent;
+     active (the pressed instant) recedes toward the body ink, the same "receding" cue every other
+     pressed control in this sheet uses. */
   .prose a {
     font-weight: 500;
     color: var(--color-primary);

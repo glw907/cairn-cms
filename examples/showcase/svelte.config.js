@@ -22,17 +22,14 @@ export default {
       // The cairnManifest() plugin verifies the manifest in buildStart, outside the prerender
       // lifecycle, so a stale manifest fails the build red regardless of the policy below.
       //
-      // SvelteKit's own default ('fail') already throws on every prerender HTTP error; this used
-      // to override that to 'warn' across the board, which is exactly how the crawler's original
-      // 400 into /admin sat unnoticed in every build log, alongside anything else that might have
-      // gone wrong. /admin is now excluded from the crawl at the source (rel="external" on every
-      // /admin link, decided by the shared isAdminHref predicate SiteHeader and SiteFooter both
-      // read), so the crawler never reaches it to be told to ignore the result, and nothing else
-      // in the site links to a route that legitimately answers non-2xx during a build-time crawl.
-      // A custom handler stands in for the bare 'fail' string anyway, matching the
-      // throw-unless-named idiom handleUnseenRoutes already uses below: today there is nothing to
-      // name, so it throws on everything, and a future legitimate case has to be added here by
-      // name rather than reintroducing a blanket 'warn'.
+      // SvelteKit's own default ('fail') already throws on every prerender HTTP error. /admin is
+      // excluded from the crawl at the source (rel="external" on every /admin link, decided by
+      // the shared isAdminHref predicate SiteHeader and SiteFooter both read), so the crawler
+      // never reaches it, and nothing else in the site links to a route that legitimately answers
+      // non-2xx during a build-time crawl. A custom handler stands in for the bare 'fail' string
+      // anyway, matching the throw-unless-named idiom handleUnseenRoutes already uses below:
+      // today there is nothing to name, so it throws on everything, and a future legitimate case
+      // has to be added here by name rather than reintroducing a blanket 'warn'.
       handleHttpError: ({ message }) => {
         throw new Error(message);
       },

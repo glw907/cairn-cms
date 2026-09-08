@@ -7,14 +7,24 @@ follows the standard it proposes, and its receipt is the last section.
 
 ## What this proposes
 
-cairn's published documentation gets one standard with four parts. The prose part adopts the
-Federal Plain Language Guidelines, with sentence numbers held as measurements and the
-paragraph numbers held as rules. The structure part sets three layers, the docs set, the
-page, and the section, each with rules a script can check. The figures part decides when a
-diagram earns its place and how it is made and graded. The review part gives docs the same
-chain code has. A template check and the linters run first. Measurements are taken against a
-vendored corpus of human exemplars. A fresh reviewer cites those exemplars, a reader runs the
-page, and the read leaves a receipt a gate can verify.
+This document proposes a standard for cairn's published documentation. By a standard I
+mean the written rules a page is drafted against and checked against before it ships,
+the way the code has its conventions and its gates. The docs are already split into four
+reader groups, which the repository calls tracks: editors who write in the admin and never
+see a terminal, site admins who run a site without writing code, developers who extend
+cairn, and the reference, which both of the last two look things up in. The standard covers
+all four, plus the front door, which is the set of pages an evaluator lands on first.
+
+The standard has four parts. The prose part says how sentences and paragraphs are written.
+It adopts the Federal Plain Language Guidelines, a published United States government style
+standard, with its paragraph numbers held as rules and cairn's own sentence numbers held as
+measurements. The structure part says which pages exist, what sections each kind of page
+carries and in what order, and how a section is built. The figures part says when a diagram
+or screenshot earns its place, how it is made, and how it is graded. The review part gives
+a page the same chain a code change gets: a check against its template, the linters,
+measurements against a small set of pages people wrote, a fresh reviewer who cites those
+pages, a reader who tries the page, and a receipt that records the review so a gate can
+verify it happened.
 
 Two rules sit above the four parts. Any claim about you or about cairn's stance comes from a
 brief you wrote or approved, and a script checks that every such claim points at a line in
@@ -30,12 +40,12 @@ sentences were built as comma-hinged pairs at twice the rate of any human page w
 and when I split them the page turned staccato. When I recast it against technical
 specimens, the same rhythm moved from the comma to the colon.
 
-The gates missed all of it for one reason. Vale and the tell scanner check words and
-punctuation, and the draft was written to pass them. Nothing checked the facts against you or the prose against a human page, and nobody but
+The gates missed all of it for one reason. A gate here is a check that fails the build. The
+two prose gates, Vale and the tell scanner, check words and punctuation, and the draft was written to pass them. Nothing checked the facts against you or the prose against a human page, and nobody but
 the author read it before you did.
 
-The cadence problem is not confined to one page. The extend track builds 48 percent of its
-sentences as hinged pairs and the reference track 44 percent, against 19 to 44 percent in
+The cadence problem is not confined to one page. The extend track, the developers' track, builds 48 percent of its
+sentences as hinged pairs (two clauses joined on a comma) and the reference track 44 percent, against 19 to 44 percent in
 the human specimens and under 30 in the best of them. The reference track's average sentence
 runs 22 words with one sentence at 151, where PostgreSQL, MDN, and the Rust reference run 12
 to 18 with almost nothing over 40.
@@ -50,8 +60,9 @@ and the live guides were re-cut. The guidelines carry about forty numbered rules
 parts. This standard adopts these:
 
 - Part I, audience. Write for one reader at a time and address separate audiences
-  separately. cairn's four tracks are this rule already, and the register's vocabulary
-  contract per track stays.
+  separately. cairn's four tracks are this rule already. The register, the repository's
+  own style document at `docs/internal/docs-register.md`, keeps its list of which words
+  each track's reader is expected to know.
 - Part II, organization. Put the most important information first and the general case
   before the exception. The structure part below is how this rule is held.
 - Part III, words. Use verbs, not nouns made from verbs. Use the active voice unless the
@@ -134,12 +145,15 @@ instrument on that page that turns an argument into the reader's decision.
 
 ### Figures
 
-A figure appears only where the fact being taught is a relation among three or more parts,
+A figure, meaning a diagram or a screenshot, appears only where the fact being taught is a relation among three or more parts,
 or a branch between paths, that prose would have to state as a series. Ten of the fourteen
 exemplar pages carry no explanatory figure. Every "why" page carries none. The reference
 pages of PostgreSQL, MDN, and Rust carry none. Across 24 Astro docs pages there are two: a
 box diagram built in CSS on the islands page and one screenshot in the tutorial's first
-hands-on step. A set of items is a table and a linear
+hands-on step. Across 21 Svelte and SvelteKit pages there are none. Their tutorial uses a live
+editor in place of any screenshot, which an editors track for readers with no code cannot
+borrow, and that is the one place cairn's docs will carry screenshots the upstream never
+needed. A set of items is a table and a linear
 sequence is a numbered list. Code the reader will type is a code block.
 
 The register ruled most of this on 2026-08-15, and eleven Mermaid figures ship under that
@@ -172,7 +186,8 @@ ownership map goes to the architecture page.
 
 ### The corpus
 
-The docs are compared against pages people wrote. `docs/internal/corpus/` holds one short
+The docs are compared against pages people wrote, which this document calls the corpus.
+`docs/internal/corpus/` holds one short
 excerpt per entry, at most 400 words. A manifest records each entry's source, license, fetch
 date, page type and track, measured numbers, and the date you approved it. Two entries per page type is the ceiling. An entry you reject is deleted and
 its id retired. The proposed entries:
@@ -225,7 +240,8 @@ Docs get the chain code has. It runs in this order, and each step has a named ow
 The setup changes in seven places, and the list is short on purpose. Anthropic's guidance is
 that an instruction file Claude ignores half of is worse than a short one.
 
-- Both `CLAUDE.md` files gain four lines. The prose standard and where it lives. Author
+- Both `CLAUDE.md` files, the instruction files Claude reads at the start of every session,
+  gain four lines. The prose standard and where it lives. Author
   facts come from a brief and a script checks them. Audience prose is drafted one section
   per read. The conductor reads audience prose in full before you do.
 - The writing-voice output style gains three tells: the two-headed heading, the abstract
@@ -234,7 +250,8 @@ that an instruction file Claude ignores half of is worse than a short one.
   what it produces.
 - The register files under `~/.claude/docs/voice/` each name the corpus entries for their
   register and the advisory bands.
-- The tell scanner gains the hinge-family share and the short-sentence share, in report
+- The tell scanner, the workstation's own checker for the habits of machine-written prose,
+  gains the hinge-family share and the short-sentence share, in report
   mode, with the bands in a small file per register.
 - The Vale hook grades a draft by its path, which step 1 of the review makes sufficient.
 - The agents change their dispatch shape. The register editor and the voice reviewer
@@ -302,13 +319,13 @@ package forced on, since this path is style-exempt, and all three levels are rep
 
 | Measure | All sentences | Prose only | Target |
 |---|---|---|---|
-| Sentences | 208 | 120 | |
-| Average length | 13.8 words | 15.4 words | 15 to 20 |
-| Longest sentence | 41 words | 41 words | under 40 |
-| Hinged pairs, all families | 34 percent | 36 percent | reported |
-| Sentences under 8 words | 25 percent | 18 percent | reported |
-| Paragraphs over 8 sentences or 150 words | 0 | | 0 |
-| Vale, Google package forced | 0 errors, 14 warnings and 102 suggestions | | errors 0 |
+| Sentences | 214 | 125 | |
+| Average length | 14.5 words | 16.5 words | 15 to 20 |
+| Longest sentence | 56 words | 56 words | under 40 |
+| Hinged pairs, all families | 35 percent | 38 percent | reported |
+| Sentences under 8 words | 24 percent | 18 percent | reported |
+| Paragraphs over 8 sentences or 150 words | 1 | | 0 |
+| Vale, Google package forced | 0 errors, 16 warnings and 110 suggestions | | errors 0 |
 | Tell scanner | 0 tells per 1,000 words; counts {'tricolon': 7} | | reported |
 
 Corpus entries cited while drafting: SQLite, Appropriate Uses (structure and the closing

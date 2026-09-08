@@ -90,8 +90,10 @@ ships one built-in resolver verifying the Access JWT header plus the generic res
 OIDC client in cairn); working assumptions stated and unobjected: the roster stays the
 authorization source (Access proves the email, the roster assigns owner or editor), a configured
 resolver turns magic-link off for that site (one identity path per admin), and the shell's logout
-hands off to Access's logout URL. Spec and plan authored tonight with the four-lens review in
-place of Geoff's read; merge order at the end: A, then B1 and B2 after Geoff's read, then the
+hands off to Access's logout URL. Spec and plan EACH get a strong adversarial review, folded in before the next
+step (Geoff, 2026-09-07: "I'm leaving judgement to you. Consider cairn philosophy and
+precedent when making decisions": the charter's leanness test and the rulings ledger govern
+every call); merge order at the end: A, then B1 and B2 after Geoff's read, then the
 identity seam on its own gate.
 
 **Chassis-B execution GRANTED (Geoff, 2026-09-07):** once the four-lens review is folded

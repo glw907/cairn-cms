@@ -41,7 +41,9 @@ xcathletes-org import `cardShell` today). The diff-reviewer on Task 8 ran an obf
 experiment on the tree (`['card' + '-body']`) that the fix-round implementer reverts first.
 Relaunch Tasks 8 to 12 as a fresh `pass-execute-chains` run from the args at the session
 scratchpad's `chassis-a-args-8to12.json` (the Task 8 notes carry the ruling verbatim) once the
-halted run `wf_855c925b-ae2` reports.
+halted run `wf_855c925b-ae2` reports. DONE: relaunched as run `wf_5ac6ef7f-5a7` (session
+9215acac, 2026-09-07 about 20:00 AKDT); the first run spent 1.23M subagent tokens over Tasks 3
+to 8, and the escalate also found the emitted `render.ts` hand-edited (the fix round re-emits).
 
 When the workflow reports: read the per-task records, decide any needs-decision or escalate,
 check the five bare `$theme/cairn.config` specifiers Task 10's grep cannot match

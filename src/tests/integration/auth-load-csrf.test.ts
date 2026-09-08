@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
+import type { MagicLinkLoginData } from '../../lib/sveltekit/auth-routes.js';
 import { makeRecordingCookies } from './_auth-harness.js';
 import { csrfCookieName } from '../../lib/auth/crypto.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
@@ -14,7 +15,9 @@ function loadEvent(url: string, cookies: CookieJar, env: Record<string, string> 
 describe('auth loads issue a CSRF token', () => {
   it('loginLoad sets a __Host- csrf cookie and returns its value', () => {
     const cookies = makeRecordingCookies();
-    const data = routes.loginLoad(loadEvent('https://test.dev/admin/login', cookies));
+    // No locals.cairnIdentity on this event, so loginLoad's runtime result is always the
+    // magic-link variant; the cast reflects that, not a widening of the declared return type.
+    const data = routes.loginLoad(loadEvent('https://test.dev/admin/login', cookies)) as MagicLinkLoginData;
     expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(cookies.sets.find((s) => s.name === csrfCookieName(true))?.value).toBe(data.csrf);
   });

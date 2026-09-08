@@ -6,6 +6,7 @@ import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
+import type { MagicLinkLoginData } from '../../lib/sveltekit/auth-routes.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -114,8 +115,11 @@ describe('public views', () => {
     const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
     if (data.view !== 'login') throw new Error('narrowing');
-    expect(data.page).toMatchObject({ siteName: 'Test Site', error: null });
-    expect(data.page.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
+    // No locals.cairnIdentity on this event, so the page's runtime shape is always the
+    // magic-link variant; the cast reflects that, not a widening of the declared return type.
+    const page = data.page as MagicLinkLoginData;
+    expect(page).toMatchObject({ siteName: 'Test Site', error: null });
+    expect(page.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
     expect('layout' in data).toBe(false);
   });
 
@@ -124,7 +128,7 @@ describe('public views', () => {
     const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
     if (data.view !== 'login') throw new Error('narrowing');
-    expect(data.page.siteName).toBe('Overridden Site');
+    expect((data.page as MagicLinkLoginData).siteName).toBe('Overridden Site');
   });
 
   it('serves the confirm page with the token and sets Referrer-Policy', async () => {

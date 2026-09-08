@@ -179,6 +179,10 @@ Run it after the first deploy, after an edge or auth change, or whenever an edit
 sign-in problem. A probe failure has many possible causes, so its detail line names the failed
 assertion and the remediation points back at the rest of the doctor and the deploy guide.
 
+Under identity mode (`createAuthGuard`'s `identity` option), `/admin/login` serves the hand-off
+page instead of the magic-link form, marked with a `data-cairn-identity` attribute on its
+paragraph; the probe reads that attribute to tell the two pages apart.
+
 ## The `--fix` skill install
 
 The package ships an agent-facing skill, `cairn-admin-screens`, that teaches a build agent the

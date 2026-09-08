@@ -1,7 +1,7 @@
 // The SvelteKit handlers for the magic-link flow, consumed by a site's thin route shims.
 // The factory takes per-site branding and an injected send, so tests run the real handlers
 // against a sink.
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { requireOrigin, requireDb } from '../env.js';
 import {
   generateToken,
@@ -37,7 +37,9 @@ export interface AuthRoutesConfig {
    * A site-declared owner to seed the allowlist through the request action, in place of a
    * hand-run `wrangler d1 execute` INSERT. Grants nothing once any editor row exists; the email
    * is compared trimmed and lowercased, matching the normalization every write path already
-   * applies.
+   * applies. Inert under identity mode: `requestAction`, its only call site, 404s before ever
+   * reaching this check, so the first owner must be seeded out of band before `identity` is
+   * enabled.
    */
   bootstrapOwner?: { email: string; displayName: string };
 }
@@ -53,14 +55,29 @@ export type RequestResult =
   | { status: 'throttled'; sent: false };
 
 /**
- * The login page's data (`loginLoad`): the site name, a resolved `?error` code, and the CSRF
+ * The magic-link login page's data: the site name, a resolved `?error` code, and the CSRF
  * token the login form's hidden field carries.
  */
-export interface LoginData {
+export interface MagicLinkLoginData {
   siteName: string;
   error: string | null;
   csrf: string;
 }
+
+/**
+ * The hand-off page's data under identity mode: the gate's label, the only thing the page needs
+ * to render "This site signs in through &lt;label&gt;." No nonce, no CSRF token; the page carries
+ * no form.
+ */
+export interface IdentityLoginData {
+  identity: { label: string };
+}
+
+/**
+ * The login page's data (`loginLoad`): the magic-link shape, or, under identity mode, the
+ * hand-off shape discriminated by the presence of `identity`.
+ */
+export type LoginData = MagicLinkLoginData | IdentityLoginData;
 
 /**
  * The confirm page's data (`confirmLoad`): the token to re-submit, the site name, a resolved
@@ -149,8 +166,13 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * POST /admin/auth/request. Looks the email up in the allowlist; on a match, issues a token,
    * emails the confirmation link, and awaits the send so the status reflects its outcome. The
    * neutral and send-ok responses are identical, so the common case never leaks membership.
+   *
+   * Under identity mode this 404s, raised before `requireDb`, before `request.formData()`, and
+   * before any cookie write: the organization's own gate is the only sign-in surface, and this
+   * action mints nothing.
    */
   async function requestAction(event: CairnEvent): Promise<RequestResult> {
+    if (event.locals.cairnIdentity) throw error(404, 'Not found');
     const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
     const db = requireDb(env);
@@ -243,8 +265,12 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * already gets, so the browser holds one before it POSTs anything. Two concurrent cookie-less
    * POSTs would otherwise each mint their own nonce, and the browser keeps only one of the two
    * `Set-Cookie` values, which may not be the one the surviving token row is bound to.
+   *
+   * Under identity mode this returns the hand-off shape instead: no pending-login nonce minted,
+   * no CSRF token issued, since the page carries no form for either to protect.
    */
   function loginLoad(event: CairnEvent): LoginData {
+    if (event.locals.cairnIdentity) return { identity: { label: event.locals.cairnIdentity.label } };
     mintOrReusePendingNonce(event);
     return {
       siteName: config.branding.siteName,
@@ -257,8 +283,12 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * GET /admin/auth/confirm. Renders the confirm page and consumes nothing; only the POST
    * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer, and
    * issues the CSRF token so the confirm form can render the hidden field.
+   *
+   * Under identity mode this 404s, raised before any cookie write: there is no magic link to
+   * confirm.
    */
   function confirmLoad(event: CairnEvent): ConfirmData {
+    if (event.locals.cairnIdentity) throw error(404, 'Not found');
     event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
     return {
       token: event.url.searchParams.get('token') ?? '',
@@ -294,8 +324,12 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * NULL in SQL, which is never true, so it is neither consumed nor confirmed and the handler
    * falls through to the no-pending-request redirect below. A present-but-wrong nonce is
    * indistinguishable from a stale link and reads as expired.
+   *
+   * Under identity mode this 404s, raised before `requireDb`, before `request.formData()`, and
+   * before any cookie write: there is no magic link to consume.
    */
   async function confirmAction(event: CairnEvent): Promise<never> {
+    if (event.locals.cairnIdentity) throw error(404, 'Not found');
     const db = requireDb(event.platform?.env ?? {});
     const form = await event.request.formData();
     const token = String(form.get('token') ?? '');
@@ -399,6 +433,12 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  be silently discarded. The editor is already signed out either way, so the redirect to
    *  `/admin/login` stays unconditional; a lingering D1 row with no valid cookie presenting it is
    *  not reachable.
+   *
+   *  Under identity mode there is no cairn session to delete (the guard never creates one), so
+   *  that step is skipped; every cookie delete above still runs (a stale cookie from a mode
+   *  switch is still worth clearing), `requireDb` still guards the call, and the redirect target
+   *  is the gate's own `logoutUrl` rather than `/admin/login`, so signing out also ends the
+   *  gate's session.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
@@ -416,7 +456,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // name form only, this request's own: a stranded nonce under the other form names a token
     // row that its ten-minute TTL has already swept, so nothing can confirm against it.
     event.cookies.delete(cookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
-    if (id) {
+    if (!event.locals.cairnIdentity && id) {
       try {
         // The record fires only when a row was actually destroyed and was still live, and names
         // the email that row carried: a cookie naming no row, or one naming an already-expired
@@ -430,7 +470,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
         log.error('auth.session.destroy_failed', { error: String(err) });
       }
     }
-    throw redirect(303, '/admin/login');
+    throw redirect(303, event.locals.cairnIdentity?.logoutUrl ?? '/admin/login');
   }
 
   return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };

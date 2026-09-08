@@ -381,7 +381,7 @@ Stability tier: Unstable API.
 
 ```ts
 let { data, form }: {
-  data: { siteName: string; error: string | null; csrf: string };
+  data: { siteName: string; error: string | null; csrf: string } | { identity: { label: string } };
   form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
 };
 ```
@@ -393,6 +393,11 @@ cannot be sent right now, and `throttled` renders a check-your-inbox hint, both 
 the editor can retry. The request form posts the named `?/request` action; on the per-route
 mounting, register `requestAction` under that name in the unauthed
 `src/routes/admin/login/+page.server.ts`.
+
+Under identity mode, `data` carries only `identity: { label }` instead, and the page renders a
+hand-off paragraph ("This site signs in through &lt;label&gt;", linking to `/admin`) with no form.
+The paragraph carries a `data-cairn-identity` attribute, the marker the doctor's login probe
+reads to tell this page apart from the magic-link one.
 
 ```svelte
 <script lang="ts">

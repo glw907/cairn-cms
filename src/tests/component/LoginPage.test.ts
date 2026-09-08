@@ -155,4 +155,13 @@ describe('LoginPage', () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
     expect(screen.container.querySelector('[data-theme="cairn-admin"]')).toBeTruthy();
   });
+
+  it('renders the identity hand-off page with the marker, a link to /admin, and no form', async () => {
+    const screen = await render(LoginPage, { data: { identity: { label: 'Acme SSO' } }, form: null });
+    const marker = screen.container.querySelector('[data-cairn-identity]');
+    expect(marker).toBeTruthy();
+    expect(marker?.textContent).toContain('Acme SSO');
+    expect(screen.container.querySelector('form')).toBeNull();
+    await expect.element(screen.getByRole('link', { name: /admin/i })).toHaveAttribute('href', '/admin');
+  });
 });

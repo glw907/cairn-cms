@@ -919,13 +919,25 @@ type AuthRoutes = {
 `createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types). `LoginData` and
 `ConfirmData`, shown in the preceding signature for their shape, carry no export row of their
 own: a consumer reaches them as `Extract<AdminData, { view: 'login' }>['page']` and
-`Extract<AdminData, { view: 'confirm' }>['page']` respectively.
+`Extract<AdminData, { view: 'confirm' }>['page']` respectively. `LoginData` is a discriminated
+union: `{ siteName, error, csrf }` (the magic-link shape) or, when the request carries
+`locals.cairnIdentity` (the [identity seam](#createauthguard)'s snapshot), `{ identity: { label }
+}`, discriminated by the presence of `identity`.
 
 Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-in view at
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
 `/admin/auth/confirm`, and `logoutAction` clears the session; the admin shell posts it as the
 named `?/logout` action on the current URL. The `config.branding` sets the site name and sender
 shown in the email; pass a custom `config.send` to override the default Cloudflare sender.
+
+**Under identity mode** (`locals.cairnIdentity` set): `loginLoad` returns the preceding hand-off
+shape, minting no pending-login nonce and issuing no CSRF token; `requestAction`, `confirmAction`,
+and `confirmLoad` all 404, raised before `requireDb`, before `request.formData()`, and before any
+cookie write, so `/admin/auth/**` serves nothing; `logoutAction` skips the session delete (the
+guard never creates one under identity), still runs every cookie delete and `requireDb`, and
+redirects to the identity snapshot's own `logoutUrl` instead of `/admin/login`. `bootstrapOwner`
+is inert under identity mode, since its only call site is the 404'd `requestAction`; seed the
+first owner out of band before enabling `identity`.
 
 The sign-in view's two handlers share the pending-login nonce, the cookie that binds a magic link
 to the browser that asked for it. `loginLoad` sets it on the GET, so a browser holds one before it

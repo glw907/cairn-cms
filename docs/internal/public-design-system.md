@@ -290,7 +290,10 @@ browser, never a constraint on a consumer's own `render`.
 rendered the `(site)` chrome, the representative article page, and `/styleguide` at all five
 viewports in both themes and found nothing to fix. What follows is doctrine for the next theme
 port, not a record of repairs: hold it while building a new chassis surface, the same way the
-admin's own recipes hold it today.
+admin's own recipes hold it today. Because that measurement found nothing above the bar, no
+numeric compensation test exists for the public surfaces; the trigger for writing one is the
+first public row that fails a read, answered with a geometry test in the shape of the admin's
+`vertical-alignment-recipes.test.ts`.
 
 ### The two-class diagnosis
 

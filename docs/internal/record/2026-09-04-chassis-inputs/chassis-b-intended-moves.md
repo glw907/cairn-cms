@@ -44,4 +44,19 @@ before set is a real file.
 Format: `surface width scheme: what moves / why / baseline names it moves`. Appended by every
 paint task in the same commit as its change.
 
-(No rows yet; Task 1 lands no paint.)
+(No rows for Task 1; it lands no paint.)
+
+### Task 2: width matrix coverage
+
+Both surfaces are NEW to the matrix, so nothing moves and every baseline listed here is a
+first-time addition (no prior baseline existed to diff against).
+
+- `error404` 320/390/768/1440/2560 light and dark: new to the width matrix / the root
+  `+error.svelte` renders fully under `vite preview` for an unmatched path (confirmed by
+  `scripts/capture-surfaces.mjs`'s availability header), so it joins `site-visual.spec.ts`'s
+  width loop the same way home/article/styleguide do / adds
+  `error404-{light,dark}-{320,390,768,1440,2560}.png` (10 files, all new).
+- `signups` (`/admin/signups`) 320/390/768/1440/2560 light and dark: new to the width matrix /
+  the consumer's own custom admin screen (built on the packaged admin toolkit) meets the
+  five-viewport bar through the `cairn-admin-theme` cookie, the same as the engine's own admin
+  screens / adds `admin-signups-{light,dark}-{320,390,768,1440,2560}.png` (10 files, all new).

@@ -58,6 +58,19 @@ for (const colorScheme of COLOR_SCHEMES) {
         fullPage: true,
       });
     });
+
+    test(`error404 — ${colorScheme} — ${width}px`, async ({ page }) => {
+      // An unmatched path: the root +error.svelte renders full SSR with the site's own nav and
+      // footer, status 404. This IS the surface under test, not a navigation failure, so the
+      // response status is left unchecked and the screenshot captures the rendered error page.
+      await page.setViewportSize({ width, height: 800 });
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/this-surface-does-not-exist');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page).toHaveScreenshot(`error404-${colorScheme}-${width}.png`, {
+        fullPage: true,
+      });
+    });
   }
 }
 

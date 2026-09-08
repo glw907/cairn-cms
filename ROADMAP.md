@@ -322,6 +322,19 @@ The original decision framing, for the record:
     1 is the never-executing paginated archive and its permanent build-gate exception).
     Internals-B's own close routes one more item here: the showcase exemplar half of audit
     finding 8.
+  - **The identity seam (before polish; Geoff, 2026-09-07):** the charter promises a developer
+    can replace the admin auth, cairn then minting no session and reading an owner/editor
+    identity "through a defined hand-off", and no such seam exists (`AuthGuardOptions` carries
+    `roles`, `access`, `includeSubDomains`; `createAuthChannel` admits nothing to `/admin`;
+    the friction log's 2026-09-07 `extender` entry has the evidence). Lands as its own small
+    pass between chassis-B and polish so polish's family read of the exports and its
+    cover-to-cover docs read see it. Lean shape: an identity resolver option on the guard
+    that, when set, mints no session and reads the editor from the site's own hook or an
+    Access-style header, with an extend page, a reference row, the security-model section,
+    the `web-auth-security-reviewer` at its gate, and one showcase proof. Brainstorm and spec
+    first (new public surface, auth-critical). Until it ships, the front door states the
+    default's assumption (the CMS is the editors' identity system) and not the stronger claim
+    (post-freeze note 4 on the cairn case).
   - **The polish slice**: routed items from internals-B's close, filed here so a later pass
     does not have to rediscover them. A ruling on `ShareLinkPanel`'s busy-button idiom against
     `EditPage`'s own rule: `ShareLinkPanel`'s share/revoke buttons use `aria-disabled` for busy

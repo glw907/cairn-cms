@@ -61,8 +61,10 @@ Author its plan from the spec's Chassis-B section with the three-lens adversaria
 in place of Geoff's read; two taste calls are settled: the thirteen new posts are REAL short
 posts (150 to 300 words, the existing trail-notes voice, through the site content method),
 and the merge gate STAYS (run to a green PR with the before/after captures and the
-visual-verifier verdict banked; Geoff merges after his five-viewport read). Then polish (not
-granted), then ONE release cut. The Go `cairn` tool Pass A is deferred "until later" (Geoff,
+visual-verifier verdict banked; Geoff merges after his five-viewport read). Then the **identity
+seam** pass (Geoff, 2026-09-07: before polish so polish's family and docs reads see it;
+brainstorm and spec first; ROADMAP's audit-remediation entry carries the shape), then polish
+(not granted), then ONE release cut. The Go `cairn` tool Pass A is deferred "until later" (Geoff,
 2026-09-05).
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is

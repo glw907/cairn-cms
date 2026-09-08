@@ -57,12 +57,13 @@
      own hand-built `.prose` (prose.css) never reads, and neither `.glass` nor `.join` appears anywhere
      in the template. The `radius` utility stays (it powers the `rounded-field`/`rounded-box` classes
      the chrome markup uses). */
-  exclude: footer, status, collapse, dropdown, avatar, textrotate, otp, chat, radio, toast, drawer,
-    checkbox, diff, swap, calendar, label, toggle, validator, filter, skeleton, fileinput, countdown,
-    link, select, mask, hovergallery, progress, table, indicator, list, megamenu, rating, kbd, modal,
-    radialprogress, range, aura, stack, stat, tooltip, breadcrumbs, loading, mockup, hero, fieldset,
-    timeline, tab, divider, carousel, hover3d, navbar, textarea, steps, input, fab, menu, dock,
-    typography, glass, join;
+  exclude:
+    footer, status, collapse, dropdown, avatar, textrotate, otp, chat, radio, toast, drawer,
+    checkbox, diff, swap, calendar, label, toggle, validator, filter, skeleton, fileinput,
+    countdown, link, select, mask, hovergallery, progress, table, indicator, list, megamenu, rating,
+    kbd, modal, radialprogress, range, aura, stack, stat, tooltip, breadcrumbs, loading, mockup,
+    hero, fieldset, timeline, tab, divider, carousel, hover3d, navbar, textarea, steps, input, fab,
+    menu, dock, typography, glass, join;
 }
 
 @theme {
@@ -135,7 +136,8 @@
   --cairn-info-ink: var(--color-info);
 
   /* Elevation: a hairline plus a soft shadow carry a floating card. */
-  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+  --cairn-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
     0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
 
   /* The CTA panel pair, generically reading the neutral role; a theme tunes this to its own

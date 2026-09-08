@@ -134,7 +134,9 @@
     text-decoration-line: underline;
     text-decoration-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
     text-underline-offset: 0.15em;
-    transition: color 0.2s ease-out, text-decoration-color 0.2s ease-out;
+    transition:
+      color 0.2s ease-out,
+      text-decoration-color 0.2s ease-out;
   }
   .prose a:hover {
     text-decoration-color: var(--color-primary);
@@ -251,8 +253,12 @@
         transparent
       );
     background-repeat: no-repeat, no-repeat;
-    background-position: 100% 0, 100% 0;
-    background-size: 1.75rem 100%, 0.75rem 100%;
+    background-position:
+      100% 0,
+      100% 0;
+    background-size:
+      1.75rem 100%,
+      0.75rem 100%;
     background-attachment: local, scroll;
   }
   .prose pre code {
@@ -369,8 +375,12 @@
         transparent
       );
     background-repeat: no-repeat, no-repeat;
-    background-position: 100% 0, 100% 0;
-    background-size: 1.75rem 100%, 0.75rem 100%;
+    background-position:
+      100% 0,
+      100% 0;
+    background-size:
+      1.75rem 100%,
+      0.75rem 100%;
     background-attachment: local, scroll;
   }
   .prose .table-scroll:focus-visible {
@@ -605,7 +615,9 @@
     background: var(--color-base-200);
     color: inherit;
     text-decoration: none;
-    transition: border-color 0.2s ease-out, background-color 0.2s ease-out;
+    transition:
+      border-color 0.2s ease-out,
+      background-color 0.2s ease-out;
   }
   .prose .video-facade-link:hover {
     border-color: var(--color-primary);
@@ -685,7 +697,9 @@
     border-radius: var(--radius-field);
     font-weight: 600;
     text-decoration: none;
-    transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
+    transition:
+      background-color 0.2s ease-out,
+      border-color 0.2s ease-out;
   }
   .prose .cta-primary {
     background: var(--color-primary);

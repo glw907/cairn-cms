@@ -94,7 +94,7 @@
 /* The light theme (default). DaisyUI 5 reads these role tokens at point of use,
    so every `bg-base-100` / `text-primary` utility and every component tracks them. */
 @plugin "daisyui/theme" {
-  name: "cairn";
+  name: 'cairn';
   default: true;
   prefersdark: false;
   color-scheme: light;
@@ -142,7 +142,7 @@
    hue-free base ladder as the light theme, so light and dark read as one theme. Status fills
    lift to a lighter tone and take dark content, the admin's dark convention. */
 @plugin "daisyui/theme" {
-  name: "cairn-dark";
+  name: 'cairn-dark';
   default: false;
   prefersdark: true;
   color-scheme: dark;
@@ -196,14 +196,18 @@
      in site.css (which alone supplies the growth above 1440px); each step's FLOOR is its original,
      unscaled mobile value, so the phone size never shrinks from that anchoring. Full derivation:
      docs/internal/public-design-system.md, "Type scale derivation". */
-  --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem);   /* tracked nav eyebrow (SiteHeader) */
-  --text-step--1: clamp(0.84rem, 0.84rem, 0.80rem);           /* caption, meta; floor over ceiling, so pinned */
-  --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem);          /* body, effectively 17px */
-  --text-step-1: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* lead, h4 */
-  --text-step-2: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* h3, index title */
-  --text-step-3: clamp(1.52rem, 1.47rem + 0.24vw, 1.66rem);   /* h2 */
-  --text-step-4: clamp(1.83rem, 1.74rem + 0.43vw, 2.08rem);   /* section display, stat */
-  --text-step-5: clamp(2.19rem, 2.05rem + 0.71vw, 2.60rem);   /* h1, masthead */
+  --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem); /* tracked nav eyebrow (SiteHeader) */
+  --text-step--1: clamp(
+    0.84rem,
+    0.84rem,
+    0.8rem
+  ); /* caption, meta; floor over ceiling, so pinned */
+  --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem); /* body, effectively 17px */
+  --text-step-1: clamp(1.27rem, 1.25rem + 0.1vw, 1.33rem); /* lead, h4 */
+  --text-step-2: clamp(1.27rem, 1.25rem + 0.1vw, 1.33rem); /* h3, index title */
+  --text-step-3: clamp(1.52rem, 1.47rem + 0.24vw, 1.66rem); /* h2 */
+  --text-step-4: clamp(1.83rem, 1.74rem + 0.43vw, 2.08rem); /* section display, stat */
+  --text-step-5: clamp(2.19rem, 2.05rem + 0.71vw, 2.6rem); /* h1, masthead */
 
   /* Fluid space scale (Utopia 3xs to 2xl). In @theme so Tailwind generates the spacing utilities
      (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS consumers. */
@@ -264,7 +268,8 @@
   --cairn-info-ink: oklch(48% 0.1 235);
 
   /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. */
-  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+  --cairn-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
     0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
 
   /* The CTA panel pair. It never reads `--color-neutral` directly, which inverts to a light value
@@ -303,7 +308,8 @@
 
     /* Elevation (dark): a defined border carries the card since a shadow barely shows. */
     --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
-    --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent),
+    --cairn-shadow:
+      0 1px 2px color-mix(in oklab, black 40%, transparent),
       0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
 
     /* The CTA inverts intentionally: a recessed bordered panel with a solid primary button, so it
@@ -323,7 +329,8 @@
   --cairn-error-ink: oklch(76% 0.14 27);
   --cairn-info-ink: oklch(80% 0.1 235);
   --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
-  --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent),
+  --cairn-shadow:
+    0 1px 2px color-mix(in oklab, black 40%, transparent),
     0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
   --cairn-cta-bg: var(--color-base-200);
   --cairn-cta-content: var(--color-base-content);
@@ -350,7 +357,10 @@
 :root.theme-flip-transition .site-header,
 :root.theme-flip-transition .site-main,
 :root.theme-flip-transition .site-footer {
-  transition: background-color 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
+  transition:
+    background-color 0.2s ease-out,
+    color 0.2s ease-out,
+    border-color 0.2s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
   :root.theme-flip-transition .site-shell,

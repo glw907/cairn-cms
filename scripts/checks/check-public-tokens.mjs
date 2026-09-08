@@ -197,7 +197,7 @@ function daisyThemeBlock(css, name) {
   const re = /@plugin\s+"daisyui\/theme"\s*\{([\s\S]*?)\n\}/g;
   let m;
   while ((m = re.exec(css))) {
-    if (new RegExp(`name:\\s*"${name}"`).test(m[1])) return m[1];
+    if (new RegExp(`name:\\s*["']${name}["']`).test(m[1])) return m[1];
   }
   throw new Error(`theme block "${name}" not found in theme.css`);
 }

@@ -363,6 +363,74 @@ or extend it; nothing here is a literal a re-skin would miss.
       </div>
     </div>
   </section>
+
+  <!-- 5. Composition: the chassis's own layout primitives (src/chassis/composition.css). Two
+       already have a real call site above (.cairn-hero on this page's masthead, .cairn-section
+       grouping this page's own sections); the root error page uses .cairn-band. .cairn-card and
+       .cairn-sidebar-layout have no real call site in this theme, so this section is where a
+       site owner sees them: a demonstration, not a composition claim. -->
+  <section class="sg-section" aria-labelledby="sg-composition">
+    <h2 id="sg-composition" class="sg-h2">Composition</h2>
+    <p class="sg-note">
+      The layout primitives every recipe below reaches for instead of a hand-rolled equivalent. This
+      masthead is <code>.cairn-hero</code> and this page's own sections are
+      <code>.cairn-section</code>; the root error page's message block is <code>.cairn-band</code>.
+    </p>
+
+    <h3 class="sg-h3">Card</h3>
+    <p class="sg-note">
+      A bordered, padded surface for a theme's own chrome or composed-page markup. The padding,
+      radius, background, and border below all come from the primitive's own tokens.
+    </p>
+    <div class="cairn-card">
+      <h4 class="sg-card-title">A cairn-card example</h4>
+      <p class="sg-card-body">
+        Nothing here is page-local styling: every value is one of the primitive's own <code
+          >--cairn-card-*</code
+        > custom properties.
+      </p>
+    </div>
+
+    <h3 class="sg-h3">Band</h3>
+    <p class="sg-note">
+      A full-bleed strip with its own background, for a section that wants to break out of the
+      reading column. A centered container sits as its child, the shape the root error page uses.
+    </p>
+    <div class="cairn-band">
+      <div class="mx-auto max-w-measure px-m">
+        <p class="sg-note" style="margin: 0;">
+          A cairn-band example: this strip's own ground reads <code>--cairn-band-bg</code>, and this
+          paragraph sits inside the centered child container.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="sg-h3">Section</h3>
+    <p class="sg-note">
+      A vertical rhythm block within the reading column, for a composed page's own pieces. The home
+      page's lead and archive index both use this to space their blocks consistently.
+    </p>
+    <div class="cairn-section">
+      <p class="sg-note" style="margin: 0;">A first block inside the section.</p>
+      <p class="sg-note" style="margin: 0;">
+        A second block, spaced from the first by the primitive's own gap.
+      </p>
+    </div>
+
+    <h3 class="sg-h3">Sidebar layout</h3>
+    <p class="sg-note">
+      A main column plus a narrower aside, stacking below a fixed 48rem breakpoint. A theme reaches
+      for this for a docs-style side nav or an article's related-posts rail.
+    </p>
+    <div class="cairn-sidebar-layout">
+      <div class="cairn-card">
+        <p class="sg-card-body" style="margin: 0;">The main column.</p>
+      </div>
+      <div class="cairn-card">
+        <p class="sg-card-body" style="margin: 0;">The narrower aside.</p>
+      </div>
+    </div>
+  </section>
 </div>
 
 <style>

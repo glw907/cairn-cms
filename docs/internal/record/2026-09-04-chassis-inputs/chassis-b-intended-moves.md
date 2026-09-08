@@ -114,3 +114,18 @@ The implementer's own read against the redesign rule: the home page change is a 
 loosening of vertical rhythm (added top/bottom margins at existing spacing values), with no
 change to layout structure, color, or type; a `diff-reviewer` read confirms or overturns this
 at the gate, and an overturn's reason and revert land here in the same commit as the fix.
+
+### Task 4b: the styleguide's composition section
+
+A "Composition" section added to the styleguide (after "Components"). It shows `.cairn-card`,
+`.cairn-band`, `.cairn-section`, and `.cairn-sidebar-layout` with two-sentence captions,
+alongside the two primitives the page already carries a real call site for (`.cairn-hero` on
+the masthead, `.cairn-section` on the page's own sections). No composition claim; the section
+is a demonstration, the sanctioned exception the ruled inputs name.
+
+- `styleguide` 320/390/768/1440/2560 light and dark: the page grows by one section, so every
+  tile at or after the previous end-of-page pushes down and new tiles appear past the former
+  page length (confirmed by `magick compare -metric AE`: 0 on every tile before the new
+  content, non-zero only on the last pre-existing tile of each width/scheme and the newly
+  appended ones) / moves `styleguide-{light,dark}-{320,390,768,1440,2560}.png` (10 files, the
+  same ten Task 3/4a left unchanged).

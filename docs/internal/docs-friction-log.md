@@ -25,6 +25,19 @@ clearings.
 - `contributor` (2026-09-04, the cairn-case round-2 review): `what-cairn-is-and-is-not.md:48` says
   "all 23 registered rules"; `docs/reference/cairn-audit.md` and the tree count 28. The charter
   carries a stale number; refresh the sentence or drop the count.
+- `extender` (2026-09-07, Geoff, reading the cairn case): the charter
+  (`what-cairn-is-and-is-not.md:60-63`, `CLAUDE.md` "What cairn is") promises a developer can
+  replace the admin auth, cairn then minting no session and reading an owner/editor identity
+  "through a defined hand-off". No such hand-off exists: `AuthGuardOptions` carries only `roles`,
+  `access`, and `includeSubDomains`; `createAuthChannel` builds a second audience's own magic-link
+  login and admits nothing to `/admin`; Cloudflare Access appears once, as a header pass-through in
+  `cli-cairn-media-seed.md`; no extend page teaches replacing the editor login. The zero-config
+  default therefore makes the CMS the organization's identity system for its editors, true for a
+  small org and rarely for a larger one, and the front door never says so. Two halves: the case and
+  why-cairn should state the assumption plainly (filed as post-freeze note 4 on the case), and the
+  seam the charter already commits to needs an owner (the lean shape is an identity resolver on
+  the guard that, when set, mints no session and reads the editor from the site's own hook or an
+  Access-style header). Engine work, outside the audit-remediation window; Geoff's call on when.
 
 None else open. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
 section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified

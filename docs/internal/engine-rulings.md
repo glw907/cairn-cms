@@ -3894,49 +3894,59 @@ when the remediation pass lands.
 ## audit-render-cardshell: `cardShell`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. It hands a stranger a baked <div class="card-body"> they did not choose, saving one h() call in a file that already imports hastscript.
-- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling defers
-  this name to list (c) Tier 4 (chassis-coupled): it is value-imported by
-  `examples/showcase/src/theme/cairn.config.ts` / `src/chassis/render.ts` and the baked
-  `templates/waymark` twins, and taught as `docs/extend/configure-rendering.md`'s worked example, so
-  its deletion requires the chassis re-homing, `emit:template` re-bake, and guide rewrite in the
-  same change. The chassis pass (slice 6) owns the re-homing, the re-emit, the guide rewrite, and
-  then the deletion.
+- **Reopens on:** closed. Executed by chassis-A (2026-09-07), Task 8: `cardShell`'s one-`h()`
+  body is inlined at its single call site, the showcase `alert` component's `build()` in
+  `examples/showcase/src/theme/markdown-components.ts`; the engine's `render/rehype-dispatch.ts`
+  definition and the `render/authoring.ts` barrel line are deleted. Seam fit: a component's
+  `build()` is a strict function of `ctx`, calling only hastscript's `h()` and the theme's own
+  helpers; no engine-owned wrapper stands between a theme's `build()` and the hast it emits.
 - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 1; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 
 ## audit-render-iconspan: `iconSpan`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The whole body is one family site's class vocabulary ('ec-icon'), and every family site already wraps it in its own makeIconRenderer factory anyway.
-- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling defers
-  this name to list (c) Tier 4 (chassis-coupled): it is value-imported by
-  `examples/showcase/src/theme/cairn.config.ts` / `src/chassis/render.ts` and the baked
-  `templates/waymark` twins, and taught as `docs/extend/configure-rendering.md`'s worked example, so
-  its deletion requires the chassis re-homing, `emit:template` re-bake, and guide rewrite in the
-  same change. The chassis pass (slice 6) owns the re-homing, the re-emit, the guide rewrite, and
-  then the deletion.
+- **Reopens on:** closed. Executed by chassis-A (2026-09-07), Task 8: `iconSpan`'s one-`h()` body
+  is inlined into the showcase chassis's `makeIconRenderer`
+  (`examples/showcase/src/chassis/render.ts`), keeping the `cairn-icon`/`cairn-icon-secondary`
+  class vocabulary internals-C already renamed it to; the engine's `render/rehype-dispatch.ts`
+  definition and the `render/authoring.ts` barrel line are deleted. Seam fit: same as
+  `audit-render-cardshell` above, a component's icon rendering is now a strict function of the
+  theme's own icon set, with no engine-owned wrapper in between.
 - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 2; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 - **Annotation (internals-C, coherence pass, Task 4):** the class vocabulary `iconSpan` bakes
-  renamed from `ec-icon`/`ec-icon-secondary` to `cairn-icon`/`cairn-icon-secondary`. The retire
-  itself stays open, owned by the chassis pass named above; this annotation only means the chassis
-  re-homing inherits `cairn-*` names, not the `ec-*` ones this ruling originally described.
+  renamed from `ec-icon`/`ec-icon-secondary` to `cairn-icon`/`cairn-icon-secondary`, inherited by
+  chassis-A's re-homing above.
 
 ## audit-render-headrow: `headRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak. Real logic (optional icon, level), but bakes 'ec-head' and 'card-title'; a stranger whose design lacks those classes must override or abandon it.
-- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling defers
-  this name to list (c) Tier 4 (chassis-coupled): it is value-imported by
-  `examples/showcase/src/theme/cairn.config.ts` / `src/chassis/render.ts` and the baked
-  `templates/waymark` twins, and taught as `docs/extend/configure-rendering.md`'s worked example, so
-  its deletion requires the chassis re-homing, `emit:template` re-bake, and guide rewrite in the
-  same change. The chassis pass (slice 6) owns the re-homing, the re-emit, the guide rewrite, and
-  then the deletion.
+- **Reopens on:** closed. Executed by chassis-A (2026-09-07), Task 8: `headRow` re-homed as a
+  chassis-local export in `examples/showcase/src/chassis/render.ts`, signature unchanged; the
+  engine's `render/rehype-dispatch.ts` definition and the `render/authoring.ts` barrel line are
+  deleted. Seam fit: `headRow`'s real logic (the optional icon, the heading level) is genuinely
+  reusable, so it stays a shared helper, just site-owned rather than engine-owned, matching the
+  chassis's "site-owned code over the versioned engine API" model
+  (`examples/showcase/src/chassis/README.md`).
 - **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 3; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 - **Annotation (internals-C, coherence pass, Task 4):** the class vocabulary `headRow` bakes
-  renamed from `ec-head` to `cairn-head`. The retire itself stays open, owned by the chassis pass
-  named above; this annotation only means the chassis re-homing inherits the `cairn-head` name,
-  not `ec-head`, which this ruling originally described.
+  renamed from `ec-head` to `cairn-head`, inherited by chassis-A's re-homing above.
+
+**Seam-fit addendum (chassis-A, Task 8 fix round, 2026-09-07):** inlining `cardShell` at its call
+site moved its two inner class literals (`card-body`, `card-title`) out of the engine package,
+which a site's Tailwind build never scans, and into `examples/showcase/src/theme/
+markdown-components.ts` and `render.ts`, which the showcase's own Tailwind build does scan. That
+scan is why the showcase's compiled `theme.css` started generating DaisyUI's `.card-body`/
+`.card-title` component rules once the literals landed there: DaisyUI's `card` component reads any
+matching class name it finds in scanned source, not only markup a `.card`-typed element wraps. The
+showcase keeps `card` enabled (the members pages render a real `.card`), so the fix is not to
+disable it; it is to rename the alert's two inner classes to `cairn-alert-body`/`cairn-alert-title`,
+names DaisyUI's component set does not read, closing the collision without touching `card`'s
+availability to the rest of the template. The re-homing itself stays correct per the three rows
+above; this addendum records the one thing the re-homing changed that none of the three rulings'
+own text anticipated, a site's Tailwind scan boundary, not the render pipeline's output.
 
 ## audit-render-iselement: `isElement`  (retire, 2026-08-26, any-site audit)
 

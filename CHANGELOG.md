@@ -259,6 +259,29 @@
   no longer leaks a stub across test files; `vi.restoreAllMocks` never restored globals. Internal
   test-harness fix only; no consumer action.
 
+### Removed
+
+- `iconSpan`, `cardShell`, and `headRow` (`/render`) are gone from the engine; the subpath is now
+  type-only, exporting `ComponentContext` alone (chassis-A pass, Task 8, closing the three
+  `audit-render-*` retire rulings). Each was value-imported at exactly one call site across every
+  family site, in its own chassis and theme, so this is a re-homing, not a removal that leaves a
+  gap. Consumers must: inline `iconSpan`'s one-`h()` body at its call site, `role === 'secondary' ?
+  ['cairn-icon', 'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className },
+  [glyphEl])`; inline `cardShell`'s body the same way, `h('section', { className: classes },
+  [h('div', { className: ['cairn-alert-body'] }, body)])`; and re-home `headRow` as site-owned
+  code with its signature unchanged (`headRow(title, icon?, level = 2)`, building `h('div', {
+  className: ['cairn-head'] }, [icon, h('h' + level, { className: ['cairn-alert-title'] },
+  title)])`, icon omitted when absent), the shape `examples/showcase/src/chassis/render.ts` now
+  ships beside `makeIconRenderer`. The emitted classes read `cairn-*` (`cairn-icon`,
+  `cairn-icon-secondary`, `cairn-head`) since internals-C's rename. Inlining `cardShell` moves its
+  two inner class literals out of the unscanned engine package and into the consuming site's own
+  Tailwind-scanned source, so a site that keeps DaisyUI's `card` component enabled for other markup
+  (a members-area card, say) will have DaisyUI's own `.card-body`/`.card-title` rules generated and
+  applied to the alert too unless the two literals are renamed away from those names; the showcase
+  renames them to `cairn-alert-body`/`cairn-alert-title` (and its `prose.css` selectors to match)
+  as the worked example. Two family sites, `ecxc-ski` and `xcathletes-org`, import `cardShell`
+  today and need the same rename at their own call sites if they enable DaisyUI's `card` component.
+
 ### Changed
 
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,

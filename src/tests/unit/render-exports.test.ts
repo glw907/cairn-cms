@@ -28,10 +28,11 @@ describe('engine entry render surface', () => {
     }
   });
 
-  it('exposes the authoring toolkit from /render', () => {
-    for (const fn of [authoring.iconSpan, authoring.cardShell, authoring.headRow]) {
-      expect(typeof fn).toBe('function');
+  it('is type-only: /render carries no runtime export (ComponentContext erases at build)', () => {
+    for (const name of ['iconSpan', 'cardShell', 'headRow']) {
+      expect(name in authoring).toBe(false);
     }
+    expect(Object.keys(authoring)).toEqual([]);
   });
 
   it('omits strAttr from /render; the reader moved onto ComponentContext.attr', () => {

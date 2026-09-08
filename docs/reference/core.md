@@ -693,21 +693,24 @@ Stability tier: Extension API.
 declare function renderGlyph(name: string, icons: IconSet): Element;
 ```
 
-The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
-`cardShell`, and `headRow`, lives on the [`/render`](./render.md) subpath, not here; `ctx.attr(key)`
-reads a declared string attribute off the `ComponentContext` `build` receives. The showcase `alert`
-component composes `renderGlyph` with those helpers:
+The rest of the hast a component's `build` function needs is site-owned, not engine-owned:
+`ctx.attr(key)` reads a declared string attribute off the `ComponentContext` `build` receives
+(documented on [`/render`](./render.md)), and `build` constructs its own hast directly with
+hastscript's `h()`. The showcase composes `renderGlyph` with its own chassis-local
+`makeIconRenderer`/`headRow` helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
-// examples/showcase/src/theme/cairn.config.ts
-import { cardShell, headRow, iconSpan } from '@glw907/cairn-cms/render';
+// examples/showcase/src/theme/markdown-components.ts
+import { makeIconRenderer, headRow } from '$chassis/render.js';
 
-const makeIcon = (name, role) => iconSpan(renderGlyph(name, icons), role);
+const makeIcon = makeIconRenderer(icons);
 build: (ctx) =>
-  cardShell(['alert'], [
-    headRow(ctx.slot('title'), makeIcon('leaf')),
-    h('div', { className: ['alert-body'] }, ctx.slot('body')),
+  h('section', { className: ['alert'] }, [
+    h('div', { className: ['cairn-alert-body'] }, [
+      headRow(ctx.slot('title'), makeIcon('leaf')),
+      h('div', { className: ['alert-body'] }, ctx.slot('body')),
+    ]),
   ]),
 ```
 

@@ -4,11 +4,10 @@
 // navLayout, not the component grammar. Not named `components.ts`: that specifier would collide
 // with the `$theme/components` directory six other files already import through.
 import { defineComponent, fields } from '@glw907/cairn-cms';
-import { cardShell, headRow } from '@glw907/cairn-cms/render';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import { isBannerExpired } from './islands/banner-expiry.js';
-import { makeIconRenderer } from '$chassis/render.js';
+import { makeIconRenderer, headRow } from '$chassis/render.js';
 import { icons } from './icons.js';
 
 // The chassis wires the icon set into the render helpers; this theme owns only the glyph data
@@ -93,10 +92,12 @@ export const alert = defineComponent({
     const name = ctx.attr('icon');
     const role = ctx.attr('role');
     const icon = name ? makeIcon(name, role) : undefined;
-    return cardShell(
-      ['alert', `alert-${role ?? 'note'}`],
-      [headRow(ctx.slot('title'), icon), h('div', { className: ['alert-body'] }, ctx.slot('body'))],
-    );
+    return h('section', { className: ['alert', `alert-${role ?? 'note'}`] }, [
+      h('div', { className: ['cairn-alert-body'] }, [
+        headRow(ctx.slot('title'), icon),
+        h('div', { className: ['alert-body'] }, ctx.slot('body')),
+      ]),
+    ]);
   },
   attributes: {
     role: fields.select({ label: 'Role', options: ['note', 'caution'] }),

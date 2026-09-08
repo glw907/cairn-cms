@@ -13,6 +13,17 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
+  (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
+  'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and
+  `cardShell`'s body (`h('section', { className: classes }, [h('div', { className:
+  ['cairn-alert-body'] }, body)])`) at their call sites, and re-home `headRow` as your own code
+  with its signature unchanged; see `CHANGELOG.md`'s entry for the exact shape. Inlining
+  `cardShell` moves its two inner class literals into your own Tailwind-scanned source, so if you
+  keep DaisyUI's `card` component enabled for other markup, rename the literals away from
+  `card-body`/`card-title` (the preceding worked example uses
+  `cairn-alert-body`/`cairn-alert-title`) and update any prose CSS that targets them; otherwise
+  DaisyUI's own `.card-body`/`.card-title` rules restyle the alert.
 - **Seventeen type-only names moved to their canonical home.** The engine now publishes each
   exported name from exactly one subpath. Re-point these imports away from
   `@glw907/cairn-cms/delivery` and `@glw907/cairn-cms/delivery/data`, which no longer carry them:

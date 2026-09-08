@@ -404,10 +404,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/render`
 
-- `cardShell`: (classes: string[], body: ElementContent[]) => Element
 - `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
-- `headRow`: (title: ElementContent[], icon?: Element, level?: number) => Element
-- `iconSpan`: (glyphEl: Element, role?: string) => Element
 
 ## `/reproductions`
 

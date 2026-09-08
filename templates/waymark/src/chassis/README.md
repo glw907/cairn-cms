@@ -102,8 +102,10 @@ diamond list bullet, the margin-hanging pull quote) sits behind `.prose[data-flo
 default; a theme opts in by adding one `data-flourish` attribute to its `.prose` root, no CSS edit.
 
 **Component-grammar wiring (`render.ts`).** `makeIconRenderer(icons)` wires a theme's own icon set
-into the engine's `iconSpan`/`glyph` helpers; a theme's `defineComponent()` build functions call
-the returned function and never import `iconSpan`/`glyph` directly. Swapping the icon set (the
+into the engine's `renderGlyph` helper; a theme's `defineComponent()` build functions call the
+returned function and never import `renderGlyph` directly. This file also exports `headRow`, the
+icon-plus-heading head a titled component's `build()` calls (the alert directive is the one call
+site); both helpers are chassis-owned, not engine exports. Swapping the icon set (the
 `icons: IconSet` object in `icons.ts`) never touches a component's `build()`.
 
 **The prose-typography seam (`render.ts`).** `proseTypography` is a `createRenderer`
@@ -188,7 +190,7 @@ a build it silently breaks) fails this file's own promise.
 | `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's own mapping); nothing else references it. |
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |
-| `render.ts` | `markdown-components.ts` (the one `makeIconRenderer` call) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon import, and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
+| `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
 | `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
 | `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with its own slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |

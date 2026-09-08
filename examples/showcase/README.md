@@ -31,7 +31,7 @@ too, and they already live in files the exclude list drops.
 
 To add a fixture, put it behind a path the exclude list already covers, or add its path, a
 directory or a single file, to `.cairn-template.json`'s `exclude` array. Reach for the
-`cairn-template:exclude-start`/`-end` markers, in
+`cairn-template:exclude-start` / `cairn-template:exclude-end` markers, in
 [`scripts/build/emit-template.mjs`](../../scripts/build/emit-template.mjs), only when the fixture
 is a few lines inside a file the produced site otherwise needs whole. Run `npm run emit:template`
 afterward and commit the regenerated `templates/waymark`.

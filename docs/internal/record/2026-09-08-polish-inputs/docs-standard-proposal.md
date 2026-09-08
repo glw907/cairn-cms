@@ -280,11 +280,11 @@ The proposed entries, with the excerpt each would carry:
 
 ### The review chain
 
-The review chain gives a page the same steps a code change gets. The outline comes first:
-the page type, the title, the headings, and the section order are checked before any prose
-is, because prose work on a page with the wrong shape is wasted, and a page whose outline
-fails goes back before step 3 runs. The steps run in this order, and each names who or what
-runs it. A page for a published path is drafted at that path on a branch, never under
+The review chain gives a page the same steps a code change gets. The outline comes first.
+The page type, the title, the headings, and the section order are checked before any prose
+is, because prose work on a page with the wrong shape is wasted. A page whose outline fails
+goes back before step 3 runs. The steps run in this order, and each names who or what runs
+it. A page for a published path is drafted at that path on a branch, never under
 `docs/internal/record`; this proposal is not a published page, which is why it lives here.
 
 1. I draft the page where it will live, so Vale and the save hook run the right styles from
@@ -441,10 +441,10 @@ output, never by hand.
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 243 | 156 | 6 |  | count only |
-| Average length | 16.3 words | 17.2 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
-| Longest sentence | 45 words | 45 words | 33 words | under 40 | FAIL |
-| Hinged pairs | 35 percent | 36 percent | 0 percent | at or under the corpus entry plus 15 points, per step 4 | fail; 36 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Sentences | 245 | 158 | 6 |  | count only |
+| Average length | 16.1 words | 16.9 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Longest sentence | 38 words | 38 words | 33 words | under 40 | pass |
+| Hinged pairs | 35 percent | 35 percent | 0 percent | at or under the corpus entry plus 15 points, per step 4 | fail; 36 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 19 percent | 13 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
 | Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |

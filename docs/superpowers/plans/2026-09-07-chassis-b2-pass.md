@@ -3,12 +3,14 @@
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via
 > `~/.claude/workflows/pass-execute-chains.js` with ONE chain (sequential; see Execution).
-> Steps use checkbox syntax for tracking. **Runs only after chassis-B1 merges** and inherits
+> Steps use checkbox syntax for tracking. **Stacks on chassis-B1's branch** (Geoff, 2026-09-07:
+> the worktree `chassis-b2` branches from `chassis-b`, not from `main`, so both PRs wait for one
+> sitting of his five-viewport read and merge in order) and inherits
 > B1's capture tool, tile protocol, intended-moves manifest, report contract, baseline rules,
 > and ritual order; this plan restates only what differs. Folded 2026-09-07 from the four-lens
 > review (record: `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-plan-review.md`,
 > the fold brief `chassis-b-fold-brief.md`). Every anchor is re-verified at dispatch against
-> post-B1 `main`.
+> the `chassis-b` head.
 
 **Goal:** the paginated archive proven on a real 27-post corpus in the showcase while the
 scaffold keeps its fourteen, site identity read from one source, the footer nav out of code,
@@ -33,7 +35,7 @@ as B1's). Task 1 (thirteen posts) and Task 2 (the archive) are the two expected 
 0.7M; Task 1 splits at seven posts if it does. **Checkpoint interval:** every four tasks
 (checkpoints at 4 and 8), each writing STATUS (task ledger, decisions taken, spend against the
 ceiling, next task). **Execution:** sequential in one worktree, `.claude/worktrees/chassis-b2`
-off post-B1 `main`, from-scratch showcase `npm install` before the first gate; the baselines,
+off the `chassis-b` branch (stacked on B1), from-scratch showcase `npm install` before the first gate; the baselines,
 the template, and the content corpus are the contended resources, so no parallel chains. Open
 the PR after Task 1's commit. CI regens (conductor checkpoint actions, chain suspended) after
 Task 2 and at pass end. The chain's `criteria` strings carry the paint protocol verbatim, as

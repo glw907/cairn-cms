@@ -152,8 +152,8 @@
   /* The one focus-ring language, read by prose.css's directive sites, the cairn-focus-ring
      utility below, and every hand-written :focus-visible rule the theme still needs for a
      descendant selector a class cannot reach. --cairn-focus-ring-radius is the theme-tunable
-     one of the three: theme.css redeclares it as its own chrome geometry default, and a theme
-     may override it again per component. */
+     one of the three: this file holds the 2px default and a theme redeclares it in theme.css,
+     or overrides it per component. */
   --cairn-focus-ring-outline: 2px solid var(--color-primary);
   --cairn-focus-ring-offset: 2px;
   --cairn-focus-ring-radius: 2px;

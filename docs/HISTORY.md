@@ -7,6 +7,36 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Chassis-A (audit remediation slice 8, structural), merged 2026-09-08
+
+Branch `chassis-a`, twelve tasks executed through four `pass-execute-chains` runs and direct
+fix dispatches over 2026-09-05 to 2026-09-08; plan and post-mortem at
+`docs/superpowers/plans/2026-09-04-chassis-a-pass.md`; harvest at
+`docs/internal/record/2026-09-04-chassis-inputs/chassis-a-harvest.md`.
+
+**What landed.** Prettier on the showcase's ts, js, and svelte with the scaffold format-checked in
+both trees; the comment gate over the showcase; the two fixture routes excluded from the scaffold
+with a CI content walk; dead components deleted; `cairn.config.ts` split into `icons.ts` and
+`markdown-components.ts`; public routes and site metadata single-sourced through `siteMeta`; the
+render trio (`iconSpan`, `cardShell`, `headRow`) deleted from the engine and re-homed in the
+chassis, `/render` now type-only, with a `Consumers must:` line naming the four sites' imports;
+the showcase's unit tests shipping to the scaffold; one import, handler, and error idiom; the
+shipped comments purged of process citations and history narration.
+
+**What the gate caught.** The mechanical reformat reflowed the `githubApp` literal
+`create-cairn-site`'s finalize pins (fixed with a `prettier-ignore` line; the CLI suite joined
+every gate). Inlining `cardShell` moved `card-body` and `card-title` into Tailwind's scan and
+DaisyUI restyled every alert (fixed by renaming to `cairn-alert-body` and `cairn-head-title`).
+The reviewer caught the conductor's consumer-import inventory wrong twice. An e2e spec's bare
+class literals re-armed the same Tailwind collision (fixed by concatenation).
+
+**What a later pass would be wrong to rediscover.** Any class literal in scanned source is a
+Tailwind candidate, e2e specs included. The fresh-scaffold proof must repoint at the packed
+engine and dev tarballs, as `create-site.yml` does, or it proves the registry. The CLI suite
+needs `prepack` first in a fresh checkout. `devBackendOptIn`'s literal ships in the default
+bundle, so it cannot be a dev-fold marker. Implementers polling a gate with no-op commands
+trip the runaway guard.
+
 ## 2026-09-05: internals-C pass complete (audit-remediation slice 7, coherence)
 
 Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-c-pass.md` (worktree

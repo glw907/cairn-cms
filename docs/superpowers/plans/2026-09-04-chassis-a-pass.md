@@ -469,3 +469,55 @@ post-mortem here; both budgets scored; push, PR, merge on green CI.
 - **Consumer sites:** the trio replacement and the `ec-*` rename, per the `Consumers must:`
   lines, in each site's own pass.
 - **Release:** the window holds; ONE cut after polish.
+
+## Post-mortem (2026-09-08)
+
+**What was built.** All twelve tasks landed on `chassis-a` in the order planned: the Prettier
+adoption for `.ts`/`.js`/`.svelte` with the four tab-indented files fixed (`e2aceffe`), the
+scaffold's format check in both trees (`8fecf730`), the comment gate over the showcase's
+TypeScript, e2e, and Svelte sources (`c2290d69`), the two fixtures out of the scaffold with the
+CI content walk (`b126d892`), the dead code deleted (`274374f2`), `cairn.config.ts` split into
+`icons.ts` and `markdown-components.ts` (`615d4d1f`), the public routes and site metadata
+single-sourced (`6c16334c`), the render trio re-homed with the engine's `/render` subpath now
+type-only (`8fc1343d` and three follow-ons), the showcase's unit tests shipping to the scaffold
+(`ee29cecf`), the idiom sweep (`ae71d945`, `25dbcaca`), the register purge (`c88e18d3`,
+`91f65e77`, `6eb07602`), and the records (`e02c0525`, `950290c8`). The simplifier
+(`fa98c613`) and the pass-end fix round (`ea39654f`) closed the ritual.
+
+**What was verified, with evidence.** Eighteen named gates green on the final tree, the six
+CI-only ones by name. The from-scratch showcase install, build, and e2e: 156 passed with no
+committed baseline changed, the pass's standing constraint. A fresh scaffold baked from
+`templates/waymark` and pointed at the locally packed engine and dev package: check, build,
+format check, and unit tests green (the first attempt installed the registry's 0.96.0 and
+failed on the unreleased window's exports, which is the CLI's real-world path and the reason
+the scaffold job repoints at the tarballs). Four pass-end reviewers (Svelte, security, Workers,
+cleanliness at the exemplar bar) returned ship-it with no blocking finding; their findings were
+folded in one fix round and the rest banked in the harvest.
+
+**Decisions taken in execution.** Task 1's mechanical reformat reflowed the one-line
+`githubApp({...})` literal that `create-cairn-site`'s finalize pins byte-for-byte; the ruling
+was a `// prettier-ignore` fix commit and the CLI suite joining every task's gate, since
+neither the plan's gate nor the dispatched gate had run it. Task 8's inlining of `cardShell`
+moved the literals `card-body` and `card-title` from the unscanned npm package into scanned
+showcase source, so Tailwind generated DaisyUI's card rules and every alert grew; the ruling
+renamed the alert's inner classes to `cairn-alert-body` and `cairn-head-title` (a generic
+chassis helper stamps generic classes), kept DaisyUI's `card` enabled, and put the mapping and
+the four-site import inventory in the `Consumers must:` line after two rounds of correcting
+the conductor's own inventory against the consumer repos. Task 11 took a second fix round on
+history-narration comments and Task 12 one on a friction-log rewrite that had dropped `main`'s
+newer entries. The dev-fold marker for `CAIRN_DEV_BACKEND` was tried and reverted: the
+chassis's `devBackendOptIn` literal ships in the default bundle through the hooks import.
+
+**What a later pass would be wrong to rediscover.** The CLI suite needs its prepack bake in a
+fresh checkout. Inlining any engine helper's class literal into showcase source moves it into
+Tailwind's scan, and any e2e spec inside the scan root does the same, which is why the alert
+test builds its DaisyUI class names by concatenation. An implementer that polls its own gate
+with no-op commands inflates its transcript into the runaway guard; the fix is `sleep` between
+checks. The conductor's inventory of consumer-site imports must be verified by a reviewer
+against the repos before it is written into a changelog. The from-scratch scaffold proof must
+repoint at the packed tarballs or it proves the registry.
+
+**Budgets.** Subagent spend about 4.4M tokens against the 7.5M ceiling (four workflow runs at
+2.8M, direct dispatches and reviewers at about 1.6M). Attended time: zero execution sittings
+(every escalate was ruled by the conductor under the standing authorization); one planning
+miss, the CLI suite missing from the gate, which a planning question would not have caught.

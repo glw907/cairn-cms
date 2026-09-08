@@ -197,6 +197,25 @@ cairn's own origin check refused it.
 somewhere else; if you run a reverse proxy in front of your site, check whether it strips or
 rewrites the `Origin` header.
 
+## Sign-in gate refused the request
+
+**`auth.identity-unresolved`, a blocker.** Only shown on a site whose developer configured
+`identity` on the auth guard, replacing magic-link sign-in with the site's own identity gate
+(Cloudflare Access, for example). The gate either refused the request outright or threw while
+cairn tried to resolve who was asking, so cairn never learned an identity and could not start a
+session. Logged as `guard.rejected` with `reason: identity`.
+
+**Act:** sign in through the gate again. If it keeps happening, ask whoever runs the site to
+check the gate's own configuration and the `guard.rejected` log record's `detail` field.
+
+## You're not on this site's editor roster
+
+**`auth.identity-unknown`, a warning.** Only shown on a site configured with `identity`. The
+site's identity gate confirmed who you are, but that email isn't in cairn's editor roster, so you
+still can't sign in to the admin. Logged as `auth.identity.unknown`.
+
+**Act, or ask an owner:** add the confirmed email to the roster through Manage editors.
+
 ## Onboard the sending domain
 
 **`email.sender-not-onboarded`, a blocker.** Your site's from-address domain has no enabled

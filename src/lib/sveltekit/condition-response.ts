@@ -4,6 +4,8 @@
 import { brandedAdminPage } from './admin-response.js';
 import { httpsRequiredPage } from './https-required-page.js';
 import { csrfRequiredPage } from './csrf-required-page.js';
+import { identityUnresolvedPage } from './identity-unresolved-page.js';
+import { identityUnknownPage } from './identity-unknown-page.js';
 import { escapeHtml } from '../escape.js';
 import { renderStaticAdminPage } from './static-admin-page.js';
 import { condition, type CairnCondition } from '../diagnostics/index.js';
@@ -14,7 +16,16 @@ export const REASON_CONDITION = {
   csrf: 'auth.csrf-token-invalid',
   origin: 'auth.csrf-origin-mismatch',
   bindings: 'config.bindings-missing',
+  identity: 'auth.identity-unresolved',
 } as const;
+
+/**
+ * The unrostered-identity condition id, spelled once here so the guard's second identity-branch
+ * switch case and this renderer never drift onto different strings. It carries no `guard.rejected`
+ * reason: an unrostered but resolved identity refuses through its own path, not the reason table
+ * above.
+ */
+export const IDENTITY_UNKNOWN_CONDITION = 'auth.identity-unknown' as const;
 
 /**
  * A branded page for an operator fault, built straight from the registered condition's fields so
@@ -37,7 +48,10 @@ function conditionFaultPage(cond: CairnCondition): string {
 }
 
 /** Render the Response the guard serves for a rejection, by its condition id. */
-export function renderConditionResponse(id: string, ctx: { url?: URL } = {}): Response {
+export function renderConditionResponse(
+  id: string,
+  ctx: { url?: URL; email?: string; label?: string } = {},
+): Response {
   // Assert the id is registered before rendering, keeping the renderer in 1:1 with the registry.
   condition(id);
   switch (id) {
@@ -56,6 +70,10 @@ export function renderConditionResponse(id: string, ctx: { url?: URL } = {}): Re
     case REASON_CONDITION.bindings:
       // An operator fault, not a request fault: the Worker deployed without its bindings.
       return brandedAdminPage(500, conditionFaultPage(condition(id)));
+    case REASON_CONDITION.identity:
+      return brandedAdminPage(403, identityUnresolvedPage(ctx.label));
+    case IDENTITY_UNKNOWN_CONDITION:
+      return brandedAdminPage(403, identityUnknownPage(ctx.email ?? '', ctx.label));
     default:
       throw new Error(`no runtime renderer for condition: ${id}`);
   }

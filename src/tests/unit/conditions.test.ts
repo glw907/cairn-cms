@@ -104,7 +104,7 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-three entries', () => {
+  it('pins the registry at twenty-five entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
@@ -112,8 +112,9 @@ describe('condition registry', () => {
     // config.no-referrer-blanket for the blanket no-referrer doctor check, minus the retired
     // edge.hsts-off, plus config.tidy-key-missing (its own condition id, no longer borrowing
     // config.bindings-missing), plus auth.store-unmigrated for the missing-0004 login fault the
-    // store now names. Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(23);
+    // store now names, plus auth.identity-unresolved and auth.identity-unknown for the identity
+    // seam. Grow this count only with a registry change.
+    expect(allConditions()).toHaveLength(25);
   });
 
   it('resolves the tidy-key condition (its own id, no longer borrowing config.bindings-missing)', () => {

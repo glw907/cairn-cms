@@ -38,6 +38,17 @@
     background: var(--cairn-band-bg);
   }
 
+  /* The band owns its exit: a footer's own top margin is meant to separate it from a preceding
+     block whose ground differs from its own, but a band that directly precedes the footer
+     already draws that separation itself (the band's own bottom edge is the seam). Left alone,
+     the footer's margin reopens a strip of the page's base ground between a band and a footer
+     that share the same ground (the showcase's base-200 band into a base-200 footer). Zeroing it
+     here, scoped to the direct-sibling case, keeps every other band-to-content transition
+     untouched. */
+  .cairn-band + .site-footer {
+    margin-top: 0;
+  }
+
   /* Section: a vertical rhythm block within the reading column, for grouping a composed page's
      pieces (a home page's "latest" block, an about page's "team" block) with consistent spacing
      above and below, without each caller re-deriving the gap by hand. */

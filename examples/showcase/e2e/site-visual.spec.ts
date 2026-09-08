@@ -119,6 +119,8 @@ test('the rendered alert carries its own inlined classes, not DaisyUI card class
   await page.goto('/posts/the-reading-surface');
   const alertBody = page.locator('.prose .alert > .cairn-alert-body');
   await expect(alertBody).toBeVisible();
+  const headTitle = page.locator('.prose .alert .cairn-head-title');
+  await expect(headTitle).toBeVisible();
   const strayCardClasses = await page
     .locator('.prose .alert .card-body, .prose .alert .card-title')
     .count();

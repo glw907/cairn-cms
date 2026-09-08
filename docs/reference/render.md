@@ -35,10 +35,10 @@ built-in directives.
 - `cairn-grid` (`markFirstList`) marks the first `<ul>` inside a component's stamped children.
   `markFirstList` has no public export, but the class it stamps is still a real, emitted name.
 
-A site's own component code stamps its own additional classes on top of these. The example
-adapter's alert directive's inner classes (`cairn-alert-body`, `cairn-head-title`) are one
-instance. They are chassis-owned, not engine-emitted, so they are documented in the chassis's own
-README rather than here.
+A site's own component code stamps its own additional classes on top of these. The alert
+directive in the example adapter stamps its own inner classes (`cairn-alert-body`,
+`cairn-head-title`) as one instance. They are chassis-owned, not engine-emitted, so they are
+documented in `examples/showcase/src/chassis/README.md` rather than here.
 
 **Registration.** `cairn-*` is a shared namespace. The admin sheet also owns roughly sixty of its
 own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`, and similar), documented in

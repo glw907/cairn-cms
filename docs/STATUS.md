@@ -21,7 +21,9 @@ passes, A, B1, B2). CI on `main` is fully green.
 ## Immediate next action
 
 **Chassis-A MERGED** (PR #50, `f301c600`, 2026-09-08 11:39 UTC, CI green; post-mortem in the plan,
-HISTORY entry written). `main` now carries TWELVE passes unpublished. **Chassis-B1 is next**, plan
+HISTORY entry written). `main` now carries TWELVE passes unpublished. **Chassis-B1 EXECUTING** as run `wf_0181ac8f-393` (launched 2026-09-08 about 04:20 AKDT on
+`.claude/worktrees/chassis-b`); the conductor runs the CI baseline regen after Task 2 and at pass
+end. Plan
 `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`: worktree `.claude/worktrees/chassis-b` off
 post-A `main`, from-scratch showcase install, the Reconciliation block re-verified at dispatch,
 then the seven tasks as a `pass-execute-chains` run from the session scratchpad's `b1-args.json`
@@ -30,8 +32,9 @@ then the seven tasks as a `pass-execute-chains` run from the session scratchpad'
 granted; B1 and B2 end at green PRs for Geoff's five-viewport read, the seam merges on its own gate.
 
 **Identity seam: Tasks 1 and 2 ACCEPTED** (`b44aee8b`; `bd9c2fc8`, `d6388333`, cap fix
-`0b99192a`); Tasks 3 to 6 running as `wf_774752b5-aba` on `.claude/worktrees/identity-seam`
-(Task 3 landed `5a534016`). Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
+`0b99192a`); Task 3 landed (`5a534016`, `e028eac8`) and its run `wf_774752b5-aba` halted on a second
+`fix` (a vacuous console spy); conductor ruling: one more fix dispatch, then Tasks 4 to 6 relaunch
+from the scratchpad's `identity-args-4to6.json`. Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
 the `prose-voice-reviewer` and the `web-auth-security-reviewer` (its accept is blocking) before 5b.
 Merge gate: green CI plus the security accept plus the docs gates.
 

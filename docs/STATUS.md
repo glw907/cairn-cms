@@ -78,6 +78,22 @@ landed on branch chassis-a, relaunch the rest as a fresh pass-execute-chains wor
 CLI test suite in the gate, then the full pass-end ritual, push, PR, merge on green CI. Then
 author and execute chassis-B."
 
+**Overnight organization (Geoff, 2026-09-07, about 22:20 AKDT):** B2 STACKS on B1's branch
+(worktree `chassis-b2` off `chassis-b`, not off `main`), so both PRs wait for one sitting of
+Geoff's five-viewport read. The **identity-seam pass** runs in its own worktree off `main` in
+PARALLEL with B1 (engine and extend docs versus showcase; two gates is the machine's ceiling),
+with authorship AND execution granted and its merge gate ruled: green CI plus the
+`web-auth-security-reviewer`'s accept plus the docs gates, Geoff reading the extend page after
+the fact. Brainstorm settled 2026-09-07: the target is Google Workspace and Microsoft 365 for
+nonprofits, met THROUGH CLOUDFLARE ACCESS (Access in front of `/admin` with the org's IdP; cairn
+ships one built-in resolver verifying the Access JWT header plus the generic resolver seam; no
+OIDC client in cairn); working assumptions stated and unobjected: the roster stays the
+authorization source (Access proves the email, the roster assigns owner or editor), a configured
+resolver turns magic-link off for that site (one identity path per admin), and the shell's logout
+hands off to Access's logout URL. Spec and plan authored tonight with the four-lens review in
+place of Geoff's read; merge order at the end: A, then B1 and B2 after Geoff's read, then the
+identity seam on its own gate.
+
 **Chassis-B execution GRANTED (Geoff, 2026-09-07):** once the four-lens review is folded
 into the plan, run chassis-B as a `pass-execute-chains` workflow through its pass-end ritual to
 a green PR with the captures and the visual-verifier verdict banked; the merge stays Geoff's.

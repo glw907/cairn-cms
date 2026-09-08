@@ -413,7 +413,7 @@ and Part II's most-important-first rule yields to that on a proposal.
 | 8a | Write `check:provenance` and `check:prose-read` | medium each |
 | 9 | Adopt the reader test for the roughly forty task guides and the front door | your reading, one page at a time |
 | 10 | Approve the Claude setup changes as listed | small, except the scanner change, which is medium |
-| 11 | Approve the `render-safety.md` demonstration before any docs pass is planned | small |
+| 11 | Approve the `add-a-custom-admin-screen.md` demonstration before any docs pass is planned | small |
 
 ## The receipt
 

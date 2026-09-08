@@ -29,8 +29,11 @@ matches byte-for-byte; diff-reviewer accepted; CLI suite 806/806). Every remaini
 carries `npm --prefix packages/create-cairn-site run prepack && npm --prefix
 packages/create-cairn-site test`; the args file shape is in the plan's Execution section.
 
-**Chassis-A: ALL TWELVE TASKS ACCEPTED (2026-09-08 about 02:00 AKDT); pass-end ritual in
-progress** on `chassis-a`: Task 12 landed `e02c0525` plus `950290c8`; `main` merged into the
+**Chassis-A: RITUAL COMPLETE, PR #50 OPEN (2026-09-08 about 03:40 AKDT), merges on green CI**
+(authorized). Simplifier `fa98c613`, fix round `ea39654f`, post-mortem and HISTORY `3c227a1d`;
+eighteen gates, the from-scratch showcase e2e (156, no baseline moved), a fresh scaffold against
+the packed engine, and four ship-it reviews. After the merge: STATUS and memory on `main`, then
+B1's worktree off post-A `main`, its Reconciliation block, and its launch. Earlier ritual note: on `chassis-a`: Task 12 landed `e02c0525` plus `950290c8`; `main` merged into the
 branch with two docs conflicts (ROADMAP, friction log) resolved by dispatch; next the
 code-simplifier over the pass diff, the reviewer fan-out the plan names, the gates by name, the
 from-scratch showcase and fresh-scaffold proofs, HISTORY/STATUS/ROADMAP, the post-mortem, push,

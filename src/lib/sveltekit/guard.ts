@@ -2,11 +2,11 @@
 // `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
 import { redirect, error, type Handle } from '@sveltejs/kit';
-import { resolveSession } from '../auth/store.js';
+import { resolveSession, findEditor } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
 import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
-import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
+import { renderConditionResponse, REASON_CONDITION, IDENTITY_UNKNOWN_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
 import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
@@ -60,6 +60,97 @@ export interface AuthGuardOptions {
    * it (see {@link applySecurityHeaders} and `brandedAdminPage`).
    */
   includeSubDomains?: boolean;
+  /**
+   * Replace magic-link session resolution with the site's own identity gate (Cloudflare Access
+   * or any other reverse proxy that authenticates the request before it reaches this Worker).
+   * Omitted, the guard resolves the session cookie exactly as today.
+   */
+  identity?: IdentityResolver;
+}
+
+/**
+ * A site's own identity gate, replacing the guard's session-cookie resolution. `resolve` proves
+ * who is making the request, or says why it could not; `logoutUrl` and `label` back the hand-off
+ * page and the doctor's probe.
+ */
+export interface IdentityResolver {
+  /** Prove who is making this request, or say why it could not be proven. */
+  resolve(event: CairnEvent): Promise<ResolvedIdentity | IdentityRefusal>;
+  /**
+   * Where the shell's logout sends the editor: a root-relative path or an `https:` URL,
+   * validated at {@link createAuthGuard}'s construction. The gate owns the session; cairn only
+   * redirects.
+   */
+  logoutUrl: string;
+  /** The gate's name for the hand-off page and the doctor probe (default "your organization's sign-in"). */
+  label?: string;
+}
+
+/** A request the site's identity gate has already authenticated. */
+export interface ResolvedIdentity {
+  ok: true;
+  /** Normalized (trim, lowercase) by the guard before the roster lookup and the log record. */
+  email: string;
+  /**
+   * Advisory only: the roster row's `displayName` wins, and this is used only when the roster
+   * row's is empty, capped at 120 characters. It reaches the commit author, so it is never
+   * trusted over the roster.
+   */
+  displayName?: string;
+}
+
+/** A request the site's identity gate could not authenticate. */
+export interface IdentityRefusal {
+  ok: false;
+  /**
+   * For the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`,
+   * `'expired'`, `'no_email'`, `'keys'`, or a site's own word; every reason is snake_case.
+   */
+  reason: string;
+}
+
+// A refusal reason that locks out the whole roster (a misconfigured gate), not just this one
+// request, so it logs at error rather than warn.
+const IDENTITY_OPERATOR_FAULT_REASONS = new Set(['audience', 'issuer', 'keys', 'error']);
+
+// The cap, in characters, on the resolver's advisory displayName, matching MAX_DISPLAY_NAME in
+// content-routes-media.ts: the value reaches the git commit author, so it is bounded the same
+// way any other author-controlled display string is.
+const MAX_ADVISORY_DISPLAY_NAME = 120;
+
+const LOGOUT_URL_PATTERN = /^\/(?![\\/])/;
+// The forbidden set is deliberately every control character (0x00-0x1f, 0x7f), a backslash, and
+// any whitespace.
+const LOGOUT_URL_FORBIDDEN = /[\\\x00-\x1f\x7f\s]/;
+
+/**
+ * Validate `identity.logoutUrl` at construction (the OWASP unvalidated-redirects rule): a
+ * root-relative path with no backslash, control character, or whitespace, or an absolute URL
+ * whose parsed protocol is exactly `https:`. A root-relative candidate is checked again after
+ * percent-decoding, since `/%2f%2fevil.example` decodes to the protocol-relative
+ * `//evil.example` a browser would treat as an absolute redirect. Anything else throws rather
+ * than admitting an open redirect at request time.
+ */
+function validateLogoutUrl(logoutUrl: string): void {
+  if (isSafeLogoutUrl(logoutUrl)) return;
+  throw new Error(`cairn: identity.logoutUrl is not a safe redirect target: ${JSON.stringify(logoutUrl)}`);
+}
+
+/** The predicate {@link validateLogoutUrl} throws on, split out so every rejection is one `false`. */
+function isSafeLogoutUrl(logoutUrl: string): boolean {
+  if (LOGOUT_URL_FORBIDDEN.test(logoutUrl)) return false;
+  if (LOGOUT_URL_PATTERN.test(logoutUrl)) {
+    try {
+      return LOGOUT_URL_PATTERN.test(decodeURIComponent(logoutUrl));
+    } catch {
+      return false;
+    }
+  }
+  try {
+    return new URL(logoutUrl).protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -74,6 +165,18 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
   const includeSubDomains = opts.includeSubDomains;
+  const identity = opts.identity;
+  // Validated once, at construction, not per request: an invalid logoutUrl is a site
+  // misconfiguration, and failing fast here beats admitting an open redirect at request time.
+  // The published snapshot below is what every admin path reads; identity.logoutUrl is never
+  // re-read per request.
+  if (identity) validateLogoutUrl(identity.logoutUrl);
+  // Frozen so a downstream handler cannot mutate the published snapshot: a plain write would
+  // otherwise silently poison it for every later request the same isolate serves, since the
+  // guard closes over one instance for its whole lifetime rather than rebuilding it per request.
+  const identitySnapshot = identity
+    ? Object.freeze({ label: identity.label ?? "your organization's sign-in", logoutUrl: identity.logoutUrl })
+    : undefined;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
@@ -132,6 +235,15 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       return renderConditionResponse(REASON_CONDITION.bindings);
     }
 
+    // Published on every admin path under identity mode, the public login and auth paths
+    // included, since the magic-link handlers live only on those public paths and detect
+    // identity mode by this field alone. The value is the snapshot validated at construction;
+    // the guard is the only writer. identity.resolve itself is called only below, on guarded
+    // paths, never here.
+    if (identitySnapshot) {
+      event.locals.cairnIdentity = identitySnapshot;
+    }
+
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
     // 403 before resolve() runs. This covers the public login/auth posts too. The header witness
     // decides outright when it was SENT at all, matching or not: a valid X-Cairn-CSRF header clears
@@ -172,7 +284,69 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       }
     }
 
-    if (!isPublicAdminPath(pathname)) {
+    if (!isPublicAdminPath(pathname) && identity) {
+      // Every identity refusal serves the same branded page under the same log event; only the
+      // level, the detail word, and (on a thrown resolve) the error text differ.
+      function refuseIdentity(level: 'warn' | 'error', detail: string, errorMessage?: string): Response {
+        log[level]('guard.rejected', {
+          reason: 'identity',
+          path: pathname,
+          conditionId: REASON_CONDITION.identity,
+          detail,
+          ...(errorMessage === undefined ? {} : { error: errorMessage }),
+        });
+        return renderConditionResponse(REASON_CONDITION.identity, { label: identitySnapshot?.label });
+      }
+
+      // identity mode replaces session-cookie resolution entirely: resolveSession is never
+      // called, and the site's own gate proves who is asking. A throw from resolve() is an
+      // operator fault (a misbehaving gate), never a 500: log it and refuse the same as any
+      // other identity refusal.
+      let resolved: ResolvedIdentity | IdentityRefusal;
+      try {
+        resolved = await identity.resolve(event);
+      } catch (err) {
+        const message = (err instanceof Error ? err.message : String(err)).slice(0, 300);
+        return refuseIdentity('error', 'error', message);
+      }
+      if (!resolved.ok) {
+        // Coerced rather than trusted verbatim: IdentityRefusal declares reason a string, but a
+        // resolver outside the type system (plain JS, a mistyped ambient) can hand back null or
+        // undefined, which would otherwise reach the log record and the Set lookup untyped.
+        const reason = String(resolved.reason ?? 'invalid');
+        const level = IDENTITY_OPERATOR_FAULT_REASONS.has(reason) ? 'error' : 'warn';
+        return refuseIdentity(level, reason);
+      }
+      if (typeof resolved.email !== 'string' || resolved.email.trim() === '') {
+        return refuseIdentity('warn', 'invalid');
+      }
+      // Normalized again inside findEditor, the store's own invariant; normalizing here too
+      // keeps the log record and the unrostered page showing what the lookup actually matched
+      // against.
+      const email = resolved.email.trim().toLowerCase();
+      const row = await findEditor(env.AUTH_DB, email);
+      if (!row) {
+        // Capped at 320 characters, the same bound auth.link.requested applies, since this email
+        // reaches both the log record and the rendered page.
+        const rendered = email.slice(0, 320);
+        log.warn('auth.identity.unknown', { email: rendered, path: pathname });
+        return renderConditionResponse(IDENTITY_UNKNOWN_CONDITION, { email: rendered, label: identitySnapshot?.label });
+      }
+      if (!Object.hasOwn(vocabulary, row.role)) {
+        log.warn('auth.role.unknown', { email: row.email, role: row.role });
+      }
+      // The roster row's displayName wins; the resolver's is advisory only, used solely when the
+      // roster row's is empty, since it reaches the commit author and is never trusted over the
+      // roster.
+      const advisoryDisplayName = resolved.displayName?.trim().slice(0, MAX_ADVISORY_DISPLAY_NAME);
+      event.locals.cairnEditor = {
+        email: row.email,
+        displayName: row.displayName || advisoryDisplayName || row.email,
+        role: row.role,
+        capability: resolveCapability(vocabulary, row.role),
+      };
+      event.locals.cairnAccess = access ?? {};
+    } else if (!isPublicAdminPath(pathname)) {
       // Same csrfSecure derivation as the hasSession read above: unreachable to differ
       // from the bare protocol check on a guarded admin path, since the https-help-page check
       // above already refused every http, non-local request before this line runs.

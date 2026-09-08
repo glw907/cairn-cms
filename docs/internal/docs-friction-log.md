@@ -22,22 +22,7 @@ clearings.
 
 ## Live findings
 
-- `extender` (2026-09-07, Geoff, reading the cairn case): the charter
-  (`what-cairn-is-and-is-not.md:60-63`, `CLAUDE.md` "What cairn is") promises a developer can
-  replace the admin auth, cairn then minting no session and reading an owner/editor identity
-  "through a defined hand-off". No such hand-off exists: `AuthGuardOptions` carries only `roles`,
-  `access`, and `includeSubDomains`; `createAuthChannel` builds a second audience's own magic-link
-  login and admits nothing to `/admin`; Cloudflare Access appears once, as a header pass-through in
-  `cli-cairn-media-seed.md`; no extend page teaches replacing the editor login. The zero-config
-  default therefore makes the CMS the organization's identity system for its editors, true for a
-  small org and rarely for a larger one, and the front door never says so. Two halves: the case and
-  why-cairn should state the assumption plainly (filed as post-freeze note 4 on the case), and the
-  seam the charter already commits to needs an owner (the lean shape is an identity resolver on
-  the guard that, when set, mints no session and reads the editor from the site's own hook or an
-  Access-style header). Engine work, outside the audit-remediation window; Geoff's call on when.
-  Owned by `ROADMAP.md`'s identity-seam entry; stays open until that pass ships.
-
-None else open. The 2026-09-07 charter audit's five findings (record
+None open. The 2026-09-07 charter audit's five findings (record
 `docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the same day
 (Geoff accepted the routing): the two charter sentences rewritten (`what-cairn-is-and-is-not.md`,
 `CLAUDE.md`: the concept SET is the site's and the seams are disclosed, not enforced, until 1.0);
@@ -72,10 +57,12 @@ all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearin
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-None open. The internals-C whole-log triage (2026-09-05) cleared the two entries this section
-previously carried: the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later
-tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction folded into
-`ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
+None open. The identity-seam pass's own two findings, discovered and shipped in the same pass
+(the locals hand-off pattern from Task 2, the doctor probe's missing `redirect: 'manual'` from
+Task 4), are cleared already; the internals-C whole-log triage (2026-09-05) cleared the two
+entries this section previously carried: the `check:snippets` stub finding promoted whole to
+`ROADMAP.md`'s Later tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction
+folded into `ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
 
 ## Clearings
 
@@ -107,6 +94,7 @@ history holds every pruned entry in full.
 | 2026-09-03 | the internals pass's whole-log sweep | the ASC CSRF entry deleted (every named mechanism verified shipped; the residual WATCH moved to `docs/STATUS.md`'s active watches); the Platform-watch-heading entry deleted as a duplicate of `ROADMAP.md`'s own inline trigger; `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` promoted whole to `ROADMAP.md`'s Later tier with their triggers |
 | 2026-09-05 | the internals-C pass's whole-log triage | the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later tier with its trigger; the `ctx.logCommitFailed` call-style contradiction (filed at internals-C's Task 10 close, 2026-09-04) folded into `ROADMAP.md`'s existing polish-slice bullet |
 | 2026-09-08 | chassis-A's whole-log triage (Task 12) | the `contributor` finding (2026-09-04, the cairn-case round-2 review) fixed: `what-cairn-is-and-is-not.md:48` said "all 23 registered rules" against the tree's actual 28; the sentence now reads 28 |
+| 2026-09-08 | the identity-seam pass, Task 6 | its own two findings, both shipped in the pass that found them and recorded in `docs/internal/record/2026-09-07-identity-seam/harvest.md`: the locals hand-off pattern (Task 2) and the doctor probe's `redirect: 'manual'` fix (Task 4) |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

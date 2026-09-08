@@ -5441,3 +5441,41 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `field-input.test.ts`, `ComponentForm.test.ts`), byte-stable across the rewrite; the sixteenth-arm
   mutation check (a scratch arm added to the union fails `npm run check` at all five sites, then
   reverted).
+
+## identity-seam: a site-owned admin identity, generic and engine-owned  (accept, 2026-09-07, identity-seam pass)
+
+- **Verdict:** accept. The charter already promises a developer can replace the admin auth,
+  cairn then minting no session and reading an owner/editor identity "through a defined
+  hand-off" (`docs/internal/what-cairn-is-and-is-not.md`, `CLAUDE.md` "What cairn is"); no such
+  hand-off existed before this pass. The seam this pass ships fulfils that promise at its
+  leanest shape: one option on `createAuthGuard`, `identity`, replacing exactly the
+  session-resolution piece of the guard's five, publishing `locals.cairnIdentity` on every admin
+  path and reading a `resolve(event) => Promise<ResolvedIdentity | IdentityRefusal>` contract on
+  guarded paths only, with the roster still the authorization source (a resolved identity proves
+  an email; the roster still assigns owner or editor). No engine dependency is added and no
+  guard-side bootstrap is introduced (`AuthRoutesConfig.bootstrapOwner` stays inert under
+  identity mode by design, the first owner seeded out of band). This is cairn's job because the
+  hand-off is the seam, generic over any gate; a specific gate's verification logic is not
+  cairn's job and ships as a recipe instead (see the declined row below).
+- **Reopens on:** closed. Executed by this pass, Tasks 1 through 4 (the seam, the guard branch
+  and its conditions, the magic-link surface's identity-mode behavior, the doctor's login probe).
+- **Record:** [`docs/internal/record/2026-09-07-identity-seam/`](record/2026-09-07-identity-seam/).
+
+## identity-seam-access-verifier: the Cloudflare Access JWT verifier stays a recipe, not an export  (decline, 2026-09-07, identity-seam pass)
+
+- **Verdict:** decline (declined for now, not closed). Follows the `isuniqueviolation-cloudflare`
+  and `audit-cloudflare-verifyturnstile` precedent: a Cloudflare-specific mechanism ships as a
+  documented recipe rather than an engine export until the engine becomes its own first consumer
+  or a second site needs the identical logic hand-rolled. The accepted assurance level is stated
+  here rather than left implicit: the recipe is the first security-critical extend-track recipe
+  cairn has shipped, and it is not machine-verified below its cairn-facing shape.
+  `check:snippets` stubs `jose` (not a cairn dependency) to `any`, so the gate proves only the
+  block's cairn-facing shape, the resolver object and both return shapes the seam contract
+  requires, never the JWT verification logic inside it; the only proof of that logic is the
+  `web-auth-security-reviewer`'s read of the recipe as shipped.
+- **Verified:** the `web-auth-security-reviewer`'s read of
+  `docs/extend/sign-in-through-your-organization.md`'s recipe block and login-methods section as
+  shipped, a blocking criterion at this pass's Task 5a rather than a pass-end item.
+- **Reopens on:** a second consumer hand-rolling this verifier, an engine-internal consumer of
+  it, or an evidenced defect in a family site's own resolver.
+- **Record:** [`docs/internal/record/2026-09-07-identity-seam/`](record/2026-09-07-identity-seam/).

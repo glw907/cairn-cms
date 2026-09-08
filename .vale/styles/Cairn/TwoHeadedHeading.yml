@@ -1,0 +1,6 @@
+extends: existence
+message: "Two-headed heading ('%s'): a heading names one thing. Drop the comma-and second head, or split the section. A serial list of three or more is not this shape."
+level: error
+scope: heading
+raw:
+  - '^[^,\n]+, and '

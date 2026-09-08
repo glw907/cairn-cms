@@ -100,6 +100,7 @@ describe('readWranglerConfig', () => {
       publicOrigin: 'https://example.com',
       accountId: 'cf-acct-1',
       r2Buckets: ['MEDIA_BUCKET'],
+      name: 'site',
     });
   });
 
@@ -113,6 +114,7 @@ describe('readWranglerConfig', () => {
       publicOrigin: 'https://example.org',
       accountId: 'cf-acct-2',
       r2Buckets: ['MEDIA_BUCKET'],
+      name: 'site',
     });
   });
 
@@ -168,6 +170,17 @@ describe('readWranglerConfig', () => {
     expect(jsonc?.r2Buckets).toEqual([]);
     const toml = await readWranglerConfig(ctx({ 'wrangler.toml': 'name = "site"\n' }).readFile);
     expect(toml?.r2Buckets).toEqual([]);
+  });
+
+  it('reads workers_dev from toml past a trailing inline comment', async () => {
+    const withComment = await readWranglerConfig(
+      ctx({ 'wrangler.toml': 'name = "site"\nworkers_dev = false  # comment\n' }).readFile
+    );
+    expect(withComment?.workersDev).toBe(false);
+    const trueWithComment = await readWranglerConfig(
+      ctx({ 'wrangler.toml': 'name = "site"\nworkers_dev = true  # comment\n' }).readFile
+    );
+    expect(trueWithComment?.workersDev).toBe(true);
   });
 
   it('throws a clean error on malformed jsonc, echoing none of the content', async () => {

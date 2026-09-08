@@ -72,7 +72,7 @@ export interface CairnEvent<Env = CairnEnv> {
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
   // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
   setHeaders(headers: Record<string, string>): void;
-  // The four members share the flat `cairn` prefix, so a grep for one name finds every engine
+  // The five members share the flat `cairn` prefix, so a grep for one name finds every engine
   // read in any repo with no namespace to peel back first.
   // `cairnBackend` is the per-request content store the dev-backend handle injects; the engine
   // resolves it ahead of the real provider, so typing it here makes the seam a checked contract
@@ -80,12 +80,15 @@ export interface CairnEvent<Env = CairnEnv> {
   // connects. `cairnAccess` is the site's declared access map, attached by the guard alongside
   // `cairnEditor`; it is internal (never serialized to a page payload) and exists only so
   // `requireAccess` needs no extra argument at the call site. `cairnAuditSink` is a site's
-  // optional sink for `adminAction`'s audit records, wired the same way.
+  // optional sink for `adminAction`'s audit records, wired the same way. `cairnIdentity` is the
+  // guard's identity-gate snapshot, set on every admin path under identity mode; the guard is
+  // its only writer.
   locals: {
     cairnEditor?: Editor | null;
     cairnBackend?: Backend;
     cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;
+    cairnIdentity?: { label: string; logoutUrl: string };
   };
   platform?: PlatformContext<Env>;
 }

@@ -2,7 +2,8 @@
 @component
 The magic-link sign-in page. A plain form POST to the named `?/request` action (the engine's
 `requestAction`); no client SDK. The success message is identical whether or not the email is on
-the allowlist, so the page never leaks membership (spec §7.1).
+the allowlist, so the page never leaks membership (spec §7.1). Under identity mode `data` carries
+only the gate's `label`, and the page renders a hand-off paragraph with no form instead.
 -->
 <script lang="ts">
   import './cairn-admin.css';
@@ -16,11 +17,14 @@ the allowlist, so the page never leaks membership (spec §7.1).
   import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-error-codes.js';
 
   interface Props {
-    /** The login load's data: the site name, an optional error, the CSRF token, and the SSR-resolved
-     * admin theme (the persisted cookie choice, or the light default; the cookie carries no auth,
-     * so it applies before sign-in too). Optional so a test render need not supply it; the real
-     * shell payload always does. */
-    data: { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' };
+    /** The login load's data: the magic-link shape (site name, an optional error, the CSRF token,
+     * and the SSR-resolved admin theme, the persisted cookie choice or the light default; the
+     * cookie carries no auth, so it applies before sign-in too), or, under identity mode, the
+     * hand-off shape carrying the gate's label. Both shapes carry the same optional `theme`,
+     * since the cookie applies before sign-in regardless of mode. */
+    data:
+      | { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' }
+      | { identity: { label: string }; theme?: 'cairn-admin' | 'cairn-admin-dark' };
     /** The action result. `sent` is true once a request was accepted; `status` discriminates the
      * neutral, send-error, and throttled outcomes. `error` carries an unexpected action failure
      * (viewAction's generic fail(500)), which has neither field. */
@@ -28,6 +32,15 @@ the allowlist, so the page never leaks membership (spec §7.1).
   }
 
   let { data, form }: Props = $props();
+
+  /** Narrows the union in place of a repeated `'identity' in data` at each call site. */
+  function isIdentity(d: Props['data']): d is { identity: { label: string } } {
+    return 'identity' in d;
+  }
+
+  /** The magic-link shape of `data`, or null under identity mode; hoisted so the template reads
+   * one narrowed value instead of repeating `!isIdentity(data) ? data.x : ...` at each site. */
+  const magicLink = $derived(isIdentity(data) ? null : data);
 
   let rootEl = $state<HTMLElement>();
   // Lets a mistyped address go back to the form without a reload, even though the server still
@@ -39,7 +52,8 @@ the allowlist, so the page never leaks membership (spec §7.1).
 
   // A fresh action result supersedes the GET-time error, so a resubmit into a throttle, a send
   // failure, or an unexpected failure never shows the stale link alert alongside the new state.
-  const linkError = $derived(!form?.status && !form?.error ? data.error : null);
+  // Identity mode carries no `error` field at all, so it reads as no link error.
+  const linkError = $derived(magicLink && !form?.status && !form?.error ? magicLink.error : null);
   // The page title is the one landing signal a JS-free arrival gets before reading anything: the
   // redirect that lands here carries its reason only in a query string, and a screen reader
   // announces the title first. Each refusal names itself, the way ConfirmPage swaps its h1.
@@ -73,7 +87,18 @@ the allowlist, so the page never leaks membership (spec §7.1).
 <div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 card-shadow">
-    {#if (form?.status === 'sent' || form?.sent) && !dismissed}
+    {#if isIdentity(data)}
+      <!-- The hand-off page: identity mode's own gate is the sign-in surface, so this renders no
+           form and mints nothing. data-cairn-identity is the marker the doctor's login probe
+           reads (docs/reference/doctor.md) to tell this page apart from the magic-link one. -->
+      <div class="mb-6 flex justify-center">{@render brand()}</div>
+      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">
+        Sign in through {data.identity.label}
+      </h1>
+      <p data-cairn-identity class="mt-2 text-center type-body">
+        This site signs in through {data.identity.label}. <a href="/admin" class="link link-primary">Go to /admin</a>.
+      </p>
+    {:else if (form?.status === 'sent' || form?.sent) && !dismissed}
       <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
            instruction. The fallback help sits in a gentle inset note below. -->
       <div role="status" class="flex flex-col items-center text-center">
@@ -105,7 +130,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
       </div>
     {:else}
       <div class="mb-6 flex justify-center">{@render brand()}</div>
-      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {data.siteName}</h1>
+      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {magicLink?.siteName ?? ''}</h1>
       <p class="mt-1 mb-5 text-center type-body text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
       <!-- tabindex="-1" on every message panel below, without exception, so an assistive
            technology reaching this page can move to whichever message it carries rather than
@@ -136,7 +161,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
         </div>
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
-        <CsrfField token={data.csrf} />
+        <CsrfField token={magicLink?.csrf ?? ''} />
         <label class="flex flex-col gap-label">
           <span class="type-body font-medium">Email</span>
           <input

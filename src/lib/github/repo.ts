@@ -264,7 +264,9 @@ async function commitOnHead(
  *
  * Caller preconditions this layer cannot enforce (the save and lifecycle paths must): every
  * `path` is confined to the site's content directories (the App token can write anywhere in the
- * repo), and `author` is derived from the verified server-side session, never request input.
+ * repo), and `author` is derived from the verified server-side session, never request input; under
+ * identity mode the guard uses the roster row's displayName when it is set, and otherwise the
+ * site's identity resolver's advisory one, trimmed and capped at 120 characters.
  *
  * An empty change set is rejected, since it would otherwise push an empty commit that triggers a
  * site redeploy for no content change.

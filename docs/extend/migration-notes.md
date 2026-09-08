@@ -36,6 +36,19 @@ The release step sets the version number at the cut and renames this section to 
   and to `@glw907/cairn-cms/media` for `MediaRef`. All are type-only, so a missed one is a type
   error at build, never a runtime failure. `MediaRef`, `MediaResolve`, and `SiteRender` are still
   importable from `@glw907/cairn-cms/delivery`, whose `PublicRoutesConfig` names all three.
+- **`LoginData` is now a discriminated union.** `createAuthGuard`'s new `identity` option adds a
+  second shape to `LoginData` (`/sveltekit`), the type `loginLoad` returns. A site that typed a
+  custom `/admin/login` route against `LoginData` and reads `csrf` or `error` directly now needs
+  to narrow on `'identity' in data` first; a site that has not built a custom login route needs
+  no change.
+- **The `admin.login-probe` doctor check reclassifies two findings from `fail` to `info`.** A
+  site that reads the probe's exit status programmatically must treat the workers.dev arm's
+  exposure finding as `info`, not `fail`, on a plain magic-link site that still leaves
+  `workers_dev` enabled (fix: `workers_dev: false` and `preview_urls: false` in the wrangler
+  config, which the info detail now names); and must treat a 401 or 403 answering `GET
+  /admin/login` as `info`, not a probe failure, since a WAF rule or a broken deploy answers the
+  same way as a real identity gate and the check cannot tell them apart. A site that only reads
+  the human-readable report needs no change.
 - **`VariantSpec` and `AssetConfig.variants` are retired.** A site's evidence sweep found zero
   reachable runtime consumers: no family site declared a custom transform preset, and
   `presetUrl`, the only reader, had no non-test caller. The built-in `thumb`, `inline`, `card`,

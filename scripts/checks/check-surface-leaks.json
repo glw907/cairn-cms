@@ -85,6 +85,12 @@
       "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-historyentry."
     },
     {
+      "name": "IdentityLoginData",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "First surfaced by the identity-seam pass (docs/superpowers/plans/2026-09-07-identity-seam-pass.md, Task 3), the hand-off half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
+    },
+    {
       "name": "LinkTarget",
       "subpath": "/sveltekit",
       "model": "type-checker",
@@ -95,6 +101,12 @@
       "subpath": "/sveltekit",
       "model": "type-checker",
       "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-logindata."
+    },
+    {
+      "name": "MagicLinkLoginData",
+      "subpath": "/sveltekit",
+      "model": "type-checker",
+      "standing-unverdicted": "First surfaced by the identity-seam pass (docs/superpowers/plans/2026-09-07-identity-seam-pass.md, Task 3), the magic-link half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
     },
     {
       "name": "MarkdownReferenceRow",

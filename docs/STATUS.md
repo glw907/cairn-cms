@@ -18,41 +18,31 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action
+## Immediate next action (2026-09-08 11:05, written at 16 percent battery, discharging)
 
-**Chassis-A MERGED** (PR #50, `f301c600`, 2026-09-08 11:39 UTC, CI green; post-mortem in the plan,
-HISTORY entry written). `main` now carries TWELVE passes unpublished. **Chassis-B1 EXECUTING** as run `wf_0181ac8f-393` (launched 2026-09-08 about 04:20 AKDT on
-`.claude/worktrees/chassis-b`); the conductor runs the CI baseline regen after Task 2 and at pass
-end. Plan
-`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`: worktree `.claude/worktrees/chassis-b` off
-post-A `main`, from-scratch showcase install, the Reconciliation block re-verified at dispatch,
-then the seven tasks as a `pass-execute-chains` run from the session scratchpad's `b1-args.json`
-(the paint protocol is inlined verbatim in every paint task's criteria string). B2 stacks on
-`chassis-b`. The identity-seam pass runs in parallel (below). Execution of B1, B2, and the seam is
-granted; B1 and B2 end at green PRs for Geoff's five-viewport read, the seam merges on its own gate.
+Three tracks are live in this session; each resumes from its own artifact.
 
-**Identity seam: Tasks 1 and 2 ACCEPTED** (`b44aee8b`; `bd9c2fc8`, `d6388333`, cap fix
-`0b99192a`); Task 3 landed (`5a534016`, `e028eac8`) and its run `wf_774752b5-aba` halted on a second
-`fix` (a vacuous console spy); conductor ruling: one more fix dispatch (landed `a5c59523`, Task 3 closed), then Tasks 4 to 6
-relaunched as run `wf_d399a13c-700` (2026-09-08 about 04:45 AKDT); Task 4 landed (`56b7c231`,
-`02e43b85`), Task 5a's page landed (`fb757009`) and its two review rounds ran: the prose read
-returned fix (16 findings, register discipline) and the security read returned fix (4 blocking:
-a false safety claim on the ungated-origin bullet, the revocation residual and the session-duration
-advice missing, the service-token comment wrong about `no_email` and the `org` token, and
-`reasonFor` switching on `err.name` which a minified bundle collapses; switch on `err.code`).
-Reports in the session scratchpad (`identity-page-*-review.md`). The page fix dispatches AFTER
-the run ends (one writer per worktree), then the security re-read (its accept is the merge gate),
-then the pass-end ritual. Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
-the `prose-voice-reviewer` and the `web-auth-security-reviewer` (its accept is blocking) before 5b.
-Merge gate: green CI plus the security accept plus the docs gates.
+- **Identity seam** (`identity-seam` worktree): code complete and reviewed; awaiting the
+  from-scratch showcase build, push, PR, and merge on green CI. Reviews are banked in
+  `docs/internal/record/2026-09-07-identity-seam/`; the pass's own ledger entry is in
+  `docs/HISTORY.md`.
+- **Chassis-B1** (`chassis-b` worktree, PR #51 draft, Tasks 1 to 3 accepted): Task 4's fix
+  round is in flight under two conductor rulings (`.cairn-section` off `.lead`, the band
+  bleeds outside `.site-main`). Then the diff-reviewer re-read, then Tasks 5 to 7 as one
+  chain (`scratchpad/b1-args-3to7.json` minus tasks 3 and 4), then the verifier loop and
+  Geoff's five-viewport read.
+- **Documentation standard proposal**
+  (`docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md`, revision 4):
+  in its own review chain (register grade against the SQLite corpus sample plus a cold
+  paraphrase read). It reaches Geoff only when the grade says ready. The polish passes spec
+  (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, revision 2) waits on Geoff's
+  read and is superseded in part by the proposal's docs decisions.
+- **Front door**: `docs/why-cairn.md` carries Geoff's true opener (committed). The
+  proposal's Section A is parked until Geoff gives the page's outline; the register now
+  rules the front door technical and academic. Author facts live in
+  `docs/internal/record/2026-09-08-polish-inputs/front-door-author-brief.md`.
 
-**Pictures initiative PAUSED for Geoff's read:** spec revision 2 at
-`docs/superpowers/specs/2026-09-08-pictures-design.md` with six taste calls in its last section;
-no plan and no execution until he rules.
-
-Guards: both sleep inhibitors and the battery watchdog hold to 11:00 on 2026-09-08; a runaway
-guard per live run. A cold resume re-arms the full set and relaunches any run not yet accepted as
-a fresh `pass-execute-chains` run (`resumeFromRunId` works only in the launching session).
+Guards: sleep inhibitors re-armed to 13:00; battery watchdog exits at 11 percent.
 
 ## Parallel tracks
 

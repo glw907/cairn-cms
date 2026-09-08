@@ -456,3 +456,42 @@ budgets scored; the next plan drafted while context is warm or the reason it is 
   behind Cloudflare Access, sign in with your organization's Google or Microsoft accounts", with
   the assumption stated first.
 - **Release:** the window holds; ONE cut after polish.
+
+## Post-mortem
+
+**What was built.** The identity seam: `createAuthGuard({ identity })`, the `IdentityResolver`
+contract (`ResolvedIdentity` or `IdentityRefusal`), `locals.cairnIdentity` published
+unconditionally on every admin path, the two branded pages
+(`docs/extend/sign-in-through-your-organization.md`, the security-model section), the doctor
+probe's redirect classifier (`redirect: 'manual'`, a 3xx whose `Location` host matches the
+Access domain pattern is the PASS case) and its workers.dev exposure arm, and the log
+vocabulary for identity-mode events. Tasks 1 through 6 landed on `.claude/worktrees/identity-seam`
+off `main`; a follow-up round folded the pass-end `svelte-reviewer` and
+`cloudflare-workers-reviewer` findings, then the `web-auth-security-reviewer`'s own follow-up
+rounds hardened the workers.dev exposure arm twice more, ending with a fix that stops an info
+exposure detail from masking a failing primary probe result.
+
+**What was verified, with evidence.** `npm run check` (`svelte-check`): 1836 files, 0 errors, 0
+warnings, at the rebased HEAD. `npm run check:docs`: 3 broken links remain, all pre-existing on
+`main` (verified via `git log main` on each target file, none touched by this pass) or from an
+unrelated concurrent track's record doc; the pass's own record doc
+(`docs/internal/record/2026-09-07-identity-seam/page-reviews.md`) had one broken link from a
+suggested-rewrite blockquote, fixed by fencing it as code (the established convention other
+record docs already use for the same shape). `check:vale`, `check:rulings-format`, and
+`check:comments` all pass at the pass-end ritual commit. The targeted `npm test` unit and
+component suites and the from-scratch showcase build/e2e were not re-run in this session (the
+machine's two-gate ceiling was held by a concurrent worktree); the code-complete state carries
+forward to the next session for that step, per `docs/STATUS.md`.
+
+**Decisions locked.** The workers.dev exposure arm's final ruling: a failing primary probe
+result always wins over an info-level exposure detail, never the reverse, and both details carry
+together when both are present. Option (a) from the security review's N-1 finding round is
+adopted (see the review record). The doctor probe's precedence rule: info findings ride alongside
+a primary result, never suppress or replace one.
+
+**Blockers.** None.
+
+**Budget.** Tokens against the plan's 5.5M ceiling: not measured in this closing session (the
+ritual dispatch did not carry the running total forward). Attended sittings: zero planning
+misses, zero execution sittings for this closing dispatch (rebase, ritual docs, and gate checks
+ran to completion with no blocking questions).

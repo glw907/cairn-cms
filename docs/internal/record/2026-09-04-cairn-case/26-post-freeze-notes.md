@@ -26,3 +26,11 @@ derivation surfaced and defer the decision to reopen.
    `extender`, 2026-09-07); the front door may carry it only after that seam ships and is
    documented. When the case next reopens, add the assumption to the audience leg beside `[^33]`
    and `[^37]`, and keep the stronger claim out until the seam exists.
+
+   **Closed (identity-seam pass, 2026-09-08).** The seam shipped: `createAuthGuard`'s `identity`
+   option, taught in [Sign in through your organization](../../../extend/sign-in-through-your-organization.md).
+   The stronger sentence now has a seam behind it, and `why-cairn.md`'s identity paragraph states
+   it, the assumption first and the Access alternative second. When the case next reopens, resolve
+   this note against the live front door rather than re-deriving it: the two-roles paragraph still
+   needs the assumption named beside `[^33]` and `[^37]`, and can now also name the identity-gate
+   alternative alongside it.

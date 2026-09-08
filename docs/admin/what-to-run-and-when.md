@@ -1,4 +1,4 @@
-# What to run, and when
+# What to run and when
 
 Your site depends on a few moving pieces, and each one moves on its own schedule. The table
 below names what each one should be today, where it gets set, and how you can tell yours still

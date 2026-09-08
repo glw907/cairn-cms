@@ -19,10 +19,13 @@ export const NO_ACCOUNT: CheckResult = skip(
 
 /**
  * GET `path` against the Cloudflare API, authenticated with `ctx.cfToken`. Returns the raw
- * `Response` unread; a check parses the body and decides pass, fail, or skip for itself.
+ * `Response` unread; a check parses the body and decides pass, fail, or skip for itself. `init`
+ * merges in ahead of the authorization header, so a caller can add its own bound, such as a
+ * timeout signal, without this helper needing to know about it.
  */
-export function cfGet(ctx: DoctorContext, path: string): Promise<Response> {
+export function cfGet(ctx: DoctorContext, path: string, init?: RequestInit): Promise<Response> {
   return ctx.fetch(`${CF_API}${path}`, {
+    ...init,
     headers: { authorization: `Bearer ${ctx.cfToken}` },
   });
 }

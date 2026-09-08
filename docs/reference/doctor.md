@@ -157,17 +157,38 @@ config and credential checks. Bare `--probe` resolves the URL from the `PUBLIC_O
 wrangler config vars first, then the environment variable. The probe does not run at all without
 the flag, since it is a network POST against a production site.
 
-The probe asserts the envelope a working sign-in presents, in two steps:
+The GET is issued with `redirect: 'manual'`, so a gate's own redirect never gets silently
+followed, and the response classifies first:
 
-1. `GET <url>/admin/login` answers 200, sets the CSRF cookie (`__Host-cairn_csrf` when the probed
-   origin is https, bare `cairn_csrf` on a local http origin), and serves a page carrying the
-   `name="csrf"` hidden field with a value and a form posting the `?/request` action. The expected
-   cookie name derives from the PROBED origin's own scheme, deliberately, never from a separately
-   resolved `PUBLIC_ORIGIN`: it's a cross-check on what the deployed runtime actually presents,
-   immune to a `--url` override diverging from the wrangler config's own value.
-2. `POST <url>/admin/login?/request` with the cookie and field echoed answers the serialized
-   action result for a sent request. A `throttled` answer also passes, since a re-run inside a
-   real editor's cooldown window still proves the path; the detail line says so.
+- A 301, 302, 303, 307, or 308 whose `Location` host matches `<team>.cloudflareaccess.com`
+  passes, naming the host: the site sits behind Cloudflare Access. A lookalike host
+  (`evilcloudflareaccess.com`) never matches, since the check anchors both ends of the hostname.
+- A 401 or 403 reports info, never pass: consistent with a gate, but not proof of one, since a
+  WAF block or a broken deploy answers the same way; the detail line adds that if the site does
+  not sit behind a gate at all, this is a deploy fault worth checking the route and any WAF rule
+  for.
+- Any other 301, 302, 303, 307, or 308 whose `Location` resolves to the same origin or the same
+  registrable domain as the probed URL (an SSO hop through a sibling subdomain, say) is followed
+  exactly once, and the response it lands on is classified the same way from the top; a second
+  redirect off that response is never followed. A redirect to anywhere else reports info naming
+  the `Location`, since the probe has no way to tell a legitimate off-site sign-in flow from an
+  actual misconfiguration.
+- A 200 carrying the identity hand-off page's `data-cairn-identity` marker fails: the origin
+  answers without a gate in front of it. A 200 carrying no form posting the `?/request` action
+  also fails, on the plain reading that the page is unrecognized; this could still sit behind a
+  gate the probe doesn't recognize, so treat that possibility as a hint rather than a diagnosis.
+- A 200 carrying the magic-link form continues into the same two-step assertion this page
+  described before identity mode existed:
+
+  1. `GET <url>/admin/login` sets the CSRF cookie (`__Host-cairn_csrf` when the probed origin is
+     https, bare `cairn_csrf` on a local http origin) and serves the `name="csrf"` hidden field
+     with a value. The expected cookie name derives from the PROBED origin's own scheme,
+     deliberately, never from a separately resolved `PUBLIC_ORIGIN`: it's a cross-check on what
+     the deployed runtime actually presents, immune to a `--url` override diverging from the
+     wrangler config's own value.
+  2. `POST <url>/admin/login?/request` with the cookie and field echoed answers the serialized
+     action result for a sent request. A `throttled` answer also passes, since a re-run inside a
+     real editor's cooldown window still proves the path; the detail line says so.
 
 The probe is side-effect free by construction. It submits a random non-editor address at the
 reserved `example.invalid` domain, and the engine's non-leak design answers a non-editor exactly
@@ -175,9 +196,52 @@ like a successful send while sending no email and minting no token, so nothing l
 and nothing changes on the site. A `send_error` answer fails the check, which catches a deployed
 site whose send path is broken without spending a real delivery.
 
+A second arm, run independently of the first, closes the exposure a gated primary hostname alone
+doesn't cover: the same Worker often stays reachable on its account's
+`<name>.<subdomain>.workers.dev` address, which no gate covers unless it was told to. With
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set, the wrangler config declaring a `name`
+shaped like a valid workers.dev subdomain label, and the probed origin not local, the doctor
+resolves the account's workers.dev subdomain and issues a credential-free `GET
+<name>.<subdomain>.workers.dev/admin`. A credential-free `/admin` never answers 200 on a gated
+cairn deploy, so the arm treats any response the Worker itself serves there as exposure: a bare
+200 (fails outright, whatever the primary arm found), or any other non-redirect status carrying
+the cairn admin page's own marker (a branded 403, 404, or 500 is still the Worker answering, not
+the gate's own denial page; this also fails outright). A redirect off `/admin` naming the
+Cloudflare Access gate host counts as not exposed, the same as an unmarked non-200 response (the
+gate's own denial page on a hostname it does cover) or a connection failure. A redirect to that
+same workers.dev hostname's own `/admin/login`, the ordinary unauthenticated magic-link redirect
+every deploy serves, is the one case that reads differently depending on what the primary arm
+saw: it fails when the primary arm itself saw gate evidence (an Access redirect or a 401/403),
+since a real gate exists and this route bypasses it. When the primary hostname carries no gate
+of its own (plain magic-link mode), the same redirect reports info naming the remedy instead,
+since it most likely just reflects the same, already-ungated site reachable at its own
+workers.dev address rather than a second, distinct bypass. Every other redirect fails naming the
+exposure. A failing primary probe is never downgraded by this arm's info result: when the primary
+arm itself fails, the check reports fail with both details together, whatever this arm found.
+When
+`CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` is unset, the wrangler config names no `name`
+or one shaped unlike a valid subdomain label, the probed origin is local, or the account
+subdomain lookup itself fails, the arm never runs at all; the primary result's detail then
+carries a note saying so (on any non-fail primary status, not only a pass), so "probed and
+clean" and "never probed" stay distinguishable. Setting `workers_dev: false` in the wrangler
+config skips the arm entirely, since the route no longer exists. That alone does not close every
+preview URL, and the two Cloudflare behaviors it depends on are separate cases: on the current
+Wrangler, `preview_urls` defaults to `workers_dev`'s own value, so setting `workers_dev: false`
+without also setting `preview_urls: false` explicitly leaves a preview URL live; on an older
+Wrangler, previews toggled on in the dashboard serve regardless of the `workers_dev` setting.
+Either way a `<alias>-<name>.<subdomain>.workers.dev` preview URL can still serve `/admin` on an
+uncovered hostname the arm never probes; closing that is the operator's to confirm, not this
+check's to detect.
+
 Run it after the first deploy, after an edge or auth change, or whenever an editor reports a
 sign-in problem. A probe failure has many possible causes, so its detail line names the failed
 assertion and the remediation points back at the rest of the doctor and the deploy guide.
+
+Under identity mode (`createAuthGuard`'s `identity` option), `/admin/login` serves the hand-off
+page instead of the magic-link form, marked with a `data-cairn-identity` attribute on its
+paragraph; the probe reads that attribute to tell the two pages apart. Seed the site's first
+owner out of band before turning `identity` on, never after: `auth.store` keeps requiring an
+owner-capability row in the roster and names this ordering in its own remedy.
 
 ## The `--fix` skill install
 

@@ -1,22 +1,25 @@
 # Why cairn
 
-Before cairn, every content change on the small sites I run ended up as my git commit. An editor
-would email me the new schedule or a corrected paragraph, I'd make the edit, and the deploy would
-carry it live. That worked, but it made me the deploy pipeline for two organizations, and it meant
-nobody could publish anything without going through me first.
+Before cairn, the small organizations I run sites for lived on WordPress, and later on static
+site generators with a git-backed editor in front. WordPress was hard to manage and hard to
+design in, a mass of plugins and theme customization that resisted integration with anything
+else, and casual editors found its block editor confusing. The static generators, with
+Sveltia in front for editing, were much cleaner to work on, and the editor problem for
+non-technical users remained the hard part.
 
-The git-based tools that handle content storage well, plain markdown in a repository, a real
-history, no server to run, still ask an editor to think in branches and commits to use them. For
-someone who wants to fix a typo before Sunday, that's a bridge too far. I wanted a tool that gave
-editors a writing surface built for prose, kept git underneath doing what git is good at, and never
-made an editor look at it.
+These organizations' users needed one clean, integrated place to do nearly everything outside
+basic productivity work, which Google Workspace or Office 365 usually covers. And I needed the
+technical side to be something I could leave alone, which is the Cloudflare choice. Cost sat
+under both, because a small organization often has none to spare.
 
 ## What cairn actually does
 
 cairn is two things at once: an editor-first, git-backed CMS, and a SvelteKit toolkit a developer
-extends for their own organization. Editors sign in from an emailed link, with no GitHub account
-and no password, and write in a markdown editor with a live preview rendered through the exact
-function the public site uses. A save holds on a per-entry branch; a deliberate publish copies it
+extends for their own organization. With the zero-config default, cairn is the organization's own
+identity system for its editors: they sign in from an emailed link, with no GitHub account and no
+password, or, behind Cloudflare Access, [sign in with your organization's Google or Microsoft
+accounts](./extend/sign-in-through-your-organization.md). Either way, an editor writes in a markdown editor with a live preview rendered through
+the exact function the public site uses. A save holds on a per-entry branch; a deliberate publish copies it
 to the main branch with the editor as commit author, and the site deploys the way any push already
 does. None of that plumbing reaches the editor.
 
@@ -44,8 +47,11 @@ history, attribution, and rollback come from tooling that already exists, rather
 database cairn would otherwise have to build and keep running.
 
 None of these choices is reversible piece by piece. cairn has no abstraction layer that lets you
-swap Cloudflare for another host, or GitHub for another repository provider, later. Committing to
-cairn means committing to the stack underneath it.
+swap Cloudflare for another host later. GitHub is the default and the one repository provider
+`create-cairn-site` wires up, but a developer can implement
+[`BackendProvider`](./extend/sign-in-through-your-organization.md#a-backend-other-than-github)
+against a different store; no second implementation ships with cairn today. Committing to cairn
+means committing to Cloudflare and, unless you build that seam yourself, GitHub.
 
 ## The honest trade-offs
 

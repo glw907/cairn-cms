@@ -48,6 +48,8 @@ past this point assumes one of those paths has already produced a working adapte
 - **[Restrict admin access](./restrict-admin-access.md)**
 - **[Add a second audience](./add-a-second-audience.md)**—a second audience's own login and its
   own admin area, one journey.
+- **[Sign in through your organization](./sign-in-through-your-organization.md)**—replace the
+  magic link with your organization's own identity gate, Cloudflare Access.
 
 ## Design your site
 

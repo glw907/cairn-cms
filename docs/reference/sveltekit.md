@@ -114,6 +114,17 @@ Omitted or `false`, the header carries only `max-age`, so a zero-config site see
 change and does not pin any sibling subdomain to HTTPS. Set it to `true` to pin the whole domain,
 a decision that belongs to whoever owns it.
 
+`opts.identity` replaces the guard's session-cookie resolution with a site's own identity gate
+(Cloudflare Access, or any reverse proxy that authenticates the request before it reaches this
+Worker). Omitted, the guard resolves the session cookie exactly as today, byte for byte.
+**Stability tier note:** `createAuthGuard` and `AuthGuardOptions` stay Scaffold API; `identity`
+and the three types it names (`IdentityResolver`, `ResolvedIdentity`, `IdentityRefusal`) are
+Unstable API inside that otherwise-frozen interface, so the option's shape may change or leave in
+any minor release. `identity.resolve` takes a [`CairnEvent`](#the-event-shape), the same
+structural event every engine seam takes, rather than a narrower shape, because a resolver
+generally needs to read request headers (an Access JWT arrives on one) that a narrower event
+would not carry.
+
 ```ts
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
@@ -908,13 +919,25 @@ type AuthRoutes = {
 `createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types). `LoginData` and
 `ConfirmData`, shown in the preceding signature for their shape, carry no export row of their
 own: a consumer reaches them as `Extract<AdminData, { view: 'login' }>['page']` and
-`Extract<AdminData, { view: 'confirm' }>['page']` respectively.
+`Extract<AdminData, { view: 'confirm' }>['page']` respectively. `LoginData` is a discriminated
+union: `{ siteName, error, csrf }` (the magic-link shape) or, when the request carries
+`locals.cairnIdentity` (the [identity seam](#createauthguard)'s snapshot), `{ identity: { label }
+}`, discriminated by the presence of `identity`.
 
 Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-in view at
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
 `/admin/auth/confirm`, and `logoutAction` clears the session; the admin shell posts it as the
 named `?/logout` action on the current URL. The `config.branding` sets the site name and sender
 shown in the email; pass a custom `config.send` to override the default Cloudflare sender.
+
+**Under identity mode** (`locals.cairnIdentity` set): `loginLoad` returns the preceding hand-off
+shape, minting no pending-login nonce and issuing no CSRF token; `requestAction`, `confirmAction`,
+and `confirmLoad` all 404, raised before `requireDb`, before `request.formData()`, and before any
+cookie write, so `/admin/auth/**` serves nothing; `logoutAction` skips the session delete (the
+guard never creates one under identity), still runs every cookie delete and `requireDb`, and
+redirects to the identity snapshot's own `logoutUrl` instead of `/admin/login`. `bootstrapOwner`
+is inert under identity mode, since its only call site is the 404'd `requestAction`; seed the
+first owner out of band before enabling `identity`.
 
 The sign-in view's two handlers share the pending-login nonce, the cookie that binds a magic link
 to the browser that asked for it. `loginLoad` sets it on the GET, so a browser holds one before it
@@ -1979,7 +2002,10 @@ imports the matching `*Data` type to type its `data` prop.
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
-| `AuthGuardOptions` | Scaffold API | `interface AuthGuardOptions { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, and whether the admin `Strict-Transport-Security` header pins sibling subdomains; each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). |
+| `AuthGuardOptions` | Scaffold API | `interface AuthGuardOptions { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |
+| <a id="identityresolver"></a>`IdentityResolver` | Unstable API | `interface IdentityResolver { resolve(event: CairnEvent): Promise<ResolvedIdentity \| IdentityRefusal>; logoutUrl: string; label?: string }` | A site's own identity gate. `resolve` proves who is making the request, or says why it could not; the guard calls it only on guarded admin paths and wraps it in a try/catch, treating a throw as a refusal. `logoutUrl` is validated once at `createAuthGuard`'s construction: a root-relative path or an absolute `https:` URL, or construction throws. `label` names the gate for the hand-off page and the doctor probe, defaulting to "your organization's sign-in." |
+| <a id="resolvedidentity"></a>`ResolvedIdentity` | Unstable API | `interface ResolvedIdentity { ok: true; email: string; displayName?: string }` | A request the gate has already authenticated. The guard normalizes `email` (trim, lowercase) before the roster lookup and the log record; `displayName` is advisory only, capped at 120 characters, and the roster row's own `displayName` wins whenever it is set. |
+| <a id="identityrefusal"></a>`IdentityRefusal` | Unstable API | `interface IdentityRefusal { ok: false; reason: string }` | A request the gate could not authenticate. `reason` is for the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`, `'expired'`, `'no_email'`, `'keys'`, or a site's own word, every value snake_case. |
 | <a id="platformcontext"></a>`PlatformContext` | Extension API | `interface PlatformContext<Env> { env?: Env }` | The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own `App.Platform` type is free to carry other members (`ctx`, and so on) alongside it, since a real SvelteKit `RequestEvent` has more than this structural subset and still satisfies it. |
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |

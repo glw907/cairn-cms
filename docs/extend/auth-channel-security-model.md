@@ -5,7 +5,7 @@ login, members, athletes, boosters, without hand-writing auth crypto. [Add a sec
 audience](./add-a-second-audience.md) walks through building one; this page is what to trust and
 why.
 
-## What this is, and what it is not
+## What this page covers
 
 Email magic-link through the built-in owner/editor model stays the zero-config default and the
 documented primary path for editors; see [Security model](./security-model.md). `createAuthChannel`

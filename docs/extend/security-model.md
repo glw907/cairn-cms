@@ -1,18 +1,24 @@
 # Security model
 
 How cairn authenticates an editor, protects `/admin` from forgery, and gates what a signed-in
-session can reach. This covers the built-in owner/editor model that guards `/admin`; a second
-audience's own login channel has its own contract, in [Auth channel security
+session can reach. This covers the built-in owner/editor model that guards `/admin`, by default
+over cairn's own magic-link sign-in; a site can replace that sign-in mechanism with its own
+identity gate instead, covered separately in [Identity from a gate](#identity-from-a-gate). A
+second audience's own login channel has its own contract, in [Auth channel security
 model](./auth-channel-security-model.md).
 
 ## The threat model
 
-The admin authors are a small, owner-curated allowlist of magic-link-authenticated people. Their
-content never renders live directly; a save lands on a holding branch, and only a deliberate
-publish, then the site's own deploy pipeline, puts anything in front of a visitor, so every change
-carries a git audit trail. That shape is what the model below is built for: the realistic risk is
-session and cookie handling, abuse of the unauthenticated magic-link request endpoint, and the cost
-of a leaked commit credential, not an anonymous public attacker reaching content directly.
+On cairn's default magic-link path, the admin authors are a small, owner-curated allowlist of
+magic-link-authenticated people. Their content never renders live directly; a save lands on a
+holding branch, and only a deliberate publish, then the site's own deploy pipeline, puts anything
+in front of a visitor, so every change carries a git audit trail. That shape is what the model
+below is built for: the realistic risk is session and cookie handling, abuse of the
+unauthenticated magic-link request endpoint, and the cost of a leaked commit credential, not an
+anonymous public attacker reaching content directly. Under an identity gate the roster-curation
+and audit-trail shape holds unchanged, but the realistic risk moves: it is JWT verification, the
+gate's own application scope, and the identity provider's email verification instead, covered in
+[Identity from a gate](#identity-from-a-gate).
 
 ```mermaid
 flowchart LR
@@ -40,12 +46,16 @@ safety](./render-safety.md) governs.*
 
 ## Sign-in: magic links, not passwords
 
+This section, and every section through [The session cookie](#the-session-cookie), describes
+cairn's own built-in sign-in path. A site configuring `identity` replaces all of it; see
+[Identity from a gate](#identity-from-a-gate) for what an identity gate changes.
+
 An editor requests a sign-in link by email. cairn mints a single-use token, stores only its SHA-256
 hash, and emails the raw token as a link. Consuming the link creates a session, stored the same way
 (id, not the raw value the browser holds). The token lives ten minutes, the session thirty days,
 and a repeat request from the same address is throttled to once a minute. All three are named
-constants an adapter cannot loosen. There is no password anywhere in this path, and no third-party
-identity provider; a sign-in proves only membership in the `editor` table.
+constants an adapter cannot loosen on this path. There is no password anywhere in this path, and
+no third-party identity provider; a sign-in proves only membership in the `editor` table.
 
 The request path is deliberately non-enumerating: an address that isn't on the roster gets the
 same `{ status: 'sent' }` response a real editor's address gets, so a stranger probing addresses
@@ -133,7 +143,7 @@ re-requesting is a cheap escape hatch and a hijacked editor session isn't.
 
 The engine writes the nonce hash to `magic_token.nonce_hash`, added by
 `migrations/0004_login_nonce.sql`. Apply that migration before deploying an engine that carries
-this behavior; `npx cairn doctor` fails the `auth.store` check when the column is absent. The
+this behavior; `npx cairn-doctor` fails the `auth.store` check when the column is absent. The
 column is nullable, and a row without a binding still confirms, so a link already in an inbox
 survives the migration itself.
 
@@ -177,15 +187,107 @@ short window right when a fresh cookie is most likely to be used), and a `Max-Ag
 session cookie's own thirty-day lifetime.
 
 The two cookies don't share one lifetime. The CSRF cookie re-anchors its `Max-Age` on every
-issue, keeping the same value, while the session cookie's thirty days run from sign-in. The CSRF
-value rotates at exactly two moments: a successful login mints a fresh one, so a value fixed on
-the browser before sign-in can't carry into the session, and a logout deletes it. Nothing else
-changes the value, so a second open admin tab's already-rendered form field keeps matching the
-cookie. At the login moment another open tab holds at most a sign-in form, which the new session
-makes moot, except when an already-signed-in browser re-authenticates through `/admin/auth/confirm`
-(a public admin path): another tab there can hold a real authenticated form whose field then
-mismatches the rotated cookie, taking one generic 403 that a reload recovers from. Binding the
-token to authentication epochs outweighs that narrow self-healing edge.
+issue, keeping the same value, while the session cookie's thirty days run from sign-in. On the
+built-in magic-link path, the CSRF value rotates at exactly two moments: a successful login mints
+a fresh one, so a value fixed on the browser before sign-in can't carry into the session, and a
+logout deletes it. Nothing else changes the value, so a second open admin tab's already-rendered
+form field keeps matching the cookie. At the login moment another open tab holds at most a
+sign-in form, which the new session makes moot, except when an already-signed-in browser
+re-authenticates through `/admin/auth/confirm` (a public admin path): another tab there can hold a
+real authenticated form whose field then mismatches the rotated cookie, taking one generic 403
+that a reload recovers from. Binding the token to authentication epochs outweighs that narrow
+self-healing edge. Under an identity gate there is no login moment for cairn to hook, and this
+guarantee weakens; see [Identity from a gate](#identity-from-a-gate) for the residual.
+
+## Identity from a gate
+
+A site can configure `createAuthGuard`'s `identity` option to replace everything above, from
+[Sign-in: magic links, not passwords](#sign-in-magic-links-not-passwords) through
+[The session cookie](#the-session-cookie), with a site-supplied gate such as Cloudflare Access.
+[Sign in through your organization](./sign-in-through-your-organization.md) covers setting one up;
+this section covers what changes in the model.
+
+**What's replaced.** cairn mints no token, creates no session, and sets no session cookie.
+`identity.resolve` reads the gate's own proof of identity from the request (the resolver's
+Cloudflare Access recipe reads a signed header the gate attaches) and the guard looks the proven
+email up against the roster, exactly as it looks up a magic-link session's email today. The
+roster still decides who may edit; the gate only proves who is asking.
+
+**The effective session lifetime moves to the gate.** cairn's own thirty-day session constant no
+longer applies once `identity` is configured. The gate itself times a session out on its own
+schedule, an operator-set duration on the Access application, 24 hours by default and
+configurable up to a month. Set it to hours, not weeks: a shorter Access session bounds an
+editor's stolen or leaked browser to a short exposure window, since cairn has no independent
+timeout to fall back on.
+
+**The guard never reads a session cookie to decide who is asking under `identity`.** Step 6 of
+[the guard's request order](#the-guards-request-order) reads `identity.resolve` instead of a
+session cookie, so no part of the identity-mode request path ever inspects
+`locals.cairnEditor`'s cookie-derived counterpart to authenticate a request. The session cookie
+still gets touched in two narrower places, neither of which authenticates anyone: a CSRF
+rejection reads it only to set the presence flag described next, and `logoutAction` reads it to
+decide whether there is anything to delete before skipping the delete under `identity`. A stale
+magic-link session cookie left over from before a site switched to `identity` never authenticates
+a request either way.
+
+**`hasSession` on a CSRF rejection is structurally always `false` under `identity`.** The
+[`guard.rejected`](../reference/log-events.md) record for a CSRF refusal carries `hasSession`, a
+read of whether the session cookie was present on the request. Under `identity` the guard never
+sets that cookie, so the field reads `false` on every identity-mode CSRF rejection; it is not
+repurposed to mean "an identity resolved," since resolving identity would mean running
+`identity.resolve`, a JWT verification and possibly a JWKS fetch, ahead of the CSRF check on every
+rejected cross-site POST.
+
+**Identity resolves after the CSRF stage, not before.** [The guard's request
+order](#the-guards-request-order) still runs CSRF (step 5) ahead of session or identity resolution
+(step 6): the CSRF check protects an unauthenticated request path from doing verification work, so
+`identity.resolve` never runs against a request the CSRF check would refuse anyway.
+
+**The CSRF rotation residual.** [The CSRF value's two rotation moments](#the-session-cookie),
+login and logout, both assume cairn's own sign-in mints the value. Under `identity` there is no
+cairn-owned login moment: the CSRF cookie mints on a browser's first admin request and then
+persists across whatever identity changes happen in that browser, since nothing about a gate's own
+session ending or starting touches cairn's cookie. Concretely, on a shared browser: editor A signs
+in through the gate, the CSRF cookie mints; A's gate session ends; editor B signs in through the
+same gate in the same browser; B inherits A's CSRF token, and A, who knows the value, can forge a
+request as B for as long as that cookie lives. Two levers narrow this. First, a deliberate sign-out
+through cairn's own logout action clears the CSRF cookie along with everything else it clears, so
+an editor who signs out before handing off a shared machine leaves nothing behind. Second, a short
+Access session duration (the lever named above) bounds how long a forgotten sign-in, and the CSRF
+cookie that rode along with it, stays live. Neither closes the residual outright; both narrow the
+window it's exploitable in.
+
+**Which login methods are safe.** The proven email is the entire join between the gate and the
+roster: cairn trusts whatever address the token carries, with no cross-check of its own. Enable
+only a login method that proves control of the address it asserts, a directory connection or an
+identity provider's own one-time PIN; a method whose email claim the end user can edit lets anyone
+it admits assert a rostered address. [Which login methods are
+safe](./sign-in-through-your-organization.md#which-login-methods-are-safe) covers this in full,
+including why an Access application's overall guarantee is only as strong as its weakest enabled
+method.
+
+**The ungated-hostname residual.** The gate proves who is asking only on the hostnames its
+application actually covers. A Worker that answers on another hostname reaching the same
+deployment, its account's `workers.dev` address or an unclosed preview URL, hands anyone holding a
+still-unexpired token full editor capability there with no gate in the path at all, since what the
+verifier accepts depends only on the token itself, never on which hostname carried it. [The
+ungated-hostname
+bullet](./sign-in-through-your-organization.md#operating-instructions) covers the close in full:
+`workers_dev: false`, `preview_urls: false`, and confirming every custom hostname sits behind the
+application.
+
+**The doctor arms.** `npx cairn-doctor --probe` gates on this too, in two arms. `admin.login-probe`
+fetches `/admin/login` from outside the site with redirects disabled: a 30x to the gate's own
+hostname passes, a 200 that answers with cairn's page directly fails, since the gate isn't in the
+request's path at all, the misconfiguration the check exists to catch. The second arm targets the
+residual above directly: it resolves the account's `workers.dev` hostname and probes its `/admin`
+with no credentials, treating any response the Worker itself serves there, a 200, an unguarded
+redirect, or a marked branded page (identity mode's own refusal page, whatever status it carries)
+on an uncovered hostname, as a fail. Exactly three cases count as not exposed: a redirect naming
+the gate's own hostname, an unmarked non-200 response, or a connection failure (see [the doctor's
+live probe](../reference/doctor.md#the-opt-in-live-probe)). The `auth.store` check separately fails
+when the roster holds no owner-capability row, since the guard performs no bootstrap write under
+`identity`; seed the first owner out of band, before enabling `identity`, never after.
 
 ## CSRF: cairn owns it, not the framework
 
@@ -218,14 +320,16 @@ every request passes through it in this fixed order.
 5. **CSRF check.** Accepts the double-submit field or a custom header, since the guard can't
    clone a raw-body upload to read a form field.
 6. **Session resolve.** Attaches `locals.cairnEditor` and `locals.cairnAccess` for the route to
-   read.
+   read. A site configuring `identity` replaces this step with the gate's own resolution instead;
+   see [Identity from a gate](#identity-from-a-gate).
 
 Every step that refuses a request logs a named [`guard.rejected`](../reference/log-events.md)
-reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`, so a sign-in failure is
-diagnosable from the logs rather than guessed at. The exception is step 6: a missing or invalid
-session redirects to `/admin/login` without logging.
+reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`. On the built-in magic-link
+path, step 6 is the one exception: a missing or invalid session redirects to `/admin/login`
+without logging. Under `identity`, step 6's refusals are logged; see [Identity from a
+gate](#identity-from-a-gate).
 
-### The dev-backend flag's two refusals, and what they don't cover
+### What the dev-backend flag's two refusals leave open
 
 `CAIRN_DEV_BACKEND` is refused in two places, deliberately on different terms, both sourced from
 one shared module so neither the wording, the truthiness rule, nor the deployment witness can drift
@@ -343,7 +447,7 @@ publish under the permissive default. Composition also runs a non-throwing check
 gap: see [`config.access_unmapped`](../reference/log-events.md) for the startup warning that
 surfaces a map that covers some, but not all, of the required targets.
 
-### `ownerOnly` stacks on the map, and does not replace it
+### `ownerOnly` stacks on the map
 
 This section states the `ownerOnly` rule in full. Every other page links here rather than restating
 it.
@@ -426,9 +530,10 @@ strips `Referer` cross-origin while keeping the real `Origin` on a same-origin P
 `/admin` carries no full Content-Security-Policy. The nonce machinery a correct CSP would need
 threads through a site's own SvelteKit config, not the engine, and the threat it would add coverage
 for, an allowlisted editor's own session attacking itself, is low value against content that is
-already git-audited before it ever goes live. The XSS surface that matters, arbitrary visitor
-content, is governed on the public render path instead; see [Render safety](./render-safety.md) for
-that control.
+already git-audited before it ever goes live. That reasoning assumes the admitted population is
+the roster; under an identity gate it is instead whoever the gate's own policy admits, which can
+be broader. The XSS surface that matters, arbitrary visitor content, is governed on the public
+render path instead; see [Render safety](./render-safety.md) for that control.
 
 ## The commit credential
 

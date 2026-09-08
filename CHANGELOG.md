@@ -1486,6 +1486,45 @@
   Consumers must: nothing; a site scaffolded before this fix should confirm its own `.dev.vars`
   never landed in a shared template.
 
+- **The identity seam:** `createAuthGuard` gains an `identity` option (`/sveltekit`) that lets a
+  site behind its own gate (Cloudflare Access, or any origin that can prove an email) sign its
+  editors into `/admin` with the organization's own identity instead of cairn's built-in
+  magic-link, with the roster still assigning owner or editor. Three new Unstable-tier types
+  carry the contract: `IdentityResolver` (`resolve(event: CairnEvent) =>
+  Promise<ResolvedIdentity | IdentityRefusal>`), `ResolvedIdentity`, and `IdentityRefusal`. When
+  `identity` is configured, the guard mints no session, publishes `locals.cairnIdentity = {
+  label, logoutUrl }` on every admin path (public paths included), and normalizes and looks up
+  the resolved email against the roster on every guarded request; an unresolved or unrostered
+  request renders one of two new diagnostic conditions, `auth.identity-unresolved` and
+  `auth.identity-unknown`, and logs through the existing `guard.rejected`/new `auth.identity.unknown`
+  vocabulary. The magic-link surface (`loginLoad`, `requestAction`, `confirmAction`,
+  `confirmLoad`) degrades to a hand-off page and 404s under identity mode; `logoutAction`
+  redirects to the configured `logoutUrl` instead of destroying a session. The doctor's login
+  probe now fetches with `redirect: 'manual'` and recognizes a Cloudflare Access gate, an
+  ungated origin, and the identity hand-off page as distinct outcomes. The Cloudflare Access
+  verifier itself ships as a documented recipe
+  (`docs/extend/sign-in-through-your-organization.md`), not an engine export, following the
+  `isuniqueviolation-cloudflare` precedent; no dependency (`jose` included) is added to
+  `package.json`. `createAuthGuard` keeps its Scaffold tier; `identity` and its three types are
+  Unstable inside that frozen interface. `LoginData` (`/sveltekit`) becomes a discriminated union
+  of the existing magic-link shape and a new identity hand-off shape (`{ identity: { label:
+  string } }`), additive on the wire but a type-level change for any site importing the type
+  directly (a custom `/admin/login` route built against `LoginData` narrows on the `identity`
+  member before reading a magic-link-only field). The login probe's workers.dev arm now also
+  follows a same-site redirect off `/admin/login` once before classifying, tolerates 308, and
+  carries a request timeout on every fetch it issues. Consumers must: nothing to build, deploy, or
+  configure differently; a site that has typed a custom login route against the exported
+  `LoginData` union narrows on `'identity' in data` before reading `csrf` or `error`. A site
+  reading the `admin.login-probe` check's exit status programmatically must: treat the workers.dev
+  arm's exposure finding as `info`, not `fail`, on a plain magic-link site (no gate of its own)
+  that still leaves `workers_dev` enabled and gets the ordinary unauthenticated redirect to
+  `/admin/login` there; the fix is `workers_dev: false` (and `preview_urls: false`) in the
+  wrangler config, which the info detail now names. A site that treated a 401 or 403 answering
+  `GET /admin/login` as a probe failure must: read it as `info` instead, since a WAF rule or a
+  broken deploy answers the same way as a real gate and the check cannot tell them apart; the info
+  detail now says so and names the deploy-fault possibility directly.
+  See [`docs/extend/sign-in-through-your-organization.md`](docs/extend/sign-in-through-your-organization.md).
+
 ## 0.96.0
 
 <!-- release-size: minor -->

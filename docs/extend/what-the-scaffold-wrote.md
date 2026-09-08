@@ -148,7 +148,7 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing; it 
 | Path | What it is |
 | --- | --- |
 | `(site)/[...path]/+page.server.ts`, `+page.svelte` | The catch-all that renders every entry, via [`createPublicRoutes`](../reference/delivery.md#createpublicroutes). |
-| `(site)/[...path=md]/+server.ts` | The raw-markdown twin of the same catch-all, matched by the `md` param matcher in `src/params/md.ts`. See [Wire the delivery surface](./wire-the-delivery-surface.md#the-markdown-twin-and-the-md-route-shape). |
+| `(site)/[...path=md]/+server.ts` | The raw-markdown twin of the same catch-all, matched by the `md` param matcher in `src/params/md.ts`. See [Wire the delivery surface](./wire-the-delivery-surface.md#the-markdown-twin-and-its-md-route). |
 | `(site)/archive/[page]/` | A paginated post archive, built on the chassis's `archive.ts` slicing helper. |
 | `(site)/preview/[token]/` | The [share-a-draft-preview](./share-a-draft-preview.md) landing page. |
 | `(site)/styleguide/` | A living reference of the theme's own components and typography; useful while you're editing the theme, safe to delete otherwise. |

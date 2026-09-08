@@ -127,7 +127,7 @@ Rule: honesty against the target. 16.3 is inside 15 to 20, so the all-sentences 
 Rewrite: "pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short."
 
 **16. Links: one path escapes the repository, and one named brief is never linked at the rule that depends on it.**
-> "([the evidence base](../../../../../../.claude/skills/writing-voice/evals/research/2026-09-01-ai-tell-evidence-base.md))" (line 301)
+> "(`[the evidence base](../../../../../../.claude/skills/writing-voice/evals/research/2026-09-01-ai-tell-evidence-base.md)`)" (line 301)
 > "Any claim about you or about cairn's stance must come from a brief you wrote or approved" (line 32)
 
 Rule: Google link-text and Wikipedia first-occurrence linking. The six-level relative path resolves outside the repository to `~/.claude/`, so it is broken in every rendered context and in any clone. `front-door-author-brief.md` sits in this directory and is the brief rule 1 means, and it is never linked. Diátaxis, DITA, Information Mapping, and Every Page Is Page One (line 126) are named entities with no link and no gloss, mitigated only by the structure-research link that follows them.

@@ -176,18 +176,26 @@ are. A page type is a named shape, and the standard names eleven, ten published 
 reader's job it serves, because a page whose job you cannot state in one line is two pages.
 
 - Task guide: the reader has a goal and wants the steps. Most admin and extend pages.
+  Exemplars: Cloudflare's Workers get-started guide and a GitHub Docs how-to.
 - Tutorial milestone: the reader is learning and needs the next unit in a sequence. The
-  extend track's deep path.
+  extend track's deep path. Exemplar: a unit of Astro's blog tutorial.
 - Concept page: the reader must understand something before acting. Extend track.
+  Exemplars: PostgreSQL's concurrency chapter and Astro's "Why Astro" principles.
 - Architecture overview: the reader must see how the parts fit and who owns each. One page
-  per track that needs it; today, `docs/extend/architecture.md`.
+  per track that needs it; today, `docs/extend/architecture.md`. Exemplars: SQLite's
+  architecture page and Kubernetes' cluster architecture page.
 - Reference entry: the reader knows the name and wants the contract. `docs/reference/`.
+  Exemplars: PostgreSQL's CREATE INDEX and MDN's scrollIntoView.
 - Reference table: the reader wants one row of many, such as a config key, a CLI flag, a log
-  event, or a condition. `docs/reference/log-events.md` is one.
+  event, or a condition. `docs/reference/log-events.md` is one. Exemplars: Wrangler's
+  configuration reference and a Stripe object page.
 - Condition entry and symptom row: the reader has a failure and wants the cause and the fix.
-  The admin track's recovery pages.
-- Index page: the reader must find the right page and leave.
-- Front door: an evaluator is deciding whether cairn fits.
+  The admin track's recovery pages. Exemplar: Cloudflare's Workers error tables.
+- Index page: the reader must find the right page and leave. Exemplar: a Kubernetes
+  section index.
+- Front door: an evaluator is deciding whether cairn fits. Exemplars: SQLite's scope page
+  and Kubernetes' overview. The editors track's welcome page is a front door for its own
+  reader, and its exemplars are a GOV.UK guidance page and a Mozilla support article.
 - Proposal, an internal type: the owner is deciding. This document is one. Its order comes
   from the [Rust RFC template](https://github.com/rust-lang/rfcs/blob/master/0000-template.md)
   and the [Kubernetes enhancement proposal template](https://github.com/kubernetes/enhancements/blob/master/keps/NNNN-kep-template/README.md),
@@ -619,15 +627,15 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 344 | 185 | 6 |  | count only |
-| Average length | 16.1 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Sentences | 354 | 185 | 6 |  | count only |
+| Average length | 15.9 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 39 words | 39 words | 33 words | under 40 | pass |
-| Hinged pairs | 42 percent | 45 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
-| Sentences under 8 words | 19 percent | 10 percent | 17 percent | reported | reported |
+| Hinged pairs | 43 percent | 45 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Sentences under 8 words | 20 percent | 10 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
 | Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
 | Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 41 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
-| Vale, Google package forced | 0 errors, 40 warnings and 184 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Vale, Google package forced | 0 errors, 48 warnings and 187 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 1 |  |  | 0 | one finding, the "Summary" heading, recorded as a deviation in the page brief |
 | Three-item lists the scanner counted | 4 |  |  | each a real list | each checked by hand and each a list of things that number three |
 

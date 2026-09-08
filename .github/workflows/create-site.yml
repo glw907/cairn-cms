@@ -102,8 +102,22 @@ jobs:
             const scaffoldFileNames = fs.readdirSync("/tmp/ci-site", { recursive: true }).map((entry) => path.basename(entry));
             assert.ok(!scaffoldFileNames.includes(stateFileName), "state record " + stateFileName + " landed inside the scaffold");
 
-            for (const leftover of ["e2e", "playwright.config.ts", ".claude"]) {
+            for (const leftover of ["e2e", "playwright.config.ts", ".claude", "src/routes/probe-craft"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
+            }
+
+            // A path-based leftover check cannot catch a fixture whose file survives the exclude list
+            // but leaks marker-stripped content, so walk every file the scaffold ships and fail on the
+            // one string a showcase-only fixture load returns.
+            const scaffoldFiles = fs.readdirSync("/tmp/ci-site", { recursive: true, withFileTypes: true });
+            for (const entry of scaffoldFiles) {
+              if (!entry.isFile()) continue;
+              const filePath = path.join(entry.parentPath ?? entry.path, entry.name);
+              const contents = fs.readFileSync(filePath, "utf8");
+              assert.ok(
+                !contents.includes("siteLayoutSentinel"),
+                "siteLayoutSentinel fixture leaked into " + filePath,
+              );
             }
 
             const scriptsEntries = fs.readdirSync("/tmp/ci-site/scripts");

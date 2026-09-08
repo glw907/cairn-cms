@@ -1,6 +1,8 @@
 {
   "exclude": [
     "src/routes/test",
+    "src/routes/probe-craft",
+    "src/routes/(site)/+layout.server.ts",
     "src/members",
     "src/routes/members",
     "migrations-members",

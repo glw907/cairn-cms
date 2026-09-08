@@ -61,10 +61,8 @@ your-site/
 │   │   │   ├── archive/[page]/
 │   │   │   ├── preview/[token]/
 │   │   │   ├── styleguide/
-│   │   │   ├── +layout.server.ts
 │   │   │   ├── +layout.svelte
 │   │   │   └── +page.server.ts, +page.svelte
-│   │   ├── probe-craft/
 │   │   ├── feed.json/
 │   │   ├── feed.xml/
 │   │   ├── healthz/
@@ -150,7 +148,6 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing; it 
 | `(site)/archive/[page]/` | A paginated post archive, built on the chassis's `archive.ts` slicing helper. |
 | `(site)/preview/[token]/` | The [share-a-draft-preview](./share-a-draft-preview.md) landing page. |
 | `(site)/styleguide/` | A living reference of the theme's own components and typography; useful while you're editing the theme, safe to delete otherwise. |
-| `probe-craft/` | A leftover fixture from the engine's own admin design work, stock DaisyUI with none of cairn's own styling. It carries no content, and nothing else in the scaffold links to it; safe to delete. |
 | `feed.xml/`, `feed.json/` | RSS and JSON Feed, via [`rssResponse`/`jsonFeedResponse`](../reference/delivery-data.md#rssresponse). |
 | `sitemap.xml/` | Via [`sitemapResponse`](../reference/delivery-data.md#sitemapresponse). |
 | `robots.txt/` | Via [`robotsResponse`](../reference/delivery-data.md#robotsresponse); see [Choose an AI posture](./choose-an-ai-posture.md) for the `posture` option it reads. |

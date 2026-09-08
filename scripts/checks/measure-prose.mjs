@@ -21,7 +21,7 @@ text = text.replace(/```[\s\S]*?```/g, '');
 text = text.replace(/^\|.*$/gm, '');
 text = text.replace(/^#{1,6} .*$/gm, '');
 text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-text = text.replace(/`[^`]*`/g, 'code');
+text = text.replace(/`[^`]*`/g, 'Code');
 text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
 
 // Join wrapped list items into one line each, then mark list items.

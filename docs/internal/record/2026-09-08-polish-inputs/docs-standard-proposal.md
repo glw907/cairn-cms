@@ -12,9 +12,9 @@ Federal Plain Language Guidelines, with sentence numbers held as measurements an
 paragraph numbers held as rules. The structure part sets three layers, the docs set, the
 page, and the section, each with rules a script can check. The figures part decides when a
 diagram earns its place and how it is made and graded. The review part gives docs the same
-chain code has: a template check, linters, measurements against a vendored corpus of human
-exemplars, a fresh reviewer who cites those exemplars, a reader who runs the page, and a receipt a
-gate can verify.
+chain code has. A template check and the linters run first. Measurements are taken against a
+vendored corpus of human exemplars. A fresh reviewer cites those exemplars, a reader runs the
+page, and the read leaves a receipt a gate can verify.
 
 Two rules sit above the four parts. Any claim about you or about cairn's stance comes from a
 brief you wrote or approved, and a script checks that every such claim points at a line in
@@ -126,10 +126,10 @@ that landed today.
 
 #### The front door
 
-`why-cairn.md` takes the shape the three strongest "why" pages share. It
-opens with your account of where cairn came from, then what cairn does, where it fits, what
-it is not as its own section, why this stack, the trade-offs, a short checklist the reader
-answers, and where to go next. The checklist is SQLite's closing device and the one
+`why-cairn.md` takes the shape the three strongest "why" pages share. Its
+sections, in order: your account of where cairn came from; what cairn does; where it fits;
+what it is not, as its own section; why this stack; the trade-offs; a short checklist the
+reader answers; and where to go next. The checklist is SQLite's closing device and the one
 instrument on that page that turns an argument into the reader's decision.
 
 ### Figures
@@ -171,9 +171,8 @@ ownership map goes to the architecture page.
 ### The corpus
 
 The docs are compared against pages people wrote. `docs/internal/corpus/` holds one short
-excerpt per entry, at most 400 words, with a manifest carrying the source, the license, the
-fetch date, the page type and track it calibrates, its measured numbers, and the date you
-approved it. Two entries per page type is the ceiling. An entry you reject is deleted and
+excerpt per entry, at most 400 words. A manifest records each entry's source, license, fetch
+date, page type and track, measured numbers, and the date you approved it. Two entries per page type is the ceiling. An entry you reject is deleted and
 its id retired. The proposed entries:
 
 - Front door: SQLite's Appropriate Uses page and Kubernetes' Overview.
@@ -301,13 +300,13 @@ package forced on, since this path is style-exempt, and all three levels are rep
 
 | Measure | All sentences | Prose only | Target |
 |---|---|---|---|
-| Sentences | 199 | 112 | |
-| Average length | 14.2 words | 16.2 words | 15 to 20 |
-| Longest sentence | 65 words | 65 words | under 40 |
-| Hinged pairs, all families | 35 percent | 38 percent | reported |
-| Sentences under 8 words | 26 percent | 20 percent | reported |
+| Sentences | 207 | 119 | |
+| Average length | 13.7 words | 15.3 words | 15 to 20 |
+| Longest sentence | 41 words | 41 words | under 40 |
+| Hinged pairs, all families | 33 percent | 35 percent | reported |
+| Sentences under 8 words | 25 percent | 18 percent | reported |
 | Paragraphs over 8 sentences or 150 words | 0 | | 0 |
-| Vale, Google package forced | 0 errors, 14 warnings and 94 suggestions | | errors 0 |
+| Vale, Google package forced | 0 errors, 14 warnings and 102 suggestions | | errors 0 |
 | Tell scanner | 0 tells per 1,000 words; counts {'tricolon': 7} | | reported |
 
 Corpus entries cited while drafting: SQLite, Appropriate Uses (structure and the closing

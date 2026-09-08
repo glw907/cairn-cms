@@ -1,7 +1,6 @@
 import type { RequestHandler } from './$types';
 import { jsonFeedResponse } from '@glw907/cairn-cms/delivery';
-import { ORIGIN, SITE_DESCRIPTION } from '$chassis/content';
-import { siteConfig } from '$theme/cairn.config';
+import { siteMeta } from '$chassis/content';
 import { buildFeedItems } from '$chassis/feed';
 
 export const prerender = true;
@@ -10,10 +9,10 @@ export const GET: RequestHandler = async () => {
   const items = await buildFeedItems();
   return jsonFeedResponse(
     {
-      title: siteConfig.siteName,
-      description: SITE_DESCRIPTION,
-      siteUrl: ORIGIN,
-      feedUrl: ORIGIN + '/feed.json',
+      title: siteMeta.title,
+      description: siteMeta.description,
+      siteUrl: siteMeta.origin,
+      feedUrl: siteMeta.origin + '/feed.json',
     },
     items,
   );

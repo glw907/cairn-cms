@@ -32,3 +32,14 @@ export const posts = indexes.posts;
 
 export const ORIGIN = 'https://showcase.test';
 export const SITE_DESCRIPTION = 'The cairn showcase site.';
+
+/**
+ * The site's identity, composed once. `PublicRoutesConfig`'s `siteName`/`description` fields,
+ *  the raw-markdown route, and both feed endpoints all read this rather than each composing
+ *  `siteConfig.siteName` and `SITE_DESCRIPTION` on their own.
+ */
+export const siteMeta = {
+  title: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+  origin: ORIGIN,
+};

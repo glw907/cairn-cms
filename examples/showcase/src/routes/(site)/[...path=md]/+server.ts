@@ -1,7 +1,6 @@
 import type { RequestHandler, EntryGenerator } from './$types';
 import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
-import { site, ORIGIN, SITE_DESCRIPTION } from '$chassis/content';
-import { cairn, publicMediaResolver, mediaEnabled, siteConfig } from '$theme/cairn.config';
+import { publicRoutesConfig } from '$chassis/public-routes';
 
 // Prerendered, same as every other public route (robots.txt, sitemap.xml, feed.xml). This is not
 // incidental: the build runs against committed `main` content, so there is no request path by
@@ -10,15 +9,7 @@ import { cairn, publicMediaResolver, mediaEnabled, siteConfig } from '$theme/cai
 // walk both close by construction today.
 export const prerender = true;
 
-const routes = createPublicRoutes({
-  site,
-  render: cairn.rendering.render,
-  origin: ORIGIN,
-  siteName: siteConfig.siteName,
-  description: SITE_DESCRIPTION,
-  resolveMedia: publicMediaResolver,
-  assetsEnabled: mediaEnabled,
-});
+const routes = createPublicRoutes(publicRoutesConfig);
 
 export const entries: EntryGenerator = () => routes.markdownEntries();
 

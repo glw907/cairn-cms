@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeEvent, makeRecordingCookies, countRows, expectRedirect, expectHttpError } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
+import { createSession } from '../../lib/auth/store.js';
 import { githubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -71,7 +72,7 @@ describe('the hand-off page (loginLoad under identity mode)', () => {
 describe('requestAction under identity mode', () => {
   it('404s before requireDb, before request.formData(), and before any cookie write, minting nothing', async () => {
     const admin = createCairnAdmin(runtime(), {});
-    const logSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const cookies = makeRecordingCookies();
     // No AUTH_DB and no PUBLIC_ORIGIN in the event's platform.env: a 404 raised after either
     // guard would still pass this test by accident, so both are absent to prove the 404 comes
@@ -88,11 +89,11 @@ describe('requestAction under identity mode', () => {
     };
     expect((await expectHttpError(() => admin.actions.request(ev))).status).toBe(404);
     expect(cookies.sets).toEqual([]);
-    const records = logSpy.mock.calls.map((c) => c[0] as { event?: string });
+    const records = infoSpy.mock.calls.map((c) => c[0] as { event?: string });
     expect(records.some((r) => r.event === 'auth.token.minted')).toBe(false);
     expect(records.some((r) => r.event === 'auth.link.requested')).toBe(false);
     expect(await countRows('magic_token')).toBe(0);
-    logSpy.mockRestore();
+    infoSpy.mockRestore();
   });
 });
 
@@ -131,6 +132,18 @@ describe('logoutAction under identity mode', () => {
     expect(deletedNames).toEqual(
       expect.arrayContaining(['cairn_session', 'cairn_csrf', '__Host-cairn_login_pending']),
     );
+  });
+
+  it('skips the session delete, emitting no auth.session.destroyed record even with a live row', async () => {
+    await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const admin = createCairnAdmin(runtime(), {});
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });
+    await expectRedirect(() => admin.actions.logout(adminEvent('/admin', { cookies })));
+    const records = infoSpy.mock.calls.map((c) => c[0] as { event?: string });
+    expect(records.some((r) => r.event === 'auth.session.destroyed')).toBe(false);
+    expect(await countRows('session')).toBe(1);
+    infoSpy.mockRestore();
   });
 });
 

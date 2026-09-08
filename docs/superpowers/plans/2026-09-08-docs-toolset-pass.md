@@ -63,14 +63,16 @@ and unit 5 belong to the stages). Inputs: `docs/internal/record/2026-09-08-polis
 above all `docs-spec-review-plannability.md`, `front-door-author-brief.md`,
 `front-door-net-failure.md`, `docs-sweep.md`, and `exports-sweep.md`.
 
-**Token ceiling: 4.75M**, recomputed for 2a alone. Revision 2 carried 6.5M across two runs, of
-which run one was about 3.8M. Four things changed. The fourteen track-harvest tasks, H12, and
-`check:figures`' seven assertions left for the stages, which removes about 2.35M. D3 and chain R
-moved in from run two, which adds about 0.20M. The baseline record and the tuning checkpoint are new,
-and together they are this pass's one genuinely new cost at about 0.30M, because they instantiate the
-measure set and the lever map, then amend two schemas and the templates. Per chain: P 0.30M, H 0.35M,
-C 0.45M, G1 1.00M, G2 1.35M, D 0.45M, R 0.45M. That sums to 4.35M against the 4.75M ceiling, leaving
-0.40M slack.
+**Token ceiling: 4.75M**, recomputed for 2a alone, and restated from the two-run total rather than
+from run one's share of it, since two of the three changes move work across the run boundary rather
+than change run one itself. Revision 2 carried 6.5M across two runs. The fourteen track-harvest
+tasks, H12, and `check:figures`' seven assertions leave for the stages, a gross removal, while the
+baseline record and the tuning checkpoint arrive as this pass's one genuinely new cost, at about
+0.30M, because they instantiate the measure set and the lever map, then amend two schemas and the
+templates; those two changes net to about 2.35M removed. D3 and chain R, previously scoped to run
+two, move into this single pass, adding back about 0.20M. 6.5M minus 2.35M plus 0.20M is 4.35M. Per
+chain: P 0.30M, H 0.35M, C 0.45M, G1 1.00M, G2 1.35M, D 0.45M, R 0.45M, which sums to the same
+4.35M against the 4.75M ceiling, leaving 0.40M slack.
 
 **Each of the five stages carries its own ceiling, set when its plan is authored** from the previous
 stage's measured cost and, for stage one, from `demonstration-cost.md`. Do not pre-number them here;
@@ -251,7 +253,7 @@ one.
 
   | Chain | Gate |
   |---|---|
-  | H | `npm run check:docs` |
+  | H | `npx vitest run scripts/checks && npm run check:docs` |
   | C | `npm run check:docs` |
   | G1, G2 | `npm run check && npx vitest run scripts/checks && npm run check:docs && npm run check:vale` |
 
@@ -308,6 +310,11 @@ None of these is a numbered task; all run in the main loop and are recorded in `
 1. **The owner commits the figures substrate** (`package.json`, `.github/workflows/test.yml`,
    `scripts/figures/`, `docs/internal/site-figures.{md,svg}`, `docs/extend/assets/` with the two
    writer-facing `.md` files moved to `docs/internal/figures/`). This is the pass's one hard stop.
+   **`docs/internal/record/2026-09-04-cairn-case/25-front-door-proposal.md` is also untracked on
+   `main` today and absent from every worktree.** It touches `check:arm-indexes` and `check:docs`
+   the same way the figures substrate does, so before P1 dispatches the owner either commits it (its
+   record arm gets an index row like any other) or moves it out of the tree; either disposition is
+   recorded in `preflight.md` beside the figures-substrate check.
 2. **Extend `~/.claude/workflows/pass-execute-chains.js` to accept a per-chain gate**, reading
    `chain.gate ?? args.gate` into both the implementer and the reviewer prompts. Ten lines. Without
    it the four chain gates in the table above are not expressible and every chain runs one string.
@@ -398,6 +405,10 @@ ground.
 - [ ] **Step 4:** re-derive the published-page set and count; re-resolve every `docs-sweep.md`
   finding number and every `exports-sweep.md` `F` number this plan cites, and write the
   finding-to-track map; record the `main` sha; commit.
+- [ ] **Step 5:** add an empty `## Questions` section to `preflight.md`, with a one-line conductor
+  instruction above the (empty) list: append one line per question, as it lands, in the shape
+  "`<date>` `<chain/task>`: `<question>` -> `<answer>`". This is the standing questions log the
+  `questions asked` measure counts from; T1 rolls it up rather than re-deriving it.
 
 **Acceptance criteria:**
 - `preflight.md` states the published-page definition once, as the four track directories plus
@@ -421,6 +432,8 @@ ground.
   files, the review agents, and the global `CLAUDE.md`) as plan one's own record's to carry.
 - `docs/internal/record/docs-rebuild/README.md` carries one unchecked row per artifact, so later
   tasks tick rather than append.
+- `preflight.md` carries a `## Questions` section with the append-one-line-per-question instruction,
+  so every chain and every conductor pre-task has one place to log a question as it lands.
 - No file outside this repository is modified, and the report says so.
 
 **Notes:** this is the one task that can stop the whole pass, and it stops on one thing only, the
@@ -539,8 +552,8 @@ names the full path.
   `check:prose-read` verifies and from the coverage-diff reports, never from a hand count. `questions
   asked` is rolled up at the review from the lines a pass records as the questions land, one line per
   question the owner, an agent, or a reviewer had to ask about a page. `reviewer misses` is what the
-  fresh reviewer changed on a drafted page, each miss attributed to the template or to the subject,
-  recorded by the coverage-diff and review steps.
+  fresh reviewer changed on a drafted page, each miss attributed to the template, the subject, or
+  register, recorded by the coverage-diff and review steps.
 - **The `helpful votes` column is marked future work and stays empty.** It starts when cairn.pub
   carries a voting widget, and no task in this plan builds one. The header states that a vote is read
   against the page's type and never pooled across types.
@@ -1109,7 +1122,10 @@ one new task, G1-7, which reports the registry lifecycle's per-type measurements
 - **Reflowing rules are disabled on the published pages** through glob overrides, each naming the
   stage that removes it. The disable's comment states the reason: a reflow moves a page's lines and
   the ledgers record a `line`.
-- **In-scope paths at the end of this task are `docs/internal/**` and the demonstration page only.**
+- **In-scope paths at the end of this task are `docs/internal/**` only.** The demonstration page,
+  `docs/extend/add-a-custom-admin-screen.md`, carries its own glob override naming **D1** as the
+  remover, not a stage: the page has no brief yet at G1-5's merge, so leaving it in scope would fail
+  `CAIRN002 brief-present` and every anatomy check red on `main` from the G merges until D1 lands.
   Every other published path carries a glob override relaxing the new rules, each naming **the stage
   that removes it**, by track name rather than by a plan filename, since no stage plan exists yet.
   This task clears nothing beyond that scope; each stage widens it as its track is rebuilt.
@@ -1282,15 +1298,15 @@ the conductor records which happened in `preflight.md`.
   run is advisory and the report says so.**
 - Both vendored packages, `Google` and `Microsoft`, are unedited: `git diff` over
   `.vale/styles/Google/` and `.vale/styles/Microsoft/` is empty.
-- Fixtures also exist for the five Cairn rules that already ship (Announcement, ContrastFrame,
-  Marketing, TwoHeadedHeading, VirtueClaims), in the same golden form.
 
-### Task G2-3: Clear the seventeen headings and promote `Google.Headings`
+### Task G2-3: Clear the seventeen headings, promote `Google.Headings`, and fixture the five shipping rules
 
-**Chain:** G2. **Depends on:** G2-2. **Deliverables:** 2.
+**Chain:** G2. **Depends on:** G2-2. **Deliverables:** 3.
 
 **Files:** Modify `.vale.ini` (the `Google.Headings` level), and the published pages carrying the
-findings.
+findings. Create `scripts/checks/vale-fixtures/<Rule>/{.vale.ini,test.md,expected.txt}` for the five
+Cairn rules that already ship (Announcement, ContrastFrame, Marketing, TwoHeadedHeading,
+VirtueClaims), in the same golden form G2-2's harness reads.
 
 **Acceptance criteria:**
 - `vale --minAlertLevel=warning --output=line docs README.md` reports **zero** `Google.Headings`
@@ -1306,6 +1322,9 @@ findings.
 - The clearing edits change heading capitalization only. Every changed slug is listed in the task
   report, and each stage harvests against the post-clearing state, since every stage branches after
   this pass merges.
+- Fixtures exist for the five Cairn rules that already ship (Announcement, ContrastFrame, Marketing,
+  TwoHeadedHeading, VirtueClaims), in the errata-ai golden form, and `check:vale-fixtures` covers all
+  five alongside G2-2's new rules.
 
 ### Task G2-4: The length and paragraph rules, and the warning report
 
@@ -1523,7 +1542,8 @@ invocation two.
 **Files:**
 - Create: `docs/extend/add-a-custom-admin-screen.brief.yml`
 - Modify: `docs/extend/add-a-custom-admin-screen.md` (rebuilt, not edited),
-  `docs/internal/corpus/manifest.md` (the provisional mark)
+  `docs/internal/corpus/manifest.md` (the provisional mark), `.markdownlint-cli2.yaml` (remove
+  G1-5's D1-named exclusion for the demonstration page)
 
 **Steps:**
 - [ ] **Step 1:** write the brief from the ledger; the `needs` and `keep` lists cite ids. Mark the
@@ -1541,6 +1561,9 @@ invocation two.
 **Gate:** `npm run lint:markdown && npm run check:docs`.
 
 **Acceptance criteria:**
+- Writing the brief removes G1-5's `.markdownlint-cli2.yaml` exclusion for the demonstration page in
+  the same commit, so the page returns to `docs/internal/**`'s in-scope treatment the moment it has
+  a brief to satisfy `CAIRN002`, and CI on `main` is never red between the G merges and D1.
 - The brief parses and carries all eight fields, with `type: task-guide`, `track: extend`, a named
   `exemplar`, a `corpus_entry` list of one or two manifest ids, `needs` and `keep` lists of
   resolving ids, and a `sentences` list covering every drafted sentence.
@@ -1571,8 +1594,9 @@ invocation two.
 - [ ] **Step 2:** dispatch the fresh reviewer, a different context and a different model family from
   the drafter, with the corpus entry or entries.
 - [ ] **Step 3:** restore the quarantined page copy, then dispatch a separate agent, never the
-  drafter, for the coverage diff against the extend ledger. One redraft round at most; a second fix
-  verdict goes to the owner.
+  drafter, for the coverage diff against the extend ledger, and record its report as a
+  `## Coverage diff` section of `demonstration-review.md`, not a separate file. One redraft round at
+  most; a second fix verdict goes to the owner.
 - [ ] **Step 4:** run `check:ledger` over every ledger that exists, its first real run; commit.
 
 **Gate:** `npm run check && npx vitest run scripts/checks && npm run check:docs &&
@@ -1591,8 +1615,10 @@ npm run check:vale && npm run lint:markdown && npm run check:provenance && npm r
   beside the corpus entry's number. **Where the brief names two entries, the report grades against
   the closer of the two and names both**, which is the spec's rule and P3's schema field. The
   hinged-pair share is reported here and is not a manifest column.
-- The coverage diff's report lists every ledger entry for this page the drafted page dropped, and
-  each is restored or recorded in the brief's `deviations` with a reason.
+- The coverage diff's report lives in `demonstration-review.md`'s `## Coverage diff` section, listed
+  in this task's Files, and lists every ledger entry for this page the drafted page dropped, each
+  restored or recorded in the brief's `deviations` with a reason. This is the path T1's "sourced by
+  path" criterion cites for the coverage-diff figures.
 - The revision cap held: at most one redraft, and the report says how many rounds ran.
 - The type ids in `docs/internal/record/docs-rebuild/page-types.md`, the template filenames, and the
   brief's `type` agree exactly.
@@ -1656,7 +1682,7 @@ npm run check:ledger && npm run check:fact-coverage -- --track extend`.
   template cost on the demonstration page, and it fills the demonstration page's type row in
   `docs/internal/page-types.md`: the reader-test result, the measured drafting cost, the questions
   anyone had to ask about the page, and the reviewer misses D2's fresh reviewer and coverage diff
-  produced, each attributed to the template or to the subject. `helpful votes` stays empty.
+  produced, each attributed to the template, the subject, or register. `helpful votes` stays empty.
 - **The review's ruling is written to `docs/internal/page-type-rulings.md`**, in the shape
   `docs/internal/engine-rulings.md` uses: the ruling, the evidence, and what would reopen it. A
   review that changes nothing still writes a ruling saying so, with the cost figure as its evidence.
@@ -1743,13 +1769,14 @@ premise as well.
 **Interfaces:**
 - Produces: the baseline every stage measures its pages against, and the instantiated measure set and
   lever map the spec's "Gauging and iterating" subsection defines.
-- Consumes: `demonstration-cost.md`, `demonstration-review.md`, the coverage-diff report, and D3's
-  reader-test findings. The conductor supplies the token and sitting figures, which an implementer
-  cannot observe.
+- Consumes: `demonstration-cost.md`, `demonstration-review.md`, the coverage-diff report, D3's
+  reader-test findings, and `preflight.md`'s `## Questions` section. The conductor supplies the token
+  and sitting figures, which an implementer cannot observe.
 
 **Steps:**
 - [ ] **Step 1:** fill the per-page measure set for `docs/extend/add-a-custom-admin-screen.md` from
-  the artifacts above, one row.
+  the artifacts above, one row. The `questions asked` figure is the count of `preflight.md`'s
+  `## Questions` lines that concern this page or its chain, rolled up rather than re-derived.
 - [ ] **Step 2:** copy the lever map from the spec's subsection into the file as the standing table,
   and record which lever, if any, this one page's numbers would have pulled.
 - [ ] **Step 3:** `check:docs`, `check:arm-indexes`; commit.
@@ -1821,9 +1848,12 @@ npm run check:rulings-format`.
   record shows X".
 
 **Notes:** the deliverable count is four because two schemas, the templates, and the record are four
-artifacts; the registry review's rows are D3's deliverable, not this task's. If the evidence would
-pull more than four levers, the conductor pulls the two with the strongest counts and records the
-rest as candidates for stage one's checkpoint.
+artifacts; the registry review's rows are D3's deliverable, not this task's. The reconciliation
+table's rollup writes to `docs/internal/page-types.md` and `docs/internal/page-type-rulings.md`
+(the questions log and the reviewer misses, rolled up from T1's baseline) are part of the record
+artifact, not a fifth: they land in the same commit as `stage-0-tuning.md` and record the same
+checkpoint. If the evidence would pull more than four levers, the conductor pulls the two with the
+strongest counts and records the rest as candidates for stage one's checkpoint.
 
 ### Task R2: STATUS, HISTORY, ROADMAP, CHANGELOG, the friction log, and the register
 

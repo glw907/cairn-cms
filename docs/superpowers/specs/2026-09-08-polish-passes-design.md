@@ -444,8 +444,8 @@ reason.
 **1. Polish-C lands entirely before the docs harvest branches.** Polish-C renames and removes across
 365 in-tree files, and every rename invalidates a fact-ledger entry in exactly the class the ledger
 exists to guarantee. The harvest therefore runs after polish-C, never between the harvest and the
-rewrite and never concurrently with either. This orders the whole sequence: A, B, D, C, then the
-docs toolset pass.
+rewrite and never concurrently with either. Polish-C lands before stage one's harvest branches and
+does not gate pass 2a; the order is A, B, D, 2a, C, then stage one.
 
 **2. Polish-B splits.** Its code work keeps tasks 2, 8, and 9 and the `check:reference` change in
 task 5, and merges before the harvest branches. **Its prose findings are not run as edits.** They

@@ -454,7 +454,7 @@ file, which exists on `main` before G1 branches.
 - [ ] **Step 3:** write `brief-schema.md` and cairn's `.tellgrader.json`; commit.
 
 **Acceptance criteria:**
-- The parser uses **`js-yaml`** for parsing and a JSON Schema check for validation, and the task adds
+- The parser uses the **`yaml`** package for parsing and a JSON Schema check for validation, and the task adds
   the `yaml` package (ISC), which already ships in `dependencies`, so no second YAML parser
   enters the tree. No surveyed documentation program hand-writes a YAML parser; `github/docs`
   parses with `js-yaml` and validates with ajv. Conductor ruling 2026-09-08: reuse the existing
@@ -1774,7 +1774,7 @@ What each of the six reviews' findings became. A finding not applied is listed w
 
 **Applied.** Benchmark: the gate consolidation onto `markdownlint-cli2` and Vale (1, 2, 7, 14, 15);
 the golden-form fixture harness (4); the `Microsoft.SentenceLength` override and the resolved
-paragraph hedge (3); `js-yaml` plus a schema check (5); the `files` negation and the `check:package`
+paragraph hedge (3); the `yaml` package plus a schema check (5); the `files` negation and the `check:package`
 assertion (6); the corpus reference-only default and every licensing rule (9, 10); the hinged-pair
 column dropped (11); decision 2's review scheduled in D3 (12); the warning report step (13); the
 lychee weekly action with a rolling issue (16); the errata-ai citation correction (17); the "no

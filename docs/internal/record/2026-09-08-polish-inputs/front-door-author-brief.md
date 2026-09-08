@@ -22,10 +22,20 @@ bombproof from the technical-admin side, which is the Cloudflare angle. And it h
 inexpensive to run, because the audience is frequently a small organization where cost is
 critical.
 
+## The other half: extension by agent, support by one idiom
+
+Once the extensible admin framework existed, agentic coding made extending cairn to an
+organization's particular needs comparatively quick and easy. That is more work than buying
+software. It is far less time spent supporting users after the fact, because they learn a
+single admin idiom and every screen the organization adds lives inside it.
+
+On the page this is the "How I build on it" section's frame and the answer the first driver
+(one integrated surface) leads to: the surface is one place for users, and one idiom to teach.
+
 ## Where it lands on the page
 
 The proposal's opener ("every content change ended up as my git commit") is one consequence of
 the first driver. The three drivers name the page's own frame: the one surface, the bombproof
-admin, the cost. "The setup most organizations already run" is where the WordPress and SSG
+admin, the cost, and the extension-by-agent, support-by-one-idiom trade. "The setup most organizations already run" is where the WordPress and SSG
 experience is the author's record rather than a comparison, and the comparisons-never-strawman
 rule holds: the alternatives are drawn as competent with their advantages.

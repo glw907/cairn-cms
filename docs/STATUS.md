@@ -33,8 +33,8 @@ granted; B1 and B2 end at green PRs for Geoff's five-viewport read, the seam mer
 
 **Identity seam: Tasks 1 and 2 ACCEPTED** (`b44aee8b`; `bd9c2fc8`, `d6388333`, cap fix
 `0b99192a`); Task 3 landed (`5a534016`, `e028eac8`) and its run `wf_774752b5-aba` halted on a second
-`fix` (a vacuous console spy); conductor ruling: one more fix dispatch, then Tasks 4 to 6 relaunch
-from the scratchpad's `identity-args-4to6.json`. Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
+`fix` (a vacuous console spy); conductor ruling: one more fix dispatch (landed `a5c59523`, Task 3 closed), then Tasks 4 to 6
+relaunched as run `wf_d399a13c-700` (2026-09-08 about 04:45 AKDT). Task 5a reports `REVIEW ROUNDS PENDING`; the conductor then dispatches
 the `prose-voice-reviewer` and the `web-auth-security-reviewer` (its accept is blocking) before 5b.
 Merge gate: green CI plus the security accept plus the docs gates.
 

@@ -52,6 +52,7 @@ export const ALLOWLIST = new Set([
   'env-var:ERR_JWT_INVALID',
   'env-var:ERR_JWS_INVALID',
   'env-var:ERR_JOSE_ALG_NOT_ALLOWED',
+  'env-var:ERR_JOSE_GENERIC', // jose's generic fallback code, cited in the same reasonFor comment
 
   // Dotted-lowercase tokens sharing an area with the log-event/condition-id/check-id union
   // (auth, admin, config, editor, entry, preview, tidy) without being a member of any of the

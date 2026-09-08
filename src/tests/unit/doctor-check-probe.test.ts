@@ -327,19 +327,18 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('without the gate');
   });
 
-  it('fails when the workers.dev arm finds /admin exposed on the account subdomain', async () => {
+  /** Runs the workers.dev arm against a scripted /admin response, sharing the wiring. */
+  async function runWorkersDevArm(adminResponse: Response) {
     const { fetch } = scripted((url) => {
       if (url === `${ORIGIN}/admin/login`) return loginResponse();
       if (url === `${ORIGIN}/admin/login?/request`) return actionJson('sent');
       if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
         return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
       }
-      if (url === 'https://my-worker.glw907.workers.dev/admin') {
-        return new Response('exposed', { status: 200 });
-      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') return adminResponse;
       throw new Error(`unexpected url ${url}`);
     });
-    const result = await liveProbeCheck(ORIGIN).run(
+    return liveProbeCheck(ORIGIN).run(
       ctx({
         fetch,
         cfToken: 'token',
@@ -348,8 +347,42 @@ describe('admin.login-probe', () => {
           relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
       })
     );
+  }
+
+  it('fails when the workers.dev arm gets a bare 200 from /admin', async () => {
+    const result = await runWorkersDevArm(new Response('exposed', { status: 200 }));
     expect(result.status).toBe('fail');
     expect(result.detail).toContain('Access application does not cover');
+  });
+
+  it('fails when the workers.dev arm gets a 303 to /admin/login (magic-link mode, no gate)', async () => {
+    const result = await runWorkersDevArm(
+      new Response(null, { status: 303, headers: { location: '/admin/login' } })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('Access application does not cover');
+  });
+
+  it('fails when the workers.dev arm gets a 403 branded cairn admin page (identity mode, no gate)', async () => {
+    const result = await runWorkersDevArm(
+      new Response(
+        '<html><body><p class="foot">Powered by Cairn</p></body></html>',
+        { status: 403 }
+      )
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('Access application does not cover');
+  });
+
+  it('does not fail the workers.dev arm when /admin redirects to a Cloudflare Access host', async () => {
+    const result = await runWorkersDevArm(
+      new Response(null, {
+        status: 302,
+        headers: { location: 'https://myteam.cloudflareaccess.com/cdn-cgi/access/login' },
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('sent');
   });
 
   it('falls back to the primary pass when the workers.dev arm itself throws', async () => {

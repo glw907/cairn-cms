@@ -98,12 +98,21 @@ email.
   site's wrangler config, since the Worker is otherwise reachable at
   `<name>.<subdomain>.workers.dev/admin`, which no Access application covers unless it was told to,
   and make sure every custom hostname and route that reaches this Worker is covered by the
-  application. Then run `cairn-doctor --probe`, whose second arm probes the workers.dev hostname
-  and fails on a 200 there even when the primary hostname passes (see
-  [the doctor's live probe](../reference/doctor.md#the-opt-in-live-probe)). Your site's own rate
-  limit ([`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit)) is worth having too,
-  since an ungated `/admin` spends an RSA verification per request, but it's the smaller half of
-  this bullet.
+  application. `workers_dev: false` does not by itself close a
+  [preview URL](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/):
+  Wrangler defaults `preview_urls` to `workers_dev`'s own value, but a site that set
+  `preview_urls: true` explicitly, or has previews toggled on in the dashboard on an older
+  Wrangler, still serves `/admin` on an `<alias>-<name>.<subdomain>.workers.dev` hostname no
+  Access application covers; set `preview_urls: false` too, and confirm it, since this is
+  yours to close, not something the doctor checks probe. Then run `cairn-doctor --probe`
+  with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set (see
+  [the doctor's live probe](../reference/doctor.md#the-opt-in-live-probe) for what those
+  credentials unlock), whose second arm probes the workers.dev hostname and fails on any
+  response the Worker itself serves there, a 200, an unguarded redirect, or the branded
+  refusal page identity mode itself serves, even when the primary hostname passes. Your
+  site's own rate limit ([`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit))
+  is worth having too, since an ungated `/admin` spends an RSA verification per request, but
+  it's the smaller half of this bullet.
 - **Never branch inside `resolve` for local development.** A conditional that checks for a
   development environment inside the resolver you hand to `identity` is a code path that runs in
   production too, whatever you intended. Swap the whole guard behind your own build-time
@@ -184,7 +193,9 @@ export const accessIdentity: IdentityResolver = {
 
     // Access issues two token shapes on the same keys: this application's token (`type: 'app'`)
     // and the team-scoped `org` session token. Only the first is a statement about this
-    // application.
+    // application. `type` is observed on real Access tokens, not documented in Cloudflare's
+    // published field list; the check fails closed, so a future rename would lock out the
+    // whole roster rather than admit anyone.
     if (payload.type !== 'app') {
       return { ok: false, reason: 'invalid' };
     }
@@ -201,10 +212,12 @@ export const accessIdentity: IdentityResolver = {
 
 // jose's error codes map onto the refusal reasons IdentityResolver declares. Branch on `code`,
 // never on `name`: jose derives `name` from the class name, which a minified production bundle
-// renames, while `code` is a string literal on the instance. `keys` covers every way the certs
-// endpoint can fail, including a network failure that surfaces as a bare TypeError from fetch, so
-// a certs outage logs and alerts as an operator fault rather than reading like a wave of forged
-// tokens.
+// renames, while `code` is a string literal on the instance. `keys` covers every certs-endpoint
+// failure this switch names explicitly, plus a network failure that surfaces as a bare TypeError
+// from fetch (the default branch below); a non-200 certs response or an unparseable body throws
+// jose's generic `ERR_JOSE_GENERIC` instead, which falls to the `error` default, still an operator
+// fault and still alerted the same way. Either way a certs outage logs and alerts as an operator
+// fault rather than reading like a wave of forged tokens.
 function reasonFor(err: unknown): string {
   if (!(err instanceof Error)) return 'error';
   const code = (err as { code?: string }).code;
@@ -234,8 +247,9 @@ function reasonFor(err: unknown): string {
 }
 ```
 
-This runs on every admin request; the assertion is the only proof a request already passed the
-gate, so there is no session to cache it against.
+This runs on every guarded admin request; `/admin/login` and `/admin/auth/**` are public and never
+call `identity.resolve` at all. The assertion is the only proof a request already passed the gate,
+so there is no session to cache it against.
 
 `audience`, `issuer`, `keys`, and `error` are operator faults: each one means every request from every
 editor is about to be refused, not just this one, so alert on them rather than treating them as
@@ -254,15 +268,21 @@ it has today. A proven identity with no roster row is refused as unknown, logged
 normalized email; add the row and the very next request succeeds, no restart required.
 
 cairn mints no session under `identity`, so its own logout has nothing to end: it clears its
-cookies and redirects to `logoutUrl`, the address `IdentityResolver` declares. Ending the gate's
-session is the Access application's own job, and it is not instant in either direction. Cloudflare
-stops honoring a revoked Access session at the edge within about thirty seconds. At the origin it
-is weaker than that: the recipe verifies a signature, an issuer, an audience, and an expiry, never
-Access's revocation list, so a token already issued stays cryptographically valid to the Worker
-until its own `exp`. Revocation is enforced by Access being in the request path, which is why
-every hostname that reaches this Worker has to be covered by the application, and why the
-application's session duration is the real admin session lifetime under `identity`, replacing
-cairn's own session constant. Set it to hours, not the maximum. For removing someone who should no
+cookies and redirects to `logoutUrl`, the address `IdentityResolver` declares, which triggers
+Access's own [logout endpoint](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/),
+`/cdn-cgi/access/logout`. Ending the gate's session is the Access application's own job, and it is
+not instant in either direction. That page states the range directly for this user-initiated
+path: a logout clears the browser's authorization cookie immediately, and Access stops accepting
+previously issued tokens within 20 to 30 seconds, so "about thirty seconds" is the top of that
+window. An administrator manually revoking a user's Access token is a separate, slower path: the
+same page states that user can't sign back in for up to a minute. At the origin the exposure is
+weaker than either figure: the recipe verifies a signature, an issuer, an audience, and an expiry,
+never Access's revocation list, so a token already issued stays cryptographically valid to the
+Worker until its own `exp`, whichever revocation path triggered it. Revocation is enforced by
+Access being in the request path, which is why every hostname that reaches this Worker has to be
+covered by the application, and why the application's session duration is the real admin session
+lifetime under `identity`, replacing cairn's own session constant. Set it to hours, not the
+maximum. For removing someone who should no
 longer edit right now, the roster's own delete is the stronger lever; it takes effect on their
 very next request, gate session or not.
 

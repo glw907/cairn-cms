@@ -120,14 +120,30 @@ async function probe(ctx: DoctorContext, origin: URL): Promise<CheckResult> {
 }
 
 /**
+ * A cairn admin page's own marker, present regardless of which branded page rendered it: the
+ * identity hand-off paragraph's `data-cairn-identity` attribute (a 200 answering the login
+ * route directly) or the `renderStaticAdminPage` shell's footer text (every branded rejection
+ * page the guard serves, the identity-unresolved 403 included).
+ */
+function carriesCairnAdminMarker(html: string): boolean {
+  return html.includes('data-cairn-identity') || html.includes('Powered by Cairn');
+}
+
+/**
  * The second arm: a Worker reachable on its account's workers.dev hostname bypasses whatever
  * gate covers the primary hostname, since neither an Access policy nor its revocation reaches
- * that address. Returns null when the arm does not apply (`workers_dev: false`, no wrangler
- * config `name`, or no Cloudflare credentials to resolve the account's subdomain) or when the
- * hostname does not answer 200, so the caller falls back to the primary result unchanged. Any
- * thrown error (a rejected fetch, an unreachable Cloudflare API) also falls back to null rather
- * than propagating, since this arm's own failure to run must never turn a correctly gated
- * primary hostname into a check-wide FAIL.
+ * that address. A credential-free `GET /admin` against an exposed cairn Worker never answers
+ * 200: identity mode refuses with a branded 403, magic-link mode redirects 303 to
+ * `/admin/login`, so exposure is any response the Worker itself serves there, not only a 200 -
+ * a 200, a redirect that does not name Cloudflare Access's own gate host, or a 403 carrying the
+ * cairn admin page's own marker all count. Only a redirect to a `*.cloudflareaccess.com` host
+ * (an Access application actually covering this hostname) or a connection failure counts as not
+ * exposed. Returns null when the arm does not apply (`workers_dev: false`, no wrangler config
+ * `name`, or no Cloudflare credentials to resolve the account's subdomain), when the hostname is
+ * gated, or when the response is neither a redirect, a 200, nor a marked 403, so the caller falls
+ * back to the primary result unchanged. Any thrown error (a rejected fetch, an unreachable
+ * Cloudflare API) also falls back to null rather than propagating, since this arm's own failure
+ * to run must never turn a correctly gated primary hostname into a check-wide FAIL.
  */
 async function probeWorkersDevExposure(ctx: DoctorContext): Promise<CheckResult | null> {
   try {
@@ -143,9 +159,26 @@ async function probeWorkersDevExposure(ctx: DoctorContext): Promise<CheckResult 
     const subdomain = body.result?.subdomain;
     if (typeof subdomain !== 'string') return null;
     const host = `${facts.name}.${subdomain}.workers.dev`;
-    const res = await ctx.fetch(`https://${host}/admin`, { redirect: 'manual' });
-    if (res.status !== 200) return null;
-    return fail('the Worker serves /admin on a hostname the Access application does not cover');
+    const origin = new URL(`https://${host}`);
+    const res = await ctx.fetch(String(new URL('/admin', origin)), { redirect: 'manual' });
+    if (GATE_REDIRECT_STATUSES.has(res.status)) {
+      if (accessGateHost(res, origin) !== null) return null;
+      return fail(
+        `the Worker redirects from /admin on ${host}, a hostname the Access application does not cover`
+      );
+    }
+    if (res.status === 200) {
+      return fail(`the Worker serves /admin directly on ${host}, a hostname the Access application does not cover`);
+    }
+    if (res.status === 403) {
+      const html = await res.text();
+      if (carriesCairnAdminMarker(html)) {
+        return fail(
+          `the Worker serves its own branded admin page on ${host}, a hostname the Access application does not cover`
+        );
+      }
+    }
+    return null;
   } catch {
     return null;
   }

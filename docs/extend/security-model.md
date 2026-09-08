@@ -143,7 +143,7 @@ re-requesting is a cheap escape hatch and a hijacked editor session isn't.
 
 The engine writes the nonce hash to `magic_token.nonce_hash`, added by
 `migrations/0004_login_nonce.sql`. Apply that migration before deploying an engine that carries
-this behavior; `npx cairn doctor` fails the `auth.store` check when the column is absent. The
+this behavior; `npx cairn-doctor` fails the `auth.store` check when the column is absent. The
 column is nullable, and a row without a binding still confirms, so a link already in an inbox
 survives the migration itself.
 
@@ -266,12 +266,27 @@ safe](./sign-in-through-your-organization.md#which-login-methods-are-safe) cover
 including why an Access application's overall guarantee is only as strong as its weakest enabled
 method.
 
-**The doctor arms.** `npx cairn doctor --probe` gates on this too. `admin.login-probe` fetches
-`/admin/login` from outside the site with redirects disabled: a 30x to the gate's own hostname
-passes, a 200 that answers with cairn's page directly fails, since the gate isn't in the request's
-path at all, the misconfiguration the check exists to catch. The `auth.store` check separately
-fails when the roster holds no owner-capability row, since the guard performs no bootstrap write
-under `identity`; seed the first owner out of band, before enabling `identity`, never after.
+**The ungated-hostname residual.** The gate proves who is asking only on the hostnames its
+application actually covers. A Worker that answers on another hostname reaching the same
+deployment, its account's `workers.dev` address or an unclosed preview URL, hands anyone holding a
+still-unexpired token full editor capability there with no gate in the path at all, since the
+token replay the verifier catches only depends on the token itself, never on which hostname
+carried it. [The ungated-hostname
+bullet](./sign-in-through-your-organization.md#operating-instructions) covers the close in full:
+`workers_dev: false`, `preview_urls: false`, and confirming every custom hostname sits behind the
+application.
+
+**The doctor arms.** `npx cairn-doctor --probe` gates on this too, in two arms. `admin.login-probe`
+fetches `/admin/login` from outside the site with redirects disabled: a 30x to the gate's own
+hostname passes, a 200 that answers with cairn's page directly fails, since the gate isn't in the
+request's path at all, the misconfiguration the check exists to catch. The second arm targets the
+residual above directly: it resolves the account's `workers.dev` hostname and probes its `/admin`
+with no credentials, treating any response the Worker itself serves there, a 200, an unguarded
+redirect, or the branded refusal page identity mode itself serves on an uncovered hostname, as a
+fail, and a redirect naming the gate's own hostname as the only pass (see [the doctor's live
+probe](../reference/doctor.md#the-opt-in-live-probe)). The `auth.store` check separately fails when
+the roster holds no owner-capability row, since the guard performs no bootstrap write under
+`identity`; seed the first owner out of band, before enabling `identity`, never after.
 
 ## CSRF: cairn owns it, not the framework
 

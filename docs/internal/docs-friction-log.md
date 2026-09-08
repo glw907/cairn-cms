@@ -37,20 +37,16 @@ clearings.
   Access-style header). Engine work, outside the audit-remediation window; Geoff's call on when.
   Owned by `ROADMAP.md`'s identity-seam entry; stays open until that pass ships.
 
-One finding stays open (above), owned by `ROADMAP.md`. The chassis-A whole-log triage
-(2026-09-08) verified and fixed one carried finding: `what-cairn-is-and-is-not.md:48` said
-"all 23 registered rules" against the tree's actual 28; the sentence now reads 28. The
-2026-09-07 charter audit's five other findings (record
+None else open. The 2026-09-07 charter audit's five findings (record
 `docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the same day
 (Geoff accepted the routing): the two charter sentences rewritten (`what-cairn-is-and-is-not.md`,
 `CLAUDE.md`: the concept SET is the site's and the seams are disclosed, not enforced, until 1.0);
 the email-sender and backend "bring your own" doors and the auth-store widening promoted whole to
-`ROADMAP.md`'s identity-seam entry; the upgrade contract left on the 1.0 path where it already
-sits. The internals-pass whole-log triage (2026-09-03) cleared the four entries this section
-previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified shipped; the
-residual WATCH now lives in `docs/STATUS.md`'s active watches, not here); `fixtureCsrf`, the
-rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all promoted whole to
-`ROADMAP.md`'s Later tier with their triggers. See Clearings below.
+`ROADMAP.md`'s identity-seam entry; the upgrade contract left on the 1.0 path where it already sits. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
+section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified
+shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
+`fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS`
+all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
 ## Tombstones (decided, do not resurface)
 
@@ -110,6 +106,7 @@ history holds every pruned entry in full.
 | 2026-09-02 | the internals pass Task 4 | the editors-page quote-drift finding shipped: `check:editor-quotes` extracts every bolded double-quoted sentence from `docs/editors/when-something-goes-wrong.md` and fails when no shipped `src/lib` string grounds it, wired into `npm test` and CI |
 | 2026-09-03 | the internals pass's whole-log sweep | the ASC CSRF entry deleted (every named mechanism verified shipped; the residual WATCH moved to `docs/STATUS.md`'s active watches); the Platform-watch-heading entry deleted as a duplicate of `ROADMAP.md`'s own inline trigger; `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` promoted whole to `ROADMAP.md`'s Later tier with their triggers |
 | 2026-09-05 | the internals-C pass's whole-log triage | the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later tier with its trigger; the `ctx.logCommitFailed` call-style contradiction (filed at internals-C's Task 10 close, 2026-09-04) folded into `ROADMAP.md`'s existing polish-slice bullet |
+| 2026-09-08 | chassis-A's whole-log triage (Task 12) | the `contributor` finding (2026-09-04, the cairn-case round-2 review) fixed: `what-cairn-is-and-is-not.md:48` said "all 23 registered rules" against the tree's actual 28; the sentence now reads 28 |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

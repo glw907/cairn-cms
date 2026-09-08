@@ -340,7 +340,7 @@ The original decision framing, for the record:
     identity "through a defined hand-off", and no such seam exists (`AuthGuardOptions` carries
     `roles`, `access`, `includeSubDomains`; `createAuthChannel` admits nothing to `/admin`;
     the friction log's 2026-09-07 `extender` entry has the evidence). Lands as its own small
-    pass between chassis-B and polish so polish's family read of the exports and its
+    pass between chassis-B2 and polish so polish's family read of the exports and its
     cover-to-cover docs read see it. Lean shape: an identity resolver option on the guard
     that, when set, mints no session and reads the editor from the site's own hook or an
     Access-style header, with an extend page, a reference row, the security-model section,

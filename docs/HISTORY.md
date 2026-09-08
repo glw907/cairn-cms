@@ -7,6 +7,40 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Identity seam, code complete and reviewed 2026-09-08
+
+Branch `identity-seam`, seven tasks executed on `.claude/worktrees/identity-seam` off `main`, in
+parallel with chassis-B1; plan and post-mortem at
+`docs/superpowers/plans/2026-09-07-identity-seam-pass.md`; harvest at
+`docs/internal/record/2026-09-07-identity-seam/harvest.md`.
+
+**What landed.** The identity seam the charter promised but did not yet ship: `createAuthGuard({
+identity })`, an `IdentityResolver` contract (`ResolvedIdentity` or `IdentityRefusal`) a site
+supplies in place of magic-link, `locals.cairnIdentity` published unconditionally on every admin
+path (public and guarded) so public handlers can read the flag without the resolver running,
+the two branded pages (`sign-in-through-your-organization.md`, an extend recipe for the
+Cloudflare Access verifier; the security-model section covering the seam's threat model), the
+doctor probe's redirect classifier (`redirect: 'manual'`, a 3xx whose `Location` host matches the
+Access domain pattern is the PASS case) and its workers.dev exposure arm, and the log vocabulary
+for identity-mode events.
+
+**What the gate caught.** The pass-end `web-auth-security-reviewer`, `cloudflare-workers-reviewer`,
+and `svelte-reviewer` fan-out returned 22 findings, none rewrite-tier; the chief one was the
+doctor probe failing every magic-link consumer until an info-exposure downgrade (a workers.dev
+exposure detail must never mask a failing primary probe result). The security review separately
+hardened the workers.dev exposure arm across two follow-up commits (real-exposure detection, then
+a further hardening round) before it accepted. A `diff-reviewer` pass caught a regression where
+an info-level finding was masking a failing primary check, fixed in the final commit.
+
+**What a later pass would be wrong to rediscover.** The doctor probe's precedence rule: an info
+finding (such as a workers.dev exposure detail) must never suppress or override a failing primary
+probe result, only ride alongside it. Two concurrent worktree gates on this machine (this pass and
+chassis-B1) produce one-off flaky failures in `rendered.test.ts` and
+`reference-coverage.test.ts` from shared-machine contention, not real regressions; re-run the
+single file in isolation before chasing a fix. The four review-subagents pin their own model
+(`claude-opus-5`) in frontmatter, so a per-dispatch `model` override on them is rejected, not
+silently ignored.
+
 ## Chassis-A (audit remediation slice 8, structural), merged 2026-09-08
 
 Branch `chassis-a`, twelve tasks executed through four `pass-execute-chains` runs and direct

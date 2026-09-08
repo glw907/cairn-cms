@@ -418,9 +418,11 @@ probe lives in another track (`docs/reference/doctor.md`, `--probe` / `admin.log
 ungrammatical: "once you have" wants an object. A reader who follows "(below)" and finds nothing
 stops trusting the page's other pointers. Rewrite:
 
-> The doctor's live probe finds such an origin (`cairn-doctor --probe`, see
-> [is it working](../admin/is-it-working.md#probe-the-deployed-admin)). Your site's own rate limit
-> is the remedy once you have one.
+```text
+The doctor's live probe finds such an origin (`cairn-doctor --probe`, see
+[is it working](../admin/is-it-working.md#probe-the-deployed-admin)). Your site's own rate limit
+is the remedy once you have one.
+```
 
 **2. `sign-in-through-your-organization.md:212-215`, the operator-fault split drops a reason the
 seam actually emits.**

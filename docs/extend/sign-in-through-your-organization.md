@@ -277,13 +277,15 @@ import { accessIdentity } from './lib/access-identity.js';
 export const handle = createAuthGuard({ identity: accessIdentity });
 ```
 
-## The roster's role, and logging out
+## The roster's role
 
 The gate answers who; the roster still answers whether that person may edit, and at what
 capability. `resolve` never returns a role, and the guard never asks it for one. The identity
 seam and the roster stay two separate systems, so authorization keeps the single source of truth
 it has today. A proven identity with no roster row is refused as unknown, logged with the
 normalized email; add the row and the very next request succeeds, no restart required.
+
+## Logging out
 
 cairn mints no session under `identity`, so its own logout has nothing to end: it clears its
 cookies and redirects to `logoutUrl`, the address `IdentityResolver` declares, which triggers

@@ -22,12 +22,10 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 Three tracks are live in this session; each resumes from its own artifact.
 
-- **Identity seam** (`identity-seam` worktree, HEAD fe560d3d plus one follow-up commit in
-  flight): the web-auth-security-reviewer ACCEPTED at fe560d3d. The follow-up lands 308 in
-  the redirect set, marker detection on any non-redirect status, the exposure-detail host, a
-  skip note, five tests, and four doc fixes. Then the pass-end ritual per the plan, push,
-  PR, merge on green CI. Reviews are banked in the session scratchpad and in
-  `docs/internal/record/2026-09-07-identity-seam/`.
+- **Identity seam** (`identity-seam` worktree): code complete and reviewed; awaiting the
+  from-scratch showcase build, push, PR, and merge on green CI. Reviews are banked in
+  `docs/internal/record/2026-09-07-identity-seam/`; the pass's own ledger entry is in
+  `docs/HISTORY.md`.
 - **Chassis-B1** (`chassis-b` worktree, PR #51 draft, Tasks 1 to 3 accepted): Task 4's fix
   round is in flight under two conductor rulings (`.cairn-section` off `.lead`, the band
   bleeds outside `.site-main`). Then the diff-reviewer re-read, then Tasks 5 to 7 as one

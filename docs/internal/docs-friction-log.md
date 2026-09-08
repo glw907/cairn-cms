@@ -22,22 +22,7 @@ clearings.
 
 ## Live findings
 
-- `extender` (2026-09-07, Geoff, reading the cairn case): the charter
-  (`what-cairn-is-and-is-not.md:60-63`, `CLAUDE.md` "What cairn is") promises a developer can
-  replace the admin auth, cairn then minting no session and reading an owner/editor identity
-  "through a defined hand-off". No such hand-off exists: `AuthGuardOptions` carries only `roles`,
-  `access`, and `includeSubDomains`; `createAuthChannel` builds a second audience's own magic-link
-  login and admits nothing to `/admin`; Cloudflare Access appears once, as a header pass-through in
-  `cli-cairn-media-seed.md`; no extend page teaches replacing the editor login. The zero-config
-  default therefore makes the CMS the organization's identity system for its editors, true for a
-  small org and rarely for a larger one, and the front door never says so. Two halves: the case and
-  why-cairn should state the assumption plainly (filed as post-freeze note 4 on the case), and the
-  seam the charter already commits to needs an owner (the lean shape is an identity resolver on
-  the guard that, when set, mints no session and reads the editor from the site's own hook or an
-  Access-style header). Engine work, outside the audit-remediation window; Geoff's call on when.
-  Owned by `ROADMAP.md`'s identity-seam entry; stays open until that pass ships.
-
-None else open. The 2026-09-07 charter audit's five findings (record
+None open. The 2026-09-07 charter audit's five findings (record
 `docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the same day
 (Geoff accepted the routing): the two charter sentences rewritten (`what-cairn-is-and-is-not.md`,
 `CLAUDE.md`: the concept SET is the site's and the seams are disclosed, not enforced, until 1.0);

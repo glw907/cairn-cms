@@ -55,7 +55,8 @@ at `33340c67` (three commits: `8fc1343d` the landing, `017a9a1e` the naming and 
 `wf_bd778850-d87` about 21:40 AKDT. That run (ended 2026-09-08 about 00:20) accepted Task 9
 (`ee29cecf`), Task 10 after one fix (`ae71d945`, `25dbcaca`), and halted Task 11 on a second `fix`
 (`c88e18d3`, `91f65e77`; two history-narration comments left); conductor ruling: one more fix
-dispatch, then Task 12 as its own run from the scratchpad's `args12.min.json`. Ritual items
+dispatch (landed `6eb07602`, Task 11 closed), then Task 12 as its own run: launched as
+`wf_99383a26-bd8` 2026-09-08 about 00:35 AKDT, carrying the `hastscript` manifest fix. Ritual items
 carried from the reviews: declare `hastscript` in the showcase and template manifests (the
 re-homed `render.ts` and its test import it, resolving only by hoisting); the `.js` specifier
 check is closed (Task 10 covered the five `$theme/cairn.config` sites). Spend on chassis-A's execution so far: about 1.9M

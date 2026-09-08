@@ -1,11 +1,10 @@
 # Sign in through your organization
 
 By default, cairn is the editors' identity system: an email arrives with a link, and clicking it
-is what proves who someone is. For an organization that already runs its own identity, on Google
-Workspace or Microsoft Entra ID, that's a second system to maintain alongside the one it already
-trusts. This page replaces the magic link with a gate in front of `/admin` that proves identity
-the way the rest of the organization already does, and teaches cairn's roster to trust what that
-gate says.
+proves who someone is. An organization that runs its own identity on Google Workspace or Microsoft
+Entra ID is then maintaining a second one alongside the directory it already trusts. This page
+replaces the magic link with a gate in front of `/admin` that proves identity the way the rest of
+the organization does, and teaches cairn's roster to trust what that gate says.
 
 **Precondition:** a Cloudflare account with Zero Trust enabled, and an IdP (Google Workspace or
 Microsoft Entra ID) your organization already administers. The Access application in this recipe
@@ -14,18 +13,18 @@ using magic links and others go through the gate.
 
 ## Put an Access application in front of `/admin`
 
-[Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) sits in
-front of your Worker and refuses a request before it ever reaches cairn. Create a self-hosted
-[Access application](https://developers.cloudflare.com/cloudflare-one/policies/access/app-types/self-hosted-apps/)
+[Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/)
+sits in front of your Worker and refuses a request before it ever reaches cairn. Create a
+self-hosted
+[Access application](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/)
 scoped to your site's own hostname, covering `/admin` (the exact path coverage a working setup
-needs is its own section below). Connect it to your organization's directory: Cloudflare wires
-Google Workspace in as a
-[generic OIDC provider](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/generic-oidc/),
-and Microsoft Entra ID has its own
-[dedicated connector](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/entraid/).
-Follow Cloudflare's own steps for whichever IdP you use; they change the console layout more
-often than this page could track, so this page states the concepts and links the current
-instructions rather than reproducing them.
+needs is its own section below). Connect it to your organization's directory: Google Workspace and
+Microsoft Entra ID each have their own dedicated connector,
+[Workspace's here](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/google-workspace/)
+and
+[Entra ID's here](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/entra-id/).
+Follow Cloudflare's own steps for whichever IdP you use; their console layout changes faster than
+any copy of it here would stay true.
 
 Every Access application carries an **AUD tag**, a value Cloudflare mints per application, distinct
 from the application's id. The recipe below validates a token against this tag, not the id; find
@@ -44,28 +43,31 @@ Skipping this step locks out whoever it affects the instant the gate goes live.
 ## Which login methods are safe
 
 The proven email is the entire join between the gate and the roster: cairn trusts whatever
-address the token carries, with no cross-check of its own. Whichever login methods an Access
-application enables, and however many, every one of them produces a token that verifies
-identically and carries the same audience, so the application's overall guarantee is only as
-strong as its weakest enabled method. Enable only a method that proves control of the address it
-asserts: your Workspace or Entra directory connection, or Cloudflare's own
-[One-time PIN](https://developers.cloudflare.com/cloudflare-one/identity/one-time-pin/) as a
-break-glass fallback for an account the directory temporarily can't reach.
+address the token carries, with no cross-check of its own. Every login method an Access
+application enables produces a token that verifies identically and carries the same audience, so
+the application's guarantee is only as strong as its weakest enabled method. Enable only a method
+that proves control of the address it asserts: your Workspace or Entra directory connection, or
+Cloudflare's own
+[One-time PIN](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/)
+as a break-glass fallback for an account the directory temporarily can't reach.
 
 Never enable a social identity provider, or a generic OIDC connection whose `email` claim the
 end user can edit, on an application that gates a cairn admin. cairn cannot tell a
 directory-asserted address from a self-asserted one; the token looks identical either way, and the
-recipe below has no way to recover a distinction the gate itself didn't enforce.
+recipe below has no way to recover a distinction the gate itself didn't enforce. A Workspace or
+Entra connection wired through its own dedicated connector asserts a directory-owned address and
+is fine; the warning is about a generic OIDC provider that lets its users set their own profile
+email.
 
 ## Operating instructions
 
-- **Two admission lists, and they can drift.** The Access application decides who may reach
-  `/admin` at all; the roster decides who, among those admitted, may actually edit. They are
-  maintained separately by design (a group membership in your directory is not reliably present on
-  the token the gate hands cairn, so this seam does not attempt group-to-role mapping), and nothing
-  reconciles them automatically. Removing someone from your directory blocks them at the gate;
-  removing them from the roster blocks them at cairn even if the gate still admits them. Review
-  both when someone's standing changes.
+- The Access application and the roster are two admission lists that can drift: the application
+  decides who may reach `/admin` at all, the roster decides who, among those admitted, may
+  actually edit, and nothing reconciles them automatically. They stay separate by design, since a
+  group membership in your directory is not reliably present on the token the gate hands cairn, so
+  this seam does not attempt group-to-role mapping. Removing someone from your directory blocks
+  them at the gate; removing them from the roster blocks them at cairn even if the gate still
+  admits them. Review both when someone's standing changes.
 - **The free Zero Trust plan covers 50 users**, counted as the editors who authenticate through
   Access, not cairn's own roster size. A larger editorial team needs the paid plan, which lifts the
   cap.
@@ -77,17 +79,31 @@ recipe below has no way to recover a distinction the gate itself didn't enforce.
 - **No Cloudflare cache rule may match `/admin`.** A cached response under the gate would serve one
   editor's page to the next request that matches the same cache key, gate or no gate.
 - **The Access application's path coverage must be exact.** Cover `/admin`, every path beneath it,
-  `/admin/__data.json` (SvelteKit's own data-only fetch for the same routes), and the shell's
-  form-action URLs such as `/admin?/logout`. Do not cover `/preview/<token>`: a preview link is
-  meant to reach an editor's reviewer, who has no reason to be admitted to `/admin` at all.
-- **Leave the application's CORS settings off.** cairn's admin makes no cross-origin request that
-  needs them, and turning them on only widens what a compromised script could reach.
-- **A reachable, ungated origin is an open door, not a broken one.** If the Worker's hostname ever
-  serves `/admin` without the gate in front of it, every request becomes an unauthenticated
-  endpoint doing a JWT verify per request. That's a request the recipe below always refuses (no
-  header means no identity means no session), but it's still a request the origin has to spend a
-  cycle answering; the doctor's [live probe](../reference/doctor.md#the-opt-in-live-probe) is how
-  you find such an origin, and your site's own rate limit is the remedy once you have.
+  `/admin/__data.json` (SvelteKit's own data-only fetch for the same routes), and the shell's form
+  actions, which post to `/admin` itself with a query string Access doesn't match on, so covering
+  `/admin` covers them. Do not cover `/preview/<token>`: a preview link is meant to reach an
+  editor's reviewer, who has no reason to be admitted to `/admin` at all. Access rules resolve
+  most specific first, hostname and path, then Worker, then account, so removing a more specific
+  rule falls back to a broader one, or to none; check the resolved rule after any change here, not
+  just the one you edited.
+- **Leave the application's CORS settings off.** Access answers preflights for the gated path
+  itself, so enabling them can make the `X-Cairn-CSRF` header settable cross-origin and collapse
+  the CSRF witness the admin guard relies on. cairn's admin is same-origin and needs no CORS.
+- **A hostname that reaches the Worker without the gate in front of it admits anyone holding a
+  token.** The recipe below refuses a request carrying no assertion, but it can't refuse a valid
+  one: it checks the signature, the issuer, the audience, and the expiry, and Access's revocation
+  state isn't carried in the token. On an ungated hostname the requester supplies the header
+  themselves, so anyone holding a still-unexpired token for this AUD keeps full editor capability
+  there, an offboarded editor included. Two things close it. Set `workers_dev: false` in the
+  site's wrangler config, since the Worker is otherwise reachable at
+  `<name>.<subdomain>.workers.dev/admin`, which no Access application covers unless it was told to,
+  and make sure every custom hostname and route that reaches this Worker is covered by the
+  application. Then run `cairn-doctor --probe`, whose second arm probes the workers.dev hostname
+  and fails on a 200 there even when the primary hostname passes (see
+  [the doctor's live probe](../reference/doctor.md#the-opt-in-live-probe)). Your site's own rate
+  limit ([`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit)) is worth having too,
+  since an ungated `/admin` spends an RSA verification per request, but it's the smaller half of
+  this bullet.
 - **Never branch inside `resolve` for local development.** A conditional that checks for a
   development environment inside the resolver you hand to `identity` is a code path that runs in
   production too, whatever you intended. Swap the whole guard behind your own build-time
@@ -96,13 +112,10 @@ recipe below has no way to recover a distinction the gate itself didn't enforce.
 
 ## The verifier
 
-The recipe below is regular application code you write and own, not an engine export: cairn ships
-no OIDC client, and [`jose`](https://github.com/panva/jose) is not one of its dependencies, so
-this repo's own doc gate cannot typecheck the block against a real copy of `jose` and checks only
-its cairn-facing shape. Its
-verification logic is proven by this pass's security review alone, never by an automated check;
-read it as carefully as you would any other authentication code you commit to your own
-repository.
+The recipe below is application code you write and own. cairn ships no OIDC client and doesn't
+depend on [`jose`](https://github.com/panva/jose), so nothing in cairn typechecks this block
+against the real library or verifies its logic for you. Read it as carefully as any other
+authentication code you commit.
 
 ```ts
 // src/lib/access-identity.ts
@@ -116,10 +129,13 @@ const teamDomain = 'your-team.cloudflareaccess.com';
 // The Access application's AUD tag (Overview tab), never the application's id.
 const AUD = 'replace-with-your-applications-aud-tag';
 
+// Both throws below run at import time, so a wiring mistake fails every request on the whole
+// Worker, public pages included, not just `/admin`. That's fail-closed and fine, but recognize
+// the symptom (a site-wide 1101) as this typo rather than an outage.
 if (teamDomain.includes('://') || teamDomain.includes('/')) {
   throw new Error('teamDomain must be a bare hostname, not a URL');
 }
-if (AUD.length === 0) {
+if (AUD.length === 0 || AUD.startsWith('replace-with-')) {
   throw new Error('AUD must be the Access application\'s own AUD tag');
 }
 
@@ -131,15 +147,15 @@ if (AUD.length === 0) {
 // until cooldownDuration has passed, and a successful key set is trusted for cacheMaxAge.
 const JWKS = createRemoteJWKSet(new URL(`https://${teamDomain}/cdn-cgi/access/certs`), {
   timeoutDuration: 5_000,
-  cooldownDuration: 5_000,
+  cooldownDuration: 30_000,
   cacheMaxAge: 10 * 60 * 1000,
 });
 
 /**
  * Verify the Cloudflare Access assertion on every admin request. Only the header is read, never
- * the `CF_Authorization` cookie: the cookie is a bearer token replayable until its own
- * expiry, while the header is what Access itself attaches to a request it has already gated,
- * so trusting the cookie would accept a replayed token the gate did not just issue.
+ * the `CF_Authorization` cookie: Access attaches the header only on paths it proxies, while
+ * `CF_Authorization` is a browser-attached bearer value replayable on any hostname reaching the
+ * same Worker and settable by hand.
  */
 export const accessIdentity: IdentityResolver = {
   logoutUrl: `https://${teamDomain}/cdn-cgi/access/logout`,
@@ -166,13 +182,15 @@ export const accessIdentity: IdentityResolver = {
       return { ok: false, reason: reasonFor(err) };
     }
 
-    // Refuses Access's team-scoped `org` session token whatever its audience says: only an
-    // application-scoped `app` token carries the email of the person the application admitted.
+    // Access issues two token shapes on the same keys: this application's token (`type: 'app'`)
+    // and the team-scoped `org` session token. Only the first is a statement about this
+    // application.
     if (payload.type !== 'app') {
       return { ok: false, reason: 'invalid' };
     }
-    // A service token verifies and carries no `email` claim at all; refusing it here as
-    // `no_email` keeps the roster lookup from ever seeing a token that was never a person.
+    // A service-token request verifies and carries `common_name` with an empty `sub` and no
+    // `email` at all. Refusing it here keeps the roster lookup from ever seeing a token that was
+    // never a person.
     if (typeof payload.email !== 'string' || payload.email.length === 0) {
       return { ok: false, reason: 'no_email' };
     }
@@ -181,30 +199,37 @@ export const accessIdentity: IdentityResolver = {
   },
 };
 
-// jose's error classes map onto the refusal reasons IdentityResolver declares. `keys` covers a
-// JWKS fetch failure specifically, so a certs endpoint outage logs and alerts as an operator
-// fault rather than reading like a wave of forged tokens.
+// jose's error codes map onto the refusal reasons IdentityResolver declares. Branch on `code`,
+// never on `name`: jose derives `name` from the class name, which a minified production bundle
+// renames, while `code` is a string literal on the instance. `keys` covers every way the certs
+// endpoint can fail, including a network failure that surfaces as a bare TypeError from fetch, so
+// a certs outage logs and alerts as an operator fault rather than reading like a wave of forged
+// tokens.
 function reasonFor(err: unknown): string {
-  const name = err instanceof Error ? err.name : '';
-  switch (name) {
-    case 'JWTExpired':
+  if (!(err instanceof Error)) return 'error';
+  const code = (err as { code?: string }).code;
+  switch (code) {
+    case 'ERR_JWT_EXPIRED':
       return 'expired';
-    case 'JWTClaimValidationFailed': {
+    case 'ERR_JWT_CLAIM_VALIDATION_FAILED': {
       const claim = (err as { claim?: string }).claim;
       if (claim === 'aud') return 'audience';
       if (claim === 'iss') return 'issuer';
       return 'invalid';
     }
-    case 'JWKSNoMatchingKey':
-    case 'JWKSTimeout':
-    case 'JWKSInvalid':
+    case 'ERR_JWKS_NO_MATCHING_KEY':
+    case 'ERR_JWKS_MULTIPLE_MATCHING_KEYS':
+    case 'ERR_JWKS_TIMEOUT':
+    case 'ERR_JWKS_INVALID':
       return 'keys';
-    case 'JWSSignatureVerificationFailed':
-    case 'JWTInvalid':
-    case 'JWSInvalid':
+    case 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED':
+    case 'ERR_JWT_INVALID':
+    case 'ERR_JWS_INVALID':
+    case 'ERR_JOSE_ALG_NOT_ALLOWED':
       return 'invalid';
     default:
-      return 'error';
+      // A failed certs fetch arrives as a TypeError with no jose code.
+      return err.name === 'TypeError' ? 'keys' : 'error';
   }
 }
 ```
@@ -223,18 +248,23 @@ event for a proven identity the roster doesn't recognize (see the migration step
 ## The roster's role, and logging out
 
 The gate answers who; the roster still answers whether that person may edit, and at what
-capability. `resolve` never returns a role, and the guard never asks it for one: the identity
-seam and the roster stay two separate systems on purpose, so authorization has exactly one source
-of truth, the same one it has today. A proven identity with no roster row is refused as unknown,
-logged with the normalized email; add the row and the very next request succeeds, no restart
-required.
+capability. `resolve` never returns a role, and the guard never asks it for one. The identity
+seam and the roster stay two separate systems, so authorization keeps the single source of truth
+it has today. A proven identity with no roster row is refused as unknown, logged with the
+normalized email; add the row and the very next request succeeds, no restart required.
 
-Cairn mints no session under `identity`, so cairn's own logout has nothing of its own to end: it
-clears its cookies and redirects to `logoutUrl`, the address `IdentityResolver` declares. Ending
-the *gate's* session is the Access application's own job, and revocation there is not instant:
-Cloudflare propagates a revoked Access session within about thirty seconds. For removing someone
-who should no longer edit right now, the roster's own delete is the stronger lever; it takes effect
-on their very next request, gate session or not.
+cairn mints no session under `identity`, so its own logout has nothing to end: it clears its
+cookies and redirects to `logoutUrl`, the address `IdentityResolver` declares. Ending the gate's
+session is the Access application's own job, and it is not instant in either direction. Cloudflare
+stops honoring a revoked Access session at the edge within about thirty seconds. At the origin it
+is weaker than that: the recipe verifies a signature, an issuer, an audience, and an expiry, never
+Access's revocation list, so a token already issued stays cryptographically valid to the Worker
+until its own `exp`. Revocation is enforced by Access being in the request path, which is why
+every hostname that reaches this Worker has to be covered by the application, and why the
+application's session duration is the real admin session lifetime under `identity`, replacing
+cairn's own session constant. Set it to hours, not the maximum. For removing someone who should no
+longer edit right now, the roster's own delete is the stronger lever; it takes effect on their
+very next request, gate session or not.
 
 ## Stability
 
@@ -251,10 +281,10 @@ logout to redirect to. A different reverse proxy in front of `/admin`, asserting
 a different header or a different token shape, writes its own version of the recipe above against
 the same interface; only the verification details change.
 
-## Two more doors
+## Two adjacent seams
 
-Two more seams solve problems adjacent to this one, each covered here in one section since a
-reader replacing sign-in is likely evaluating the whole auth surface at once.
+A reader replacing sign-in is usually evaluating the whole auth surface, so two neighboring
+seams follow.
 
 ### A sender other than Cloudflare Email Sending
 
@@ -269,7 +299,7 @@ mail through something else.
 
 A `BackendProvider`, documented in the [core reference](../reference/core.md), commits every
 concept cairn manages: the adapter's `backend` value carries the provider's kind and default
-branch, and `connect(env)`s to a live `Backend` when a route needs one. `githubApp(...)` is the
-one provider cairn ships, wrapping the GitHub App flow this project defaults to; the interface
-itself names no second implementation, and none ships with cairn today. A site that stores
-content somewhere other than GitHub implements `BackendProvider` against its own store.
+branch, and `connect(env)` returns a live `Backend` when a route needs one. `githubApp(...)` is
+the one provider cairn ships, wrapping the GitHub App flow this project defaults to; none ships
+with cairn today. A site that stores content somewhere other than GitHub implements
+`BackendProvider` against its own store.

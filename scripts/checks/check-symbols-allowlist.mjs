@@ -39,6 +39,20 @@ export const ALLOWLIST = new Set([
   'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
 
+  // jose's own SCREAMING_SNAKE_CASE error codes (the `code` property jose's error classes carry,
+  // never an environment variable), cited in docs/extend/sign-in-through-your-organization.md's
+  // `reasonFor` switch. cairn does not depend on jose, so no source tree carries these strings.
+  'env-var:ERR_JWT_EXPIRED',
+  'env-var:ERR_JWT_CLAIM_VALIDATION_FAILED',
+  'env-var:ERR_JWKS_NO_MATCHING_KEY',
+  'env-var:ERR_JWKS_MULTIPLE_MATCHING_KEYS',
+  'env-var:ERR_JWKS_TIMEOUT',
+  'env-var:ERR_JWKS_INVALID',
+  'env-var:ERR_JWS_SIGNATURE_VERIFICATION_FAILED',
+  'env-var:ERR_JWT_INVALID',
+  'env-var:ERR_JWS_INVALID',
+  'env-var:ERR_JOSE_ALG_NOT_ALLOWED',
+
   // Dotted-lowercase tokens sharing an area with the log-event/condition-id/check-id union
   // (auth, admin, config, editor, entry, preview, tidy) without being a member of any of the
   // three: a nested property path on a config object, a data shape, or a variable, all real,

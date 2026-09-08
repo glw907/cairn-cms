@@ -218,7 +218,9 @@ standard adds them:
 
 Figures are produced in two lanes, and one rule routes between them. A Mermaid fence in the page is the default,
 because it renders on GitHub, on the artifact host, and through cairn.pub's theme, and it
-diffs. Hand-authored SVG is the exception, taken only when the lesson is arrangement rather
+diffs.
+
+Hand-authored SVG is the exception, taken only when the lesson is arrangement rather
 than edges. The front door carries two such figures today: the concept figure, which draws
 one site's boundary, and the site's ownership map, which bands the scaffold by who owns
 what. (The 2026-08-15 ruling's own "ownership map" is a different figure, in the admin
@@ -446,14 +448,14 @@ the content hash and the reader's result that a step-8 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 247 | 160 | 6 | | count only |
+| Sentences | 247 | 160 | 6 |  | count only |
 | Average length | 16.3 words | 17.1 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 38 words | 38 words | 33 words | under 40 | pass |
 | Hinged pairs | 35 percent | 36 percent | 0 percent | at or under the corpus entry plus 15 points, per step 4 | fail; 36 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 18 percent | 13 percent | 17 percent | reported | reported |
-| Paragraphs over 8 sentences or 150 words | 1 | | | 0 | FAIL |
-| Paragraphs under 3 sentences, list lead-ins exempt | 0 | | | 0 | pass |
-| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 37 paragraphs | | | a spread of at least 3, per the paragraph rule | pass |
+| Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
+| Paragraphs under 3 sentences, list lead-ins exempt | 1 |  |  | 0 | fail |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 7, across 38 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
 | Vale, Google package forced | 0 errors, 28 warnings and 138 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 0 | | | 0 | pass |
 | Three-item lists the scanner counted | 6 | | | each a real list | each checked by hand and each a list of things that number three |

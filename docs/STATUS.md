@@ -96,6 +96,16 @@ precedent when making decisions": the charter's leanness test and the rulings le
 every call); merge order at the end: A, then B1 and B2 after Geoff's read, then the
 identity seam on its own gate.
 
+**Pictures initiative (Geoff, 2026-09-07 late; PAUSED for his morning read).** Two designs,
+brainstormed and settled on the modern-convention research (record to be banked under
+`docs/internal/record/2026-09-08-pictures/`): (A) a ROW of two or three pictures inside the
+engine's reserved `figure` directive, equal heights, ONE shared caption (Geoff's call), stacking
+below 768, authored by wrapping consecutive pictures with the existing figure button; (B) a post
+GALLERY rendered from the showcase's existing `gallery` field with a caption per picture and a
+site-island viewer that cycles the set, working without scripting as links. Both after B2 as one
+pictures pass, engine half first. Overnight: draft the spec and run its adversarial review, park
+it; NO plan and NO execution until Geoff reads the spec (paint-changing, taste calls remain).
+
 **Identity seam EXECUTING** (launched 2026-09-08 about 00:10 AKDT as run `wf_b310f457-1bf`,
 session 9215acac, worktree `.claude/worktrees/identity-seam` off `main` at `f7daa6cb`, seven
 tasks at 5.5M, in parallel with chassis-A's last tasks). Spec revision 3 (`79261f74`) and plan

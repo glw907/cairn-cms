@@ -227,14 +227,19 @@ reviewer never reads the plan file.
   and goes in the tool's header comment either way); commit the manifest with the tool's
   header update.
 - [ ] **Step 3 (commit 2, the mechanical reformat):** the ignore and target-set edits; run
-  `format`; `git diff -w --stat` on the three files is whitespace-only; `check:public-tokens`
+  `format`; `git diff -w --stat` on the three files shows only Prettier's own value-preserving
+  normalization (trailing zeros stripped from numbers, multi-value declarations split across
+  lines); the CSS quote style is pinned to double quotes by a `.prettierrc` override for `*.css`
+  so `check-public-tokens.mjs` stays untouched (ruled 2026-09-08 at the Task 1 escalation:
+  the engine script is B2's); `check:public-tokens`
   and `check:chassis-boundary` green (both read these files); the visual suite green with
   every baseline unchanged (a reformat that moves paint stops and reports the file);
   re-emit; full gate; commit with a subject naming it the mechanical CSS reformat.
 
 **Acceptance criteria:** the tool exists with the availability header; the pass before set
 exists with its `.missing` files named in the manifest; the three CSS files differ from their
-parents by whitespace only; `format:check` covers CSS and is green; every baseline unchanged;
+parents by whitespace and Prettier's numeric normalization only, quote style pinned; no engine
+script touched; `format:check` covers CSS and is green; every baseline unchanged;
 two commits; `check:template` green.
 
 ### Task 2: Width matrix coverage (early, so every adoption has a before)

@@ -103,8 +103,12 @@ engine's reserved `figure` directive, equal heights, ONE shared caption (Geoff's
 below 768, authored by wrapping consecutive pictures with the existing figure button; (B) a post
 GALLERY rendered from the showcase's existing `gallery` field with a caption per picture and a
 site-island viewer that cycles the set, working without scripting as links. Both after B2 as one
-pictures pass, engine half first. Overnight: draft the spec and run its adversarial review, park
-it; NO plan and NO execution until Geoff reads the spec (paint-changing, taste calls remain).
+pictures pass, engine half first. DONE overnight: spec revision 2 at
+`docs/superpowers/specs/2026-09-08-pictures-design.md`, folded from a three-lens review (record
+`docs/internal/record/2026-09-08-pictures/`), now TWO passes (the row, seven tasks; the gallery,
+five) with SIX taste calls parked in its last section for Geoff (the row's height rule, the
+stacking rule, the `sizes` posture, swipe, grid captions, the dialog as a chassis primitive).
+NO plan and NO execution until Geoff reads the spec and rules on the six.
 
 **Identity seam EXECUTING** (launched 2026-09-08 about 00:10 AKDT as run `wf_b310f457-1bf`,
 session 9215acac, worktree `.claude/worktrees/identity-seam` off `main` at `f7daa6cb`, seven

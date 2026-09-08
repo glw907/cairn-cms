@@ -28,6 +28,21 @@ matches byte-for-byte; diff-reviewer accepted; CLI suite 806/806). Every remaini
 carries `npm --prefix packages/create-cairn-site run prepack && npm --prefix
 packages/create-cairn-site test`; the args file shape is in the plan's Execution section.
 
+**Task 8 ruling (2026-09-07, about 19:45 AKDT):** Tasks 3 to 7 accepted and committed
+(`c2290d69`, `b126d892`, `274374f2`, `615d4d1f`, `6c16334c`). Task 8's implementer returned
+gate-red and uncommitted (25 files): inlining `cardShell` moved the literals `card-body` and
+`card-title` from the unscanned npm package into scanned showcase source, so Tailwind generates
+DaisyUI's card rules into the public CSS and every alert directive grows about 26 px (HTML
+byte-identical). Ruling: DaisyUI `card` stays enabled (the members pages use it); the inlined
+alert's two inner classes are renamed `cairn-alert-body`/`cairn-alert-title` with the prose.css
+selectors and the render.md registry following, paint proven identical by every baseline
+unchanged; the `Consumers must:` line carries the rename and its scan reason (ecxc-ski and
+xcathletes-org import `cardShell` today). The diff-reviewer on Task 8 ran an obfuscation
+experiment on the tree (`['card' + '-body']`) that the fix-round implementer reverts first.
+Relaunch Tasks 8 to 12 as a fresh `pass-execute-chains` run from the args at the session
+scratchpad's `chassis-a-args-8to12.json` (the Task 8 notes carry the ruling verbatim) once the
+halted run `wf_855c925b-ae2` reports.
+
 When the workflow reports: read the per-task records, decide any needs-decision or escalate,
 check the five bare `$theme/cairn.config` specifiers Task 10's grep cannot match
 (`(site)/+page.server.ts`, `feed.xml/+server.ts`, `feed.json/+server.ts`,

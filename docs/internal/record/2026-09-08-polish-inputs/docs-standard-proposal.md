@@ -449,33 +449,36 @@ it. A page for a published path is drafted at that path on a branch, never under
 
 #### The quality checklist
 
-Every page walks one checklist before its receipt is written. Each item names what holds it,
-a gate or a person, so nothing rests on memory. The checklist is the judged half of the
-receipt, and the reviewer records each item as met, not met, or not applicable.
+Every page walks one checklist before its receipt is written. The checklist is generic: its
+questions apply to any artifact, a docs page, a proposal, or a plan, and they are the
+questions a reviewer asks first. Beneath each question sits what answers it in this
+repository, a gate or a person, so nothing rests on memory. The reviewer records each item
+as met, not met, or not applicable.
 
-- A page brief exists with its four answers. Person.
-- The page has one type and one track, and the registry lists it once. `check:anatomy`.
-- The required sections appear in the template's order, and no extra level-two heading
-  precedes the last required one. `check:anatomy`.
-- The first sentence states the page's one job. Person.
-- Headings follow the grammar for their kind, and siblings share one form. `check:headings`.
-- Every term the reader is not expected to know is defined where it first appears. Person,
+- Who is the intended reader, and does the page address that reader alone? The page brief
+  names the track and reader; a person checks the vocabulary against the track's list.
+- What is the page for, and does its first sentence say so? A person.
+- Which standard governs this page, and does the page follow it? The brief names the page
+  type; `check:anatomy` holds the section order and `check:headings` the heading grammar.
+- Is the page organized logically for that reader, with the general case before the
+  exception and each section on one idea? A person, at the outline review, before any prose
+  is read.
+- Does the page deviate from its standard anywhere, and is each deviation recorded with its
+  reason? The brief; a person.
+- Is every claim true and traceable? Facts about the author or the product point at the
+  brief (`check:provenance` on the front door); facts about the code are checked against the
+  code; every link and anchor resolves (`check:docs`).
+- Is every term the reader is not expected to know defined where it first appears? A person,
   against the track's vocabulary list.
-- Requirements say "must"; the indicative describes what exists. Person.
-- No sentence passes the ceiling for its track, and no paragraph passes eight sentences or
-  150 words. Vale.
-- The prose measurements are reported beside the corpus entry's, and the hinged-pair share
-  is called out if it runs more than fifteen points above. The tell scanner.
-- Every figure passes the two figure tests, has alt text and a caption, and is referenced
-  from the text. `check:visuals`, `check:figures`, and a person for the two tests.
-- Every relative link and anchor resolves. `check:docs`.
-- Every fact about the author or cairn's stance points at a line in the brief. On the front
-  door, `check:provenance`.
-- A fresh reviewer graded the page against a named corpus entry. Person, recorded in the
-  receipt.
-- A reader ran the page, for a task guide or the front door. Person, recorded in the
-  receipt.
-- The receipt exists beside the page and its hash matches. `check:prose-read`.
+- Are requirements stated as requirements and facts as facts? A person.
+- Is the prose within its limits? Vale holds the sentence ceiling and the paragraph bounds;
+  the tell scanner reports the measurements beside the corpus entry's.
+- Does every figure earn its place, and does every missing figure show up? A person, with
+  the two figure tests; `check:visuals` and `check:figures` hold alt text, captions, and the
+  mechanical assertions.
+- Did someone other than the author read it against a named exemplar, and did a reader use
+  it? Both recorded in the receipt.
+- Does the receipt exist and match the page? `check:prose-read`.
 
 ### The reader test
 
@@ -616,17 +619,17 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 343 | 184 | 6 |  | count only |
-| Average length | 16 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Sentences | 344 | 185 | 6 |  | count only |
+| Average length | 16.1 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 39 words | 39 words | 33 words | under 40 | pass |
-| Hinged pairs | 40 percent | 46 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 46 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Hinged pairs | 42 percent | 45 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 19 percent | 10 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
 | Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
 | Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 41 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
-| Vale, Google package forced | 0 errors, 42 warnings and 179 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
-| Tell scanner findings | 0.1538698261270965 |  |  | 0 | one finding, the "Summary" heading, recorded as a deviation in the page brief |
-| Three-item lists the scanner counted | 3 |  |  | each a real list | each checked by hand and each a list of things that number three |
+| Vale, Google package forced | 0 errors, 40 warnings and 184 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Tell scanner findings | 1 |  |  | 0 | one finding, the "Summary" heading, recorded as a deviation in the page brief |
+| Three-item lists the scanner counted | 4 |  |  | each a real list | each checked by hand and each a list of things that number three |
 
 Provenance: the account of the front-door failure is
 [front-door-net-failure.md](front-door-net-failure.md); the track measurements are in

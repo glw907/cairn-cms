@@ -377,10 +377,13 @@ Both poles, so a reviewer learns the line and not just the rules.
 - "The whole organization works in one place, content and custom functions sharing one admin
   and one sign-in." Marketing register and factually false.
 
-**Ratified-good:** the why-cairn opener, Geoff-polished: "Before cairn, every content change
-on the small sites I run ended up as my git commit. An editor would email me the new
-schedule or a corrected paragraph, I'd make the edit, and the deploy would carry it live."
-Concrete, unhurried, first person carrying evidence. The post-sweep `docs/README.md` is the
+**Ratified-good:** the why-cairn opener, from Geoff's own account (re-ratified 2026-09-08;
+the earlier specimen, an editor emailing changes for the author to commit, was invented and
+is withdrawn): "Before cairn, the small organizations I run sites for lived on WordPress, and
+later on static site generators with a git-backed editor in front. WordPress was hard to
+manage and hard to design in, a mass of plugins and theme customization that resisted
+integration with anything else, and casual editors found its block editor confusing."
+Concrete, unhurried, first person carrying the author's evidence, and true. The post-sweep `docs/README.md` is the
 third exemplar, in the front-door register.
 
 ## For reviewers grading against this standard

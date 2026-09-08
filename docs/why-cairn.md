@@ -1,15 +1,16 @@
 # Why cairn
 
-Before cairn, every content change on the small sites I run ended up as my git commit. An editor
-would email me the new schedule or a corrected paragraph, I'd make the edit, and the deploy would
-carry it live. That worked, but it made me the deploy pipeline for two organizations, and it meant
-nobody could publish anything without going through me first.
+Before cairn, the small organizations I run sites for lived on WordPress, and later on static
+site generators with a git-backed editor in front. WordPress was hard to manage and hard to
+design in, a mass of plugins and theme customization that resisted integration with anything
+else, and casual editors found its block editor confusing. The static generators, with
+Sveltia in front for editing, were much cleaner to work on, and the editor problem for
+non-technical users remained the hard part.
 
-The git-based tools that handle content storage well, plain markdown in a repository, a real
-history, no server to run, still ask an editor to think in branches and commits to use them. For
-someone who wants to fix a typo before Sunday, that's a bridge too far. I wanted a tool that gave
-editors a writing surface built for prose, kept git underneath doing what git is good at, and never
-made an editor look at it.
+These organizations' users needed one clean, integrated place to do nearly everything outside
+basic productivity work, which Google Workspace or Office 365 usually covers. And I needed the
+technical side to be something I could leave alone, which is the Cloudflare choice. Cost sat
+under both, because a small organization often has none to spare.
 
 ## What cairn actually does
 

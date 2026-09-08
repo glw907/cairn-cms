@@ -45,8 +45,7 @@ const splitSentences = (s) =>
   s.split(/(?<=[.!?])\s+(?=[A-Z"'(`])/).map((x) => x.trim()).filter((x) => x.split(/\s+/).length >= 3);
 
 // A hinged pair: two clauses joined by a comma-coordinator, a colon, a semicolon, a dash,
-// or a relative-clause chain. Serial-list commas are excluded by requiring a coordinator or
-// relative word after the comma.
+// or a relative-clause chain.
 // Serial lists are excluded: a ", and" or ", or" that follows another comma in the same
 // sentence is read as the last item of a list, never as a hinge.
 const HINGE_PUNCT = /[;:]\s+\S|\s[-–—]\s/;
@@ -67,7 +66,7 @@ function measure(sel) {
     const ss = splitSentences(b.text);
     sents.push(...ss);
     if (!b.list) {
-      const para = { sentences: ss.length, words: b.text.split(/\s+/).length };
+      const para = { sentences: ss.length, words: b.text.split(/\s+/).length, leadIn: /[:]$/.test(b.text.trim()) };
       paras.push(para);
       if (showParas && sel === 'all' && (para.sentences > 8 || para.words > 150)) console.error(`long paragraph (${para.sentences} sentences, ${para.words} words): ${b.text.slice(0, 90)}`);
     }
@@ -78,6 +77,7 @@ function measure(sel) {
   const hinge = sents.filter(isHinged).length;
   const short = lens.filter((l) => l < 8).length;
   const longPara = paras.filter((p) => p.sentences > 8 || p.words > 150).length;
+  const shortPara = paras.filter((p) => p.sentences < 3 && !p.leadIn).length;
   return {
     sentences: n,
     mean: Math.round(mean * 10) / 10,
@@ -85,6 +85,7 @@ function measure(sel) {
     hingePct: n ? Math.round((100 * hinge) / n) : 0,
     shortPct: n ? Math.round((100 * short) / n) : 0,
     longParagraphs: longPara,
+    shortParagraphs: shortPara,
     paragraphs: paras.length,
   };
 }
@@ -94,6 +95,6 @@ if (asJson) console.log(JSON.stringify(out, null, 2));
 else {
   for (const k of ['all', 'prose']) {
     const m = out[k];
-    console.log(`${k}: sentences ${m.sentences}, mean ${m.mean}, max ${m.max}, hinged ${m.hingePct}%, short ${m.shortPct}%, long paragraphs ${m.longParagraphs}/${m.paragraphs}`);
+    console.log(`${k}: sentences ${m.sentences}, mean ${m.mean}, max ${m.max}, hinged ${m.hingePct}%, short ${m.shortPct}%, long paragraphs ${m.longParagraphs}/${m.paragraphs}, short paragraphs ${m.shortParagraphs}`);
   }
 }

@@ -107,9 +107,9 @@ to the `ownerOnly` a [`navLayout`](./organize-your-admin-nav.md) entry carries. 
 cosmetic: it hides a sidebar link from a non-owner session and gates nothing on its own. This one
 is a real authorization check: it requires owner capability *in addition to* the access map's own
 rule for the target, never in place of it. The option only ever narrows, and never widens a denial
-into an admission. [Security model, "`ownerOnly` stacks on the map, and does not replace
-it"](./security-model.md#owneronly-stacks-on-the-map-and-does-not-replace-it) states the two cases
-that follow from that in full.
+into an admission. [Security model, "`ownerOnly` stacks on the
+map"](./security-model.md#owneronly-stacks-on-the-map) states the two cases that follow from that
+in full.
 
 ```ts
 // src/routes/admin/club/payroll/+page.server.ts

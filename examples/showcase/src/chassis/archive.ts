@@ -4,9 +4,9 @@
 // two routes.
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-// Entries per archive page. Derived against the 220-post review fixture: at this size the home
-// document's entry markup stays well under the audit's 100KB weight flag (measured well under half
-// of it), while still reading as a substantial archive page rather than a token sliver.
+// Entries per archive page. Sized against a larger fixture corpus than the showcase's current 14
+// posts carries, so pagination does not yet exercise a real second page; a later pass re-derives
+// this against the showcase's own corpus.
 export const ARCHIVE_PAGE_SIZE = 50;
 
 /** One year's entries, newest first within the year. */

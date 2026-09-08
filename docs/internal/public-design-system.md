@@ -104,6 +104,35 @@ surface reads as one clean sans-serif voice with no serif accent.
   the root clamp below: the root carries body the rest of the way to about 19px at ultrawide, while
   each step's floor stays at its original, pre-anchor size so the mobile end never shrinks.
 
+### Type scale derivation
+
+The whole scale is anchored so body (`--text-step-0`) tops out at 1.0625rem, 17px at the 16px root
+`site.css`'s own root clamp floors at below 1440px. Below that anchor, `html`'s root `font-size` is
+a separate fluid clamp (16px to 18px, active 1440 to ~2200px); a step expressed in rem multiplies
+whatever the root currently is, so an unanchored step's own vw-driven ceiling riding a root that is
+also growing overshoots, to about 21-22px body at desktop-and-up widths. Every step's ceiling is
+rescaled by the same factor (0.871, the ratio from a 1.22rem step-0 ceiling to the 1.0625rem one),
+which holds every step-to-step ratio and leaves exactly one fluid mechanism active per width range:
+the root clamp alone supplies the 1440-to-2200px growth, landing body at about 17px at 1440px and
+about 19px at 2560px.
+
+The floor of each step, though, is the pre-rescale value, not the 0.871-scaled one; a uniform
+rescale would also shrink the comfortable phone floor (body would read about 14.85px at 320px), and
+the mobile end never had the desktop-overshoot problem the ceiling rescale fixes. Each middle term
+is a standard Utopia fluid interpolation between that unscaled floor and the rescaled ceiling, over
+the same 320-to-1240px viewport range the file's fluid space scale uses. For step-0 the floor
+(1.06rem) and ceiling (1.0625rem) are only 0.0025rem apart, so it lands effectively constant at
+1.06rem, which is correct: the visible growth from 17px to 19px above 1440px comes from the root
+clamp, not from this step. Step--1 (caption, meta) is narrower still: its floor (0.84rem) is larger
+than its own rescaled ceiling (0.80rem), because captions were already comfortably sized and never
+had an overshoot to fix; a CSS `clamp()` whose minimum exceeds its maximum resolves to the minimum
+unconditionally, so this step is deliberately pinned at 0.84rem below 1440px width and grows only
+with the root clamp above it.
+
+`--text-step--2` sits outside this rescale: the header's tracked eyebrow nav wants a size a notch
+under the caption step, so it is its own small, mostly-flat clamp rather than a derived term in the
+Utopia ladder.
+
 ## The ultrawide posture (locked)
 
 Above ~1440px the root font-size scales smoothly via a `clamp()` on `html` (`site.css`) to ~112.5%

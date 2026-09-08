@@ -1,12 +1,12 @@
 <!-- @component
-The /styleguide route: the single growing demo surface that shows every part of the public theme
-shipped so far, so the template is a working component library, not a blog skeleton. B3 and B4 add
-their feature and option components to this same page. It auto-themes through `prefers-color-scheme`
-(the manual light/dark toggle is B4), so a reader in dark mode sees the dark theme here too.
+The /styleguide route: the single growing demo surface that shows every part of the public theme,
+so the template is a working component library, not a blog skeleton. It auto-themes through
+`prefers-color-scheme`, and the manual light/dark toggle in the header overrides that from then on,
+so a reader in dark mode sees the dark theme here too.
 
 Four sections: the color tokens (a swatch per DaisyUI role and on-surface ink), the type scale (each
 named step at size, plus the three faces), the reading surface (the real prose output, rendered
-server-side through the adapter `render` and wrapped in `.prose`), and the B2 core component set (the
+server-side through the adapter `render` and wrapped in `.prose`), and the core component set (the
 markdown directive components plus the own-it components a page composes from).
 
 Token-backed throughout: every color reads a DaisyUI role utility or a `var(--color-*)`/`var(--cairn-*)`
@@ -249,7 +249,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     </div>
   </section>
 
-  <!-- 4. Components: the B2 core set. The directive components are shown in the reading surface above
+  <!-- 4. Components: the core set. The directive components are shown in the reading surface above
        (callout note/tip/warning, alert); here are the own-it components a page composes from. Every
        one is a DaisyUI primitive styled on the tokens, an editable file a site owner adopts. -->
   <section class="sg-section" aria-labelledby="sg-components">

@@ -40,8 +40,7 @@ export default {
       // page numbers 2..N from the content index at build time, and legitimately returns zero
       // entries when the whole corpus fits on page one (no page 2 exists yet, a small site or an
       // early-stage one). SvelteKit's crawl-completeness check has no way to tell "correctly
-      // empty" from "misconfigured entries", so it fails the whole build on that route alone
-      // (found in a 14-post merge rehearsal; the 220-post fixture here never triggers it). Scope
+      // empty" from "misconfigured entries", so it fails the whole build on that route alone. Scope
       // the exception to that one route by id; any other unseen prerenderable route still fails
       // the build, same as the default.
       handleUnseenRoutes: ({ routes, message }) => {

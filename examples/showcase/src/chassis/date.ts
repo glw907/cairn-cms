@@ -1,6 +1,6 @@
 // The showcase's one date vocabulary. Every date-bearing surface (the archive's entries, the
 // article meta line) formats through this single helper, so a reader never sees two different
-// date shapes on the same site (the archive and the article disagreed before this module existed).
+// date shapes on the same site.
 const DATE_FORMAT = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
   month: 'short',

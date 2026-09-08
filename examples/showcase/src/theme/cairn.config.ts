@@ -179,11 +179,11 @@ export const cairn = defineAdapter({
       label: 'Navigation',
       maxDepth: 2,
     },
-    // The site's whole declared sidebar (spec §2, the organize-your-admin-nav guide's own worked
-    // shape): a Content group for what an editor authors and owns, then a trailing Site group for
-    // site management, inbound data, configuration, and roster. Two taxonomy rulings (design arc
-    // 2026-07-15) place the custom and engine doors by the same razor, what an editor authors
-    // versus what the site operates: Library joins Content, since uploaded, described media is
+    // The site's whole declared sidebar, the organize-your-admin-nav guide's own worked shape: a
+    // Content group for what an editor authors and owns, then a trailing Site group for site
+    // management, inbound data, configuration, and roster. The custom and engine doors both place
+    // by the same razor, what an editor authors versus what the site operates: Library joins
+    // Content, since uploaded, described media is
     // the editor's own material the same way posts and pages are (the WordPress-era convention of
     // Media beside Posts/Pages also matches a volunteer editor's muscle memory), while the custom
     // Signups screen lands in Site, not Content, since signups are inbound visitor data,

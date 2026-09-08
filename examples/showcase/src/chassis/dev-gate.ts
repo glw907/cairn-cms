@@ -6,11 +6,11 @@
 // substitutes it as a literal into the text of every module that names it, so `if
 // (__CAIRN_DEV_BUILD__ && devBackendOptIn())` folds at the call site itself and Rollup drops the
 // dead branch with its dynamic `@glw907/cairn-cms-dev` import. Keep every call site naming the
-// define directly. Exporting one shared `const devBackendEnabled` from here does NOT work, and was
-// the earlier shape: SvelteKit's SSR build folds the constant inside this chunk but does not
-// propagate the value into the consuming chunk, which keeps its `if` and its import, so the whole
-// dev backend rode into the deployable Worker. Verified against `wrangler deploy --dry-run` output
-// on 2026-08-04; the e2e and scaffold workflows now grep that artifact both ways.
+// define directly. Exporting one shared `const devBackendEnabled` from here does NOT work:
+// SvelteKit's SSR build folds the constant inside this chunk but does not propagate the value into
+// the consuming chunk, which keeps its `if` and its import, so the whole dev backend rides into the
+// deployable Worker. The e2e and scaffold workflows grep `wrangler deploy --dry-run` output both
+// ways to catch a regression.
 //
 // The runtime half is below. It reads an environment variable that no build can know, so it has
 // nothing to fold and one shared home costs nothing.

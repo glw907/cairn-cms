@@ -1,5 +1,5 @@
 /* ============================================================================
-   cairn bespoke reading surface — the signature B2 deliverable.
+   cairn bespoke reading surface.
 
    The article's prose, every element bound to the DaisyUI roles and the cairn
    tokens in theme.css, so one token edit re-skins the chrome AND the article in
@@ -19,8 +19,8 @@
        because it is @import-ed into theme.css, the one sheet the (site) layout and
        the preview config both link (the parity rule; see site.css's header).
 
-   The directive components (the engine's render output) are styled here too. They
-   carry the real engine class names, NOT the mockup's BEM names: a callout is
+   The directive components (the engine's render output) are styled here too, by the
+   real engine class names: a callout is
    `.callout > .callout-title + .callout-body + .callout-points`, an alert is
    `.alert > .cairn-alert-body > (.cairn-head > .cairn-head-title) + .alert-body`. Every rule is
    scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component

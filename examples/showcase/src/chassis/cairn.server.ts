@@ -10,8 +10,8 @@ import { devBackendOptIn } from './dev-gate.js';
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 
 // Under the dev backend the tidy action calls a deterministic stub instead of the real Anthropic
-// SDK. The dev content backend now rides event.locals.cairnBackend (set by the fenced devBackendHandle),
-// so there is no token stub here. The block reads __CAIRN_DEV_BUILD__, the Vite define, directly
+// SDK. The dev content backend rides event.locals.cairnBackend, set by the fenced devBackendHandle.
+// The block reads __CAIRN_DEV_BUILD__, the Vite define, directly
 // (see ./dev-gate.ts), and the fake-anthropic import is dynamic, so a default production build
 // substitutes `false` here and Rollup drops the whole block, keeping the dev package's bypass
 // barrel out of the deployed bundle. A real deployment leaves `client` unset: the content routes

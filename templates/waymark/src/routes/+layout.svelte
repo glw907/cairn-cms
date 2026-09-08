@@ -15,7 +15,7 @@
   // module (`$theme/islands/registry.js`, a directive-name-to-component map with no other
   // dependency), never the full site adapter (`$theme/cairn.config.js`), which also carries the
   // engine renderer, the icon set, and the committed media manifest: importing that client-side
-  // is what used to ship the whole adapter to every public page.
+  // would ship the whole adapter to every public page.
   afterNavigate(async () => {
     if (!data.hasIslands) return;
     const [{ hydrateIslands }, { siteIslands }] = await Promise.all([

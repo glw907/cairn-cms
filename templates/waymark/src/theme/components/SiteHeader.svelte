@@ -1,49 +1,25 @@
 <!-- @component
 The showcase's public site header: an owned, copy-in chrome component on the token layer. A sticky
 band over a translucent `base-100` with a hairline bottom, carrying the site's wordmark on the left
-and the primary nav plus the theme toggle on the right. The wordmark is a plain, glyph-free type
-lockup (font-display, semibold, tracking-tight); cairn ships no logo mark on the public chrome by
-default, so a theme that wants a brand glyph adds its own at the theme layer (the cairn theme
-re-adds identity there). Every colour and size reads a DaisyUI role utility or a cairn token
-(`--font-display`, `--cairn-*`), never a literal. The current route's nav link gets
-`aria-current="page"` and the accent colour. The inner content caps at `--container-measure`, the
-same width as the article and home reading column (`.site-main`), so the wordmark's left edge lines
-up with the body copy below it rather than centering independently at a wider measure. The nav links
-themselves come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), resolved by the
-root layout server load and edited from `/admin/nav`; a site owner still edits this file to re-shape
-the chrome itself (structure, markup, the theme toggle), and the look re-skins from `theme.css` with
-no edit here. The `/admin` entry renders `rel="external"`, the one attribute SvelteKit's prerender
-crawler honours to skip queuing a link (the target answers every crawl-time request with a 400 by
-design), decided by the shared `isAdminHref` predicate (`admin-link.ts`, also used by `SiteFooter`)
-rather than a change to the `NavNode` type an editor edits through `/admin/nav`.
+and the primary nav plus the theme toggle on the right. Every colour and size reads a DaisyUI role
+utility or a cairn token (`--font-display`, `--cairn-*`), never a literal, and the inner content caps
+at `--container-measure` so the wordmark's left edge lines up with the article column below it.
 
-The theme toggle sets `data-theme` on `<html>` between `cairn` (light) and `cairn-dark`, and
-persists the choice to a `cairn-site-theme` cookie (path `/`, a year) so it survives a reload; the
-inline script in `app.html` reads that same cookie before first paint, so a returning visitor's
-choice never flashes the system default first. With no stored choice, `data-theme` stays unset and
-`theme.css`'s own `prefers-color-scheme` block follows the OS setting, live, with no JS at all: the
-first-ever visit is system-driven, and the toggle is a standing override from then on, never a
-tri-state "back to system" control. `theme` here reads `<html>`'s live attribute at component
-construction, guarded by `$app/environment`'s `browser` so the SSR pass (which cannot see `document`)
-never runs the browser branch; that read lands after the head script has already set the attribute,
-so the button's icon matches the painted page with no separate correction step.
+The nav links come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), resolved
+by the root layout server load and edited from `/admin/nav`; a site owner edits this file to
+re-shape the chrome itself, and the look re-skins from `theme.css` with no edit here. The current
+route's nav link gets `aria-current="page"` and the accent colour; the `/admin` entry renders
+`rel="external"` (the shared `isAdminHref` predicate, also used by `SiteFooter`) so SvelteKit's
+prerender crawler skips a target that answers every crawl-time request with a 400 by design.
 
-The layout is no-JS-first responsive, pure CSS, with a deliberate two-row lockup below the `md`
-breakpoint (~48rem) rather than an unplanned wrap. The wordmark carries `white-space: nowrap` so it
-can only wrap the row, not its letters. Below `md`, the nav and the theme toggle change places: the
-toggle's `order` pulls it up beside the wordmark on row one (a `justify-between` pair), while the nav
-(`w-full`) drops to its own row two, left-aligned. The wrapping div around the nav and toggle is
-`display: contents` at that width, so its two children rejoin the header's own flex flow and the
-`order` utilities can freely interleave them with the wordmark; at `md` and up the div becomes a real
-flex box again (`md:flex`) and `order-none` restores source order (nav, then toggle), which is the
-original single-row composition: wordmark left, nav and toggle grouped tight on the right. Nav links
-keep a 44px-class touch target at every width, so the two-row lockup stays tappable, not just visible.
+The theme toggle sets `data-theme` on `<html>` between `cairn` and `cairn-dark` and persists the
+choice to a `cairn-site-theme` cookie (path `/`, a year); the inline script in `app.html` reads that
+cookie before first paint so a returning visitor's choice never flashes the system default. With no
+stored choice, `theme.css`'s own `prefers-color-scheme` block follows the OS setting live, with no
+JS: the toggle is a standing override from the first explicit choice on, never a tri-state control.
 
-The primary nav reads as a tracked eyebrow at every width, not only on the phone lockup: uppercase,
-`text-step--2` (a size under the caption step), `font-medium` at rest and `font-semibold` plus
-`text-primary` on the current item, with the letter-spacing itself in `--cairn-caption-tracking`
-(scoped to `.site-nav a` below), the header's own tracking value, narrower than the wider
-`--tracking-eyebrow` label device used elsewhere on the site.
+The layout is no-JS-first responsive, with a deliberate two-row lockup below the `md` breakpoint
+rather than an unplanned wrap; see the markup comment above the nav/toggle group for the mechanism.
 -->
 <script lang="ts">
   import { page } from '$app/state';
@@ -59,7 +35,7 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
   // The root layout server load resolves menus.primary into NavNode[] and hands it down through
   // page.data (both mounts of this component, the (site) layout and the root +error.svelte, sit
   // under that same root load). A node with no url is a label-only grouping header; this header
-  // renders only top-level entries with a url, flat, the same shape the hardcoded list used to be.
+  // renders only top-level entries with a url, flat.
   const nav = $derived(
     (page.data.nav ?? []).filter(
       (item): item is NavNode & { url: string } => item.url !== undefined,

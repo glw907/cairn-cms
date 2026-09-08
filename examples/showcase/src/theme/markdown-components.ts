@@ -223,7 +223,7 @@ export const pullQuote = defineComponent({
 });
 
 // A single restrained link-button. The fuller marketing-panel CTA (title, sub-copy, a card ground)
-// the styleguide already demonstrates (`.sg-cta`) is a bigger design call the design review owns; this
+// the styleguide already demonstrates (`.sg-cta`) is a bigger design call, left to a site owner; this
 // component stays a label-plus-link so a post can point at one next step without pre-empting that
 // question. `variant` is a closed two-value choice for the same reason.
 export const cta = defineComponent({

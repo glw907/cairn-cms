@@ -1,7 +1,7 @@
 /* examples/showcase/src/theme/site.css
    The reading-column container and the cairn figure-placement contract for the public (site) pages.
-   The chrome (header, nav, footer) moved to owned token-driven components (SiteHeader.svelte,
-   SiteFooter.svelte); this sheet now carries only the centered `.site-main` measure and the figure
+   The chrome (header, nav, footer) lives in owned token-driven components (SiteHeader.svelte,
+   SiteFooter.svelte); this sheet carries the centered `.site-main` measure and the figure
    role classes, on the public theme's tokens (theme.css), so they re-skin with the rest. The bespoke
    article surface (every prose element) lives in prose.css, which theme.css @import-s; this sheet
    keeps only the layout container and the figure-placement geometry the article sits inside.
@@ -99,7 +99,7 @@ html {
   padding: var(--spacing-l) var(--spacing-m);
 }
 
-/* cairn figure placement: the default reader CSS for the :::figure role classes (media 3a). cairn
+/* cairn figure placement: the default reader CSS for the :::figure role classes. cairn
    defines the class contract; a site owns the pixels by overriding these. The breakout centers a
    figure on the viewport from inside the centered, max-width .site-main column. overflow-x: clip on
    the body keeps the full-bleed figure from adding a horizontal scrollbar (clip is sticky-safe). */
@@ -116,7 +116,7 @@ body {
   border-radius: var(--radius-box);
 }
 /* A caption is normally a real <figcaption> (the figure render step promotes the trailing text when
-   the image is a managed `media:` reference). A raw external image URL, media 3a's other supported
+   the image is a managed `media:` reference). A raw external image URL, the other supported
    authoring path, never matches that promotion's media-reference check, so its trailing text stays a
    plain sibling <p> with no figcaption tag; `> * + *` catches that fallback (the image is always the
    figure's first child, whichever form it took) so the caption reads the same whichever path the

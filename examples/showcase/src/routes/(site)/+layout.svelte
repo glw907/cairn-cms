@@ -1,37 +1,21 @@
-<!-- @component The public chrome for the showcase: an owned, token-driven header, main, and footer in a
-     (site) route group. The group is URL-transparent, so these pages keep their paths, and the chrome
-     never wraps /admin, which lives outside the group. The chrome is built from `SiteHeader` and
-     `SiteFooter`, copy-in components a site owner edits, styled on the public theme (`theme.css`,
-     DaisyUI/Tailwind on the cairn token layer); the admin self-styles independently with its own scoped
-     sheet. Both stylesheets link by their ?url-resolved URL rather than a static import, so the editor's
-     preview frame can link the very same assets (the header comment in site.css explains why a static
-     import would break that).
+<!-- @component
+The public chrome for the showcase: an owned, token-driven header, main, and footer in a (site)
+route group. The group is URL-transparent, so these pages keep their paths, and the chrome never
+wraps /admin, which lives outside the group. The chrome is built from `SiteHeader` and `SiteFooter`,
+copy-in components a site owner edits, styled on the public theme (`theme.css`, DaisyUI/Tailwind on
+the cairn token layer); the admin self-styles independently with its own scoped sheet. Both
+stylesheets link by their ?url-resolved URL rather than a static import, so the editor's preview
+frame can link the very same assets (the header comment in site.css explains why a static import
+would break that).
 
-     The `.site-shell` wrapper is a flex column at least the viewport tall, and `<main>` grows to fill
-     it (`flex-1`), so a short page (About, a 404, a stub) still pushes the footer to the viewport
-     bottom instead of leaving its own background exposed as a seam below it; a long page simply grows
-     past the viewport and the footer follows the content as usual.
+The `.site-shell` wrapper is a flex column at least the viewport tall, and `<main>` grows to fill it
+(`flex-1`), so a short page still pushes the footer to the viewport bottom instead of leaving its own
+background exposed as a seam below it.
 
-     `onNavigate` below wires SvelteKit's documented View Transitions recipe: a plain root cross-fade
-     (~180ms, theme.css's `::view-transition-old/new(root)` rule) on every internal navigation,
-     no-op where the browser has no `document.startViewTransition` and skipped outright under
-     `prefers-reduced-motion` (the CSS rule's own media query is the second, independent guard). This
-     lives only in the (site) group's layout, so the admin never cross-fades.
-
-     `beforeNavigate`/`afterNavigate` below bracket SvelteKit's own post-navigation scroll reset with
-     `cairn-router-scrolling` (site.css's own comment on the class has the full CSSOM View reasoning):
-     the router's scroll happens strictly before `afterNavigate`'s callbacks run, so the class is
-     still present when it fires and is removed only once it has already resolved, leaving a
-     reader's own in-page anchor jump or focused-heading scroll, neither of which is a navigation,
-     still smooth.
-
-     A navigation that is cancelled or superseded before it commits never reaches `afterNavigate`
-     (confirmed against the vendored @sveltejs/kit client: `on_navigate_callbacks`, which
-     `onNavigate` registers against, only run once a navigation has already survived the abort
-     check right before commit, so `onNavigate`'s own cleanup return value never runs for one that
-     does not get that far either), which would otherwise leave the class stuck on <html> until
-     the next completed navigation. `navigation.complete` is documented to reject in exactly that
-     case, so the `.catch` below is the settled-promise fallback that covers it. -->
+Navigation carries a root cross-fade view transition and a scroll-reset guard, each degrading to a
+no-op under its own failure condition; see the comments above `onNavigate` and
+`beforeNavigate`/`afterNavigate` below.
+-->
 <script lang="ts">
   import { afterNavigate, beforeNavigate, onNavigate } from '$app/navigation';
   import themeCss from '$theme/theme.css?url';
@@ -40,6 +24,11 @@
   import SiteFooter from '$theme/components/SiteFooter.svelte';
   let { children } = $props();
 
+  // SvelteKit's documented View Transitions recipe: a plain root cross-fade (~180ms, theme.css's
+  // `::view-transition-old/new(root)` rule) on every internal navigation, no-op where the browser
+  // has no `document.startViewTransition` and skipped outright under `prefers-reduced-motion` (the
+  // CSS rule's own media query is the second, independent guard). This lives only in the (site)
+  // group's layout, so the admin never cross-fades.
   onNavigate((navigation) => {
     if (!document.startViewTransition) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -51,6 +40,18 @@
     });
   });
 
+  // Brackets SvelteKit's own post-navigation scroll reset with `cairn-router-scrolling` (site.css's
+  // own comment on the class has the full CSSOM View reasoning): the router's scroll happens
+  // strictly before `afterNavigate`'s callbacks run, so the class is still present when it fires and
+  // is removed only once it has already resolved, leaving a reader's own in-page anchor jump or
+  // focused-heading scroll, neither of which is a navigation, still smooth.
+  //
+  // A navigation that is cancelled or superseded before it commits never reaches `afterNavigate`
+  // (confirmed against the vendored @sveltejs/kit client: `on_navigate_callbacks`, which
+  // `onNavigate` registers against, only run once a navigation has already survived the abort check
+  // right before commit), which would otherwise leave the class stuck on <html> until the next
+  // completed navigation. `navigation.complete` is documented to reject in exactly that case, so the
+  // `.catch` below is the settled-promise fallback that covers it.
   beforeNavigate((navigation) => {
     document.documentElement.classList.add('cairn-router-scrolling');
     navigation.complete.catch(() => {

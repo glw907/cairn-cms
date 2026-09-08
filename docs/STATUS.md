@@ -48,6 +48,14 @@ landed on branch chassis-a, relaunch the rest as a fresh pass-execute-chains wor
 CLI test suite in the gate, then the full pass-end ritual, push, PR, merge on green CI. Then
 author and execute chassis-B."
 
+**Chassis-B plan DRAFTED** (2026-09-07, `docs/superpowers/plans/2026-09-07-chassis-b-pass.md`,
+12 tasks, ceiling 6M, one chain; inputs banked at
+`docs/internal/record/2026-09-04-chassis-inputs/chassis-b-inputs.md`). Drafted against `main`
+at `d565ab77` plus chassis-A's plan as the known delta, so after chassis-A merges and before
+the first dispatch: re-verify every anchor against post-A `main`, then run the three-lens
+adversarial plan review (grounding, risk, hygiene and sizing) in place of Geoff's read, fold
+it, commit, and execute. Settled 2026-09-07: the thirteen posts are dated across 2025.
+
 **After chassis-A: chassis-B, plan authorship AND execution granted (Geoff, 2026-09-05).**
 Author its plan from the spec's Chassis-B section with the three-lens adversarial plan review
 in place of Geoff's read; two taste calls are settled: the thirteen new posts are REAL short

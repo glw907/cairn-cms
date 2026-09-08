@@ -129,7 +129,7 @@ its own config.
 `.cairn-hero`, `.cairn-sidebar-layout` are the "generous, not minimal" ruling made concrete: a
 theme reaches for one of these instead of hand-rolling its own card or two-column layout from
 scratch. Three are real site uses: the styleguide masthead is `.cairn-hero`, the home page's
-`.lead` and `.index` are `.cairn-section`, and the root error page's message block is
+`.index` is `.cairn-section`, and the root error page's message block is
 `.cairn-band`. `.cairn-card` and `.cairn-sidebar-layout` have no real site use in this theme
 (the members pages are template-excluded fixtures, the home lead is not a card, and `related`
 renders as a block in the reading flow rather than a sidebar-shaped region), so they are

@@ -365,27 +365,29 @@ or extend it; nothing here is a literal a re-skin would miss.
   </section>
 
   <!-- 5. Composition: the chassis's own layout primitives (src/chassis/composition.css). Two
-       already have a real call site above (.cairn-hero on this page's masthead, .cairn-section
-       grouping this page's own sections); the root error page uses .cairn-band. .cairn-card and
+       already have a real call site elsewhere (.cairn-hero on this page's masthead, .cairn-section
+       on the home page's .index); the root error page uses .cairn-band. .cairn-card and
        .cairn-sidebar-layout have no real call site in this theme, so this section is where a
        site owner sees them: a demonstration, not a composition claim. -->
   <section class="sg-section" aria-labelledby="sg-composition">
     <h2 id="sg-composition" class="sg-h2">Composition</h2>
     <p class="sg-note">
       The layout primitives every recipe below reaches for instead of a hand-rolled equivalent. This
-      masthead is <code>.cairn-hero</code> and this page's own sections are
+      masthead is <code>.cairn-hero</code> and the home page's archive index is
       <code>.cairn-section</code>; the root error page's message block is <code>.cairn-band</code>.
     </p>
 
     <h3 class="sg-h3">Card</h3>
     <p class="sg-note">
       A bordered, padded surface for a theme's own chrome or composed-page markup. The padding,
-      radius, background, and border below all come from the primitive's own tokens.
+      radius, background, and border below all come from the primitive's own tokens; the title and
+      body typography reads this page's own <code>.sg-card-title</code>/<code>.sg-card-body</code>
+      classes.
     </p>
     <div class="cairn-card">
       <h4 class="sg-card-title">A cairn-card example</h4>
       <p class="sg-card-body">
-        Nothing here is page-local styling: every value is one of the primitive's own <code
+        The padding, radius, background, and border are the primitive's own <code
           >--cairn-card-*</code
         > custom properties.
       </p>
@@ -394,9 +396,11 @@ or extend it; nothing here is a literal a re-skin would miss.
     <h3 class="sg-h3">Band</h3>
     <p class="sg-note">
       A full-bleed strip with its own background, for a section that wants to break out of the
-      reading column. A centered container sits as its child, the shape the root error page uses.
+      reading column. A centered container sits as its child, the shape the root error page uses;
+      this demo carries the page's own <code>.cairn-place-full</code> breakout (the figure-placement
+      class in <code>src/theme/site.css</code>) to bleed off the styleguide's own reading column.
     </p>
-    <div class="cairn-band">
+    <div class="cairn-band cairn-place-full">
       <div class="mx-auto max-w-measure px-m">
         <p class="sg-note" style="margin: 0;">
           A cairn-band example: this strip's own ground reads <code>--cairn-band-bg</code>, and this
@@ -408,11 +412,11 @@ or extend it; nothing here is a literal a re-skin would miss.
     <h3 class="sg-h3">Section</h3>
     <p class="sg-note">
       A vertical rhythm block within the reading column, for a composed page's own pieces. The home
-      page's lead and archive index both use this to space their blocks consistently.
+      page's archive index uses this to space its blocks consistently.
     </p>
     <div class="cairn-section">
-      <p class="sg-note" style="margin: 0;">A first block inside the section.</p>
-      <p class="sg-note" style="margin: 0;">
+      <p class="sg-section-block">A first block inside the section.</p>
+      <p class="sg-section-block">
         A second block, spaced from the first by the primitive's own gap.
       </p>
     </div>
@@ -486,6 +490,17 @@ or extend it; nothing here is a literal a re-skin would miss.
     border: var(--border) solid var(--color-base-300);
     border-radius: var(--radius-selector);
     padding: 0.1em 0.36em;
+  }
+
+  /* The Section demo's two blocks: the same reading typography as .sg-note but with no margin
+     declaration of its own, so .cairn-section's layered `> * + *` rule (composition.css) is free
+     to paint the gap between them. .sg-note's own unlayered bottom margin would otherwise win
+     over that layered rule regardless of specificity, zeroing the gap the demo exists to show. */
+  .sg-section-block {
+    max-width: var(--container-measure);
+    font-size: var(--text-step-0);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
 
   /* Color swatches: a responsive grid of chips, each painted from its token via an inline var(). */

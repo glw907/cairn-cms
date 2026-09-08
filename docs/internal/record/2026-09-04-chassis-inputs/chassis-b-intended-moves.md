@@ -78,11 +78,11 @@ computed geometry (`display: flex; flex-direction: column; min-height: 100vh` on
 
 ### Task 4a: the composition primitives, site adoptions
 
-Three real site uses: `.cairn-hero` on the styleguide masthead, `.cairn-section` on the home
-page's `.lead` and `.index`, `.cairn-band` on the root error page's message block (all
-`src/chassis/composition.css`). Before set: symlinked to the pass before set
-(`~/.cache/cairn-chassis-b/pass/before/`), since Task 3 (the only predecessor to touch these
-surfaces) is itself paint-neutral, confirmed by its own row above.
+Two real site uses stand as adopted: `.cairn-hero` on the styleguide masthead, `.cairn-section`
+on the home page's `.index`. `.cairn-band` on the root error page's message block. Before set:
+symlinked to the pass before set (`~/.cache/cairn-chassis-b/pass/before/`), since Task 3 (the
+only predecessor to touch these surfaces) is itself paint-neutral, confirmed by its own row
+above.
 
 - `styleguide` 320/390/768/1440/2560 light and dark: no move / the masthead's `<header>`/`<h1>`/
   `<p>` move onto `.cairn-hero`/`.cairn-hero-title`/`.cairn-hero-lead`, and the scoped
@@ -92,17 +92,14 @@ surfaces) is itself paint-neutral, confirmed by its own row above.
   `color: var(--color-base-content)` (unlike the deleted `.sg-title`) but inherits the
   identical value from `.cairn-site-shell`'s `text-base-content` class / no baseline names
   change; `magick compare -metric AE` is 0 on every one of the 44 compared before/after tiles.
-- `home` 320/390/768/1440/2560 light and dark: `.cairn-section`'s `--cairn-section-gap`
-  (`--spacing-l`, 2rem) adds a `.lead` top margin it never had and replaces its former
-  non-collapsing `padding-bottom: var(--spacing-l)` with the primitive's collapsible
-  `margin-block-end`; on `.index` (previously no box geometry of its own) the primitive adds a
-  top and bottom `margin-block` of `--spacing-l` plus a `> * + *` rule opening a `--spacing-l`
-  gap between `.index__head` and the tag filter, year heading, or entry that follows it (most
-  already carried their own `--spacing-l` top spacing via unlayered rules of equal value and
-  absorb the primitive unchanged; the entry immediately under `.index__head`, and any entry
-  following another entry with no year heading between them, gains the new gap, since `.entry`
-  itself declares no margin-top) / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png`
-  (10 files).
+- `home` 320/390/768/1440/2560 light and dark, `.index` gaps only: on `.index` (previously no
+  box geometry of its own) `.cairn-section` adds a top and bottom `margin-block` of
+  `--spacing-l` plus a `> * + *` rule opening a `--spacing-l` gap between `.index__head` and the
+  tag filter, year heading, or entry that follows it (most already carried their own
+  `--spacing-l` top spacing via unlayered rules of equal value and absorb the primitive
+  unchanged; the entry immediately under `.index__head`, and any entry following another entry
+  with no year heading between them, gains the new gap, since `.entry` itself declares no
+  margin-top) / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png` (10 files).
 - `error404` 320/390/768/1440/2560 light and dark: the message block moves onto `.cairn-band`
   wrapping a centered `.mx-auto max-w-measure px-m` child; `--cairn-band-padding-block`
   (`--spacing-xl`, 3rem/48px) replaces the former `py-2xl` (`--spacing-2xl`, 4rem/64px), a
@@ -115,17 +112,66 @@ loosening of vertical rhythm (added top/bottom margins at existing spacing value
 change to layout structure, color, or type; a `diff-reviewer` read confirms or overturns this
 at the gate, and an overturn's reason and revert land here in the same commit as the fix.
 
+### Task 4 fix round: the lead reversal and the two band bleeds
+
+The `diff-reviewer` escalated five findings against 5ebdef55/c3d4ffc6; the conductor ruled two.
+Before set: a fresh capture at `~/.cache/cairn-chassis-b/task-4-fix/before/` (home, error404,
+styleguide only, taken on the clean c3d4ffc6 worktree, since Task 4a/4b's own before/after
+already covers the paint this fix reopens). After set at
+`~/.cache/cairn-chassis-b/task-4-fix/after/`.
+
+- `home` 320/390/768/1440/2560 light and dark: RULING 1 takes `.cairn-section` off `.lead` and
+  restores its pre-4a `padding-bottom: var(--spacing-l)` / `margin-bottom: var(--spacing-l)`
+  (the reviewer measured a visible redesign of the lead's internal gaps at
+  home-light-2560-00: 26px moved to 48px above the date, 49px moved to 81px above the link,
+  50px moved to 17px below the link). `.cairn-section` STAYS on `.index`; those gaps are
+  unchanged from the 4a row above / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png`
+  (10 files, the same ten 4a moved, now reverted on the `.lead` portion only).
+- `error404` 320/390/768/1440/2560 light and dark: RULING 2 moves `.cairn-band` off the
+  `.cairn-site-main site-main` main element and onto `main` directly (paired with
+  `.cairn-site-main`, so the flex-item fix for the sticky footer still applies to `main`), with
+  a new inner `.site-main` div (the centering-only concern) as the band's child; the band now
+  reads edge to edge at every width instead of capped to the measure, so its `--color-base-200`
+  ground fills the full viewport width behind the centered message / moves
+  `error404-{light,dark}-{320,390,768,1440,2560}.png` (10 files).
+- `styleguide` 320/390/768/1440/2560 light and dark: the Band demo gains
+  `.cairn-place-full` (the figure-placement breakout in `src/theme/site.css`, reused rather than
+  invented, since the demo already sits inside `.site-main` the way a figure does) so it bleeds
+  off the styleguide's reading column the same as the real call site; the Section demo's two
+  `<p>` children move off `.sg-note style="margin: 0;"` onto a new `.sg-section-block` class
+  that declares no margin at all, so `.cairn-section`'s layered `> * + *` rule is no longer
+  fought by `.sg-note`'s unlayered bottom margin and the gap actually paints; every tile above
+  the Composition section stays AE 0 (confirmed per tile), the Card/Band/Section/Sidebar tiles
+  move / moves `styleguide-{light,dark}-{320,390,768,1440,2560}.png` (10 files, the same ten
+  Task 3/4a/4b left unchanged; non-zero AE confined to tile indices `-06`/`-07` at 1440,
+  `-07`/`-08` at 2560, `-09`/`-10` at 320, `-07`/`-08`/`-09` at 390, and `-06`/`-07` at 768 in
+  both schemes, all within or after the Composition section; every earlier tile at every width
+  and scheme is AE 0 or within single-digit rounding).
+
+Mechanical, non-paint-moving: the false "this page's own sections are `.cairn-section`" claim
+(the comment above the Composition section and its visible paragraph) corrected to name the
+home page's `.index` as the real call site; the card demo's "Nothing here is page-local
+styling" sentence corrected to name `.sg-card-title`/`.sg-card-body` as page-local; the README's
+"the home page's `.lead` and `.index` are `.cairn-section`" corrected to name `.index` only.
+
 ### Task 4b: the styleguide's composition section
 
 A "Composition" section added to the styleguide (after "Components"). It shows `.cairn-card`,
 `.cairn-band`, `.cairn-section`, and `.cairn-sidebar-layout` with two-sentence captions,
-alongside the two primitives the page already carries a real call site for (`.cairn-hero` on
-the masthead, `.cairn-section` on the page's own sections). No composition claim; the section
-is a demonstration, the sanctioned exception the ruled inputs name.
+alongside the two primitives the page already carries a real call site for elsewhere
+(`.cairn-hero` on the masthead, `.cairn-section` on the home page's `.index`). No composition
+claim; the section is a demonstration, the sanctioned exception the ruled inputs name.
+
+(Deviation from the task's stated files: `~/.cache/cairn-chassis-b/task-4b/before/` is a
+symlink to `~/.cache/cairn-chassis-b/task-4/after/` (Task 4a's own after set), not a fresh
+capture, since 4b builds directly on 4a's landed paint and a fresh before capture would only
+reproduce that same after set.)
 
 - `styleguide` 320/390/768/1440/2560 light and dark: the page grows by one section, so every
   tile at or after the previous end-of-page pushes down and new tiles appear past the former
   page length (confirmed by `magick compare -metric AE`: 0 on every tile before the new
-  content, non-zero only on the last pre-existing tile of each width/scheme and the newly
-  appended ones) / moves `styleguide-{light,dark}-{320,390,768,1440,2560}.png` (10 files, the
-  same ten Task 3/4a left unchanged).
+  content, non-zero starting at the last pre-existing tile of each width, identical index in
+  both schemes: `-06` at 768 and 1440, `-07` at 390 and 2560, `-09` at 320; every tile after
+  that index is new, appended past the former page length) / moves
+  `styleguide-{light,dark}-{320,390,768,1440,2560}.png` (10 files, the same ten Task 3/4a left
+  unchanged).

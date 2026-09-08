@@ -58,7 +58,7 @@
        on the page needed distinguishing from it). Only page one carries a lead: a tag search and any
        deeper archive page are both browsing a list, not opening the front page. -->
   {#if showFeatured && data.featured}
-    <article class="cairn-section lead" data-cairn-post>
+    <article class="lead" data-cairn-post>
       <p class="m-0 mb-2xs text-step--1 font-semibold uppercase tracking-eyebrow text-muted">
         Latest
       </p>
@@ -186,11 +186,13 @@
   }
 
   /* The lead card: the newest entry, set larger than an index row and closed by its own hairline
-     before the archive starts. The vertical rhythm above and below now comes from .cairn-section
-     (src/chassis/composition.css), an unlayered rule here would win over it, so .lead itself
-     declares no top or bottom spacing: it swaps the former non-collapsing padding-bottom for the
-     primitive's collapsible margin-block, and gains a top margin it never had before. */
+     before the archive starts. .lead does not carry .cairn-section: the primitive's margin-block
+     visibly redesigns the eyebrow-to-date and excerpt-to-link gaps (26 to 48px above the date,
+     49 to 81px above the link, 50 to 17px below the link at home-light-2560), so .lead keeps its
+     own spacing here instead. */
   .lead {
+    padding-bottom: var(--spacing-l);
+    margin-bottom: var(--spacing-l);
     border-bottom: var(--border) solid var(--color-card-border);
   }
   .lead__date {

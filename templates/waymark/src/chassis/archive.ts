@@ -25,11 +25,6 @@ export interface ArchivePage {
   years: ArchiveYearGroup[];
 }
 
-/** Sort entries newest first. An undated entry has no year marker to sort by, so it sorts last. */
-export function sortNewestFirst(entries: ContentSummary[]): ContentSummary[] {
-  return [...entries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
-}
-
 /**
  * Slice one page out of an already newest-first list and group it by year. `page` is clamped into
  * `[1, totalPages]`, so an out-of-range request (page 0, or past the last page) still returns a

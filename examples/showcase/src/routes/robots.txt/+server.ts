@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
-import { ORIGIN } from '$chassis/content';
+import { ORIGIN } from '$chassis/content.js';
 
 export const prerender = true;
 

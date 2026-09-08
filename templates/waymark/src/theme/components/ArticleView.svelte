@@ -18,7 +18,7 @@ everything else staying byte-for-byte the same. -->
 <script lang="ts">
   import type { EntryData, ResolvedReference } from '@glw907/cairn-cms/delivery';
   import { CairnHead } from '@glw907/cairn-cms/delivery/head';
-  import { formatDate } from '$chassis/date';
+  import { formatDate } from '$chassis/date.js';
 
   interface Props {
     /** The composed entry data, plus the reference-edge resolution `$chassis/entry-data.js` layers on. */

@@ -1,4 +1,4 @@
-// cairn-cms: dev-only wiring for the showcase's members login channel, excluded from every
+// Dev-only wiring for the showcase's members login channel, excluded from every
 // scaffolded site (see .cairn-template.json and the cairn-template:exclude markers in
 // wrangler.jsonc and hooks.server.ts). Reachable only from inside hooks.server.ts's
 // __CAIRN_DEV_BUILD__ branch via a dynamic import(), so createChannelDb never rides into a

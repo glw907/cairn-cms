@@ -1,4 +1,4 @@
-// cairn-cms: the runtime half of the showcase's dev-backend gate, read by hooks.server.ts,
+// The runtime half of the showcase's dev-backend gate, read by hooks.server.ts,
 // cairn.server.ts, and the three /test fixture routes. The gate has two halves and they live
 // apart on purpose.
 //

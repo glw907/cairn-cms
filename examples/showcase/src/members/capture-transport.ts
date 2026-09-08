@@ -1,4 +1,4 @@
-// cairn-cms: the showcase's capture delivery transport, the harness pattern that proves a
+// The showcase's capture delivery transport, the harness pattern that proves a
 // channel end to end (docs/extend/add-a-second-audience.md): instead of sending
 // anything, it remembers the last code and a delivery count per contact in module state, so the
 // /test/last-otp route (a later task) can read a code back without polling a real inbox or the

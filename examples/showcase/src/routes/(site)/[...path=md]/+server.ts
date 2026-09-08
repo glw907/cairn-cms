@@ -1,6 +1,6 @@
 import type { RequestHandler, EntryGenerator } from './$types';
 import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
-import { publicRoutesConfig } from '$chassis/public-routes';
+import { publicRoutesConfig } from '$chassis/public-routes.js';
 
 // Prerendered, same as every other public route (robots.txt, sitemap.xml, feed.xml). This is not
 // incidental: the build runs against committed `main` content, so there is no request path by

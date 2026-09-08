@@ -1,7 +1,7 @@
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
-import { devBackendOptIn } from '$chassis/dev-gate';
+import { devBackendOptIn } from '$chassis/dev-gate.js';
 
 // No handleError hook: adminAction's own authorization refusals (see the SvelteKit reference's
 // "Refusal channels") throw SvelteKit's own redirect()/error() now, which SvelteKit already

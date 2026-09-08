@@ -6,7 +6,7 @@
      cannot express. No hard-coded color or px font-size. -->
 <script lang="ts">
   import type { PageData } from './$types';
-  import { formatDate } from '$chassis/date';
+  import { formatDate } from '$chassis/date.js';
 
   let { data }: { data: PageData } = $props();
 

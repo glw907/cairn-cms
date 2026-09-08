@@ -1,4 +1,4 @@
-// cairn-cms: the one place that maps the showcase's posts index into cairn-cms/delivery's FeedItem
+// The one place that maps the showcase's posts index into cairn-cms/delivery's FeedItem
 // shape. feed.xml and feed.json both call this, so the two feed formats read the same permalinks,
 // excerpts, and rendered bodies and can never drift from each other.
 import { createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';

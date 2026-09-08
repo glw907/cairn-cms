@@ -1,7 +1,7 @@
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
-import { publicRoutesConfig } from '$chassis/public-routes';
-import { withReferences } from '$chassis/entry-data';
+import { publicRoutesConfig } from '$chassis/public-routes.js';
+import { withReferences } from '$chassis/entry-data.js';
 
 export const prerender = true;
 

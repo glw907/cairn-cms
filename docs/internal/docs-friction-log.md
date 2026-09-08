@@ -39,6 +39,31 @@ clearings.
   the guard that, when set, mints no session and reads the editor from the site's own hook or an
   Access-style header). Engine work, outside the audit-remediation window; Geoff's call on when.
 
+- `contributor` (2026-09-07, charter-versus-engine audit, banked at
+  `docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`): the charter
+  (`what-cairn-is-and-is-not.md:72-78`) says the seams are "enforced" and a site's work
+  "survives ordinary updates"; `extend/README.md:118-125` and `why-cairn.md:52-56` record two
+  Extension-tier breaks inside 0.x minors. `check:surface` detects and discloses drift, never
+  prevents a break. Rewrite to "disclosed" until 1.0. Prose; land now.
+- `contributor` (2026-09-07, same audit): the charter's "a fixed set of first-class concepts,
+  Posts and Pages, not open-ended collections" (also `CLAUDE.md` "What cairn is") is false as
+  written; `declare-your-own-concept.md:9-12` says the set is the site's. The MODEL is fixed
+  (one concept shape, `defineConcept`), the set is open. This is the sentence scope
+  adjudications quote. Prose; land now.
+- `extender` (2026-09-07, same audit): the email sender is replaceable through
+  `CairnAdminConfig.auth.send` (Extension tier) and no extend page mentions it; a site off
+  Cloudflare Email Sending cannot find the door. Route: the identity-seam pass writes it
+  beside its own extend page (both are "bring your own X" doors).
+- `extender` (2026-09-07, same audit): `BackendProvider` is Extension tier (`core.md:1040`)
+  with no GitHub branching, while `why-cairn.md:46-48` says no backend swap exists. Doc
+  contradicts doc; decide which is the promise (the audit reads the type as the truth) and fix
+  the other. Route: the identity-seam pass, same "bring your own" family.
+- `extender` (2026-09-07, same audit, widening the identity entry above): the auth store is
+  D1-typed end to end and `guard.ts:177` hardcodes `resolveSession(env.AUTH_DB, ...)`, so the
+  identity resolver must bypass the cookie read, the store, and the `AUTH_DB` refusal together,
+  and the roster screens need a stated posture when a site brings its own identity. Folds into
+  the identity-seam brainstorm.
+
 None else open. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
 section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified
 shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);

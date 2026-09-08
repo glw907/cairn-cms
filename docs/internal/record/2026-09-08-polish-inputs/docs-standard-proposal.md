@@ -1,7 +1,7 @@
 # A documentation standard for cairn
 
-Revision 6, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
-Revisions 2 to 5 went through the review chain this document proposes, and each revision
+Revision 7, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
+Revisions 2 to 6 went through the review chain this document proposes, and each revision
 folds the findings. The reviews and research are the `proposal-review-*.md` and
 `proposal-research-*.md` files in this directory.
 
@@ -52,7 +52,8 @@ moving the hinge.
 The gates missed the draft's faults in three places. Vale, the prose linter, and the tell
 scanner, the workstation's own checker for the habits of machine-written prose, both read
 words and punctuation, and the draft was written to pass them. Nothing checked the facts
-against you. Nobody but the author read the page before you did.
+against you. Nobody but the author read the page before you did. The two rules above answer
+the first two places, and the review chain below answers the third.
 
 The rhythm problem is not confined to one page. On the instrument this document's receipt
 uses, which counts every hinge form and excludes serial lists, the extend track, the
@@ -94,7 +95,8 @@ numbered rules in five parts, and the standard adopts these:
   inside the sentence that makes the claim.
 - Part III, paragraphs. A paragraph must open with a topic sentence, cover one topic, and run
   three to eight sentences and no more than 150 words, with 250 as the hard limit. Paragraph
-  length must vary across a page.
+  length must vary across a page, by at least three sentences between the shortest and the
+  longest.
 - Part V, test. A page must be tested with a reader before it ships. The reader test below
   says how.
 
@@ -106,7 +108,7 @@ source:
 |---|---|---|---|
 | Average sentence length | 15 to 20 words | [OPM plain-language guidance](https://www.opm.gov/information-management/plain-language/) | measured and reported, never gated |
 | Longest sentence | under 40 words, no exception | Cutts, Oxford Guide to Plain English | gated per track once the existing violations are cleared |
-| Sentence ceiling, admin and editors tracks | 25 words | ASD-STE100, the aerospace industry's controlled-language specification | gated, through a Cairn rule that overrides the vendored Microsoft rule's level |
+| Sentence ceiling, admin and editors tracks | 25 words | ASD-STE100, the aerospace industry's controlled-language specification | gated, through a Cairn rule that sets its own level; the vendored packages stay unedited |
 | Paragraph length | 3 to 8 sentences and 150 words, hard limit 250 | the guidelines, Part III | gated |
 
 ASD-STE100 sets 20 words for a sentence that gives an instruction and 25 for one that
@@ -147,15 +149,15 @@ most nine siblings before it groups them.
 #### The page
 
 Each page type would get a fixed section order, held in a template under
-`docs/internal/templates/`. Decision 4 creates that directory. A new `check:anatomy` script
+`docs/internal/templates/`. Decision 4a creates that directory. A new `check:anatomy` script
 would read the template, so template and gate cannot drift apart.
 
 Three orders are settled now. A task guide runs title, contract, before you begin, steps,
 check it worked, and if it fails. A concept page runs definition, why it exists, how it
 works, what it is not, limits, and where to go next. A reference entry runs signature,
 summary, parameters, returns, defaults, failure modes, stability tier, example, and see also,
-which is the order PostgreSQL and MDN use. Decision 4 defers the other five orders until their templates are
-drafted, and approves the three now. A task guide must
+which is the order PostgreSQL and MDN use. Decision 4 approves the three orders now, and decision 4a defers the other five until
+their templates are drafted. A task guide must
 stay under 800 words and a concept page under 1,500. No page may name its own type or track.
 
 The front door is a page type of its own, and `why-cairn.md` takes the shape that SQLite's
@@ -176,7 +178,7 @@ SQLite's device, and it gives the reader something to answer. The sections, in o
 A section must cover one idea and state it in its first sentence. A list must be grouped
 once it passes nine items. A heading either tells the reader to do something or explains. The
 first kind starts with a bare verb and the second is a noun phrase. Siblings at one level
-share one form. A new `check:headings` script would hold all three rules. The two-headed-heading Vale
+share one form. A new `check:headings` script would hold the three heading rules. The two-headed-heading Vale
 rule that landed today,
 [`TwoHeadedHeading.yml`](../../../../.vale/styles/Cairn/TwoHeadedHeading.yml), holds one
 shape of one fault and nothing more.
@@ -217,11 +219,13 @@ standard adds them:
 Figures are produced in two lanes, and one rule routes between them. A Mermaid fence in the page is the default,
 because it renders on GitHub, on the artifact host, and through cairn.pub's theme, and it
 diffs. Hand-authored SVG is the exception, taken only when the lesson is arrangement rather
-than edges, which is the case for the two ownership figures. Both lanes must draw from one
+than edges. The front door carries two such figures today: the concept figure, which draws
+one site's boundary, and the site's ownership map, which bands the scaffold by who owns
+what. (The 2026-08-15 ruling's own "ownership map" is a different figure, in the admin
+track, and ships as Mermaid.) Their lesson is arrangement, which is why both are SVG. Both lanes must draw from one
 palette and one typeface. SVG must never be edited in place. It would be emitted from
 `docs/internal/site-figures.svg` by `scripts/figures/build-site-figures.mjs`, and neither the
 source, the script, nor the emitted assets are committed yet; decision 5 commits them.
-Mermaid and hand-authored SVG are the only two lanes.
 
 A script grades part of a figure and a reviewer grades the rest. `check:figures` must grow
 from a staleness check to seven assertions:
@@ -436,29 +440,31 @@ list items included and then excluded, and every hinge form counted, serial list
 The corpus column measures the SQLite sample the same way. A paragraph that ends with a colon
 introduces a list and is exempt from the paragraph floor, and the script names any short
 paragraph it counts. Vale ran with the Google package forced on, since this path is
-style-exempt, and all three levels are reported. Every cell below is written by the script's
-output, never by hand.
+style-exempt, and all three levels are reported. Every cell below is written from the
+script's output by one generator, never by hand. This proposal is not a published page, so
+the content hash and the reader's result that a step-8 receipt carries do not apply here.
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 245 | 158 | 6 |  | count only |
-| Average length | 16.1 words | 16.9 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Sentences | 247 | 160 | 6 | | count only |
+| Average length | 16.3 words | 17.1 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 38 words | 38 words | 33 words | under 40 | pass |
-| Hinged pairs | 35 percent | 35 percent | 0 percent | at or under the corpus entry plus 15 points, per step 4 | fail; 36 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
-| Sentences under 8 words | 19 percent | 13 percent | 17 percent | reported | reported |
-| Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
-| Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
-| Paragraph lengths, shortest to longest, in sentences | 1 to 7, across 37 paragraphs | | | a spread of at least 3 | pass |
-| Vale, Google package forced | 0 errors, 26 warnings and 134 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Hinged pairs | 35 percent | 36 percent | 0 percent | at or under the corpus entry plus 15 points, per step 4 | fail; 36 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Sentences under 8 words | 18 percent | 13 percent | 17 percent | reported | reported |
+| Paragraphs over 8 sentences or 150 words | 1 | | | 0 | FAIL |
+| Paragraphs under 3 sentences, list lead-ins exempt | 0 | | | 0 | pass |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 37 paragraphs | | | a spread of at least 3, per the paragraph rule | pass |
+| Vale, Google package forced | 0 errors, 28 warnings and 138 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 0 | | | 0 | pass |
-| Three-item lists the scanner counted | 5 | | | each a real list | each checked by hand and each a list of things that number three |
+| Three-item lists the scanner counted | 6 | | | each a real list | each checked by hand and each a list of things that number three |
 
 Provenance: the account of the front-door failure is
 [front-door-net-failure.md](front-door-net-failure.md); the track measurements are in
 [proposal-review-readers.md](proposal-review-readers.md) and, on the fixed instrument, in
 this document's own "The failure it answers"; the citation corrections are in
 [proposal-review-self.md](proposal-review-self.md) and
-[proposal-review-peers.md](proposal-review-peers.md); the grades of revisions 3, 4, and 5 are
+[proposal-review-peers.md](proposal-review-peers.md); the grades of revisions 3 to 6 are
 [proposal-review-rev3.md](proposal-review-rev3.md),
-[proposal-review-rev4.md](proposal-review-rev4.md), and
-[proposal-review-rev5.md](proposal-review-rev5.md).
+[proposal-review-rev4.md](proposal-review-rev4.md),
+[proposal-review-rev5.md](proposal-review-rev5.md), and
+[proposal-review-rev6.md](proposal-review-rev6.md).

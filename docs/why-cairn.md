@@ -15,9 +15,11 @@ under both, because a small organization often has none to spare.
 ## What cairn actually does
 
 cairn is two things at once: an editor-first, git-backed CMS, and a SvelteKit toolkit a developer
-extends for their own organization. Editors sign in from an emailed link, with no GitHub account
-and no password, and write in a markdown editor with a live preview rendered through the exact
-function the public site uses. A save holds on a per-entry branch; a deliberate publish copies it
+extends for their own organization. With the zero-config default, cairn is the organization's own
+identity system for its editors: they sign in from an emailed link, with no GitHub account and no
+password, or, behind Cloudflare Access, [sign in with your organization's Google or Microsoft
+accounts](./extend/sign-in-through-your-organization.md). Either way, an editor writes in a markdown editor with a live preview rendered through
+the exact function the public site uses. A save holds on a per-entry branch; a deliberate publish copies it
 to the main branch with the editor as commit author, and the site deploys the way any push already
 does. None of that plumbing reaches the editor.
 
@@ -45,8 +47,11 @@ history, attribution, and rollback come from tooling that already exists, rather
 database cairn would otherwise have to build and keep running.
 
 None of these choices is reversible piece by piece. cairn has no abstraction layer that lets you
-swap Cloudflare for another host, or GitHub for another repository provider, later. Committing to
-cairn means committing to the stack underneath it.
+swap Cloudflare for another host later. GitHub is the default and the one repository provider
+`create-cairn-site` wires up, but a developer can implement
+[`BackendProvider`](./extend/sign-in-through-your-organization.md#a-backend-other-than-github)
+against a different store; no second implementation ships with cairn today. Committing to cairn
+means committing to Cloudflare and, unless you build that seam yourself, GitHub.
 
 ## The honest trade-offs
 

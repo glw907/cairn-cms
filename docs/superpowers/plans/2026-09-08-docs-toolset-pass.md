@@ -19,7 +19,7 @@
 > syntax for tracking.
 
 **Goal:** hand plan three, the docs rewrite, the nine artifacts it cannot be authored without: five
-fact ledgers, a page type for every published page, an approved corpus, twelve templates, a brief
+fact ledgers, a page type for every published page, an approved corpus, nine templates, a brief
 schema with a parser, the gate estate with its path scopes, Vale rules with must-fire fixtures, a
 drafting-dispatch fragment, and one page rebuilt end to end with its measured cost.
 
@@ -29,7 +29,7 @@ re-derives the published-page set, and commits every file two chains would other
 H harvests every published page's checkable claims into five ledgers under
 `docs/internal/record/docs-rebuild/`; after its third task it splits into H-A (admin, editors,
 front door) and H-B (extend, reference). C assembles the corpus the reviews grade against. G1
-builds the structure spine: the twelve templates and the markdownlint-cli2 runner that carries
+builds the structure spine: the nine templates and the markdownlint-cli2 runner that carries
 anatomy, heading order, the front-door and index shapes, brief presence, and the alt-text hole. G2
 builds the prose and receipt spine: the Vale rule set with its golden fixtures, `check:provenance`,
 `check:prose-read`, `check:ledger`, the quality checklist, and the figure assertions. D rebuilds
@@ -51,7 +51,9 @@ roughly forty fixtures; the corpus defaults to reference-only, which removes mos
 work; the reference and extend harvests are split by source-word budget rather than by halves,
 which raises the task count and lowers the per-task waste. Per chain: P 0.30M, H run one 0.35M,
 C 0.45M, G1 1.00M, G2 1.50M, D 0.45M, H-A 0.45M, H-B 1.60M, H12 0.10M, R 0.20M. That sums to
-6.40M against the 6.5M ceiling, leaving 0.10M slack. **The cut point is named: run one is plan 2a,
+6.40M against the 6.5M ceiling, leaving 0.10M slack. Decision 2's nine-type registry takes three
+templates out of chain G1 and adds G1-7, the per-type outcome report; the two offset to under
+0.05M, so every figure above stands and the ceiling is not recomputed. **The cut point is named: run one is plan 2a,
 run two is plan 2b.** If the ceiling binds, 2b is the half that leaves, because 2a already produces
 every gate, the corpus, the templates, and the measured per-page cost.
 
@@ -87,17 +89,24 @@ at the mid sitting, H12 and D3 at the closing one.
 ## Ruled inputs (recorded; no task re-derives them)
 
 - **Owner decisions 1 through 7 are accepted as the spec's recommendations state them.** Length
-  rules warn permanently with no promotion path (decision 1). **The registry is twelve page types
-  from task P2 onward**; the eleven-then-twelve straddle is deleted, because a plan-internal split
-  guarded only by prose is the weakest form of a watch item and nothing detects a violation. The
+  rules warn permanently with no promotion path (decision 1). **The registry is nine page types
+  from task P2 onward**, which is owner decision 2 resolved on 2026-09-08: the internal proposal
+  type is dropped, the condition entry and the symptom row fold into the reference entry as section
+  shapes, and both front-door types stay. The eleven-then-twelve straddle is deleted, because a
+  plan-internal split guarded only by prose is the weakest form of a watch item and nothing detects
+  a violation. **The registry is maintained on outcome from here**, per the spec's registry
+  lifecycle: `docs/internal/page-types.md` carries one outcome row per type, and
+  `docs/internal/page-type-rulings.md` carries each ruling in the shape
+  `docs/internal/engine-rulings.md` uses. The
   receipt is a pull-request artifact plus one ledger row per page, never a per-page committed file
   with a content hash (decision 3). The reader test runs on nine pages in plan three, one of which
   is the demonstration page here (decision 4). The `ROADMAP.md` claims-verification row is absorbed
   and its after-`beta.1` sequencing overruled, with the overrule recorded (decision 5). No rendered
   docs preview is added (decision 6). The new scanner measures live in the workstation's tellgrader
-  behind a docs-register profile, so they are plan one's work (decision 7). **Decision 2's own
-  review, "review after the demonstration page shows what a template costs", is scheduled as an
-  explicit owner question in D3's report.**
+  behind a docs-register profile, so they are plan one's work (decision 7). **Decision 2's earlier
+  "review after the demonstration page shows what a template costs" note is superseded by the
+  registry lifecycle's first review, which D3 runs at the demonstration page and records as a
+  ruling.**
 - **The gate estate is consolidated onto two runners plus four bespoke scripts.**
   `markdownlint-cli2` (MIT, `DavidAnson/markdownlint-cli2`) is the runner for page anatomy, heading
   order, the front-door and index shapes, brief presence, and the missing-alt hole (MD045). Vale
@@ -162,7 +171,8 @@ at the mid sitting, H12 and D3 at the closing one.
 - **Six keep classes, not the spec's "five".** The spec's unit 1 says "five further entry classes"
   and then lists six bullets. This plan resolves the arithmetic upward to six and records the
   correction here rather than leaving it undisclosed.
-- **The page-type assignment lives in `page-types.md`, not in the ledger.** The spec's unit 1
+- **The page-type assignment lives in `docs/internal/record/docs-rebuild/page-types.md`, not in the
+  ledger.** The spec's unit 1
   acceptance criterion 5 says the ledger records it. The ledger is per track and the assignment is
   one table over all 76 pages, so the assignment is one file. Recorded as a deliberate change.
 - **The published-page set is defined once, in P1, and is 76 today.** Nine admin, eight editors,
@@ -256,8 +266,9 @@ None of these is a numbered task; all run in the main loop and are recorded in `
    `preflight.md`. If a reference page yields more than roughly 200 tokens, the token classes or the
    granularity rule change before fourteen harvest tasks build on them.
 6. **Confirm the local `vale --version`** and record the disposition beside the CI pin.
-7. **Pre-extract the spec's twelve section orders and its brief field table** into the scratchpad,
-   so G1-2 through G1-4 and P3 do not each scan a 1,065-line spec to find them.
+7. **Pre-extract the spec's nine section orders and its brief field table** into the scratchpad,
+   so G1-2 through G1-4 and P3 do not each scan the spec to find them. The reference-entry order
+   carries the condition and the symptom section shapes, so extract those with it.
 
 ## Reconciliation (contended resources)
 
@@ -279,6 +290,7 @@ ordinary line merge.
 | `ROADMAP.md`, `CHANGELOG.md`, `docs/HISTORY.md` | R1 (the ROADMAP row), R2 (the rest) | No contention. |
 | `docs/internal/record/docs-rebuild/*-facts.md` | H, H-A, H-B | Each ledger file is chain-private. `extend-facts.md` is appended by H2 then H-B1 through H-B4 in sequence; `reference-facts.md` by H-B5 through H-B11 in sequence. Positional. |
 | `docs/internal/corpus/manifest.md` | C1 through C5 | One chain, sequential. |
+| `docs/internal/page-types.md`, `docs/internal/page-type-rulings.md` | P2, G1-7, D3 | P2 creates both with their headers and the nine type rows. G1-7 fills the computed columns and D3 writes the first review's rows and its ruling, both after chain G1 merges. Sequential, no contention. |
 
 Merge order: **P, then C, G1, G2, H in any order, then D, then R.** G1 merges before G2 by default,
 since G1-5 creates the `.markdownlint-cli2.yaml` that G1-6 and the register both cite. **G2-6 and
@@ -353,25 +365,38 @@ cheap and it runs alone.
 
 ### Task P2: The ledger schema and the page-type assignment
 
-**Chain:** P. **Depends on:** P1. **Deliverables:** 2.
+**Chain:** P. **Depends on:** P1. **Deliverables:** 4, which is the cap.
 
 **Files:**
 - Create: `docs/internal/record/docs-rebuild/ledger-schema.md`,
-  `docs/internal/record/docs-rebuild/page-types.md`
-- Modify: `docs/internal/record/docs-rebuild/README.md` (tick two rows)
+  `docs/internal/record/docs-rebuild/page-types.md`, `docs/internal/page-types.md`,
+  `docs/internal/page-type-rulings.md`
+- Modify: `docs/internal/record/docs-rebuild/README.md` (tick two rows),
+  `docs/internal/README.md` (the arm index lines for the two new files, if `check:arm-indexes`
+  requires them)
+
+**Two files share a basename and are not the same file.** The per-page assignment is
+`docs/internal/record/docs-rebuild/page-types.md`, one row per published page. The registry's
+outcome record is `docs/internal/page-types.md`, one row per type. Every reference in this plan
+names the full path.
 
 **Interfaces:**
 - Produces: `ledger-schema.md`, read by every harvest task, by `check:fact-coverage` (H1), and by
   `check:ledger` (G2-8). Revision 1 left this in chain H and made it the one declared cross-chain
-  edge; in P it is not a cross-chain edge at all. `page-types.md`, hand-off artifact 2, read by
-  G1-1's registry table and by plan three's brief authoring.
-- Consumes: the spec's unit 1 section and its registry table; `docs-sweep.md`.
+  edge; in P it is not a cross-chain edge at all. `docs/internal/record/docs-rebuild/page-types.md`,
+  hand-off artifact 2, read by G1-1's registry table and by plan three's brief authoring.
+  `docs/internal/page-types.md` and `docs/internal/page-type-rulings.md`, the registry lifecycle's
+  two records, written by G1-7, D3, and every later review.
+- Consumes: the spec's unit 1 section, its registry table, and its registry lifecycle;
+  `docs-sweep.md`.
 
 **Steps:**
 - [ ] **Step 1:** write `ledger-schema.md` with an example row for each shape it fixes.
 - [ ] **Step 2:** enumerate the published set from `preflight.md`'s definition and assign a type to
-  each page from the twelve canonical ids, with a one-line reason naming the reader's job.
-- [ ] **Step 3:** `check:docs`, `check:arm-indexes`; commit.
+  each page from the nine canonical ids, with a one-line reason naming the reader's job.
+- [ ] **Step 3:** create `docs/internal/page-types.md` with its outcome-record columns and one row
+  per type, and `docs/internal/page-type-rulings.md` with its header and no rulings.
+- [ ] **Step 4:** `check:docs`, `check:arm-indexes`; commit.
 
 **Acceptance criteria (schema):**
 - The entry shape is a markdown table with these columns, in this order: `id`, `claim` (a normalized
@@ -411,20 +436,51 @@ cheap and it runs alone.
 **Acceptance criteria (page types):**
 - One row per published page: `path`, `track`, `type`, `reason`. The count is stated in the first
   line and equals `preflight.md`'s number.
-- Every `type` is one of the twelve canonical ids: `task-guide`, `tutorial-milestone`, `concept`,
-  `architecture-overview`, `reference-entry`, `reference-table`, `condition-entry`, `symptom-row`,
-  `index`, `front-door-evaluator`, `front-door-track-index`, `proposal`.
+- Every `type` is one of the nine canonical ids: `task-guide`, `tutorial-milestone`, `concept`,
+  `architecture-overview`, `reference-entry`, `reference-table`, `index`, `front-door-evaluator`,
+  `front-door-track-index`.
+- **A recovery page, which revision 2 would have typed `condition-entry` or `symptom-row`, is
+  `reference-entry`**, and its `reason` names which of the two section shapes it uses. Neither id
+  appears anywhere in the file.
 - `docs/why-cairn.md` and the root `README.md` are `front-door-evaluator`; `docs/README.md` and the
   four track `README.md` files are `front-door-track-index`.
 - Every `track` is one of `admin`, `editors`, `extend`, `reference`, `front-door`, and `front-door`
   is exactly `docs/README.md`, `docs/why-cairn.md`, and the root `README.md`. A track README stays
   in its own track.
 - A closing section, "types the registry may lack", lists every page whose type has no exemplar in
-  the spec's registry, with the nearest type named. That section is input to R2 and to decision 2's
-  review in D3, not a blocker.
+  the spec's registry, with the nearest type named. That section is input to R2 and to the registry
+  lifecycle's first review in D3, not a blocker. A page listed there is a review trigger under the
+  lifecycle, which the section states.
 
-**Notes:** the type ids here and G1-1's registry table are one interface. G1-1 grades against this
-file, which exists on `main` before G1 branches.
+**Acceptance criteria (the registry outcome record):**
+- `docs/internal/page-types.md` is a markdown table with one row per type, nine rows, keyed by the
+  canonical id, with these columns in this order: `type`, `pages assigned`, `outline-review
+  failures`, `provenance findings`, `questions asked`, `reviewer misses`, `helpful votes`,
+  `reader-test results`, `measured drafting cost`, `last reviewed`. Every column but `type` and
+  `pages assigned` is empty at this task, and the header says which task fills each: G1-7 the two
+  finding columns, D3 the rest.
+- The file's header states the sources, in these words: the finding counts come from the ledger rows
+  `check:prose-read` verifies and from the coverage-diff reports, never from a hand count. `questions
+  asked` is rolled up at the review from the lines a pass records as the questions land, one line per
+  question the owner, an agent, or a reviewer had to ask about a page. `reviewer misses` is what the
+  fresh reviewer changed on a drafted page, each miss attributed to the template or to the subject,
+  recorded by the coverage-diff and review steps.
+- **The `helpful votes` column is marked future work and stays empty.** It starts when cairn.pub
+  carries a voting widget, and no task in this plan builds one. The header states that a vote is read
+  against the page's type and never pooled across types.
+- The header states the three review triggers and the four rulings from the spec's registry
+  lifecycle, and points at the spec section rather than restating its reasoning. It states the third
+  trigger's shape in full: a type is compared against its own prior record, never against the other
+  types, and the trigger cannot fire below three outline-review failures in the window or below three
+  pages of that type.
+- `docs/internal/page-type-rulings.md` carries the header, the column set, and no rulings. Its
+  columns are the shape `docs/internal/engine-rulings.md` uses: the ruling, the evidence, and what
+  would reopen it. The header states that D3 writes the first row.
+- `npm run check:rulings-format` is green if it reaches the new file, and the task reports whether it
+  does.
+
+**Notes:** the type ids here and G1-1's registry table are one interface. G1-1 grades against
+`docs/internal/record/docs-rebuild/page-types.md`, which exists on `main` before G1 branches.
 
 ### Task P3: The brief schema, the parser, and the packaging negation
 
@@ -464,7 +520,7 @@ file, which exists on `main` before G1 branches.
   fails the unit test.
 - The schema fixes eight fields with these exact names: `type`, `track`, `exemplar`, `corpus_entry`,
   `needs`, `keep`, `deviations`, `sentences`.
-- `type` is one of the twelve canonical ids; `track` one of the five; `exemplar` a path or URL;
+- `type` is one of the nine canonical ids; `track` one of the five; `exemplar` a path or URL;
   **`corpus_entry` is a list of one or two manifest ids**; `needs` and `keep` lists of ledger ids
   matching the id regex; `deviations` a list of `{ rule, reason }`; `sentences` an ordered list
   whose every element is a ledger id or the literal `no-claim`.
@@ -641,7 +697,8 @@ implementer that finds nothing to correct says so explicitly in its report.
 
 **Acceptance criteria:**
 - The fragment states, as an instruction to a drafting agent: do not open the page you replace; read
-  only the track ledger, `page-types.md`, the page type's template, the named corpus entry, and the
+  only the track ledger, `docs/internal/record/docs-rebuild/page-types.md`, the page type's
+  template, the named corpus entry, and the
   pages the brief's `keep` list names.
 - It carries the one-section-per-read protocol and requires the dispatch id in the receipt row.
 - It states the mechanical half of the quarantine, which is the conductor's job and not the
@@ -850,8 +907,8 @@ read.
 **Files:**
 - Create: `docs/internal/corpus/README.md` (the arm index), `docs/internal/corpus/manifest.md`,
   `docs/internal/corpus/front-door-evaluator-sqlite-scope.md`,
-  `docs/internal/corpus/proposal-go-monotonic-time.md`,
-  `docs/internal/corpus/proposal-kep-node-swap.md`
+  `docs/internal/corpus/internal-proposal-go-monotonic-time.md`,
+  `docs/internal/corpus/internal-proposal-kep-node-swap.md`
 - Delete: the three `corpus-sample-*.md` files under
   `docs/internal/record/2026-09-08-polish-inputs/`
 - Modify: `docs/internal/README.md` (the arm index line for `corpus/`), and the six records that
@@ -886,6 +943,12 @@ read.
   `front-door-evaluator` and its file is therefore `front-door-evaluator-sqlite-scope.md`. Revision
   1 fixed the id as `<type-id>-<source-slug>` and then named the file `concept-sqlite-scope.md`, and
   `corpus_entry` is a brief field, so the format is load-bearing.
+- **The two design-document samples keep the reserved `internal-proposal-` prefix, which is not a
+  type id.** Owner decision 2 dropped the internal proposal type from the registry, and internal
+  planning documents are not graded, so their `page type` cell reads `none (internal, not a registry
+  type)` and the manifest legend states they are retained as the exemplars an internal spec is
+  written against and that no published page is graded on them. A brief's `corpus_entry` never names
+  one, and the parser's registry check does not accept the prefix as a type.
 - Every committed excerpt is at most 400 words before its `## Source` heading, measured by
   `node scripts/checks/measure-prose.mjs <file> --until "## Source" --json`.
 - Every entry carries a `## Source` section naming the source, the URL, the license, and the fetch
@@ -900,13 +963,13 @@ read.
   deleted files and `docs-links.mjs` walks all of `docs/` except `superpowers/`.
 - The `approved` column is present and empty for all three.
 
-### Task C2: Corpus entries for the first six page types
+### Task C2: Corpus entries for the first five page types
 
 **Chain:** C. **Depends on:** C1. **Deliverables:** 1.
 
 **Files:**
 - Create: one or two entries under `docs/internal/corpus/` for each of `task-guide`,
-  `tutorial-milestone`, `concept`, `architecture-overview`, `reference-entry`, `reference-table`
+  `tutorial-milestone`, `concept`, `architecture-overview`, `reference-entry`
 - Modify: `docs/internal/corpus/manifest.md`
 
 **Steps:**
@@ -917,33 +980,32 @@ read.
   `check:docs`; commit.
 
 **Acceptance criteria:**
-- Each of the six types has at least one entry and at most two.
+- Each of the five types has at least one entry and at most two.
+- **The `reference-entry` entries cover the type's three shapes**: the export contract (PostgreSQL's
+  CREATE INDEX or MDN's scrollIntoView) and, in one entry marked `structure-only`, the condition and
+  symptom section shapes from a Cloudflare Workers error table. The two shapes fold into this type
+  under owner decision 2, so they need an exemplar here and no type of their own.
 - Every entry's `mode` is `reference-only` unless its `## Source` states both the permitting license
   and the reason a side-by-side read needs the text.
-- **No Stripe excerpt is committed.** Stripe is the `reference-table` exemplar and its Services
-  Agreement reserves all rights in the documentation, so the entry is `reference-only` and the
-  manifest names Stripe as the worked case, so no later implementer reaches for fair use.
 - **DigitalOcean is `reference-only` unless the license is verified from the page itself.**
   Secondary sources report CC BY-NC-SA 4.0; if the non-commercial term is correct it bars the use
   outright.
 - Every share-alike source (GitLab docs, CC BY-SA 4.0; Mozilla SUMO, version unverified) carries a
   `note` flagging it and is quoted byte for byte or is `reference-only`.
-- Every `reference-table` entry is `structure-only`, and the manifest's legend states that a review
-  of such a page compares column order, row completeness, and the lead sentence rather than cadence.
 - Every entry's `license` cell names a specific license or the words "no redistribution grant"; none
   is empty. Verified clean for a 400-word attributed excerpt: SQLite (public domain), Kubernetes and
   Cloudflare docs and GitHub Docs content (CC BY 4.0), Go proposals (BSD-3-Clause), Kubernetes KEPs
   (Apache-2.0).
 - No committed excerpt exceeds 400 words before `## Source`.
 
-### Task C3: Corpus entries for the remaining six page types
+### Task C3: Corpus entries for the remaining four page types
 
 **Chain:** C. **Depends on:** C2. **Deliverables:** 1.
 
 **Files:**
-- Create: entries for `condition-entry`, `symptom-row`, `index`, `front-door-evaluator` (the SQLite
-  entry already serves; a second is optional), `front-door-track-index`, `proposal` (the two design
-  documents already serve), plus the hand-picked second editors entry
+- Create: entries for `reference-table`, `index`, `front-door-evaluator` (the SQLite entry already
+  serves; a second is optional), and `front-door-track-index`, plus the hand-picked second editors
+  entry
 - Modify: `docs/internal/corpus/manifest.md`
 
 **Steps:**
@@ -952,12 +1014,16 @@ read.
 - [ ] **Step 2:** manifest rows; `check:docs`; commit.
 
 **Acceptance criteria:**
-- All twelve type ids appear in the manifest's `page type` column, each with at least one row.
+- All nine type ids appear in the manifest's `page type` column, each with at least one row, and no
+  row names `condition-entry`, `symptom-row`, or `proposal`.
 - The editors track has two entries, one of them the hand-picked one, and its `## Source` states why
   an automated fetch was not used (the Mozilla support articles block automated reads).
-- `condition-entry` and `symptom-row` have distinct entries; a single Cloudflare error table serving
-  both is recorded as two rows with different scopes or one row plus a `structure-only` row, and the
-  choice is stated.
+- **Every `reference-table` entry is `structure-only`**, and the manifest's legend states that a
+  review of such a page compares column order, row completeness, and the lead sentence rather than
+  cadence.
+- **No Stripe excerpt is committed.** Stripe is the `reference-table` exemplar and its Services
+  Agreement reserves all rights in the documentation, so the entry is `reference-only` and the
+  manifest names Stripe as the worked case, so no later implementer reaches for fair use.
 - The `approved` column is empty for every new row.
 - The same license and mode criteria as C2.
 
@@ -1005,7 +1071,7 @@ the owner rejects.
 - Every remaining manifest row's `approved` column carries a date.
 - A rejected entry's file is deleted and its id is listed under a "retired ids" heading, never
   reused.
-- Every one of the twelve type ids still has at least one approved or `reference-only` entry after
+- Every one of the nine type ids still has at least one approved or `reference-only` entry after
   the deletions. If a deletion leaves a type uncovered, the task reports the gap rather than
   substituting a replacement without approval.
 - **The `task-guide` entry D1 drafted against is either ratified or replaced.** If replaced, D2's
@@ -1022,7 +1088,8 @@ entry blocks work rather than protecting anything. Offer it in the same question
 
 ## Chain G1: the structure spine (unit 3a, run one)
 
-Six tasks.
+Seven tasks. Three fewer templates than revision 2 planned, since the registry is nine types, and
+one new task, G1-7, which reports the registry lifecycle's per-type measurements.
 
 ### Task G1-1: The marker syntax, the registry table, and the index template
 
@@ -1030,17 +1097,17 @@ Six tasks.
 
 **Files:**
 - Create: `docs/internal/templates/index.md`
-- Modify: `docs/internal/templates/README.md` (the marker syntax and the twelve-row registry table;
+- Modify: `docs/internal/templates/README.md` (the marker syntax and the nine-row registry table;
   P4 created the file)
 
 **Acceptance criteria:**
-- The registry table has twelve rows, one per canonical type id, each naming the reader's job it
+- The registry table has nine rows, one per canonical type id, each naming the reader's job it
   serves and its exemplars. **The type ids match `docs/internal/record/docs-rebuild/page-types.md`
   exactly, checked by name.** That file is on `main` before this chain branches, so the check is
   runnable here; revision 1 asked a G1 task to grade against a chain-H file its worktree did not
   contain.
 - The marker syntax for required-or-optional headings is stated once, in one fixed form, and is
-  identical across all twelve templates.
+  identical across all nine templates.
 - `index.md` carries the four-section index order and the rule that an index groups its children
   once it lists more than nine siblings.
 - Every template file this chain writes is under `docs/internal/`, so none ships;
@@ -1056,33 +1123,34 @@ Six tasks.
 **Acceptance criteria:**
 - Each carries its section order verbatim from the spec: task guide's six sections, tutorial
   milestone's six, concept's six, architecture overview's five. **The conductor's pre-extraction of
-  the spec's twelve section orders is the task's input**, so the implementer does not scan a
+  the spec's nine section orders is the task's input**, so the implementer does not scan a
   1,065-line spec to find them.
 - Every heading line carries G1-1's required-or-optional marker.
 - A word ceiling appears where the spec states one: task guide under 800 words, concept under 1,500,
   recorded as advisory, since length rules warn and never gate.
 
-### Task G1-3: Templates for the four reference and condition types
+### Task G1-3: Templates for the two reference types
 
-**Chain:** G1. **Depends on:** G1-2. **Deliverables:** 4.
+**Chain:** G1. **Depends on:** G1-2. **Deliverables:** 2.
 
-**Files:** Create `docs/internal/templates/reference-entry.md`, `reference-table.md`,
-`condition-entry.md`, `symptom-row.md`.
+**Files:** Create `docs/internal/templates/reference-entry.md`, `reference-table.md`.
 
 **Acceptance criteria:**
-- Reference entry carries its ten sections, reference table its three; condition entry and symptom
-  row carry the spec's orders.
+- Reference entry carries its ten sections and reference table its three.
+- **The reference-entry template carries the condition and the symptom section shapes**, each marked
+  optional, in the orders the spec's reference-entry section fixes. Owner decision 2 folded both into
+  this type, so no `condition-entry.md` or `symptom-row.md` template is written and a `grep` for
+  either filename under `docs/internal/templates/` returns nothing.
 - **The reference-entry template is derived from the shape `check:reference` and
   `check:reference:signatures` already fix**, and its header states which script fixes which part,
   so the template is not a second copy that drifts.
 - Every heading carries G1-1's marker.
 
-### Task G1-4: Templates for the front door and the proposal
+### Task G1-4: Templates for the two front-door types
 
-**Chain:** G1. **Depends on:** G1-3. **Deliverables:** 3.
+**Chain:** G1. **Depends on:** G1-3. **Deliverables:** 2.
 
-**Files:** Create `docs/internal/templates/front-door-evaluator.md`, `front-door-track-index.md`,
-`proposal.md`.
+**Files:** Create `docs/internal/templates/front-door-evaluator.md`, `front-door-track-index.md`.
 
 **Acceptance criteria:**
 - `front-door-evaluator.md` carries the spec's eight-section front-door order and is the template
@@ -1090,10 +1158,11 @@ Six tasks.
 - `front-door-track-index.md` carries a routing order satisfying the register's
   five-routes-in-the-first-screenful requirement, and its header names the register rule it answers.
   It is the template for `docs/README.md` and the four track READMEs.
-- `proposal.md` carries the eleven-section proposal order and is marked internal: the type stays
-  outside the Vale gates and its template governs shape rather than prose.
-- Twelve templates now exist, one per canonical type id, and the registry table's twelve rows
-  resolve to twelve files.
+- **No `proposal.md` template is written.** Owner decision 2 dropped the internal proposal type,
+  because internal planning documents are not graded, and a `grep` for `proposal` under
+  `docs/internal/templates/` returns nothing.
+- Nine templates now exist, one per canonical type id, and the registry table's nine rows resolve to
+  nine files.
 
 ### Task G1-5: Adopt markdownlint-cli2 and its config
 
@@ -1180,6 +1249,45 @@ Six tasks.
 - Every rule has a fixture that fires and a fixture that passes, all running in the unit test.
 - No `check:anatomy` or `check:headings` npm script is created. A `grep` for either in
   `package.json` returns nothing.
+
+### Task G1-7: The per-type anatomy report
+
+**Chain:** G1. **Depends on:** G1-6. **Deliverables:** 3.
+
+**Files:**
+- Create: `scripts/checks/report-anatomy.mjs`, `scripts/checks/report-anatomy.test.ts`
+- Modify: `package.json` (`"report:anatomy"`), `docs/internal/page-types.md` (the two finding
+  columns)
+
+**Interfaces:**
+- Produces: `npm run report:anatomy [--json]`, the registry lifecycle's measurement instrument.
+- Consumes: `markdownlint-cli2`'s JSON output, `docs/internal/record/docs-rebuild/page-types.md`,
+  and `docs/internal/page-types.md`'s column set.
+
+**Acceptance criteria:**
+- The script runs `markdownlint-cli2` over the published set in JSON output mode, groups every
+  `CAIRN001 page-anatomy` finding by the page's type from
+  `docs/internal/record/docs-rebuild/page-types.md`, and prints one line per type: the pages
+  assigned and the outline-review failure count.
+- **It reports, per type, the failure count and the page count, and nothing that ranks one type
+  against another.** No median, no registry-wide rate, no ordering. The spec's registry lifecycle
+  compares a type against its own prior record, because a threshold set at the registry median
+  retires half the registry by construction and a documentation metric is goal-specific per type.
+- It reads the previous run's counts from `docs/internal/page-types.md` and prints the change against
+  them per type, flagging a type only when it clears both bounds the lifecycle sets: at least three
+  outline-review failures in the window, and at least three pages of that type. Below either bound
+  the type is printed as below sample, never as flagged.
+- **It gates nothing.** It exits 0 whatever it finds, it is wired into `package.json` only, and a
+  `grep` proves it appears in no `test.yml` step. The script's header states that and the reason: a
+  measurement that decides whether a type survives must not also decide whether a build passes.
+- The spec's `check:anatomy` is this repository's `CAIRN001` rule, and the header records that the
+  reported fields the spec asks `check:anatomy` to carry live here rather than inside a per-page
+  markdownlint rule, which sees one page at a time and cannot roll a type's window up.
+- The task writes the current values into `docs/internal/page-types.md`'s two finding columns and
+  records the run date in `last reviewed`, leaving the reader-test and cost columns to D3.
+- A fixture with a known finding distribution proves the grouping, the per-type counts, and both
+  bounds, including a type that clears the failure floor but not the page floor. The unit test runs
+  it.
 
 ---
 
@@ -1586,16 +1694,22 @@ npm run check:vale && npm run lint:markdown && npm run check:provenance && npm r
 - The coverage diff's report lists every ledger entry for this page the drafted page dropped, and
   each is restored or recorded in the brief's `deviations` with a reason.
 - The revision cap held: at most one redraft, and the report says how many rounds ran.
-- The type ids in `page-types.md`, the template filenames, and the brief's `type` agree exactly.
+- The type ids in `docs/internal/record/docs-rebuild/page-types.md`, the template filenames, and the
+  brief's `type` agree exactly.
 
-### Task D3: The reader test, the receipt, the measured cost, and decision 2's review
+### Task D3: The reader test, the receipt, the measured cost, and the first registry review
 
 **Conductor task**, run two. **Depends on:** D2, G2-10, H12. **Deliverables:** 4.
 **Owner-blocked**: the reader test and the demonstration read are part of the closing sitting.
 
 **Files:**
-- Modify: `docs/internal/record/docs-rebuild/receipts.md` (the first row)
+- Modify: `docs/internal/record/docs-rebuild/receipts.md` (the first row),
+  `docs/internal/page-types.md` (the rows the review fills),
+  `docs/internal/page-type-rulings.md` (the first ruling)
 - Create: `docs/internal/record/docs-rebuild/demonstration-cost.md`
+
+The registry review is one deliverable, counted as the artifact it is: the review with its outcome
+rows and its ruling. The task stays at four.
 
 **Steps:**
 - [ ] **Step 1:** re-run the page's full gate set now that `check:figures` has merged.
@@ -1603,7 +1717,9 @@ npm run check:vale && npm run lint:markdown && npm run check:provenance && npm r
   sitting. Record every place the page was unclear.
 - [ ] **Step 3:** write the receipt row and the comparison artifact, with the conductor supplying the
   token spend per step, which an implementer cannot observe.
-- [ ] **Step 4:** present the rebuilt page beside the original to the owner, batched with H12's
+- [ ] **Step 4:** run the registry lifecycle's first review against the measured template cost, and
+  record its ruling.
+- [ ] **Step 5:** present the rebuilt page beside the original to the owner, batched with H12's
   rulings. **The owner's read and approval to proceed is the plan's closing gate, not this task's
   criterion.**
 
@@ -1621,11 +1737,20 @@ npm run check:figures`.
   apply to: the reference entries, which are edited in place.
 - The reader test's result is in the receipt row and its findings are listed in the cost document,
   whether or not they were folded.
-- **The report carries decision 2's scheduled review as an explicit owner question**: the spec's
-  decision row says "review after the demonstration page shows what a template costs", and the owner
-  accepted the recommendations as written. The question states what twelve types cost, what eight
-  would cost, and the field comparison: Kubernetes runs four content types over more than a thousand
-  pages with no validator, and GitLab runs no page-type registry at all. R2 records the answer.
+- **The registry lifecycle's first review runs here, and it is a review rather than an owner
+  question.** Decision 2 is settled: the registry is nine types. The review's input is what a
+  template cost on the demonstration page, and it fills the demonstration page's type row in
+  `docs/internal/page-types.md`: the reader-test result, the measured drafting cost, the questions
+  anyone had to ask about the page, and the reviewer misses D2's fresh reviewer and coverage diff
+  produced, each attributed to the template or to the subject. `helpful votes` stays empty.
+- **The review's ruling is written to `docs/internal/page-type-rulings.md`**, in the shape
+  `docs/internal/engine-rulings.md` uses: the ruling, the evidence, and what would reopen it. A
+  review that changes nothing still writes a ruling saying so, with the cost figure as its evidence.
+  Neither of the two count-changing rulings can fire on one page, so the ruling is either "no change"
+  or a template revision on a section the findings cluster on, and the task says which.
+- The review records the two bounds it could not test on one page: the third trigger needs three
+  failures and three pages of a type, so no type is flagged here, and the row is a baseline for the
+  next review rather than a comparison. R2 records the outcome.
 - The document does not assert the owner's approval. It states that the read is pending or records
   the date it happened.
 
@@ -1638,10 +1763,10 @@ npm run check:rulings-format && npm run check:arm-indexes`.
 
 ### Task R1: The roadmap absorption
 
-**Chain:** R. **Depends on:** D3. **Deliverables:** 2.
+**Chain:** R. **Depends on:** D3. **Deliverables:** 3.
 
-**Files:** Modify `ROADMAP.md` (the claims-verification row), `docs/internal/engine-rulings.md` (one
-row).
+**Files:** Modify `ROADMAP.md` (the claims-verification row and the registry-review standing item),
+`docs/internal/engine-rulings.md` (one row).
 
 **Interfaces:**
 - Consumes: owner decision 5.
@@ -1672,6 +1797,12 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
 - The row's status as a blocking gate before `1.0.0` is restated, not dropped.
 - The overrule is filed as a row in `docs/internal/engine-rulings.md`, which is where this repository
   records a ruling that reverses a ratified position, and `check:rulings-format` is green.
+- **`ROADMAP.md` carries the registry lifecycle's rewrite-close trigger as a standing item**, in the
+  tier where it bites, which is the tier plan three's track plans sit in. The item states the
+  trigger, not the action: the close of every rewrite plan runs a registry review, whose record is
+  `docs/internal/page-types.md` and whose rulings go to `docs/internal/page-type-rulings.md`. It
+  names the other two triggers and points at the spec's registry lifecycle for their bounds. It is a
+  standing item, so it is not marked done by this pass.
 - No item this plan shipped is still listed in a live ROADMAP tier.
 
 ### Task R2: STATUS, HISTORY, ROADMAP, CHANGELOG, the friction log, and the register
@@ -1687,8 +1818,10 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
   scripts `check:provenance`, `check:prose-read`, `check:ledger`, and `check:fact-coverage`. It
   records that `check:fact-coverage` is a harvest tool and not a CI gate, with the reason, and that
   the spec's five-script table is superseded by this shape with its reason.
-- It records decision 2's answer from D3's owner question, whether the registry stays at twelve or
-  reduces.
+- It records that the registry is nine types, that decision 2 settled it on 2026-09-08, and that the
+  registry is maintained on outcome from here. It names the two lifecycle records,
+  `docs/internal/page-types.md` and `docs/internal/page-type-rulings.md`, and the three review
+  triggers, and it records D3's first review and its ruling.
 - `ROADMAP.md` carries the docs standard as an Active initiative with plan three named.
 - `CHANGELOG.md` gains one entry under `## Unreleased` with no `Consumers must:` line for the
   engine's public surface, **and one line noting that `docs/extend/add-a-custom-admin-screen.md` was
@@ -1716,9 +1849,10 @@ exactly what the amendment exists to prevent, and which would have falsified H-A
   1. The five ledgers at `docs/internal/record/docs-rebuild/<track>-facts.md`.
   2. The page-type assignment at `docs/internal/record/docs-rebuild/page-types.md`, covering every
      published page.
-  3. `docs/internal/corpus/` and its manifest, approval column filled, every one of the twelve types
+  3. `docs/internal/corpus/` and its manifest, approval column filled, every one of the nine types
      covered.
-  4. `docs/internal/templates/`, twelve templates, each heading marked required or optional.
+  4. `docs/internal/templates/`, nine templates, each heading marked required or optional, plus the
+     registry's two lifecycle records with the first review's rows and ruling in them.
   5. The brief schema, `scripts/checks/brief.mjs`, and one worked brief.
   6. The gate estate: `markdownlint-cli2` with its cairn rules, the Vale rule set, and the four
      scripts, wired into `package.json` and CI, **each with its scope and the named plan-three track
@@ -1761,8 +1895,9 @@ CI. Plan three is authored only after the owner's demonstration read.
 - **The cairn.pub consultation**, owed now (R3).
 - **The registry gaps** P2 recorded under "types the registry may lack": a glossary, a migration
   guide, a release-notes page, or an FAQ has no type. The escape is a brief-recorded deviation naming
-  the nearest type, pending an owner-approved registry addition with its exemplar. Decision 2's
-  answer from D3 sits beside it.
+  the nearest type, pending an owner-approved registry addition with its exemplar. Each such brief is
+  a review trigger under the registry lifecycle, and plan three's track plans each close with a
+  registry review.
 - **Plan one's own follow-ups**, if the Claude infrastructure pass left any.
 - **Release:** the window holds. This pass does not bump or publish.
 
@@ -1776,7 +1911,7 @@ What each of the six reviews' findings became. A finding not applied is listed w
 the golden-form fixture harness (4); the `Microsoft.SentenceLength` override and the resolved
 paragraph hedge (3); the `yaml` package plus a schema check (5); the `files` negation and the `check:package`
 assertion (6); the corpus reference-only default and every licensing rule (9, 10); the hinged-pair
-column dropped (11); decision 2's review scheduled in D3 (12); the warning report step (13); the
+column dropped (11); decision 2's review scheduled in D3, now the registry lifecycle's first review (12); the warning report step (13); the
 lychee weekly action with a rolling issue (16); the errata-ai citation correction (17); the "no
 change needed" items kept as written (18). Sequencing: the amendment as a precondition (1); `npm run
 check` is not a composite (2); anchor-plus-claim re-resolution and the reflow disables (3); the
@@ -1786,7 +1921,8 @@ here (8); the named cut point and one ceiling (9); the ROADMAP overrule's reason
 engine-rulings row (10); re-derivation as a P1 criterion (11); every smaller correction (12).
 Charter: the tell-scanner step cut and the routine moved in-repo (1); `ParagraphBounds` to warning
 (2); `check:fact-coverage` unwired and token-matched (3); the verb lexicon dropped (4); the
-eleven-to-twelve straddle cut (6); G2-7's block folded into P1's stop and the task moved last (8);
+eleven-to-twelve straddle cut (6, and the registry cut to nine by owner decision 2 on 2026-09-08);
+G2-7's block folded into P1's stop and the task moved last (8);
 the PDF vendoring cut (9); the plan-lint cut (11); markdownlint scoped rather than cleared (12);
 C5 batched into a single sitting with the other mid-sitting items (13); R2's hand-off split into R3.
 Coverage: the spec amendment (1, and the companion edit); the quality checklist (2); paragraph
@@ -1801,10 +1937,14 @@ deliverable-counting rule; the G2-6 rebase step; every pointer and wording corre
 
 **Not applied:**
 
-- **Charter 5, twelve page types collapsed to eight.** The registry stays at twelve, fixed from P2
-  onward. Decision 2's own scheduled review is the mechanism for answering this, and it is now
-  scheduled (D3) with the field comparison the charter and benchmark reviews both supply. Deciding it
-  here would pre-empt an owner decision the spec already reserves.
+- **Charter 5, twelve page types collapsed to eight. Superseded 2026-09-08, and now applied in
+  part.** Owner decision 2 cut the registry to nine: the internal proposal type is dropped, since
+  internal planning documents are not graded, and the condition entry and the symptom row fold into
+  the reference entry as section shapes. The finding's direction was right and its number was not
+  the lever; the count follows from the test that a registry entry is a whole-page shape with a
+  published exemplar. The field comparison the charter and benchmark reviews supplied is recorded in
+  the spec's resolution. From here the count is maintained on outcome rather than argued, and D3 runs
+  the first review.
 - **Charter 7, merge G1 and G2 into one chain.** The two chains stay separate. The five contended
   file groups the merge would remove are already removed another way: P creates every shared stub,
   the scope file is gone, and `.markdownlint-cli2.yaml` and `.vale.ini` are each written by one chain

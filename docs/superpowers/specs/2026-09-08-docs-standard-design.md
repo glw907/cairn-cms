@@ -19,7 +19,7 @@ resolves to the section of the proposal with the same heading.
 
 **Page brief.** Type: design spec, internal. Reader: the implementer who writes the pass plans from
 this document, and the owner checking it against the proposal. This page needs the four parts of
-the standard stated as requirements, with the page types (eleven now, twelve after 3a) and their
+the standard stated as requirements, with the nine page types and their
 section orders. It also
 needs the adopted decisions with their sizes, an implementation order in pass-sized units, the
 acceptance criteria for each unit, the risks, the decisions the owner still owes, and the items the
@@ -30,8 +30,9 @@ and KEP-2400
 The section order below is the Go document's spine, which runs abstract, background, proposal,
 rationale, compatibility, implementation. Deviations, each with its reason:
 
-- A design spec is not one of the page types the standard names (eleven now, twelve after 3a), so no
-  template governs it and the exemplar rule applies instead.
+- A design spec is not one of the page types the standard names, so no template governs it and the
+  exemplar rule applies instead. Internal planning documents are not graded, which owner decision 2
+  settles, so no registry type covers this page.
 - Design details, goals and non-goals, risks, and open items come from the KEP spine, because the Go
   document has no section for any of the four and the owner's brief requires all four.
 - Rationale is present but short. It carries only the reasoning this document adds beyond the
@@ -40,8 +41,9 @@ rationale, compatibility, implementation. Deviations, each with its reason:
   own spec convention, held by every spec under `docs/superpowers/specs/`. Decisions sits before
   Compatibility because Compatibility is written against the adopted set. Risks sits after
   Implementation because most risks are unit risks.
-- The registry splits the proposal's combined "condition entry and symptom row" bullet into two
-  types, which reaches the eleven types (twelve after 3a) the proposal already claims.
+- The registry folds the proposal's "condition entry and symptom row" bullet into the reference
+  entry as two section shapes, and it drops the internal proposal type. Both are owner decision 2,
+  resolved on 2026-09-08, and they bring the registry to nine types.
 - This page names its own type and carries its brief inline. An internal spec has no separate brief
   file and no reader it could mislead, and the no-self-naming rule binds published pages.
 - The page carries one 40-word sentence and, on the all-sentences measure, an average sentence length
@@ -218,11 +220,9 @@ exemplar of its genre, and the **corpus**, the set of human-written excerpts def
 carry an excerpt of it. A page whose type has no approved exemplar must not be written. The page
 brief must name the exemplar the page was drafted against.
 
-A page type is a named shape. Eleven are named now, ten published and one internal; twelve after unit
-3a lands, when the front-door type splits into "front door, evaluator" (`docs/why-cairn.md`, the root
-`README.md`) and "front door, track index" (`docs/README.md` and the four track READMEs). Each is
-listed with the reader's job it serves and its exemplars, because a page whose job nobody can state in
-one line is two pages. This list is the registry a page brief cites.
+A page type is a named shape. Nine are named, and every one is published. Each is listed with the
+reader's job it serves and its exemplars, because a page whose job nobody can state in one line is
+two pages. This list is the registry a page brief cites.
 
 | Page type | The reader's job | Exemplars |
 |---|---|---|
@@ -230,17 +230,20 @@ one line is two pages. This list is the registry a page brief cites.
 | Tutorial milestone | The reader is learning and needs the next unit in a sequence | a unit of Astro's blog tutorial |
 | Concept page | The reader must understand something before acting | PostgreSQL's concurrency chapter; Astro's "Why Astro" principles |
 | Architecture overview | The reader must see how the parts fit and who owns each | SQLite's architecture page; Kubernetes' cluster architecture page |
-| Reference entry | The reader knows the name and wants the contract | PostgreSQL's CREATE INDEX; MDN's scrollIntoView |
+| Reference entry | The reader knows the name and wants the contract, or has a failure and wants the cause and the fix | PostgreSQL's CREATE INDEX; MDN's scrollIntoView; Cloudflare's Workers error tables for the condition and symptom section shapes |
 | Reference table | The reader wants one row of many | Wrangler's configuration reference; a Stripe object page |
-| Condition entry | The reader has a failure and wants the cause and the fix | Cloudflare's Workers error tables |
-| Symptom row | The reader matches a symptom and wants the row that names it | Cloudflare's Workers error tables |
 | Index page | The reader must find the right page and leave | a Kubernetes section index |
-| Front door | An evaluator is deciding whether cairn fits | SQLite's scope page; Kubernetes' overview. The editors track's welcome page is a front door for its own reader, with a GOV.UK guidance page and a Mozilla support article as its exemplars |
-| Proposal (internal) | The owner is deciding | the Rust RFC template; the Kubernetes enhancement proposal template |
+| Front door, evaluator | An evaluator is deciding whether cairn fits | SQLite's scope page; Kubernetes' overview. The editors track's welcome page is a front door for its own reader, with a GOV.UK guidance page and a Mozilla support article as its exemplars |
+| Front door, track index | The reader must reach the right track and leave | a Kubernetes section index; the GOV.UK topic page |
 
-Type 11 is the one internal type, and it stays outside the Vale gates that `.vale.ini` exempts for
-`docs/internal/**` and `docs/superpowers/**`. Its template governs shape, not prose. `check:anatomy`
-and `check:headings` are scoped to published paths only.
+`docs/why-cairn.md` and the root `README.md` are the evaluator type. `docs/README.md` and the four
+track READMEs are the track-index type, which the register's five-routes-in-the-first-screenful
+requirement governs.
+
+No internal type is in the registry. Internal planning documents are not graded, which owner
+decision 2 settles, so a spec, a plan, a post-mortem, and a record carry no page type and no
+template, and they stay outside the Vale gates that `.vale.ini` exempts for `docs/internal/**` and
+`docs/superpowers/**`. Every structure gate is scoped to published paths only.
 
 Four rules hold at this level:
 
@@ -250,6 +253,64 @@ Four rules hold at this level:
 - A page must stay on one level. It must link down to a concept rather than explain it in place.
 - An index must group its children once it lists more than nine siblings, which is Horn's chunking
   bound.
+
+#### The registry lifecycle
+
+The registry is maintained on outcome. A type earns its place by what the pages of that type
+measure, and the registry changes when the measurements say to. Four parts hold it.
+
+**The outcome record.** Each type carries one row in `docs/internal/page-types.md`. The row records
+the pages assigned to the type, the outline-review failures and the provenance findings clustered by
+type, the reader-test results for its pages, and the measured drafting cost of a page of that type.
+The failure and finding counts come from the ledger rows `check:prose-read` verifies and from the
+coverage-diff reports, so no count is entered by hand from memory.
+
+Three further signals sit in the same row, each cheap and each drawn from the field's most
+predictive measures:
+
+- **The questions a page of this type made someone ask.** Every question the owner, an agent, or a
+  reviewer had to ask about a page during a pass is logged as one line in that pass's record when it
+  happens, and rolled up per type at the review. Four documentation vendors converged independently
+  on unanswered questions as the primary content signal, and this is that signal at the cost of a
+  line.
+- **Helpful votes per type, read on a fixed cadence.** This one is future work, not a plan-two task.
+  It starts when cairn.pub carries a voting widget. The literature's warning is what makes it a
+  per-type field rather than a per-page one: a vote must be read against the page's type and never
+  pooled across types.
+- **Reviewer-miss feedback.** What the fresh reviewer changed on a drafted page, and whether the miss
+  traces to the template or to the subject. The coverage-diff and review steps record it, one
+  structured line per review. It is the signal that attributes a failure to the type the drafter was
+  handed rather than to the subject matter, which is the question this registry actually asks.
+
+**The review triggers.** A review runs at the close of every rewrite plan. A review also runs on any
+page brief that cannot name a type. And a review runs on a type whose outline-review failure count
+rises against its own prior record by a stated margin for two consecutive reviews.
+
+That third trigger compares a type against itself, never against the other types. A threshold set at
+the registry median retires half the registry by construction, and the practitioner literature holds
+that a documentation metric is goal-specific per type, so a task guide's failure count and a
+reference entry's are not comparable quantities. Two bounds keep the trigger from firing on noise. It
+needs an absolute floor of at least three outline-review failures in the review window, and a minimum
+sample of at least three pages of that type. Below either bound the trigger cannot fire. The anatomy
+report therefore reports per-type failure counts and page counts, and never a cross-type ranking.
+
+**The rulings.** Add a type when two or more pages need a whole-page shape no type gives, and only
+after an exemplar is found. Merge or retire a type whose page count falls under three, or whose
+pages the third trigger has flagged. Revise a template when the findings cluster on one of
+its sections. Record each ruling in `docs/internal/page-type-rulings.md`, in the shape
+`docs/internal/engine-rulings.md` uses: the ruling, the evidence, and what would reopen it.
+
+**The first review.** It runs at the demonstration page in pass 2a, against that page's measured
+template cost.
+
+**What here is precedented and what is not.** The field survey at
+[`research-agent-run-docs-lifecycle.md`](../../internal/record/2026-09-08-polish-inputs/research-agent-run-docs-lifecycle.md)
+found the registry itself, the human adjudication of every proposed change, and the fixed review
+cadence all well attested, at Cloudflare, Kubernetes, GitLab, PostHog, and GitBook. It found no
+published precedent for a per-type outcome record or for a trigger that fires when a brief cannot
+name a type. Every registry surveyed is a static list with selection guidance, and no program
+publishes what evidence retires a type. Nothing in the field will validate those two, which is the
+reason each must be cheap enough to run that its cost never has to be defended.
 
 #### Page level
 
@@ -298,15 +359,19 @@ second copy of it. The orders are:
 sentences. Contract: (4) parameters, (5) returns, (6) defaults, (7) failure modes, (8) stability
 tier. Use: (9) example, (10) see also.
 
+The type carries two further section shapes, each optional and each used where the entry documents a
+failure rather than an export. A **condition** section states the condition, its cause, and its fix,
+in that order. A **symptom** section is a table whose rows a reader matches on sight, one row per
+symptom, with the same columns in every row. Both keep the field lists the recovery pages carry
+today, treated as an order rather than as a set, and neither gains a field in this spec, since the
+recovery pages already carry the fields their readers use. The template records both orders so the
+anatomy gate can hold them.
+
 **Reference table**. The prose rules apply to the lead sentence and the notes only:
 
 1. A lead sentence saying what the table lists and how it is ordered.
 2. The table, one row per item, the same columns in every row.
 3. Notes, if any, keyed to rows.
-
-**Condition entry and symptom row**. Both keep the field lists they carry today, treated as an order
-rather than as a set. The template records that order so `check:anatomy` can hold it. Neither type
-gains a field in this spec, since the recovery pages already carry the fields their readers use.
 
 **Index page**:
 
@@ -315,7 +380,7 @@ gains a field in this spec, since the recovery pages already carry the fields th
 3. The pages, in reading order.
 4. Where to start.
 
-**Front door**:
+**Front door, evaluator**:
 
 1. The owner's account of where cairn came from.
 2. What cairn does.
@@ -326,10 +391,9 @@ gains a field in this spec, since the recovery pages already carry the fields th
 7. A short checklist the reader answers.
 8. Where to go next.
 
-**Proposal**, grouped in two. The argument: (1) summary, (2) motivation, (3) goals and non-goals,
-(4) proposal, (5) design details. The decision: (6) drawbacks, (7) alternatives considered, (8) prior
-art, (9) unresolved questions, (10) decisions with their costs, (11) a receipt when the document
-grades itself.
+**Front door, track index**. The index-page order above, with one addition: section 3, the pages in
+reading order, must put five routes in the reader's first screenful, which is the register's
+requirement for this surface.
 
 No page may name its own type or track, which extends the standing rule that no page cites
 Diátaxis. A page must state its type by following it. The template and the brief file are the only
@@ -592,7 +656,8 @@ Applying the charter's premise check divides this standard between two owners. A
 the second half as cairn work. The split runs like this:
 
 - **Cairn's, and gradeable by this repository's gate.** The corpus entries and their manifest, the
-  page-type registry, the templates, the brief files, and the fact ledgers. The five new scripts,
+  page-type registry with its outcome record and its rulings file, the templates, the brief files,
+  and the fact ledgers. The five new scripts,
   the Cairn Vale rules with their fixtures, markdownlint, the link-rot routine, and every published
   page.
 - **The workstation's, and an owner action rather than a cairn task.** The measurement instrument as
@@ -808,7 +873,7 @@ Acceptance criteria:
 
 ### Unit 3a: the structure gates
 
-The brief format and its parser, the page templates (eleven now, twelve after 3a), `check:anatomy`,
+The brief format and its parser, the nine page templates, `check:anatomy`,
 `check:headings` with its
 verb lexicon, markdownlint, and the CI wiring. Roughly six tasks. This is what unit 4 needs to prove
 the shape.
@@ -825,10 +890,12 @@ Acceptance criteria:
   verb lexicon at warning level, and a fixture per rule.
 - Markdownlint runs with its stock rules and `check:headings` reimplements none of them.
 - Both gates are scoped to published paths and wired into `package.json` and CI.
-- This unit splits the front-door type into "front door, evaluator" (`docs/why-cairn.md`, the root
-  `README.md`) and "front door, track index" (`docs/README.md` and the four track READMEs), bringing
-  the registry to twelve types and twelve templates. `check:anatomy` is extended to reach the root
-  `README.md`, which sits outside `docs/`.
+- The registry's two front-door types each get their own template, and `check:anatomy` is extended to
+  reach the root `README.md`, which sits outside `docs/`. The registry is nine types and nine
+  templates, fixed before this unit starts rather than split inside it.
+- `docs/internal/page-types.md` carries one row per type with the outcome-record columns, and
+  `docs/internal/page-type-rulings.md` exists with its header, so the registry lifecycle has a
+  record to write into from the first review onward.
 
 ### Unit 3b: the receipt and provenance gates
 
@@ -882,6 +949,8 @@ Acceptance criteria:
 - The fresh reviewer's report names the corpus entry and carries the measurement table.
 - The reader test has run on the page, one sitting, and its result is in the receipt.
 - The page was drafted one section per read, recorded in the dispatch.
+- The registry lifecycle's first review has run against that measured template cost, its row is in
+  `docs/internal/page-types.md`, and its ruling is in `docs/internal/page-type-rulings.md`.
 - The comparison artifact exists: the rebuilt page beside the original, with the measured token and
   sitting cost of one page end to end. The owner's read and approval to proceed is the plan's
   closing gate rather than a task criterion.
@@ -966,7 +1035,7 @@ criteria:
 2. The page-type assignment for every published page, 76 today.
 3. `docs/internal/corpus/` and its manifest, approval column filled, every registry type covered by
    an approved or reference-only entry.
-4. `docs/internal/templates/`, the twelve page templates, each heading marked required or optional.
+4. `docs/internal/templates/`, the nine page templates, each heading marked required or optional.
 5. The brief schema, its parser, and one worked brief.
 6. The gate estate, wired into `package.json` and CI, each gate with its scope and the named
    plan-three track plan that removes each relaxation.
@@ -1004,7 +1073,8 @@ criteria:
 - **The registry may lack a type a page needs.** A glossary, a migration guide, a release-notes page
   or an FAQ has no type here, and the rule forbids writing a page whose type has no exemplar. The
   escape is a brief-recorded deviation naming the nearest type, pending an owner-approved registry
-  addition with its exemplar.
+  addition with its exemplar. A brief that cannot name a type is a review trigger under the registry
+  lifecycle, so the gap is recorded and ruled on rather than absorbed silently.
 
 ## Owner decisions
 
@@ -1014,7 +1084,7 @@ is the conductor's, and none is taken. No unit blocks on them, but three change 
 | # | Decision | Options | Reviewers' evidence | Conductor's recommendation |
 |---|---|---|---|---|
 | 1 | Sentence-length gate level: decision 3's 25-word ceiling on admin and editors, and the 40-word ceiling | Error after clearing 196 sentences, or warning permanently | Benchmark: GitLab and Red Hat both run sentence length at suggestion, and no surveyed program gates a length number. Conformance: both banked exemplars fail a gated rule, the KEP at 44 words and both at the paragraph floor. Charter: the spec's own non-goals say rewriting to a length number does not improve comprehension, which contradicts buying 196 rewrites | Warning permanently, no promotion path; drop the 196-sentence clearing; keep the paragraph ceiling at error |
-| 2 | Page-type count | Keep eleven, or collapse to about six | Benchmark: Kubernetes runs four types over a thousand-plus pages, Microsoft five, Red Hat three; eleven for 75 pages is roughly four times the field ratio. Plannability: eleven templates will not fit one dispatch and drive unit 3's task count | Keep eleven for plan one's registry, then review after the demonstration page shows what a template costs |
+| 2 | Page-type count | Keep eleven, or collapse to about six | Benchmark: Kubernetes runs four types over a thousand-plus pages, Microsoft five, Red Hat three; eleven for 75 pages is roughly four times the field ratio. Plannability: eleven templates will not fit one dispatch and drive unit 3's task count | **Resolved 2026-09-08. The registry is nine types.** See the resolution below |
 | 3 | Receipt mechanism | Per-page committed receipt verified by content hash, or a pull-request artifact plus one ledger row per page | Benchmark: no surveyed program commits a per-page review artifact; Microsoft's nearest analogue lives in the PR check. Charter: a hash gate makes a typo fix unmergeable by a contributor who cannot run a reader test, and a receipt beside a published page ships in the npm tarball. Plannability: no hash algorithm, normalization, path, or staleness policy is specified | PR artifact plus one row per page in a docs ledger, gate failing only on a missing row; if the file form is kept, hash prose only and define fresh, prose-stale, and structure-stale |
 | 4 | Reader-test sittings | Forty, one per task guide and the front door, or nine with a next-rewrite trigger | Benchmark: DigitalOcean's precedent is paid staff editors, and Kubernetes gets volunteers; cairn has one owner. Charter and plannability: the spec predicts its own stall at this criterion, and the sitting total reaches 47 to 90 across the initiative | Nine: the front door, the track index pages, and the six highest-traffic task guides, with the rest triggered by the next substantive rewrite |
 | 5 | Harvest sequencing against the roadmap | Honor the ratified after-`beta.1` sequencing, or overrule it and run the harvest with plan one | Charter: `ROADMAP.md` records the claims-verification audit as running after `beta.1` so its inputs exist, and as a blocking gate before `1.0.0`; the spec plans it first without citing the row. Plannability: polish-C's renames invalidate ledger entries wholesale | Absorb the row and run the harvest when plan one runs, recording the overrule with its reason; polish-C lands entirely first |
@@ -1023,6 +1093,22 @@ is the conductor's, and none is taken. No unit blocks on them, but three change 
 
 Decided 2026-09-08: the owner accepted all seven recommendations as written. Plan one is
 drafted on that basis, and decision 1 settles decision 2's ceiling clause at warning.
+
+**Decision 2, resolved 2026-09-08.** The registry drops the internal proposal type, because internal
+planning documents are not graded, and it folds the condition entry and the symptom row into the
+reference entry as section shapes inside that type. Both front-door types stay. The reasoning is the
+registry's own test: a registry entry is a whole-page shape with a published exemplar, so the count
+is a consequence of that test rather than a lever to pull. The practice evidence points the same
+way. Kubernetes runs four types, Microsoft five, Red Hat three, and Diátaxis four, so fewer types
+demonstrably suffice, and no outcome evidence favors any particular count. That is why the count is
+not fixed here for good: the registry lifecycle above maintains it on outcome, and its first review
+runs at the demonstration page in pass 2a.
+
+The ruling was given as ten types. The removals it enumerates resolve to nine, since the condition
+entry and the symptom row are two registry rows rather than one. This spec records nine and adds no
+type to reach the stated number, which is what "the count is a consequence" requires. The nine are
+`task-guide`, `tutorial-milestone`, `concept`, `architecture-overview`, `reference-entry`,
+`reference-table`, `index`, `front-door-evaluator`, and `front-door-track-index`.
 
 ## Open items
 
@@ -1047,8 +1133,8 @@ answers are unverified.
 One more sits with the register rather than with the owner. `docs-register.md` treats
 `docs/README.md`, `docs/why-cairn.md`, and the root `README.md` as one front-door surface and
 requires five routes in the first screenful, which one template cannot hold alongside an evaluator's
-argument. Unit 3a must split the front-door type into an evaluator type and a routing-index type,
-and state how `check:anatomy` reaches a root `README.md` that sits outside `docs/`. The register's
+argument. The registry answers that with two front-door types, and unit 3a must state how
+`check:anatomy` reaches a root `README.md` that sits outside `docs/`. The register's
 2026-09-08 front-door voice ruling outranks the cadence report on that surface.
 
 ## Receipt

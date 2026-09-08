@@ -172,8 +172,13 @@ system contributes one level, and none is adopted whole.
 #### The docs set
 
 Every published page must have one track and one page type. The four tracks stay as they
-are. A page type is a named shape, and the standard names eleven, ten published and one internal. Each is listed here with the
-reader's job it serves, because a page whose job you cannot state in one line is two pages.
+are. A page must look like what it is: a technical proposal must read as a technical
+proposal, an API entry as an API entry, and an editor's welcome page as a welcome page, so
+that a reader who knows the genre recognizes the page on sight. To hold that, each page type
+names a published exemplar of its genre, and the corpus carries an excerpt of it. A page
+type is a named shape, and the standard names eleven, ten published and one internal. Each
+is listed here with the reader's job it serves and its exemplar, because a page whose job you
+cannot state in one line is two pages.
 
 - Task guide: the reader has a goal and wants the steps. Most admin and extend pages.
   Exemplars: Cloudflare's Workers get-started guide and a GitHub Docs how-to.
@@ -627,9 +632,9 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 354 | 185 | 6 |  | count only |
-| Average length | 15.9 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
-| Longest sentence | 39 words | 39 words | 33 words | under 40 | pass |
+| Sentences | 356 | 187 | 6 |  | count only |
+| Average length | 16 words | 18.5 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Longest sentence | 46 words | 46 words | 33 words | under 40 | FAIL |
 | Hinged pairs | 43 percent | 45 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 20 percent | 10 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |

@@ -96,7 +96,17 @@ precedent when making decisions": the charter's leanness test and the rulings le
 every call); merge order at the end: A, then B1 and B2 after Geoff's read, then the
 identity seam on its own gate.
 
-**Identity seam, state (2026-09-07 about 23:30 AKDT):** spec at
+**Identity seam EXECUTING** (launched 2026-09-08 about 00:10 AKDT as run `wf_b310f457-1bf`,
+session 9215acac, worktree `.claude/worktrees/identity-seam` off `main` at `f7daa6cb`, seven
+tasks at 5.5M, in parallel with chassis-A's last tasks). Spec revision 3 (`79261f74`) and plan
+revision 2 (`f7daa6cb`) are the folded artifacts; the four-lens plan review, its fold brief,
+and the spec review are banked under `docs/internal/record/2026-09-07-identity-seam/`. Task 5a
+reports `REVIEW ROUNDS PENDING`; the conductor then dispatches the `prose-voice-reviewer` and
+the `web-auth-security-reviewer` (its accept is blocking) before Task 5b. Merge gate as ruled.
+A cold resume checks `git log` on `identity-seam` and relaunches the tasks not yet accepted as a
+fresh run from the scratchpad's `identity-args.json` shape.
+
+**Identity seam, earlier state (2026-09-07 about 23:30 AKDT):** spec at
 `docs/superpowers/specs/2026-09-07-identity-seam-design.md` revision 2 (`de2bf1cb`), folded from
 a three-lens review; plan drafted at `docs/superpowers/plans/2026-09-07-identity-seam-pass.md`
 (`b58b5d2e`, 6 tasks, 4.5M); its four-lens review (grounding, security, hygiene, charter) is

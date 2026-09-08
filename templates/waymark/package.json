@@ -9,7 +9,8 @@
     "cairn:manifest": "cairn-manifest",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "format": "prettier --write --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte}' 'e2e/**/*.ts' '*.ts' '*.js'",
-    "format:check": "prettier --check --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte}' 'e2e/**/*.ts' '*.ts' '*.js'"
+    "format:check": "prettier --check --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte}' 'e2e/**/*.ts' '*.ts' '*.js'",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@glw907/cairn-cms": "^0.96.0",
@@ -36,6 +37,7 @@
     "tailwindcss": "^4.3.2",
     "typescript": "^6",
     "vite": "^8",
+    "vitest": "^4.1",
     "wrangler": "^4.125.0"
   }
 }

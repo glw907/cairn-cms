@@ -96,6 +96,7 @@ jobs:
       # payload colliding with another action's failure field inside SvelteKit's generated
       # ActionData) is invisible until this runs.
       - run: npm --prefix examples/showcase run check
+      - run: npm --prefix examples/showcase run test:unit
       - run: npm --prefix examples/showcase run format:check
       - name: Install Vale 3.15.1
         run: |

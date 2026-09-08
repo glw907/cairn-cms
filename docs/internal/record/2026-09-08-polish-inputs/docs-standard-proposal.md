@@ -137,7 +137,9 @@ instrument on that page that turns an argument into the reader's decision.
 A figure appears only where the fact being taught is a relation among three or more parts,
 or a branch between paths, that prose would have to state as a series. Ten of the fourteen
 exemplar pages carry no explanatory figure. Every "why" page carries none. The reference
-pages of PostgreSQL, MDN, and Rust carry none. A set of items is a table and a linear
+pages of PostgreSQL, MDN, and Rust carry none. Across 24 Astro docs pages there are two: a
+box diagram built in CSS on the islands page and one screenshot in the tutorial's first
+hands-on step. A set of items is a table and a linear
 sequence is a numbered list. Code the reader will type is a code block.
 
 The register ruled most of this on 2026-08-15, and eleven Mermaid figures ship under that
@@ -300,10 +302,10 @@ package forced on, since this path is style-exempt, and all three levels are rep
 
 | Measure | All sentences | Prose only | Target |
 |---|---|---|---|
-| Sentences | 207 | 119 | |
-| Average length | 13.7 words | 15.3 words | 15 to 20 |
+| Sentences | 208 | 120 | |
+| Average length | 13.8 words | 15.4 words | 15 to 20 |
 | Longest sentence | 41 words | 41 words | under 40 |
-| Hinged pairs, all families | 33 percent | 35 percent | reported |
+| Hinged pairs, all families | 34 percent | 36 percent | reported |
 | Sentences under 8 words | 25 percent | 18 percent | reported |
 | Paragraphs over 8 sentences or 150 words | 0 | | 0 |
 | Vale, Google package forced | 0 errors, 14 warnings and 102 suggestions | | errors 0 |

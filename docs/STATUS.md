@@ -29,7 +29,10 @@ carries `npm --prefix packages/create-cairn-site run prepack && npm --prefix
 packages/create-cairn-site test`; the args file shape is in the plan's Execution section.
 
 When the workflow reports: read the per-task records, decide any needs-decision or escalate,
-then the full pass-end ritual (`cairn-pass`: simplifier, the six CI-only gates by name plus
+check the five bare `$theme/cairn.config` specifiers Task 10's grep cannot match
+(`(site)/+page.server.ts`, `feed.xml/+server.ts`, `feed.json/+server.ts`,
+`(site)/[...path=md]/+server.ts`, `(site)/styleguide/+page.server.ts`; a survivor is a fix
+commit in the ritual), then the full pass-end ritual (`cairn-pass`: simplifier, the six CI-only gates by name plus
 `check:idioms` and `check:cm-internals`, the reviewer fan-out the plan names, from-scratch
 showcase install and e2e, a fresh scaffold built and unit-tested, whole-log friction triage,
 STATUS/HISTORY/ROADMAP, post-mortem, both budgets scored), push, PR, merge on green CI.

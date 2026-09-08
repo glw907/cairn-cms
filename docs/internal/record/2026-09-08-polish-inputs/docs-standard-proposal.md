@@ -1,9 +1,9 @@
 # A documentation standard for cairn
 
-Revision 8, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
+Revision 9, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
 Revisions 2 to 6 went through the review chain this document proposes, and each revision
 folds the findings. The reviews and research are the `proposal-review-*.md` and
-`proposal-research-*.md` files in this directory. Revision 8 follows your read of revision 7. The
+`proposal-research-*.md` files in this directory. Revision 8 follows your read of revision 7, and revision 9 adds the exemplar-first rule and the round cap. The
 structure rules are now the largest part, since the front door failed at the outline before
 it failed at the sentence. The figure rules shrink to what a page needs, and the document
 takes the proposal shape it names for itself.
@@ -466,6 +466,12 @@ it. A page for a published path is drafted at that path on a branch, never under
    hash, the measurement table, the corpus entry, the reviewer's verdict, and the reader's
    result, and the gate fails when a published page's hash has no matching receipt.
 
+The chain runs at most two rounds on one draft. Round one is steps 3 through 7. A fix
+verdict from step 7 buys one redraft and a second run of those steps. A second fix verdict
+stops the loop and sends the page to you with the findings attached, the way a second fix
+verdict on a code task goes to the conductor. The cap is what keeps the chain from becoming
+the eight-revision loop this proposal went through.
+
 #### The quality checklist
 
 Every page walks one checklist before its receipt is written. The checklist is generic: its
@@ -638,14 +644,14 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 361 | 192 | 6 |  | count only |
+| Sentences | 366 | 197 | 6 |  | count only |
 | Average length | 16 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 39 words | 39 words | 33 words | under 40 | pass |
-| Hinged pairs | 43 percent | 45 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Hinged pairs | 43 percent | 44 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 45 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 19 percent | 10 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
 | Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
-| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 43 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 44 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
 | Vale, Google package forced | 0 errors, 48 warnings and 187 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 1 |  |  | 0 | one finding, the "Summary" heading, recorded as a deviation in the page brief |
 | Three-item lists the scanner counted | 4 |  |  | each a real list | each checked by hand and each a list of things that number three |

@@ -47,7 +47,17 @@ const splitSentences = (s) =>
 // A hinged pair: two clauses joined by a comma-coordinator, a colon, a semicolon, a dash,
 // or a relative-clause chain. Serial-list commas are excluded by requiring a coordinator or
 // relative word after the comma.
-const HINGE = /(?:,\s+(?:and|but|so|or|yet|which|where|while|because|since|although|though|as)\b)|[;:]\s+\S|\s[-–—]\s|,\s+(?:which|that)\s+\w+\s+\w+/;
+// Serial lists are excluded: a ", and" or ", or" that follows another comma in the same
+// sentence is read as the last item of a list, never as a hinge.
+const HINGE_PUNCT = /[;:]\s+\S|\s[-–—]\s/;
+const HINGE_SUB = /,\s+(?:but|so|yet|which|where|while|because|since|although|though|as)\b|,\s+(?:which|that)\s+\w+\s+\w+/;
+const HINGE_AND = /,\s+(?:and|or)\b/;
+function isHinged(s) {
+  if (HINGE_PUNCT.test(s) || HINGE_SUB.test(s)) return true;
+  const m = HINGE_AND.exec(s);
+  if (!m) return false;
+  return !s.slice(0, m.index).includes(',');
+}
 
 function measure(sel) {
   const sents = [];
@@ -65,7 +75,7 @@ function measure(sel) {
   const lens = sents.map((s) => s.split(/\s+/).length);
   const n = lens.length;
   const mean = n ? lens.reduce((a, b) => a + b, 0) / n : 0;
-  const hinge = sents.filter((s) => HINGE.test(s)).length;
+  const hinge = sents.filter(isHinged).length;
   const short = lens.filter((l) => l < 8).length;
   const longPara = paras.filter((p) => p.sentences > 8 || p.words > 150).length;
   return {

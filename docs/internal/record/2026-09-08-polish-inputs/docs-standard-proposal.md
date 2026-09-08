@@ -1,34 +1,38 @@
 # A documentation standard for cairn
 
-Revision 3, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses and
-revision 2 through the review chain this document proposes, and each revision folds the
-findings. The reviews and research are the `proposal-review-*.md` and
-`proposal-research-*.md` files in this directory. This proposal is an internal record, not a
-published page, so it stays in this directory even though the rule it proposes sends
-published drafts elsewhere.
+Revision 4, 2026-09-08, for Geoff's review. Revision 1 went through seven review lenses.
+Revisions 2 and 3 went through the review chain this document proposes, and each revision
+folds the findings. The reviews and research are the `proposal-review-*.md` and
+`proposal-research-*.md` files in this directory.
 
 ## A documentation standard
 
 A documentation standard is the set of written rules a page must be drafted against and
 checked against before it ships, the way the code has its conventions and its gates. A gate
 is a check that fails the build. The standard proposed here covers cairn's published
-documentation, which is already split into four reader groups the repository calls tracks.
-Editors write in the admin and never see a terminal. Site admins run a site without writing
-code. Developers extend cairn. The reference is where the last two look things up. The
-standard also covers the front door, which is the set of pages an evaluator lands on first.
+documentation and the front door, the pages an evaluator lands on first.
+
+The published documentation is already split into four reader groups the repository calls
+tracks. Editors write in the admin and never see a terminal, site admins run a site without
+writing code, developers extend cairn, and the reference is where the last two look things
+up. Each track already has its own list of the words its reader is expected to know, kept in
+the register, which is the repository's own style document at
+[`docs-register.md`](../../docs-register.md).
 
 The standard has four parts. The prose rules say how sentences and paragraphs must be
 written, and they adopt the Federal Plain Language Guidelines, a published United States
 government style standard. The structure rules say which pages exist, what sections each
-kind of page carries and in what order, and how a section is built. The figure rules say
-when a diagram or screenshot earns its place, how it is made, and how it is graded. The
-review chain gives a page the same sequence of checks a code change gets, and it ends in a
-receipt that records the review so a gate can verify the review happened.
+kind of page carries, and how a section is built. The figure rules say when a diagram or
+screenshot earns its place, how it is made, and how it is graded. The review chain gives a
+page the same sequence of checks a code change gets, and it ends in a receipt that records
+the review so a gate can verify the review happened.
 
-Two rules sit above the four parts. Any claim about you or about cairn's stance must come
-from a brief you wrote or approved, and a script must check that every such claim points at
-a line in that brief. A page for an outside reader must be drafted one section per read,
-never end to end in an autonomous run.
+Two rules stand above the four parts, and they answer the two faults no gate caught.
+
+1. Any claim about you or about cairn's stance must come from a brief you wrote or approved,
+   and a script must check that every such claim points at a line in that brief.
+2. A page for an outside reader must be drafted one section per read, never end to end in an
+   autonomous run.
 
 ## The failure it answers
 
@@ -46,14 +50,14 @@ measurement counts all five forms, so a rewrite cannot pass by moving the hinge.
 The gates missed the draft's faults in three places. Vale, the prose linter, and the tell
 scanner, the workstation's own checker for the habits of machine-written prose, both read
 words and punctuation, and the draft was written to pass them. Nothing checked the facts
-against you. And nobody but the author read the page before you did.
+against you. Nobody but the author read the page before you did.
 
 The rhythm problem is not confined to one page. The extend track, the developers' track,
 builds 48 percent of its sentences as hinged pairs, and the reference track builds 44
 percent. The human pages I measured run 19 to 44 percent, and the best of them under 30. The
 samples are small enough that these intervals overlap, so treat the gap as a direction rather
 than a finding ([the cost review](proposal-review-cost.md) carries the intervals). The
-sentence-length gap is firmer: the reference track averages 22 words with one sentence at
+sentence-length gap is firmer. The reference track averages 22 words with one sentence at
 151, where PostgreSQL, MDN, and the Rust reference average 12 to 18 with almost nothing over
 40 ([the reader-fit review](proposal-review-readers.md)).
 
@@ -62,17 +66,16 @@ sentence-length gap is firmer: the reference track averages 22 words with one se
 ### The prose rules
 
 The Federal Plain Language Guidelines are the prose standard, in their March 2011 revision.
-That revision is not yet in the repository. Vendoring it as a PDF is part of the first
-decision below, because plainlanguage.gov now redirects to digital.gov and the live guides
-were re-cut ([the 2011 PDF](https://wid.org/wp-content/uploads/2022/03/FederalPLGuidelines.pdf)).
-The guidelines carry about forty numbered rules in five parts, and the standard adopts these:
+That revision is not yet in the repository, and its only reachable copy is a mirror
+([the 2011 PDF](https://wid.org/wp-content/uploads/2022/03/FederalPLGuidelines.pdf)),
+because plainlanguage.gov now redirects to digital.gov and the live guides were re-cut.
+Vendoring the PDF is part of the first decision below. The guidelines carry about forty
+numbered rules in five parts, and the standard adopts these:
 
 - Part I, audience. A page must be written for one reader at a time, and separate audiences
-  must be addressed separately. cairn's four tracks are this rule already. The register, the
-  repository's own style document at [`docs-register.md`](../../docs-register.md), keeps its
-  list of which words each track's reader is expected to know.
+  must be addressed separately. cairn's four tracks are this rule already.
 - Part II, organization. A page must put its most important information first and the
-  general case before the exception. The structure rules below hold this.
+  general case before the exception. The structure rules hold this.
 - Part III, words. A page must use verbs rather than nouns made from verbs, the active voice
   unless the actor does not matter, "must" for a requirement, and the same term for the same
   thing every time. A term the reader is not expected to know must be defined where it is
@@ -93,30 +96,36 @@ source.
 | Measure | Target | Source | Proposed status |
 |---|---|---|---|
 | Average sentence length | 15 to 20 words | [OPM plain-language guidance](https://www.opm.gov/information-management/plain-language/) | measured and reported, never gated |
-| Longest sentence | under 40, with at most 2 percent of a page allowed up to 65 | Cutts, Oxford Guide to Plain English; the 65 is the longest sentence on SQLite's scope page | gated per track once the existing violations are cleared |
-| Sentence ceiling, admin and editors tracks | 25 words | ASD-STE100, the aerospace industry's controlled-language specification, whose descriptive ceiling this is | gated, by raising the vendored Microsoft rule from suggestion to error |
+| Longest sentence | under 40 words, no exception | Cutts, Oxford Guide to Plain English | gated per track once the existing violations are cleared |
+| Sentence ceiling, admin and editors tracks | 25 words | ASD-STE100, the aerospace industry's controlled-language specification | gated, through a Cairn rule that overrides the vendored Microsoft rule's level |
 | Paragraph length | 3 to 8 sentences and 150 words, hard limit 250 | the guidelines, Part III | gated |
+
+ASD-STE100 sets 20 words for a sentence that gives an instruction and 25 for one that
+describes. The admin and editors tracks take the 25, because most of their sentences
+describe a screen or a state rather than give a step, and one number per track is what a
+linter can hold. The Microsoft sentence-length rule has been running on the editors track at
+"suggestion" all along, so its findings were advisory and nobody acted on them. The vendored
+file is not edited, since the packages are pinned; a Cairn rule sets the level and the number
+for the two tracks.
 
 Three safeguards keep the numbers from doing harm. Every rule file must ship with a fixture
 that fires, because a rule written as a Vale section override silently disables itself on
 the CI version, and the cost review tested this on both versions. The sentence ceiling
-travels with the two rules ASD-STE100 pairs it with: complex text must go into a list, and
-no part of a sentence may be dropped to make it shorter. And the average is never a gate,
+travels with the two rules ASD-STE100 pairs it with. Complex text must go into a list, and
+no part of a sentence may be dropped to make it shorter. The average is never a gate,
 because writing to it produces amputated sentences, as revision 2 of this document showed.
 
-The Google and Microsoft guides keep the mechanics for their tracks. Their Vale packages are
-vendored and pinned in CI. The Microsoft sentence-length rule has been running on the editors
-track at "suggestion" all along, which is why nobody saw its findings, and it must move to
-"error" at 25 words once the track is clean.
+The Google and Microsoft guides keep the mechanics for their tracks, and their Vale packages
+stay vendored and pinned in CI.
 
 ### The structure rules
 
-Structure is set at three levels, and each level has its own gate. The docs set decides
-which pages exist. The page decides its sections and their order. The section decides how
-one block of text is built. The research behind this compared Diátaxis, DITA, Information
-Mapping, Every Page Is Page One, and the reference conventions of PostgreSQL, MDN, and Rust
-([the structure research](proposal-research-structure.md)); each system contributes one
-level, and none is adopted whole.
+Structure is set at three levels, and each level would get its own gate. The docs set
+decides which pages exist. The page decides its sections and their order. The section
+decides how one block of text is built. The research behind this compared Diátaxis, DITA,
+Information Mapping, Every Page Is Page One, and the reference conventions of PostgreSQL,
+MDN, and Rust ([the structure research](proposal-research-structure.md)). Each system
+contributes one level, and none is adopted whole.
 
 #### The docs set
 
@@ -129,26 +138,19 @@ most nine siblings before it groups them.
 
 #### The page
 
-Each page type has a fixed section order, held in a template under
-`docs/internal/templates/` and checked by a new `check:anatomy` script that reads the
-template, so template and gate cannot drift apart. A task guide runs title, contract, before
-you begin, steps, check it worked, and if it fails. A concept page runs definition, why it
-exists, how it works, what it is not, limits, and where to go next. A reference entry runs
-signature, summary, parameters, returns, defaults, failure modes, stability tier, example,
-and see also, which is the order PostgreSQL and MDN use. A task guide must stay under 800
-words and a concept page under 1,500. No page may name its own type or track.
+Each page type would get a fixed section order, held in a template under
+`docs/internal/templates/`, a directory decision 4 creates, and checked by a new
+`check:anatomy` script that reads the template, so template and gate cannot drift apart.
+Three orders are settled now. A task guide runs title, contract, before you begin, steps,
+check it worked, and if it fails. A concept page runs definition, why it exists, how it
+works, what it is not, limits, and where to go next. A reference entry runs signature,
+summary, parameters, returns, defaults, failure modes, stability tier, example, and see also,
+which is the order PostgreSQL and MDN use. The other five orders are written when their
+templates are, and decision 4 approves the three now and the five later. A task guide must
+stay under 800 words and a concept page under 1,500. No page may name its own type or track.
 
-#### The section
-
-A section must cover one idea and state it in its first sentence. A list must be grouped
-once it passes nine items. A heading that tells the reader to do something must start with a
-bare verb, a heading that explains must be a noun phrase, and sibling headings must share one
-form. A new `check:headings` script holds the grammar, beside the two-headed-heading Vale rule
-that landed today.
-
-#### The front door
-
-`why-cairn.md` takes the shape the three strongest "why" pages share, with these sections in
+The front door is a page type of its own, and `why-cairn.md` takes the shape that SQLite's
+scope page, Kubernetes' overview, and Astro's "Why Astro" share, with these sections in
 order:
 
 - your account of where cairn came from
@@ -160,15 +162,24 @@ order:
 - a short checklist the reader answers
 - where to go next
 
-The checklist is SQLite's closing device. It is the one instrument on that page that turns
-the argument into the reader's own decision.
+The checklist is SQLite's closing device, and it is what makes the reader decide.
+
+#### The section
+
+A section must cover one idea and state it in its first sentence. A list must be grouped
+once it passes nine items. A heading that tells the reader to do something must start with a
+bare verb. A heading that explains must be a noun phrase. Sibling headings must share one
+form. A new `check:headings` script would hold all three rules. The two-headed-heading Vale
+rule that landed today,
+[`TwoHeadedHeading.yml`](../../../../.vale/styles/Cairn/TwoHeadedHeading.yml), holds one
+shape of one fault and nothing more.
 
 ### The figure rules
 
-A figure, meaning a diagram or a screenshot, may appear only where the fact being taught is
-a relation among three or more parts, or a branch between paths, that prose would have to
-state as a series. A set of items must be a table, a linear sequence must be a numbered
-list, and code the reader will type must be a code block.
+A figure is a diagram or a screenshot. It may appear only where prose would have to state a
+relation among three or more parts as a series, or where the fact is a branch between paths.
+A set of items must be a table, a linear sequence must be a numbered list, and code the
+reader will type must be a code block.
 
 The pages people write set the bar high. Ten of the fourteen exemplar pages carry no
 explanatory figure, every "why" page carries none, and the reference pages of PostgreSQL,
@@ -181,8 +192,10 @@ survey](proposal-research-figures-sveltekit.md)). Their tutorial uses a live edi
 of any screenshot. An editors track for readers with no code cannot borrow that, and it is
 the one place cairn's docs will carry screenshots the upstream never needed.
 
-The register ruled most of this on 2026-08-15, and eleven Mermaid figures ship under that
-ruling. Two tests were missing, one in each direction, and the standard adds them.
+The register ruled most of this on 2026-08-15
+([the visual-layer rulings](../2026-08-15-docs-visual-layer-rulings.md)), and eleven Mermaid
+figures ship under that ruling. Two tests were missing, one in each direction, and the
+standard adds them.
 
 - A figure that should not be there. Remove it, and if the text still makes the point
   without a new sentence, the figure was decoration. Then write its text alternative before
@@ -197,9 +210,10 @@ Production has two lanes and one routing rule. A Mermaid fence in the page is th
 because it renders on GitHub, on the artifact host, and through cairn.pub's theme, and it
 diffs. Hand-authored SVG is the exception, taken only when the lesson is arrangement rather
 than edges, which is the case for the two ownership figures. Both lanes must draw from one
-palette and one typeface. SVG must never be edited in place; it is emitted from
-`docs/internal/site-figures.svg` by `scripts/figures/build-site-figures.mjs`, which is
-written but not yet committed. No third tool.
+palette and one typeface. SVG must never be edited in place. It would be emitted from
+`docs/internal/site-figures.svg` by `scripts/figures/build-site-figures.mjs`, and neither the
+source, the script, nor the emitted assets are committed yet; decision 5 commits them.
+Mermaid and hand-authored SVG are the only two lanes.
 
 Grading has a mechanical half and a judged half. `check:figures` must grow from a staleness
 check to seven assertions:
@@ -209,7 +223,7 @@ check to seven assertions:
 - nothing overflows the figure's own box
 - text and strokes clear the contrast floor in both color schemes
 - every color is a theme token
-- the node count stays under the register's budget
+- the node count stays at or under 15, which fixes the register's "about 15" at a number
 - the SVG carries no script, no foreign object, and no external reference
 
 `check:visuals` must close the hole where an image with no alt attribute at all passes
@@ -221,11 +235,16 @@ architecture page.
 ### The corpus
 
 The docs must be compared against pages people wrote, and this document calls that set the
-corpus. `docs/internal/corpus/` holds one excerpt per entry, at most 400 words, and a
-manifest records each entry's source, license, fetch date, page type and track, measured
-numbers, and the date you approved it. Two entries per page type is the ceiling. An entry
-you reject is deleted and its id retired. A review must cite a corpus entry beside its
-verdict, and a verdict that cites none does not count.
+corpus. A band, throughout, is the range a track's corpus entries set for a measurement. The
+corpus has these constraints.
+
+- `docs/internal/corpus/` holds one excerpt per entry, at most 400 words.
+- A manifest records each entry's source, license, fetch date, page type and track,
+  measured numbers, and the date you approved it.
+- Two entries per page type is the ceiling.
+- An entry you reject is deleted and its id retired.
+- A review must cite a corpus entry beside its verdict, and a verdict that cites none does
+  not count.
 
 The proposed entries, with the excerpt each would carry:
 
@@ -252,31 +271,37 @@ The proposed entries, with the excerpt each would carry:
   [Kubernetes, Cluster Architecture](https://kubernetes.io/docs/concepts/architecture/), its
   figure with alt text, caption, and lead-in.
 
+The first entry exists as a sample, [corpus-sample-sqlite.md](corpus-sample-sqlite.md), so
+the receipt below can cite it.
+
 ### The review chain
 
-Docs get the chain code has. The steps run in this order, and each names who does it.
+Docs get the chain code has. The steps run in this order, and each names who or what runs
+it. A page for a published path is drafted at that path on a branch, never under
+`docs/internal/record`; this proposal is not a published page, which is why it lives here.
 
-1. I draft the page where it will live. A page for a published path is drafted at that path
-   on a branch, so Vale and the save hook run the right styles from the first save.
-2. The template scripts run: `check:anatomy` and `check:headings`, with `check:docs`,
+1. I draft the page where it will live, so Vale and the save hook run the right styles from
+   the first save.
+2. CI runs the template scripts, `check:anatomy` and `check:headings`, with `check:docs`,
    `check:visuals`, and `check:figures`.
-3. The linters run under a severity contract. An error fails CI, a warning shows in the
-   review, and a suggestion stays local. A rule may move to error only after every existing
-   violation is cleared, which is
+3. CI runs the linters under a severity contract. An error fails the build, a warning shows
+   in the review, and a suggestion stays local. A rule may move to error only after every
+   existing violation is cleared, which is
    [GitLab's rule](https://docs.gitlab.com/development/documentation/testing/) and the
    reason the 40-word ceiling cannot ship as an error today.
 4. The tell scanner reports the sentence numbers, the hinged-pair share, and the
-   short-sentence share beside the corpus entry's numbers. Nothing gates on them, and the
-   bands stay advisory until a track has a thousand sentences from ten documents behind
-   them.
+   short-sentence share beside the corpus entry's numbers. Nothing gates on them. The bands
+   stay advisory until a track has a thousand sentences from ten documents behind them.
 5. `check:provenance` runs on the front door. Every sentence there that states a fact about
    you or about cairn's stance must carry a footnote id, and the script fails on an id that
    does not resolve to a line in the brief.
 6. A fresh reviewer grades the page against its corpus entry. The reviewer is a different
    context from the drafter, and a different model family where one is available, because a
-   judge from the same family shares the drafter's blind spots. Its report carries the page
-   type, the corpus entry, the measurement table, and the verdict.
-7. The reader test runs, as described next.
+   judge from the same family shares the drafter's blind spots
+   ([the evidence base](../../../../../../.claude/skills/writing-voice/evals/research/2026-09-01-ai-tell-evidence-base.md)).
+   Its report carries the page type, the corpus entry, the measurement table, and the
+   verdict.
+7. You or a volunteer runs the reader test, described next.
 8. `check:prose-read` verifies the receipt. A file beside the page carries the page's content
    hash, the measurement table, the corpus entry, the reviewer's verdict, and the reader's
    result, and the gate fails when a published page's hash has no matching receipt.
@@ -286,11 +311,11 @@ Docs get the chain code has. The steps run in this order, and each names who doe
 For a task guide, someone who is not the author does the task from the page. For a concept
 page or the front door, they read it once and paraphrase it back, and every mismatch between
 the paraphrase and the page is a place the page was unclear. This is Part V of the
-guidelines and the step every mature docs team keeps. DigitalOcean's editors run each
-tutorial before it ships, and the Center for Plain Language holds that reader testing, not a
-formula, is the standard ([the peer comparison](proposal-review-peers.md)). It costs a person's time,
-yours or a volunteer's, and it is spent on task guides and the front door, never on
-reference entries.
+guidelines. DigitalOcean's editors run each tutorial before it ships, and the Center for
+Plain Language holds that reader testing, not a formula, is the standard
+([the peer comparison](proposal-review-peers.md)). The test costs a person's time, yours or a
+volunteer's. The pages it applies to are the task guides in the admin and extend tracks and
+the front door, which today number about forty, and never the reference entries.
 
 ### The Claude setup
 
@@ -305,8 +330,8 @@ guidance is that an instruction file Claude ignores half of is worse than a shor
   standing in for the concrete thing, and the page describing itself. Nothing else is added,
   because a longer list of prohibitions narrows what a model avoids without changing what it
   produces.
-- The voice register files under `~/.claude/docs/voice/`, one per audience, each name the
-  corpus entries for their audience and the advisory bands.
+- The voice files under `~/.claude/docs/voice/`, one per audience, each name the corpus
+  entries for their audience and the advisory bands.
 - The tell scanner gains the hinged-pair share and the short-sentence share, in report mode,
   with the bands in a small file per audience. The cost review sizes this at about 285 lines
   of Go with no new dependency.
@@ -320,7 +345,8 @@ guidance is that an instruction file Claude ignores half of is worse than a shor
   skill gains an "author-facing prose" section holding the brief-first, one-section-per-read
   protocol.
 
-The memory paragraph revision 1 proposed is dropped. The register is the durable record.
+The memory paragraph revision 1 proposed is dropped, because the register is the durable
+record.
 
 ## Exclusions
 
@@ -328,19 +354,19 @@ This standard is not a readability gate. Controlled studies since the 1960s have
 rewriting to a sentence-length number does not improve comprehension
 ([Redish 2000](https://dl.acm.org/doi/10.1145/344599.344637),
 [a 2024 randomized trial](https://link.springer.com/article/10.1007/s11606-024-09200-z)).
-The formula authors themselves warned that cutting sentences to hit a score removes the
+Klare, who wrote the formulas, warned that cutting sentences to hit a score removes the
 connectives that make an explanation cohere.
-The numbers here locate a passage for a person to judge.
 
 The four tracks stay, and no page names its type or cites Diátaxis. The register's existing
 rulings on vocabulary, figures, and the front door stand except where this document names a
 change.
 
 Revision 1 proposed rewriting the extend track to the bands. This revision proposes one
-demonstration instead: the worst-measuring extend page rewritten against a task-guide corpus
-entry, read by you beside the original, before any pass is planned. The cost review sizes
-the full pass at six to nine million tokens and 31 to 73 attended sittings, which is why it
-does not appear in the decisions below.
+demonstration instead. `docs/extend/render-safety.md`, the worst-measuring extend page at 67
+percent hinged pairs, would be rewritten against a task-guide corpus entry and read by you
+beside the original, before any pass is planned. The cost review sizes the full pass at six
+to nine million tokens and 31 to 73 attended sittings, which is why it is not a decision
+below.
 
 A second diagram language, a screenshot regime for the developer tracks, and a pixel-diff
 suite for figures were each considered and rejected in the figure research for a stated
@@ -353,59 +379,67 @@ five pages and a reviewer's comparison is whatever it fetched. Assembling the co
 first task after approval.
 
 The measurement script, [`measure-prose.mjs`](../../../../scripts/checks/measure-prose.mjs),
-defines a hinged pair by four patterns. They are a comma followed by a coordinator or a
+defines a hinged pair by four patterns. They are a comma followed by a subordinator or a
 relative word, a colon or semicolon followed by text, a spaced dash, and a comma followed by
-"which" or "that" and two more words. It excludes serial-list commas by that definition. The receipt names this
-definition, and the definition is fixed in the script before any number becomes a rule.
+"and" or "or" when no earlier comma sits in the sentence. That last clause is what excludes
+serial lists, and it was added in this revision after the revision 3 grade found the count
+inflated by them. The receipt names this definition, and the definition is fixed in the
+script before any number becomes a rule.
 
 Vale's rule mechanics were tested on the pinned CI version and on the workstation version,
 and they disagree. A rule that passes on one and not the other is caught only by the
 must-fire fixture, which is why the fixture is not optional.
 
-## Decisions and costs
+This revision has not been reader-tested. Revision 3 was, and its paraphrase matched the
+document; the two soft spots it found, the corpus constraints and the two overriding rules,
+are lists in this revision. The register grade of revision 3 raised twenty-one findings, and
+this revision answers each, but the answers are unverified until the next grade.
 
-Each item can be approved or declined on its own. The sizes come from the cost review's
-table, where small is a file or two, medium is a script or a tuned package, and large is a
-pass.
+## The decisions
+
+Each item can be approved or declined on its own. Small is a file or two, medium is a script
+or a tuned package, and large is a pass; in tokens, small is under a quarter million, medium
+under two million, and large is the cost review's figure for the docs pass. The decisions
+come last because a decision list read before its reasoning is a list of unsupported claims,
+and Part II's most-important-first rule yields to that on a proposal.
 
 | # | Decision | Size |
 |---|---|---|
 | 1 | Adopt the Federal Plain Language Guidelines, 2011 revision, as the prose standard, and vendor the PDF | small |
 | 2 | Hold the paragraph numbers as gated rules and the sentence numbers as reported measurements | small |
-| 3 | Raise the vendored Microsoft sentence rule to error at 25 words on the admin and editors tracks, after clearing the existing violations | small |
-| 4 | Adopt the three structure levels, the eight page types, the templates, and the two new scripts | medium |
-| 5 | Adopt the two figure tests, the two-lane routing rule, the seven `check:figures` assertions, and the `check:visuals` fix | medium |
+| 3 | Add a Cairn rule that fails a sentence over 25 words on the admin and editors tracks, after clearing the 135 admin and 61 editors sentences that exceed it today | small, plus the clearing |
+| 4 | Adopt the three structure levels, the eight page types, three templates now and five later, and the two new scripts | medium |
+| 5 | Adopt the two figure tests, the two-lane routing rule, the seven `check:figures` assertions, and the `check:visuals` fix, and commit the figure source and script | medium |
 | 6 | Take the concept figure off the front door and move the ownership map to the architecture page | small |
 | 7 | Approve the corpus entries above, or name the ones to swap | small |
 | 8 | Adopt the review chain, including the severity contract, `check:provenance`, and the receipt gate | medium |
-| 9 | Adopt the reader test for task guides and the front door | your time per page |
+| 9 | Adopt the reader test for the roughly forty task guides and the front door | your reading, one page at a time |
 | 10 | Approve the Claude setup changes as listed | small, except the scanner change, which is medium |
-| 11 | Approve one demonstration page before any docs pass is planned | small |
+| 11 | Approve the `render-safety.md` demonstration before any docs pass is planned | small |
 
 ## Receipt
 
 Measured with `scripts/checks/measure-prose.mjs` over everything above this section, with
-list items included and then excluded, and every hinge form counted. Vale ran with the
-Google package forced on, since this path is style-exempt, and all three levels are
-reported.
+list items included and then excluded, and every hinge form counted, serial lists excluded.
+The corpus column measures the SQLite sample the same way. Vale ran with the Google package
+forced on, since this path is style-exempt, and all three levels are reported.
 
-| Measure | All sentences | Prose only | Target | Status |
-|---|---|---|---|---|
-| Sentences | 209 | 132 | | |
-| Average length | 16.3 words | 17.6 words | 15 to 20 | prose inside the band; the all-sentences figure counts list items, which the standard wants short |
-| Longest sentence | 38 words | 38 words | under 40 | pass |
-| Hinged pairs, all forms | 45 percent | 46 percent | reported | reported |
-| Sentences under 8 words | 20 percent | 11 percent | reported | reported |
-| Paragraphs over 8 sentences or 150 words | 0 | | 0 | 0_STATUS |
-| Vale, Google package forced | 0 errors, 21 warnings and 115 suggestions | | errors 0 | 0 errors, 21 warnings and 115 suggestions_STATUS |
-| Tell scanner findings | 0 | | 0 | 0_STATUS |
-| Three-item lists counted by the scanner | 5 | | each one a real list | 5_STATUS |
+| Measure | All sentences | Prose only | Corpus entry | Target | Status |
+|---|---|---|---|---|---|
+| Sentences | 226 | 143 | 6 | | |
+| Average length | 16.5 words | 17.7 words | 18.7 words | 15 to 20 | pass on prose; the all-sentences figure counts list items, which the standard wants short |
+| Longest sentence | 42 words | 42 words | 33 words | under 40 | FAIL |
+| Hinged pairs | 35 percent | 37 percent | 0 percent | reported | reported; the prose runs 37 percent against the corpus entry's 0, which is the direction the whole proposal warns about, and the person judging is you |
+| Sentences under 8 words | 19 percent | 13 percent | 17 percent | reported | reported |
+| Paragraphs over 8 sentences or 150 words | 0 | | | 0 | pass |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 43 paragraphs | | | varied | pass |
+| Vale, Google package forced | 0 errors, 23 warnings and 124 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Tell scanner findings | 0 | | | 0 | pass |
+| Three-item lists the scanner counted | 5 | | | each a real list | each checked by hand and each a list of things that number three |
 
-Corpus entries used while drafting: SQLite, Appropriate Uses, for the structure and the
-closing checklist; Kubernetes, Overview, for the exclusions section. The cold-reader test
-ran on revision 2, and its paraphrase matched the document; its six unclear passages are
-fixed in this revision. Provenance: the account of the front-door failure is
+Provenance: the account of the front-door failure is
 [front-door-net-failure.md](front-door-net-failure.md); the track measurements are in
 [proposal-review-readers.md](proposal-review-readers.md); the citation corrections are in
 [proposal-review-self.md](proposal-review-self.md) and
-[proposal-review-peers.md](proposal-review-peers.md).
+[proposal-review-peers.md](proposal-review-peers.md); the revision 3 grade is
+[proposal-review-rev3.md](proposal-review-rev3.md).

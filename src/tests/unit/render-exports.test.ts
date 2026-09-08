@@ -29,9 +29,7 @@ describe('engine entry render surface', () => {
   });
 
   it('is type-only: /render carries no runtime export (ComponentContext erases at build)', () => {
-    for (const name of ['iconSpan', 'cardShell', 'headRow']) {
-      expect(name in authoring).toBe(false);
-    }
+    // The re-homed trio (iconSpan, cardShell, headRow) is covered by the same assertion.
     expect(Object.keys(authoring)).toEqual([]);
   });
 

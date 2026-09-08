@@ -17,7 +17,7 @@ function fixtureHead(node: Element): { head: Element; rest: ElementContent[] } {
   return { head: h('div', { className: ['cairn-head'] }, [h2]), rest };
 }
 
-// Local fixture copy of the retired cardShell (chassis-A, Task 8, re-homed to site-owned code):
+// Local fixture copy of the retired cardShell:
 // `<section class=…><div class="card-body">…</div></section>`.
 function fixtureCardShell(classes: string[], body: ElementContent[]): Element {
   return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);

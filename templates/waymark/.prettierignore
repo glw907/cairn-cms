@@ -1,6 +1,5 @@
+# Every stylesheet, at any depth: the token, prose, and theme sheets are hand-aligned.
 *.css
-src/chassis/*.css
-src/theme/*.css
 
 # The bake writes these fresh (bake-template.mjs) or rewrites them in place
 # (emit-template.mjs), or the emit-template-dir overlay replaces or appends onto them

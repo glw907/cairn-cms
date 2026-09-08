@@ -4,9 +4,8 @@
 // two routes.
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-// Entries per archive page. Sized against a larger fixture corpus than the showcase's current 14
-// posts carries, so pagination does not yet exercise a real second page; a later pass re-derives
-// this against the showcase's own corpus.
+// Entries per archive page. The showcase's own corpus fits on page one, so a site adopting this
+// chassis sizes the constant against its own archive.
 export const ARCHIVE_PAGE_SIZE = 50;
 
 /** One year's entries, newest first within the year. */

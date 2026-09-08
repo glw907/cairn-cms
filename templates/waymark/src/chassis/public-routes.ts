@@ -6,7 +6,7 @@
 // this ONE binding, so the three routes can never drift their rendering config apart by editing
 // one copy and forgetting the others.
 import type { PublicRoutesConfig } from '@glw907/cairn-cms/delivery';
-import { site, siteMeta, ORIGIN } from './content.js';
+import { site, siteMeta } from './content.js';
 import { cairn, publicMediaResolver, mediaEnabled } from '$theme/cairn.config.js';
 
 export const publicRoutesConfig: PublicRoutesConfig = {
@@ -15,8 +15,8 @@ export const publicRoutesConfig: PublicRoutesConfig = {
   origin: siteMeta.origin,
   siteName: siteMeta.title,
   description: siteMeta.description,
-  defaultImage: ORIGIN + '/og/default.png',
-  feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
+  defaultImage: siteMeta.origin + '/og/default.png',
+  feeds: { rss: siteMeta.origin + '/feed.xml', json: siteMeta.origin + '/feed.json' },
   // The same resolver the body render path uses, injected so the read path resolves the frontmatter
   // `image` hero into the `heroImage` projection the template and the SEO head read.
   resolveMedia: publicMediaResolver,

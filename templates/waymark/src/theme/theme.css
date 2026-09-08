@@ -197,7 +197,7 @@
      unscaled mobile value, so the phone size never shrinks from that anchoring. Full derivation:
      docs/internal/public-design-system.md, "Type scale derivation". */
   --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem);   /* tracked nav eyebrow (SiteHeader) */
-  --text-step--1: clamp(0.84rem, 0.84rem, 0.80rem);           /* caption, meta; pinned, see above */
+  --text-step--1: clamp(0.84rem, 0.84rem, 0.80rem);           /* caption, meta; floor over ceiling, so pinned */
   --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem);          /* body, effectively 17px */
   --text-step-1: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* lead, h4 */
   --text-step-2: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* h3, index title */

@@ -22,9 +22,6 @@ export const load: PageServerLoad = async (event) => {
   return { signups: results };
 };
 
-// The raw requireOwner/formData/fail shape below is kept deliberately rather than adopted onto
-// createSectionAction: adopting the helper changes this route's auth and audit path, which is
-// behavioral work for a later pass, not this one.
 export const actions: Actions = {
   create: async (event) => {
     requireOwner(event);

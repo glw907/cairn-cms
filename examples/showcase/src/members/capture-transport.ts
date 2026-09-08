@@ -1,7 +1,7 @@
 // The showcase's capture delivery transport, the harness pattern that proves a
 // channel end to end (docs/extend/add-a-second-audience.md): instead of sending
 // anything, it remembers the last code and a delivery count per contact in module state, so the
-// /test/last-otp route (a later task) can read a code back without polling a real inbox or the
+// /test/last-otp route can read a code back without polling a real inbox or the
 // database directly. It carries devDelivery's own in-body refusal
 // (ctx.env.CAIRN_DEV_BACKEND === '1'), checked inside this function so a wrapper cannot bypass
 // it, which also keeps a default showcase deploy from holding OTP codes in Worker memory.

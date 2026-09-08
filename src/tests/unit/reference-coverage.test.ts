@@ -273,7 +273,7 @@ describe('checkOne (per-subpath stale-name rescope)', () => {
   it('defaults allowlist to NARRATIVE_CONTEXT_ALLOWLIST when omitted', () => {
     const result = checkOne({ entry: entryA, pageKnownNames, globalKnownNamesSet: globalKnownNames });
     // fromB is foreign to entryA's page and NOT covered by the real narrative-context allowlist
-    // (empty since the render trio was re-homed, chassis-A Task 8), so it still reports as stale.
+    // (empty since the render trio was re-homed to site-owned code), so it still reports as stale.
     expect(result.stale).toEqual(['fromB']);
   });
 });
@@ -405,7 +405,7 @@ describe('NARRATIVE_CONTEXT_ALLOWLIST', () => {
     ).toThrow(/no reason/);
   });
 
-  it('carries no entries now that the render trio is re-homed (chassis-A, Task 8)', () => {
+  it('carries no entries now that the render trio is re-homed', () => {
     expect(NARRATIVE_CONTEXT_ALLOWLIST).toEqual([]);
   });
 });

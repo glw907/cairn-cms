@@ -31,7 +31,9 @@ export const site = indexes.site;
 export const posts = indexes.posts;
 
 export const ORIGIN = 'https://showcase.test';
-export const SITE_DESCRIPTION = 'The cairn showcase site.';
+
+// Read through `siteMeta` below, the one composed identity every caller imports.
+const SITE_DESCRIPTION = 'The cairn showcase site.';
 
 /**
  * The site's identity, composed once. `PublicRoutesConfig`'s `siteName`/`description` fields,

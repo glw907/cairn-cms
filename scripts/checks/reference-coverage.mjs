@@ -602,9 +602,8 @@ function knownNamesByPage(entries) {
 // than a claim that it lives here. Each entry names its page, the foreign names it shows, and the
 // reason, the same fail-unless-recorded idiom `check:surface`'s leak registry uses, so a carve-out
 // is self-explaining rather than silent.
-// The render trio (cardShell/headRow/iconSpan) that once justified an entry here is re-homed to
-// site-owned code (chassis-A, Task 8, per engine-rulings.md's three closed retire rows); no
-// current entry needs the carve-out.
+// Empty today: the render trio that once justified an entry here is re-homed to site-owned code,
+// and no current page shows a foreign name.
 /** @type {{ page: string, names: string[], reason: string }[]} */
 export const NARRATIVE_CONTEXT_ALLOWLIST = [];
 

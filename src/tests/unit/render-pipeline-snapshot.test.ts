@@ -12,10 +12,9 @@ import {
   type MakeIcon,
 } from '../../lib/render/rehype-dispatch.js';
 
-// Local fixture copies of the render trio the engine retired (chassis-A, Task 8, re-homed to
-// site-owned code): kept here, byte-for-byte, so this suite's byte-identical lock stands on no
-// engine export beyond the ones the engine still ships. A real site's copy lives beside its own
-// icon renderer, e.g. examples/showcase/src/chassis/render.ts.
+// Local fixture copies of the render trio the engine retired, kept byte-for-byte so this suite's
+// byte-identical lock stands on no engine export beyond the ones the engine still ships. A real
+// site's copy lives beside its own icon renderer, e.g. examples/showcase/src/chassis/render.ts.
 function fixtureIconSpan(glyphEl: Element, role?: string): Element {
   const className = role === 'secondary' ? ['cairn-icon', 'cairn-icon-secondary'] : ['cairn-icon'];
   return h('span', { className }, [glyphEl]);

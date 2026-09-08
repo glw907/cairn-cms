@@ -83,3 +83,40 @@ looked done after the first commit but was not; a fresh grep for the pass vocabu
 (`docs/internal/record/2026-09-04-chassis-inputs/showcase-review-at-the-exemplar-bar.md`
 sections 3.1-3.6) after the first fix round would have caught the remainder before the second
 dispatch.
+
+## Pass-end review harvest
+
+Filed observations from the four-reviewer pass-end fold, not fixes; each is a candidate for a
+later pass or a ROADMAP item, not acted on here.
+
+- `create-site.yml`'s content walk (the `siteLayoutSentinel` leak check) is the workflow's only
+  always-green sentinel: nothing in the job ever exercises the failure path, so a regression in
+  the walk itself (a broken skip set, a silently-swallowed exception) would pass unnoticed.
+- `finalize.mjs` interpolates the owner and repo strings directly into generated TypeScript
+  (the rewritten `githubApp(...)` call). Safe today because GitHub logins and repo names are
+  constrained by GitHub's own charset, but `JSON.stringify` per field would close the gap
+  structurally rather than leaning on that constraint.
+- `createSiteIndexes`'s eager parse of the whole content corpus runs at module scope on the
+  runtime preview route (`previewLoad`), against the Workers startup budget. The ROADMAP's
+  manifest-backed resolver is the real fix; a lazy getter is the interim mitigation if the
+  budget bites before that lands.
+- `scaffold.yml` carries none of `create-site.yml`'s assertions (the personalization check, the
+  leftover check, the content walk, the scripts-dir check), so a regression covered only by
+  `create-site.yml` could still pass whatever `scaffold.yml` gates.
+- `e2e/` still carries the process register that `src` was purged of in Task 11's fix rounds; the
+  purge only reached `src`.
+- The CSS comment surface (`.css` files) has no em-dash or process-citation gate; `check:comments`
+  reaches only `.ts`/`.svelte` under ESLint.
+- `cairn.config.ts` sits at 230 lines with the media wiring as the next natural split if it grows
+  further.
+- `(site)/[...path]/+page.svelte` lacks an `@component` doc block.
+- The banner-expiry test's timezone safety was verified under four zones by hand, not asserted by
+  the suite itself; a future timezone regression has no test catching it directly.
+- `.dev.vars.example` is both tracked in git and matched by `.dev.vars.*` in `.gitignore`; it
+  stays tracked only because it was already committed before the gitignore pattern existed.
+- The styleguide tab strip lacks Home/End keyboard navigation (it has arrow-key roving focus but
+  no jump-to-first/jump-to-last).
+- `headRow`'s `level` parameter is typed as a bare `number` rather than the narrower `1 | 2 | 3`
+  (or similar) a heading level actually takes.
+- The `handleUnseenRoutes` waiver is permanently active until a later pass (B2) sets the
+  manifest's page size; B2's ruling fixed that page size at 13, not 8.

@@ -1,3 +1,6 @@
+# This file serves editor format-on-save; the npm format/format:check scripts glob only
+# ts/js/svelte and never read this file.
+
 # Every stylesheet, at any depth: the token, prose, and theme sheets are hand-aligned.
 *.css
 

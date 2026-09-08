@@ -108,12 +108,20 @@ jobs:
 
             // A path-based leftover check cannot catch a fixture whose file survives the exclude list
             // but leaks marker-stripped content, so walk every file the scaffold ships and fail on the
-            // one string a showcase-only fixture load returns.
+            // one string a showcase-only fixture load returns. The skip set and the NUL-byte guard
+            // below keep the walk safe regardless of what has already run in this job (a generated
+            // dir or a binary asset), rather than relying on this step's current position ahead of
+            // install/build.
+            const SKIP_DIRS = new Set(["node_modules", ".svelte-kit", "build", ".wrangler"]);
             const scaffoldFiles = fs.readdirSync("/tmp/ci-site", { recursive: true, withFileTypes: true });
             for (const entry of scaffoldFiles) {
               if (!entry.isFile()) continue;
-              const filePath = path.join(entry.parentPath ?? entry.path, entry.name);
-              const contents = fs.readFileSync(filePath, "utf8");
+              const parentPath = entry.parentPath ?? entry.path;
+              if (parentPath.split(path.sep).some((segment) => SKIP_DIRS.has(segment))) continue;
+              const filePath = path.join(parentPath, entry.name);
+              const buffer = fs.readFileSync(filePath);
+              if (buffer.includes(0)) continue;
+              const contents = buffer.toString("utf8");
               assert.ok(
                 !contents.includes("siteLayoutSentinel"),
                 "siteLayoutSentinel fixture leaked into " + filePath,
@@ -130,6 +138,7 @@ jobs:
           npm run check
           npm run build
           npm run format:check
+          npm run test:unit
       - name: Dev server reaches the admin
         working-directory: /tmp/ci-site
         run: |

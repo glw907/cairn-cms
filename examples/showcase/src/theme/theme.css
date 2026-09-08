@@ -17,7 +17,7 @@
    everything. The prose reading surface is included at zero extra edits.
 
      1. The brand accent: edit `--color-primary` (and its dark sibling). To stay
-        contrast-stable, ROTATE THE HUE only — change the third oklch value (the
+        contrast-stable, ROTATE THE HUE only: change the third oklch value (the
         248 here) and hold the lightness and chroma. `--color-primary-content`
         (the text on the accent) keeps its light/dark value.
      2. The paper and ink: `--color-base-100` (paper) and `--color-base-content`

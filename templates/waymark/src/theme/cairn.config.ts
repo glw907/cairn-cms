@@ -1,5 +1,6 @@
-// The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
-// a render that runs the engine pipeline, and a backend the dev GitHub double answers for. The
+// The showcase's adapter: the single seam the engine consumes. It declares the posts, pages, and
+// fragments concepts, the media wiring, the navLayout, and the preview knob, over a render that
+// runs the engine pipeline and a backend the dev GitHub double answers for. The
 // icon set and the registered markdown components live in their own modules
 // (`icons.ts`, `markdown-components.ts`); this file holds only the adapter, concepts, backend,
 // and navLayout.
@@ -143,6 +144,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
+  // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)
   // prettier-ignore
   backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },

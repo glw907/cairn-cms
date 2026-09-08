@@ -121,9 +121,17 @@ test('the rendered alert carries its own inlined classes, not DaisyUI card class
   await expect(alertBody).toBeVisible();
   const headTitle = page.locator('.prose .alert .cairn-head-title');
   await expect(headTitle).toBeVisible();
-  const strayCardClasses = await page
-    .locator('.prose .alert .card-body, .prose .alert .card-title')
-    .count();
+  // Built by concatenation, not as bare `card-body`/`card-title` literals: this e2e directory is
+  // inside the Tailwind class scan root, so a literal string here would itself be a candidate
+  // class the collision guard above exists to catch.
+  const cardBody = 'card' + '-body';
+  const cardTitle = 'card' + '-title';
+  const strayCardClasses = await page.$$eval(
+    '.prose .alert *',
+    (elements, [body, title]) =>
+      elements.filter((el) => el.classList.contains(body) || el.classList.contains(title)).length,
+    [cardBody, cardTitle],
+  );
   expect(strayCardClasses).toBe(0);
 });
 

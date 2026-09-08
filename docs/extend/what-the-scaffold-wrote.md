@@ -96,7 +96,7 @@ site scaffolded from the published package carries both.*
 The tree above is complete; the map below is not. It covers the entries that are cairn-specific
 or otherwise need explaining, and skips the tooling and plain SvelteKit files a developer already
 recognizes (`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, the `src/chassis/` files
-not named below, and the root and route-group `+layout.server.ts`/`+layout.svelte`/home
+not named below, and the root and `admin` `+layout.server.ts`/`+layout.svelte`/home
 `+page.server.ts`/`+page.svelte` files SvelteKit's own routing expects). Two files it skips are
 not plain: `src/hooks.server.ts` mounts `createAuthGuard()` behind the dev-backend gate, and
 `src/app.d.ts` declares the platform bindings and `__CAIRN_DEV_BUILD__`. [Build a site by

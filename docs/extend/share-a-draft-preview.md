@@ -144,6 +144,20 @@ as part of their own cascade, closing an id-reuse gap where a stale link could o
 to a different entry later. Publishing deliberately leaves the rows in place, since `previewLoad`
 needs them to answer a now-stale link with "this preview has ended" instead of a bare 404.
 
+## What a layout can leak into a preview payload
+
+A parent layout load runs on every route beneath it, the preview route included, with no session
+and no route-specific gate: SvelteKit serializes its returned data into the page payload the same
+way it does for any other load in the chain, so a value a group layout returns reaches an
+anonymous preview holder exactly as it reaches a public visitor. If your own layout load carries
+data meant only for a signed-in editor or member, mind that boundary yourself; the engine has no
+way to plug a leak it doesn't know your data is privileged.
+
+Two remedies. Branch the load on `event.route.id` so the privileged value is returned only for
+routes that need it, never unconditionally for the whole group. Or mount the preview route in a
+sibling route group, outside the layout that carries the privileged data, so the load never runs
+on the preview path at all.
+
 ## You know it worked when
 
 Minting a link from a draft's edit screen returns a URL that renders the draft, styled like a

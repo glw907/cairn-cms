@@ -22,5 +22,5 @@
  * package out of a default production build.
  */
 export function devBackendOptIn(): boolean {
-  return process.env.CAIRN_DEV_BACKEND === '1';
+  return typeof process !== 'undefined' && process.env?.CAIRN_DEV_BACKEND === '1';
 }

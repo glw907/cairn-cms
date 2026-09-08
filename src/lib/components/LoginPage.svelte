@@ -20,10 +20,11 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
     /** The login load's data: the magic-link shape (site name, an optional error, the CSRF token,
      * and the SSR-resolved admin theme, the persisted cookie choice or the light default; the
      * cookie carries no auth, so it applies before sign-in too), or, under identity mode, the
-     * hand-off shape carrying only the gate's label. */
+     * hand-off shape carrying the gate's label. Both shapes carry the same optional `theme`,
+     * since the cookie applies before sign-in regardless of mode. */
     data:
       | { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' }
-      | { identity: { label: string } };
+      | { identity: { label: string }; theme?: 'cairn-admin' | 'cairn-admin-dark' };
     /** The action result. `sent` is true once a request was accepted; `status` discriminates the
      * neutral, send-error, and throttled outcomes. `error` carries an unexpected action failure
      * (viewAction's generic fail(500)), which has neither field. */
@@ -79,7 +80,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
-<div data-theme={!isIdentity(data) && data.theme ? data.theme : 'cairn-admin'} bind:this={rootEl}>
+<div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if isIdentity(data)}

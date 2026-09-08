@@ -86,7 +86,7 @@ describe('requestAction under identity mode', () => {
       platform: { env: {} },
       setHeaders: () => {},
     };
-    await expectHttpError(() => admin.actions.request(ev));
+    expect((await expectHttpError(() => admin.actions.request(ev))).status).toBe(404);
     expect(cookies.sets).toEqual([]);
     const records = logSpy.mock.calls.map((c) => c[0] as { event?: string });
     expect(records.some((r) => r.event === 'auth.token.minted')).toBe(false);
@@ -100,7 +100,9 @@ describe('confirmLoad under identity mode', () => {
   it('404s and sets no cookie', async () => {
     const admin = createCairnAdmin(runtime(), {});
     const cookies = makeRecordingCookies();
-    await expectHttpError(() => admin.load(adminEvent('/admin/auth/confirm', { search: '?token=x', cookies })));
+    expect(
+      (await expectHttpError(() => admin.load(adminEvent('/admin/auth/confirm', { search: '?token=x', cookies })))).status,
+    ).toBe(404);
     expect(cookies.sets).toEqual([]);
   });
 });
@@ -109,9 +111,13 @@ describe('confirmAction under identity mode', () => {
   it('404s', async () => {
     const admin = createCairnAdmin(runtime(), {});
     const cookies = makeRecordingCookies();
-    await expectHttpError(() =>
-      admin.actions.confirm(adminEvent('/admin/auth/confirm', { cookies, form: { token: 'tok' } })),
-    );
+    expect(
+      (
+        await expectHttpError(() =>
+          admin.actions.confirm(adminEvent('/admin/auth/confirm', { cookies, form: { token: 'tok' } })),
+        )
+      ).status,
+    ).toBe(404);
   });
 });
 

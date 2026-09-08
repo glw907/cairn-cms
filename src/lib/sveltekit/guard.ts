@@ -60,6 +60,91 @@ export interface AuthGuardOptions {
    * it (see {@link applySecurityHeaders} and `brandedAdminPage`).
    */
   includeSubDomains?: boolean;
+  /**
+   * Replace magic-link session resolution with the site's own identity gate (Cloudflare Access
+   * or any other reverse proxy that authenticates the request before it reaches this Worker).
+   * Omitted, the guard resolves the session cookie exactly as today.
+   */
+  identity?: IdentityResolver;
+}
+
+/**
+ * A site's own identity gate, replacing the guard's session-cookie resolution. `resolve` proves
+ * who is making the request, or says why it could not; `logoutUrl` and `label` back the hand-off
+ * page and the doctor's probe.
+ */
+export interface IdentityResolver {
+  /** Prove who is making this request, or say why it could not be proven. */
+  resolve(event: CairnEvent): Promise<ResolvedIdentity | IdentityRefusal>;
+  /**
+   * Where the shell's logout sends the editor: a root-relative path or an `https:` URL,
+   * validated at {@link createAuthGuard}'s construction. The gate owns the session; cairn only
+   * redirects.
+   */
+  logoutUrl: string;
+  /** The gate's name for the hand-off page and the doctor probe (default "your organization's sign-in"). */
+  label?: string;
+}
+
+/** A request the site's identity gate has already authenticated. */
+export interface ResolvedIdentity {
+  ok: true;
+  /** Normalized (trim, lowercase) by the guard before the roster lookup and the log record. */
+  email: string;
+  /**
+   * Advisory only: the roster row's `displayName` wins, and this is used only when the roster
+   * row's is empty, capped at the store's display-name bound. It reaches the commit author, so
+   * it is never trusted over the roster.
+   */
+  displayName?: string;
+}
+
+/** A request the site's identity gate could not authenticate. */
+export interface IdentityRefusal {
+  ok: false;
+  /**
+   * For the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`,
+   * `'expired'`, `'no_email'`, `'keys'`, or a site's own word; every reason is snake_case.
+   */
+  reason: string;
+}
+
+const LOGOUT_URL_PATTERN = /^\/(?![\\/])/;
+// The forbidden set is deliberately every control character (0x00-0x1f, 0x7f), a backslash, and
+// any whitespace.
+const LOGOUT_URL_FORBIDDEN = /[\\\x00-\x1f\x7f\s]/;
+
+/**
+ * Validate `identity.logoutUrl` at construction (the OWASP unvalidated-redirects rule): a
+ * root-relative path with no backslash, control character, or whitespace, or an absolute URL
+ * whose parsed protocol is exactly `https:`. A root-relative candidate is checked again after
+ * percent-decoding, since `/%2f%2fevil.example` decodes to the protocol-relative
+ * `//evil.example` a browser would treat as an absolute redirect. Anything else throws rather
+ * than admitting an open redirect at request time.
+ */
+function validateLogoutUrl(logoutUrl: string): void {
+  const unsafe = (): never => {
+    throw new Error(`cairn: identity.logoutUrl is not a safe redirect target: ${JSON.stringify(logoutUrl)}`);
+  };
+  if (LOGOUT_URL_FORBIDDEN.test(logoutUrl)) unsafe();
+  if (LOGOUT_URL_PATTERN.test(logoutUrl)) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(logoutUrl);
+    } catch {
+      unsafe();
+      return;
+    }
+    if (LOGOUT_URL_PATTERN.test(decoded)) return;
+    unsafe();
+    return;
+  }
+  try {
+    if (new URL(logoutUrl).protocol === 'https:') return;
+  } catch {
+    // fall through to the throw below
+  }
+  unsafe();
 }
 
 /**
@@ -74,6 +159,15 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
   const includeSubDomains = opts.includeSubDomains;
+  const identity = opts.identity;
+  // Validated once, at construction, not per request: an invalid logoutUrl is a site
+  // misconfiguration, and failing fast here beats admitting an open redirect at request time.
+  // The published snapshot below is what every admin path reads; identity.logoutUrl is never
+  // re-read per request.
+  if (identity) validateLogoutUrl(identity.logoutUrl);
+  const identitySnapshot = identity
+    ? { label: identity.label ?? "your organization's sign-in", logoutUrl: identity.logoutUrl }
+    : undefined;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
@@ -130,6 +224,15 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
         path: pathname,
       });
       return renderConditionResponse(REASON_CONDITION.bindings);
+    }
+
+    // Published on every admin path under identity mode, the public login and auth paths
+    // included, since the magic-link handlers live only on those public paths and detect
+    // identity mode by this field alone. The value is the snapshot validated at construction;
+    // the guard is the only writer. identity.resolve itself is called only below, on guarded
+    // paths, never here.
+    if (identitySnapshot) {
+      event.locals.cairnIdentity = identitySnapshot;
     }
 
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded

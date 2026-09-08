@@ -1,6 +1,6 @@
 # Ambient types (`/ambient`)
 
-A type-only module whose import side effect augments SvelteKit's `App.Locals` with the four
+A type-only module whose import side effect augments SvelteKit's `App.Locals` with the five
 fields the engine reads and writes on every admin request, and nothing else: a type a site
 consumes directly, `CairnEnv`, `Editor`, and so on, belongs on [Core](./core.md) or
 [SvelteKit](./sveltekit.md) instead, even one this augmentation's own members reference, since
@@ -22,19 +22,22 @@ declare global {
       cairnBackend?: Backend;
       cairnAuditSink?: AdminActionAuditSink;
       cairnAccess?: AccessMap;
+      cairnIdentity?: { label: string; logoutUrl: string };
     }
   }
 }
 ```
 
-All four members share the flat `cairn` prefix rather than a nested `locals.cairn.{}` namespace:
+All five members share the flat `cairn` prefix rather than a nested `locals.cairn.{}` namespace:
 a flat key costs a site one optional hop (`event.locals.cairnEditor`) instead of two, and a grep
 for `cairnEditor` finds every engine read of the field in any repo, this one included, with no
 namespace to peel back first.
 
 `Editor`, `Backend`, `AdminActionAuditSink`, and `AccessMap` are exports of the same names:
 `Editor`, `Backend`, and `AccessMap` from [core](./core.md), and `AdminActionAuditSink` from
-[sveltekit](./sveltekit.md#adminactionauditsink).
+[sveltekit](./sveltekit.md#adminactionauditsink). `cairnIdentity`'s shape has no export row of
+its own; it's the inline object [`createAuthGuard`'s `identity` option](./sveltekit.md#createauthguard)
+publishes.
 
 - **`cairnEditor`** is the signed-in admin identity. `createAuthGuard` sets it on every
   `/admin/**` request; it's optional because a request the guard hasn't touched carries no editor
@@ -61,6 +64,13 @@ namespace to peel back first.
   argument to reach it at the call site. A zero-config site's guard attaches an empty map, which
   admits nothing, so an opted-in action refuses until the site declares a rule for its target;
   `adminAction` with no `access` option never reads the field.
+
+- **`cairnIdentity`** is the site's identity-gate snapshot, set by
+  [`createAuthGuard`](./sveltekit.md#createauthguard)'s `identity` option on every `/admin/**`
+  path, the public login and auth paths included, since the magic-link handlers detect identity
+  mode by this field alone. `createAuthGuard` is the field's only writer, and the value it
+  publishes is the snapshot validated once at construction, never re-read from the option per
+  request. Absent under the zero-config magic-link path.
 
 The subpath exports nothing at runtime (its JS module is empty), so the import is safe in a
 declaration file and free everywhere else.

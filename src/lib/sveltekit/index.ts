@@ -3,7 +3,17 @@
 // content, and health route factories and functions. An admin Svelte component belongs on
 // `/components` instead, even though a site also wires it into a route: this barrel is server
 // logic only, never a `.svelte` file.
-export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess, type AuthGuardOptions } from './guard.js';
+export {
+  createAuthGuard,
+  requireSession,
+  requireOwner,
+  requireEditor,
+  requireAccess,
+  type AuthGuardOptions,
+  type IdentityResolver,
+  type ResolvedIdentity,
+  type IdentityRefusal,
+} from './guard.js';
 export {
   createAuthRoutes,
   NO_PENDING_REQUEST_ERROR,

@@ -130,8 +130,8 @@ NO plan and NO execution until Geoff reads the spec and rules on the six.
 **Identity seam: Tasks 1 and 2 ACCEPTED** (`b44aee8b`; `bd9c2fc8` and `d6388333`), run
 `wf_b310f457-1bf` halted on Task 2's escalate (the resolver's `displayName` TSDoc claimed a
 store bound that does not exist); conductor ruling 2026-09-08 about 02:30: cap at 120
-characters (the media routes' display-name bound) in the guard with a test, fix dispatched; then
-Tasks 3 to 6 relaunch as a fresh run from the scratchpad's `identity-args-3to6.json`. Implementer
+characters (the media routes' display-name bound) in the guard with a test, fix landed `0b99192a`; Tasks
+3 to 6 relaunched as run `wf_774752b5-aba` (2026-09-08 about 02:45 AKDT). Implementer
 decisions accepted: both conditions render 403; a malformed `ok: true` identity logs `invalid`
 at `warn`; an unlisted refusal word defaults to `warn`.
 

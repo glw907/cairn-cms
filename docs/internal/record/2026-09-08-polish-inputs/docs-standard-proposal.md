@@ -645,7 +645,7 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 | Sentences under 8 words | 19 percent | 10 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
 | Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
-| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 41 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 43 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
 | Vale, Google package forced | 0 errors, 48 warnings and 187 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 1 |  |  | 0 | one finding, the "Summary" heading, recorded as a deviation in the page brief |
 | Three-item lists the scanner counted | 4 |  |  | each a real list | each checked by hand and each a list of things that number three |

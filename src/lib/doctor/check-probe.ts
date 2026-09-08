@@ -124,24 +124,31 @@ async function probe(ctx: DoctorContext, origin: URL): Promise<CheckResult> {
  * gate covers the primary hostname, since neither an Access policy nor its revocation reaches
  * that address. Returns null when the arm does not apply (`workers_dev: false`, no wrangler
  * config `name`, or no Cloudflare credentials to resolve the account's subdomain) or when the
- * hostname does not answer 200, so the caller falls back to the primary result unchanged.
+ * hostname does not answer 200, so the caller falls back to the primary result unchanged. Any
+ * thrown error (a rejected fetch, an unreachable Cloudflare API) also falls back to null rather
+ * than propagating, since this arm's own failure to run must never turn a correctly gated
+ * primary hostname into a check-wide FAIL.
  */
 async function probeWorkersDevExposure(ctx: DoctorContext): Promise<CheckResult | null> {
-  const facts = await readWranglerConfig(ctx.readFile);
-  if (facts?.workersDev === false) return null;
-  if (typeof facts?.name !== 'string') return null;
-  if (!ctx.cfToken || !ctx.cfAccountId) return null;
-  // GET /accounts/{account_id}/workers/subdomain, { result: { subdomain } } out.
-  // https://developers.cloudflare.com/api/resources/workers/subresources/subdomain/
-  const subdomainRes = await cfGet(ctx, `/accounts/${ctx.cfAccountId}/workers/subdomain`);
-  if (!subdomainRes.ok) return null;
-  const body = (await subdomainRes.json()) as { result?: { subdomain?: string } };
-  const subdomain = body.result?.subdomain;
-  if (typeof subdomain !== 'string') return null;
-  const host = `${facts.name}.${subdomain}.workers.dev`;
-  const res = await ctx.fetch(`https://${host}/admin`, { redirect: 'manual' });
-  if (res.status !== 200) return null;
-  return fail('the Worker serves /admin on a hostname the Access application does not cover');
+  try {
+    const facts = await readWranglerConfig(ctx.readFile);
+    if (facts?.workersDev === false) return null;
+    if (typeof facts?.name !== 'string') return null;
+    if (!ctx.cfToken || !ctx.cfAccountId) return null;
+    // GET /accounts/{account_id}/workers/subdomain, { result: { subdomain } } out.
+    // https://developers.cloudflare.com/api/resources/workers/subresources/subdomain/
+    const subdomainRes = await cfGet(ctx, `/accounts/${ctx.cfAccountId}/workers/subdomain`);
+    if (!subdomainRes.ok) return null;
+    const body = (await subdomainRes.json()) as { result?: { subdomain?: string } };
+    const subdomain = body.result?.subdomain;
+    if (typeof subdomain !== 'string') return null;
+    const host = `${facts.name}.${subdomain}.workers.dev`;
+    const res = await ctx.fetch(`https://${host}/admin`, { redirect: 'manual' });
+    if (res.status !== 200) return null;
+    return fail('the Worker serves /admin on a hostname the Access application does not cover');
+  } catch {
+    return null;
+  }
 }
 
 /** The named cookie's value from the Set-Cookie lines, or undefined when no line names it. */

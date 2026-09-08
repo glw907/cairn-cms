@@ -352,6 +352,31 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('Access application does not cover');
   });
 
+  it('falls back to the primary pass when the workers.dev arm itself throws', async () => {
+    const { fetch } = scripted((url) => {
+      if (url === `${ORIGIN}/admin/login`) return loginResponse();
+      if (url === `${ORIGIN}/admin/login?/request`) return actionJson('sent');
+      if (url === 'https://api.cloudflare.com/client/v4/accounts/acct1/workers/subdomain') {
+        return new Response(JSON.stringify({ result: { subdomain: 'glw907' } }), { status: 200 });
+      }
+      if (url === 'https://my-worker.glw907.workers.dev/admin') {
+        throw new Error('getaddrinfo ENOTFOUND my-worker.glw907.workers.dev');
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    const result = await liveProbeCheck(ORIGIN).run(
+      ctx({
+        fetch,
+        cfToken: 'token',
+        cfAccountId: 'acct1',
+        readFile: async (relPath) =>
+          relPath === 'wrangler.jsonc' ? '{"name": "my-worker", "workers_dev": true}' : null,
+      })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('sent');
+  });
+
   it('skips the workers.dev arm when workers_dev is false, never fetching the account subdomain', async () => {
     const { fetch, calls } = probeFetch(loginResponse(), actionJson('sent'));
     const result = await liveProbeCheck(ORIGIN).run(

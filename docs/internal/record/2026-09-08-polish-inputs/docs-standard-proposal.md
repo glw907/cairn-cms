@@ -8,6 +8,12 @@ structure rules are now the largest part, since the front door failed at the out
 it failed at the sentence. The figure rules shrink to what a page needs, and the document
 takes the proposal shape it names for itself.
 
+**Page brief.** Type: proposal, internal, in the Rust RFC and Kubernetes enhancement shape.
+Reader: the project owner, deciding. This page needs: eleven decisions each with a size, the
+evidence behind each, and a receipt that grades the page by its own rules. Deviation: the
+heading "Summary" is one the tell scanner flags as a scaffold heading, and the proposal
+template requires it, so it stays and the scanner's one finding is that heading.
+
 ## Summary
 
 A documentation standard is the set of written rules a page must be drafted against and
@@ -399,7 +405,8 @@ The proposed entries, with the excerpt each would carry:
 
 ### The review chain
 
-The review chain gives a page the same steps a code change gets. The outline comes first.
+The review chain gives a page the same steps a code change gets, and the quality checklist
+below is what the chain verifies. The outline comes first.
 The page type, the title, the headings, and the section order are checked before any prose
 is, because prose work on a page with the wrong shape is wasted. A page whose outline fails
 goes back before step 4 runs. The steps run in this order, and each names who or what runs
@@ -439,6 +446,36 @@ it. A page for a published path is drafted at that path on a branch, never under
 9. `check:prose-read` verifies the receipt. A file beside the page carries the page's content
    hash, the measurement table, the corpus entry, the reviewer's verdict, and the reader's
    result, and the gate fails when a published page's hash has no matching receipt.
+
+#### The quality checklist
+
+Every page walks one checklist before its receipt is written. Each item names what holds it,
+a gate or a person, so nothing rests on memory. The checklist is the judged half of the
+receipt, and the reviewer records each item as met, not met, or not applicable.
+
+- A page brief exists with its four answers. Person.
+- The page has one type and one track, and the registry lists it once. `check:anatomy`.
+- The required sections appear in the template's order, and no extra level-two heading
+  precedes the last required one. `check:anatomy`.
+- The first sentence states the page's one job. Person.
+- Headings follow the grammar for their kind, and siblings share one form. `check:headings`.
+- Every term the reader is not expected to know is defined where it first appears. Person,
+  against the track's vocabulary list.
+- Requirements say "must"; the indicative describes what exists. Person.
+- No sentence passes the ceiling for its track, and no paragraph passes eight sentences or
+  150 words. Vale.
+- The prose measurements are reported beside the corpus entry's, and the hinged-pair share
+  is called out if it runs more than fifteen points above. The tell scanner.
+- Every figure passes the two figure tests, has alt text and a caption, and is referenced
+  from the text. `check:visuals`, `check:figures`, and a person for the two tests.
+- Every relative link and anchor resolves. `check:docs`.
+- Every fact about the author or cairn's stance points at a line in the brief. On the front
+  door, `check:provenance`.
+- A fresh reviewer graded the page against a named corpus entry. Person, recorded in the
+  receipt.
+- A reader ran the page, for a task guide or the front door. Person, recorded in the
+  receipt.
+- The receipt exists beside the page and its hash matches. `check:prose-read`.
 
 ### The reader test
 
@@ -579,17 +616,17 @@ the content hash and the reader's result that a step-9 receipt carries do not ap
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 315 | 177 | 6 | | count only |
-| Average length | 16.2 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
+| Sentences | 343 | 184 | 6 |  | count only |
+| Average length | 16 words | 18.3 words | 18.7 words | 15 to 20 | pass on both; the all-sentences figure runs lower because it counts list items, which the standard wants short |
 | Longest sentence | 39 words | 39 words | 33 words | under 40 | pass |
-| Hinged pairs | 39 percent | 44 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 44 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
+| Hinged pairs | 40 percent | 46 percent | 0 percent | at or under the corpus entry plus 15 points, per step 5 | fail; 46 against 0. The instrument is unsettled, so this fails as a reading, not as a gate, and the person judging is you |
 | Sentences under 8 words | 19 percent | 10 percent | 17 percent | reported | reported |
-| Paragraphs over 8 sentences or 150 words | 0 | | | 0 | pass |
-| Paragraphs under 3 sentences, list lead-ins exempt | 0 | | | 0 | pass |
-| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 39 paragraphs | | | a spread of at least 3, per the paragraph rule | pass |
-| Vale, Google package forced | 0 errors, 39 warnings and 168 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
-| Tell scanner findings | 0.1637465203864418 | | | 0 | FAIL |
-| Three-item lists the scanner counted | 3 | | | each a real list | each checked by hand and each a list of things that number three |
+| Paragraphs over 8 sentences or 150 words | 0 |  |  | 0 | pass |
+| Paragraphs under 3 sentences, list lead-ins exempt | 0 |  |  | 0 | pass |
+| Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 41 paragraphs |  |  | a spread of at least 3, per the paragraph rule | pass |
+| Vale, Google package forced | 0 errors, 42 warnings and 179 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Tell scanner findings | 0.1538698261270965 |  |  | 0 | one finding, the "Summary" heading, recorded as a deviation in the page brief |
+| Three-item lists the scanner counted | 3 |  |  | each a real list | each checked by hand and each a list of things that number three |
 
 Provenance: the account of the front-door failure is
 [front-door-net-failure.md](front-door-net-failure.md); the track measurements are in

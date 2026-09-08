@@ -17,7 +17,6 @@
 
 /**
  * True when the operator opted this process into the dev backend with `CAIRN_DEV_BACKEND=1`.
- *
  * @remarks
  * Always call this behind `__CAIRN_DEV_BUILD__`, never alone: the define is what keeps the dev
  * package out of a default production build.

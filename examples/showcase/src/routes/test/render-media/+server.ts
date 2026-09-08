@@ -13,6 +13,7 @@ import { normalizeAssets, createMediaResolver, type MediaEntry } from '@glw907/c
 import { cairn } from '$theme/cairn.config.js';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
 
+/** Render the posted body with the in-flight media record overlaid onto the resolver. */
 export async function POST({ request }) {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { body, record } = (await request.json()) as { body: string; record: MediaEntry };

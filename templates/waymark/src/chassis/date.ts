@@ -10,7 +10,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat('en-GB', {
 
 /**
  * Render an ISO `YYYY-MM-DD` date as the site's short tabular label, e.g. "9 Jul 2026".
- * @param iso An ISO `YYYY-MM-DD` date string.
+ * @param iso - An ISO `YYYY-MM-DD` date string.
  */
 export function formatDate(iso: string): string {
   return DATE_FORMAT.format(new Date(iso));

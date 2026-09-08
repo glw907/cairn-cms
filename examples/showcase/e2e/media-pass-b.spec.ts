@@ -69,8 +69,10 @@ async function readMainMedia(
   return JSON.parse(content!) as Record<string, { slug: string; displayName: string }>;
 }
 
-/** Open the first-light asset's detail slide-over from the grid. The Library may union extra branch
- *  assets from the other specs, so target the asset by its display name (stable). */
+/**
+ * Open the first-light asset's detail slide-over from the grid. The Library may union extra branch
+ *  assets from the other specs, so target the asset by its display name (stable).
+ */
 async function openAsset(page: import('@playwright/test').Page) {
   await page.goto('/admin/media');
   const grid = page.getByRole('listbox', { name: 'Media library' });

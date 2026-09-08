@@ -7,6 +7,7 @@
 import { json, error } from '@sveltejs/kit';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
 
+/** Return the fake-github double's content for the requested branch and path, or 404. */
 export async function GET({ url }) {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { committedFile } = await import('@glw907/cairn-cms-dev');

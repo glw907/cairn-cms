@@ -105,8 +105,8 @@ test('admin editors page — dark', async ({ page, context, baseURL }) => {
   await expect(page).toHaveScreenshot('admin-editors-dark.png', { fullPage: true });
 });
 
-// The edit page (desk chrome), swept in Phase 4. The subject is the chrome — the topbar desk cluster, the
-// Write/Preview tabs, the format toolbar, the footer environment strip — so the live CodeMirror content is
+// The edit page (desk chrome), swept in Phase 4. The subject is the chrome (the topbar desk cluster, the
+// Write/Preview tabs, the format toolbar, the footer environment strip), so the live CodeMirror content is
 // masked (it is the walled editor theme, not the swept surface). The Write tab settles the DOM; do not focus
 // any chrome element (a focus ring would pollute the captured chrome). The editor mounts unfocused, so no
 // caret paints; the mask guards the seeded body text.

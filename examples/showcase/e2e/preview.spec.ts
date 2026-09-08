@@ -50,8 +50,10 @@ function assertPreviewHeaders(headers: Record<string, string>): void {
   }
 }
 
-/** Select every character of the CodeMirror body editor and retype it, waiting for the hidden
- *  input the form submits to catch up (the mirror-input idiom every other spec in this suite uses). */
+/**
+ * Select every character of the CodeMirror body editor and retype it, waiting for the hidden
+ *  input the form submits to catch up (the mirror-input idiom every other spec in this suite uses).
+ */
 async function setBody(page: Page, text: string): Promise<void> {
   const editor = page.locator('.cm-content');
   await expect(editor).toBeVisible();
@@ -88,8 +90,10 @@ async function discard(page: Page, expectEnded: boolean): Promise<void> {
   });
 }
 
-/** Every field but the title lives behind the Details slide-over (closed by default); open it once,
- *  idempotent against a page that already has it open. */
+/**
+ * Every field but the title lives behind the Details slide-over (closed by default); open it once,
+ *  idempotent against a page that already has it open.
+ */
 async function openDetails(page: Page) {
   const details = page.getByRole('region', { name: 'Entry details' });
   if (!(await details.isVisible().catch(() => false))) {
@@ -135,8 +139,10 @@ async function deleteFromList(page: Page, title: string): Promise<void> {
   await expect(page.getByRole('link', { name: title, exact: true })).toHaveCount(0);
 }
 
-/** Create a fresh, self-contained post through the admin UI, save it (a pending draft, never
- *  published), and leave the editor open on it. Returns the entry's id. */
+/**
+ * Create a fresh, self-contained post through the admin UI, save it (a pending draft, never
+ *  published), and leave the editor open on it. Returns the entry's id.
+ */
 async function createDraftPost(
   page: Page,
   opts: { slug: string; title: string; body: string },
@@ -156,16 +162,20 @@ async function createDraftPost(
   return id;
 }
 
-/** Open the seeded twin-render fixture, apply the one-word edit, and save it. Idempotent: calling
- *  this more than once across tests just resaves the same body. */
+/**
+ * Open the seeded twin-render fixture, apply the one-word edit, and save it. Idempotent: calling
+ *  this more than once across tests just resaves the same body.
+ */
 async function ensureHelloDraft(page: Page): Promise<void> {
   await page.goto(HELLO_EDIT_PATH);
   await setBody(page, helloBody('initial'));
   await save(page);
 }
 
-/** The `<article class="prose">...</article>` fragment of a rendered page's HTML, the portion the
- *  twin-render comparison cares about (independent of `<head>` differences the preview flag adds). */
+/**
+ * The `<article class="prose">...</article>` fragment of a rendered page's HTML, the portion the
+ *  twin-render comparison cares about (independent of `<head>` differences the preview flag adds).
+ */
 function articleFragment(html: string): string {
   const match = html.match(/<article class="prose">[\s\S]*?<\/article>/);
   expect(match, 'expected an <article class="prose"> fragment').toBeTruthy();

@@ -6,6 +6,7 @@
 import { json, error } from '@sveltejs/kit';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
 
+/** Return the last commit the fake-github double recorded. */
 export async function GET() {
   if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     const { lastRecordedCommit } = await import('@glw907/cairn-cms-dev');

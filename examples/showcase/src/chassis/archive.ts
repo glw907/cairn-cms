@@ -15,8 +15,10 @@ export interface ArchiveYearGroup {
   entries: ContentSummary[];
 }
 
-/** One paginated archive segment: the page number actually served, the total page count, and the
- *  year-grouped entries for that page alone. */
+/**
+ * One paginated archive segment: the page number actually served, the total page count, and the
+ *  year-grouped entries for that page alone.
+ */
 export interface ArchivePage {
   page: number;
   totalPages: number;

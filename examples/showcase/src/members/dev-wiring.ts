@@ -24,7 +24,6 @@ function resolveChannelDb(): Promise<ChannelDb> {
 /**
  * Merge the member channel's D1 double into `event.platform.env`, never replacing
  * `event.platform` wholesale.
- *
  * @remarks
  * `devBackendHandle` (`@glw907/cairn-cms-dev`) builds a fresh `event.platform` for `/admin` and
  * `/media`, discarding whatever was there. hooks.server.ts therefore composes

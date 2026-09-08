@@ -143,7 +143,7 @@ form. The flag is read from both `platform.env` and `process.env`. "Deployed" re
 `PUBLIC_ORIGIN` first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
 set. Local development with the flag set is untouched, which is what lets a dev transport use the
 flag as its own enable contract. See [the security
-model](../extend/security-model.md#the-dev-backend-flags-two-refusals-and-what-they-dont-cover) for
+model](../extend/security-model.md#what-the-dev-backend-flags-two-refusals-leave-open) for
 the full rule and what it doesn't cover.
 
 ## Config obligations

@@ -113,7 +113,7 @@ Declaring the four properties on `:root`, or any ancestor, always wins: the bann
 through a `var(--cairn-preview-bg, <fallback>)` and never declares one on its own scoped element,
 so there's no specificity fight to win.
 
-## What the link is good for, and what it isn't
+## What the link is good for
 
 The token alone is the credential. `previewLoad` reads no cookie and touches neither
 `locals.cairnEditor` nor `locals.cairnAccess`, so anyone holding the link can view the draft with

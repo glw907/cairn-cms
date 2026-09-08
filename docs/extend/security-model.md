@@ -225,7 +225,7 @@ reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`, so a sign-
 diagnosable from the logs rather than guessed at. The exception is step 6: a missing or invalid
 session redirects to `/admin/login` without logging.
 
-### The dev-backend flag's two refusals, and what they don't cover
+### What the dev-backend flag's two refusals leave open
 
 `CAIRN_DEV_BACKEND` is refused in two places, deliberately on different terms, both sourced from
 one shared module so neither the wording, the truthiness rule, nor the deployment witness can drift
@@ -343,7 +343,7 @@ publish under the permissive default. Composition also runs a non-throwing check
 gap: see [`config.access_unmapped`](../reference/log-events.md) for the startup warning that
 surfaces a map that covers some, but not all, of the required targets.
 
-### `ownerOnly` stacks on the map, and does not replace it
+### `ownerOnly` stacks on the map
 
 This section states the `ownerOnly` rule in full. Every other page links here rather than restating
 it.

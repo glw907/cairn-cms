@@ -69,7 +69,7 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 every routable entry for the prerenderer. [`/delivery`](../reference/delivery.md#createpublicroutes)
 documents `EntryData`'s full shape and the `CairnHead` component that renders its SEO head.
 
-## The markdown twin, and the `.md` route shape
+## The markdown twin and its `.md` route
 
 `markdownEntries`/`markdownLoad`, the same factory's other pair, build a raw-markdown twin of
 every routable, non-`noindex` entry: a second URL, `.md`-suffixed, that serves the entry's stored

@@ -56,6 +56,12 @@ fail.
 - No em-dash rhythm. The sentence-final elaborative tail is the tell regardless of which
   punctuation carries it; restructure into a second sentence rather than swapping the glyph
   for a comma or colon.
+- No two-headed headings. A heading of the shape "X, and Y" ("The shape, and cairn as one
+  build of it") is a tortured rhythm: two heads on one line, the second hung off a comma.
+  A heading names one thing; if the section has two, split it or name the whole. The
+  `Cairn.TwoHeadedHeading` Vale rule fires on the comma-and shape in any heading (Geoff,
+  2026-09-08). Serial lists in a heading ("Roles, capability, and the access map") are not
+  this tell.
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling,
   Geoff, 2026-08-14). A reader does not need to know the taxonomy a page was planned under;
   this document may name the forms (task guide, reference, and so on) for its own internal

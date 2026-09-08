@@ -49,7 +49,11 @@ escalated on the changelog inventory (three `cardShell` importers, not two; `hea
 sites) and on the generic `headRow` stamping an alert-named class; fix round dispatched about
 20:50 with the rulings (inventory corrected, `cairn-head-title`, the chassis classes out of the
 engine registry, the worked example off DaisyUI names, one e2e assertion). Tasks 9 to 12 relaunch
-from the scratchpad's `args9.min.json` after the fix round is reviewed.
+from the scratchpad's `args9.min.json` after the fix round is reviewed. DONE: Task 8 accepted
+at `33340c67` (three commits: `8fc1343d` the landing, `017a9a1e` the naming and registry fixes,
+`d9322615` and `33340c67` the inventory and e2e); Tasks 9 to 12 launched as run
+`wf_bd778850-d87` about 21:40 AKDT. Spend on chassis-A's execution so far: about 1.9M
+subagent tokens.
 
 When the workflow reports: read the per-task records, decide any needs-decision or escalate,
 check the five bare `$theme/cairn.config` specifiers Task 10's grep cannot match

@@ -91,6 +91,15 @@ describe('guard identity branch: rostered', () => {
     expect(ev.locals.cairnEditor?.displayName).toBe('Roster Name');
   });
 
+  it("uses the resolver's advisory displayName, capped at 120 characters, when the roster row's is empty", async () => {
+    await seedEditor('owner@x.dev', '', 'owner');
+    const longName = 'N'.repeat(200);
+    const guard = guardWith(async () => resolved('owner@x.dev', longName));
+    const ev = event('/admin');
+    await guard({ event: ev, resolve: async () => OK });
+    expect(ev.locals.cairnEditor?.displayName).toBe(longName.slice(0, 120));
+  });
+
   it('normalizes the resolved email before the roster lookup', async () => {
     await seedEditor('owner@example.org', 'Roster Name', 'owner');
     const guard = guardWith(async () => resolved(' Owner@Example.org '));
@@ -127,6 +136,7 @@ describe('guard identity branch: resolved but unrostered', () => {
     const body = await res.text();
     expect(body).toContain('nobody@x.dev');
     expect(ev.locals.cairnEditor).toBeUndefined();
+    expect(ev.locals.cairnIdentity).toEqual({ label: 'Acme SSO', logoutUrl: '/goodbye' });
     const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; email?: string });
     const match = records.find((r) => r.event === 'auth.identity.unknown');
     expect(match).toMatchObject({ event: 'auth.identity.unknown', email: 'nobody@x.dev' });

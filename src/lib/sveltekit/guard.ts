@@ -93,8 +93,8 @@ export interface ResolvedIdentity {
   email: string;
   /**
    * Advisory only: the roster row's `displayName` wins, and this is used only when the roster
-   * row's is empty, capped at the store's display-name bound. It reaches the commit author, so
-   * it is never trusted over the roster.
+   * row's is empty, capped at 120 characters. It reaches the commit author, so it is never
+   * trusted over the roster.
    */
   displayName?: string;
 }
@@ -112,6 +112,11 @@ export interface IdentityRefusal {
 // A refusal reason that locks out the whole roster (a misconfigured gate), not just this one
 // request, so it logs at error rather than warn.
 const IDENTITY_OPERATOR_FAULT_REASONS = new Set(['audience', 'issuer', 'keys', 'error']);
+
+// The cap, in characters, on the resolver's advisory displayName, matching MAX_DISPLAY_NAME in
+// content-routes-media.ts: the value reaches the git commit author, so it is bounded the same
+// way any other author-controlled display string is.
+const MAX_ADVISORY_DISPLAY_NAME = 120;
 
 const LOGOUT_URL_PATTERN = /^\/(?![\\/])/;
 // The forbidden set is deliberately every control character (0x00-0x1f, 0x7f), a backslash, and
@@ -335,9 +340,10 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       // The roster row's displayName wins; the resolver's is advisory only, used solely when the
       // roster row's is empty, since it reaches the commit author and is never trusted over the
       // roster.
+      const advisoryDisplayName = resolved.displayName?.trim().slice(0, MAX_ADVISORY_DISPLAY_NAME);
       event.locals.cairnEditor = {
         email: row.email,
-        displayName: row.displayName || resolved.displayName || row.email,
+        displayName: row.displayName || advisoryDisplayName || row.email,
         role: row.role,
         capability: resolveCapability(vocabulary, row.role),
       };

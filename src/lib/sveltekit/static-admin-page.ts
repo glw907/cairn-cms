@@ -1,4 +1,5 @@
-// The shared shell for cairn's edge-served admin pages (HTTPS-required, CSRF-failed). Each is a
+// The shared shell for cairn's edge-served admin pages (HTTPS-required, CSRF-failed,
+// identity-unresolved, identity-unknown). Each is a
 // self-contained document with inlined Warm Stone tokens for both colour schemes and the system
 // font stack, served raw before SvelteKit renders. The cairn glyph is the same public-domain
 // Temaki mark the admin chrome uses. See docs/internal/admin-design-system.md.
@@ -16,7 +17,7 @@ const CAIRN_GLYPH =
 
 // The verbatim rule set lifted from the original <style> block: the `:root` light tokens, the
 // `@media (prefers-color-scheme: dark)` block, and every rule through `.foot`. It already covers
-// every class both pages use (brand, eyebrow, cta, fix, path, foot).
+// every class all four pages use (brand, eyebrow, cta, fix, path, foot).
 const SHARED_STYLE = `:root {
   color-scheme: light;
   --bg: oklch(96.5% 0.006 75);

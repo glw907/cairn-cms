@@ -397,9 +397,9 @@ this revision answers each, but the answers are unverified until the next grade.
 
 ## The decisions
 
-Each item can be approved or declined on its own. Small is a file or two, medium is a script
-or a tuned package, and large is a pass; in tokens, small is under a quarter million, medium
-under two million, and large is the cost review's figure for the docs pass. The decisions
+Each item can be approved or declined on its own. Small is a file or two, under a quarter
+million tokens. Medium is a script or a tuned package, under two million. Large is a pass,
+at the cost review's figure for the docs pass. The decisions
 come last because a decision list read before its reasoning is a list of unsupported claims,
 and Part II's most-important-first rule yields to that on a proposal.
 
@@ -426,14 +426,14 @@ forced on, since this path is style-exempt, and all three levels are reported.
 
 | Measure | All sentences | Prose only | Corpus entry | Target | Status |
 |---|---|---|---|---|---|
-| Sentences | 226 | 143 | 6 | | |
-| Average length | 16.5 words | 17.7 words | 18.7 words | 15 to 20 | pass on prose; the all-sentences figure counts list items, which the standard wants short |
-| Longest sentence | 42 words | 42 words | 33 words | under 40 | FAIL |
-| Hinged pairs | 35 percent | 37 percent | 0 percent | reported | reported; the prose runs 37 percent against the corpus entry's 0, which is the direction the whole proposal warns about, and the person judging is you |
-| Sentences under 8 words | 19 percent | 13 percent | 17 percent | reported | reported |
+| Sentences | 228 | 145 | 6 |  |  |
+| Average length | 16.3 words | 17.4 words | 18.7 words | 15 to 20 | pass on prose; the all-sentences figure counts list items, which the standard wants short |
+| Longest sentence | 38 words | 38 words | 33 words | under 40 | pass |
+| Hinged pairs | 34 percent | 36 percent | 0 percent | reported | reported; the prose runs 36 percent against the corpus entry's 0, which is the direction the whole proposal warns about, and the person judging is you |
+| Sentences under 8 words | 19 percent | 12 percent | 17 percent | reported | reported |
 | Paragraphs over 8 sentences or 150 words | 0 | | | 0 | pass |
 | Paragraph lengths, shortest to longest, in sentences | 1 to 8, across 43 paragraphs | | | varied | pass |
-| Vale, Google package forced | 0 errors, 23 warnings and 124 suggestions | | | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
+| Vale, Google package forced | 0 errors, 24 warnings and 123 suggestions |  |  | errors 0 | pass on the gate; the warnings are contractions and word-list items from the Google package, which this document does not adopt for itself |
 | Tell scanner findings | 0 | | | 0 | pass |
 | Three-item lists the scanner counted | 5 | | | each a real list | each checked by hand and each a list of things that number three |
 

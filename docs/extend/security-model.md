@@ -215,15 +215,20 @@ roster still decides who may edit; the gate only proves who is asking.
 
 **The effective session lifetime moves to the gate.** cairn's own thirty-day session constant no
 longer applies once `identity` is configured. The gate itself times a session out on its own
-schedule, an operator-set duration on the Access application, up to a month by default. Set it to
-hours, not weeks: a shorter Access session bounds an editor's stolen or leaked browser to a short
-exposure window, since cairn has no independent timeout to fall back on.
+schedule, an operator-set duration on the Access application, 24 hours by default and
+configurable up to a month. Set it to hours, not weeks: a shorter Access session bounds an
+editor's stolen or leaked browser to a short exposure window, since cairn has no independent
+timeout to fall back on.
 
-**The guard never reads a session cookie under `identity`.** Step 6 of [the guard's request
-order](#the-guards-request-order) reads `identity.resolve` instead of a session cookie, so no part
-of the identity-mode request path ever inspects `locals.cairnEditor`'s cookie-derived
-counterpart. A stale magic-link session cookie left over from before a site switched to `identity`
-is simply never read.
+**The guard never reads a session cookie to decide who is asking under `identity`.** Step 6 of
+[the guard's request order](#the-guards-request-order) reads `identity.resolve` instead of a
+session cookie, so no part of the identity-mode request path ever inspects
+`locals.cairnEditor`'s cookie-derived counterpart to authenticate a request. The session cookie
+still gets touched in two narrower places, neither of which authenticates anyone: a CSRF
+rejection reads it only to set the presence flag described next, and `logoutAction` reads it to
+decide whether there is anything to delete before skipping the delete under `identity`. A stale
+magic-link session cookie left over from before a site switched to `identity` never authenticates
+a request either way.
 
 **`hasSession` on a CSRF rejection is structurally always `false` under `identity`.** The
 [`guard.rejected`](../reference/log-events.md) record for a CSRF refusal carries `hasSession`, a
@@ -267,6 +272,8 @@ passes, a 200 that answers with cairn's page directly fails, since the gate isn'
 path at all, the misconfiguration the check exists to catch. The `auth.store` check separately
 fails when the roster holds no owner-capability row, since the guard performs no bootstrap write
 under `identity`; seed the first owner out of band, before enabling `identity`, never after.
+
+## CSRF: cairn owns it, not the framework
 
 SvelteKit's default CSRF check compares the request's `Origin` header against the site's own
 origin and rejects a mismatch. It is a single global switch, with no per-route exception. It also

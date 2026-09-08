@@ -18,31 +18,32 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-08 11:05, written at 16 percent battery, discharging)
+## Immediate next action (2026-09-08 15:40)
 
-Three tracks are live in this session; each resumes from its own artifact.
+Three tracks are live; each resumes from its own artifact.
 
-- **Identity seam** (`identity-seam` worktree): code complete and reviewed; awaiting the
-  from-scratch showcase build, push, PR, and merge on green CI. Reviews are banked in
-  `docs/internal/record/2026-09-07-identity-seam/`; the pass's own ledger entry is in
-  `docs/HISTORY.md`.
-- **Chassis-B1** (`chassis-b` worktree, PR #51 draft, Tasks 1 to 3 accepted): Task 4's fix
-  round is in flight under two conductor rulings (`.cairn-section` off `.lead`, the band
-  bleeds outside `.site-main`). Then the diff-reviewer re-read, then Tasks 5 to 7 as one
-  chain (`scratchpad/b1-args-3to7.json` minus tasks 3 and 4), then the verifier loop and
-  Geoff's five-viewport read.
-- **Documentation standard proposal**
-  (`docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md`, revision 4):
-  in its own review chain (register grade against the SQLite corpus sample plus a cold
-  paraphrase read). It reaches Geoff only when the grade says ready. The polish passes spec
-  (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, revision 2) waits on Geoff's
-  read and is superseded in part by the proposal's docs decisions.
-- **Front door**: `docs/why-cairn.md` carries Geoff's true opener (committed). The
-  proposal's Section A is parked until Geoff gives the page's outline; the register now
-  rules the front door technical and academic. Author facts live in
+- **Identity seam**: MERGED as PR #53 (`ac0d4d52`). Its ledger entry is in `docs/HISTORY.md`;
+  reviews are banked in `docs/internal/record/2026-09-07-identity-seam/`.
+- **Chassis-B1** (`chassis-b` worktree, PR #51, Tasks 1 to 7 accepted, CI green): the
+  pass-end verifier returned fail-with-list on two `error404` items (the band-to-footer
+  sliver, the message measure); the fix round is in flight, then the verifier re-reads the
+  404, then Geoff's five-viewport read from the contact sheets under
+  `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-contact-sheets/`, then merge and
+  B2 stacks on it.
+- **Documentation standard**: spec approved at revision 4
+  (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`; nine page types, the
+  registry lifecycle, staged delivery, the gauge-and-iterate protocol). Plan one, the Claude
+  infrastructure pass, is executing in `~/.dotfiles` (its STATUS carries the ledger). Pass
+  2a (`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md`, 36 tasks, 4.75M) is
+  approved and waits on two things: the machine freeing from B1, and Geoff committing or
+  moving aside his uncommitted working-tree files named in the plan's pre-task 1. Five
+  per-track stages follow 2a in the order reference, extend, admin, editors, front door;
+  polish pass C lands before stage one. The polish spec carries the dated amendment.
+- **Front door**: `docs/why-cairn.md` keeps Geoff's true opener; the page is stage five of
+  the rewrite. Author facts live in
   `docs/internal/record/2026-09-08-polish-inputs/front-door-author-brief.md`.
 
-Guards: sleep inhibitors re-armed to 13:00; battery watchdog exits at 11 percent.
+Guards: sleep inhibitor armed to about 16:30; battery charging.
 
 ## Parallel tracks
 

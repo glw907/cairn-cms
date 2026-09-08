@@ -48,6 +48,12 @@ landed on branch chassis-a, relaunch the rest as a fresh pass-execute-chains wor
 CLI test suite in the gate, then the full pass-end ritual, push, PR, merge on green CI. Then
 author and execute chassis-B."
 
+**Chassis-B execution GRANTED (Geoff, 2026-09-07):** once the four-lens review is folded
+into the plan, run chassis-B as a `pass-execute-chains` workflow through its pass-end ritual to
+a green PR with the captures and the visual-verifier verdict banked; the merge stays Geoff's.
+If the fold splits B into two passes, both halves run under this grant. B starts after
+chassis-A's ritual, PR, and merge.
+
 **Chassis-B plan DRAFTED** (2026-09-07, `docs/superpowers/plans/2026-09-07-chassis-b-pass.md`,
 12 tasks, ceiling 6M, one chain; inputs banked at
 `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-inputs.md`). Drafted against `main`

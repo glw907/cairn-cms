@@ -20,6 +20,8 @@ migrated).
 your-site/
 ├── .gitattributes
 ├── .gitignore
+├── .prettierignore
+├── .prettierrc
 ├── migrations/
 │   ├── 0000_auth.sql
 │   ├── 0003_preview.sql
@@ -85,6 +87,7 @@ your-site/
 ├── svelte.config.js
 ├── tsconfig.json
 ├── vite.config.ts
+├── vitest.config.ts
 └── wrangler.jsonc
 ```
 
@@ -102,7 +105,7 @@ not plain: `src/hooks.server.ts` mounts `createAuthGuard()` behind the dev-backe
 `src/app.d.ts` declares the platform bindings and `__CAIRN_DEV_BUILD__`, and the root
 `src/routes/+layout.server.ts` composes the site name, the primary and footer nav, and the
 islands flag, which every public page and `+error.svelte` read through `page.data`. [Build a
-site by hand](./build-a-site-by-hand.md) writes both from nothing.
+site by hand](./build-a-site-by-hand.md) writes the first two from nothing.
 
 | File | What it is |
 | --- | --- |

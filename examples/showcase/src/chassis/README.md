@@ -44,6 +44,20 @@ SvelteKit's routing is filesystem-based; they import chassis logic through the `
 (the adapter config, the site config) through a second alias, `$theme` (`src/theme/`), the mirror
 image of `$chassis` for everything that is not genre-free.
 
+## Class namespaces
+
+Four class prefixes appear across this showcase, and each names who owns it, not enforced by a
+gate but stated here so a new class reaches for the right one. `cairn-*` is the chassis's: a
+class the engine or a chassis file defines and a theme only ever colors through tokens, never
+restyles the structure of (`cairn-place-center`/`-wide`/`-full`, `cairn-tok-*`, `cairn-router-scrolling`,
+`cairn-focus-ring`). `site-*` is the theme's own chrome and page classes and custom properties
+(`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`). `sg-*` is the styleguide
+route's own demo classes, scoped to `/styleguide` and never read anywhere else. A directive class
+with no prefix at all (`.callout`, `.alert`, `.card`) is engine-fixed under `.prose`: the markdown
+render pipeline emits it directly from a directive, so it is neither the chassis's nor a theme's
+to rename; a theme-registered custom directive component (`.banner`, this theme's own) is free to
+pick its own bare name the same way, since it never collides with the fixed set.
+
 ## Every override seam
 
 **Adapter and delivery wiring.** `content.ts`, `feed.ts`, and `cairn.server.ts` take a theme's own

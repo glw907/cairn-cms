@@ -157,6 +157,11 @@
   --cairn-focus-ring-outline: 2px solid var(--color-primary);
   --cairn-focus-ring-offset: 2px;
   --cairn-focus-ring-radius: 2px;
+
+  /* The header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a`), narrower than
+     `--tracking-eyebrow` above. A generic default so a theme that never redeclares it still gets
+     a real value instead of a dangling reference; a theme usually tunes it in its own theme.css. */
+  --cairn-caption-tracking: 0.08em;
 }
 
 /* Tailwind's @utility must sit at a stylesheet's top level, outside any @layer block, so this

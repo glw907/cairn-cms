@@ -194,15 +194,17 @@
 
      Each step's CEILING is anchored so it does not compound with the separate root font-size clamp
      in site.css (which alone supplies the growth above 1440px); each step's FLOOR is its original,
-     unscaled mobile value, so the phone size never shrinks from that anchoring. Full derivation:
-     docs/internal/public-design-system.md, "Type scale derivation". */
+     unscaled mobile value, so the phone size never shrinks from that anchoring. Two steps land
+     on a constant this way (step--1's floor above its own rescaled ceiling, step-0's ceiling a
+     hair above its floor): a `clamp()` whose three terms never vary across the viewport is
+     written as that plain constant instead, so the source states outright what the CSS would
+     otherwise resolve to. Full derivation: docs/internal/public-design-system.md, "Type scale
+     derivation". */
   --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem); /* tracked nav eyebrow (SiteHeader) */
-  --text-step--1: clamp(
-    0.84rem,
-    0.84rem,
-    0.8rem
-  ); /* caption, meta; floor over ceiling, so pinned */
-  --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem); /* body, effectively 17px */
+  --text-step--1: 0.84rem; /* caption, meta; the resolved constant (floor over ceiling, so pinned) */
+  --text-step-0: 1.06rem; /* body, effectively 17px; the resolved constant */
+  /* step-1 and step-2 share this value deliberately: the lead paragraph and h3/index title read
+     at one size, not two adjacent steps on the ratio. */
   --text-step-1: clamp(1.27rem, 1.25rem + 0.1vw, 1.33rem); /* lead, h4 */
   --text-step-2: clamp(1.27rem, 1.25rem + 0.1vw, 1.33rem); /* h3, index title */
   --text-step-3: clamp(1.52rem, 1.47rem + 0.24vw, 1.66rem); /* h2 */
@@ -287,7 +289,9 @@
      `--tracking-eyebrow` (0.12em), which is the wider, all-caps label device used above the home
      listing and archive ("Latest", "Archive"). --cairn-focus-ring-radius now lives in
      chassis/tokens.css, whose 2px default this theme happens to want unchanged; a theme that
-     wants a different focus-ring corner redeclares it here. */
+     wants a different focus-ring corner redeclares it here. --cairn-caption-tracking also has a
+     chassis default now (a plain :root there); this override is Waymark's own tuned value, not
+     a theme-only token a second theme would leave dangling. */
   --cairn-caption-tracking: 0.09em;
 }
 

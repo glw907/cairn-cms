@@ -459,3 +459,26 @@ Own before set captured at this task's parent commit (`9e472aa7`, Task 3's own l
 - The second-menu editing question (`/admin/nav` is bound to `menus.primary` only, so
   `menus.footer` is developer-edited in `site.config.yaml`) is a chassis harvest item, an
   engine consultation candidate rather than a site-side patch.
+
+### Task 5: CSS conformance
+
+Before set at `~/.cache/cairn-chassis-b2/task-5/before/`, symlinked to `task-4/after/` (Task 4's
+own after set), since Task 4 is B2's own most recent predecessor and its row above confirms it
+moved no paint. After set at `~/.cache/cairn-chassis-b2/task-5/after/`: `home`, `article` (plus
+its light-only 1920 extra), `styleguide`, `archive2`, `error404`, `signups`, every width, both
+schemes (314 manifest entries, no `.missing`).
+
+- No surface moves. Every one of this task's edits computes to the same rendered value it
+  replaces: the two degenerate `--text-step` clamps (`clamp(0.84rem, 0.84rem, 0.80rem)` and
+  `clamp(1.06rem, 1.06rem, 1.0625rem)`) already resolved to the plain `0.84rem`/`1.06rem` they
+  are now written as; `--cairn-caption-tracking`'s new chassis default (`tokens.css`) is
+  overridden unchanged by theme.css's own `0.09em`; and site.css's three former literals
+  (`max-height: 32rem`, `border-left: 3px`, `border-radius: 0.25rem`) are now `--site-*`
+  custom properties resolving to the identical numbers / `magick compare -metric AE` between
+  `task-5/before/` and `task-5/after/` is 0 on every one of the 314 compared files (all six
+  surfaces at every width and scheme); the manifest's differing sha256 hashes on 253 of those
+  314 files are PNG re-encoding only (confirmed AE 0 on each), not a pixel change.
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reports the same 20 pre-existing failures Task 3 and Task 4 recorded (`site home` and
+  `archive page 2`, every width and scheme, byte-for-byte the same test names, `4de378ec`'s own
+  CI-baseline list) and 64 passed; this task moves no baseline, so `MOVED BASELINES:` is empty.

@@ -362,9 +362,12 @@ adds the remaining six, bringing the showcase corpus to 27 posts (14 original pl
 
 - `home` 320/390/768/1440/2560 light and dark: the home page lists `entries.slice(1)` (all posts
   but the featured lead) at `ARCHIVE_PAGE_SIZE` (still 50 in this task), so the row count grows
-  from 13 to 26 (27 posts minus the one featured lead), and every home baseline grows taller with
-  it / thirteen new posts added to `src/content/posts/`, unexcluded from the showcase's own
-  delivery glob / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png` (10 files).
+  from 13 to 26 (27 posts minus the one featured lead) and a new "2025" year heading appears
+  above those rows (the year-grouped archive shape in `src/chassis/archive.ts` groups by
+  `entry.date.slice(0, 4)`, and every prior post predates 2025), and every home baseline grows
+  taller with it / thirteen new posts added to `src/content/posts/`, unexcluded from the
+  showcase's own delivery glob / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png` (10
+  files).
 - `article`, `styleguide`, `error404`, `signups` at every width and scheme: no move / none of
   these surfaces render the posts index / no baseline changes; `magick compare -metric AE`
   between `task-1/before/` and `task-1/after/` is 0 on every tile of all four (193 of 193

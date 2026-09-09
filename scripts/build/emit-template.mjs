@@ -11,16 +11,15 @@
 // Every line from the start marker through the end marker, inclusive, is dropped. The pass is
 // fail-loud by design: an unterminated start, a nested start, or an end with no start throws,
 // naming the file, because a silently dropped end marker would truncate the rest of the file.
-import { cp, readFile, writeFile, rm, mkdir, stat, symlink, unlink } from 'node:fs/promises';
+import { cp, readFile, writeFile, rm, mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { walk } from '../walk-files.mjs';
-
-const execFileAsync = promisify(execFile);
 
 const EXCLUDE_START = 'cairn-template:exclude-start';
 const EXCLUDE_END = 'cairn-template:exclude-end';
+
+/** The committed content manifest's repo-relative path, the same constant every reader shares. */
+const CONTENT_MANIFEST_PATH = path.join('src', 'content', '.cairn', 'index.json');
 
 /**
  * Strip marker-delimited blocks from a file's content. Every line from a start marker through
@@ -116,38 +115,43 @@ export function isAlwaysSkippedPath(rel) {
 
 /**
  * Regenerate the emitted tree's content manifest (`src/content/.cairn/index.json`) so it matches
- * the content the copy actually kept. A plain copy of `from`'s committed manifest would carry
- * entries for any path the exclusion manifest just dropped (the thirteen fixture posts excluded
- * from the scaffold, for one), and the emitted tree's own `cairnManifest()` Vite plugin verifies
- * the manifest against its content at build time, so a stale copy fails every scaffold's first
- * build. Regenerating needs a real Vite resolution (the config module is TypeScript, and its
- * `$theme`/`$chassis` aliases only resolve inside SvelteKit's own config loading), so this borrows
- * `from`'s already-installed `node_modules` through a temporary symlink rather than re-implementing
- * that resolution here; a `from` with no installed dependencies (a fixture directory in a unit
- * test) is left alone; a build that ships with a stale manifest is the ridge a real toolchain
- * catches on, not this script's own tests.
- * @param {string} from the showcase (or other source) the copy came from, with its own
- *  `node_modules` installed
+ * the content the copy actually kept, by dropping every entry whose source content file the
+ * exclusion walk removed. A plain copy of `from`'s committed manifest would carry entries for any
+ * excluded path (the thirteen fixture posts excluded from the scaffold, for one), and the emitted
+ * tree's own `cairnManifest()` Vite plugin verifies the manifest against its content at build
+ * time, so a stale copy fails every scaffold's first build.
+ *
+ * A manifest entry keys back to its content file as `src/content/<concept>/<id>.md`, the same
+ * directory convention `.cairn-template.json`'s own excluded paths already rely on (every concept
+ * descriptor names its content directory `src/content/<concept id>`). The committed manifest is
+ * already canonical (entries sorted by concept then id, a fixed per-entry key order,
+ * `serializeManifest`'s output), and removing entries never disturbs that order or a surviving
+ * entry's own shape, so the filtered result is byte-identical to a fresh regeneration: a kept
+ * entry's content file did not change, so neither does its manifest projection. This runs on the
+ * copied tree alone; it needs no installed dependencies and no subprocess. A `from` with no
+ * committed manifest (a fixture directory in a unit test) is left alone, the same no-op contract
+ * this function has always offered a manifest-free source.
+ * @param {string} from the showcase (or other source) the copy came from
  * @param {string} to the emitted tree, already holding a copied `package.json` and content
+ * @param {string[]} exclude the exclusion manifest's excluded paths
  * @returns {Promise<void>}
  */
-async function regenerateManifest(from, to) {
-  const fromNodeModules = path.join(from, 'node_modules');
-  const hasNodeModules = await stat(fromNodeModules)
-    .then(() => true)
-    .catch(() => false);
-  if (!hasNodeModules) return;
-  const binPath = path.join(fromNodeModules, '.bin', 'cairn-manifest');
-  const toNodeModules = path.join(to, 'node_modules');
-  await symlink(fromNodeModules, toNodeModules);
-  try {
-    await execFileAsync('node', [binPath], { cwd: to });
-  } finally {
-    await unlink(toNodeModules);
-    // The nested Vite/SvelteKit resolution used to regenerate the manifest writes its own
-    // `.svelte-kit/` sync output into `to` as a side effect; the emitted tree never ships one.
-    await rm(path.join(to, '.svelte-kit'), { recursive: true, force: true });
-  }
+async function regenerateManifest(from, to, exclude) {
+  const manifestPath = path.join(from, CONTENT_MANIFEST_PATH);
+  const raw = await readFile(manifestPath, 'utf8').catch((err) => {
+    if (err.code === 'ENOENT') return null;
+    throw err;
+  });
+  if (raw === null) return;
+  const manifest = JSON.parse(raw);
+  const entries = manifest.entries.filter(
+    /** @param {{ concept: string, id: string }} entry */
+    (entry) => !isExcluded(`src/content/${entry.concept}/${entry.id}.md`, exclude),
+  );
+  await writeFile(
+    path.join(to, CONTENT_MANIFEST_PATH),
+    JSON.stringify({ version: manifest.version, entries }, null, 2) + '\n',
+  );
 }
 
 /**
@@ -187,7 +191,7 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
   // install. force ignores its absence, so no existence check is needed.
   await rm(path.join(to, 'package-lock.json'), { force: true });
   await stripMarkedBlocksInTree(to);
-  await regenerateManifest(from, to);
+  await regenerateManifest(from, to, exclude);
   return to;
 }
 

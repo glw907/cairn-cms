@@ -50,9 +50,10 @@ describe('paginateArchive', () => {
   });
 
   // The showcase's own corpus, 27 posts minus the home page's featured lead: 26 entries at the
-  // showcase's ARCHIVE_PAGE_SIZE (13) land exactly on two full pages, the boundary both the home
-  // route and /archive/[page] paginate this same 26-entry slice from. This proves the two
-  // routes' page counts agree, not just that paginateArchive's own arithmetic holds.
+  // showcase's ARCHIVE_PAGE_SIZE (13) land exactly on two full pages. Both the home route and
+  // /archive/[page] call paginateArchive(posts.all().slice(1), n) on this same 26-entry slice
+  // with no page-size override, which the /archive/2 and home baselines render as "Page 2 of 2"
+  // and "Page 1 of 2".
   it('paginates a 27-post corpus (26 after the featured lead) into two pages of thirteen', () => {
     const entries = Array.from({ length: 26 }, (_, i) => entry('2026-01-01', `post-${i}`));
     const homePage = paginateArchive(entries, 1, ARCHIVE_PAGE_SIZE);
@@ -62,8 +63,6 @@ describe('paginateArchive', () => {
     expect(homePage.years[0].entries).toHaveLength(13);
     expect(archivePage2.page).toBe(2);
     expect(archivePage2.years[0].entries).toHaveLength(13);
-    // The home route and the archive route paginate the same slice, so their reported totals
-    // must never disagree.
     expect(homePage.totalPages).toBe(archivePage2.totalPages);
   });
 });

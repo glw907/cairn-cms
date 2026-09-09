@@ -55,6 +55,11 @@ const THEME_CSS_RELATIVE = 'src/theme/theme.css';
 
 const SITE_NAME_LINE = 'siteName: Waymark';
 
+// The siteName line together with a `description:` line directly beneath it, the shape the
+// showcase config carries. Anchored to the start of a line so an indented `description:` nested
+// under some other key is never mistaken for the top-level one.
+const TEMPLATE_HEADER_WITH_DESCRIPTION = new RegExp(`^${SITE_NAME_LINE}\\ndescription: .*$`, 'm');
+
 // The theme file's own re-skin recipe (its header comment) says: rotate the hue only, hold the
 // lightness and chroma, so both the light and dark blocks keep the contrast they were tuned
 // for. Matching each declaration's L and C individually (rather than replacing a fixed literal)
@@ -197,14 +202,27 @@ export async function applySubstitutions(dir, { name, description, brandColor })
   const siteConfig = await readTarget(siteConfigPath, SITE_CONFIG_RELATIVE);
   // A description rides along in this one replacement rather than a second lookup for the line
   // just written: the template's own `siteName:` line is the only string worth gating on, and
-  // looking up a line this function itself produced would gate on nothing.
+  // looking up a line this function itself produced would gate on nothing. The template carries
+  // its own tagline under the same key, so the header the replacement consumes is the siteName
+  // line plus that line when it follows: writing a second one produced a duplicate map key, which
+  // every YAML parser rejects, and leaving the template's would ship showcase copy as a site's
+  // own description.
   const siteNameBlock = description
     ? `siteName: ${name}\ndescription: ${description}`
     : `siteName: ${name}`;
-  await writeFile(
-    siteConfigPath,
-    replaceExact(siteConfig, SITE_NAME_LINE, siteNameBlock, SITE_CONFIG_RELATIVE),
-  );
+  const header = siteConfig.match(TEMPLATE_HEADER_WITH_DESCRIPTION)?.[0] ?? SITE_NAME_LINE;
+  const personalized = replaceExact(siteConfig, header, siteNameBlock, SITE_CONFIG_RELATIVE);
+  // The header replacement only reaches a description adjacent to `siteName:`. A template that
+  // moved the key elsewhere would duplicate it again, so this refuses to write the broken config
+  // rather than leaving the failure for the scaffolded site's first build.
+  const descriptionKeys = personalized.split('\n').filter((line) => line.startsWith('description:'));
+  if (descriptionKeys.length > 1) {
+    throw new Error(
+      `substitute: ${SITE_CONFIG_RELATIVE} would carry ${descriptionKeys.length} top-level ` +
+        'description keys after personalization; the template declares one away from its siteName line',
+    );
+  }
+  await writeFile(siteConfigPath, personalized);
   changed.push(SITE_CONFIG_RELATIVE);
 
   if (brandColor) {

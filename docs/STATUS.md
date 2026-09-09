@@ -24,12 +24,13 @@ Three tracks are live; each resumes from its own artifact.
 
 - **Identity seam**: MERGED as PR #53 (`ac0d4d52`). Its ledger entry is in `docs/HISTORY.md`;
   reviews are banked in `docs/internal/record/2026-09-07-identity-seam/`.
-- **Chassis-B1** (`chassis-b` worktree, PR #51, Tasks 1 to 7 accepted, CI green): the
-  pass-end verifier returned fail-with-list on two `error404` items (the band-to-footer
-  sliver, the message measure); the fix round is in flight, then the verifier re-reads the
-  404, then Geoff's five-viewport read from the contact sheets under
-  `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-contact-sheets/`, then merge and
-  B2 stacks on it.
+- **Chassis-B1** (`chassis-b` worktree, PR #51 draft, HEAD `0f43f550`, CI green on the
+  prior commit): Tasks 1 to 7 accepted; the pass-end verifier passes every render after two
+  seam fix rounds (the footer's top margin moved into the chassis layer so the band's cancel
+  rule applies; see the `tailwind-v4-layer-order` memory). Owed: Geoff's five-viewport read
+  from the contact sheets under
+  `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-contact-sheets/` (home, error404,
+  styleguide; light and dark), then undraft and merge, then B2 stacks on it.
 - **Documentation standard**: spec approved at revision 4
   (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`; nine page types, the
   registry lifecycle, staged delivery, the gauge-and-iterate protocol). Plan one, the Claude

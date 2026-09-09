@@ -9,9 +9,14 @@ this file; the look re-skins from `theme.css`.
 
 The wordmark text is `page.data.siteName`, the same root layout server load's reading `SiteHeader`
 uses; this component never imports `siteConfig` itself.
+
+The nav links come from `page.data.footerNav`, the site's `menus.footer` (`site.config.yaml`),
+resolved by the root layout server load. `/admin/nav` edits only `menus.primary`, so a site owner
+who wants to change the footer edits `site.config.yaml` directly.
 -->
 <script lang="ts">
   import { page } from '$app/state';
+  import type { NavNode } from '@glw907/cairn-cms';
   import { isAdminHref } from './admin-link.js';
 
   /**
@@ -31,14 +36,14 @@ uses; this component never imports `siteConfig` itself.
    * crawler honours, and it also opts the link out of SvelteKit's client-side router, which is
    * correct for a full navigation into the admin surface anyway.
    */
-  type NavItem = { label: string; href: string };
 
-  /** The footer's nav targets. A scaffolded site owner edits this list. */
-  const nav: NavItem[] = [
-    { label: 'Writing', href: '/' },
-    { label: 'Admin', href: '/admin' },
-    { label: 'Feed', href: '/feed.xml' },
-  ];
+  // The root layout server load resolves menus.footer into NavNode[] and hands it down through
+  // page.data. This footer renders only top-level entries with a url, flat.
+  const nav = $derived(
+    (page.data.footerNav ?? []).filter(
+      (item): item is NavNode & { url: string } => item.url !== undefined,
+    ),
+  );
 </script>
 
 <footer class="site-footer border-t border-base-300 bg-base-200">
@@ -49,10 +54,10 @@ uses; this component never imports `siteConfig` itself.
     </a>
 
     <nav class="site-nav flex flex-wrap items-center gap-s text-step--1" aria-label="Footer">
-      {#each nav as item (item.href)}
+      {#each nav as item (item.url)}
         <a
-          href={item.href}
-          rel={isAdminHref(item.href) ? 'external' : undefined}
+          href={item.url}
+          rel={isAdminHref(item.url) ? 'external' : undefined}
           class="inline-flex min-h-11 items-center px-xs text-muted no-underline hover:text-base-content"
         >
           {item.label}

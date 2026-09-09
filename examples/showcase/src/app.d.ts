@@ -24,6 +24,7 @@ declare global {
     // still type-checks against the empty default.
     interface PageData {
       nav?: NavNode[];
+      footerNav?: NavNode[];
       hasIslands?: boolean;
     }
     interface Platform {

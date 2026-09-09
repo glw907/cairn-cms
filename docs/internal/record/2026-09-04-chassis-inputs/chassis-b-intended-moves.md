@@ -505,3 +505,12 @@ surface renders.
   byte-for-byte the same test names, `4de378ec`'s own CI-baseline list) and 168 passed, including
   both `custom-screen.spec.ts` tests (five assertions) and every `admin-office-*`/`signups-*`
   baseline; this task moves no baseline, so `MOVED BASELINES:` is empty.
+
+## `.missing` reconciliation, closed (Task 8)
+
+B1's own Task 7 reconciliation (above) left `archive2`'s ten `.missing` entries open, deferred
+to "B2's archive proof". Task 2's `ARCHIVE_PAGE_SIZE` change closed that gap: `archive2` gained
+its first real render at Task 2 (ten new files, `archive2-{light,dark}-{320,390,768,1440,2560}.png`)
+and carries no `.missing` entry in any B2 after set from Task 2 onward (314 manifest entries at
+Tasks 3 through 5, no `.missing` marker on any of them). No `.missing` entry remains open in
+either pass's before or after sets as of this pass's close.

@@ -320,27 +320,37 @@ The original decision framing, for the record:
     `examples/showcase` gets its round of improvement against the changed engine, as its own
     pass series in this initiative, split into three: chassis-A (structural), then chassis-B1
     and chassis-B2 (the paint-changing half, split at the plan review's fold on 2026-09-07).
-    Chassis-A shipped the structural half: the mechanical Prettier reformat and its scaffold
-    format check, the comment gate reaching the showcase, the fixture job excluded from the
-    emitted scaffold, dead code removed, the `cairn.config.ts` monolith split, the public
-    routes and site metadata single-sourced, the render trio (`cardShell`, `headRow`,
-    `iconSpan`) re-homed per the audit's retire rulings, a unit-test suite for the chassis's
-    pure logic, one idiom across the tree, and the shipped comments purged of process
+    All three shipped. Chassis-A shipped the structural half: the mechanical Prettier reformat
+    and its scaffold format check, the comment gate reaching the showcase, the fixture job
+    excluded from the emitted scaffold, dead code removed, the `cairn.config.ts` monolith
+    split, the public routes and site metadata single-sourced, the render trio (`cardShell`,
+    `headRow`, `iconSpan`) re-homed per the audit's retire rulings, a unit-test suite for the
+    chassis's pure logic, one idiom across the tree, and the shipped comments purged of process
     narration. Chassis-B1 (`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`) shipped the
     rest of the CSS format half, the capture tool and before set, the width matrix
     (`error404` and `admin/signups`), the chassis site shell on the showcase's public chrome,
     the five composition primitives adopted (`cairn-hero`, `cairn-section`, and `cairn-band` on
     real site surfaces, `cairn-card` and `cairn-sidebar-layout` demonstrated on the
     styleguide's composition section), one focus-ring token trio and utility replacing every
-    hand-written ring, and the entry row written once as `EntryRow`. What carries forward,
-    named by plan: chassis-B2 (`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`) takes
-    the archive proof (27 posts at page size 13), site identity and one title convention, the
-    footer nav out of code, CSS conformance, small idioms, and waymark's deliberate adaptation
-    and final rebake.
+    hand-written ring, and the entry row written once as `EntryRow`. Chassis-B2
+    (`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`) shipped the archive proof (a
+    thirteen-post fixture corpus taking the showcase to 27 posts, `/archive/2` real and
+    baselined at `ARCHIVE_PAGE_SIZE = 13`), site identity read from one server-side source
+    (`page.data.siteName`) and one title convention, the footer nav moved out of code into
+    `site.config.yaml`'s `menus.footer`, CSS conformance (`site.css` under `check-public-
+    tokens`, the degenerate clamps collapsed), the small idioms closed (the three `platform!`
+    assertions, the `feed.ts` guard mix), and waymark rebaked after a first-time-developer read.
+    Its harvest (the corpus decision, the second-menu editing question, the `check-public-
+    tokens` scope argument, the CI regen loop's cost) is banked at
+    `docs/internal/record/2026-09-04-chassis-inputs/chassis-b2-harvest.md`, alongside chassis-
+    B1's own harvest in the same directory.
     Internals-B's own close routed one more item here (the showcase exemplar half of audit
     finding 8), landed in chassis-A.
-  - **The polish slice**: routed items from internals-B's close, filed here so a later pass
-    does not have to rediscover them. A ruling on `ShareLinkPanel`'s busy-button idiom against
+  - **The polish slice**: its plan is `docs/superpowers/specs/2026-09-08-polish-passes-design.md`,
+    which routes the full inventory (this initiative's routed items, the friction log, and its
+    own planning sweeps) into a named pass series; that spec and its plans are the source of
+    truth for what polish executes, not a re-derived list here. The items below are the routed
+    inputs that fed it. A ruling on `ShareLinkPanel`'s busy-button idiom against
     `EditPage`'s own rule: `ShareLinkPanel`'s share/revoke buttons use `aria-disabled` for busy
     state, while `EditPage.svelte` (~:1573) reserves native `disabled` for busy as its one
     sanctioned case, so the two idioms now read as contradictory in-repo and the polish slice's
@@ -907,6 +917,15 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **Two `showcase`-flavored strings survive in what a scaffolded site ships (chassis-B2's
+  Task 7 read, filed rather than fixed since both sit outside a docs task's scope and one
+  would move a rendered baseline).** `src/routes/(site)/+page.svelte`'s home masthead copy
+  ("The cairn showcase. You write in markdown...") and two content fixtures
+  (`src/content/pages/about.md`, `src/content/pages/the-trail-crew.md`) describe themselves
+  as the showcase rather than a scaffolded site's own sample content; a new developer keeps
+  this copy verbatim until they edit it. **Trigger:** the next pass that touches the home
+  masthead or the sample pages, or a scaffold-facing docs pass.
 
 - **Four engine defects the measured build surfaced (filed 2026-09-05, from
   `docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review-2.md`'s second
@@ -2032,6 +2051,11 @@ the named human gates only):**
 
 ## Later
 
+- **The second-menu editing question (chassis-B2 harvest, engine consultation candidate).**
+  `/admin/nav`'s `createNavRoutes` binds to one menu (`menus.primary`); chassis-B2 moved the
+  showcase's footer nav to `site.config.yaml`'s `menus.footer` as a developer-edited yaml block
+  rather than a second admin-editable menu, since no site has asked to edit a second menu from
+  `/admin` yet. **Trigger:** a consuming site asking to edit a second menu in the admin UI.
 - **An engine-shipped Cloudflare Access verifier**, replacing the recipe
   `docs/extend/sign-in-through-your-organization.md` teaches today
   (`docs/internal/engine-rulings.md`'s `identity-seam-access-verifier` row, declined for now).

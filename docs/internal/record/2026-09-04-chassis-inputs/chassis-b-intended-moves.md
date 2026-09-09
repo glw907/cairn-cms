@@ -308,19 +308,22 @@ surfaces, and the prior fix round's after set is the correct, if buggy, parent).
   own declaration block, both inside the same `@layer components` block; no `.mt-2xl` utility is
   emitted at all (nothing references it anymore). The 320 `error404` tile height drops from 864px
   (before) to 800px (after), closing the full 64px strip.
-- `error404` 320/390/768/1440/2560 light and dark: the band-to-footer seam closes for real. Only
-  six of the ten baselines actually move under the unmodified suite: 320, 390, and 2560 in both
-  schemes. 768 and 1440 do not move (confirmed both by the committed baseline dimensions, already
-  800px tall pre-fix at those widths, and by the suite run reporting 40 passed / 6 failed): the
-  suite's fixed 800px viewport height and `.cairn-site-shell`'s `min-height: 100vh` already forced
-  the document to exactly 800px at those two widths regardless of the extra 64px margin, so the
-  bug never had visible height to close there. This corrects the plan's working assumption of ten
-  moves; the real `MOVED BASELINES:` list is
-  `error404-{light,dark}-{320,390,2560}.png` (6 files) / `site-visual.spec.ts --update-
-  snapshots=changed` regenerated exactly these 6, `magick compare -metric AE` between the
-  task-6/after and task-7-fix2/after `home` tiles is 0 (10 of 10), and the `styleguide` tiles
-  against `task-7-fix/after` are 0 (10 of 10, the sanctioned Band-demo exception stays a nested,
-  non-direct-sibling case).
+- `error404` 320/390/768/1440/2560 light and dark: the band-to-footer seam closes for real, and it
+  closes at all ten widths, not six. 768 and 1440 were not exempt from the strip: the fix-1
+  captures show it there too, 69px at 768 and 76px at 1440, measured directly. What differs at
+  those two widths is that `.cairn-site-shell`'s `min-height: 100vh` and the suite's fixed 800px
+  viewport already fixed the document at 800px tall before this fix, so removing the extra margin
+  cannot shrink a height that was already pinned. What the fix changes there instead is color: the
+  freed 64px band recolors from whatever showed through the old margin gap to the band's own
+  ground, in place, with no height change to show for it. Every pixel in that band shifted by 7 to
+  9 levels out of 255, a delta under `toHaveScreenshot`'s default per-pixel threshold, so the
+  unmodified suite reported those four baselines unchanged even though the rendered output moved.
+  This corrects the plan's working assumption of six moves; the real `MOVED BASELINES:` list is
+  `error404-{light,dark}-{320,390,768,1440,2560}.png` (10 files) / `site-visual.spec.ts --update-
+  snapshots=changed` regenerated only the 320/390/2560 six under the suite's own threshold,
+  `magick compare -metric AE` between the task-6/after and task-7-fix2/after `home` tiles is 0 (10
+  of 10), and the `styleguide` tiles against `task-7-fix/after` are 0 (10 of 10, the sanctioned
+  Band-demo exception stays a nested, non-direct-sibling case).
 - `home` and `styleguide` 320/390/768/1440/2560 light and dark: no move, confirmed above; neither
   page has a `.cairn-band` directly preceding its footer.
 - The full suite (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green after the update: 46 +

@@ -724,6 +724,7 @@ when the remediation pass lands.
 - **Verdict:** retire. Decisive reason is false: ('owner').home is undefined in JS, not a crash. roles.ts:94-102 is one ternary, and content-routes-core.ts:721-735 shows roleHome is only the first of three branches in the landing policy, so a site copying it gets no policy. Zero importers; same class as DEFAULT_ROLES.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the root barrel (`src/lib/index.ts`); `roleHome` stays exported from `auth/roles.ts`, since `content-routes-core.ts` still calls it internally for the `/admin` landing policy.
 - **Note (internals-B, Task 4):** the still-calls-it-internally fact above is now historical; `content-routes-core.ts` retired at internals-B, and the `/admin` landing policy caller moved to `content-routes-entry.ts`.
+- **Note (polish-11a, Task 1):** the internals-B Note above misattributes the caller. The `/admin` landing policy caller lives in `content-routes-shell.ts` (`indexLoad`), never in `content-routes-entry.ts`; the entry split moves nothing on this row, and the entry file's retirement in Task 3 leaves this row's code path unchanged.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 21; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md) (verdict overturned there).
 

@@ -420,7 +420,8 @@ repointed read-cluster importers with the two ledger rows the move falsifies.
   `src/lib/reproductions/stories/support.ts`, `src/lib/components/FragmentPicker.svelte`,
   `docs/internal/engine-rulings.md` (`audit-sveltekit-fragmenttarget`, whose internals-B Note at
   `:1751` says the export "moved to `content-routes-entry.ts`"; `audit-adapter-rolehome`, whose
-  internals-B Note at `:726` says the `/admin` landing policy caller moved there),
+  internals-B Note at `:726` misattributes the `/admin` landing policy caller to
+  `content-routes-entry.ts`, when the caller is `content-routes-shell.ts`'s `indexLoad`),
   `docs/internal/src-lib-map.md` (the domain-factory list, the `-entry.ts` shorthand at `:145`, and
   the "well over a thousand lines each" sentence at `:148-149`), `CHANGELOG.md`
 - Test: `src/tests/component/FragmentPicker.test.ts`,
@@ -499,8 +500,10 @@ repointed read-cluster importers with the two ledger rows the move falsifies.
   as the home of something this task moves. `audit-sveltekit-fragmenttarget` gains a
   `- **Note (polish-11a, Task 1):**` line saying `FragmentTarget` moved to
   `content-routes-entry-read.ts`, still imported directly by `FragmentPicker.svelte`.
-  `audit-adapter-rolehome` gains one saying the `/admin` landing policy caller moved to the entry
-  read module. Locate both by slug, never by the line numbers in this plan.
+  `audit-adapter-rolehome` gains one correcting the internals-B Note's misattribution: the `/admin`
+  landing policy caller is `content-routes-shell.ts`'s `indexLoad`, never `content-routes-entry.ts`,
+  so this task's move leaves the row's code path unchanged. Locate both by slug, never by the line
+  numbers in this plan.
 - [ ] **Step 7:** update `docs/internal/src-lib-map.md`'s domain-factory list, its `-entry.ts`
   shorthand, and its line-count sentence to describe the new shape. Append the `CHANGELOG.md` line
   under `## Unreleased` (internal module split, no consumer action).
@@ -527,8 +530,9 @@ repointed read-cluster importers with the two ledger rows the move falsifies.
 - `src/tests/unit/content-routes-edit.test.ts` and `src/tests/unit/content-routes-history.test.ts`
   are not in the diff and pass.
 - `audit-sveltekit-fragmenttarget` and `audit-adapter-rolehome` each carry a new
-  `- **Note (polish-11a, Task 1):**` line naming the new module, their heading ids are unchanged,
-  and `check:rulings-format` passes.
+  `- **Note (polish-11a, Task 1):**` line, `audit-sveltekit-fragmenttarget`'s naming the new module
+  and `audit-adapter-rolehome`'s correcting the internals-B Note's caller misattribution; their
+  heading ids are unchanged and `check:rulings-format` passes.
 - No file outside the named set is in the diff.
 - The report names the importer count found, the count changed, and the deferred list.
 

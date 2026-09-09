@@ -594,6 +594,11 @@ fans out `svelte-reviewer`, `daisyui-a11y-reviewer`, and `web-auth-security-revi
 and all four for polish-C, with the security reviewer reading the auth renames and the outcome
 re-key.
 
+Amended 2026-09-09 (Geoff): the per-task gate omits the showcase e2e for paint-neutral tasks;
+paint tasks keep it; the pass-end gate and CI on every push run the full suite. Evidence:
+chassis-B2's eight per-task e2e runs caught nothing the check suite, the diff reviewer, and CI
+did not.
+
 ## Risks
 
 - **The monolith splits move a lot of text.** One commit per cluster across three tasks,

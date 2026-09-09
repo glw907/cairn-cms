@@ -1521,6 +1521,13 @@ check is dropped for cost; the spec forecloses that. The string is byte-identica
 polish-11a derived at `ac911ec3`, because the committed workflows did not change between the two
 derivations.
 
+Per the spec's 2026-09-09 amendment ("The gate, all three passes"), the per-task gate for a
+paint-neutral task is the fence's string with the trailing
+`&& CI=1 npm --prefix examples/showcase run test:e2e` removed. This plan's paint tasks, per its
+own paint-branch table (the capture-pair tasks 2, 3, 4, 5, 10 and the produced-moved-list tasks
+6, 7, 8, 9), run the full fence string unchanged. Tasks 1 and 11 (no rendered surface) drop the
+e2e clause. The pass-end ritual runs the full string regardless.
+
 **What changed is the wrapper, not the list.** Twelve of the npm scripts in the derived list chain
 `npm run package` as a prerequisite (`check:package`, `check:reference`,
 `check:reference:signatures`, `check:surface`, `check:self-use`, `check:custom-surface`,

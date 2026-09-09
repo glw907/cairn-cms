@@ -460,3 +460,60 @@ ceiling arithmetic account for the verifier loop's fix dispatch.
 - **Consumer sites:** the focus-ring tokens, `EntryRow`, and the primitives in each site's own
   chassis pass by its own choice; nothing here is a `Consumers must:`.
 - **Release:** the window holds; ONE cut after polish.
+
+## Post-mortem
+
+Merged 2026-09-08 as PR #51 (`58ed9d1f`), after Geoff's five-viewport read of the committed
+contact sheets. Ran on `.claude/worktrees/chassis-b` off post-chassis-A `main`.
+
+**What was built.** All seven numbered tasks landed (Task 8 was the reserved fix-round slot,
+not a deliverable): the capture tool and the pass before set, plus the CSS format half
+(`capture-surfaces.mjs`, the intended-moves manifest, the three-file Prettier reformat pinned to
+double quotes); the width matrix gained `error404` and `admin/signups` at all five widths in
+both schemes; the showcase's public chrome adopted the chassis site shell
+(`.cairn-site-shell`/`.cairn-site-main`) on `(site)/+layout.svelte` and `+error.svelte`; the five
+composition primitives landed, `cairn-hero`, `cairn-section`, and `cairn-band` on real site
+surfaces (the styleguide masthead, the home page's `.index`, the root error page's message
+block) and `cairn-card`/`cairn-sidebar-layout` demonstrated on the styleguide's composition
+section, the sanctioned exception; one focus-ring token trio
+(`--cairn-focus-ring-outline`/`-offset`/`-radius`) and a `cairn-focus-ring` utility replaced
+every hand-written ring; the entry row was written once as `EntryRow.svelte`, retiring three
+duplicated `<article class="entry">` blocks. Task 7 banked the harvest
+(`chassis-b1-harvest.md`), the per-surface contact sheets, and the hand-off to B2, moved B1's
+shipped items out of `ROADMAP.md`'s chassis tier, and closed the `CHANGELOG.md` entry.
+
+**What was verified, with evidence.** Each task ran through the implementer/diff-reviewer/gate
+chain with its own before/after capture pair and its `INTENDED MOVES:` row appended to
+`chassis-b-intended-moves.md` in the same commit as the change; every paint-neutral task
+(2, 3, 5, 6) additionally reported `magick compare -metric AE` = 0 across its touched surfaces'
+tiles. The pass-end fresh-context `visual-verifier` graded the whole surface set against the
+committed manifest in a bounded loop: it found the band-to-footer seam fix from Task 7's first
+round a no-op under Tailwind v4's layer order (the utility `mt-2xl` on `SiteFooter.svelte` beat
+the `@layer components` cancel rule regardless of selector specificity), which the second fix
+round closed by moving the footer's top margin itself into `@layer components`; a third read
+after that fix passed clean. Four baselines (`error404` at 768/1440 in both schemes) had passed
+the unmodified suite's per-pixel threshold on the first fix even though the render had actually
+moved (a 7-to-9-level color shift on already-height-pinned tiles), caught only by the verifier's
+tile read and `magick compare`, not by `toHaveScreenshot`. The conductor's own one-check read
+covered every changed surface's after tiles at 320 and 2560 light from the contact sheets.
+Geoff's five-viewport read of the merged contact sheets (`chassis-b-contact-sheets/`) was the
+merge gate and passed with no further findings.
+
+**Decisions locked.** The ruled inputs recorded at the top of this plan (the site-shell paint
+boundary, the five primitives' call-site assignments, the focus-ring token/utility shape, the
+CI-canonical baseline regen loop, the 31-baseline count) all held through execution with no
+reopening. The Task 1 escalation ruling (recorded 2026-09-08 in the CSS quote-style ruled input)
+kept `check-public-tokens.mjs` untouched, routing the quote pin to a `.prettierrc` override
+instead, and is now the general lesson: a mechanical reformat pins its own style choice rather
+than reaching into an engine script that is a different pass's to touch. The layer-order lesson
+from the seam fix (Tailwind v4's cascade layers, not selector specificity, decide a cross-file
+rule conflict; both halves of a seam must share a layer) is banked in the
+`chassis-b1-harvest.md` and the `tailwind-v4-layer-order` memory for the next primitive
+adoption anywhere in the family.
+
+**Blockers.** None; every task closed inside the pass, including both fix rounds.
+
+**Budget.** Tokens: the workflow reported 839,281 subagent tokens for Tasks 5 through 7; the
+earlier tasks (1 through 4) ran before that measurement was wired in and are not counted here.
+Attended sittings: one, the five-viewport contact-sheet read. Planning misses: zero, no
+ambiguity surfaced after plan approval that a planning question would have caught.

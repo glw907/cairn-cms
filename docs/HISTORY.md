@@ -7,6 +7,50 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Chassis-B1, merged 2026-09-08
+
+Branch `chassis-b`, seven tasks executed on `.claude/worktrees/chassis-b` off post-chassis-A
+`main`; plan and post-mortem at `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` (PR #51,
+`58ed9d1f`); harvest at `docs/internal/record/2026-09-04-chassis-inputs/chassis-b1-harvest.md`.
+
+**What landed.** The showcase, the chassis every theme copy and the scaffold descend from, now
+uses the chassis it ships. The capture tool (`capture-surfaces.mjs`) and a committed
+intended-moves manifest drove every paint task's before/after proof. The width matrix gained
+`error404` and `admin/signups` at five widths in both schemes. The public chrome adopted the
+chassis site shell (`.cairn-site-shell`/`.cairn-site-main`). The five composition primitives
+landed: `cairn-hero`, `cairn-section`, and `cairn-band` on real site surfaces (the styleguide
+masthead, the home page's `.index`, the root error page's message block), `cairn-card` and
+`cairn-sidebar-layout` demonstrated on the styleguide's composition section (the sanctioned
+exception, since neither primitive has a real call site in this theme). One focus-ring token
+trio and a `cairn-focus-ring` utility replaced every hand-written ring. The entry row was
+written once as `EntryRow.svelte`, retiring three duplicated markup blocks.
+
+**What the gate caught.** Task 4's `.cairn-section` adoption on the home page's `.index` needed
+a redesign-rule fix round (an inline `style="margin: 0;"` on the styleguide's Section demo beat
+the primitive's own `@layer components` gap rule outright; moved to a named class with no
+inline margin). Task 7's band-to-footer seam fix was a no-op on its first round: the cancel
+rule lived in `@layer components` while the footer's `mt-2xl` was a Tailwind utility, and
+Tailwind v4's layer order (theme, base, components, utilities) lets the utility win regardless
+of selector specificity, no matter what the seam's own selector specificity says. The fix moved
+the footer's margin itself into `@layer components`, giving both halves of the seam the same
+layer. The pass-end verifier separately caught four `error404` baselines (768/1440, both
+schemes) that had passed the unmodified suite's default per-pixel threshold on the first fix
+round even though the render had moved: a 7-to-9-level color shift on tiles whose height was
+already pinned by the suite's fixed viewport, invisible to `toHaveScreenshot` but visible to a
+tile read and `magick compare -metric AE`.
+
+**What a later pass would be wrong to rediscover.** A cross-file CSS conflict in a Tailwind v4
+codebase is decided by cascade layer order, not selector specificity; a seam fix must put both
+halves of the rule in the same layer or the higher-specificity half can still lose. A baseline
+diff under the suite's own per-pixel threshold is not proof nothing moved; a color-only shift on
+a height-pinned tile can pass the automated suite while a tile-level `magick compare` catches
+it. The capture tool's output directories are write-once by design (refuses a non-empty target)
+so a re-run reports the collision instead of silently overwriting a reference set. The exact
+`magick montage`/`annotate` recipe that reproduces the `chassis-b-contact-sheets` PNGs
+bit-for-bit lives in the `contact-sheet-montage-recipe` implementer memory, not in any plan or
+commit; the next pass needing contact sheets should read it rather than re-deriving the
+pipeline.
+
 ## Identity seam, code complete and reviewed 2026-09-08
 
 Branch `identity-seam`, seven tasks executed on `.claude/worktrees/identity-seam` off `main`, in

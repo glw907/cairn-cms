@@ -38,6 +38,18 @@ Three tracks are live; each resumes from its own artifact.
   fresh-context verifier over six surfaces (B1's five plus archive2), then Geoff's
   five-viewport read. If resuming cold: check `git log chassis-b2` for which tasks committed
   and relaunch the remaining tasks the same way.
+- **Polish** (planning, 2026-09-08 evening): the polish spec
+  (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`) is being rewritten to
+  revision 4 under three rulings: no docs investment before the rewrite (polish-B dissolved,
+  polish-D dropped entirely, Geoff's uncommitted front-door files stay unowned until the docs
+  initiative replaces them), polish-A split into 11a and 11b along the risk lens's cut, and
+  polish-C as slice 12. Three-lens review of revision 3 is banked at
+  `docs/internal/record/2026-09-08-polish-inputs/spec-review-rev3-*.md`; the fold record is
+  `spec-review-rev3-fold.md`. Next: verify revision 4, author the 11a plan, adversarial-review
+  it, then Geoff reads spec and plan together. Chassis-B2 Task 1 escalated on an emitter
+  scope creep (manifest regeneration via a showcase-install subprocess, red on CI); ruled: the
+  emitter filters the copied manifest with no subprocess; fix dispatched, Task 2 launches as
+  its own run after the fix passes review.
 - **Documentation standard**: spec approved at revision 4
   (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`; nine page types, the
   registry lifecycle, staged delivery, the gauge-and-iterate protocol). Plan one, the Claude

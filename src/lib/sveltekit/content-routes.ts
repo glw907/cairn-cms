@@ -24,6 +24,7 @@ import type { ContentRoutesConfig } from './content-routes-context.js';
 import { createShellActions } from './content-routes-shell.js';
 import { createListActions } from './content-routes-list.js';
 import { createEntryActions } from './content-routes-entry.js';
+import { createEntryReadActions } from './content-routes-entry-read.js';
 import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
@@ -38,7 +39,7 @@ export type { EntrySummary, ListData } from './content-routes-list.js';
 
 export type { ContentFormFailure } from './content-routes-shared.js';
 
-export type { EditData } from './content-routes-entry.js';
+export type { EditData } from './content-routes-entry-read.js';
 
 export type {
   MediaLibraryData,
@@ -61,6 +62,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const shell = createShellActions(ctx);
   const list = createListActions(ctx);
   const entry = createEntryActions(ctx);
+  const entryRead = createEntryReadActions(ctx);
   const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -76,9 +78,9 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     settingsSaveAction: settings.settingsSaveAction,
     vocabularyLoad: settings.vocabularyLoad,
     vocabularySaveAction: settings.vocabularySaveAction,
-    createAction: entry.createAction,
-    editLoad: entry.editLoad,
-    historyLoad: entry.historyLoad,
+    createAction: entryRead.createAction,
+    editLoad: entryRead.editLoad,
+    historyLoad: entryRead.historyLoad,
     saveAction: entry.saveAction,
     publishAction: entry.publishAction,
     publishAllAction: entry.publishAllAction,

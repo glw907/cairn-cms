@@ -288,6 +288,14 @@
 
 ### Changed
 
+- The `content-routes-entry.ts` monolith begins splitting into one module per entry cluster
+  (internal, no public surface change): `content-routes-entry-read.ts` now declares
+  `createEntryReadActions` (`createAction`, `editLoad`, `historyLoad`) and the exported
+  `EditData` and `FragmentTarget` types, and `content-routes-shared.ts` gains the cross-cluster
+  helpers `draftFromBranchHead`, `commitEditorName`, `HISTORY_LIMIT`, and `invalidIdMessage`.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  Consumers must: nothing.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

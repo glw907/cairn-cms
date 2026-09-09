@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import type { AdminData } from '../../lib/sveltekit/cairn-admin.js';
 import type { AuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import type { EditorRoutes } from '../../lib/sveltekit/editors-routes.js';
-import type { EditData } from '../../lib/sveltekit/content-routes-entry.js';
+import type { EditData } from '../../lib/sveltekit/content-routes-entry-read.js';
 import type { ListData } from '../../lib/sveltekit/content-routes-list.js';
 import type { HelpData, AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
 import type { HistoryData } from '../../lib/sveltekit/types.js';

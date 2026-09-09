@@ -134,21 +134,24 @@ files whose specific types ride out through the root barrel.
 ## 4. The `content-routes-*` sibling pattern
 
 `sveltekit/content-routes.ts` is the composition root: it builds one shared
-`ContentRoutesContext` (`content-routes-context.ts`), then merges eight per-domain sibling
+`ContentRoutesContext` (`content-routes-context.ts`), then merges the per-domain sibling
 factories into the one object `cairn-admin.ts` consumes. The pattern is a shared filename prefix
-standing in for a directory, ten files sharing `content-routes-` instead of one `content-routes/`
+standing in for a directory, files sharing `content-routes-` instead of one `content-routes/`
 directory:
 
 - `content-routes-context.ts`: the shared context every domain factory closes over.
 - `content-routes-shared.ts`: not a domain factory, only the primitives several domains import
-  (concept and entry-id resolution, the flattened action-failure shape).
-- `content-routes-shell.ts`, `-list.ts`, `-entry.ts`, `-preview.ts`, `-media.ts`, `-tidy.ts`,
-  `-settings.ts`, `-dictionary.ts`: the eight domain factories, each named for what it does rather
-  than the earlier single `content-routes-core.ts` this pass's predecessor split it out of.
-  `content-routes-entry.ts` (entry CRUD, publish, rename, revert) and `content-routes-media.ts`
-  (the media library actions) are by far the largest, at well over a thousand lines each; the
-  other six range from 139 lines (`content-routes-preview.ts`) to 457
-  (`content-routes-settings.ts`).
+  (concept and entry-id resolution, the flattened action-failure shape, and the entry-cluster
+  cross-cutting helpers `draftFromBranchHead`, `commitEditorName`, `HISTORY_LIMIT`, and
+  `invalidIdMessage`).
+- `content-routes-shell.ts`, `-list.ts`, `-entry.ts`, `-entry-read.ts`, `-preview.ts`, `-media.ts`,
+  `-tidy.ts`, `-settings.ts`, `-dictionary.ts`: the domain factories, each named for what it does
+  rather than the earlier single `content-routes-core.ts` this pass's predecessor split it out of.
+  `-entry.ts` is splitting further into one module per entry cluster; `-entry-read.ts` (create,
+  edit, history) is the first cluster out, and `content-routes-entry.ts` (the remaining write,
+  destructive, and revert clusters) and `content-routes-media.ts` (the media library actions)
+  are still the largest, at well over a thousand lines each; the other files range from 139 lines
+  (`content-routes-preview.ts`) to 548 (`content-routes-entry-read.ts`).
 
 Every type `content-routes.ts` used to declare inline now lives with the domain that owns it and
 is re-exported from `content-routes.ts`, so an existing importer sees the same names at the same

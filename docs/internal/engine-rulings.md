@@ -1749,6 +1749,7 @@ when the remediation pass lands.
 - **Verdict:** retire. None. { id; title; body } feeds the editor's fragment picker; a site mounting CairnEntryEditor passes data whole.
 - **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content-routes-core.ts` (`FragmentPicker.svelte` imports it directly); its re-export dropped from `content-routes.ts` and its barrel line from `sveltekit/index.ts`. Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Note (internals-B, Task 4):** the stays-in-`content-routes-core.ts` fact above is now historical; that file retired at internals-B, and the export moved to `content-routes-entry.ts`, still imported directly by `FragmentPicker.svelte`.
+- **Note (polish-11a, Task 1):** the export moved again, to `content-routes-entry-read.ts`, still imported directly by `FragmentPicker.svelte`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 34.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 

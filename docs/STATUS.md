@@ -24,8 +24,16 @@ Three tracks are live; each resumes from its own artifact.
 
 - **Identity seam**: MERGED as PR #53 (`ac0d4d52`). Its ledger entry is in `docs/HISTORY.md`;
   reviews are banked in `docs/internal/record/2026-09-07-identity-seam/`.
-- **Chassis-B1**: MERGED as PR #51 (`58ed9d1f`). Next is chassis-B2, plan
-  `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`, on a fresh worktree off `main`.
+- **Chassis-B1**: MERGED as PR #51 (`58ed9d1f`); ledger entry in `docs/HISTORY.md`.
+- **Chassis-B2** (next, pre-baked): worktree `.claude/worktrees/chassis-b2` on branch
+  `chassis-b2` off main with a from-scratch showcase install; plan
+  `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md` (8 tasks, one sequential chain, 6M
+  ceiling, checkpoint every four). Launch from the main checkout with the Workflow tool:
+  `scriptPath: ~/.claude/workflows/pass-execute-chains.js`, args from
+  `~/.cache/cairn-chassis-b2/b2-args.json` (pass its JSON as the args object). Arm the sleep
+  inhibitor and the battery watchdog first (`~/.claude/docs/unattended-work-guards.md`); the
+  B1 runaway guard pattern is the transcript-dir watcher. Pass-end: the fresh-context
+  verifier over six surfaces (B1's five plus archive2), then Geoff's five-viewport read.
 - **Documentation standard**: spec approved at revision 4
   (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`; nine page types, the
   registry lifecycle, staged delivery, the gauge-and-iterate protocol). Plan one, the Claude

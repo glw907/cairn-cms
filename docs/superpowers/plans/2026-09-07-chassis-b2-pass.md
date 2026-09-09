@@ -337,5 +337,114 @@ together against the original single-pass estimate. **Geoff merges.**
   the showcase's `admin/signups` exemplar, which polish owns.
 - **Polish:** the `createSectionAction` adoption with its dev-package seam; the second-menu
   editing consultation; the `.cairn-card` no-real-use observation; the 404 if B1 carried it;
-  the engine's `src/lib/components` Svelte lint wiring; the single-theme identity observation.
+  the engine's `src/lib/components` Svelte lint wiring; the single-theme identity observation;
+  the two cosmetic gaps the pass-end `visual-verifier` named (the home/archive2 double
+  hairline above the pagination block, the "N entries" count reading the page rather than the
+  archive total), filed to `ROADMAP.md`'s Next tier at this pass's close.
 - **Release:** the window holds; ONE cut after polish, `check:template` at the cut.
+
+## Post-mortem (2026-09-09)
+
+**What was built.** All eight tasks landed on `chassis-b2` (stacked on `chassis-b`, itself
+already merged to `main` as PR #51), 22 commits: the thirteen 2025-dated posts excluded from
+the scaffold by path (`2e2dfcd5`, `4aac78db`, `3c6fcd2d`), the archive proven on the real
+27-post corpus at `ARCHIVE_PAGE_SIZE = 13` with `/archive/2` real for the first time
+(`8f47f098`, `1c8fc189`, and the CI baseline regen `4de378ec`), site identity read from one
+server-side source with one title convention (`9e472aa7`), the footer nav moved into
+`site.config.yaml`'s `menus.footer` (`7fd0bc81`), CSS conformance (`site.css` under
+`check-public-tokens`, the degenerate clamps collapsed: `83a9c55a`, `ef9e3649`), the small
+idioms closed (the three `platform!` assertions, the `feed.ts` guard mix: `b5dffd0a`,
+`87a48160`), Waymark read as a first-time developer and rebaked (`9ea2763f`, `81e2d08b`), and
+the records and harvest (`3b97188f`, `430090ed`). The code-simplifier (`2e5921d3`) and a
+pass-end fix round closed the ritual: a `check:symbols` break from the identity rework
+(`e6553813`), then four blocking findings from the pass-end reviewer fan-out fixed in one
+round (`36a4e77d`, `79df0ebf`, `eb234d9c`, `2bad6688`).
+
+**What was verified, with evidence.** Every task's own `diff-reviewer` round independently
+re-ran the affected gates and re-compared tiles rather than trusting the implementer's report
+(for example Task 5's reviewer planted a literal color and an unresolvable token in `site.css`
+to prove `check-public-tokens`'s two halves actually fail before accepting that they pass).
+The committed intended-moves manifest's `## B2` section confirms `magick compare -metric AE`
+at 0 on every tile of every paint-neutral task (253 to 314 tiles per task across Tasks 3
+through 6) and that Tasks 1 and 2's declared moves (`site-home-*`, then `archive2-*` new) match
+the unmodified visual suite's own failure list name for name. The final full-gate run on
+`HEAD e6553813` (before the fix round) reported `npm run check`: 1836 files, 0 errors, 0
+warnings; `npm test`: 5060 unit and integration tests passed across 380 files plus 1370
+component tests across 78 files; every named check green; a fresh `templates/waymark` scaffold
+baked, installed, format-checked, unit-tested, and built green (Task 7); and the showcase
+e2e's 20 `site-home-*`/`archive2-*` baseline diffs verified, by file-list diff against
+`4de378ec`, as the pass's own already-documented CI/workstation font-rendering drift rather
+than a regression, per the paint protocol's baseline rule. The pass-end reviewer fan-out
+returned: `svelte-reviewer`, one blocking (archive2 shipped with no `h1` and an inverted
+heading order the first time it rendered, tripping axe's `page-has-heading-one` and
+`heading-order`) plus four non-blocking; `web-auth-security-reviewer`, one blocking
+(`App.PageData` never declared `siteName` despite nine new readers, so a typo would have
+compiled clean) plus eight non-blocking, and confirmed no auth, session, CSRF, or signing
+surface changed; `cloudflare-workers-reviewer`, two blocking (the root layout's new
+`siteMeta` import pulled the full render adapter and three eager content globs into every
+`/admin`, `/members`, and 404 request; the showcase's site description silently regressed to
+the generic fallback). The `visual-verifier`'s six-surface grade returned `pass: true`,
+structural findings empty, three cosmetic (the pre-existing double-hairline gap and the "N
+entries" count ambiguity, both filed to `ROADMAP.md`'s Next tier at this close since the
+pass's own harvest commit had already landed before the verifier ran; one sub-pixel AE-56
+rendering-noise tile). All four reviewers' blocking findings were fixed in one review-fix
+round and re-verified against the code, not the report, before landing.
+
+**Decisions taken in execution.** Task 7's `diff-reviewer` found the "first-time developer"
+read's own fix incomplete against the freshly baked scaffold (the "complete" root tree
+omitted `.prettierignore`, `.prettierrc`, and `vitest.config.ts`; a description sentence was
+inaccurate; the showcase's own README had gone stale after Task 1 without being touched); the
+ruling was one fix round (`81e2d08b`) rather than accepting the gap, since the task's whole
+point was catching exactly this class of miss. Task 8's `diff-reviewer` caught that its own
+ROADMAP edit violated the repo's own ledger rule (a pass shipping a roadmap item removes it
+from the live tier rather than expanding the entry with what shipped): the chassis-improvement
+bullet had grown by roughly ten lines of shipped narrative instead of leaving the Now tier; the
+ruling was a same-task fix (`430090ed`) cutting it to a six-line pointer at the three plans and
+two harvests. The pass-end reviewer fan-out's four blocking findings were, notably, none of
+them caught by any individual task's own `diff-reviewer`: each was introduced incrementally
+(Task 3's `siteName` plumbing, Task 7's description fallback) in a way that read as correct in
+isolation and only became visible once the whole pass's diff was graded together, which is the
+fan-out's job and is why it runs even after every task's own gate is green. The overnight run
+halted once, mid pass-end ritual, at step `b2:capture-after` (a wall-clock/context guard
+forcing the session to report, recorded on `main` at `0794774d`); a fresh session resumed from
+the committed resume prompt and completed capture-after, records, simplify, verify, the
+reviewer fan-out, and the review-fix round with no decision from Geoff.
+
+**What a later pass would be wrong to rediscover.** The pass-end reviewer fan-out catches
+defects individual task gates structurally cannot: a per-task diff-reviewer only ever sees one
+task's diff against its own criteria, so a cross-cutting property (does every new
+`page.data.siteName` reader have a type declaration; does the root layout's new import graph
+stay lean) is invisible until the whole pass is read at once. A pass that banks its harvest and
+ROADMAP routing (Task 8) before the pass-end verifier and reviewer fan-out run will miss
+whatever they find; this pass's own harvest doc predates the verifier by nearly three hours
+(`3b97188f` at 04:11, the verifier at 06:57), which is why its two cosmetic findings needed a
+second pass at close to be filed. `admin/signups`'s post listing reads the dev backend's own
+seeded fixture, never the public `src/content/posts/` directory, so a corpus-size ruling
+written against the public archive (as this pass's Task 2 was) cannot assume it moves an admin
+baseline too; verify the actual data source before predicting a baseline move. A local `CI=1`
+e2e run drifts permanently from a CI baseline regen by a fixed, nameable file list
+(font-hinting or subpixel differences between the workstation's ImageMagick/browser stack and
+the CI runner's); treat any local failure outside that named list, not any failure at all, as
+the real gate, and do not try to regenerate the drift away locally, since that only
+reintroduces it against the next real CI regen.
+
+**Budgets.** No chain-reported token total was recoverable from this close-out dispatch's own
+session history (a fresh subagent with no visibility into the parent conductor's `/cost`
+reading); reconstructed instead from the four `pass-execute-chains` workflow runs' own
+subagent transcripts, summing each turn's `input_tokens` + `cache_creation_input_tokens` +
+`output_tokens` (`cache_read_input_tokens` excluded as the standard discount convention). That
+reconstruction likely still overstates true spend, since a long, tool-heavy agent conversation
+re-embeds a growing prior context at each cache-creation breakpoint rather than only its new
+tokens, so treat the figure as an upper-bound approximation, not the number of record if the
+conductor's own accounting differs. By that reconstruction: Task 1's workflow run about 1.7M,
+Task 2 plus its fix round about 1.1M, Task 3 plus its CI regen and the mid-pass halt about
+1.0M, and Tasks 4 through 8 plus the full close ritual (the halt-and-resume, four
+`diff-reviewer` fix rounds, the three-reviewer fan-out, the `visual-verifier`, and the
+code-simplifier) about 8.7M, for an execution total near 12.5M; adding this close-out
+dispatch's own reported spend of about 0.18M puts the pass near 12.7M against its 6M ceiling,
+roughly double. The overrun concentrates in the pass-end ritual: four of the five tasks from 4
+onward needed a `diff-reviewer` fix round, and the halt-and-resume added a second cold start
+mid-ritual, both costlier than the plan's own per-task estimate assumed. Attended time: zero
+planning misses (nothing surfaced after approval that a planning question would have caught);
+zero execution sittings, since the one halt was a wall-clock and context guard resuming from
+its own recorded prompt with no decision pulled from Geoff, not a genuine blocker.

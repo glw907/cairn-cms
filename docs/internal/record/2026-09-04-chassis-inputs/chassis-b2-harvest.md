@@ -78,3 +78,17 @@ only reintroduce the same drift against the next real CI regen. The lesson for a
 budget one CI regen's worth of permanent local/CI drift per baseline touched, name the exact
 file list the drift produces at the regen, and treat any local e2e failure outside that named
 list, not any failure at all, as the real gate.
+
+## Two cosmetic findings from the pass-end visual-verifier
+
+The six-surface `visual-verifier` grading returned `pass: true` (every intended move present
+and correct, structural findings empty) but named two pre-existing CSS shapes that this pass
+was the first to render, both filed to `ROADMAP.md`'s Next tier rather than fixed here since
+neither is a paint regression this pass caused and both cost a rendered baseline to touch:
+`EntryRow`'s `border-bottom` and `.pagination`'s own `margin-top` plus `border-top` read as a
+double hairline with a 32 to 40px empty strip between the last entry row and the pagination
+block on `home` and `archive2` at every width and scheme, and the index head's "N entries"
+count reads the current page's row count rather than the archive's total next to "Page 1 of
+2," which a reader could take as the whole archive. Recorded here because the verifier itself
+flagged the hairline gap as "worth a chassis harvest note"; this pass's own Task 8 harvest
+commit landed before the verifier ran, which is why the note was missing until pass close.

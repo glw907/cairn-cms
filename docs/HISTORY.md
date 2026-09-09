@@ -7,6 +7,59 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Chassis-B2 (audit remediation slice 8, the paint-changing half's second slice), code complete and reviewed 2026-09-09
+
+Branch `chassis-b2`, eight tasks executed on `.claude/worktrees/chassis-b2` off `chassis-b`
+across four `pass-execute-chains` workflow runs and one overnight halt-and-resume, 2026-09-08
+to 2026-09-09; plan and post-mortem at
+`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`; harvest at
+`docs/internal/record/2026-09-04-chassis-inputs/chassis-b2-harvest.md`.
+
+**What landed.** The paginated archive proven on a real 27-post corpus (thirteen 2025-dated
+posts added and excluded from the scaffold by path; `ARCHIVE_PAGE_SIZE` drops from 50 to 13,
+so `/archive/2` renders for real for the first time); site identity read from one server-side
+source (`page.data.siteName`, sourced from `site-config.ts`) on one title convention; the
+footer nav moved out of a component array into `site.config.yaml`'s `menus.footer`; `site.css`
+brought under `check-public-tokens` with the two degenerate `--text-step` clamps collapsed to
+the constants they resolved to; the three `platform!` assertions and the `feed.ts` guard mix
+closed; and `templates/waymark` read as a first-time developer and rebaked (the showcase's
+self-referential "the showcase"/"this showcase" language reworded to "this site," a hard-coded
+description literal fixed to read the site's own config).
+
+**What the gate caught.** The pass-end reviewer fan-out (`svelte-reviewer`,
+`web-auth-security-reviewer`, `cloudflare-workers-reviewer`) returned four blocking findings
+none of Task 3 through 6's own per-task `diff-reviewer` caught, since each read as correct in
+isolation and only surfaced once the whole pass's diff was graded together: `/archive/2`
+shipped with no page-level `h1` and an inverted heading order the first time it rendered past
+page one; `App.PageData` never declared `siteName` despite nine new readers, typing it `any`;
+the root layout's new `siteMeta` import pulled the full render adapter and three eager content
+globs into every `/admin`, `/members`, and 404 request; and the showcase's own site
+description silently regressed to the generic fallback. All four were fixed in one review-fix
+round, verified against the code rather than the report. The six-surface `visual-verifier`
+returned `pass: true` with two cosmetic findings (a pre-existing double-hairline gap above the
+archive/home pagination block, an "N entries" count that reads the page rather than the
+archive total) filed to `ROADMAP.md`'s Next tier at pass close, since the pass's own harvest
+commit had already landed nearly three hours before the verifier ran. Individual task
+`diff-reviewer` rounds caught Task 7's doc-completeness gaps against a freshly baked scaffold
+and Task 8's own ROADMAP edit violating the repo's ledger rule (ten lines of shipped narrative
+added instead of the tier entry leaving), both fixed same-task.
+
+**What a later pass would be wrong to rediscover.** A pass-end reviewer fan-out catches
+cross-cutting defects a per-task `diff-reviewer` structurally cannot, since the latter only
+ever grades one task's diff against its own criteria; bank a pass's harvest and ROADMAP
+routing only after the fan-out and verifier have run, or their findings need a second pass at
+close to get filed. `admin/signups`'s post listing reads the dev backend's own seeded fixture,
+never the public `src/content/posts/` directory, so a corpus-size change to the public archive
+does not move an admin baseline; verify the actual data source before predicting a baseline
+move. A local `CI=1` e2e run drifts permanently from a CI baseline regen by a fixed, nameable
+file list (workstation-versus-CI font-hinting or subpixel differences); treat a local failure
+outside that named list, not any failure at all, as the real gate, and do not try to
+regenerate the drift away locally. Reconstructed subagent spend (input plus cache-creation
+plus output tokens, cache-read excluded, an upper-bound approximation) put the pass near 12.7M
+against its 6M ceiling, concentrated in the pass-end ritual: four of five tasks from 4 onward
+needed a `diff-reviewer` fix round, and a mid-ritual wall-clock halt added a second cold start.
+Full detail and the reviewer/verifier verdicts are in the plan's own post-mortem.
+
 ## Identity seam, code complete and reviewed 2026-09-08
 
 Branch `identity-seam`, seven tasks executed on `.claude/worktrees/identity-seam` off `main`, in

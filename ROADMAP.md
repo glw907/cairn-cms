@@ -903,6 +903,17 @@ the named human gates only):**
   this copy verbatim until they edit it. **Trigger:** the next pass that touches the home
   masthead or the sample pages, or a scaffold-facing docs pass.
 
+- **Two cosmetic gaps the chassis-B2 pass-end `visual-verifier` named, neither a paint
+  regression this pass caused (both pre-existing CSS the archive page size change was the
+  first to render past one page).** `EntryRow`'s `border-bottom` and `.pagination`'s own
+  `margin-top` plus `border-top` read as a double hairline with a 32 to 40px empty strip
+  between the last entry row and the pagination block on `home` and `archive2`, every width
+  and scheme; the index head's "N entries" count reads the current page's row count rather
+  than the archive's total next to "Page N of 2," which a reader could take as the whole
+  archive. Full detail:
+  `docs/internal/record/2026-09-04-chassis-inputs/chassis-b2-harvest.md`. **Trigger:** the
+  polish slice's rendered-surface read.
+
 - **Four engine defects the measured build surfaced (filed 2026-09-05, from
   `docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review-2.md`'s second
   review and `inference-traps-to-fix.md`).** A dispatched implementer built a real custom admin

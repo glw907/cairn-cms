@@ -39,14 +39,12 @@ it runs and stopping with this file pointing at the next launch.
   `~/.cache/cairn-polish-11a/11a-run{1,2}-args.json`), polish-11b-i and polish-11b-ii
   (Geoff split 11b at 22:40; plans committed `4756dcae`, args under `~/.cache/cairn-polish-11b-i/`
   and `-11b-ii/`), then polish-C (`2026-09-08-polish-c-pass.md`, `4756dcae`, args
-  `~/.cache/cairn-polish-c/`) ONLY with `c.approved: true`.
-- **Geoff's morning read:** the polish-C plan's "Verb-first names for Geoff's read" section
-  (33 rows; the seven taste-call names argued individually with a recommendation each; two
-  open choices: `mintPreview`/`revokePreview` versus the longer `*Token` pair, and whether
-  `loadPreview`/`loadHealth` are worth the asymmetry against the route-object `*Load` members).
-  Approval lets C run and the cut fire automatically. The 11a, 11b-i, and 11b-ii plans execute
-  unread by his ruling; every plan's reviews, fold record, and verification read are banked at
-  `docs/internal/record/2026-09-08-polish-inputs/plan-*.md`.
+  `~/.cache/cairn-polish-c/`) with `c.approved: true` (Geoff approved the names table at 23:45,
+  as recommended), after which the cut fires automatically.
+- **No human gate remains before the cut.** The 11a, 11b-i, and 11b-ii plans execute unread
+  by Geoff's ruling and the C names are approved; every plan's reviews, fold record, and
+  verification read are banked at `docs/internal/record/2026-09-08-polish-inputs/plan-*.md`.
+  Geoff reads main's rendered surfaces in the morning.
 - **If resuming cold:** read this file's ledger lines, `git log main`, and the run's
   `journal.jsonl`; relaunch the orchestrator with `resumeFromRunId` or with the next stage's args.
   Guards: both inhibitors held to 09:00 (`claude-cairn-overnight`), the battery watchdog and the

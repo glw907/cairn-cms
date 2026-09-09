@@ -451,6 +451,11 @@ re-derives the list against post-11b `main` before the first commit and records 
 
 ## Verb-first names for Geoff's read
 
+**Approved by Geoff, 2026-09-08 23:45, as recommended:** every row in the table, the seven
+verb-first names as argued, the short `mintPreview`/`revokePreview` pair, and `loadPreview` and
+`loadHealth` taken despite the asymmetry with the route objects' `*Load` members. Polish-C
+executes and the cut fires without a further read.
+
 **Every proposed rename in the window, in one table, so the list is read before polish-C
 executes.** The seven verb-first function names are the one taste call; they are argued
 individually below the table against the ruled vocabulary. A row's "argues from" column names the

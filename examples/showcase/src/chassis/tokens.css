@@ -158,9 +158,11 @@
   --cairn-focus-ring-offset: 2px;
   --cairn-focus-ring-radius: 2px;
 
-  /* The header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a`), narrower than
-     `--tracking-eyebrow` above. A generic default so a theme that never redeclares it still gets
-     a real value instead of a dangling reference; a theme usually tunes it in its own theme.css. */
+  /* The header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a`), at the same
+     0.08em as the generic `--tracking-eyebrow` above; a theme that widens its eyebrow usually
+     tunes this one narrower (this theme's theme.css sets 0.09em against 0.12em). A generic
+     default so a theme that never redeclares it still gets a real value instead of a dangling
+     reference. */
   --cairn-caption-tracking: 0.08em;
 }
 

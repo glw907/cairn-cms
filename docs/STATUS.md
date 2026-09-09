@@ -20,6 +20,14 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action (2026-09-09 09:20)
 
+**The overnight run halted at stage 11a:run1** (2026-09-09). Reason: task 1 (the entry
+split, the shared additions and the read cluster) escalated with fixRounds 0; tasks 2
+through 7 (the write cluster; the destructive and revert clusters; the media split's shared
+module, library read, and ingest; delete and orphans; the metadata rewrite and the
+BulkDeleteSkip rename; the engine product copy) all deferred with fixRounds 0. Resume: read
+the 11a run-one journal, decide the non-accepted task, then resume the remaining run-one
+tasks; then the CI regen; then run two.
+
 **Chassis-B2 is MERGED** (PR #54, `b22af9b7`; ledger entry in `docs/HISTORY.md`; the
 verifier passed six surfaces, the reviewers' blocking findings were fixed, CI green). Geoff
 reads `main`'s home page and `/archive/2` when convenient.

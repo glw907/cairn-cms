@@ -1,4 +1,5 @@
 siteName: Waymark
+description: Trail reports and gear notes from the field.
 menus:
   primary:
     - label: Writing

@@ -13,7 +13,7 @@ import ConceptList from '../../components/ConceptList.svelte';
 import EditPage from '../../components/EditPage.svelte';
 import WelcomeView from '../../components/WelcomeView.svelte';
 import type { InboundLink } from '../../content/manifest.js';
-import type { DeleteRefusal } from '../../sveltekit/content-routes-entry.js';
+import type { DeleteFailure } from '../../sveltekit/content-routes-entry-destructive.js';
 import { fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
 import { clickWhenPresent, conceptListData, editPageProps, settleEditingSurface, waitFor } from './support.js';
@@ -96,7 +96,7 @@ const pendingList: ReproStory = {
 };
 
 /** The refused delete's form result: what drives the banner naming the blocking entry. */
-const refusalForm: DeleteRefusal = {
+const refusalForm: DeleteFailure = {
   error: `${REFUSAL_INBOUND_LINKS.length} entries link to this one.`,
   inboundLinks: REFUSAL_INBOUND_LINKS,
   inboundKind: 'link',

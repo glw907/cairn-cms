@@ -26,6 +26,7 @@ import { createListActions } from './content-routes-list.js';
 import { createEntryActions } from './content-routes-entry.js';
 import { createEntryReadActions } from './content-routes-entry-read.js';
 import { createEntryWriteActions } from './content-routes-entry-write.js';
+import { createEntryDestructiveActions } from './content-routes-entry-destructive.js';
 import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
@@ -65,6 +66,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const entry = createEntryActions(ctx);
   const entryRead = createEntryReadActions(ctx);
   const entryWrite = createEntryWriteActions(ctx);
+  const entryDestructive = createEntryDestructiveActions(ctx);
   const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -87,9 +89,9 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     publishAction: entryWrite.publishAction,
     publishAllAction: entryWrite.publishAllAction,
     discardAction: entryWrite.discardAction,
-    deleteAction: entry.deleteAction,
-    listDeleteAction: entry.listDeleteAction,
-    renameAction: entry.renameAction,
+    deleteAction: entryDestructive.deleteAction,
+    listDeleteAction: entryDestructive.listDeleteAction,
+    renameAction: entryDestructive.renameAction,
     previewMintAction: preview.previewMintAction,
     previewRevokeAction: preview.previewRevokeAction,
     revertAction: entry.revertAction,

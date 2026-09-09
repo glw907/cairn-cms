@@ -244,6 +244,9 @@ interval is three rather than four because four of the ten tasks are move-heavy 
 
 ## Polish-11b: the admin surface, non-breaking (slice 11b)
 
+Executed as two passes, polish-11b-i and polish-11b-ii, by Geoff's split ruling of 2026-09-08;
+each plan header names the spec tasks it carries and the Sequencing section carries both ceilings.
+
 **Shape.** The admin components, the dev package, the showcase's admin routes, the admin
 design system, and the tests. `check:surface` byte-identical. Each task appends its own
 `CHANGELOG.md` line and closes or progress-notes its own ledger row, under the same standing
@@ -323,9 +326,11 @@ the named widths in both schemes through the chassis-B capture tool against the 
 admin routes, scheduled at a checkpoint so a build never runs beside two gates, and the
 reviewer names the tiles read. A finding the render refutes retires with the tile named.
 
-**Ceiling.** 5.5M tokens, checkpoint every four tasks. The number rests on the same measured
-band: twelve tasks at the band's middle of about 450K is 5.4M, and 11b carries the render
-proofs and the three-reviewer fan-out that 11a does not.
+**Ceiling.** 11b-i 7.0M and 11b-ii 5.0M, checkpoint every four tasks in each half (re-derived at
+each half's plan authoring for its own eleven-task and six-task shape; the Sequencing section's
+ceiling line carries both derivations and each plan header carries its own line-item arithmetic).
+The superseded 5.5M rested on the same measured band: twelve tasks at the band's middle of about
+450K is 5.4M, and 11b carries the render proofs and the three-reviewer fan-out that 11a does not.
 
 **Dependency.** 11b depends on nothing 11a produces in code; the two halves touch disjoint
 file sets, `src/lib/sveltekit/*` plus `packages/create-cairn-site/*` against
@@ -471,7 +476,9 @@ after the polish slice.** Geoff's call: the whole remediation ships in a single 
 one `Consumers must:` list." A no-cut outcome needs Geoff's ruling at polish-C's plan review or
 close, never the pass's own reading of whether the window warrants one.
 
-**Ceiling.** 7M tokens, checkpoint every four tasks.
+**Ceiling.** 9M tokens, re-derived at C's plan authoring for the folded fifteen-task shape;
+the Sequencing section's ceiling line carries the derivation. Four checkpoints, after tasks
+3, 7, 12, and 14 of that shape.
 
 **Dependency.** Polish-C branches after 11b merges.
 
@@ -553,9 +560,18 @@ stage one.**
 
 Ceilings: 11a 6.5M (re-derived at 11a's plan authoring, 2026-09-08, from the folded thirteen-task
 shape: fourteen gate-bearing units at the measured band's middle of about 450K plus the two
-conductor CI regen waits, superseding the 4.5M this section set for a ten-task shape), 11b 5.5M,
-C 7M, so 19M is the total on the table. Checkpoint intervals:
-three tasks in 11a, four in 11b and C. Attended time: three plan reviews, one per pass, plus
+conductor CI regen waits, superseding the 4.5M this section set for a ten-task shape), **11b split
+by Geoff on 2026-09-08 into 11b-i at 7.0M (eleven tasks: the design system and the engine admin
+surface, plus its own records task) and 11b-ii at 5.0M (six tasks: the cairnAccess seam, the signups
+exemplar, formatTimestamp, and records), superseding the 5.5M this section set for one twelve-task
+pass, with each half's arithmetic in its own plan header**,
+C 9M (re-derived at C's plan authoring, 2026-09-08, from the folded fifteen-task shape: fifteen
+gate-bearing units at the measured band's upper half of about 500K is 7.5M, plus 0.5M for the
+four-reviewer fan-out and the last task's whole-window reads, plus a named 1M reserve for the two
+re-dispatch fix rounds the chain allows, superseding the 7M this section set for a ten-task
+shape), so 27.5M is the total on the table. Checkpoint intervals:
+three tasks in 11a, four in each 11b half, and four checkpoints in C after its tasks 3, 7, 12, and 14.
+Attended time: three plan reviews, one per pass, plus
 Geoff's read of the verb-first names inside C's plan review. Polish carries no front-door read,
 since that page moves to the rewrite's last stage. The either-or choices the review found are
 ruled above (A5's glyph decided at plan authoring, A8's markup option, F2's sentence, decisions

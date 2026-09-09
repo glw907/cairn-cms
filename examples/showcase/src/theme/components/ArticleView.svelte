@@ -159,8 +159,8 @@ everything else staying byte-for-byte the same. -->
     text-decoration: underline;
   }
   .meta a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
     border-radius: 2px;
   }
 </style>

@@ -326,13 +326,17 @@ The original decision framing, for the record:
     routes and site metadata single-sourced, the render trio (`cardShell`, `headRow`,
     `iconSpan`) re-homed per the audit's retire rulings, a unit-test suite for the chassis's
     pure logic, one idiom across the tree, and the shipped comments purged of process
-    narration. What carries forward, named by plan: chassis-B1
-    (`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`) takes the CSS format half, the
-    capture tool and before set, the width matrix, the site shell and the five composition
-    primitives, one focus ring, and the entry row written once; chassis-B2
-    (`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`) takes the archive proof (27 posts
-    at page size 13), site identity and one title convention, the footer nav out of code, CSS
-    conformance, small idioms, and waymark's deliberate adaptation and final rebake.
+    narration. Chassis-B1 (`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`) shipped the
+    rest of the CSS format half, the capture tool and before set, the width matrix
+    (`error404` and `admin/signups`), the chassis site shell on the showcase's public chrome,
+    the five composition primitives adopted (`cairn-hero`, `cairn-section`, and `cairn-band` on
+    real site surfaces, `cairn-card` and `cairn-sidebar-layout` demonstrated on the
+    styleguide's composition section), one focus-ring token trio and utility replacing every
+    hand-written ring, and the entry row written once as `EntryRow`. What carries forward,
+    named by plan: chassis-B2 (`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`) takes
+    the archive proof (27 posts at page size 13), site identity and one title convention, the
+    footer nav out of code, CSS conformance, small idioms, and waymark's deliberate adaptation
+    and final rebake.
     Internals-B's own close routed one more item here (the showcase exemplar half of audit
     finding 8), landed in chassis-A.
   - **The polish slice**: routed items from internals-B's close, filed here so a later pass

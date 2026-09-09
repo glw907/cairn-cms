@@ -5,5 +5,5 @@
    `cairn-admin`/`cairn-admin-dark`. Automatic source detection is on (no `source(none)`, no
    `@source` restriction), so this file scans the whole showcase project the same way
    `chassis/tokens.css` already does. */
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin 'daisyui';

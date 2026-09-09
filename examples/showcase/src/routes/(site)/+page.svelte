@@ -7,6 +7,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { formatDate } from '$chassis/date.js';
+  import EntryRow from '$theme/components/EntryRow.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -77,7 +78,7 @@
     </article>
   {/if}
 
-  <div class="index">
+  <div class="cairn-section index">
     <div class="index__head">
       <p class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted">Archive</p>
       <span class="index__count">
@@ -93,7 +94,7 @@
       <div class="tag-filter" role="group" aria-label="Filter by tag">
         <button
           type="button"
-          class="tag-filter__option"
+          class="tag-filter__option cairn-focus-ring"
           aria-pressed={selected === ''}
           onclick={() => (selected = '')}
         >
@@ -102,7 +103,7 @@
         {#each tagOptions as option (option.value)}
           <button
             type="button"
-            class="tag-filter__option"
+            class="tag-filter__option cairn-focus-ring"
             aria-pressed={selected === option.value}
             onclick={() => (selected = option.value)}
           >
@@ -114,19 +115,7 @@
 
     {#if filtered}
       {#each filtered as post (post.id)}
-        <article class="entry" class:entry--undated={!post.date} data-cairn-post>
-          {#if post.date}
-            <div class="entry__date">{formatDate(post.date)}</div>
-          {/if}
-          <div>
-            <h2 class="entry__title">
-              <a href={post.permalink}>{post.title}</a>
-            </h2>
-            {#if post.fields.description}
-              <p class="entry__excerpt">{post.fields.description}</p>
-            {/if}
-          </div>
-        </article>
+        <EntryRow {post} />
       {/each}
     {:else}
       <!-- Year-grouped archive: a year marker opens each run of same-year entries, in the page's
@@ -135,19 +124,7 @@
       {#each data.archive.years as group, i (group.year)}
         <h3 class="index__year" class:index__year--first={i === 0}>{group.year}</h3>
         {#each group.entries as post (post.id)}
-          <article class="entry" class:entry--undated={!post.date} data-cairn-post>
-            {#if post.date}
-              <div class="entry__date">{formatDate(post.date)}</div>
-            {/if}
-            <div>
-              <h2 class="entry__title">
-                <a href={post.permalink}>{post.title}</a>
-              </h2>
-              {#if post.fields.description}
-                <p class="entry__excerpt">{post.fields.description}</p>
-              {/if}
-            </div>
-          </article>
+          <EntryRow {post} />
         {/each}
       {/each}
     {/if}
@@ -161,14 +138,14 @@
       {#if data.archive.page > 1}
         <a
           href={data.archive.page - 1 === 1 ? '/' : `/archive/${data.archive.page - 1}`}
-          class="pagination__link"
+          class="pagination__link cairn-focus-ring"
         >
           <span aria-hidden="true">&larr; </span>Newer
         </a>
       {/if}
       <span class="pagination__status">Page {data.archive.page} of {data.archive.totalPages}</span>
       {#if data.archive.page < data.archive.totalPages}
-        <a href={`/archive/${data.archive.page + 1}`} class="pagination__link">
+        <a href={`/archive/${data.archive.page + 1}`} class="pagination__link cairn-focus-ring">
           Older<span aria-hidden="true"> &rarr;</span>
         </a>
       {/if}
@@ -186,7 +163,10 @@
   }
 
   /* The lead card: the newest entry, set larger than an index row and closed by its own hairline
-     before the archive starts. */
+     before the archive starts. .lead does not carry .cairn-section: the primitive's margin-block
+     visibly redesigns the eyebrow-to-date and excerpt-to-link gaps (26 to 48px above the date,
+     49 to 81px above the link, 50 to 17px below the link at home-light-2560), so .lead keeps its
+     own spacing here instead. */
   .lead {
     padding-bottom: var(--spacing-l);
     margin-bottom: var(--spacing-l);
@@ -216,8 +196,8 @@
     color: var(--color-primary);
   }
   .lead__title a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   .lead__excerpt {
     margin: 0 0 var(--spacing-s);
@@ -239,8 +219,8 @@
     text-decoration: underline;
   }
   .lead__link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
     border-radius: 2px;
   }
 
@@ -309,10 +289,6 @@
       border-color 0.2s ease-out,
       background-color 0.2s ease-out;
   }
-  .tag-filter__option:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
   .tag-filter__option:hover {
     color: var(--color-base-content);
     border-color: var(--color-primary);
@@ -326,55 +302,6 @@
     .tag-filter__option {
       transition: none;
     }
-  }
-
-  .entry {
-    display: grid;
-    grid-template-columns: 7.5rem 1fr;
-    gap: var(--spacing-m);
-    align-items: start;
-    padding: var(--spacing-m) 0;
-    border-bottom: var(--border) solid var(--color-card-border);
-  }
-  /* An undated post drops the date column and reads as a single column. */
-  .entry--undated {
-    grid-template-columns: 1fr;
-  }
-
-  .entry__date {
-    padding-top: 0.5rem;
-    font-size: var(--text-step--1);
-    color: var(--color-muted);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
-  }
-
-  .entry__title {
-    margin: 0 0 0.35rem;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--text-step-2);
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-tight);
-  }
-  .entry__title a {
-    color: inherit;
-    text-decoration: none;
-    border-radius: 2px;
-  }
-  .entry__title a:hover {
-    color: var(--color-primary);
-  }
-  .entry__title a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  .entry__excerpt {
-    margin: 0;
-    font-size: var(--text-step-0);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
   }
 
   /* Pagination: a plain, centered row (a status label between the two direction links), reading
@@ -400,24 +327,9 @@
   .pagination__link:hover {
     text-decoration: underline;
   }
-  .pagination__link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
   .pagination__status {
     font-size: var(--text-step--1);
     color: var(--color-muted);
     font-variant-numeric: tabular-nums;
-  }
-
-  /* Below the narrow breakpoint the date stacks above the title in one column. */
-  @media (max-width: 34rem) {
-    .entry {
-      grid-template-columns: 1fr;
-      gap: 0.4rem;
-    }
-    .entry__date {
-      padding-top: 0;
-    }
   }
 </style>

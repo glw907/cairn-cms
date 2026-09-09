@@ -6,7 +6,7 @@
      from. -->
 <script lang="ts">
   import type { PageData } from './$types';
-  import { formatDate } from '$chassis/date.js';
+  import EntryRow from '$theme/components/EntryRow.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -31,19 +31,7 @@
     {#each data.archive.years as group, i (group.year)}
       <h3 class="index__year" class:index__year--first={i === 0}>{group.year}</h3>
       {#each group.entries as post (post.id)}
-        <article class="entry" class:entry--undated={!post.date} data-cairn-post>
-          {#if post.date}
-            <div class="entry__date">{formatDate(post.date)}</div>
-          {/if}
-          <div>
-            <h2 class="entry__title">
-              <a href={post.permalink}>{post.title}</a>
-            </h2>
-            {#if post.fields.description}
-              <p class="entry__excerpt">{post.fields.description}</p>
-            {/if}
-          </div>
-        </article>
+        <EntryRow {post} />
       {/each}
     {/each}
   </div>
@@ -51,13 +39,13 @@
   <nav class="pagination" aria-label="Archive pages">
     <a
       href={data.archive.page - 1 === 1 ? '/' : `/archive/${data.archive.page - 1}`}
-      class="pagination__link"
+      class="pagination__link cairn-focus-ring"
     >
       <span aria-hidden="true">&larr; </span>Newer
     </a>
     <span class="pagination__status">Page {data.archive.page} of {data.archive.totalPages}</span>
     {#if data.archive.page < data.archive.totalPages}
-      <a href={`/archive/${data.archive.page + 1}`} class="pagination__link">
+      <a href={`/archive/${data.archive.page + 1}`} class="pagination__link cairn-focus-ring">
         Older<span aria-hidden="true"> &rarr;</span>
       </a>
     {/if}
@@ -100,51 +88,6 @@
     border-top: 0;
   }
 
-  .entry {
-    display: grid;
-    grid-template-columns: 7.5rem 1fr;
-    gap: var(--spacing-m);
-    align-items: start;
-    padding: var(--spacing-m) 0;
-    border-bottom: var(--border) solid var(--color-card-border);
-  }
-  .entry--undated {
-    grid-template-columns: 1fr;
-  }
-  .entry__date {
-    padding-top: 0.5rem;
-    font-size: var(--text-step--1);
-    color: var(--color-muted);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
-  }
-  .entry__title {
-    margin: 0 0 0.35rem;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--text-step-2);
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-tight);
-  }
-  .entry__title a {
-    color: inherit;
-    text-decoration: none;
-    border-radius: 2px;
-  }
-  .entry__title a:hover {
-    color: var(--color-primary);
-  }
-  .entry__title a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-  .entry__excerpt {
-    margin: 0;
-    font-size: var(--text-step-0);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
-  }
-
   .pagination {
     display: flex;
     align-items: center;
@@ -166,23 +109,9 @@
   .pagination__link:hover {
     text-decoration: underline;
   }
-  .pagination__link:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
   .pagination__status {
     font-size: var(--text-step--1);
     color: var(--color-muted);
     font-variant-numeric: tabular-nums;
-  }
-
-  @media (max-width: 34rem) {
-    .entry {
-      grid-template-columns: 1fr;
-      gap: 0.4rem;
-    }
-    .entry__date {
-      padding-top: 0;
-    }
   }
 </style>

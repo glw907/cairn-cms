@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       update_snapshots:
-        description: Regenerate the admin-visual baseline snapshots instead of asserting against them
+        description: Regenerate the admin-visual and site-visual baselines instead of asserting against them
         type: boolean
         default: false
 

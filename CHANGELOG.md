@@ -288,6 +288,20 @@
 
 ### Changed
 
+- The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
+  adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
+  chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace
+  the hand-rolled flex column on the public layout and the error page; the composition
+  primitives are used on real surfaces (`cairn-hero` on the styleguide masthead, `cairn-section`
+  on the home page's index, `cairn-band` on the error page) and demonstrated on the styleguide
+  (`cairn-card`, `cairn-sidebar-layout`); one focus-ring token trio
+  (`--cairn-focus-ring-outline`, `--cairn-focus-ring-offset`, `--cairn-focus-ring-radius`) and a
+  `cairn-focus-ring` utility in `tokens.css` replace every hand-written focus ring in the
+  scaffold's theme and route CSS; and the repeated post-listing markup is written once as
+  `EntryRow` (`src/theme/components/EntryRow.svelte`). No engine export or runtime behavior
+  changed; a site that forked its own `src/chassis` or `src/theme` copy before this pass sees no
+  change until it re-copies. Consumers must: nothing.
+
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
   ruling 1: the MarkdownEditor seam collapse) into one
   `registerEditor?: (api: EditorApi | null) => void`.

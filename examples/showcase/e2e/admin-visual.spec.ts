@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+// The five-viewport responsive bar (320, 390, 768, 1440, 2560), in both color schemes, over the
+// consumer's own custom admin screen, Signups: the in-repo proof that a developer's route built
+// on the packaged admin toolkit (`@glw907/cairn-cms/admin-toolkit`) meets the family's
+// responsive standard the same way the engine's own admin screens do.
+const SIGNUPS_WIDTHS = [320, 390, 768, 1440, 2560];
+
 // The SSR theme is selected by the `cairn-admin-theme` COOKIE, not by emulateMedia: the server reads the
 // cookie to pick `cairn-admin` vs `cairn-admin-dark` before it renders, while emulateMedia only aligns the
 // client-side media-query CSS (prefers-color-scheme) so the painted page matches the SSR choice. The cookie
@@ -211,3 +217,25 @@ test('admin media detail panel — dark', async ({ page, context, baseURL }) => 
   await expect(page.getByRole('region', { name: /details$/ })).toBeVisible();
   await expect(page).toHaveScreenshot('admin-media-detail-dark.png', { fullPage: true });
 });
+
+for (const width of SIGNUPS_WIDTHS) {
+  test(`admin signups — light — ${width}px`, async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+    await page.setViewportSize({ width, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/admin/signups');
+    await expect(page.getByRole('heading', { level: 1, name: 'Signups' })).toBeVisible();
+    await expect(page).toHaveScreenshot(`admin-signups-light-${width}.png`, { fullPage: true });
+  });
+
+  test(`admin signups — dark — ${width}px`, async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+    ]);
+    await page.setViewportSize({ width, height: 800 });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/admin/signups');
+    await expect(page.getByRole('heading', { level: 1, name: 'Signups' })).toBeVisible();
+    await expect(page).toHaveScreenshot(`admin-signups-dark-${width}.png`, { fullPage: true });
+  });
+}

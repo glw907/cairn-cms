@@ -148,9 +148,9 @@ or extend it; nothing here is a literal a re-skin would miss.
 </svelte:head>
 
 <div class="sg">
-  <header class="sg-masthead">
-    <h1 class="sg-title">Styleguide</h1>
-    <p class="sg-lead">
+  <header class="cairn-hero sg-masthead">
+    <h1 class="cairn-hero-title">Styleguide</h1>
+    <p class="cairn-hero-lead">
       Everything the public theme ships so far, on the tokens a site owner re-skins. The page
       auto-themes with your system light or dark setting.
     </p>
@@ -301,7 +301,7 @@ or extend it; nothing here is a literal a re-skin would miss.
             aria-selected={activeTab === tab.id}
             aria-controls="cairn-sg-panel-{tab.id}"
             tabindex={activeTab === tab.id ? 0 : -1}
-            class="sg-tab"
+            class="sg-tab cairn-focus-ring"
             class:sg-tab-active={activeTab === tab.id}
             onclick={() => (activeTab = tab.id)}
             onkeydown={(e) => onTabKeydown(e, i)}
@@ -327,7 +327,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     <div class="sg-accordion">
       {#each accordion as item (item.summary)}
         <details class="sg-details">
-          <summary class="sg-summary">{item.summary}</summary>
+          <summary class="sg-summary cairn-focus-ring">{item.summary}</summary>
           <p class="sg-details-body">{item.body}</p>
         </details>
       {/each}
@@ -344,7 +344,7 @@ or extend it; nothing here is a literal a re-skin would miss.
       <!-- rel="external" keeps SvelteKit's prerender crawler from queuing /admin (it answers a
            build-time crawl with an error by design) and opts the link out of the client-side
            router, the same isAdminHref-decided pattern SiteHeader and SiteFooter use. -->
-      <a href="/admin" rel="external" class="sg-cta-btn">Open the editor</a>
+      <a href="/admin" rel="external" class="sg-cta-btn cairn-focus-ring">Open the editor</a>
     </div>
 
     <h3 class="sg-h3">Stat</h3>
@@ -363,6 +363,78 @@ or extend it; nothing here is a literal a re-skin would miss.
       </div>
     </div>
   </section>
+
+  <!-- 5. Composition: the chassis's own layout primitives (src/chassis/composition.css). Two
+       already have a real call site elsewhere (.cairn-hero on this page's masthead, .cairn-section
+       on the home page's .index); the root error page uses .cairn-band. .cairn-card and
+       .cairn-sidebar-layout have no real call site in this theme, so this section is where a
+       site owner sees them: a demonstration, not a composition claim. -->
+  <section class="sg-section" aria-labelledby="sg-composition">
+    <h2 id="sg-composition" class="sg-h2">Composition</h2>
+    <p class="sg-note">
+      The layout primitives every recipe below reaches for instead of a hand-rolled equivalent. This
+      masthead is <code>.cairn-hero</code> and the home page's archive index is
+      <code>.cairn-section</code>; the root error page's message block is <code>.cairn-band</code>.
+    </p>
+
+    <h3 class="sg-h3">Card</h3>
+    <p class="sg-note">
+      A bordered, padded surface for a theme's own chrome or composed-page markup. The padding,
+      radius, background, and border below all come from the primitive's own tokens; the title and
+      body typography reads this page's own <code>.sg-card-title</code>/<code>.sg-card-body</code>
+      classes.
+    </p>
+    <div class="cairn-card">
+      <h4 class="sg-card-title">A cairn-card example</h4>
+      <p class="sg-card-body">
+        The padding, radius, background, and border are the primitive's own <code
+          >--cairn-card-*</code
+        > custom properties.
+      </p>
+    </div>
+
+    <h3 class="sg-h3">Band</h3>
+    <p class="sg-note">
+      A full-bleed strip with its own background, for a section that wants to break out of the
+      reading column. A centered container sits as its child, the shape the root error page uses;
+      this demo carries the page's own <code>.cairn-place-full</code> breakout (the figure-placement
+      class in <code>src/theme/site.css</code>) to bleed off the styleguide's own reading column.
+    </p>
+    <div class="cairn-band cairn-place-full">
+      <div class="mx-auto max-w-measure px-m">
+        <p class="sg-note" style="margin: 0;">
+          A cairn-band example: this strip's own ground reads <code>--cairn-band-bg</code>, and this
+          paragraph sits inside the centered child container.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="sg-h3">Section</h3>
+    <p class="sg-note">
+      A vertical rhythm block within the reading column, for a composed page's own pieces. The home
+      page's archive index uses this to space its blocks consistently.
+    </p>
+    <div class="cairn-section">
+      <p class="sg-section-block">A first block inside the section.</p>
+      <p class="sg-section-block">
+        A second block, spaced from the first by the primitive's own gap.
+      </p>
+    </div>
+
+    <h3 class="sg-h3">Sidebar layout</h3>
+    <p class="sg-note">
+      A main column plus a narrower aside, stacking below a fixed 48rem breakpoint. A theme reaches
+      for this for a docs-style side nav or an article's related-posts rail.
+    </p>
+    <div class="cairn-sidebar-layout">
+      <div class="cairn-card">
+        <p class="sg-card-body" style="margin: 0;">The main column.</p>
+      </div>
+      <div class="cairn-card">
+        <p class="sg-card-body" style="margin: 0;">The narrower aside.</p>
+      </div>
+    </div>
+  </section>
 </div>
 
 <style>
@@ -375,24 +447,12 @@ or extend it; nothing here is a literal a re-skin would miss.
     margin-inline: auto;
   }
 
+  /* The masthead now sits on .cairn-hero (src/chassis/composition.css): the primitive's own
+     flex-column gap replaces the lead's former top margin, and the -title/-lead classes replace
+     the deleted .sg-title/.sg-lead rules. Only the section-spacing margin below the header stays
+     scoped here, since that rhythm belongs to this page, not the hero primitive. */
   .sg-masthead {
     margin-bottom: var(--spacing-xl);
-  }
-  .sg-title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--text-step-5);
-    line-height: var(--leading-tight);
-    letter-spacing: var(--tracking-tight);
-    color: var(--color-base-content);
-  }
-  .sg-lead {
-    margin: var(--spacing-s) 0 0;
-    max-width: var(--container-measure);
-    font-size: var(--text-step-1);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
   }
 
   .sg-section {
@@ -430,6 +490,17 @@ or extend it; nothing here is a literal a re-skin would miss.
     border: var(--border) solid var(--color-base-300);
     border-radius: var(--radius-selector);
     padding: 0.1em 0.36em;
+  }
+
+  /* The Section demo's two blocks: the same reading typography as .sg-note but with no margin
+     declaration of its own, so .cairn-section's layered `> * + *` rule (composition.css) is free
+     to paint the gap between them. .sg-note's own unlayered bottom margin would otherwise win
+     over that layered rule regardless of specificity, zeroing the gap the demo exists to show. */
+  .sg-section-block {
+    max-width: var(--container-measure);
+    font-size: var(--text-step-0);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
 
   /* Color swatches: a responsive grid of chips, each painted from its token via an inline var(). */
@@ -563,10 +634,6 @@ or extend it; nothing here is a literal a re-skin would miss.
     border-bottom-color: var(--color-primary);
     font-weight: 600;
   }
-  .sg-tab:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
   .sg-tabpanel {
     padding-top: var(--spacing-s);
     font-size: var(--text-step-0);
@@ -610,10 +677,6 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   .sg-details[open] .sg-summary::after {
     content: '\2212';
-  }
-  .sg-summary:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
   }
   .sg-details-body {
     margin: var(--spacing-2xs) 0 0;
@@ -660,10 +723,6 @@ or extend it; nothing here is a literal a re-skin would miss.
     color: var(--cairn-cta-btn-content);
     font-weight: 600;
     text-decoration: none;
-  }
-  .sg-cta-btn:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
   }
 
   /* Stat: a display-face number over a muted label, the index/landing accent treatment. */

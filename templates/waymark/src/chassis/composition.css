@@ -2,8 +2,8 @@
    The chassis's composition primitives: card, band, section, hero, and sidebar-layout. These are
    the "generous, not minimal" ruling made concrete (Geoff, 2026-07-05): a theme reaches for one of
    these recipes instead of hand-rolling its own card or two-column layout from scratch, the same
-   way it reaches for a token instead of a literal color. Nothing in the showcase's current markup
-   uses any of these yet; adopting one is a theme's choice, never a requirement, and every recipe
+   way it reaches for a token instead of a literal color. The showcase's own `(site)` chrome uses
+   the site-shell pair; the rest are a theme's choice, never a requirement, and every recipe
    below is overridable per-instance through its own `--cairn-<primitive>-*` custom properties
    (documented at each rule) rather than only through the shared design-scale tokens.
 
@@ -36,6 +36,28 @@
     --cairn-band-bg: var(--color-base-200);
     padding-block: var(--cairn-band-padding-block);
     background: var(--cairn-band-bg);
+  }
+
+  /* The footer's own top margin, separating it from whatever precedes it. This lives here, in
+     @layer components, rather than as a Tailwind utility class on the footer element, because the
+     band-to-footer cancel below is itself a layered rule: a Tailwind utility (`mt-2xl`) sits in
+     @layer utilities, which Tailwind v4 orders AFTER @layer components, so an unlayered or
+     later-layer margin always wins over the cancel regardless of selector specificity. Both
+     halves of this seam have to share a layer for either to be able to override the other. */
+  .site-footer {
+    margin-top: var(--spacing-2xl);
+  }
+
+  /* The band owns its exit: a footer's own top margin is meant to separate it from a preceding
+     block whose ground differs from its own, but a band that directly precedes the footer
+     already draws that separation itself (the band's own bottom edge is the seam). Left alone,
+     the footer's margin reopens a strip of the page's base ground between a band and a footer
+     that share the same ground (the showcase's base-200 band into a base-200 footer). Zeroing it
+     here, scoped to the direct-sibling case, keeps every other band-to-content transition
+     untouched; the higher specificity of the compound selector over the plain `.site-footer`
+     rule above wins within the shared layer. */
+  .cairn-band + .site-footer {
+    margin-top: 0;
   }
 
   /* Section: a vertical rhythm block within the reading column, for grouping a composed page's
@@ -95,9 +117,9 @@
   /* Site shell: a sticky-footer flex column (header, growing main, footer), for a theme whose
      chrome wants the footer pinned to the viewport bottom on a short page (the AstroPaper port's
      shape). `.cairn-site-shell` is the flex column; `.cairn-site-main` is the growing item. A
-     flex item's own width is auto, and auto does not resolve against the flex line on the CROSS
-     axis the way a plain block's width does (this is a different bug from the well-known
-     main-axis min-content gotcha): when a descendant intrinsically wider than the column (a
+     flex item's own width is auto, and auto does not resolve against the flex line the way a
+     plain block's width does on the cross axis (a different bug from the well-known main-axis
+     min-content gotcha): when a descendant intrinsically wider than the column (a
      table with nowrap cells, any box with its own overflow-x: auto) sits anywhere inside
      `.cairn-site-main`, the item shrinks-to-fit that descendant's content width instead of
      stretching, and the growth silently bubbles up through every auto-sized ancestor, breaking

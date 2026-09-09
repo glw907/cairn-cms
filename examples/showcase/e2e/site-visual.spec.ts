@@ -58,6 +58,19 @@ for (const colorScheme of COLOR_SCHEMES) {
         fullPage: true,
       });
     });
+
+    test(`error404 — ${colorScheme} — ${width}px`, async ({ page }) => {
+      // An unmatched path: the root +error.svelte renders full SSR with the site's own nav and
+      // footer, status 404. This IS the surface under test, not a navigation failure, so the
+      // response status is left unchecked and the screenshot captures the rendered error page.
+      await page.setViewportSize({ width, height: 800 });
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/this-surface-does-not-exist');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page).toHaveScreenshot(`error404-${colorScheme}-${width}.png`, {
+        fullPage: true,
+      });
+    });
   }
 }
 
@@ -135,24 +148,34 @@ test('the rendered alert carries its own inlined classes, not DaisyUI card class
   expect(strayCardClasses).toBe(0);
 });
 
-// The home lead entry's title link must carry its own designed focus-visible treatment, not
-// whatever outline the browser draws by default; `.focus()` reliably triggers `:focus-visible` on
-// an anchor in Chromium (unlike a button or input, an anchor is not on the UA's mouse-focus
-// suppression list), so this needs no simulated Tab traversal.
-test('the home lead title gets a styled focus-visible ring, not the browser default', async ({
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/');
-  const leadTitleLink = page.locator('.lead__title a').first();
-  await expect(leadTitleLink).toBeVisible();
-  await leadTitleLink.focus();
-  const { hasOutline, hasBoxShadow } = await leadTitleLink.evaluate((el) => {
-    const style = getComputedStyle(el);
-    return {
-      hasOutline: style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0,
-      hasBoxShadow: style.boxShadow !== 'none',
-    };
+// The one focus ring, proved by real keyboard traversal rather than a programmatic .focus()
+// call on one hand-picked link. Three Tab presses land on a `.site-nav` link on every one of
+// these three pages (the skip link and the wordmark precede it in the tab order, chrome the
+// chassis-B Task 5 sweep does not ring), so the loop reaches a real ringed control the same
+// way on home, article, and styleguide and asserts against the token's own resolved value
+// rather than a hard-coded number, so a theme that retunes the offset keeps this test honest.
+for (const { label, path } of [
+  { label: 'home', path: '/' },
+  { label: 'reading-surface article', path: '/posts/the-reading-surface' },
+  { label: 'styleguide', path: '/styleguide' },
+]) {
+  test(`${label} — the focus ring reads the chassis token after three Tab presses`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto(path);
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press('Tab');
+    }
+    const { outlineStyle, outlineOffset, tokenOffset } = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement;
+      const style = getComputedStyle(el);
+      const tokenOffset = getComputedStyle(document.documentElement)
+        .getPropertyValue('--cairn-focus-ring-offset')
+        .trim();
+      return { outlineStyle: style.outlineStyle, outlineOffset: style.outlineOffset, tokenOffset };
+    });
+    expect(outlineStyle).not.toBe('none');
+    expect(outlineOffset).toBe(tokenOffset);
   });
-  expect(hasOutline || hasBoxShadow).toBe(true);
-});
+}

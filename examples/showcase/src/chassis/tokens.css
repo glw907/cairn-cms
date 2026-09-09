@@ -44,9 +44,9 @@
      - prose.css (the reading-surface foundation) and composition.css (the card/band/section/hero/
        sidebar primitives) both import here, so a theme gets both by importing this one file.
    ============================================================================ */
-@import 'tailwindcss';
-@import './prose.css';
-@import './composition.css';
+@import "tailwindcss";
+@import "./prose.css";
+@import "./composition.css";
 
 @plugin "daisyui" {
   themes: false;
@@ -57,19 +57,20 @@
      own hand-built `.prose` (prose.css) never reads, and neither `.glass` nor `.join` appears anywhere
      in the template. The `radius` utility stays (it powers the `rounded-field`/`rounded-box` classes
      the chrome markup uses). */
-  exclude: footer, status, collapse, dropdown, avatar, textrotate, otp, chat, radio, toast, drawer,
-    checkbox, diff, swap, calendar, label, toggle, validator, filter, skeleton, fileinput, countdown,
-    link, select, mask, hovergallery, progress, table, indicator, list, megamenu, rating, kbd, modal,
-    radialprogress, range, aura, stack, stat, tooltip, breadcrumbs, loading, mockup, hero, fieldset,
-    timeline, tab, divider, carousel, hover3d, navbar, textarea, steps, input, fab, menu, dock,
-    typography, glass, join;
+  exclude:
+    footer, status, collapse, dropdown, avatar, textrotate, otp, chat, radio, toast, drawer,
+    checkbox, diff, swap, calendar, label, toggle, validator, filter, skeleton, fileinput,
+    countdown, link, select, mask, hovergallery, progress, table, indicator, list, megamenu, rating,
+    kbd, modal, radialprogress, range, aura, stack, stat, tooltip, breadcrumbs, loading, mockup,
+    hero, fieldset, timeline, tab, divider, carousel, hover3d, navbar, textarea, steps, input, fab,
+    menu, dock, typography, glass, join;
 }
 
 @theme {
   /* Generic system-font defaults; a theme overrides these three with its own face choices. */
-  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   /* A modest, non-fluid default scale (no clamp math of its own): legible, but a theme almost
      always wants its own fluid formula here. The named utilities (`text-step-*`) generate from
@@ -135,7 +136,8 @@
   --cairn-info-ink: var(--color-info);
 
   /* Elevation: a hairline plus a soft shadow carry a floating card. */
-  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+  --cairn-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
     0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
 
   /* The CTA panel pair, generically reading the neutral role; a theme tunes this to its own
@@ -146,6 +148,29 @@
   --cairn-cta-border: transparent;
   --cairn-cta-btn-bg: var(--color-base-100);
   --cairn-cta-btn-content: var(--color-base-content);
+
+  /* The one focus-ring language, read by prose.css's directive sites, the cairn-focus-ring
+     utility below, and every hand-written :focus-visible rule the theme still needs for a
+     descendant selector a class cannot reach. --cairn-focus-ring-radius is the theme-tunable
+     one of the three: this file holds the 2px default and a theme redeclares it in theme.css,
+     or overrides it per component. */
+  --cairn-focus-ring-outline: 2px solid var(--color-primary);
+  --cairn-focus-ring-offset: 2px;
+  --cairn-focus-ring-radius: 2px;
+}
+
+/* Tailwind's @utility must sit at a stylesheet's top level, outside any @layer block, so this
+   one lives here rather than inside composition.css's @layer components body. A theme's markup
+   reaches for `cairn-focus-ring` instead of hand-writing the outline pair on every interactive
+   element. It carries only the outline pair, never the radius: several call sites already set
+   their own unconditional border-radius (a pill, a DaisyUI field radius), and this utility must
+   not fight that on focus. A theme that wants the rounded corner too reads
+   --cairn-focus-ring-radius directly, the way SiteHeader/SiteFooter's .site-nav a already does. */
+@utility cairn-focus-ring {
+  &:focus-visible {
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
+  }
 }
 
 @layer components {

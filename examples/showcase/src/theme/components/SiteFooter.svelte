@@ -37,7 +37,7 @@ this file; the look re-skins from `theme.css`.
   ];
 </script>
 
-<footer class="site-footer mt-2xl border-t border-base-300 bg-base-200">
+<footer class="site-footer border-t border-base-300 bg-base-200">
   <div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl">
     <a href="/" class="brand-link inline-flex min-h-11 items-center text-muted no-underline">
       <span class="font-display text-step-1 font-semibold tracking-tight">Waymark</span>
@@ -68,8 +68,8 @@ this file; the look re-skins from `theme.css`.
     transition: color 0.15s;
   }
   .site-nav a:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
   }
   /* The brand link gets the same hover-and-transition idiom as the sibling nav links. */
   .brand-link {

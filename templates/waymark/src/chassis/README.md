@@ -128,23 +128,22 @@ its own config.
 **Composition primitives (`composition.css`).** `.cairn-card`, `.cairn-band`, `.cairn-section`,
 `.cairn-hero`, `.cairn-sidebar-layout` are the "generous, not minimal" ruling made concrete: a
 theme reaches for one of these instead of hand-rolling its own card or two-column layout from
-scratch. Nothing in this showcase's current markup uses any of them yet; adopting one is a
-theme's choice, never a requirement. Each primitive exposes its own `--cairn-<primitive>-*` custom
+scratch. Three are real site uses: the styleguide masthead is `.cairn-hero`, the home page's
+`.index` is `.cairn-section`, and the root error page's message block is
+`.cairn-band`. `.cairn-card` and `.cairn-sidebar-layout` have no real site use in this theme
+(the members pages are template-excluded fixtures, the home lead is not a card, and `related`
+renders as a block in the reading flow rather than a sidebar-shaped region), so they are
+demonstrated on the styleguide's own Composition section instead, a demonstration rather than a
+composition claim; adopting either elsewhere is a theme's choice, never a requirement. Each
+primitive exposes its own `--cairn-<primitive>-*` custom
 properties (for example `--cairn-card-padding`, `--cairn-band-bg`, `--cairn-sidebar-width`) for a
 per-instance override, layered on top of the shared design-scale tokens they default from. A media
 query condition cannot read a custom property, so `.cairn-sidebar-layout`'s 48rem breakpoint is a
 fixed value, not a token seam; its own comment says so.
 
 `.cairn-site-shell`/`.cairn-site-main` is a sticky-footer flex column (header, growing main,
-footer), harvested from the AstroPaper port's own hand-rolled shape. It bakes in the fix for a
-flex-item cross-axis bug: a flex item's own width is auto, and auto does not resolve against the
-flex line the way a plain block's width does, so a wide descendant anywhere inside the growing
-item (a table with nowrap cells, any box with its own `overflow-x: auto`) shrinks the item to
-that descendant's content width instead of stretching it, and the growth silently bubbles up
-through every auto-sized ancestor, breaking the layout at narrow viewports (`min-width: 0` alone
-does not fix this; only an explicit `width` does). A theme puts `.cairn-site-shell` on its outer
-wrapper and `.cairn-site-main` on `<main>` to get the fix for free, rather than rediscovering the
-bug the way the AstroPaper port first did.
+footer) that also bakes in a fix for a flex-item width bug; see the pair's own comment in
+`composition.css` for the mechanism.
 
 ## The themed-404 pattern
 
@@ -199,7 +198,7 @@ a build it silently breaks) fails this file's own promise.
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
-| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point). | Delete the file and that one `@import` line; nothing else references it today, since no theme markup in this showcase currently uses `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero`/`.cairn-sidebar-layout`/`.cairn-site-shell`/`.cairn-site-main` (the AstroPaper port's own theme is the first adopter of the site-shell pair, in its own tree). |
+| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); `(site)/styleguide/+page.svelte` (`.cairn-hero` on the masthead, `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-sidebar-layout` on the Composition section); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with its own flex column, replaces the hero, section, and band markup at their real call sites with hand-rolled equivalents, and drops the styleguide's Composition section (its `.cairn-card`/`.cairn-sidebar-layout` demonstration has no other call site in this theme). |
 
 Two of these notes are verified verbatim, in a scratch copy of this showcase, as part of the
 chassis restructure's own acceptance pass: `composition.css` (the zero-current-dependents case)

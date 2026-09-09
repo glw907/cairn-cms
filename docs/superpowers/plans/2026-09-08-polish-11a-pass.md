@@ -1565,6 +1565,13 @@ npm run package && npm run check && npm test && publint --strict && attw --pack 
 it is in neither `npm run check` nor `npm test` and is the only gate over `engine-rulings.md`. No
 check is dropped for cost; the spec forecloses that.
 
+Per the spec's 2026-09-09 amendment ("The gate, all three passes"), the per-task gate for a
+paint-neutral task is the fence's string with the trailing
+`&& CI=1 npm --prefix examples/showcase run test:e2e` removed. Task 7 is this plan's one paint
+task (it carries the capture pair and the produced `MOVED BASELINES:` list) and runs the full
+fence string unchanged. Every other task (1-6, 8-13) is paint-neutral and drops the e2e clause.
+The pass-end ritual runs the full string regardless.
+
 **What changed is the wrapper, not the list.** Twelve of the npm scripts in the derived list chain
 `npm run package` as a prerequisite (`check:package`, `check:reference`,
 `check:reference:signatures`, `check:surface`, `check:self-use`, `check:custom-surface`,

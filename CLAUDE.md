@@ -284,6 +284,16 @@ worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap i
 structurally by the showcase's `pretest:e2e` repackage hook. The symlink half is not: reinstall
 before trusting a worktree e2e, or rely on CI's real checkout.
 
+## Durable gotcha (CI-canonical baselines this workstation cannot reproduce)
+
+The visual baselines are CI-canonical (`e2e.yml`'s `update_snapshots` regen commits them). After
+a regen, this workstation's Chromium renders a few surfaces a few pixels differently (chassis-B2:
+the 20 home and archive2 files from `4de378ec`), so a local `CI=1 test:e2e` fails on exactly
+those files and cannot be made green without committing a locally biased baseline, which is
+forbidden. A local gate is green when its only visual failures are exactly the files the latest
+regen commit rewrote; anything else is a real red. The lasting fix is a ROADMAP chore: pin the
+local e2e to the runner's Chromium build and fonts, or run it in a matching container.
+
 ## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
 
 Vite 8 / Rolldown parses dist `.svelte` `<script lang="ts">` as JavaScript before the consumer's

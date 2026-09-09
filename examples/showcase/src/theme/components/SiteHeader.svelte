@@ -5,6 +5,10 @@ and the primary nav plus the theme toggle on the right. Every colour and size re
 utility or a cairn token (`--font-display`, `--cairn-*`), never a literal, and the inner content caps
 at `--container-measure` so the wordmark's left edge lines up with the article column below it.
 
+The wordmark text is `page.data.siteName`, the root layout server load's one composed reading of
+`siteConfig.siteName` (through `$chassis/content.js`'s `siteMeta`); this component never imports
+`siteConfig` itself.
+
 The nav links come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), resolved
 by the root layout server load and edited from `/admin/nav`; a site owner edits this file to
 re-shape the chrome itself, and the look re-skins from `theme.css` with no edit here. The current
@@ -85,7 +89,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
       <!-- Nowrap keeps the name on one line at any width; the header's own flex-wrap (above) is what
            makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
       <span class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
-        >Waymark</span
+        >{page.data.siteName}</span
       >
     </a>
 

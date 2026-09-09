@@ -5,6 +5,7 @@
      vocabulary with the home page's index; see $chassis/archive for the pagination shape both build
      from. -->
 <script lang="ts">
+  import { page } from '$app/state';
   import type { PageData } from './$types';
   import EntryRow from '$theme/components/EntryRow.svelte';
 
@@ -14,7 +15,7 @@
 </script>
 
 <svelte:head>
-  <title>Archive, page {data.archive.page} · Waymark</title>
+  <title>Archive, page {data.archive.page} · {page.data.siteName}</title>
   <meta name="robots" content="noindex" />
 </svelte:head>
 

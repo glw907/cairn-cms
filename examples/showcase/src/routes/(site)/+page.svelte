@@ -5,6 +5,7 @@
      the markup, a scoped `<style>` only for the lead card, the index grid, and the hairlines a utility
      cannot express. No hard-coded color or px font-size. -->
 <script lang="ts">
+  import { page } from '$app/state';
   import type { PageData } from './$types';
   import { formatDate } from '$chassis/date.js';
   import EntryRow from '$theme/components/EntryRow.svelte';
@@ -39,6 +40,10 @@
   const visibleCount = $derived((filtered ?? pageEntries).length);
   const showFeatured = $derived(selected === '' && Boolean(data.featured));
 </script>
+
+<svelte:head>
+  <title>{page.data.siteName}</title>
+</svelte:head>
 
 <section class="mx-auto max-w-measure pb-xl pt-l">
   <h1 class="m-0 mb-s font-display text-step-5 font-semibold leading-tight tracking-tight">

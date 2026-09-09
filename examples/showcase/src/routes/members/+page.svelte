@@ -7,6 +7,7 @@ visit is redirected to `/members/login` before this component ever renders (see 
 would be served by the asset layer with the Worker, and therefore the guard, never running).
 -->
 <script lang="ts">
+  import { page } from '$app/state';
   import themeCss from '$theme/theme.css?url';
   import type { PageData } from './$types';
 
@@ -20,7 +21,7 @@ would be served by the asset layer with the Worker, and therefore the guard, nev
 
 <svelte:head>
   <link rel="stylesheet" href={themeCss} />
-  <title>Member account</title>
+  <title>Member account · {page.data.siteName}</title>
 </svelte:head>
 
 <div

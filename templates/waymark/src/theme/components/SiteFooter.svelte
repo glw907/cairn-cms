@@ -6,8 +6,12 @@ public chrome by default. Every colour and size reads a DaisyUI role utility or 
 a literal. The inner content caps at `--container-measure`, matching the header and the article/home
 reading column, so the footer's left edge lines up with the body copy above it. A site owner edits
 this file; the look re-skins from `theme.css`.
+
+The wordmark text is `page.data.siteName`, the same root layout server load's reading `SiteHeader`
+uses; this component never imports `siteConfig` itself.
 -->
 <script lang="ts">
+  import { page } from '$app/state';
   import { isAdminHref } from './admin-link.js';
 
   /**
@@ -40,7 +44,8 @@ this file; the look re-skins from `theme.css`.
 <footer class="site-footer border-t border-base-300 bg-base-200">
   <div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl">
     <a href="/" class="brand-link inline-flex min-h-11 items-center text-muted no-underline">
-      <span class="font-display text-step-1 font-semibold tracking-tight">Waymark</span>
+      <span class="font-display text-step-1 font-semibold tracking-tight">{page.data.siteName}</span
+      >
     </a>
 
     <nav class="site-nav flex flex-wrap items-center gap-s text-step--1" aria-label="Footer">

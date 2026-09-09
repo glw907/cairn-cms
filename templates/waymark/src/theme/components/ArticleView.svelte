@@ -10,7 +10,9 @@ emits no `<link rel="canonical">`, no `og:url`, and no raw-markdown `.md` twin l
 entry's eventual public permalink is not yet live (or, on the ended page, already superseded) and
 a preview must not self-canonicalize onto it or let a crawler or unfurler consolidate there. The
 token, not the URL, is the credential; it lives only in the route path and never appears on the
-page. `previewLoad` (`/sveltekit`) already strips `canonical`, `og:url`, and `jsonLd.url` from
+page. The public route also passes `titleTemplate` (the site's `<page> · <siteName>` convention);
+the preview route leaves it unset, so a minted preview's `<title>` stays the entry's bare title
+rather than reading as a published page. `previewLoad` (`/sveltekit`) already strips `canonical`, `og:url`, and `jsonLd.url` from
 `data.seo` for exactly this reason, so the strip below is redundant for that field, though not for
 the `.md` twin link, which this component derives itself. It changes no other rendering: the
 fidelity claim (a minted preview and its eventual public page render identically) depends on
@@ -25,9 +27,15 @@ everything else staying byte-for-byte the same. -->
     data: EntryData & { references: Record<string, ResolvedReference | ResolvedReference[]> };
     /** True on the preview route: suppresses canonical, og:url, and the `.md` twin link. Defaults to false (the public route). */
     preview?: boolean;
+    /**
+     * Forwarded to `CairnHead`'s own `titleTemplate`: wraps the entry's raw title in the caller's
+     * title-suffix convention. Left unset on preview, so a minted preview keeps the entry's bare
+     * title rather than reading as a published page.
+     */
+    titleTemplate?: (title: string) => string;
   }
 
-  let { data, preview = false }: Props = $props();
+  let { data, preview = false, titleTemplate }: Props = $props();
 
   // Belt and suspenders: previewLoad already strips canonical/og:url/jsonLd.url from data.seo, so
   // this filter is a no-op against that caller. It stays so this component's own contract does not
@@ -92,7 +100,7 @@ everything else staying byte-for-byte the same. -->
   );
 </script>
 
-<CairnHead {seo} {markdownUrl} />
+<CairnHead {seo} {markdownUrl} {titleTemplate} />
 
 <!-- The bespoke reading surface. The `.prose` container caps the column at the measure and binds every
      element to the theme tokens (prose.css, @import-ed into theme.css). The hero figure leads the

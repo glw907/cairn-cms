@@ -147,6 +147,9 @@ export const cairn = defineAdapter({
   // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)
   // prettier-ignore
   backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  // A verified sender literal, not derived from ORIGIN or any other URL host: Cloudflare Email
+  // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
+  // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
   email: { from: 'cms@showcase.test' },
   // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
   // R2 double rides platform.env in dev; a real site binds it in wrangler.jsonc and mounts the

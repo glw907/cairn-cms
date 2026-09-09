@@ -30,9 +30,8 @@ const indexes = createSiteIndexes(cairn, siteConfig, {
 export const site = indexes.site;
 export const posts = indexes.posts;
 
-// The build-time origin, a literal by design: this is the reader Vite bakes into the static
-// build (robots.txt, the sitemap, the feed). `PUBLIC_ORIGIN` in wrangler.jsonc is the Worker's
-// own runtime value for the same host, read where a handler needs the live request's origin.
+// The public origin as a literal: it is read at build time by the feed and sitemap, and
+// `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same host.
 const ORIGIN = 'https://showcase.test';
 
 // Read through `siteMeta` below, the one composed identity every caller imports.

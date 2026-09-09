@@ -15,6 +15,7 @@ stays green over this file. A site owner reads this page to learn what is availa
 or extend it; nothing here is a literal a re-skin would miss.
 -->
 <script lang="ts">
+  import { page } from '$app/state';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -140,7 +141,7 @@ or extend it; nothing here is a literal a re-skin would miss.
 </script>
 
 <svelte:head>
-  <title>Styleguide · Waymark</title>
+  <title>Styleguide · {page.data.siteName}</title>
   <meta
     name="description"
     content="The cairn public theme: color tokens, the type scale, the reading surface, and the component set."

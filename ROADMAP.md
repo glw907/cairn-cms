@@ -2038,6 +2038,13 @@ the named human gates only):**
 
 ## Later
 
+- **Make the local showcase e2e render match the CI runner (Geoff, 2026-09-09).** After a CI
+  baseline regen, this workstation's Chromium renders home and archive2 a few pixels off (the 20
+  files in `4de378ec`), so every local gate reports those failures and needed a conductor ruling
+  to pass. Pin the local Playwright Chromium build and font set to the runner's, or run the e2e
+  in a matching container, so local baselines are canonical again. Chore, not a pass; the gotcha
+  is recorded in `CLAUDE.md`.
+
 - **The second-menu editing question (chassis-B2 harvest, engine consultation candidate).**
   `/admin/nav`'s `createNavRoutes` binds to one menu (`menus.primary`); chassis-B2 moved the
   showcase's footer nav to `site.config.yaml`'s `menus.footer` as a developer-edited yaml block

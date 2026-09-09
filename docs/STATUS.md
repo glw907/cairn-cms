@@ -18,30 +18,35 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-08, overnight run halted)
+## Immediate next action (2026-09-09 09:20)
 
-**The overnight run halted again, at stage `b2:merge`.** PR #54 (chassis-B2) cannot
-proceed: it is behind `main` and has real merge conflicts, and no CI has run on it since
-the last push (or the two pushes before it). Resume prompt for the next cold session,
-verbatim:
+**Chassis-B2 is MERGED** (PR #54, `b22af9b7`; ledger entry in `docs/HISTORY.md`; the
+verifier passed six surfaces, the reviewers' blocking findings were fixed, CI green). Geoff
+reads `main`'s home page and `/archive/2` when convenient.
 
-> Resume chassis-B2's pass-end ritual at step "b2:merge" in
-> /var/home/glw907/Projects/cairn-cms/.claude/worktrees/chassis-b2; the earlier steps are
-> committed on the branch.
+**The run to the next release continues by stages, each launched from a fresh session when
+the previous merge lands** (all rulings recorded; no human gate remains before the cut):
 
-**The overnight run to the next release halted mid-stage.** Stage one (chassis-B2) was
-running its pass-end ritual and stopped at step `b2:capture-after`: the capture run had
-started but had not finished when the session was forced to report, so it is not complete.
-Earlier steps are committed on the chassis-B2 branch.
+1. **Polish-11a next.** Worktree `.claude/worktrees/polish-11a` off `main` (create it; from-scratch
+   showcase install). Plan `docs/superpowers/plans/2026-09-08-polish-11a-pass.md`; args
+   `~/.cache/cairn-polish-11a/11a-run1-args.json` (Tasks 1 to 7, the cut after the paint task)
+   and `11a-run2-args.json` (8 to 13). Launch: copy `~/.claude/workflows/cairn-overnight-to-release.js`
+   and `pass-execute-chains.js` to the session scratchpad, pass `{date, repo, chainsScript,
+   a11: {worktree, branch, plan, cache, ceilingM: 6.5, run1Args, run2Args}}` as args (move each
+   run file's identical PAINT PROTOCOL criteria tail into one `paintProtocol` field first; the
+   `cairn-overnight-orchestrator` memory has the recipe). The orchestrator runs both chains,
+   the CI regen after Task 7, and the close through merge.
+2. **Polish-11b-i, then 11b-ii** the same way (`~/.cache/cairn-polish-11b-i/`, `-11b-ii/`).
+3. **Polish-C with `c.approved: true`** (`~/.cache/cairn-polish-c/`), then the cut fires.
 
-Resume prompt for the next cold session, verbatim:
+Rulings that bind every stage (workstation `CLAUDE.md`, "Gate economy on a pass"): the per-task
+gate omits the showcase e2e for paint-neutral tasks; comment-only fix rounds run the reduced
+gate; a local e2e is green when its only visual failures are exactly the files the latest CI
+regen rewrote; merges bring `main` in first with STATUS taking main's. Do not push docs to
+`main` while a PR is waiting on CI (it caused two extra merge rounds on #54).
 
-> Resume chassis-B2's pass-end ritual at step "b2:capture-after" in
-> /var/home/glw907/Projects/cairn-cms/.claude/worktrees/chassis-b2; the earlier steps are
-> committed on the branch.
-
-Stages two to four (polish-11a, polish-11b-i, polish-11b-ii, polish-C, then the automatic
-release cut) have not started and wait on chassis-B2's merge.
+Budget note: the weekly pool was at 98% when this session closed on 2026-09-09; the next
+stage waits for the pool.
 
 ## Parallel tracks
 

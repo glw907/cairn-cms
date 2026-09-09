@@ -20,6 +20,8 @@ migrated).
 your-site/
 ├── .gitattributes
 ├── .gitignore
+├── .prettierignore
+├── .prettierrc
 ├── migrations/
 │   ├── 0000_auth.sql
 │   ├── 0003_preview.sql
@@ -85,6 +87,7 @@ your-site/
 ├── svelte.config.js
 ├── tsconfig.json
 ├── vite.config.ts
+├── vitest.config.ts
 └── wrangler.jsonc
 ```
 
@@ -96,11 +99,13 @@ site scaffolded from the published package carries both.*
 The tree above is complete; the map below is not. It covers the entries that are cairn-specific
 or otherwise need explaining, and skips the tooling and plain SvelteKit files a developer already
 recognizes (`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, the `src/chassis/` files
-not named below, and the root and `admin` `+layout.server.ts`/`+layout.svelte`/home
-`+page.server.ts`/`+page.svelte` files SvelteKit's own routing expects). Two files it skips are
-not plain: `src/hooks.server.ts` mounts `createAuthGuard()` behind the dev-backend gate, and
-`src/app.d.ts` declares the platform bindings and `__CAIRN_DEV_BUILD__`. [Build a site by
-hand](./build-a-site-by-hand.md) writes both from nothing.
+not named below, and the `admin` `+layout.server.ts`/`+layout.svelte`/home
+`+page.server.ts`/`+page.svelte` files SvelteKit's own routing expects). Three files it skips are
+not plain: `src/hooks.server.ts` mounts `createAuthGuard()` behind the dev-backend gate,
+`src/app.d.ts` declares the platform bindings and `__CAIRN_DEV_BUILD__`, and the root
+`src/routes/+layout.server.ts` composes the site name, the primary and footer nav, and the
+islands flag, which every public page and `+error.svelte` read through `page.data`. [Build a
+site by hand](./build-a-site-by-hand.md) writes the first two from nothing.
 
 | File | What it is |
 | --- | --- |

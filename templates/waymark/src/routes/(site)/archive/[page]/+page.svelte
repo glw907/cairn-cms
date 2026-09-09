@@ -5,6 +5,7 @@
      vocabulary with the home page's index; see $chassis/archive for the pagination shape both build
      from. -->
 <script lang="ts">
+  import { page } from '$app/state';
   import type { PageData } from './$types';
   import EntryRow from '$theme/components/EntryRow.svelte';
 
@@ -14,14 +15,14 @@
 </script>
 
 <svelte:head>
-  <title>Archive, page {data.archive.page} · Waymark</title>
+  <title>Archive, page {data.archive.page} · {page.data.siteName}</title>
   <meta name="robots" content="noindex" />
 </svelte:head>
 
 <section class="listing" aria-label="Writing">
   <div class="index">
     <div class="index__head">
-      <p class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted">Archive</p>
+      <h1 class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted">Archive</h1>
       <span class="index__count">
         {visibleCount}
         {visibleCount === 1 ? 'entry' : 'entries'}
@@ -29,7 +30,7 @@
     </div>
 
     {#each data.archive.years as group, i (group.year)}
-      <h3 class="index__year" class:index__year--first={i === 0}>{group.year}</h3>
+      <h2 class="index__year" class:index__year--first={i === 0}>{group.year}</h2>
       {#each group.entries as post (post.id)}
         <EntryRow {post} />
       {/each}

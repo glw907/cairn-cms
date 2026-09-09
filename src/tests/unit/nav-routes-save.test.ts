@@ -34,6 +34,27 @@ describe('navSaveAction', () => {
     expect(commitPost.body).not.toHaveProperty('committer');
   });
 
+  it('preserves a sibling menus.footer block when saving menus.primary', async () => {
+    // /admin/nav is bound to one menu (primary); a save must round-trip the rest of the
+    // document untouched, including a developer-edited footer block.
+    const gh = new GithubDouble({
+      main: {
+        'src/lib/site.config.yaml':
+          'siteName: S\nmenus:\n  primary:\n    - label: Old\n  footer:\n    - label: Feed\n      url: /feed.xml\n',
+      },
+    });
+    gh.install();
+    const routes = createNavRoutes(runtime());
+    await expectRedirect(() =>
+      routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }]))),
+    );
+    const saved = gh.read('main', 'src/lib/site.config.yaml');
+    expect(saved).toContain('label: Home');
+    expect(saved).toContain('footer:');
+    expect(saved).toContain('label: Feed');
+    expect(saved).toContain('url: /feed.xml');
+  });
+
   it('logs commit.succeeded under scope, never a concept a site could also declare', async () => {
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
     gh.install();

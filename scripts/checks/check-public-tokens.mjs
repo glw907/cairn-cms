@@ -1,11 +1,14 @@
 // cairn-cms: the public-theme token gate (the bar's colour and accessibility CI-mechanical checks).
 // Two checks, both must pass for the gate to pass:
 //
-//   (a) No literals. A showcase component (`.svelte`) or the prose reading surface (`prose.css`) must
-//       carry no literal colour and no hard-coded absolute font-size; every colour reads a DaisyUI
-//       role utility or a `--color-*`/`--cairn-*` token, and every type size reads a `--cairn-step-*`
-//       token. theme.css is the token DEFINITION layer, so its oklch literals are correct and it is
-//       excluded entirely. A violation anywhere else fails with the file, line, and offending text.
+//   (a) No literals. A showcase component (`.svelte`), the prose reading surface (`prose.css`), or
+//       the theme's own layout sheet (`site.css`) must carry no literal colour and no hard-coded
+//       absolute font-size; every colour reads a DaisyUI role utility or a `--color-*`/`--cairn-*`
+//       token, and every type size reads a `--cairn-step-*` token. theme.css and tokens.css are the
+//       token DEFINITION layers, so their oklch literals are correct and both are excluded entirely.
+//       site.css carries one named exemption (EXEMPT_DECLARATIONS below): its root font-size clamp
+//       computes a formula between those definition layers' own constants rather than introducing a
+//       new one. A violation anywhere else fails with the file, line, and offending text.
 //
 //   (b) Dual-gamut AA contrast. Every text-bearing role/`-content` and on-surface-ink pair, parsed
 //       out of theme.css for both the light and the dark theme, must clear WCAG AA after clamping into
@@ -25,6 +28,7 @@ import { parse, converter, toGamut, wcagLuminance } from 'culori';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
+const SITE_CSS = resolve(ROOT, 'examples/showcase/src/theme/site.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
 // The cairn-theme identity overlay: a documented opt-in layer (docs/extend/design-your-site.md)
 // imported directly after theme.css, retoning only the base ladder. Part (b) also checks its merged
@@ -61,10 +65,50 @@ export const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch)\s*\(/;
 const ARBITRARY_FONT_SIZE = /text-\[[0-9.]+(?:px|rem|pt|cm|in|pc|q)\]/;
 const FONT_SIZE_DECL = /font-size:\s*[^;]*\b[0-9.]+(?:px|rem|pt|cm|in|pc|q)\b/;
 
+// A named exemption: one declaration inside one top-level rule of one scanned file that the
+// no-literals check would otherwise flag, held to a stated reason instead of silently skipped.
+// site.css's root font-size is the only entry: it is a fluid formula computing between two
+// constants theme.css and tokens.css already declare as real tokens (the type-scale steps), not
+// a new literal introduced here, and the formula itself cannot be expressed as a single token.
+const EXEMPT_DECLARATIONS = [
+  {
+    file: SITE_CSS,
+    selector: 'html',
+    rule: 'hard-coded font-size',
+    reason:
+      "the ultrawide root font-size clamp: it computes between theme.css's and tokens.css's own " +
+      'type-scale constants rather than introducing a new literal, and the formula itself has no ' +
+      'single token to read',
+  },
+];
+
 /**
- * Every `.svelte` file, `prose.css`, and `composition.css` under a directory, recursively.
- * theme.css and tokens.css are the token definition layers and are excluded by name (they are the
- * only files allowed to hold oklch literals or generic role-derived defaults).
+ * The 1-indexed, inclusive line range of a top-level rule (depth 0 to 1) whose selector matches
+ * exactly, in a CSS string. Returns null when the selector never opens a top-level rule. Used to
+ * scope an {@link EXEMPT_DECLARATIONS} entry to the one rule it names, not the whole file.
+ * @param {string} css
+ * @param {string} selector
+ * @returns {[number, number] | null}
+ */
+function topLevelRuleLines(css, selector) {
+  const lines = css.split('\n');
+  const opensSelector = new RegExp(`^${selector}\\s*\\{`);
+  let depth = 0;
+  let start = null;
+  for (let i = 0; i < lines.length; i++) {
+    const opens = (lines[i].match(/\{/g) || []).length;
+    const closes = (lines[i].match(/\}/g) || []).length;
+    if (depth === 0 && opens > 0 && opensSelector.test(lines[i].trim())) start = i + 1;
+    depth += opens - closes;
+    if (start !== null && depth === 0) return [start, i + 1];
+  }
+  return null;
+}
+
+/**
+ * Every `.svelte` file, `prose.css`, `composition.css`, and `site.css` under a directory,
+ * recursively. theme.css and tokens.css are the token definition layers and are excluded by name
+ * (they are the only files allowed to hold oklch literals or generic role-derived defaults).
  * @param {string} dir
  * @returns {string[]}
  */
@@ -76,7 +120,7 @@ function scannedFiles(dir) {
     if (statSync(full).isDirectory()) {
       out.push(...scannedFiles(full));
     } else if (
-      (name.endsWith('.svelte') || name === 'prose.css' || name === 'composition.css') &&
+      (name.endsWith('.svelte') || name === 'prose.css' || name === 'composition.css' || name === 'site.css') &&
       name !== 'theme.css' &&
       name !== 'tokens.css'
     ) {
@@ -89,20 +133,36 @@ function scannedFiles(dir) {
 /**
  * Scan one file for a literal colour or a hard-coded absolute font-size, returning a violation per
  * matching line. The whole line is reported as the offending text so the location is unambiguous.
+ * A line covered by an {@link EXEMPT_DECLARATIONS} entry for this file and rule is skipped.
  * @param {string} file an absolute path
  * @returns {{ file: string, line: number, rule: string, text: string }[]}
  */
 function scanFile(file) {
   /** @type {{ file: string, line: number, rule: string, text: string }[]} */
   const violations = [];
-  const lines = readFileSync(file, 'utf8').split('\n');
+  const css = readFileSync(file, 'utf8');
+  const lines = css.split('\n');
+  const rel = relative(ROOT, file);
+  const exemptLinesByRule = new Map();
+  for (const exemption of EXEMPT_DECLARATIONS) {
+    if (exemption.file !== file) continue;
+    const range = topLevelRuleLines(css, exemption.selector);
+    if (range) exemptLinesByRule.set(exemption.rule, range);
+  }
+  function isExempt(/** @type {string} */ rule, /** @type {number} */ lineNumber) {
+    const range = exemptLinesByRule.get(rule);
+    return range !== undefined && lineNumber >= range[0] && lineNumber <= range[1];
+  }
   lines.forEach((line, i) => {
-    const rel = relative(ROOT, file);
-    if (COLOR_LITERAL.test(line)) {
-      violations.push({ file: rel, line: i + 1, rule: 'literal colour', text: line.trim() });
+    const lineNumber = i + 1;
+    if (COLOR_LITERAL.test(line) && !isExempt('literal colour', lineNumber)) {
+      violations.push({ file: rel, line: lineNumber, rule: 'literal colour', text: line.trim() });
     }
-    if (ARBITRARY_FONT_SIZE.test(line) || FONT_SIZE_DECL.test(line)) {
-      violations.push({ file: rel, line: i + 1, rule: 'hard-coded font-size', text: line.trim() });
+    if (
+      (ARBITRARY_FONT_SIZE.test(line) || FONT_SIZE_DECL.test(line)) &&
+      !isExempt('hard-coded font-size', lineNumber)
+    ) {
+      violations.push({ file: rel, line: lineNumber, rule: 'hard-coded font-size', text: line.trim() });
     }
   });
   return violations;
@@ -562,25 +622,29 @@ function codeRampBody(css) {
 }
 
 /**
- * The token-resolution check. Collects every `var(--token)` referenced in the prose surface and in
- * the chassis code ramp, collects every token DEFINED across theme.css, chassis/tokens.css, and
- * prose.css (the `:root`, the dark media block, and the two `@plugin "daisyui/theme"` geometry
- * blocks all declare with `--x:`, so a whole-file declaration scan captures them) unioned with
- * DaisyUI's generated role set, and returns the references that resolve to nothing. theme.css's
- * later declarations override chassis/tokens.css's generic defaults for the SAME property name (the
- * chassis boundary; src/chassis/README.md), but a resolution check only asks whether a name is
- * defined SOMEWHERE in the composed stylesheet, so unioning both files' declarations is correct
- * regardless of which one wins the cascade. An empty result means every reference is defined.
+ * The token-resolution check. Collects every `var(--token)` referenced in the prose surface, the
+ * chassis code ramp, and (when supplied) site.css, collects every token DEFINED across theme.css,
+ * chassis/tokens.css, prose.css, and site.css (the `:root`, the dark media block, and the two
+ * `@plugin "daisyui/theme"` geometry blocks all declare with `--x:`, so a whole-file declaration
+ * scan captures them) unioned with DaisyUI's generated role set, and returns the references that
+ * resolve to nothing. theme.css's later declarations override chassis/tokens.css's generic defaults
+ * for the SAME property name (the chassis boundary; src/chassis/README.md), but a resolution check
+ * only asks whether a name is defined SOMEWHERE in the composed stylesheet, so unioning both files'
+ * declarations is correct regardless of which one wins the cascade. An empty result means every
+ * reference is defined. `siteCss` is optional so a caller with no site.css to check (the re-skin
+ * fixture, which only ever rewrites theme.css) keeps calling this with three arguments.
  * @param {string} themeCss the contents of theme.css
  * @param {string} proseCss the contents of prose.css
  * @param {string} chassisTokensCss the contents of chassis/tokens.css
+ * @param {string} [siteCss] the contents of site.css
  * @returns {{ token: string, source: string }[]}
  */
-export function checkTokenResolution(themeCss, proseCss, chassisTokensCss) {
+export function checkTokenResolution(themeCss, proseCss, chassisTokensCss, siteCss) {
   const defined = new Set([
     ...collectDefinedTokens(themeCss),
     ...collectDefinedTokens(proseCss),
     ...collectDefinedTokens(chassisTokensCss),
+    ...(siteCss ? collectDefinedTokens(siteCss) : []),
     ...DAISYUI_GENERATED_ROLES,
   ]);
   /** @type {{ token: string, source: string }[]} */
@@ -590,6 +654,7 @@ export function checkTokenResolution(themeCss, proseCss, chassisTokensCss) {
     ['prose.css', proseCss],
     ['chassis/tokens.css code ramp', codeRampBody(chassisTokensCss)],
   ];
+  if (siteCss) sources.push(['theme/site.css', siteCss]);
   for (const [source, css] of sources) {
     for (const token of collectReferencedTokens(css)) {
       if (!defined.has(token)) dangling.push({ token, source });
@@ -614,7 +679,7 @@ function main() {
     }
     failed = true;
   } else {
-    console.log('No-literals check: PASS (no literal colour or hard-coded font-size in components or prose.css)');
+    console.log('No-literals check: PASS (no literal colour or hard-coded font-size in components, prose.css, or site.css)');
   }
 
   // (b) Dual-gamut AA contrast.
@@ -643,6 +708,7 @@ function main() {
     css,
     readFileSync(PROSE_CSS, 'utf8'),
     readFileSync(CHASSIS_TOKENS_CSS, 'utf8'),
+    readFileSync(SITE_CSS, 'utf8'),
   );
   console.log('');
   if (dangling.length) {

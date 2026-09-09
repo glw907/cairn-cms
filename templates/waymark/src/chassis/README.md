@@ -1,7 +1,7 @@
 # The chassis
 
 The boundary rule: **a theme is everything that isn't chassis.** `src/chassis/` holds the
-genre-free layer this showcase's theme (Waymark, living in `src/theme/`, plus the route files
+genre-free layer this site's theme (Waymark, living in `src/theme/`, plus the route files
 under `src/routes/` that SvelteKit's filesystem routing pins in place) mounts onto: the plumbing
 no site skips regardless of what it looks like, and the composition primitives a theme reaches for
 instead of hand-rolling its own. Everything outside `src/chassis/` (the concrete adapter config,
@@ -43,6 +43,20 @@ SvelteKit's routing is filesystem-based; they import chassis logic through the `
 (`svelte.config.js`) instead of duplicating it. The same route files reach the theme's own content
 (the adapter config, the site config) through a second alias, `$theme` (`src/theme/`), the mirror
 image of `$chassis` for everything that is not genre-free.
+
+## Class namespaces
+
+Four class prefixes appear across this site, and each names who owns it, not enforced by a
+gate but stated here so a new class reaches for the right one. `cairn-*` is the chassis's: a
+class the engine or a chassis file defines and a theme only ever colors through tokens, never
+restyles the structure of (`cairn-place-center`/`-wide`/`-full`, `cairn-tok-*`, `cairn-router-scrolling`,
+`cairn-focus-ring`). `site-*` is the theme's own chrome and page classes and custom properties
+(`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`). `sg-*` is the styleguide
+route's own demo classes, scoped to `/styleguide` and never read anywhere else. A directive class
+with no prefix at all (`.callout`, `.alert`, `.card`) is engine-fixed under `.prose`: the markdown
+render pipeline emits it directly from a directive, so it is neither the chassis's nor a theme's
+to rename; a theme-registered custom directive component (`.banner`, this theme's own) is free to
+pick its own bare name the same way, since it never collides with the fixed set.
 
 ## Every override seam
 
@@ -125,6 +139,13 @@ passes its own `ThemeToggleConfig` (`SiteHeader.svelte` is the worked example). 
 differently named themes, or a second theme entirely, reuses this module unchanged by supplying
 its own config.
 
+**The archive page size (`archive.ts`).** `ARCHIVE_PAGE_SIZE` is a site's own knob, not a chassis
+constant tuned for this site: `paginateArchive` reads it as a default, and both the home
+page's featured segment and the `/archive/[page]` route pass no override, so raising or lowering
+it changes pagination everywhere at once. The scaffold ships fourteen sample posts, sized so the
+pagination block stays hidden until a fifteenth post crosses the page boundary; a site with a
+larger corpus, or one that wants a shorter page, sets its own value here.
+
 **Composition primitives (`composition.css`).** `.cairn-card`, `.cairn-band`, `.cairn-section`,
 `.cairn-hero`, `.cairn-sidebar-layout` are the "generous, not minimal" ruling made concrete: a
 theme reaches for one of these instead of hand-rolling its own card or two-column layout from
@@ -148,7 +169,7 @@ footer) that also bakes in a fix for a flex-item width bug; see the pair's own c
 ## The themed-404 pattern
 
 A fully static theme (every page under `(site)` set to `export const prerender = true`, this
-showcase's own shape) needs two pieces working together to serve a themed 404, not one. The
+site's own shape) needs two pieces working together to serve a themed 404, not one. The
 failure mode, found the hard way porting Foxi: a fully prerendered site strips its own
 `[...path]` catch-all out of the runtime-routable manifest entirely, so a request for an
 unmatched path matches no route at all. That means the `(site)` group's layout never runs, and
@@ -159,7 +180,7 @@ a file inside it, renders for an unmatched path, and only if the request reaches
 first place.
 
 Whether it reaches the Worker is the wrangler-config half. `assets.not_found_handling` gates it:
-`"none"` (the schema's own default, and what this showcase's `wrangler.jsonc` now sets explicitly)
+`"none"` (the schema's own default, and what this site's `wrangler.jsonc` now sets explicitly)
 passes an unmatched request through to the Worker, which falls through to SvelteKit's own
 built-in default-404 handling and renders the root `+error.svelte` through a real SSR response.
 `"404-page"` does the opposite: it makes the adapter write a static file to the assets directory
@@ -199,11 +220,6 @@ a build it silently breaks) fails this file's own promise.
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
 | `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); `(site)/styleguide/+page.svelte` (`.cairn-hero` on the masthead, `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-sidebar-layout` on the Composition section); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with its own flex column, replaces the hero, section, and band markup at their real call sites with hand-rolled equivalents, and drops the styleguide's Composition section (its `.cairn-card`/`.cairn-sidebar-layout` demonstration has no other call site in this theme). |
-
-Two of these notes are verified verbatim, in a scratch copy of this showcase, as part of the
-chassis restructure's own acceptance pass: `composition.css` (the zero-current-dependents case)
-and `theme-toggle.ts` (the used-but-optional case). Both removals left the showcase building green
-with no other edit. See the pass's post-mortem for the exact commands run.
 
 ## Adding a new primitive or seam
 

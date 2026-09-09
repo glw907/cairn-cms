@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { transformPackageJson, isExcluded, stripMarkedBlocks } from './emit-template.mjs';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { transformPackageJson, isExcluded, stripMarkedBlocks, emitTemplate } from './emit-template.mjs';
 
 test('transformPackageJson rewrites the engine and dev specs and renames the package', () => {
   const input = {
@@ -75,4 +78,49 @@ test('stripMarkedBlocks returns content unchanged when it carries a NUL byte', (
 test('stripMarkedBlocks returns content unchanged when it carries no marker', () => {
   const content = 'nothing to see here\njust plain lines';
   assert.equal(stripMarkedBlocks(content, 'plain.ts'), content);
+});
+
+test('emitTemplate regenerates the manifest by dropping excluded entries, with no installed dependencies', async () => {
+  const from = await mkdtemp(path.join(tmpdir(), 'cairn-emit-from-'));
+  const to = path.join(tmpdir(), `cairn-emit-to-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  try {
+    await writeFile(
+      path.join(from, '.cairn-template.json'),
+      JSON.stringify({ exclude: ['src/content/posts/2025-01-01-excluded.md'] }),
+    );
+    await writeFile(path.join(from, 'package.json'), JSON.stringify({ name: 'fixture', dependencies: {} }));
+    await mkdir(path.join(from, 'src/content/posts'), { recursive: true });
+    await writeFile(path.join(from, 'src/content/posts/2024-01-01-kept.md'), '---\ntitle: Kept\n---\nbody');
+    await writeFile(path.join(from, 'src/content/posts/2025-01-01-excluded.md'), '---\ntitle: Excluded\n---\nbody');
+    await mkdir(path.join(from, 'src/content/.cairn'), { recursive: true });
+    const sourceManifest = {
+      version: 1,
+      entries: [
+        { id: '2024-01-01-kept', concept: 'posts', title: 'Kept', permalink: '/posts/kept', draft: false, links: [] },
+        {
+          id: '2025-01-01-excluded',
+          concept: 'posts',
+          title: 'Excluded',
+          permalink: '/posts/excluded',
+          draft: false,
+          links: [],
+        },
+      ],
+    };
+    await writeFile(
+      path.join(from, 'src/content/.cairn/index.json'),
+      JSON.stringify(sourceManifest, null, 2) + '\n',
+    );
+
+    await emitTemplate({ from, to, engineSpec: '^1.0.0', devSpec: '^1.0.0' });
+
+    const emitted = JSON.parse(await readFile(path.join(to, 'src/content/.cairn/index.json'), 'utf8'));
+    assert.deepEqual(emitted, {
+      version: 1,
+      entries: [sourceManifest.entries[0]],
+    });
+  } finally {
+    await rm(from, { recursive: true, force: true });
+    await rm(to, { recursive: true, force: true });
+  }
 });

@@ -32,6 +32,186 @@
       "links": []
     },
     {
+      "id": "2025-01-11-cold-start",
+      "concept": "posts",
+      "title": "Starting a cold morning right",
+      "date": "2025-01-11",
+      "permalink": "/posts/cold-start",
+      "summary": "A note on why the first ten minutes at a frozen trailhead matter more than any mile after them.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "season-notes"
+      ]
+    },
+    {
+      "id": "2025-02-08-icefall-watch",
+      "concept": "posts",
+      "title": "Watching for icefall on the north face",
+      "date": "2025-02-08",
+      "permalink": "/posts/icefall-watch",
+      "summary": "Late-winter thaw cycles are loosening ice on the north-face gully, and the safe window is shorter than the forecast suggests.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2025-03-08-mud-season-begins",
+      "concept": "posts",
+      "title": "Mud season starts on the lower switchbacks",
+      "date": "2025-03-08",
+      "permalink": "/posts/mud-season-begins",
+      "summary": "The lower switchbacks have gone soft with the thaw, and staying on the durable line matters more than usual this week.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "trail-reports",
+        "weather"
+      ]
+    },
+    {
+      "id": "2025-04-05-creek-crossing",
+      "concept": "posts",
+      "title": "The creek crossing runs high this week",
+      "date": "2025-04-05",
+      "permalink": "/posts/creek-crossing",
+      "summary": "Snowmelt has pushed the main creek crossing above its usual line, and the safer ford sits a quarter mile upstream.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2025-05-03-wildflower-window",
+      "concept": "posts",
+      "title": "The wildflower window opens on the meadow loop",
+      "date": "2025-05-03",
+      "permalink": "/posts/wildflower-window",
+      "summary": "The meadow loop's lupine and paintbrush have started blooming a week earlier than last year.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2025-05-31-new-boots-review",
+      "concept": "posts",
+      "title": "Breaking in a new pair of boots the slow way",
+      "date": "2025-05-31",
+      "permalink": "/posts/new-boots-review",
+      "summary": "A pair of stiff leather boots earned their fit over six short walks before the first real day on trail.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear"
+      ]
+    },
+    {
+      "id": "2025-06-28-solstice-loop",
+      "concept": "posts",
+      "title": "A long light loop around the solstice",
+      "date": "2025-06-28",
+      "permalink": "/posts/solstice-loop",
+      "summary": "Sixteen hours of daylight this week made room for a loop that would feel rushed any other month.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "season-notes"
+      ]
+    },
+    {
+      "id": "2025-07-26-afternoon-thunder",
+      "concept": "posts",
+      "title": "Reading the afternoon thunderheads",
+      "date": "2025-07-26",
+      "permalink": "/posts/afternoon-thunder",
+      "summary": "A predictable early-afternoon storm pattern this week means the ridge is only safe to be on before noon.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "weather"
+      ]
+    },
+    {
+      "id": "2025-08-23-low-water-route",
+      "concept": "posts",
+      "title": "Taking the low-water route across the flats",
+      "date": "2025-08-23",
+      "permalink": "/posts/low-water-route",
+      "summary": "The creek across the flats has dropped enough this week to skip the footbridge detour entirely.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2025-09-20-first-color",
+      "concept": "posts",
+      "title": "First color on the aspen bench",
+      "date": "2025-09-20",
+      "permalink": "/posts/first-color",
+      "summary": "The aspen bench turned gold almost overnight this week, and the cooler mornings are worth planning around.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2025-10-18-hunting-season-notes",
+      "concept": "posts",
+      "title": "Sharing the trail during hunting season",
+      "date": "2025-10-18",
+      "permalink": "/posts/hunting-season-notes",
+      "summary": "Rifle season opened this week on the ridge, and the usual route needs a few adjustments until it closes.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2025-11-15-early-snow-gear",
+      "concept": "posts",
+      "title": "What actually earns its place once snow starts",
+      "date": "2025-11-15",
+      "permalink": "/posts/early-snow-gear",
+      "summary": "The first real snow of the season sorted out which pieces of kit were worth carrying all along.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "weather"
+      ]
+    },
+    {
+      "id": "2025-12-13-solstice-dark",
+      "concept": "posts",
+      "title": "Route-finding in the short days",
+      "date": "2025-12-13",
+      "permalink": "/posts/solstice-dark",
+      "summary": "With less than nine hours of daylight, the margin for a wrong turn on the ridge loop has gotten thin.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "weather"
+      ]
+    },
+    {
       "id": "2026-01-15-hello",
       "concept": "posts",
       "title": "Hello, cairn",

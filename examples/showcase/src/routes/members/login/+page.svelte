@@ -11,6 +11,7 @@ that requested the code (the documented "same browser" rule; a cross-browser con
 inside the cooldown still answers `sent`, so the button's label is the only thing that changes.
 -->
 <script lang="ts">
+  import { page } from '$app/state';
   import themeCss from '$theme/theme.css?url';
   import {
     INSECURE_TEST_CHALLENGE_FIELD,
@@ -28,7 +29,7 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
 
 <svelte:head>
   <link rel="stylesheet" href={themeCss} />
-  <title>Member sign in</title>
+  <title>Member sign in · {page.data.siteName}</title>
 </svelte:head>
 
 <div

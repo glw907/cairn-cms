@@ -18,6 +18,9 @@ import { walk } from '../walk-files.mjs';
 const EXCLUDE_START = 'cairn-template:exclude-start';
 const EXCLUDE_END = 'cairn-template:exclude-end';
 
+/** The committed content manifest's repo-relative path, the same constant every reader shares. */
+const CONTENT_MANIFEST_PATH = path.join('src', 'content', '.cairn', 'index.json');
+
 /**
  * Strip marker-delimited blocks from a file's content. Every line from a start marker through
  * its matching end marker, inclusive, is dropped; a line outside any block passes through
@@ -111,6 +114,47 @@ export function isAlwaysSkippedPath(rel) {
 }
 
 /**
+ * Regenerate the emitted tree's content manifest (`src/content/.cairn/index.json`) so it matches
+ * the content the copy actually kept, by dropping every entry whose source content file the
+ * exclusion walk removed. A plain copy of `from`'s committed manifest would carry entries for any
+ * excluded path (the thirteen fixture posts excluded from the scaffold, for one), and the emitted
+ * tree's own `cairnManifest()` Vite plugin verifies the manifest against its content at build
+ * time, so a stale copy fails every scaffold's first build.
+ *
+ * A manifest entry keys back to its content file as `src/content/<concept>/<id>.md`, the same
+ * directory convention `.cairn-template.json`'s own excluded paths already rely on (every concept
+ * descriptor names its content directory `src/content/<concept id>`). The committed manifest is
+ * already canonical (entries sorted by concept then id, a fixed per-entry key order,
+ * `serializeManifest`'s output), and removing entries never disturbs that order or a surviving
+ * entry's own shape, so the filtered result is byte-identical to a fresh regeneration: a kept
+ * entry's content file did not change, so neither does its manifest projection. This runs on the
+ * copied tree alone; it needs no installed dependencies and no subprocess. A `from` with no
+ * committed manifest (a fixture directory in a unit test) is left alone, the same no-op contract
+ * this function has always offered a manifest-free source.
+ * @param {string} from the showcase (or other source) the copy came from
+ * @param {string} to the emitted tree, already holding a copied `package.json` and content
+ * @param {string[]} exclude the exclusion manifest's excluded paths
+ * @returns {Promise<void>}
+ */
+async function regenerateManifest(from, to, exclude) {
+  const manifestPath = path.join(from, CONTENT_MANIFEST_PATH);
+  const raw = await readFile(manifestPath, 'utf8').catch((err) => {
+    if (err.code === 'ENOENT') return null;
+    throw err;
+  });
+  if (raw === null) return;
+  const manifest = JSON.parse(raw);
+  const entries = manifest.entries.filter(
+    /** @param {{ concept: string, id: string }} entry */
+    (entry) => !isExcluded(`src/content/${entry.concept}/${entry.id}.md`, exclude),
+  );
+  await writeFile(
+    path.join(to, CONTENT_MANIFEST_PATH),
+    JSON.stringify({ version: manifest.version, entries }, null, 2) + '\n',
+  );
+}
+
+/**
  * Emit the template tree.
  * @param {{ from: string, to: string, engineSpec: string, devSpec: string, name?: string }} opts
  *  `from` is the showcase dir, `to` the target dir (must not exist or be empty), and
@@ -147,6 +191,7 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
   // install. force ignores its absence, so no existence check is needed.
   await rm(path.join(to, 'package-lock.json'), { force: true });
   await stripMarkedBlocksInTree(to);
+  await regenerateManifest(from, to, exclude);
   return to;
 }
 

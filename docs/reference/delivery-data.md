@@ -170,19 +170,19 @@ then hands them to the responder.
 ```ts
 import type { RequestHandler } from './$types';
 import { rssResponse, createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
-import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { site, siteMeta } from '$lib/content';
+import { cairn } from '$theme/cairn.config.js';
 
 export const prerender = true;
 
 export const GET: RequestHandler = async () => {
   const posts = site.concept('posts');
   const toPermalink = createLinkResolver(site);
-  const resolve = (ref: Parameters<typeof toPermalink>[0]) => ORIGIN + toPermalink(ref);
+  const resolve = (ref: Parameters<typeof toPermalink>[0]) => siteMeta.origin + toPermalink(ref);
   const items: FeedItem[] = await Promise.all(
     (posts?.all() ?? []).map(async (p) => ({
       title: p.title,
-      url: ORIGIN + p.permalink,
+      url: siteMeta.origin + p.permalink,
       date: p.date,
       summary: p.excerpt,
       contentHtml: await cairn.rendering.render({ body: posts!.byId(p.id)!.body, resolve }),
@@ -190,7 +190,12 @@ export const GET: RequestHandler = async () => {
     })),
   );
   return rssResponse(
-    { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+    {
+      title: siteMeta.title,
+      description: siteMeta.description,
+      siteUrl: siteMeta.origin,
+      feedUrl: siteMeta.origin + '/feed.xml',
+    },
     items,
   );
 };
@@ -268,15 +273,15 @@ serve a body the enumerator never listed.
 
 ```ts
 import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
-import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { site, siteMeta } from '$lib/content';
+import { cairn } from '$theme/cairn.config.js';
 
 const routes = createPublicRoutes({
   site,
   render: cairn.rendering.render,
-  origin: ORIGIN,
-  siteName: siteConfig.siteName,
-  description: SITE_DESCRIPTION,
+  origin: siteMeta.origin,
+  siteName: siteMeta.title,
+  description: siteMeta.description,
 });
 
 export const GET = async ({ url }: { url: URL }) => {

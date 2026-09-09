@@ -302,6 +302,19 @@
   changed; a site that forked its own `src/chassis` or `src/theme` copy before this pass sees no
   change until it re-copies. Consumers must: nothing.
 
+- The showcase scaffold and the emitted `create-cairn-site` template (chassis-B2 pass) proves
+  the paginated archive on a real 27-post corpus (thirteen 2025-dated posts added, excluded from
+  the scaffold's own delivery): `ARCHIVE_PAGE_SIZE` drops from 50 to 13, so `/archive/2` renders
+  for real. The wordmark and every `<title>` now read the site name from `page.data.siteName`,
+  served by the root `+layout.server.ts` from `siteMeta`, rather than a hard-coded literal, on
+  one title convention (`<page> · <siteName>`, the home page bare). The footer nav moves out of
+  a component-local array into `site.config.yaml`'s `menus.footer`, read through `readMenu` as a
+  `footerNav` export and served through `page.data.footerNav`. `site.css` joins the scanned set
+  `check-public-tokens` enforces, and the two degenerate `--text-step` clamps collapse to the
+  constants they already resolved to. No engine export or runtime behavior changed; a site that
+  forked its own `src/theme` or `src/routes` copy before this pass sees no change until it
+  re-copies. Consumers must: nothing.
+
 - `MarkdownEditor` (`/components`) collapses its 13 `register*` props (internals pass, Task 7,
   ruling 1: the MarkdownEditor seam collapse) into one
   `registerEditor?: (api: EditorApi | null) => void`.

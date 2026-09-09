@@ -328,3 +328,189 @@ surfaces, and the prior fix round's after set is the correct, if buggy, parent).
   page has a `.cairn-band` directly preceding its footer.
 - The full suite (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green after the update: 46 +
   28 = 74 passed, 0 failed.
+
+## B2
+
+### The pass before set
+
+Captured `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md` Task 1, at the branch point,
+before this task's own changes:
+
+- **Commit:** `58ed9d1f` (the chassis-b merge into `main`, B2's own branch point)
+- **Location:** `~/.cache/cairn-chassis-b2/pass/before/`
+- **Tool:** `examples/showcase/scripts/capture-surfaces.mjs`, full surface matrix (no `--only`)
+- **Surfaces:** `home`, `article` (plus its light-only 1920 extra), `styleguide`, `archive2`,
+  `error404`, `signups`
+- **Widths:** 320, 390, 768, 1440, 2560 (plus 1920 for `article`, light only)
+- **Schemes:** light, dark
+- **Manifest entries:** 278 (44 home, 92 article incl. the 1920 extra, 102 styleguide, 20
+  error404, 20 signups; `archive2` writes ten `.missing` files, not manifest entries)
+
+`archive2` is still `.missing` at every width in both schemes (`ARCHIVE_PAGE_SIZE` is still 50;
+Task 2 owns the page-size change). `task-1/before/` symlinks to this set, since Task 1 is B2's
+first task and no predecessor moved paint.
+
+## Row log
+
+### Task 1: the thirteen posts
+
+Step 1 (the first seven 2025-dated posts) lands no paint by itself (the delivery layer already
+globs every file under `src/content/posts/`, so the showcase's home page already reflects the
+growing corpus mid-task, but the paint protocol only captures once at each task boundary). Step 2
+adds the remaining six, bringing the showcase corpus to 27 posts (14 original plus 13 new,
+2025-dated), all excluded from the scaffold by path.
+
+- `home` 320/390/768/1440/2560 light and dark: the home page lists `entries.slice(1)` (all posts
+  but the featured lead) at `ARCHIVE_PAGE_SIZE` (still 50 in this task), so the row count grows
+  from 13 to 26 (27 posts minus the one featured lead) and a new "2025" year heading appears
+  above those rows (the year-grouped archive shape in `src/chassis/archive.ts` groups by
+  `entry.date.slice(0, 4)`, and every prior post predates 2025), and every home baseline grows
+  taller with it / thirteen new posts added to `src/content/posts/`, unexcluded from the
+  showcase's own delivery glob / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png` (10
+  files).
+- `article`, `styleguide`, `error404`, `signups` at every width and scheme: no move / none of
+  these surfaces render the posts index / no baseline changes; `magick compare -metric AE`
+  between `task-1/before/` and `task-1/after/` is 0 on every tile of all four (193 of 193
+  compared: 81 article, 92 styleguide, 10 error404, 10 signups). `archive2` stays `.missing` in
+  both sets (still 404 at `ARCHIVE_PAGE_SIZE = 50`), so it has no image tile to compare.
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reported exactly the 10 `site-home-*` failures listed above and 64 passed; `--update-
+  snapshots=changed` regenerated exactly those 10 files, matching this row's `INTENDED MOVES:`
+  name for name.
+
+### Task 2: the archive proven
+
+Own before set captured at this task's parent commit (`3c6fcd2d`, Task 1's own last commit),
+not symlinked from `task-1/`: Task 1 moved `site-home-*` paint, so `task-1/after/` is not a
+valid stand-in for `task-2/before/`.
+
+- `home` 320/390/768/1440/2560 light and dark: `ARCHIVE_PAGE_SIZE` drops from 50 to 13, so page
+  one now shows 13 rows (all still 2026) under the lead instead of all 26, closing with a new
+  "Page 1 of 2 / Older→" pagination block that did not render at page size 50 / the constant
+  change in `src/chassis/archive.ts` / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png`
+  (10 files).
+- `archive2` (`/archive/2`) 320/390/768/1440/2560 light and dark: NEW, first real render. At
+  page size 50 the route 404s (`.missing` in the before set); at 13 the 26-entry slice (27
+  posts minus the featured lead) splits into two full pages of 13, so page two now serves the
+  13 "2025" entries under one year heading and a "Page 2 of 2 / ← Newer" pagination block / the
+  same constant change / adds `archive2-{light,dark}-{320,390,768,1440,2560}.png` (10 files, all
+  new).
+- `article`, `styleguide`, `error404`, `signups` at every width and scheme: no move / none of
+  these surfaces render the paginated archive / `magick compare -metric AE` between
+  `task-2/before/` and `task-2/after/` is 0 on every tile of all four (193 of 193 compared: 81
+  article incl. the 1920 extra, 92 styleguide, 10 error404, 10 signups).
+- `admin-office-*`: this task's plan draft expected the count line and pagination control to
+  move (a 14-to-27-post corpus growth reaching `/admin/posts`'s own client-side pagination).
+  The unmodified `admin-visual.spec.ts` run reported no `admin-office-*` failure: the admin
+  route's post listing reads the dev backend's own seeded fixture, not the public
+  `src/content/posts/` directory the showcase corpus lives in, so the thirteen new posts (added
+  in Task 1) never reach that screen and `ARCHIVE_PAGE_SIZE` (a public-route constant) cannot
+  move it either. This corrects the plan's working assumption; `admin-office-*` carries no row
+  because it never moved.
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reported exactly 20 failures (`site-home-*` and `archive-page-2-*`, both suites' full names
+  listed in the implementer report) and 64 passed; `--update-snapshots=changed` scoped to `-g
+  "site home|archive page 2"` regenerated exactly those 20 files, matching this row's `INTENDED
+  MOVES:` name for name. `scripts/capture-surfaces.mjs`'s own `archive2` capture needed a small
+  fix alongside this task's own files: the route carries no page-level `h1` (the home route's is
+  the one the archive shares), so the tool's default `waitFor` (which waits on `h1`) timed out
+  once the route stopped 404ing; it now waits on the route's own year heading instead.
+
+### Task 3: site identity and one title convention
+
+Own before set captured at this task's parent commit (`4de378ec`, Task 2's own last commit, after
+its CI regen was pulled): `home`, `article` (plus its light-only 1920 extra), `styleguide`,
+`archive2`, `error404`, `signups`, every width, both schemes (314 manifest entries, no
+`.missing`).
+
+- `home`, `article` (incl. the 1920 extra), `styleguide`, `archive2`, `error404`, `signups` at
+  every width and scheme: no move / the wordmark text (`page.data.siteName`) resolves to the same
+  literal ("Waymark") the hard-coded string it replaces already read, and every touched `<title>`
+  is not part of the painted surface / `magick compare -metric AE` between `task-3/before/` and
+  `task-3/after/` is 0 on every tile of all six surfaces (253 of 253 compared: 34 home, 81
+  article incl. the 1920 extra, 92 styleguide, 26 archive2, 10 error404, 10 signups).
+- Produced, not asserted: the unmodified `site-visual.spec.ts` run (before this task's changes,
+  at the `4de378ec` parent commit, and again after) reports the identical 20 failures
+  (`site home` and `archive page 2`, every width and scheme) both times, byte-for-byte the same
+  test names; each failing tile's own `AE` is small (for example 220 of ~1.49M pixels on
+  `site-home-light-320`, `0.000148` fraction) and the diff overlay shows no structural change,
+  consistent with a local-font-rendering mismatch against the committed `-linux.png` baselines
+  (regenerated by a CI run in Task 2) rather than a real paint move. This drift predates Task 3
+  and this task moves no baseline, so `MOVED BASELINES:` is empty; the 20 pre-existing failures
+  are not this task's to regenerate.
+
+### Task 4: the footer nav out of code
+
+Own before set captured at this task's parent commit (`9e472aa7`, Task 3's own last commit):
+`home`, `article` (plus its light-only 1920 extra), `styleguide`, `archive2`, `error404`,
+`signups`, every width, both schemes (314 manifest entries, no `.missing`).
+
+- `home`, `article` (incl. the 1920 extra), `styleguide`, `archive2`, `error404`, `signups` at
+  every width and scheme: no move / `menus.footer`'s three entries (Writing `/`, Admin
+  `/admin`, Feed `/feed.xml`) are the same labels and hrefs `SiteFooter.svelte`'s removed array
+  already rendered, and every surface but `signups` shows the footer / `magick compare -metric
+  AE` between `task-4/before/` and `task-4/after/` is 0 on every tile of all six surfaces (253
+  of 253 compared: 34 home, 81 article incl. the 1920 extra, 92 styleguide, 26 archive2, 10
+  error404, 10 signups).
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reports the same 20 pre-existing failures Task 3 recorded (`site home` and `archive page 2`,
+  every width and scheme, byte-for-byte the same test names, `4de378ec`'s own CI-baseline list)
+  and 64 passed; this task moves no baseline, so `MOVED BASELINES:` is empty.
+- The second-menu editing question (`/admin/nav` is bound to `menus.primary` only, so
+  `menus.footer` is developer-edited in `site.config.yaml`) is a chassis harvest item, an
+  engine consultation candidate rather than a site-side patch.
+
+### Task 5: CSS conformance
+
+Before set at `~/.cache/cairn-chassis-b2/task-5/before/`, symlinked to `task-4/after/` (Task 4's
+own after set), since Task 4 is B2's own most recent predecessor and its row above confirms it
+moved no paint. After set at `~/.cache/cairn-chassis-b2/task-5/after/`: `home`, `article` (plus
+its light-only 1920 extra), `styleguide`, `archive2`, `error404`, `signups`, every width, both
+schemes (314 manifest entries, no `.missing`).
+
+- No surface moves. Every one of this task's edits computes to the same rendered value it
+  replaces: the two degenerate `--text-step` clamps (`clamp(0.84rem, 0.84rem, 0.80rem)` and
+  `clamp(1.06rem, 1.06rem, 1.0625rem)`) already resolved to the plain `0.84rem`/`1.06rem` they
+  are now written as; `--cairn-caption-tracking`'s new chassis default (`tokens.css`) is
+  overridden unchanged by theme.css's own `0.09em`; and site.css's three former literals
+  (`max-height: 32rem`, `border-left: 3px`, `border-radius: 0.25rem`) are now `--site-*`
+  custom properties resolving to the identical numbers / `magick compare -metric AE` between
+  `task-5/before/` and `task-5/after/` is 0 on every one of the 314 compared files (all six
+  surfaces at every width and scheme); the manifest's differing sha256 hashes on 253 of those
+  314 files are PNG re-encoding only (confirmed AE 0 on each), not a pixel change.
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reports the same 20 pre-existing failures Task 3 and Task 4 recorded (`site home` and
+  `archive page 2`, every width and scheme, byte-for-byte the same test names, `4de378ec`'s own
+  CI-baseline list) and 64 passed; this task moves no baseline, so `MOVED BASELINES:` is empty.
+
+### Task 6: Small idioms
+
+Before set at `~/.cache/cairn-chassis-b2/task-6/before/`, symlinked to `task-5/after/` (Task 5's
+own after set, B2's most recent predecessor with paint on record; its row above confirms it moved
+none). After set at `~/.cache/cairn-chassis-b2/task-6/after/`: `signups` only, every width, both
+schemes (20 manifest entries), captured with `--only signups` since this task's only code changes
+(the `platform!` guard, `feed.ts`'s one `posts` guard, the doc repoint) touch no markup any other
+surface renders.
+
+- No surface moves. `magick compare -metric AE` between `task-6/before/tiles/` and
+  `task-6/after/tiles/` is 0 on all ten `signups` tiles (every width, both schemes); the guard
+  rewrite changes only the server-side error branch, never the success-path markup the load and
+  the two actions already render. `feed.ts`'s `posts` guard is not a visual surface (`/feed.xml`
+  and `/feed.json` are prerendered, non-visual); proved byte-identical directly, sha256-diffing
+  `.svelte-kit/output/prerendered/pages/feed.{xml,json}` from a build with the change against a
+  build with `feed.ts` stashed back to its prior form (no existing unit test covers this file).
+- Produced, not asserted: the unmodified `CI=1 npm run test:e2e` run (the gate's own step, the
+  full 188-test suite rather than the two visual specs alone) reports the same 20 pre-existing
+  failures Tasks 3 through 5 recorded (`site home` and `archive page 2`, every width and scheme,
+  byte-for-byte the same test names, `4de378ec`'s own CI-baseline list) and 168 passed, including
+  both `custom-screen.spec.ts` tests (five assertions) and every `admin-office-*`/`signups-*`
+  baseline; this task moves no baseline, so `MOVED BASELINES:` is empty.
+
+## `.missing` reconciliation, closed (Task 8)
+
+B1's own Task 7 reconciliation (above) left `archive2`'s ten `.missing` entries open, deferred
+to "B2's archive proof". Task 2's `ARCHIVE_PAGE_SIZE` change closed that gap: `archive2` gained
+its first real render at Task 2 (ten new files, `archive2-{light,dark}-{320,390,768,1440,2560}.png`)
+and carries no `.missing` entry in any B2 after set from Task 2 onward (314 manifest entries at
+Tasks 3 through 5, no `.missing` marker on any of them). No `.missing` entry remains open in
+either pass's before or after sets as of this pass's close.

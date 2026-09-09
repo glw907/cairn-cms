@@ -20,7 +20,7 @@
 <svelte:head>
   <link rel="stylesheet" href={themeCss} />
   <link rel="stylesheet" href={siteCss} />
-  <title>{page.status} | Waymark</title>
+  <title>{page.status} · {page.data.siteName ?? 'Site'}</title>
 </svelte:head>
 
 <div class="cairn-site-shell site-shell bg-base-100 font-body text-base-content">

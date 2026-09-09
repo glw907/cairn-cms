@@ -25,7 +25,7 @@ async function tempDir(t) {
 
 /**
  * Build a fixture directory reproducing the real showcase's substitution targets:
- * `src/theme/site.config.yaml` with the bare `siteName:` line and no `description:` key, and
+ * `src/theme/site.config.yaml` with the `siteName:` line and the tagline beneath it, and
  * `src/theme/theme.css` with both the light and dark brand blocks.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
@@ -33,7 +33,10 @@ async function tempDir(t) {
 async function fixture(t) {
   const dir = await tempDir(t);
   await mkdir(path.join(dir, 'src/theme'), { recursive: true });
-  await writeFile(path.join(dir, 'src/theme/site.config.yaml'), 'siteName: Waymark\nmenus:\n  primary: []\n');
+  await writeFile(
+    path.join(dir, 'src/theme/site.config.yaml'),
+    'siteName: Waymark\ndescription: Trail reports and gear notes from the field.\nmenus:\n  primary: []\n',
+  );
   await writeFile(
     path.join(dir, 'src/theme/theme.css'),
     [
@@ -60,7 +63,7 @@ test('substitutes the site name in src/theme/site.config.yaml', async (t) => {
   assert.ok(changed.includes('src/theme/site.config.yaml'));
 });
 
-test('a nonempty description is inserted after the siteName line; an empty one inserts nothing', async (t) => {
+test('a nonempty description replaces the template tagline; an empty one removes it', async (t) => {
   const dir = await fixture(t);
   await applySubstitutions(dir, { name: 'Alpine Club', description: 'Notes from the range', brandColor: '' });
   const withDescription = await readFile(path.join(dir, 'src/theme/site.config.yaml'), 'utf8');
@@ -183,4 +186,42 @@ test('the committed site-config-path.json matches the engine doctor\'s own copy'
     ),
   );
   assert.deepEqual(bakeCopy, engineCopy);
+});
+
+// Regression: the pass wrote its own `description:` line without touching the template's, so a
+// showcase that carries a tagline scaffolded a config with the key twice, which every YAML
+// parser rejects as a duplicate map key. The fixture above cannot catch that on its own, since
+// a hand-written fixture drifts from the showcase silently, so this reads the real source the
+// template is emitted from.
+test('the real showcase config personalizes to exactly one top-level description key', async (t) => {
+  const showcaseConfig = readFileSync(
+    fileURLToPath(new URL('../../../examples/showcase/src/theme/site.config.yaml', import.meta.url)),
+    'utf8',
+  );
+
+  const withDescription = await tempDir(t);
+  await mkdir(path.join(withDescription, 'src/theme'), { recursive: true });
+  await writeFile(path.join(withDescription, 'src/theme/site.config.yaml'), showcaseConfig);
+  await applySubstitutions(withDescription, {
+    name: 'CI Site',
+    description: 'Built by CI',
+    brandColor: '',
+  });
+  const personalized = await readFile(path.join(withDescription, 'src/theme/site.config.yaml'), 'utf8');
+  assert.deepEqual(
+    personalized.split('\n').filter((line) => line.startsWith('description:')),
+    ['description: Built by CI'],
+  );
+  assert.match(personalized, /^siteName: CI Site$/m);
+
+  const withoutDescription = await tempDir(t);
+  await mkdir(path.join(withoutDescription, 'src/theme'), { recursive: true });
+  await writeFile(path.join(withoutDescription, 'src/theme/site.config.yaml'), showcaseConfig);
+  await applySubstitutions(withoutDescription, { name: 'CI Site', description: '', brandColor: '' });
+  const bare = await readFile(path.join(withoutDescription, 'src/theme/site.config.yaml'), 'utf8');
+  assert.deepEqual(
+    bare.split('\n').filter((line) => line.startsWith('description:')),
+    [],
+    'the showcase tagline must not survive into a site that answered no description',
+  );
 });

@@ -1,4 +1,5 @@
 siteName: Waymark
+description: Trail reports and gear notes from the field.
 menus:
   primary:
     - label: Writing
@@ -7,6 +8,15 @@ menus:
       url: /styleguide
     - label: Admin
       url: /admin
+  # /admin/nav edits only menus.primary (createNavRoutes is bound to that one menu), so this
+  # block is developer-edited: a site owner changes the footer by editing this file directly.
+  footer:
+    - label: Writing
+      url: /
+    - label: Admin
+      url: /admin
+    - label: Feed
+      url: /feed.xml
 vocabulary:
   - value: trail-reports
     label: Trail Reports

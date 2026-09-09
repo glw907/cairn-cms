@@ -18,7 +18,7 @@
        directive styling leans on the base declarations; the directive's two inner classes are the
        site's own `cairn-alert-body`/`cairn-head-title`, named apart from DaisyUI's `.card-body`/
        `.card-title` so this same `card` activation cannot restyle them, and the alert no longer
-       emits card classes at all. `card` stays enabled because the showcase's own members fixture
+       emits card classes at all. `card` stays enabled because this site's own members fixture
        renders one (`routes/members`), a route the template excludes; a scaffolded site with no
        `.card` in its own markup may exclude it too.
        Everything else DaisyUI ships (accordion-style `collapse`,
@@ -157,6 +157,13 @@
   --cairn-focus-ring-outline: 2px solid var(--color-primary);
   --cairn-focus-ring-offset: 2px;
   --cairn-focus-ring-radius: 2px;
+
+  /* The header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a`), at the same
+     0.08em as the generic `--tracking-eyebrow` above; a theme that widens its eyebrow usually
+     tunes this one narrower (this theme's theme.css sets 0.09em against 0.12em). A generic
+     default so a theme that never redeclares it still gets a real value instead of a dangling
+     reference. */
+  --cairn-caption-tracking: 0.08em;
 }
 
 /* Tailwind's @utility must sit at a stylesheet's top level, outside any @layer block, so this

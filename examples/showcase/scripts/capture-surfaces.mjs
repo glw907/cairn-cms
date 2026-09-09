@@ -14,9 +14,10 @@
 //   - signups (`/admin/signups`): renders normally (200); the dev backend mints an owner editor
 //     on every `/admin` request, so no session cookie or login flow is needed, only the
 //     `cairn-admin-theme` cookie for the color scheme.
-//   - archive2 (`/archive/2`): 404s BY DESIGN. `ARCHIVE_PAGE_SIZE` is 50
-//     (`src/chassis/archive.ts`) and the showcase's own corpus fits on page one, so there is no
-//     real page two. This is the one expected `.missing` in the before set, not a capture gap.
+//   - archive2 (`/archive/2`): renders normally (200) now that `ARCHIVE_PAGE_SIZE`
+//     (`src/chassis/archive.ts`) crosses the showcase's own corpus, producing a real page two.
+//     It carries its own page-level `h1` (the "Archive" eyebrow), so it waits on
+//     `waitForHeading` like every other public surface.
 //   - error404 (an unmatched path): the root `+error.svelte` DOES render under `vite preview`
 //     for a genuinely unmatched route, full SSR, status 404, with the site's own nav and footer.
 //     Unlike archive2, this surface's whole point is to capture that rendered error page, so a

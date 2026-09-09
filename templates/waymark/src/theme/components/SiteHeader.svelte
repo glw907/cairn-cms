@@ -1,9 +1,14 @@
 <!-- @component
-The showcase's public site header: an owned, copy-in chrome component on the token layer. A sticky
+This site's public header: an owned, copy-in chrome component on the token layer. A sticky
 band over a translucent `base-100` with a hairline bottom, carrying the site's wordmark on the left
 and the primary nav plus the theme toggle on the right. Every colour and size reads a DaisyUI role
 utility or a cairn token (`--font-display`, `--cairn-*`), never a literal, and the inner content caps
 at `--container-measure` so the wordmark's left edge lines up with the article column below it.
+
+The wordmark text is `page.data.siteName`, the root layout server load's one composed reading of
+`siteConfig.siteName`; this component never imports `siteConfig` itself. `page.data.siteName` is
+optional in `App.PageData` (a root load that throws before setting it still type-checks), so the
+brand link falls back to an `aria-label` of "Home" rather than shipping with no accessible name.
 
 The nav links come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), resolved
 by the root layout server load and edited from `/admin/nav`; a site owner edits this file to
@@ -41,6 +46,11 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
       (item): item is NavNode & { url: string } => item.url !== undefined,
     ),
   );
+
+  // page.data.siteName is only ever unset when the root load itself throws before reaching this
+  // component (the root +error.svelte mount); 'Home' keeps the brand link's accessible name from
+  // going empty in that case, without inventing a site title.
+  const siteName = $derived(page.data.siteName ?? '');
 
   /**
    * Whether a nav item points at the page being viewed. The home link matches only the exact root;
@@ -81,11 +91,15 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
   <div
     class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-x-m gap-y-2xs px-m py-xs"
   >
-    <a href="/" class="brand-link inline-flex min-h-11 items-center text-base-content no-underline">
+    <a
+      href="/"
+      class="brand-link inline-flex min-h-11 items-center text-base-content no-underline"
+      aria-label={siteName || 'Home'}
+    >
       <!-- Nowrap keeps the name on one line at any width; the header's own flex-wrap (above) is what
            makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
       <span class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
-        >Waymark</span
+        >{siteName}</span
       >
     </a>
 

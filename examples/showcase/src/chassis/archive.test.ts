@@ -48,4 +48,21 @@ describe('paginateArchive', () => {
     const result = paginateArchive(entries, 1);
     expect(result.years).toEqual([{ year: 'Undated', entries: [entries[0]] }]);
   });
+
+  // This site's own corpus, 27 posts minus the home page's featured lead: 26 entries at the
+  // site's ARCHIVE_PAGE_SIZE (13) land exactly on two full pages. Both the home route and
+  // /archive/[page] call paginateArchive(posts.all().slice(1), n) on this same 26-entry slice
+  // with no page-size override, which the /archive/2 and home baselines render as "Page 2 of 2"
+  // and "Page 1 of 2".
+  it('paginates a 27-post corpus (26 after the featured lead) into two pages of thirteen', () => {
+    const entries = Array.from({ length: 26 }, (_, i) => entry('2026-01-01', `post-${i}`));
+    const homePage = paginateArchive(entries, 1);
+    const archivePage2 = paginateArchive(entries, 2);
+
+    expect(homePage.totalPages).toBe(2);
+    expect(homePage.years[0].entries).toHaveLength(13);
+    expect(archivePage2.totalPages).toBe(2);
+    expect(archivePage2.page).toBe(2);
+    expect(archivePage2.years[0].entries).toHaveLength(13);
+  });
 });

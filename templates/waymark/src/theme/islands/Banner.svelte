@@ -1,6 +1,6 @@
 <!--
 @component
-Showcase island: the expiring-announcement banner mounted over its static fallback by the cairn
+The expiring-announcement banner island: mounted over its static fallback by the cairn
 islands runtime. Props are the `:::banner` directive's scalar attributes. Mounts over the
 build()-emitted fallback and re-checks the expiry on its own, at hydration, rather than trusting the
 server's snapshot: a statically built or long-cached page can outlive its `expires` date, so the

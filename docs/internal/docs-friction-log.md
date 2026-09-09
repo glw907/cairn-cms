@@ -95,6 +95,7 @@ history holds every pruned entry in full.
 | 2026-09-05 | the internals-C pass's whole-log triage | the `check:snippets` stub finding promoted whole to `ROADMAP.md`'s Later tier with its trigger; the `ctx.logCommitFailed` call-style contradiction (filed at internals-C's Task 10 close, 2026-09-04) folded into `ROADMAP.md`'s existing polish-slice bullet |
 | 2026-09-08 | chassis-A's whole-log triage (Task 12) | the `contributor` finding (2026-09-04, the cairn-case round-2 review) fixed: `what-cairn-is-and-is-not.md:48` said "all 23 registered rules" against the tree's actual 28; the sentence now reads 28 |
 | 2026-09-08 | the identity-seam pass, Task 6 | its own two findings, both shipped in the pass that found them and recorded in `docs/internal/record/2026-09-07-identity-seam/harvest.md`: the locals hand-off pattern (Task 2) and the doctor probe's `redirect: 'manual'` fix (Task 4) |
+| 2026-09-09 | chassis-B2's whole-log triage (Task 8) | its own Task 7 finding (the two `showcase`-flavored strings surviving in a scaffolded site's shipped content), never open here since it was found and routed in the same pass, promoted whole to `ROADMAP.md`'s Next tier with its trigger; the second-menu editing question (Task 4) filed to `ROADMAP.md`'s Later tier as a consultation candidate |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

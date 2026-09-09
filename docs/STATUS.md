@@ -29,7 +29,7 @@ Three tracks are live; each resumes from its own artifact.
   on branch `chassis-b2` off main; plan `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`
   (8 tasks, one sequential chain, 6M ceiling, checkpoint every four). The chain runs as two
   Workflow runs because the plan suspends it after Task 2 for the conductor's CI regen: run
-  one (Tasks 1 and 2) is `wf_9a14fefc-631` from the main checkout, chains script copied to the
+  one (Task 1, done: `2e2dfcd5`, `4aac78db`, fix `3c6fcd2d` accepted; PR #54 open) was `wf_9a14fefc-631`; Task 2 runs alone as `wf_d2fc5612-7dc`, from the main checkout, chains script copied to the
   session scratchpad (the tool refuses a `~/.claude/workflows` path), args from
   `~/.cache/cairn-chassis-b2/b2-args.json` filtered to tasks 1 and 2. Between runs: open the PR,
   `gh workflow run e2e.yml --ref chassis-b2 -f update_snapshots=true`, wait, pull, read the

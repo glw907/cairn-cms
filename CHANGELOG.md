@@ -302,6 +302,15 @@
   core and the `saveRefusal`, `SaveHold`, and `SaveFailure` types it shares. `content-routes.ts`'s
   public shape, key order, and re-exported type names are unchanged. Consumers must: nothing.
 
+- The `content-routes-entry.ts` split finishes and the file retires (internal, no public surface
+  change): `content-routes-entry-destructive.ts` now declares `createEntryDestructiveActions`
+  (`deleteAction`, `listDeleteAction`, `renameAction`), and `content-routes-entry-revert.ts`
+  declares `createEntryRevertActions` (`revertAction`). `DeleteRefusal` renamed to `DeleteFailure`
+  (the `Refusal`-suffix retirement); it stays a module-level export of
+  `content-routes-entry-destructive.ts`, reached from no package subpath.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  Consumers must: nothing.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

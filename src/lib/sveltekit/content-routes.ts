@@ -5,8 +5,9 @@
 //
 // This module is the composition root: `createContentRoutesInternal` builds the shared
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
-// factories (content-routes-shell.ts, -list.ts, -entry.ts, -preview.ts, -media.ts, -tidy.ts,
-// -settings.ts, -dictionary.ts) into the one returned object. content-routes-shared.ts is not one
+// factories (content-routes-shell.ts, -list.ts, -entry-read.ts, -entry-write.ts,
+// -entry-destructive.ts, -entry-revert.ts, -preview.ts, -media.ts, -tidy.ts, -settings.ts,
+// -dictionary.ts) into the one returned object. content-routes-shared.ts is not one
 // of those factories, only the primitives several of them import (concept and entry-id resolution,
 // the flattened action-failure shape); this file re-exports its `ContentFormFailure` type below
 // alongside the domain types. Every type this file used to declare inline now lives with the
@@ -23,10 +24,10 @@ import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesConfig } from './content-routes-context.js';
 import { createShellActions } from './content-routes-shell.js';
 import { createListActions } from './content-routes-list.js';
-import { createEntryActions } from './content-routes-entry.js';
 import { createEntryReadActions } from './content-routes-entry-read.js';
 import { createEntryWriteActions } from './content-routes-entry-write.js';
 import { createEntryDestructiveActions } from './content-routes-entry-destructive.js';
+import { createEntryRevertActions } from './content-routes-entry-revert.js';
 import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
@@ -63,10 +64,10 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const ctx = createContentRoutesContext(runtime, config);
   const shell = createShellActions(ctx);
   const list = createListActions(ctx);
-  const entry = createEntryActions(ctx);
   const entryRead = createEntryReadActions(ctx);
   const entryWrite = createEntryWriteActions(ctx);
   const entryDestructive = createEntryDestructiveActions(ctx);
+  const entryRevert = createEntryRevertActions(ctx);
   const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -94,7 +95,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     renameAction: entryDestructive.renameAction,
     previewMintAction: preview.previewMintAction,
     previewRevokeAction: preview.previewRevokeAction,
-    revertAction: entry.revertAction,
+    revertAction: entryRevert.revertAction,
     uploadAction: media.uploadAction,
     mediaLibraryUploadAction: media.mediaLibraryUploadAction,
     mediaDeleteAction: media.mediaDeleteAction,

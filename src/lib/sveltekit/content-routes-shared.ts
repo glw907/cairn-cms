@@ -149,7 +149,7 @@ export function invalidIdMessage(concept: ConceptDescriptor): string {
 
 /**
  * The most recent publishes the entry history cluster reads; a module constant, not a site config
- *  knob (the spec's plan-time call). `listCommits` is asked for one more than this, so the extra
+ *  knob. `listCommits` is asked for one more than this, so the extra
  *  probe row sets `truncated` without a second read and is never itself rendered. Shared by the
  *  revert cluster's own membership check.
  */

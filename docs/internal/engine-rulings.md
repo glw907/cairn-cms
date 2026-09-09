@@ -222,6 +222,9 @@ open edits, not part of the shape itself.
   `DeleteRefusal`, `RenameFailure`, `CreateFailure`, `PreviewMintFailure`) execute against.
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 5.
+- **Note (polish-11a, Task 3):** `DeleteRefusal` renamed to `DeleteFailure`, matching this ruling's
+  own suffix-scope clause; it now declares in `content-routes-entry-destructive.ts`. Verdict
+  unchanged.
 
 ## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -1692,6 +1695,9 @@ when the remediation pass lands.
   `.inboundKind`, and `.id`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 29.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 3):** renamed to `DeleteFailure` per `convention-failure-suffix`; the
+  interface now declares in `content-routes-entry-destructive.ts`, still keeping its module-level
+  `export` for `reproductions/stories/publish.ts`'s direct import. Verdict unchanged.
 
 ## audit-sveltekit-savefailure: `SaveFailure`  (retire, 2026-08-26, any-site audit)
 

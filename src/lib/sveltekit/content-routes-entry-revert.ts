@@ -1,10 +1,10 @@
-// cairn-cms: the entry revert cluster (revertAction). The destructive cluster (delete, rename)
-// lives in content-routes-entry-destructive.ts, the read cluster (createAction, editLoad,
-// historyLoad) lives in content-routes-entry-read.ts, and the write cluster (saveAction,
-// publishAction, publishAllAction, discardAction) lives in content-routes-entry-write.ts.
-// createEntryActions closes over the shared ContentRoutesContext (content-routes-context.ts),
-// which createContentRoutesInternal builds once and passes to every sibling factory; the public
-// createContentRoutes is a thin wrapper around that internal factory.
+// cairn-cms: the entry revert cluster (revertAction). Starts a fresh pending branch from an
+// earlier publish rather than rewriting history; draftExistsFailure and revertSchemaDrift exist
+// only for revertAction's own use, and BUILTIN_FRONTMATTER_KEYS is revertSchemaDrift's own
+// primitive, so all three stay module-internal.
+// createEntryRevertActions closes over the shared ContentRoutesContext
+// (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every
+// sibling factory; the public createContentRoutes is a thin wrapper around that internal factory.
 import { redirect, fail, type ActionFailure } from '@sveltejs/kit';
 import { parseMarkdown } from '../content/frontmatter.js';
 import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
@@ -51,9 +51,11 @@ function revertSchemaDrift(
 /**
  * Build the entry revert cluster, closed over the shared content-routes context: revert to an
  *  earlier publish. The destructive cluster (delete, rename) lives in
- *  `content-routes-entry-destructive.ts`.
+ *  `content-routes-entry-destructive.ts`, the read cluster (create, edit, history) lives in
+ *  `content-routes-entry-read.ts`, and the write cluster (save, publish, publish-all, discard)
+ *  lives in `content-routes-entry-write.ts`.
  */
-export function createEntryActions(ctx: ContentRoutesContext) {
+export function createEntryRevertActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
 
   /**

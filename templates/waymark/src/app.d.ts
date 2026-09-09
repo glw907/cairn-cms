@@ -25,6 +25,7 @@ declare global {
     interface PageData {
       nav?: NavNode[];
       footerNav?: NavNode[];
+      siteName?: string;
       hasIslands?: boolean;
     }
     interface Platform {

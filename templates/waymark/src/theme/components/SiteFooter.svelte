@@ -8,7 +8,9 @@ reading column, so the footer's left edge lines up with the body copy above it. 
 this file; the look re-skins from `theme.css`.
 
 The wordmark text is `page.data.siteName`, the same root layout server load's reading `SiteHeader`
-uses; this component never imports `siteConfig` itself.
+uses; this component never imports `siteConfig` itself. `page.data.siteName` is optional in
+`App.PageData`, so the brand link falls back to an `aria-label` of "Home" the same way `SiteHeader`
+does.
 
 The nav links come from `page.data.footerNav`, the site's `menus.footer` (`site.config.yaml`),
 resolved by the root layout server load. `/admin/nav` edits only `menus.primary`, so a site owner
@@ -42,13 +44,19 @@ who wants to change the footer edits `site.config.yaml` directly.
       (item): item is NavNode & { url: string } => item.url !== undefined,
     ),
   );
+
+  // See SiteHeader's identical guard: only unset when the root load throws before this mounts.
+  const siteName = $derived(page.data.siteName ?? '');
 </script>
 
 <footer class="site-footer border-t border-base-300 bg-base-200">
   <div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl">
-    <a href="/" class="brand-link inline-flex min-h-11 items-center text-muted no-underline">
-      <span class="font-display text-step-1 font-semibold tracking-tight">{page.data.siteName}</span
-      >
+    <a
+      href="/"
+      class="brand-link inline-flex min-h-11 items-center text-muted no-underline"
+      aria-label={siteName || 'Home'}
+    >
+      <span class="font-display text-step-1 font-semibold tracking-tight">{siteName}</span>
     </a>
 
     <nav class="site-nav flex flex-wrap items-center gap-s text-step--1" aria-label="Footer">

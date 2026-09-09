@@ -482,3 +482,26 @@ schemes (314 manifest entries, no `.missing`).
   reports the same 20 pre-existing failures Task 3 and Task 4 recorded (`site home` and
   `archive page 2`, every width and scheme, byte-for-byte the same test names, `4de378ec`'s own
   CI-baseline list) and 64 passed; this task moves no baseline, so `MOVED BASELINES:` is empty.
+
+### Task 6: Small idioms
+
+Before set at `~/.cache/cairn-chassis-b2/task-6/before/`, symlinked to `task-5/after/` (Task 5's
+own after set, B2's most recent predecessor with paint on record; its row above confirms it moved
+none). After set at `~/.cache/cairn-chassis-b2/task-6/after/`: `signups` only, every width, both
+schemes (20 manifest entries), captured with `--only signups` since this task's only code changes
+(the `platform!` guard, `feed.ts`'s one `posts` guard, the doc repoint) touch no markup any other
+surface renders.
+
+- No surface moves. `magick compare -metric AE` between `task-6/before/tiles/` and
+  `task-6/after/tiles/` is 0 on all ten `signups` tiles (every width, both schemes); the guard
+  rewrite changes only the server-side error branch, never the success-path markup the load and
+  the two actions already render. `feed.ts`'s `posts` guard is not a visual surface (`/feed.xml`
+  and `/feed.json` are prerendered, non-visual); proved byte-identical directly, sha256-diffing
+  `.svelte-kit/output/prerendered/pages/feed.{xml,json}` from a build with the change against a
+  build with `feed.ts` stashed back to its prior form (no existing unit test covers this file).
+- Produced, not asserted: the unmodified `CI=1 npm run test:e2e` run (the gate's own step, the
+  full 188-test suite rather than the two visual specs alone) reports the same 20 pre-existing
+  failures Tasks 3 through 5 recorded (`site home` and `archive page 2`, every width and scheme,
+  byte-for-byte the same test names, `4de378ec`'s own CI-baseline list) and 168 passed, including
+  both `custom-screen.spec.ts` tests (five assertions) and every `admin-office-*`/`signups-*`
+  baseline; this task moves no baseline, so `MOVED BASELINES:` is empty.

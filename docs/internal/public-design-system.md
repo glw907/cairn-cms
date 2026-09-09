@@ -2,8 +2,9 @@
 
 Waymark is cairn's public reading template, neutral by default: a humanist sans display face over a
 clean, hue-free paper. Read this before any work on the public theme:
-`examples/showcase/src/lib/theme.css` (the tokens and the re-skin recipe), `prose.css` (the reading
-surface), the `(site)` chrome components, and the `/styleguide` route. It is written for an
+`examples/showcase/src/theme/theme.css` (the tokens and the re-skin recipe),
+`examples/showcase/src/chassis/prose.css` (the reading surface), the `(site)` chrome components in
+`examples/showcase/src/theme/components/`, and the `/styleguide` route. It is written for an
 implementing agent, so it leads with the rules that are easy to break and not visible in the markup,
 then the tokens, the type, the recipes, the component model, the cairn theme opt-in identity layer, and
 the re-skin recipe.
@@ -347,8 +348,8 @@ measure it, rather than trusting the read.
 
 ## Pointers
 
-- The theme and the re-skin recipe: `examples/showcase/src/lib/theme.css`. The reading surface:
-  `examples/showcase/src/lib/prose.css`. The chrome: `examples/showcase/src/lib/components/`.
+- The theme and the re-skin recipe: `examples/showcase/src/theme/theme.css`. The reading surface:
+  `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
   ([`2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)).
 - The gates: `scripts/checks/check-public-tokens.mjs`, `scripts/lab/reskin-fixture.mjs`, and the `design.yml`

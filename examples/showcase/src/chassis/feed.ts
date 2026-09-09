@@ -8,15 +8,16 @@ import { cairn } from '$theme/cairn.config.js';
 /** Build the showcase's post feed items, shared by the RSS and JSON Feed routes. */
 export async function buildFeedItems(): Promise<FeedItem[]> {
   const posts = site.concept('posts');
+  if (!posts) return [];
   const toPermalink = createLinkResolver(site);
   const resolve = (ref: Parameters<typeof toPermalink>[0]) => siteMeta.origin + toPermalink(ref);
   return Promise.all(
-    (posts?.all() ?? []).map(async (p) => ({
+    posts.all().map(async (p) => ({
       title: p.title,
       url: siteMeta.origin + p.permalink,
       date: p.date,
       summary: p.excerpt,
-      contentHtml: await cairn.rendering.render({ body: posts!.byId(p.id)!.body, resolve }),
+      contentHtml: await cairn.rendering.render({ body: posts.byId(p.id)!.body, resolve }),
       tags: p.tags,
     })),
   );

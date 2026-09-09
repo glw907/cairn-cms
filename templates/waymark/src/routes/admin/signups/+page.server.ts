@@ -3,9 +3,10 @@
 // inside the shared CairnAdminShell from the parent layout, and reads and writes its own APP_DB
 // binding (the engine never touches it). requireOwner is the real server-side gate; the ownerOnly
 // nav flag is cosmetic only.
-import type { PageServerLoad, Actions } from './$types';
+import type { PageServerLoad, Actions, RequestEvent } from './$types';
 import { requireOwner } from '@glw907/cairn-cms/sveltekit';
-import { fail } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
+import type { D1Database } from '@cloudflare/workers-types';
 
 /** A signup row, the developer's own table shape, read from APP_DB. */
 interface SignupRow {
@@ -14,9 +15,22 @@ interface SignupRow {
   email: string;
 }
 
+// A deployed Worker always carries platform.env (wrangler.jsonc binds APP_DB); its absence is a
+// deployment misconfiguration, not a request-shaped failure, so it logs with the engine's own
+// area.subject.verb_phrase grammar (admin-action.ts's admin.action.misconfigured) and fails
+// closed with a generic 500 rather than leaking binding detail to the client.
+function requireAppDb(event: RequestEvent): D1Database {
+  const db = event.platform?.env.APP_DB;
+  if (!db) {
+    console.error('admin.signups.misconfigured', { reason: 'db_not_bound' });
+    error(500, 'This screen is not configured.');
+  }
+  return db;
+}
+
 export const load: PageServerLoad = async (event) => {
   requireOwner(event);
-  const db = event.platform!.env.APP_DB;
+  const db = requireAppDb(event);
   const { results } = await db
     .prepare('SELECT id, name, email FROM signups ORDER BY id DESC')
     .all<SignupRow>();
@@ -29,7 +43,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   create: async (event) => {
     requireOwner(event);
-    const db = event.platform!.env.APP_DB;
+    const db = requireAppDb(event);
     // The guard already rejected a tokenless POST; the bare CsrfField rides the shell's context token.
     const form = await event.request.formData();
     const name = String(form.get('name') ?? '').trim();
@@ -41,7 +55,7 @@ export const actions: Actions = {
   remove: async (event) => {
     // The owner-gated destructive action.
     requireOwner(event);
-    const db = event.platform!.env.APP_DB;
+    const db = requireAppDb(event);
     const id = Number((await event.request.formData()).get('id'));
     await db.prepare('DELETE FROM signups WHERE id = ?').bind(id).run();
     return { removed: true };

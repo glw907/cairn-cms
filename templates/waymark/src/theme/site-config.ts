@@ -10,6 +10,13 @@ import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);
 
 /**
+ * The site's name, read once here so the root layout server load (nav, footer nav, this) and
+ * `$chassis/content.js`'s `siteMeta.title` (feeds, robots, sitemap, SEO) agree without either one
+ * reading `siteConfig.siteName` a second time.
+ */
+export const siteName = siteConfig.siteName;
+
+/**
  * The public header's primary menu, resolved from `menus.primary` at the same depth the admin
  * nav editor declares (`cairn.config.ts`'s `editor.nav.maxDepth`).
  */

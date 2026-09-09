@@ -4,6 +4,7 @@
 // lifecycle, so a stale manifest fails the build red regardless of the handleHttpError policy).
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { siteName } from '$theme/site-config.js';
 
 const postsRaw = import.meta.glob('/src/content/posts/*.md', {
   query: '?raw',
@@ -41,10 +42,12 @@ const DEFAULT_SITE_DESCRIPTION = 'A cairn site.';
 /**
  * The site's identity, composed once. `PublicRoutesConfig`'s `siteName`/`description` fields,
  *  robots.txt, the sitemap, and the feed all read this rather than each composing
- *  `siteConfig.siteName`, `siteConfig.description`, and `ORIGIN` on their own.
+ *  `site-config.ts`'s `siteName`, `siteConfig.description`, and `ORIGIN` on their own. `title`
+ *  reads the same `site-config.ts` export the root layout server load does, so the name has
+ *  exactly one source no matter which module reads it.
  */
 export const siteMeta = {
-  title: siteConfig.siteName,
+  title: siteName,
   description: siteConfig.description ?? DEFAULT_SITE_DESCRIPTION,
   origin: ORIGIN,
 };

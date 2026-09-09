@@ -20,6 +20,16 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action (2026-09-09 09:20)
 
+**The overnight run halted again at stage 11a:run1** (2026-09-09). Reason: task 2 (the
+entry split, the write cluster) accepted with fixRounds 0; task 3 (the entry split, the
+destructive and revert clusters) accepted with fixRounds 1; task 4 (the media split, the
+shared module, library read, and ingest) failed with fixRounds 0; task 5 (the media split,
+delete and orphans) deferred with fixRounds 0; task 6 (the media split, the metadata
+rewrite and the BulkDeleteSkip rename) deferred with fixRounds 0; task 7 (the engine
+product copy) deferred with fixRounds 0. Resume: read the 11a run-one journal, decide the
+non-accepted task, then resume the remaining run-one tasks; then the CI regen; then run
+two.
+
 **The overnight run halted at stage 11a:run1** (2026-09-09). Reason: task 1 (the entry
 split, the shared additions and the read cluster) escalated with fixRounds 0; tasks 2
 through 7 (the write cluster; the destructive and revert clusters; the media split's shared

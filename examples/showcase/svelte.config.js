@@ -34,12 +34,13 @@ export default {
         throw new Error(message);
       },
       // /archive/[page]'s own `entries` export (archive.ts's paginateArchive) enumerates the real
-      // page numbers 2..N from the content index at build time, and legitimately returns zero
-      // entries when the whole corpus fits on page one (no page 2 exists yet, a small site or an
-      // early-stage one). SvelteKit's crawl-completeness check has no way to tell "correctly
-      // empty" from "misconfigured entries", so it fails the whole build on that route alone. Scope
-      // the exception to that one route by id; any other unseen prerenderable route still fails
-      // the build, same as the default.
+      // page numbers 2..N from the content index at build time. On a small or early-stage corpus
+      // this legitimately returns zero entries: the whole corpus fits on page one, so no page 2
+      // exists yet. This showcase's own corpus now crosses that boundary and produces /archive/2,
+      // but a smaller site's still returns none, and SvelteKit's crawl-completeness check has no
+      // way to tell "correctly empty" from "misconfigured entries", so it fails the whole build on
+      // that route alone. Scope the exception to that one route by id; any other unseen
+      // prerenderable route still fails the build, same as the default.
       handleUnseenRoutes: ({ routes, message }) => {
         const hasUnexpected = routes.some((route) => route !== '/(site)/archive/[page]');
         if (hasUnexpected) throw new Error(message);

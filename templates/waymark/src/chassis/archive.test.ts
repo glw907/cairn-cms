@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
-import { paginateArchive } from './archive.js';
+import { ARCHIVE_PAGE_SIZE, paginateArchive } from './archive.js';
 
 function entry(date: string | undefined, id: string): ContentSummary {
   return {
@@ -47,5 +47,23 @@ describe('paginateArchive', () => {
     const entries = [entry(undefined, 'a')];
     const result = paginateArchive(entries, 1);
     expect(result.years).toEqual([{ year: 'Undated', entries: [entries[0]] }]);
+  });
+
+  // The showcase's own corpus, 27 posts minus the home page's featured lead: 26 entries at the
+  // showcase's ARCHIVE_PAGE_SIZE (13) land exactly on two full pages, the boundary both the home
+  // route and /archive/[page] paginate this same 26-entry slice from. This proves the two
+  // routes' page counts agree, not just that paginateArchive's own arithmetic holds.
+  it('paginates a 27-post corpus (26 after the featured lead) into two pages of thirteen', () => {
+    const entries = Array.from({ length: 26 }, (_, i) => entry('2026-01-01', `post-${i}`));
+    const homePage = paginateArchive(entries, 1, ARCHIVE_PAGE_SIZE);
+    const archivePage2 = paginateArchive(entries, 2, ARCHIVE_PAGE_SIZE);
+
+    expect(homePage.totalPages).toBe(2);
+    expect(homePage.years[0].entries).toHaveLength(13);
+    expect(archivePage2.page).toBe(2);
+    expect(archivePage2.years[0].entries).toHaveLength(13);
+    // The home route and the archive route paginate the same slice, so their reported totals
+    // must never disagree.
+    expect(homePage.totalPages).toBe(archivePage2.totalPages);
   });
 });

@@ -377,3 +377,41 @@ adds the remaining six, bringing the showcase corpus to 27 posts (14 original pl
   reported exactly the 10 `site-home-*` failures listed above and 64 passed; `--update-
   snapshots=changed` regenerated exactly those 10 files, matching this row's `INTENDED MOVES:`
   name for name.
+
+### Task 2: the archive proven
+
+Own before set captured at this task's parent commit (`3c6fcd2d`, Task 1's own last commit),
+not symlinked from `task-1/`: Task 1 moved `site-home-*` paint, so `task-1/after/` is not a
+valid stand-in for `task-2/before/`.
+
+- `home` 320/390/768/1440/2560 light and dark: `ARCHIVE_PAGE_SIZE` drops from 50 to 13, so page
+  one now shows 13 rows (all still 2026) under the lead instead of all 26, closing with a new
+  "Page 1 of 2 / Older→" pagination block that did not render at page size 50 / the constant
+  change in `src/chassis/archive.ts` / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png`
+  (10 files).
+- `archive2` (`/archive/2`) 320/390/768/1440/2560 light and dark: NEW, first real render. At
+  page size 50 the route 404s (`.missing` in the before set); at 13 the 26-entry slice (27
+  posts minus the featured lead) splits into two full pages of 13, so page two now serves the
+  13 "2025" entries under one year heading and a "Page 2 of 2 / ← Newer" pagination block / the
+  same constant change / adds `archive2-{light,dark}-{320,390,768,1440,2560}.png` (10 files, all
+  new).
+- `article`, `styleguide`, `error404`, `signups` at every width and scheme: no move / none of
+  these surfaces render the paginated archive / `magick compare -metric AE` between
+  `task-2/before/` and `task-2/after/` is 0 on every tile of all four (193 of 193 compared: 81
+  article incl. the 1920 extra, 92 styleguide, 10 error404, 10 signups).
+- `admin-office-*`: this task's plan draft expected the count line and pagination control to
+  move (a 14-to-27-post corpus growth reaching `/admin/posts`'s own client-side pagination).
+  The unmodified `admin-visual.spec.ts` run reported no `admin-office-*` failure: the admin
+  route's post listing reads the dev backend's own seeded fixture, not the public
+  `src/content/posts/` directory the showcase corpus lives in, so the thirteen new posts (added
+  in Task 1) never reach that screen and `ARCHIVE_PAGE_SIZE` (a public-route constant) cannot
+  move it either. This corrects the plan's working assumption; `admin-office-*` carries no row
+  because it never moved.
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reported exactly 20 failures (`site-home-*` and `archive-page-2-*`, both suites' full names
+  listed in the implementer report) and 64 passed; `--update-snapshots=changed` scoped to `-g
+  "site home|archive page 2"` regenerated exactly those 20 files, matching this row's `INTENDED
+  MOVES:` name for name. `scripts/capture-surfaces.mjs`'s own `archive2` capture needed a small
+  fix alongside this task's own files: the route carries no page-level `h1` (the home route's is
+  the one the archive shares), so the tool's default `waitFor` (which waits on `h1`) timed out
+  once the route stopped 404ing; it now waits on the route's own year heading instead.

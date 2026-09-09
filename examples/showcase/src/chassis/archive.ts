@@ -4,9 +4,10 @@
 // two routes.
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-// Entries per archive page. The showcase's own corpus fits on page one, so a site adopting this
-// chassis sizes the constant against its own archive.
-export const ARCHIVE_PAGE_SIZE = 50;
+// Entries per archive page. Sized so the showcase's own corpus crosses one page boundary,
+// proving the pagination shape end to end; a site adopting this chassis sizes the constant
+// against its own archive.
+export const ARCHIVE_PAGE_SIZE = 13;
 
 /** One year's entries, newest first within the year. */
 export interface ArchiveYearGroup {

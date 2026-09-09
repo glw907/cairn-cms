@@ -14,9 +14,10 @@
 //   - signups (`/admin/signups`): renders normally (200); the dev backend mints an owner editor
 //     on every `/admin` request, so no session cookie or login flow is needed, only the
 //     `cairn-admin-theme` cookie for the color scheme.
-//   - archive2 (`/archive/2`): 404s BY DESIGN. `ARCHIVE_PAGE_SIZE` is 50
-//     (`src/chassis/archive.ts`) and the showcase's own corpus fits on page one, so there is no
-//     real page two. This is the one expected `.missing` in the before set, not a capture gap.
+//   - archive2 (`/archive/2`): renders normally (200) now that `ARCHIVE_PAGE_SIZE`
+//     (`src/chassis/archive.ts`) crosses the showcase's own corpus, producing a real page two.
+//     It carries no page-level `h1` of its own (the home route's h1 is the one the archive
+//     shares), so it waits on its own year heading instead of `waitForHeading`'s `h1`.
 //   - error404 (an unmatched path): the root `+error.svelte` DOES render under `vite preview`
 //     for a genuinely unmatched route, full SSR, status 404, with the site's own nav and footer.
 //     Unlike archive2, this surface's whole point is to capture that rendered error page, so a
@@ -45,6 +46,13 @@ const TILE_OVERLAP = 60;
 
 async function waitForHeading(page) {
   await page.locator('h1').first().waitFor({ state: 'visible', timeout: 10_000 });
+}
+
+// /archive/[page] is a continuation page with no page-level h1 of its own (the home route
+// carries the one h1 the archive shares); its year marker is the first heading that settles
+// the DOM.
+async function waitForYearHeading(page) {
+  await page.locator('h3').first().waitFor({ state: 'visible', timeout: 10_000 });
 }
 
 async function waitForImages(page) {
@@ -89,7 +97,7 @@ const SURFACES = [
     path: '/archive/2',
     kind: 'public',
     expectStatus: 200,
-    waitFor: waitForHeading,
+    waitFor: waitForYearHeading,
   },
   {
     name: 'error404',

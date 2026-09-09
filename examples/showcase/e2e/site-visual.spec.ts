@@ -48,6 +48,16 @@ for (const colorScheme of COLOR_SCHEMES) {
       });
     });
 
+    test(`archive page 2 — ${colorScheme} — ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/archive/2');
+      await expect(page.getByRole('heading', { level: 3, name: '2025' })).toBeVisible();
+      await expect(page).toHaveScreenshot(`archive2-${colorScheme}-${width}.png`, {
+        fullPage: true,
+      });
+    });
+
     test(`styleguide — ${colorScheme} — ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await page.emulateMedia({ colorScheme });

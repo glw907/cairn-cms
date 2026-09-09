@@ -316,36 +316,12 @@ The original decision framing, for the record:
     `edit-page-state-reset-coverage.test.ts`'s declared-state regex cannot match a type
     annotation containing a generic comma (`let x: Record<string, boolean> = $state({})`),
     so such a declaration silently escapes the gate.
-  - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
-    `examples/showcase` gets its round of improvement against the changed engine, as its own
-    pass series in this initiative, split into three: chassis-A (structural), then chassis-B1
-    and chassis-B2 (the paint-changing half, split at the plan review's fold on 2026-09-07).
-    All three shipped. Chassis-A shipped the structural half: the mechanical Prettier reformat
-    and its scaffold format check, the comment gate reaching the showcase, the fixture job
-    excluded from the emitted scaffold, dead code removed, the `cairn.config.ts` monolith
-    split, the public routes and site metadata single-sourced, the render trio (`cardShell`,
-    `headRow`, `iconSpan`) re-homed per the audit's retire rulings, a unit-test suite for the
-    chassis's pure logic, one idiom across the tree, and the shipped comments purged of process
-    narration. Chassis-B1 (`docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`) shipped the
-    rest of the CSS format half, the capture tool and before set, the width matrix
-    (`error404` and `admin/signups`), the chassis site shell on the showcase's public chrome,
-    the five composition primitives adopted (`cairn-hero`, `cairn-section`, and `cairn-band` on
-    real site surfaces, `cairn-card` and `cairn-sidebar-layout` demonstrated on the
-    styleguide's composition section), one focus-ring token trio and utility replacing every
-    hand-written ring, and the entry row written once as `EntryRow`. Chassis-B2
-    (`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`) shipped the archive proof (a
-    thirteen-post fixture corpus taking the showcase to 27 posts, `/archive/2` real and
-    baselined at `ARCHIVE_PAGE_SIZE = 13`), site identity read from one server-side source
-    (`page.data.siteName`) and one title convention, the footer nav moved out of code into
-    `site.config.yaml`'s `menus.footer`, CSS conformance (`site.css` under `check-public-
-    tokens`, the degenerate clamps collapsed), the small idioms closed (the three `platform!`
-    assertions, the `feed.ts` guard mix), and waymark rebaked after a first-time-developer read.
-    Its harvest (the corpus decision, the second-menu editing question, the `check-public-
-    tokens` scope argument, the CI regen loop's cost) is banked at
-    `docs/internal/record/2026-09-04-chassis-inputs/chassis-b2-harvest.md`, alongside chassis-
-    B1's own harvest in the same directory.
-    Internals-B's own close routed one more item here (the showcase exemplar half of audit
-    finding 8), landed in chassis-A.
+  - **The chassis improvement round**: three plans,
+    `docs/superpowers/plans/2026-09-04-chassis-a-pass.md`,
+    `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`, and
+    `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`, with harvests at
+    `docs/internal/record/2026-09-04-chassis-inputs/chassis-b1-harvest.md` and
+    `chassis-b2-harvest.md`.
   - **The polish slice**: its plan is `docs/superpowers/specs/2026-09-08-polish-passes-design.md`,
     which routes the full inventory (this initiative's routed items, the friction log, and its
     own planning sweeps) into a named pass series; that spec and its plans are the source of

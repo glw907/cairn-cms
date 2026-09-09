@@ -25,6 +25,7 @@ import { createShellActions } from './content-routes-shell.js';
 import { createListActions } from './content-routes-list.js';
 import { createEntryActions } from './content-routes-entry.js';
 import { createEntryReadActions } from './content-routes-entry-read.js';
+import { createEntryWriteActions } from './content-routes-entry-write.js';
 import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
@@ -63,6 +64,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const list = createListActions(ctx);
   const entry = createEntryActions(ctx);
   const entryRead = createEntryReadActions(ctx);
+  const entryWrite = createEntryWriteActions(ctx);
   const preview = createPreviewActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -81,10 +83,10 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     createAction: entryRead.createAction,
     editLoad: entryRead.editLoad,
     historyLoad: entryRead.historyLoad,
-    saveAction: entry.saveAction,
-    publishAction: entry.publishAction,
-    publishAllAction: entry.publishAllAction,
-    discardAction: entry.discardAction,
+    saveAction: entryWrite.saveAction,
+    publishAction: entryWrite.publishAction,
+    publishAllAction: entryWrite.publishAllAction,
+    discardAction: entryWrite.discardAction,
     deleteAction: entry.deleteAction,
     listDeleteAction: entry.listDeleteAction,
     renameAction: entry.renameAction,

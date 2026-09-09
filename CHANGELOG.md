@@ -296,6 +296,12 @@
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
   Consumers must: nothing.
 
+- The `content-routes-entry.ts` split continues with the write cluster (internal, no public
+  surface change): `content-routes-entry-write.ts` now declares `createEntryWriteActions`
+  (`saveAction`, `publishAction`, `publishAllAction`, `discardAction`) with the `saveToBranch`
+  core and the `saveRefusal`, `SaveHold`, and `SaveFailure` types it shares. `content-routes.ts`'s
+  public shape, key order, and re-exported type names are unchanged. Consumers must: nothing.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

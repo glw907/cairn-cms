@@ -18,37 +18,21 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-08 23:40)
+## Immediate next action (2026-09-08, overnight run halted)
 
-**The overnight run to the next release is live** (Geoff's rulings this evening: B2 merges on
-the verifier plus CI green; 11a and 11b execute on reviewed plans unread; polish-C waits for
-Geoff's read of its verb-first names; the cut fires automatically once C lands). The
-orchestrator is the session scratchpad's `overnight-to-release.js` (a copy is worth banking at
-`~/.claude/workflows/` at close); it is stage-launchable, each launch carrying only the passes
-it runs and stopping with this file pointing at the next launch.
+**The overnight run to the next release halted mid-stage.** Stage one (chassis-B2) was
+running its pass-end ritual and stopped at step `b2:capture-after`: the capture run had
+started but had not finished when the session was forced to report, so it is not complete.
+Earlier steps are committed on the chassis-B2 branch.
 
-- **Stage one, running:** chassis-B2 Tasks 4 to 8, then B2's close (simplifier, gates, the
-  pass-end CI regen, the fresh-context verifier over six surfaces, reviewer fan-out, records,
-  PR #54 merge). Run `wf_1d0833ee-610` (the first run, `wf_06c01691-22f`, halted at Task 3's
-  escalation). Tasks 1 to 3 are accepted on the branch (head `9e472aa7`). Conductor ruling
-  after Task 3: the CI regen `4de378ec` rewrote 20 home and archive2 baselines with
-  CI-canonical renders this workstation cannot reproduce, so the local e2e gate passes when
-  its only failures are exactly those 20; they are never regenerated locally.
-- **Stages two to four, each its own launch after the prior merge:** polish-11a
-  (`docs/superpowers/plans/2026-09-08-polish-11a-pass.md`, `f273274e`, args
-  `~/.cache/cairn-polish-11a/11a-run{1,2}-args.json`), polish-11b-i and polish-11b-ii
-  (Geoff split 11b at 22:40; plans committed `4756dcae`, args under `~/.cache/cairn-polish-11b-i/`
-  and `-11b-ii/`), then polish-C (`2026-09-08-polish-c-pass.md`, `4756dcae`, args
-  `~/.cache/cairn-polish-c/`) with `c.approved: true` (Geoff approved the names table at 23:45,
-  as recommended), after which the cut fires automatically.
-- **No human gate remains before the cut.** The 11a, 11b-i, and 11b-ii plans execute unread
-  by Geoff's ruling and the C names are approved; every plan's reviews, fold record, and
-  verification read are banked at `docs/internal/record/2026-09-08-polish-inputs/plan-*.md`.
-  Geoff reads main's rendered surfaces in the morning.
-- **If resuming cold:** read this file's ledger lines, `git log main`, and the run's
-  `journal.jsonl`; relaunch the orchestrator with `resumeFromRunId` or with the next stage's args.
-  Guards: both inhibitors held to 09:00 (`claude-cairn-overnight`), the battery watchdog and the
-  runaway guard are session monitors.
+Resume prompt for the next cold session, verbatim:
+
+> Resume chassis-B2's pass-end ritual at step "b2:capture-after" in
+> /var/home/glw907/Projects/cairn-cms/.claude/worktrees/chassis-b2; the earlier steps are
+> committed on the branch.
+
+Stages two to four (polish-11a, polish-11b-i, polish-11b-ii, polish-C, then the automatic
+release cut) have not started and wait on chassis-B2's merge.
 
 ## Parallel tracks
 

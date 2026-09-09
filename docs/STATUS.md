@@ -20,6 +20,15 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action (2026-09-08, overnight run halted)
 
+**The overnight run halted again, at stage `b2:merge`.** PR #54 (chassis-B2) cannot
+proceed: it is behind `main` and has real merge conflicts, and no CI has run on it since
+the last push (or the two pushes before it). Resume prompt for the next cold session,
+verbatim:
+
+> Resume chassis-B2's pass-end ritual at step "b2:merge" in
+> /var/home/glw907/Projects/cairn-cms/.claude/worktrees/chassis-b2; the earlier steps are
+> committed on the branch.
+
 **The overnight run to the next release halted mid-stage.** Stage one (chassis-B2) was
 running its pass-end ritual and stopped at step `b2:capture-after`: the capture run had
 started but had not finished when the session was forced to report, so it is not complete.

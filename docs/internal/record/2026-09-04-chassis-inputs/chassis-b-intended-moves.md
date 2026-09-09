@@ -328,3 +328,49 @@ surfaces, and the prior fix round's after set is the correct, if buggy, parent).
   page has a `.cairn-band` directly preceding its footer.
 - The full suite (`site-visual.spec.ts` + `admin-visual.spec.ts`) ran green after the update: 46 +
   28 = 74 passed, 0 failed.
+
+## B2
+
+### The pass before set
+
+Captured `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md` Task 1, at the branch point,
+before this task's own changes:
+
+- **Commit:** `58ed9d1f` (the chassis-b merge into `main`, B2's own branch point)
+- **Location:** `~/.cache/cairn-chassis-b2/pass/before/`
+- **Tool:** `examples/showcase/scripts/capture-surfaces.mjs`, full surface matrix (no `--only`)
+- **Surfaces:** `home`, `article` (plus its light-only 1920 extra), `styleguide`, `archive2`,
+  `error404`, `signups`
+- **Widths:** 320, 390, 768, 1440, 2560 (plus 1920 for `article`, light only)
+- **Schemes:** light, dark
+- **Manifest entries:** 278 (44 home, 92 article incl. the 1920 extra, 102 styleguide, 20
+  error404, 20 signups; `archive2` writes ten `.missing` files, not manifest entries)
+
+`archive2` is still `.missing` at every width in both schemes (`ARCHIVE_PAGE_SIZE` is still 50;
+Task 2 owns the page-size change). `task-1/before/` symlinks to this set, since Task 1 is B2's
+first task and no predecessor moved paint.
+
+## Row log
+
+### Task 1: the thirteen posts
+
+Step 1 (the first seven 2025-dated posts) lands no paint by itself (the delivery layer already
+globs every file under `src/content/posts/`, so the showcase's home page already reflects the
+growing corpus mid-task, but the paint protocol only captures once at each task boundary). Step 2
+adds the remaining six, bringing the showcase corpus to 27 posts (14 original plus 13 new,
+2025-dated), all excluded from the scaffold by path.
+
+- `home` 320/390/768/1440/2560 light and dark: the home page lists `entries.slice(1)` (all posts
+  but the featured lead) at `ARCHIVE_PAGE_SIZE` (still 50 in this task), so the row count grows
+  from 13 to 26 (27 posts minus the one featured lead), and every home baseline grows taller with
+  it / thirteen new posts added to `src/content/posts/`, unexcluded from the showcase's own
+  delivery glob / moves `site-home-{light,dark}-{320,390,768,1440,2560}.png` (10 files).
+- `article`, `styleguide`, `error404`, `signups` at every width and scheme: no move / none of
+  these surfaces render the posts index / no baseline changes; `magick compare -metric AE`
+  between `task-1/before/` and `task-1/after/` is 0 on every tile of all four (193 of 193
+  compared: 81 article, 92 styleguide, 10 error404, 10 signups). `archive2` stays `.missing` in
+  both sets (still 404 at `ARCHIVE_PAGE_SIZE = 50`), so it has no image tile to compare.
+- Produced, not asserted: the unmodified `site-visual.spec.ts` + `admin-visual.spec.ts` run
+  reported exactly the 10 `site-home-*` failures listed above and 64 passed; `--update-
+  snapshots=changed` regenerated exactly those 10 files, matching this row's `INTENDED MOVES:`
+  name for name.

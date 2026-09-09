@@ -125,6 +125,13 @@ passes its own `ThemeToggleConfig` (`SiteHeader.svelte` is the worked example). 
 differently named themes, or a second theme entirely, reuses this module unchanged by supplying
 its own config.
 
+**The archive page size (`archive.ts`).** `ARCHIVE_PAGE_SIZE` is a site's own knob, not a chassis
+constant tuned for this showcase: `paginateArchive` reads it as a default, and both the home
+page's featured segment and the `/archive/[page]` route pass no override, so raising or lowering
+it changes pagination everywhere at once. The scaffold ships fourteen sample posts, sized so the
+pagination block stays hidden until a fifteenth post crosses the page boundary; a site with a
+larger corpus, or one that wants a shorter page, sets its own value here.
+
 **Composition primitives (`composition.css`).** `.cairn-card`, `.cairn-band`, `.cairn-section`,
 `.cairn-hero`, `.cairn-sidebar-layout` are the "generous, not minimal" ruling made concrete: a
 theme reaches for one of these instead of hand-rolling its own card or two-column layout from

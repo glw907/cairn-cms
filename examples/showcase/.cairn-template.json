@@ -10,6 +10,19 @@
     "playwright.config.ts",
     ".claude",
     "scripts",
-    "README.md"
+    "README.md",
+    "src/content/posts/2025-01-11-cold-start.md",
+    "src/content/posts/2025-02-08-icefall-watch.md",
+    "src/content/posts/2025-03-08-mud-season-begins.md",
+    "src/content/posts/2025-04-05-creek-crossing.md",
+    "src/content/posts/2025-05-03-wildflower-window.md",
+    "src/content/posts/2025-05-31-new-boots-review.md",
+    "src/content/posts/2025-06-28-solstice-loop.md",
+    "src/content/posts/2025-07-26-afternoon-thunder.md",
+    "src/content/posts/2025-08-23-low-water-route.md",
+    "src/content/posts/2025-09-20-first-color.md",
+    "src/content/posts/2025-10-18-hunting-season-notes.md",
+    "src/content/posts/2025-11-15-early-snow-gear.md",
+    "src/content/posts/2025-12-13-solstice-dark.md"
   ]
 }

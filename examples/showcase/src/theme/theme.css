@@ -66,7 +66,7 @@
 
    TIER MAP (the starter-template custom-surface ledger,
    docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
-     - Tier 1: the two `@plugin "daisyui/theme"` blocks (cairn, cairn-dark). The showcase's own
+     - Tier 1: the two `@plugin "daisyui/theme"` blocks (cairn, cairn-dark). This site's own
        DaisyUI theme, kept verbatim. Not the admin's Warm Stone.
      - Tier 2 (owned, the documented floor): the on-surface inks (--color-muted and the
        --cairn-<status>-ink set), the elevation pair (--color-card-border, --cairn-shadow), the CTA

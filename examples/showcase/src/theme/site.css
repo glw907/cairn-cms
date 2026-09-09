@@ -1,4 +1,4 @@
-/* examples/showcase/src/theme/site.css
+/* src/theme/site.css
    The reading-column container and the cairn figure-placement contract for the public (site) pages.
    The chrome (header, nav, footer) lives in owned token-driven components (SiteHeader.svelte,
    SiteFooter.svelte); this sheet carries the centered `.site-main` measure and the figure
@@ -127,7 +127,7 @@ body {
 /* Hero, wide, and full figures run at the column or the viewport width with no height limit, so an
    extreme-ratio photo (a tall portrait crop, a rare panorama) can blow the column height out. Cap the
    box and let object-fit: cover crop only what the cap cannot hold, so a normal-ratio photo (like every
-   image in the showcase content) renders at its own proportions, well under the cap, completely
+   image in this site's content) renders at its own proportions, well under the cap, completely
    unaffected; cover never stretches, so even a capped image keeps its true aspect. The centered figure
    (below) is exempt: it is already bounded to a small width for a portrait or a detail shot, and
    forcing a landscape crop there would defeat that shape. */

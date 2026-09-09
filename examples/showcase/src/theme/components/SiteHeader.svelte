@@ -1,5 +1,5 @@
 <!-- @component
-The showcase's public site header: an owned, copy-in chrome component on the token layer. A sticky
+This site's public header: an owned, copy-in chrome component on the token layer. A sticky
 band over a translucent `base-100` with a hairline bottom, carrying the site's wordmark on the left
 and the primary nav plus the theme toggle on the right. Every colour and size reads a DaisyUI role
 utility or a cairn token (`--font-display`, `--cairn-*`), never a literal, and the inner content caps

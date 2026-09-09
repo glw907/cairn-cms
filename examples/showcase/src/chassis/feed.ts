@@ -1,11 +1,11 @@
-// The one place that maps the showcase's posts index into cairn-cms/delivery's FeedItem
+// The one place that maps this site's posts index into cairn-cms/delivery's FeedItem
 // shape. feed.xml and feed.json both call this, so the two feed formats read the same permalinks,
 // excerpts, and rendered bodies and can never drift from each other.
 import { createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from './content.js';
 import { cairn } from '$theme/cairn.config.js';
 
-/** Build the showcase's post feed items, shared by the RSS and JSON Feed routes. */
+/** Build this site's post feed items, shared by the RSS and JSON Feed routes. */
 export async function buildFeedItems(): Promise<FeedItem[]> {
   const posts = site.concept('posts');
   if (!posts) return [];

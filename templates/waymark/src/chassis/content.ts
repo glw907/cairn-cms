@@ -1,4 +1,4 @@
-// The showcase's one delivery content layer: it globs the markdown and hands the adapter to the
+// This site's one delivery content layer: it globs the markdown and hands the adapter to the
 // full-auto createSiteIndexes, which builds the typed per-concept indexes and the site resolver.
 // The cairnManifest() Vite plugin owns the build-time manifest verify (it runs outside the prerender
 // lifecycle, so a stale manifest fails the build red regardless of the handleHttpError policy).
@@ -34,16 +34,17 @@ export const posts = indexes.posts;
 // `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same host.
 const ORIGIN = 'https://showcase.test';
 
-// Read through `siteMeta` below, the one composed identity every caller imports.
-const SITE_DESCRIPTION = 'The cairn showcase site.';
+// PublicRoutesConfig.description is required, so a site that sets none in site.config.yaml
+// still gets a real value rather than an empty SEO tag.
+const DEFAULT_SITE_DESCRIPTION = 'A cairn site.';
 
 /**
  * The site's identity, composed once. `PublicRoutesConfig`'s `siteName`/`description` fields,
  *  robots.txt, the sitemap, and the feed all read this rather than each composing
- *  `siteConfig.siteName`, `SITE_DESCRIPTION`, and `ORIGIN` on their own.
+ *  `siteConfig.siteName`, `siteConfig.description`, and `ORIGIN` on their own.
  */
 export const siteMeta = {
   title: siteConfig.siteName,
-  description: SITE_DESCRIPTION,
+  description: siteConfig.description ?? DEFAULT_SITE_DESCRIPTION,
   origin: ORIGIN,
 };

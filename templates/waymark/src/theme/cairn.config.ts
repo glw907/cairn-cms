@@ -1,4 +1,4 @@
-// The showcase's adapter: the single seam the engine consumes. It declares the posts, pages, and
+// This site's adapter: the single seam the engine consumes. It declares the posts, pages, and
 // fragments concepts, the media wiring, the navLayout, and the preview knob, over a render that
 // runs the engine pipeline and a backend the dev GitHub double answers for. The
 // icon set and the registered markdown components live in their own modules

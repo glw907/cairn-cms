@@ -49,8 +49,8 @@ describe('paginateArchive', () => {
     expect(result.years).toEqual([{ year: 'Undated', entries: [entries[0]] }]);
   });
 
-  // The showcase's own corpus, 27 posts minus the home page's featured lead: 26 entries at the
-  // showcase's ARCHIVE_PAGE_SIZE (13) land exactly on two full pages. Both the home route and
+  // This site's own corpus, 27 posts minus the home page's featured lead: 26 entries at the
+  // site's ARCHIVE_PAGE_SIZE (13) land exactly on two full pages. Both the home route and
   // /archive/[page] call paginateArchive(posts.all().slice(1), n) on this same 26-entry slice
   // with no page-size override, which the /archive/2 and home baselines render as "Page 2 of 2"
   // and "Page 1 of 2".

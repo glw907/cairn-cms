@@ -18,7 +18,7 @@
        directive styling leans on the base declarations; the directive's two inner classes are the
        site's own `cairn-alert-body`/`cairn-head-title`, named apart from DaisyUI's `.card-body`/
        `.card-title` so this same `card` activation cannot restyle them, and the alert no longer
-       emits card classes at all. `card` stays enabled because the showcase's own members fixture
+       emits card classes at all. `card` stays enabled because this site's own members fixture
        renders one (`routes/members`), a route the template excludes; a scaffolded site with no
        `.card` in its own markup may exclude it too.
        Everything else DaisyUI ships (accordion-style `collapse`,

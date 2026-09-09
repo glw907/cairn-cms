@@ -1,5 +1,5 @@
 <!-- @component
-The showcase's public site footer: an owned, copy-in chrome component on the token layer. It sits on
+This site's public footer: an owned, copy-in chrome component on the token layer. It sits on
 `base-200` over a top hairline and carries the wordmark, a footer nav, and a fine-print line. The
 wordmark is the same plain, glyph-free type lockup the header uses; cairn ships no logo mark on the
 public chrome by default. Every colour and size reads a DaisyUI role utility or a cairn token, never

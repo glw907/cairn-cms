@@ -1,4 +1,4 @@
-// The showcase's one PublicRoutesConfig literal, carrying site/render/origin plus the SEO
+// This site's one PublicRoutesConfig literal, carrying site/render/origin plus the SEO
 // (siteName, description, defaultImage, feeds) and media (resolveMedia, assetsEnabled) fields.
 // `(site)/[...path]/+page.server.ts` (the build's prerendered entry route, via createPublicRoutes),
 // `(site)/preview/[token]/+page.server.ts` (the runtime preview route, via previewLoad), and

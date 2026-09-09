@@ -1,10 +1,10 @@
-// The showcase home's archive shape: year-grouped, paginated segments over the full post index.
+// This site's home archive shape: year-grouped, paginated segments over the full post index.
 // Both the home page (page one, alongside its featured lead) and the deeper /archive/[page] route
 // build their page from this one module, so the slicing and grouping rule never drifts between the
 // two routes.
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-// Entries per archive page. Sized so the showcase's own corpus crosses one page boundary,
+// Entries per archive page. Sized so this site's own corpus crosses one page boundary,
 // proving the pagination shape end to end; a site adopting this chassis sizes the constant
 // against its own archive.
 export const ARCHIVE_PAGE_SIZE = 13;

@@ -2,7 +2,7 @@
    The chassis's composition primitives: card, band, section, hero, and sidebar-layout. These are
    the "generous, not minimal" ruling made concrete (Geoff, 2026-07-05): a theme reaches for one of
    these recipes instead of hand-rolling its own card or two-column layout from scratch, the same
-   way it reaches for a token instead of a literal color. The showcase's own `(site)` chrome uses
+   way it reaches for a token instead of a literal color. This site's own `(site)` chrome uses
    the site-shell pair; the rest are a theme's choice, never a requirement, and every recipe
    below is overridable per-instance through its own `--cairn-<primitive>-*` custom properties
    (documented at each rule) rather than only through the shared design-scale tokens.
@@ -52,7 +52,7 @@
      block whose ground differs from its own, but a band that directly precedes the footer
      already draws that separation itself (the band's own bottom edge is the seam). Left alone,
      the footer's margin reopens a strip of the page's base ground between a band and a footer
-     that share the same ground (the showcase's base-200 band into a base-200 footer). Zeroing it
+     that share the same ground (this site's base-200 band into a base-200 footer). Zeroing it
      here, scoped to the direct-sibling case, keeps every other band-to-content transition
      untouched; the higher specificity of the compound selector over the plain `.site-footer`
      rule above wins within the shared layer. */
@@ -72,7 +72,7 @@
   }
 
   /* Hero: an introductory block with a large display heading over a recessed sub-line, the shape
-     the showcase's own home masthead and the styleguide both hand-roll today in scoped `<style>`
+     this site's own home masthead and the styleguide both hand-roll today in scoped `<style>`
      blocks. A theme adopts .cairn-hero to get the same rhythm without repeating the declarations. */
   .cairn-hero {
     --cairn-hero-gap: var(--spacing-s);

@@ -350,7 +350,7 @@
      tree (WCAG 1.3.1: `display: block` on a table strips its row/cell roles
      in every current engine). The scroll container is a wrapper the engine's
      own render pipeline emits around every table by default (`RendererOptions.
-     tableScroll`, src/lib/render/table-scroll.ts, not a showcase-side step):
+     tableScroll`, src/lib/render/table-scroll.ts, not a site-side step):
      `.table-scroll` carries `display: block; overflow-x: auto`, `role="region"`,
      a `tabindex` and an `aria-label` naming the table, so a keyboard user can
      tab to the region and scroll it. Cells stay `nowrap` so a narrow viewport
@@ -762,8 +762,8 @@
     outline-offset: var(--cairn-focus-ring-offset);
   }
   .prose .micro-cta-label {
-    /* The ratified recipe reads --font-sans, a Tailwind default the showcase's own token layer
-       never defines; --font-body is the showcase's equivalent sans face (Source Sans 3), so the
+    /* The ratified recipe reads --font-sans, a Tailwind default this site's own token layer
+       never defines; --font-body is this site's equivalent sans face (Source Sans 3), so the
        chip's label stays on the site's own token system rather than an incidental default. */
     font-family: var(--font-body);
     font-size: var(--text-step--1);

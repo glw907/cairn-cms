@@ -187,17 +187,16 @@ one.
   page edits get. **Every stage's harvest re-derives its track's pages against merged `main` at that
   stage's own sha**, so a page edited by any pass between 2a and that stage is harvested as it then
   stands, never as `preflight.md` recorded it.
-- **The one true pass stop is the figures substrate.** `check:figures`, `scripts/figures/`,
-  `docs/internal/site-figures.*`, and `docs/extend/assets/` are uncommitted working-tree state
-  today, and `docs/extend` is in `package.json`'s `files` array, so that commit changes the
-  published-page count every chain derives from and the `package.json` and `test.yml` baseline every
-  G task edits. **The owner commits it before P1**, with the two writer-facing `assets/*.md` files
-  moved to `docs/internal/figures/` per polish-D's pre-dispatch. P1 verifies and stops the pass if
-  it has not happened.
+- **The figures substrate is not a pass stop** (amended 2026-09-08 evening, above). `check:figures`,
+  `scripts/figures/`, `docs/internal/site-figures.*`, and `docs/extend/assets/` stay uncommitted
+  working-tree files that no pass owns, so the published-page count and the `package.json` and
+  `test.yml` baseline every G task edits are the ones on `main` today. P1 records the count as it
+  stands and the pass proceeds.
 - **Polish-B's prose findings are authoritative ledger input, not edits to run.** The findings in
   `docs/internal/record/2026-09-08-polish-inputs/docs-sweep.md` are numbered **1 through 30 with no
   prefix**; `F7` through `F10` live in **`exports-sweep.md`**, not the docs sweep. P1 re-resolves
-  every finding number against merged `main`, records which polish-B already applied as edits, and
+  every finding number against merged `main`, records that none was applied as an edit because
+  polish-B dissolved, and
   writes the **finding-to-track map** each stage's harvest reads. Revision 2 mapped findings to
   harvest tasks; the harvest tasks now live in stage plans nobody has authored, so the map's unit is
   the track and the stage's own plan assigns each finding to a task. A finding that no longer
@@ -239,6 +238,37 @@ one.
   restate them, so there is one copy to amend. T1 records the baseline and T2 runs the checkpoint.
 - **Release:** no version bump, no publish. The window holds and `CHANGELOG.md` gains one entry
   under `## Unreleased`.
+
+## Amendment 2026-09-08 (evening), from the polish spec revision 4 fold
+
+Geoff's rulings of that evening, recorded in
+`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4, change three things in this
+plan. Task numbering is unchanged.
+
+1. **The figures substrate is no longer a precondition, and no longer a hard stop.** Pre-task 1 read
+   "**The owner commits the figures substrate**" and "This is the pass's one hard stop", and the
+   global constraint read "**The owner commits it before P1**". Geoff has ruled the figure assets,
+   `scripts/figures/`, `check:figures`, and
+   `docs/internal/record/2026-09-04-cairn-case/25-front-door-proposal.md` to be uncommitted
+   working-tree files that no pass owns and that the docs initiative replaces with its own figures
+   and its own front door. They stay untracked, `docs/extend/assets/*.md` never reaches the
+   published arm, and P1 records the published-page count as it stands rather than after a commit.
+   Task P1's step 1 becomes a record, not a stop.
+2. **Polish-B dissolved, so its edit record is empty.** The preflight instruction to record "which
+   polish-B already applied as edits" is answered "none; polish-B dissolved" wherever it appears.
+   Every `docs-sweep.md` finding and every `exports-sweep.md` F7 through F10 finding is still mapped
+   to its page and track, with four qualifications the polish spec states: D11, D12, and D1 bank
+   their docs halves only, since their engine, CLI, and ruling halves execute in polish slices 11a
+   and 11b; D21's sentence is removed at stage five rather than corrected; D16 is moot, because the
+   two figure-copy files it concerns stay untracked; and A29 is not banked, because it lands in
+   slice 11b.
+3. **Chain D is ordered after polish-C merges.** Chain D rebuilds
+   `docs/extend/add-a-custom-admin-screen.md`, and polish-C's task 1 rewrites the same page to
+   compose `PageHeader` beside `AdminTable` with no `OfficeList`. A rebuild from a ledger harvested
+   before polish-C re-teaches a removed export and turns `check:snippets` red on `main` after the
+   release is cut, and two branches owning one file conflict either way. The merge order below reads
+   "P, then C, G1, G2, H in any order, then D, then R" and still does; D additionally waits for
+   polish-C's merge and takes a rebase on merged `main` as its step 0.
 
 ## Global constraints
 
@@ -313,14 +343,13 @@ one.
 
 None of these is a numbered task; all run in the main loop and are recorded in `preflight.md`.
 
-1. **The owner commits the figures substrate** (`package.json`, `.github/workflows/test.yml`,
-   `scripts/figures/`, `docs/internal/site-figures.{md,svg}`, `docs/extend/assets/` with the two
-   writer-facing `.md` files moved to `docs/internal/figures/`). This is the pass's one hard stop.
-   **`docs/internal/record/2026-09-04-cairn-case/25-front-door-proposal.md` is also untracked on
-   `main` today and absent from every worktree.** It touches `check:arm-indexes` and `check:docs`
-   the same way the figures substrate does, so before P1 dispatches the owner either commits it (its
-   record arm gets an index row like any other) or moves it out of the tree; either disposition is
-   recorded in `preflight.md` beside the figures-substrate check.
+1. **Record the owner's untracked working-tree files and depend on none of them** (amended
+   2026-09-08 evening, above). `package.json`, `.github/workflows/test.yml`, `scripts/figures/`,
+   `docs/internal/site-figures.{md,svg}`, `docs/extend/assets/`, and
+   `docs/internal/record/2026-09-04-cairn-case/25-front-door-proposal.md` stay untracked and unowned
+   until the docs initiative's own figure and front-door stages replace them. No task reads them, no
+   gate sees them, and the pass does not stop on them. `preflight.md` records their presence as
+   working-tree state and states that the published-page count is derived without them.
 2. **Extend `~/.claude/workflows/pass-execute-chains.js` to accept a per-chain gate**, reading
    `chain.gate ?? args.gate` into both the implementer and the reviewer prompts. Ten lines. Without
    it the four chain gates in the table above are not expressible and every chain runs one string.
@@ -351,7 +380,7 @@ ordinary line merge.
 
 | File | Chains that write it | Reconciliation |
 |---|---|---|
-| `package.json` (`scripts` only) | H1, G1-5, G2-2, G2-4, G2-5, G2-7, G2-8 | Three-way with the owner's figures line, which lands before P1. Each chain appends its own script lines adjacent to its own block; the conductor reconciles at each merge. |
+| `package.json` (`scripts` only) | H1, G1-5, G2-2, G2-4, G2-5, G2-7, G2-8 | No owner line lands first (amended 2026-09-08 evening). Each chain appends its own script lines adjacent to its own block; the conductor reconciles at each merge. |
 | `package.json` (`files`, `devDependencies`) | P3, P4, G1-5 | P3 adds the `!docs/**/*.brief.yml` negation; G1-5 adds `markdownlint-cli2`. Positional. |
 | `.github/workflows/test.yml` | G1-5, G2-4, G2-9 | P4 creates the empty `docs-gates` job with a named anchor comment; each task appends its own step block inside it. |
 | `.markdownlint-cli2.yaml` | G1-5, G1-6 | Same chain, sequential. P4 stubs it. |
@@ -364,7 +393,8 @@ ordinary line merge.
 | `docs/internal/corpus/manifest.md` | C1 through C5 | One chain, sequential. |
 | `docs/internal/page-types.md`, `docs/internal/page-type-rulings.md` | P2, G1-7, D3, T2 | P2 creates both with their headers and the nine type rows. G1-7 fills the computed columns, D3 writes the first review's rows and its ruling, and T2 rolls up the questions log and the reviewer misses from T1's baseline. Sequential, no contention. |
 
-Merge order: **P, then C, G1, G2, H in any order, then D, then R.** G1 merges before G2 by default,
+Merge order: **P, then C, G1, G2, H in any order, then D, then R.** **Chain D additionally waits for
+polish-C's merge** (amended 2026-09-08 evening) and takes a rebase on merged `main` as its step 0. G1 merges before G2 by default,
 since G1-5 creates the `.markdownlint-cli2.yaml` that G1-6 and the register both cite. **G2-6 and
 G2-8 take a rebase on merged `main` as their step 0**, since both consume a file chain H or chain P
 produced. Chain R is sequential: R1, T1, T2, R2, R3.
@@ -402,8 +432,9 @@ ground.
   one's hand-off, which names the six artifacts and gives the verification commands step 3 runs.
 
 **Steps:**
-- [ ] **Step 1:** verify the figures substrate is committed to `main`. **If it is not, stop the pass
-  and report the block.** This is the plan's one hard stop.
+- [ ] **Step 1:** record that the owner's untracked working-tree files are not a precondition
+  (amended 2026-09-08 evening) and derive the published-page set without them. The plan has no hard
+  stop.
 - [ ] **Step 2:** record the polish-C state: whether its `Consumers must:` list is in `CHANGELOG.md`
   and whether the ten renames in the polish spec's table resolve to their new names in `src/lib/`.
   Record the result; do not stop the pass and do not stop chain H. **State in `preflight.md` that
@@ -437,7 +468,7 @@ ground.
 - It carries a table mapping every `docs-sweep.md` finding (1 through 30, no prefix) and every
   `exports-sweep.md` finding (F7 through F10) to **the page it concerns and the track whose stage
   consumes it**, with **every finding assigned**. Revision 1 left findings 16 and 21 unassigned. A
-  finding polish-B already applied as an edit is marked applied, with its page. The map's unit is the
+  finding is marked not applied, since polish-B dissolved and applied none. The map's unit is the
   track, not the task, because the harvest tasks live in stage plans that do not exist yet; each
   stage's plan assigns its track's findings to its own tasks.
 - It records the current value of `package.json`'s `check` script verbatim, so no later task assumes
@@ -470,9 +501,8 @@ ground.
   so every chain and every conductor pre-task has one place to log a question as it lands.
 - No file outside this repository is modified, and the report says so.
 
-**Notes:** this is the one task that can stop the whole pass, and it stops on one thing only, the
-figures substrate. It is cheap and it runs alone. Every other precondition it records rather than
-enforces, because the pass ahead of it builds tools and gates against fixtures, not against the
+**Notes:** no precondition stops this task; it records every one of them. It is cheap and it runs
+alone, because the pass ahead of it builds tools and gates against fixtures, not against the
 published pages. **`.tellgrader.json` moves here from P3** because plan one's hand-off names its
 absence as the sole reason the docs-register profile is dead on arrival in this repository, and P1
 is where the repository's baseline first exists to commit against.
@@ -1571,7 +1601,8 @@ VirtueClaims), in the same golden form G2-2's harness reads.
 
 Three tasks, all **conductor tasks** in the main loop, because each dispatches a subagent or stops
 for the owner and `cairn-implementer` has no `Agent` tool. D1 and D2 close invocation one; D3 opens
-invocation two.
+invocation two. **The chain starts after polish-C merges** (amended 2026-09-08 evening), because
+polish-C's task 1 rewrites the same page to drop `OfficeList`.
 
 ### Task D1: The brief, the outline, and the quarantined draft
 
@@ -1648,8 +1679,7 @@ npm run check:vale && npm run lint:markdown && npm run check:provenance && npm r
 
 **Acceptance criteria:**
 - Every named gate exits 0 on the page. **`check:figures`' seven assertions are not among them**,
-  since that work is the extend stage's; the page's current `check:figures` run is whatever the
-  committed figures substrate already asserts, and **the extend stage re-runs this page's full gate
+  since that work is the extend stage's; **the extend stage re-runs this page's full gate
   set after the seven assertions land**, which its plan carries as a criterion.
 - `check:provenance` passes with every sentence classified and every cited id resolving; no sentence
   carries `no-claim` while stating a checkable proposition, which the reviewer's report addresses
@@ -1996,7 +2026,8 @@ usual. The gates by name: `lint:markdown`, `check:docs-standard-globs`, `check:v
 `check:vale-fixtures`, `check:provenance`, `check:prose-read`, `check:ledger`, `check:fact-coverage`,
 plus the repository's own `check:docs`, `check:reference`, `check:reference:signatures`,
 `check:snippets`, `check:transcripts`, `check:symbols`, `check:editor-quotes`, `check:arm-indexes`,
-`check:visuals`, `check:figures`, `check:package`, `check:readiness`, `npm run check`,
+`check:visuals`, `check:package`, `check:readiness`, `npm run check`
+(`check:figures` lands with the extend stage, not this pass),
 `npx vitest run scripts/checks`, and the full `npm test`. Both budgets scored: tokens against the
 **4.75M** ceiling, and attended time as planning misses plus execution sittings, the two owner
 sittings counting as two. **The scored numbers go into `baseline.md` as well as into the

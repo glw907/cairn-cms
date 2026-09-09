@@ -707,7 +707,7 @@ means more.
 | 4 | Adopt the three structure levels, the page types with their section orders, and the outline-first review | small | 3a |
 | 4a | Write the templates and the two new structure scripts | medium | 3a |
 | 5 | Adopt the two figure tests and the two-lane routing rule, and commit the figure source and script | small | 3b |
-| 5a | Grow `check:figures` to the seven assertions and close the `check:visuals` hole | medium | 3b |
+| 5a | Author `check:figures` with the seven assertions and close the `check:visuals` hole | medium | 3b |
 | 6 | Take the concept figure off `docs/why-cairn.md` and move the ownership map to `docs/extend/architecture.md` | small | 5 |
 | 7 | Approve the corpus entries, or name the ones to swap | small | 2, owner action |
 | 8 | Adopt the review chain and its severity contract | small | 3b |
@@ -860,7 +860,9 @@ two are one measurement rather than two.
 ### Sequencing constraints
 
 Two sit outside this spec. Polish-C, the breaking window, renames and removes
-across 365 in-tree files and four sites' route files, and every rename invalidates ledger entries in
+across 267 tracked files outside the write-once archives (measured over `git ls-files` for the
+twenty-five identifiers it renames or removes, 464 including those archives) and four sites' route
+files, and every rename invalidates ledger entries in
 exactly the class the ledger exists to guarantee. **Polish-C must land entirely before the first
 stage's harvest branches.** It does not gate pass 2a, whose only harvest is the one demonstration
 page and whose purpose there is to break the schema, not to hold a track's facts; that page's entries
@@ -868,12 +870,11 @@ are re-derived at the extend stage. By the same rule, **every stage re-derives i
 its own sha**, so page edits from the identity-seam and chassis passes are harvested as they stand
 rather than tracked.
 
-And `check:figures`, its script under `scripts/figures/`, and the figure assets are
-uncommitted working-tree state today, so that work must land on `main` before pass 2a's preflight,
-and decisions 5, 5a, and 6 re-verified against the merged state. **`check:figures` must grow its
-seven assertions before any figure is graded**, which is the extend stage, the first stage with a
-figure to grade; pass 2a takes that work instead only if the assertions have landed on `main` by its
-second invocation for another reason.
+And `check:figures`, its script under `scripts/figures/`, and the figure assets are uncommitted
+working-tree state that no pass owns (amended 2026-09-08 evening, above), so this initiative builds
+them itself and no chain waits on them. **`check:figures` must land with its seven assertions before
+any figure is graded**, which is the extend stage, the first stage with a figure to grade; pass 2a
+takes that work instead only if it has landed on `main` by its second invocation for another reason.
 
 ### Sizing
 
@@ -1102,6 +1103,32 @@ F10 prose findings become authoritative ledger input. The harvest records the tr
 proving source and marks the old page's claim superseded. Then the rebuild emits the corrected page
 once, instead of editing a page and rebuilding it afterwards.
 
+**Amendment 2026-09-08 (evening), from the polish spec revision 4 fold.** Three sentences above are
+superseded by Geoff's rulings of that evening, recorded in
+`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4. First, "Polish-B folds here
+except its code half. Tasks 2, 8, and 9 and the `check:reference` change in task 5 stay in polish-B,
+which merges before the harvest branches" no longer holds, because polish-B dissolved and polish-A
+split into slices 11a and 11b. Task 8's custom-screen example is polish-C's task 1; task 9's records
+work is 11a's and 11b's own records tasks; task 2's doctor-transcript re-record is 11a's task 6,
+returned to polish because this unit harvests a gated block's fence verbatim against the fixture its
+gate replays and never re-records one. Only the `check:reference` `## Types` assertion (F7) stays
+deferred here, and it is a gate change stage one makes while it rebuilds the thirteen reference
+pages the ordering edit would otherwise touch twice. The prose findings still bank as ledger input,
+with four qualifications the polish spec states: D11, D12, and D1 bank their docs halves only, D21's
+sentence is removed at stage five, D16 is moot, and A29 is not banked at all. Second, "Polish-D's
+substrate commit and its figure and form tasks stay where they are" no longer holds. There is no
+substrate commit. The figure assets, `scripts/figures/`, and `check:figures` stay uncommitted
+working-tree files that no pass owns, so "that work must land on `main` before pass 2a's preflight"
+at `:871-875` is withdrawn and this initiative produces its own figures in its own stages, with
+`check:figures` and its assets arriving as stage work rather than as an inherited precondition.
+Wherever this spec elsewhere states that `check:figures` grows from an existing check (`:500`,
+`:543`, `:632`, `:710`, `:1024`, `:1035`, `:1156`), the stage that first needs it authors it
+instead, and its `npm test` membership claim holds from that stage on, not before.
+Third, pass 2a's chain D is ordered after polish-C merges, because chain D rebuilds
+`docs/extend/add-a-custom-admin-screen.md` and polish-C's task 1 rewrites the same page to drop
+`OfficeList`; a rebuild from a pre-polish-C ledger would re-teach a removed export and turn
+`check:snippets` red on `main` after the release is cut.
+
 Reference entries under `docs/reference/` are the named exception, and they are edited in place. They
 are also stage one, because a fixed shape under the signature gate and a sentence or two of prose per
 entry is the least demanding writing in the set, which is what makes the track the right place to
@@ -1129,8 +1156,8 @@ Acceptance criteria:
 - The coverage diff has run on every rebuilt page and every reported miss is resolved or recorded.
 - The full `npm test` gate passes, which includes `check:snippets`, `check:reference`,
   `check:reference:signatures`, `check:transcripts` with its per-page block floors,
-  `check:editor-quotes`, `check:symbols`, `check:arm-indexes`, `check:visuals`, `check:figures`,
-  `check:prose`, and `check:docs`.
+  `check:editor-quotes`, `check:symbols`, `check:arm-indexes`, `check:visuals`,
+  `check:prose`, and `check:docs`, plus `check:figures` from unit 5a on.
 - `check:anatomy`, `check:headings`, `check:provenance`, and `check:prose-read` pass across the whole
   published set, with no path-scoped exclusions left from the Compatibility section.
 - Every anchor in each track's anchor map either survives or has its inbound links repaired in the

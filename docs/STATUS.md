@@ -18,38 +18,42 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-08 15:40)
+## Immediate next action (2026-09-08 23:40)
 
-Three tracks are live; each resumes from its own artifact.
+**The overnight run to the next release is live** (Geoff's rulings this evening: B2 merges on
+the verifier plus CI green; 11a and 11b execute on reviewed plans unread; polish-C waits for
+Geoff's read of its verb-first names; the cut fires automatically once C lands). The
+orchestrator is the session scratchpad's `overnight-to-release.js` (a copy is worth banking at
+`~/.claude/workflows/` at close); it is stage-launchable, each launch carrying only the passes
+it runs and stopping with this file pointing at the next launch.
 
-- **Identity seam**: MERGED as PR #53 (`ac0d4d52`). Its ledger entry is in `docs/HISTORY.md`;
-  reviews are banked in `docs/internal/record/2026-09-07-identity-seam/`.
-- **Chassis-B1** (`chassis-b` worktree, PR #51 draft, HEAD `0f43f550`, CI green on the
-  prior commit): Tasks 1 to 7 accepted; the pass-end verifier passes every render after two
-  seam fix rounds (the footer's top margin moved into the chassis layer so the band's cancel
-  rule applies; see the `tailwind-v4-layer-order` memory). Owed: Geoff's five-viewport read
-  from the contact sheets under
-  `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-contact-sheets/` (home, error404,
-  styleguide; light and dark), then undraft and merge, then B2 stacks on it.
-- **Documentation standard**: spec approved at revision 4
-  (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`; nine page types, the
-  registry lifecycle, staged delivery, the gauge-and-iterate protocol). Plan one, the Claude
-  infrastructure pass, is executing in `~/.dotfiles` (its STATUS carries the ledger). Pass
-  2a (`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md`, 36 tasks, 4.75M) is
-  approved and waits on two things: the machine freeing from B1, and Geoff committing or
-  moving aside his uncommitted working-tree files named in the plan's pre-task 1. Five
-  per-track stages follow 2a in the order reference, extend, admin, editors, front door;
-  polish pass C lands before stage one. The polish spec carries the dated amendment.
-- **Front door**: `docs/why-cairn.md` keeps Geoff's true opener; the page is stage five of
-  the rewrite. Author facts live in
-  `docs/internal/record/2026-09-08-polish-inputs/front-door-author-brief.md`.
-
-Guards: sleep inhibitor armed to about 16:30; battery charging.
+- **Stage one, running:** chassis-B2 Tasks 4 to 8, then B2's close (simplifier, gates, the
+  pass-end CI regen, the fresh-context verifier over six surfaces, reviewer fan-out, records,
+  PR #54 merge). Run `wf_1d0833ee-610` (the first run, `wf_06c01691-22f`, halted at Task 3's
+  escalation). Tasks 1 to 3 are accepted on the branch (head `9e472aa7`). Conductor ruling
+  after Task 3: the CI regen `4de378ec` rewrote 20 home and archive2 baselines with
+  CI-canonical renders this workstation cannot reproduce, so the local e2e gate passes when
+  its only failures are exactly those 20; they are never regenerated locally.
+- **Stages two to four, each its own launch after the prior merge:** polish-11a
+  (`docs/superpowers/plans/2026-09-08-polish-11a-pass.md`, `f273274e`, args
+  `~/.cache/cairn-polish-11a/11a-run{1,2}-args.json`), polish-11b-i and polish-11b-ii
+  (Geoff split 11b at 22:40; plans committed `4756dcae`, args under `~/.cache/cairn-polish-11b-i/`
+  and `-11b-ii/`), then polish-C (`2026-09-08-polish-c-pass.md`, `4756dcae`, args
+  `~/.cache/cairn-polish-c/`) with `c.approved: true` (Geoff approved the names table at 23:45,
+  as recommended), after which the cut fires automatically.
+- **No human gate remains before the cut.** The 11a, 11b-i, and 11b-ii plans execute unread
+  by Geoff's ruling and the C names are approved; every plan's reviews, fold record, and
+  verification read are banked at `docs/internal/record/2026-09-08-polish-inputs/plan-*.md`.
+  Geoff reads main's rendered surfaces in the morning.
+- **If resuming cold:** read this file's ledger lines, `git log main`, and the run's
+  `journal.jsonl`; relaunch the orchestrator with `resumeFromRunId` or with the next stage's args.
+  Guards: both inhibitors held to 09:00 (`claude-cairn-overnight`), the battery watchdog and the
+  runaway guard are session monitors.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b, 5 (internals), and 6
-  (internals-B), and 7 (internals-C) MERGED; chassis-A shipped. Next: chassis-B1 and chassis-B2
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3, 4a, 4b, 5 (internals), 6
+  (internals-B), 7 (internals-C), chassis-A, and chassis-B1 MERGED. Next: chassis-B2
   (immediate next action above), then the final **polish** slice (Geoff, 2026-09-01: a full-surface
   cleanliness-and-beauty sweep, reading the exports as a family, the docs cover to cover,
   and the rendered admin against the design system; it also carries the OfficeList

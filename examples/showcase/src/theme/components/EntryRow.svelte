@@ -26,9 +26,9 @@ copy.
     <div class="site-entry__date">{formatDate(post.date)}</div>
   {/if}
   <div>
-    <h2 class="site-entry__title">
+    <h3 class="site-entry__title">
       <a href={post.permalink} class="cairn-focus-ring">{post.title}</a>
-    </h2>
+    </h3>
     {#if post.fields.description}
       <p class="site-entry__excerpt">{post.fields.description}</p>
     {/if}

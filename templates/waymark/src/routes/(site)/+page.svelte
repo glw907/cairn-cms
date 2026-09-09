@@ -127,7 +127,7 @@
            established eyebrow-heading register, so a multi-year archive reads as segmented history
            rather than one flat scroll. -->
       {#each data.archive.years as group, i (group.year)}
-        <h3 class="index__year" class:index__year--first={i === 0}>{group.year}</h3>
+        <h2 class="index__year" class:index__year--first={i === 0}>{group.year}</h2>
         {#each group.entries as post (post.id)}
           <EntryRow {post} />
         {/each}

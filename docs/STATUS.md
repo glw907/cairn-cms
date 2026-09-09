@@ -18,52 +18,28 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-08 15:40)
+## Immediate next action (2026-09-08 22:30)
 
-Three tracks are live; each resumes from its own artifact.
+**The overnight run to the next release is live** (Geoff's rulings this evening: B2 merges on
+the verifier plus CI green; 11a and 11b execute on reviewed plans unread; polish-C waits for
+Geoff's read of its verb-first names; the cut fires automatically once C lands). The
+orchestrator is the session scratchpad's `overnight-to-release.js` (a copy is worth banking at
+`~/.claude/workflows/` at close); it is stage-launchable, each launch carrying only the passes
+it runs and stopping with this file pointing at the next launch.
 
-- **Identity seam**: MERGED as PR #53 (`ac0d4d52`). Its ledger entry is in `docs/HISTORY.md`;
-  reviews are banked in `docs/internal/record/2026-09-07-identity-seam/`.
-- **Chassis-B1**: MERGED as PR #51 (`58ed9d1f`); ledger entry in `docs/HISTORY.md`.
-- **Chassis-B2** (EXECUTING since 2026-09-08 18:30): worktree `.claude/worktrees/chassis-b2`
-  on branch `chassis-b2` off main; plan `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`
-  (8 tasks, one sequential chain, 6M ceiling, checkpoint every four). The chain runs as two
-  Workflow runs because the plan suspends it after Task 2 for the conductor's CI regen: run
-  one (Task 1, done: `2e2dfcd5`, `4aac78db`, fix `3c6fcd2d` accepted; PR #54 open) was `wf_9a14fefc-631`; Task 2 runs alone as `wf_d2fc5612-7dc`, from the main checkout, chains script copied to the
-  session scratchpad (the tool refuses a `~/.claude/workflows` path), args from
-  `~/.cache/cairn-chassis-b2/b2-args.json` filtered to tasks 1 and 2. Between runs: open the PR,
-  `gh workflow run e2e.yml --ref chassis-b2 -f update_snapshots=true`, wait, pull, read the
-  CI diff. Run two carries Tasks 3 through 8 (the same args filtered to `.[2:8]`). Guards
-  armed (inhibitor pair, battery watchdog, transcript runaway guard). Pass-end: the
-  fresh-context verifier over six surfaces (B1's five plus archive2), then Geoff's
-  five-viewport read. If resuming cold: check `git log chassis-b2` for which tasks committed
-  and relaunch the remaining tasks the same way.
-- **Polish** (planning, 2026-09-08 evening): the polish spec
-  (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`) is being rewritten to
-  revision 4 under three rulings: no docs investment before the rewrite (polish-B dissolved,
-  polish-D dropped entirely, Geoff's uncommitted front-door files stay unowned until the docs
-  initiative replaces them), polish-A split into 11a and 11b along the risk lens's cut, and
-  polish-C as slice 12. Three-lens review of revision 3 is banked at
-  `docs/internal/record/2026-09-08-polish-inputs/spec-review-rev3-*.md`; the fold record is
-  `spec-review-rev3-fold.md`. Next: verify revision 4, author the 11a plan, adversarial-review
-  it, then Geoff reads spec and plan together. Chassis-B2 Task 1 escalated on an emitter
-  scope creep (manifest regeneration via a showcase-install subprocess, red on CI); ruled: the
-  emitter filters the copied manifest with no subprocess; fix dispatched, Task 2 launches as
-  its own run after the fix passes review.
-- **Documentation standard**: spec approved at revision 4
-  (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`; nine page types, the
-  registry lifecycle, staged delivery, the gauge-and-iterate protocol). Plan one, the Claude
-  infrastructure pass, is executing in `~/.dotfiles` (its STATUS carries the ledger). Pass
-  2a (`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md`, 36 tasks, 4.75M) is
-  approved and waits on two things: the machine freeing from B1, and Geoff committing or
-  moving aside his uncommitted working-tree files named in the plan's pre-task 1. Five
-  per-track stages follow 2a in the order reference, extend, admin, editors, front door;
-  polish pass C lands before stage one. The polish spec carries the dated amendment.
-- **Front door**: `docs/why-cairn.md` keeps Geoff's true opener; the page is stage five of
-  the rewrite. Author facts live in
-  `docs/internal/record/2026-09-08-polish-inputs/front-door-author-brief.md`.
-
-Guards: sleep inhibitor armed to about 16:30; battery charging.
+- **Stage one, running:** chassis-B2 Tasks 3 to 8, then B2's close (simplifier, gates, the
+  pass-end CI regen, the fresh-context verifier over six surfaces, reviewer fan-out, records,
+  PR #54 merge). Run `wf_06c01691-22f`. Tasks 1 and 2 are accepted on the branch; the
+  post-Task-2 CI regen is the run's first step.
+- **Stage two, next launch:** polish-11a (plan `docs/superpowers/plans/2026-09-08-polish-11a-pass.md`,
+  committed `f273274e`; args `~/.cache/cairn-polish-11a/11a-run{1,2}-args.json`), then 11b and
+  C if their reviewed plans are committed (11b at `2026-09-08-polish-11b-pass.md`, C at
+  `2026-09-08-polish-c-pass.md`, both being authored now with the same three-lens review), C
+  only with `c.approved: true` after Geoff reads its names table.
+- **If resuming cold:** read this file's ledger lines, `git log main`, and the run's
+  `journal.jsonl`; relaunch the orchestrator with `resumeFromRunId` or with the next stage's args.
+  Guards: both inhibitors held to 09:00 (`claude-cairn-overnight`), the battery watchdog and the
+  runaway guard are session monitors.
 
 ## Parallel tracks
 

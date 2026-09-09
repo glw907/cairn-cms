@@ -18,15 +18,39 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-08, overnight run halted)
+## Immediate next action (2026-09-08 23:40)
 
-**The overnight run halted at stage `b2:run2`.** Task 3 (Site identity and one title
-convention) escalated, fixRounds 0. Tasks 4 through 8 (the footer nav out of code; CSS
-conformance; small idioms; the waymark read and rebake; records and the harvest) deferred,
-fixRounds 0.
+**The overnight run to the next release is live** (Geoff's rulings this evening: B2 merges on
+the verifier plus CI green; 11a and 11b execute on reviewed plans unread; polish-C waits for
+Geoff's read of its verb-first names; the cut fires automatically once C lands). The
+orchestrator is the session scratchpad's `overnight-to-release.js` (a copy is worth banking at
+`~/.claude/workflows/` at close); it is stage-launchable, each launch carrying only the passes
+it runs and stopping with this file pointing at the next launch.
 
-Resume prompt: Read the B2 chain journal, decide the non-accepted task, then resume the
-remaining B2 tasks as one chain run; then the pass-end ritual.
+- **Stage one, running:** chassis-B2 Tasks 4 to 8, then B2's close (simplifier, gates, the
+  pass-end CI regen, the fresh-context verifier over six surfaces, reviewer fan-out, records,
+  PR #54 merge). Run `wf_1d0833ee-610` (the first run, `wf_06c01691-22f`, halted at Task 3's
+  escalation). Tasks 1 to 3 are accepted on the branch (head `9e472aa7`). Conductor ruling
+  after Task 3: the CI regen `4de378ec` rewrote 20 home and archive2 baselines with
+  CI-canonical renders this workstation cannot reproduce, so the local e2e gate passes when
+  its only failures are exactly those 20; they are never regenerated locally.
+- **Stages two to four, each its own launch after the prior merge:** polish-11a
+  (`docs/superpowers/plans/2026-09-08-polish-11a-pass.md`, `f273274e`, args
+  `~/.cache/cairn-polish-11a/11a-run{1,2}-args.json`), polish-11b-i and polish-11b-ii
+  (Geoff split 11b at 22:40; plans committed `4756dcae`, args under `~/.cache/cairn-polish-11b-i/`
+  and `-11b-ii/`), then polish-C (`2026-09-08-polish-c-pass.md`, `4756dcae`, args
+  `~/.cache/cairn-polish-c/`) ONLY with `c.approved: true`.
+- **Geoff's morning read:** the polish-C plan's "Verb-first names for Geoff's read" section
+  (33 rows; the seven taste-call names argued individually with a recommendation each; two
+  open choices: `mintPreview`/`revokePreview` versus the longer `*Token` pair, and whether
+  `loadPreview`/`loadHealth` are worth the asymmetry against the route-object `*Load` members).
+  Approval lets C run and the cut fire automatically. The 11a, 11b-i, and 11b-ii plans execute
+  unread by his ruling; every plan's reviews, fold record, and verification read are banked at
+  `docs/internal/record/2026-09-08-polish-inputs/plan-*.md`.
+- **If resuming cold:** read this file's ledger lines, `git log main`, and the run's
+  `journal.jsonl`; relaunch the orchestrator with `resumeFromRunId` or with the next stage's args.
+  Guards: both inhibitors held to 09:00 (`claude-cairn-overnight`), the battery watchdog and the
+  runaway guard are session monitors.
 
 ## Parallel tracks
 

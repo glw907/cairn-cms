@@ -38,13 +38,24 @@
     background: var(--cairn-band-bg);
   }
 
+  /* The footer's own top margin, separating it from whatever precedes it. This lives here, in
+     @layer components, rather than as a Tailwind utility class on the footer element, because the
+     band-to-footer cancel below is itself a layered rule: a Tailwind utility (`mt-2xl`) sits in
+     @layer utilities, which Tailwind v4 orders AFTER @layer components, so an unlayered or
+     later-layer margin always wins over the cancel regardless of selector specificity. Both
+     halves of this seam have to share a layer for either to be able to override the other. */
+  .site-footer {
+    margin-top: var(--spacing-2xl);
+  }
+
   /* The band owns its exit: a footer's own top margin is meant to separate it from a preceding
      block whose ground differs from its own, but a band that directly precedes the footer
      already draws that separation itself (the band's own bottom edge is the seam). Left alone,
      the footer's margin reopens a strip of the page's base ground between a band and a footer
      that share the same ground (the showcase's base-200 band into a base-200 footer). Zeroing it
      here, scoped to the direct-sibling case, keeps every other band-to-content transition
-     untouched. */
+     untouched; the higher specificity of the compound selector over the plain `.site-footer`
+     rule above wins within the shared layer. */
   .cairn-band + .site-footer {
     margin-top: 0;
   }

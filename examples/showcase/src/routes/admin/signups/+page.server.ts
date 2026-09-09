@@ -17,7 +17,7 @@ interface SignupRow {
 
 // A deployed Worker always carries platform.env (wrangler.jsonc binds APP_DB); its absence is a
 // deployment misconfiguration, not a request-shaped failure, so it logs with the engine's own
-// area.subject.verb_phrase grammar (admin-action.ts's admin.action.misconfigured) and fails
+// area.subject.verb_phrase grammar (section-action.ts's admin.action.misconfigured) and fails
 // closed with a generic 500 rather than leaking binding detail to the client.
 function requireAppDb(event: RequestEvent): D1Database {
   const db = event.platform?.env.APP_DB;

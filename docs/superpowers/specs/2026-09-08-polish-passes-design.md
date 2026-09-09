@@ -231,7 +231,9 @@ ledger entry it executes, per the initiative design's standing constraint at
     of the `## Unreleased` block the nine preceding tasks each appended to. The conductor writes
     `docs/STATUS.md`, never this task.
 
-**Ceiling.** 4.5M tokens, checkpoint every three tasks. The number rests on the risk lens's
+**Ceiling.** 6.5M tokens, checkpoint every three tasks (re-derived for the folded thirteen-task
+shape; the Sequencing section's ceiling line carries that derivation). The superseded 4.5M rested
+on the risk lens's
 measured band for this repo, 370K to 530K per task over five comparable passes (conventions 4a
 about 530K, conformance 4b about 430K, internals about 400K, chassis-A about 367K). Ten tasks
 at the band's low-to-middle is 3.7M to 4.5M, and the lens's own arithmetic for this half was
@@ -549,7 +551,10 @@ hard stop on it is removed. Both changes are written into
 fact-ledger entry in exactly the class the ledger exists to guarantee. **Then the rewrite's
 stage one.**
 
-Ceilings: 11a 4.5M, 11b 5.5M, C 7M, so 17M is the total on the table. Checkpoint intervals:
+Ceilings: 11a 6.5M (re-derived at 11a's plan authoring, 2026-09-08, from the folded thirteen-task
+shape: fourteen gate-bearing units at the measured band's middle of about 450K plus the two
+conductor CI regen waits, superseding the 4.5M this section set for a ten-task shape), 11b 5.5M,
+C 7M, so 19M is the total on the table. Checkpoint intervals:
 three tasks in 11a, four in 11b and C. Attended time: three plan reviews, one per pass, plus
 Geoff's read of the verb-first names inside C's plan review. Polish carries no front-door read,
 since that page moves to the rewrite's last stage. The either-or choices the review found are

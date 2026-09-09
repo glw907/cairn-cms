@@ -20,6 +20,11 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action (2026-09-08 23:40)
 
+**The overnight run halted on 2026-09-08 at stage "b2:merge."** Reason: blocked before any git
+action, a live executor is actively editing this exact worktree right now. Resume chassis-B2's
+pass-end ritual at step "b2:merge" in /var/home/glw907/Projects/cairn-cms/.claude/worktrees/chassis-b2;
+the earlier steps are committed on the branch.
+
 **The overnight run to the next release is live** (Geoff's rulings this evening: B2 merges on
 the verifier plus CI green; 11a and 11b execute on reviewed plans unread; polish-C waits for
 Geoff's read of its verb-first names; the cut fires automatically once C lands). The

@@ -1725,6 +1725,8 @@ when the remediation pass lands.
 - **Shape:** Declare it as one flat interface with every field optional, each documented against the action that sets it, and keep the eleven arms module-internal. Today it is a `Partial<>` over an eleven-way intersection of the retiring arm types, which cannot survive their retirement as written and whose meaning, whichever action last failed, is not readable from the intersection.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 31.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 3):** `DeleteRefusal`, one of the five core carriers named above, is now
+  `DeleteFailure` and declares in `content-routes-entry-destructive.ts`. Verdict unchanged.
 
 ## audit-sveltekit-revertfailure: `RevertFailure`  (reshape, 2026-08-26, any-site audit)
 

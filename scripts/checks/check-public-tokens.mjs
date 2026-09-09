@@ -149,10 +149,10 @@ function scanFile(file) {
     const range = topLevelRuleLines(css, exemption.selector);
     if (range) exemptLinesByRule.set(exemption.rule, range);
   }
-  const isExempt = (/** @type {string} */ rule, /** @type {number} */ lineNumber) => {
+  function isExempt(/** @type {string} */ rule, /** @type {number} */ lineNumber) {
     const range = exemptLinesByRule.get(rule);
-    return range ? lineNumber >= range[0] && lineNumber <= range[1] : false;
-  };
+    return range !== undefined && lineNumber >= range[0] && lineNumber <= range[1];
+  }
   lines.forEach((line, i) => {
     const lineNumber = i + 1;
     if (COLOR_LITERAL.test(line) && !isExempt('literal colour', lineNumber)) {

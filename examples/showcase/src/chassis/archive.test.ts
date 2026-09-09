@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
-import { ARCHIVE_PAGE_SIZE, paginateArchive } from './archive.js';
+import { paginateArchive } from './archive.js';
 
 function entry(date: string | undefined, id: string): ContentSummary {
   return {
@@ -56,13 +56,13 @@ describe('paginateArchive', () => {
   // and "Page 1 of 2".
   it('paginates a 27-post corpus (26 after the featured lead) into two pages of thirteen', () => {
     const entries = Array.from({ length: 26 }, (_, i) => entry('2026-01-01', `post-${i}`));
-    const homePage = paginateArchive(entries, 1, ARCHIVE_PAGE_SIZE);
-    const archivePage2 = paginateArchive(entries, 2, ARCHIVE_PAGE_SIZE);
+    const homePage = paginateArchive(entries, 1);
+    const archivePage2 = paginateArchive(entries, 2);
 
     expect(homePage.totalPages).toBe(2);
     expect(homePage.years[0].entries).toHaveLength(13);
+    expect(archivePage2.totalPages).toBe(2);
     expect(archivePage2.page).toBe(2);
     expect(archivePage2.years[0].entries).toHaveLength(13);
-    expect(homePage.totalPages).toBe(archivePage2.totalPages);
   });
 });

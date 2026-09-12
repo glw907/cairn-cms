@@ -72,18 +72,11 @@ regen rewrote; merges bring `main` in first with STATUS taking main's. Do not pu
   treats the ROADMAP's older 14-finding list as input, never the ceiling; chassis precedes
   polish because polish's cover-to-cover docs read must see the chassis that teaches the
   surface.
-- **The cairn case (front-door argument).** `docs/internal/record/2026-09-04-the-cairn-case.md`
-  is FROZEN at revision 12 (`dcb11bd3`, 2026-09-05; six graded rounds to B+, two fresh-context
-  verification reads, 354 notes). Inputs, reviews, and the three-round measured build are banked
-  in `docs/internal/record/2026-09-04-cairn-case/` (`experiment-screen` never merges). Waiting
-  for Geoff's read, all UNCOMMITTED: the first-person front-door proposal
-  `25-front-door-proposal.md` (a why-cairn.md replacement at 1,619 words, register grade B+, cut
-  list in its Section C.5, plus the README and cairn.pub forms); the two figures under
-  `docs/extend/assets/` with source `docs/internal/site-figures.svg`, emitter `scripts/figures/`,
-  and a `check:figures` line in `package.json` and `test.yml`, re-derived from the frozen case
-  (review page: artifact bfe5eef9). Post-freeze notes that would reopen the case are in
-  `26-post-freeze-notes.md`. Landing path: a docs task in polish (or a small docs-only pass) once
-  Geoff rules on the page, its length, and the figures.
+- **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** The frozen case record
+  and its inputs stay under `docs/internal/record/2026-09-04-cairn-case/` as history; the
+  uncommitted front-door proposal, the two figures, their emitter, and the `check:figures`
+  wiring were deleted after a harvest into the `site-figures-harvest` memory. Every doc will be
+  rewritten; nothing from the initiative lands.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

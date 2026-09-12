@@ -1282,6 +1282,14 @@
 
 ### Fixed
 
+- `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
+  optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
+  both `paid-plan-declined` messages now all state plainly that a cairn site needs Workers Paid
+  from its first deploy, matching `money.mjs`'s own cost preamble. The declined-branch messages no
+  longer say the site is "still working" or that turning the plan on later is "not urgent";
+  declining still leaves the owner able to sign in and publish through `--sign-in`, but the copy no
+  longer frames the plan itself as skippable. Internal CLI copy fix; no consumer action.
+
 - `cairn-audit`'s `list-role` rule gains a rendered-mode counterpart (internals pass, Task 8),
   closing the gap the static rule's own coverage note names: daisyUI styles a list item through a
   descendant selector scoped to the LIST's own class (`.menu :where(li)`, `.breadcrumbs > li`), not

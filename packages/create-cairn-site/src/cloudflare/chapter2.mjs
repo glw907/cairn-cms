@@ -677,7 +677,7 @@ export async function runChapter2({
           return;
         }
         const answer = await confirm({
-          message: "Turn on Cloudflare's Workers Paid plan now, so anyone besides you can sign in?",
+          message: "A cairn site needs Cloudflare's Workers Paid plan from its first deploy. Turn it on now?",
         });
         if (isCancel(answer)) exitOnCancel();
         emailConsented = Boolean(answer);

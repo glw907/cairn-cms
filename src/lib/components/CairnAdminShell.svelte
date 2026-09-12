@@ -647,13 +647,14 @@ discriminant, not the fields, gates the chrome).
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
              band, where the desk sidebar is receded). -->
         <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
-          <!-- A real accessible opener, kept as a label rather than a bare button: the pointer
-               route is the native for= click-forwarding to the checkbox (unchanged from before,
-               so a plain click still just works), and role/tabindex/the Enter-Space handler below
-               add the keyboard route a bare label never had. aria-expanded mirrors drawerOpen and
-               aria-controls names the drawer nav it opens, so it is reachable and announced like
-               any other disclosure button. svelte-ignore: the compiler's noninteractive-element
-               heuristic does not know this element already carries a full keyboard contract. -->
+          <!-- Kept as a label, not a bare `<button>`: examples/showcase/e2e/admin-shell-sidebar.spec.ts
+               locates this opener by `label[for="cairn-shell-drawer"]` and is out of this
+               change's scope. The pointer route is still the native for=/id= click-forwarding to
+               the checkbox; role, tabindex, and the Enter/Space handler below add the keyboard
+               route a bare label never had, and both routes flip drawerOpen directly since the
+               checkbox mirrors that state rather than driving it. svelte-ignore: the compiler's
+               noninteractive-element heuristic does not know this element already carries a full
+               keyboard contract. -->
           <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
           <label
             for="cairn-shell-drawer"

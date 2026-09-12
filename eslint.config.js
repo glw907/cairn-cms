@@ -71,13 +71,15 @@ export default [
       'jsdoc/require-yields': 'off',
     },
   },
-  // The showcase's .svelte files get the same four comment rules the .ts block carries, scoped
-  // to this one glob. svelte-eslint-parser hands the <script> block to typescript-eslint's
-  // parser so the comment rules see TypeScript comments; eslint-plugin-svelte's own rule sets
-  // (a11y, reactivity) are deliberately not enabled here, since this block is a comment gate,
-  // not a component linter, and its files glob would otherwise reach src/lib/components too.
+  // The showcase's .svelte files and the engine's own admin components get the same four
+  // comment rules the .ts block carries, scoped to these two globs. svelte-eslint-parser hands
+  // the <script> block to typescript-eslint's parser so the comment rules see TypeScript
+  // comments; eslint-plugin-svelte's own rule sets (a11y, reactivity) are deliberately not
+  // enabled here, since this block is a comment gate, not a component linter. The engine's
+  // components carry the same TSDoc contract as its .ts sources, so they belong under the same
+  // gate rather than relying on review alone to catch a malformed doc comment.
   {
-    files: ['examples/showcase/src/**/*.svelte'],
+    files: ['examples/showcase/src/**/*.svelte', 'src/lib/components/**/*.svelte'],
     languageOptions: {
       parser: svelteParser,
       parserOptions: { parser: tseslint.parser },

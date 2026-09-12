@@ -5,7 +5,7 @@
 // instead of a second copy.
 
 import type { MediaLibraryEntry } from '../media/library-entry.js';
-import type { MediaUsageInfo } from '../sveltekit/content-routes-media.js';
+import type { MediaUsageInfo } from '../sveltekit/content-routes-media-library.js';
 import type { UsageEntry } from '../media/usage.js';
 
 /** The distinct-entry usage count for an asset; zero when the asset has no usage key. */

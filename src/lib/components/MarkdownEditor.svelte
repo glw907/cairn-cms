@@ -126,7 +126,7 @@ Swapping the editor stays a one-file change.
     mediaLibrary?: MediaLibrary;
     /** The published fragment titles the include: source decoration resolves a
      *  `::include{fragment="id"}` chip's label against, keyed by fragment id (EditData's
-     *  `fragmentTargets`, projected to id -> title). A resolved include line always chips; an id
+     *  `fragmentTargets`, projected to id -\> title). A resolved include line always chips; an id
      *  absent from this map falls back to naming the chip from the raw id. Empty by default. */
     fragmentTitles?: import('./editor-include.js').FragmentTitles;
     /** Reports the directive container at the caret (or null when outside any container) whenever

@@ -17,18 +17,20 @@ const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'Advisory
 // The five core arm shapes ContentFormFailure's Partial<> intersection once carried, retired from
 // every barrel and subpath by the conventions pass, Task 5 (`audit-sveltekit-contentformfailure`'s
 // prescribed flatten): every field folded into the flat, all-optional ContentFormFailure, which
-// stays in KEPT below. DeleteRefusal survives structurally as ContentFormFailure's inboundLinks/
-// inboundKind/id fields, the same F-1-class leak the six names above already establish.
-const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteRefusal', 'RenameFailure', 'CreateFailure', 'PreviewMintFailure'];
+// stays in KEPT below. DeleteFailure (renamed from DeleteRefusal per the Refusal-suffix retirement)
+// survives structurally as ContentFormFailure's inboundLinks/inboundKind/id fields, the same
+// F-1-class leak the six names above already establish.
+const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteFailure', 'RenameFailure', 'CreateFailure', 'PreviewMintFailure'];
 
 // Six of this list's own names, retired from the /sveltekit barrel by the 4b conformance pass,
 // Task 1 (the Tier 1 media-janitorial retires): each stays a module-level export at its
-// declaring module, `content-routes-media.ts`, either for an in-process consumer
+// declaring module (content-routes-media-delete.ts, content-routes-media-ingest.ts, or
+// content-routes-media-metadata.ts, per symbol), either for an in-process consumer
 // (CairnMediaLibrary.svelte, media-upload-outcome.ts) or because its action's return type
 // composes into `createContentRoutesInternal` (content-routes.ts), whose `.d.ts` emit must be
 // able to name it. ContentFormFailure, at the same original position in KEPT, is NOT one of
 // these: it is the flattened carrier that survives, not a retire.
-const RETIRED_TIER1 = ['MediaDeleteRefusal', 'MediaUpdateFailure', 'MediaReplaceFailure', 'MediaAltPropagateFailure', 'MediaBulkFailure', 'UploadResult'];
+const RETIRED_TIER1 = ['MediaDeleteFailure', 'MediaUpdateFailure', 'MediaReplaceFailure', 'MediaAltPropagateFailure', 'MediaBulkFailure', 'UploadResult'];
 
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the

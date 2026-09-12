@@ -514,3 +514,23 @@ its first real render at Task 2 (ten new files, `archive2-{light,dark}-{320,390,
 and carries no `.missing` entry in any B2 after set from Task 2 onward (314 manifest entries at
 Tasks 3 through 5, no `.missing` marker on any of them). No `.missing` entry remains open in
 either pass's before or after sets as of this pass's close.
+
+## Polish-11a
+
+### Task 7: the engine product copy
+
+The vocabulary screen is not in the capture matrix (`scripts/capture-surfaces.mjs`'s surface
+list); it is baselined only by `e2e/admin-visual.spec.ts:40` and `:49`. Before set at
+`~/.cache/cairn-polish-11a/task-7/before/`, captured fresh at this task's parent commit (no
+predecessor in this pass had captured a pass-wide before set). After set at
+`~/.cache/cairn-polish-11a/task-7/after/`.
+
+- `vocabulary-light` (full page, no width variant): "A tag groups related posts." becomes "A tag
+  groups related entries.", and every in-use count changes from "N post(s)" to "N entry/entries" /
+  the entry-vocabulary copy pass drops the CMS's internal "post" noun in favor of the
+  concept-neutral "entry" the rest of the admin uses / moves `vocabulary-light-linux.png`.
+- `vocabulary-dark` (full page, no width variant): the same copy change under the dark color
+  scheme / same reason / moves `vocabulary-dark-linux.png`.
+- The six capture-matrix surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`,
+  `signups`) touch no code this task changes: `magick compare -metric AE` is 0 on every
+  before/after tile pair.

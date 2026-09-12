@@ -17,7 +17,7 @@ restores there on close.
   import { getContext, tick } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import type { MediaOrphanScanResult } from '../media/orphan-scan.js';
-  import type { MediaOrphanPurgeResult, MediaBulkFailure } from '../sveltekit/content-routes-media.js';
+  import type { MediaOrphanPurgeResult, MediaBulkFailure } from '../sveltekit/content-routes-media-delete.js';
   import { confirmGateMatches } from './typed-confirm.js';
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
   import { postFormAction } from './client-action.js';

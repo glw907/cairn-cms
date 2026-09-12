@@ -413,9 +413,9 @@ test('carry-over-declined now reports the declined kind', () => {
   assert.equal(err.catalogue.kind, 'declined');
 });
 
-test('paid-plan-declined names what still and does not still work, the --sign-in path, and the 30-day window', () => {
+test('paid-plan-declined states Workers Paid is needed from the first deploy, the --sign-in path, and the 30-day window', () => {
   const err = cloudflareError('paid-plan-declined', { dir: './alpine' });
-  assert.match(err.message, /still working/);
+  assert.match(err.message, /first deploy/);
   assert.match(err.message, /editing and publishing/);
   assert.match(err.message, /signing in/);
   assert.ok(err.message.includes('--sign-in'), 'should name the --sign-in recovery command');

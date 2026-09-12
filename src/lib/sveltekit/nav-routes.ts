@@ -152,7 +152,7 @@ export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       return commitFailure(commitFields, err, {
-        error: 'The site config changed since you opened it. Reload and reapply your edits.',
+        error: 'The site config changed since you opened it. Re-read the config and reapply your edits.',
       } satisfies NavSaveFailure);
     }
 

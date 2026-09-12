@@ -1,10 +1,11 @@
 // cairn-cms: the content routes' shared closure context. createContentRoutesContext builds this
 // object once per createContentRoutesInternal call (the backend resolver, the manifest and media-json
-// readers, the commit-failure handlers, the tidy client), and every per-domain sibling module
-// (content-routes-shell.ts, -list.ts, -entry.ts, -preview.ts, -media.ts, -tidy.ts, -settings.ts,
-// -dictionary.ts) closes over it instead of re-deriving these from `runtime`/`deps` itself. This
-// is the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
-// where their shared captures come from.
+// readers, the commit-failure handler, the tidy client), and every per-domain sibling module
+// (content-routes-shell.ts, -list.ts, -entry-read.ts, -entry-write.ts, -entry-destructive.ts,
+// -entry-revert.ts, -preview.ts, -media-library.ts, -media-ingest.ts, -media-delete.ts,
+// -media-metadata.ts, -tidy.ts, -settings.ts, -dictionary.ts) closes over it instead of re-deriving
+// these from `runtime`/`deps` itself. This is the seam a pure closure-lift produces: the domain
+// modules are unchanged in behavior, only in where their shared captures come from.
 import type { ActionFailure } from '@sveltejs/kit';
 import type { Backend } from '../github/backend.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
@@ -12,7 +13,7 @@ import type { CairnRuntime } from '../content/types.js';
 import { validateNavLayout, validateAccessComposition, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type PublishActionEntry } from './publish-actions.js';
-import { logCommitFailed, commitFailure, type CommitLogFields } from './commit-log.js';
+import { commitFailure, type CommitLogFields } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 import type { PreviewTokenConfig } from './preview.js';
@@ -306,15 +307,6 @@ export interface ContentRoutesContext {
   /** The repo-relative personal-dictionary path, defaulting to the `.cairn/` content root. */
   dictionaryFilePath(): string;
   /**
-   * Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
-   *  reason; any other error is unexpected and logs at error with the stringified cause.
-   */
-  logCommitFailed(
-    fields: CommitLogFields,
-    err: unknown,
-    event?: 'commit.failed' | 'publish.failed',
-  ): void;
-  /**
    * The shared commit catch for the entry and media actions: log the failure, then answer a
    *  conflict in place with `fail(409, payload)` carrying the caller's own screen failure shape,
    *  and rethrow anything else.
@@ -417,7 +409,6 @@ export function createContentRoutesContext(runtime: CairnRuntime, config: Conten
     readManifest,
     parseMediaJson,
     dictionaryFilePath,
-    logCommitFailed,
     commitFailure,
   };
 }

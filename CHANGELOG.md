@@ -288,6 +288,65 @@
 
 ### Changed
 
+- The engine's own admin components (`src/lib/components/*.svelte`) now sit under the same
+  `check:comments` TSDoc gate the showcase's `.svelte` files carry: the ESLint `.svelte` block's
+  `files` glob widens to include `src/lib/components/**/*.svelte`. Eleven `tsdoc/syntax` errors
+  the widened glob turned up across six components are fixed in place (unclosed code spans,
+  unescaped `{}`/`>` characters), with no comment's content changed. No consumer action.
+
+- The `content-routes-entry.ts` monolith begins splitting into one module per entry cluster
+  (internal, no public surface change): `content-routes-entry-read.ts` now declares
+  `createEntryReadActions` (`createAction`, `editLoad`, `historyLoad`) and the exported
+  `EditData` and `FragmentTarget` types, and `content-routes-shared.ts` gains the cross-cluster
+  helpers `draftFromBranchHead`, `commitEditorName`, `HISTORY_LIMIT`, and `invalidIdMessage`.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  No consumer action.
+
+- The `content-routes-entry.ts` split continues with the write cluster (internal, no public
+  surface change): `content-routes-entry-write.ts` now declares `createEntryWriteActions`
+  (`saveAction`, `publishAction`, `publishAllAction`, `discardAction`) with the `saveToBranch`
+  core and the `saveRefusal`, `SaveHold`, and `SaveFailure` types it shares. `content-routes.ts`'s
+  public shape, key order, and re-exported type names are unchanged. No consumer action.
+
+- The `content-routes-entry.ts` split finishes and the file retires (internal, no public surface
+  change): `content-routes-entry-destructive.ts` now declares `createEntryDestructiveActions`
+  (`deleteAction`, `listDeleteAction`, `renameAction`), and `content-routes-entry-revert.ts`
+  declares `createEntryRevertActions` (`revertAction`). `DeleteRefusal` renamed to `DeleteFailure`
+  (the `Refusal`-suffix retirement); it stays a module-level export of
+  `content-routes-entry-destructive.ts`, reached from no package subpath.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  No consumer action.
+
+- The `content-routes-media.ts` monolith begins splitting into one module per media cluster
+  (internal, no public surface change): `content-routes-media-shared.ts` now declares the
+  fifteen module-level primitives every cluster shares (the slug and hash grammars, the human-field
+  caps and sanitizer, the shared fail-closed messages, and the R2 bucket resolver) plus
+  `distinctEntryCount`. `content-routes-media-library.ts` now declares `createMediaLibraryActions`
+  (`mediaLibraryLoad`) and the exported `MediaLibraryData` and `MediaUsageInfo` types, and
+  `content-routes-media-ingest.ts` now declares `createMediaIngestActions` (`uploadAction`,
+  `mediaLibraryUploadAction`) and the exported `MediaUploadFailure` and `UploadResult` types.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  No consumer action.
+
+- The `content-routes-media.ts` split continues with the destructive cluster (internal, no public
+  surface change): `content-routes-media-delete.ts` now declares `createMediaDeleteActions`
+  (`mediaDeleteAction`, `mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`)
+  and the exported `MediaDeleteFailure`, `MediaBulkFailure`, `MediaBulkDeleteResult`, and
+  `MediaOrphanPurgeResult` types. `MediaDeleteRefusal` renamed to `MediaDeleteFailure` (the
+  `Refusal`-suffix retirement); it stays a module-level export, reached from no package subpath.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  No consumer action.
+
+- The `content-routes-media.ts` split finishes with the metadata cluster (internal, no public
+  surface change): `content-routes-media-metadata.ts` now declares `createMediaMetadataActions`
+  (`mediaUpdateAction`, `mediaReplacePreviewAction`, `mediaReplaceAction`, `mediaAltPreviewAction`,
+  `mediaAltPropagateAction`) and the exported `MediaUpdateFailure`, `MediaReplaceFailure`,
+  `MediaAltPropagateFailure`, `MediaReplacePreviewEntry`, and `MediaReplacePreviewPlan` types.
+  `content-routes-media.ts` is retired: every cluster it held now lives in one of the four sibling
+  modules. `BulkDeleteSkip` renamed to `BulkDeleteSkippedAsset` (the `Skip`-suffix retirement); its
+  `skipped` field name is unaffected. `content-routes.ts`'s public shape, key order, and
+  re-exported type names are unchanged. No consumer action.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace
@@ -1134,6 +1193,13 @@
   built-in directive output; a site's own chassis copy (forked from the showcase's) still carries
   the old names until that site's own pass re-homes them.
 
+- Product copy drops the misleading "Reload" instruction from four conflict-refusal messages
+  (the two entry conflict refusals, the nav-menu conflict refusal, and the site-settings conflict
+  refusal) where the editor's own unsaved typing is what a reload would discard, and the
+  `VocabularyAdmin` tag-vocabulary screen now names its counted things "entries" rather than
+  "posts", matching the concept-neutral vocabulary the rest of the admin uses. No consumer
+  action.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
@@ -1220,7 +1286,26 @@
   `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map recipe
   to close the gap.
 
+- Four doc-comment residuals close: `createSiteIndexes` (`/delivery`) no longer sends a reader to
+  `createSiteResolver`, an internal name the shipped `.d.ts` does not export, and instead states
+  what `validate: false` opts out of directly; `rssResponse`, `jsonFeedResponse`, and
+  `sitemapResponse` (`/delivery`), `FeedChannel` and `buildJsonFeed` (`/delivery`), and `ListData`
+  (`/sveltekit`) each gain a doc comment stating its contract in place of a one-line paraphrase of
+  its own name; `EntryData`'s eight members and `MediaEntry`'s twelve each gain a member-level doc
+  comment, with `MediaEntry`'s block comment naming `sha256` and `originalFilename` as the two
+  fields its `MediaLibraryEntry` projection drops; and the `/sveltekit` barrel's doc comment now
+  names its two documented cross-subpath exceptions, `PublicRoutesConfig` and `EntryData`, both
+  canonical on `/delivery`. No signature changed and no export moved.
+
 ### Fixed
+
+- `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
+  optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
+  both `paid-plan-declined` messages now all state plainly that a cairn site needs Workers Paid
+  from its first deploy, matching `money.mjs`'s own cost preamble. The declined-branch messages no
+  longer say the site is "still working" or that turning the plan on later is "not urgent";
+  declining still leaves the owner able to sign in and publish through `--sign-in`, but the copy no
+  longer frames the plan itself as skippable. Internal CLI copy fix; no consumer action.
 
 - `cairn-audit`'s `list-role` rule gains a rendered-mode counterpart (internals pass, Task 8),
   closing the gap the static rule's own coverage note names: daisyUI styles a list item through a
@@ -1551,6 +1636,12 @@
   broken deploy answers the same way as a real gate and the check cannot tell them apart; the info
   detail now says so and names the deploy-fault possibility directly.
   See [`docs/extend/sign-in-through-your-organization.md`](docs/extend/sign-in-through-your-organization.md).
+
+- The state-reset coverage test's `parseDeclaredStateNames` pattern now matches a declarator whose
+  type annotation carries its own generic comma inside balanced angle brackets (`let picked:
+  Map<string, number> = $state(new Map())`); the previous pattern excluded every comma in the
+  optional type run, so a declaration shaped like this was invisible to the gate. Internal
+  test-only fix; no consumer action.
 
 ## 0.96.0
 

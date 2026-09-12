@@ -8,20 +8,34 @@
  * One stored asset's row: its content hash, its human layer, and its byte and pixel facts. The
  *  `contentType` is the stored MIME type, so the delivery route serves it verbatim rather than
  *  guessing from the extension. `width` and `height` are null when no dimensions are known (the
- *  client is the only dimension source and a Worker cannot re-derive them).
+ *  client is the only dimension source and a Worker cannot re-derive them). This is the source
+ *  record; `MediaLibraryEntry` (`library-entry.ts`) projects it for the picker and drops `sha256`
+ *  and `originalFilename`, since neither is display-safe or picker-relevant.
  */
 export interface MediaEntry {
+  /** The 16-hex content-hash prefix that names the bytes and keys this row in the manifest. */
   hash: string;
+  /** The full content hash, kept for a stronger dedup check than the 16-hex prefix alone can give. */
   sha256: string;
+  /** The cosmetic display slug in the media: token and the delivery path. */
   slug: string;
+  /** The editable human name shown on the Library row. */
   displayName: string;
+  /** The name the file arrived with, kept for provenance even after the slug and display name change. */
   originalFilename: string;
+  /** The alt text carried into a new placement; empty is the needs-alt signal. */
   alt: string;
+  /** The bare file extension (no dot), for example `webp`. */
   ext: string;
+  /** The stored MIME type the delivery route serves verbatim rather than guessing from the extension. */
   contentType: string;
+  /** The stored byte size, read from disk at ingest rather than trusted from the client. */
   bytes: number;
+  /** The pixel width, or null when the client that uploaded it reported none. */
   width: number | null;
+  /** The pixel height, or null when the client that uploaded it reported none. */
   height: number | null;
+  /** The ISO timestamp the bytes were first stored, the Library's sortable "Added" column. */
   createdAt: string;
 }
 

@@ -912,7 +912,7 @@ describe('tags/screen', () => {
     await expect.element(screen.getByRole('heading', { name: 'Your tags' })).toBeInTheDocument();
     // The stored-form line under the Add field is the one contracted detail the audit says is not
     // in the resting render (it appears as the author types), so this row asserts no pose for it.
-    expect(screen.container.textContent).toContain('Editors see the name; posts keep a short slug.');
+    expect(screen.container.textContent).toContain('Editors see the name; entries keep a short slug.');
 
     // The trash icon versus the use count: an in-use tag's delete is guarded (aria-disabled), the
     // fixture's zero-usage tag's own delete stays the active, ungated control.
@@ -922,7 +922,7 @@ describe('tags/screen', () => {
     expect(unusedDelete?.hasAttribute('aria-disabled')).toBe(false);
 
     // The not-on-this-list section, seeded from a tag in use but absent from the vocabulary.
-    await expect.element(screen.getByRole('heading', { name: 'Already on your posts' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('heading', { name: 'Already on your entries' })).toBeInTheDocument();
     expect(screen.container.textContent).toContain('volunteer-spotlight');
 
     await expect.element(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();

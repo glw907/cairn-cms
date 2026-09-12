@@ -46,7 +46,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
   // current slug each time the dialog opens without capturing only the initial prop value.
   let nextSlug = $state('');
 
-  /** Open the dialog with a fresh prefill. Exported so a trigger={false} host can drive it. */
+  /** Open the dialog with a fresh prefill. Exported so a `trigger={false}` host can drive it. */
   export function open() {
     nextSlug = slug;
     dialog?.showModal();

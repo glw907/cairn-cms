@@ -530,26 +530,25 @@ const ROWS = {
     build(params) {
       if (params.reoffered) {
         return (
-          "You chose again not to turn on Cloudflare's Workers Paid plan, so this site still " +
-          'cannot send its own sign-in email. Nothing is broken: the site keeps serving, and you ' +
-          'keep editing and publishing as the owner.\n' +
+          "You chose again not to turn on Cloudflare's Workers Paid plan. A cairn site needs " +
+          'that plan from its first deploy, so this site still cannot send its own sign-in ' +
+          'email; it keeps serving its pages, and you keep editing and publishing as the owner.\n' +
           `Your own way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
-          'Next: nothing, unless you want email sign-in. Re-run npx create-cairn-site --dir ' +
-          `${params.dir} whenever you do.`
+          'Next: turn on Workers Paid. Re-run npx create-cairn-site --dir ' +
+          `${params.dir} to do it.`
         );
       }
       return (
-        "You chose not to turn on Cloudflare's Workers Paid plan, so this site cannot send its " +
-        'own sign-in email yet. That choice is recorded, and your site is untouched and still ' +
-        'working: it keeps serving its pages, and you keep editing and publishing as the owner. ' +
-        'What does not work is anyone else signing in, since only Workers Paid can send them a ' +
-        'link.\n' +
+        "You chose not to turn on Cloudflare's Workers Paid plan, and a cairn site needs that " +
+        'plan from its first deploy. That choice is recorded: your site keeps serving its pages, ' +
+        'and you keep editing and publishing as the owner, but what does not work is anyone else ' +
+        'signing in, since only Workers Paid can send them a link.\n' +
         `Your own way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which ` +
         "writes a fresh sign-in link straight into the site's database without touching email. " +
-        'Your current sign-in lasts 30 days, so none of this is urgent.\n' +
-        'Next: when you are ready to turn email sign-in on, re-run npx create-cairn-site --dir ' +
-        `${params.dir}.`
+        'Your current sign-in lasts 30 days.\n' +
+        'Next: turn on Workers Paid. Re-run npx create-cairn-site --dir ' +
+        `${params.dir} when you are ready.`
       );
     }
   },

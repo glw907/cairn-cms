@@ -6,10 +6,10 @@
 // not a closure over ContentRoutesContext, so a caller passes `runtime` (or nothing) directly
 // rather than threading `ctx`.
 //
-// Name-collision note: `content-routes-media.ts` declares its own block-scoped `const manifestRow`
-// inside `mediaAltPreviewAction`, unrelated to this module's exported `manifestRow`. That module
-// does not import this one's export today; if it ever does, the local `const` must be renamed
-// first, since the two would otherwise shadow silently.
+// Name-collision note: `content-routes-media-metadata.ts` declares its own block-scoped `const
+// manifestRow` inside `mediaAltPreviewAction`, unrelated to this module's exported `manifestRow`.
+// That module does not import this one's export today; if it ever does, the local `const` must be
+// renamed first, since the two would otherwise shadow silently.
 import { error } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { isValidId } from '../content/ids.js';
@@ -23,7 +23,8 @@ import { CairnError } from '../diagnostics/index.js';
 import { log } from '../log/index.js';
 import type { CairnRuntime, ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
-import type { CairnEvent } from './types.js';
+import type { CairnEvent, HistoryData } from './types.js';
+import type { Backend } from '../github/backend.js';
 
 /**
  * What a route's single `form` export presents to a view component: whichever content action
@@ -133,4 +134,54 @@ export function pendingEntryOf(runtime: CairnRuntime, name: string): { concept: 
   if (!ref || !isValidId(ref.id)) return null;
   const concept = findConcept(runtime.concepts, ref.concept);
   return concept ? { concept, id: ref.id } : null;
+}
+
+/**
+ * The bad-slug refusal, naming what the form asked for. A non-routable concept's create and rename
+ *  forms ask for a Name, so telling its author to fix an "address" names a thing the entry does not
+ *  have and the form never showed them. Shared by the entry read cluster's `createAction` and the
+ *  destructive cluster's `renameAction`.
+ */
+export function invalidIdMessage(concept: ConceptDescriptor): string {
+  const noun = concept.routing.routable ? 'address' : 'name';
+  return `Enter a valid ${noun}: lowercase letters, numbers, and hyphens.`;
+}
+
+/**
+ * The most recent publishes the entry history cluster reads; a module constant, not a site config
+ *  knob. `listCommits` is asked for one more than this, so the extra
+ *  probe row sets `truncated` without a second read and is never itself rendered. Shared by the
+ *  revert cluster's own membership check.
+ */
+export const HISTORY_LIMIT = 25;
+
+/**
+ * Render what git recorded for a commit's author, degrading name to email to "unknown": the
+ *  default branch's log can hold commits made outside cairn (a direct edit, a migration), so
+ *  this never assumes a cairn editor produced the row.
+ */
+export function commitEditorName(author: { name: string; email: string }): string {
+  return author.name.trim() || author.email.trim() || 'unknown';
+}
+
+/**
+ * Who holds the open draft on `branch` and since when: `branchHead` answers a sha and never
+ *  metadata, so the author and date come from a one-row `listCommits` at the branch. Prefers the
+ *  row whose sha matches the branch head exactly; when the head commit itself did not touch this
+ *  file, falls back to the newest commit on the branch that did (for an ordinary draft, that is
+ *  simply the last save). Null when the branch has no head, or when no commit on the branch ever
+ *  touched the file. Shared by the entry read cluster's synthetic draft row and the revert
+ *  cluster's revert-collision refusal, so a refused revert names the same person the history
+ *  screen shows.
+ */
+export async function draftFromBranchHead(
+  backend: Backend,
+  path: string,
+  branch: string,
+  headSha: string | null,
+): Promise<HistoryData['draft']> {
+  if (headSha === null) return null;
+  const branchCommits = await backend.listCommits(path, branch, 1);
+  const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
+  return head ? { editor: commitEditorName(head.author), lastSavedAt: head.date } : null;
 }

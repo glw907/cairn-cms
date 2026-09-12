@@ -31,7 +31,11 @@ export interface EntrySummary {
   summary: string | null;
 }
 
-/** The concept list view's data. */
+/**
+ * The concept list route's load data. The list view reads the descriptor fields (`label`,
+ *  `singular`, `dated`) to render its create affordances and reads `entries` to render the rows,
+ *  without a second fetch back to the content index.
+ */
 export interface ListData {
   conceptId: string;
   label: string;

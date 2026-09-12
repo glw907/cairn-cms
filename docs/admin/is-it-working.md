@@ -121,48 +121,45 @@ a clean pass.
 
 Match what your doctor printed to the section that explains it:
 
-- `Always Use HTTPS` — [Force HTTPS at the edge](#force-https-at-the-edge),
+- `Always Use HTTPS`—[Force HTTPS at the edge](#force-https-at-the-edge),
   `edge.https-not-forced`
-- `Email sending domain`, `Live test send` —
-  [Onboard the sending domain](#onboard-the-sending-domain), `email.sender-not-onboarded`,
+- `Email sending domain`, `Live test send`—[Onboard the sending domain](#onboard-the-sending-domain), `email.sender-not-onboarded`,
   `email.send-failed`
-- `Wrangler bindings`, `Media bucket binding` —
-  [Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings),
+- `Wrangler bindings`, `Media bucket binding`—[Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings),
   `config.bindings-missing`
-- `Tidy API key` — [Configure the Tidy API key](#configure-the-tidy-api-key),
+- `Tidy API key`—[Configure the Tidy API key](#configure-the-tidy-api-key),
   `config.tidy-key-missing`
-- `Workers Logs sink` — [Turn on observability](#turn-on-observability),
+- `Workers Logs sink`—[Turn on observability](#turn-on-observability),
   `config.observability-off`
-- `Framework CSRF handoff` — [Wire cairn's CSRF guard](#wire-cairns-csrf-guard),
+- `Framework CSRF handoff`—[Wire cairn's CSRF guard](#wire-cairns-csrf-guard),
   `config.csrf-disable-missing`
-- `Blanket no-referrer` — [Scope a site-wide no-referrer policy](#scope-a-site-wide-no-referrer-policy),
+- `Blanket no-referrer`—[Scope a site-wide no-referrer policy](#scope-a-site-wide-no-referrer-policy),
   `config.no-referrer-blanket`
-- `Public origin` — [Set the public origin](#set-the-public-origin),
+- `Public origin`—[Set the public origin](#set-the-public-origin),
   `config.public-origin-invalid`
-- `Site config` — [Validate the site config](#validate-the-site-config),
+- `Site config`—[Validate the site config](#validate-the-site-config),
   `config.site-config-invalid`
-- `Dependency floors` — [Meet the dependency floors](#meet-the-dependency-floors),
+- `Dependency floors`—[Meet the dependency floors](#meet-the-dependency-floors),
   `config.dependency-floors-unmet`
-- `AI posture, effective` —
-  [Make the stated AI posture effective](#make-the-stated-ai-posture-effective),
+- `AI posture, effective`—[Make the stated AI posture effective](#make-the-stated-ai-posture-effective),
   `ai.posture-not-effective`
 - `Auth store (D1)`, `Editor role vocabulary`, `Guard role wiring`,
-  `Editor email normalization` — [Provision the auth store](#provision-the-auth-store),
+  `Editor email normalization`—[Provision the auth store](#provision-the-auth-store),
   `auth.store-unreachable`, `auth.unknown-role`, `auth.role-wiring-missing`,
   `auth.email-not-normalized`
-- `GitHub App` — [Install the GitHub App](#install-the-github-app), `github.app-unreachable`
-- `Custom /admin mount` — [Wire the admin mount](#wire-the-admin-mount),
+- `GitHub App`—[Install the GitHub App](#install-the-github-app), `github.app-unreachable`
+- `Custom /admin mount`—[Wire the admin mount](#wire-the-admin-mount),
   `admin.mount-incomplete`
-- `Live admin login probe` — [Probe the deployed admin](#probe-the-deployed-admin),
+- `Live admin login probe`—[Probe the deployed admin](#probe-the-deployed-admin),
   `admin.login-probe-failed`
-- `admin-screens skill` — [Refresh the admin-screens skill](#refresh-the-admin-screens-skill),
+- `admin-screens skill`—[Refresh the admin-screens skill](#refresh-the-admin-screens-skill),
   `skill.admin-screens-stale`
 
 Two more sections below cover a real blocker, but `cairn-doctor` never reports either one; your
 site answers with the refusal itself, the moment it happens:
 
-- [Admin CSRF token rejected](#admin-csrf-token-rejected) — `auth.csrf-token-invalid`
-- [Non-admin origin rejected](#non-admin-origin-rejected) — `auth.csrf-origin-mismatch`
+- [Admin CSRF token rejected](#admin-csrf-token-rejected)—`auth.csrf-token-invalid`
+- [Non-admin origin rejected](#non-admin-origin-rejected)—`auth.csrf-origin-mismatch`
 
 ## Force HTTPS at the edge
 

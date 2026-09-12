@@ -336,16 +336,9 @@ The original decision framing, for the record:
     `audit-admin-officelist` is a CLOSED reshape row (`engine-rulings.md:2660-2666`, executed by
     4b, `Reopens on: closed`), so an outright retire there is a new proposal against a closed
     row, not a reopen. A `formatTimestamp` (`/admin-toolkit`) widening. The command palette's
-    own live region. `content-routes-media.ts:668` still calls `ctx.logCommitFailed(commitFields,
-    err)`, the bound-method style, while `content-routes-entry.ts` was unified onto the
-    `logCommitFailed` module import (`content-routes-entry.ts:42, 1109, 1591`); the two call
-    styles now read as contradictory in the same subsystem (filed 2026-09-04, internals-C's
-    Task 10 close, from the docs-friction-log). Chassis-A's close routes two more items here:
-    the engine's own `src/lib/components/*.svelte` Svelte lint wiring (chassis-A wired the
-    parser and the comment rules over `examples/showcase/src/**/*.svelte` only, deliberately
-    leaving the engine's admin components unwired); and the `createSectionAction` adoption in
-    `admin/signups/+page.server.ts` with its dev-package seam, deferred past both chassis
-    passes because adopting the helper changes its auth and audit path.
+    own live region. Chassis-A's close routes one more item here: the `createSectionAction`
+    adoption in `admin/signups/+page.server.ts` with its dev-package seam, deferred past both
+    chassis passes because adopting the helper changes its auth and audit path.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -2037,6 +2030,14 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **The 317-comment register sweep over the engine's own admin components.** Polish-11a's
+  Svelte lint wiring brought `src/lib/components/**/*.svelte` under the same `check:comments`
+  parser the showcase already carries, so the file family's roughly 317 comments are parsed for
+  the first time; `jsdoc/informative-docs` (the paraphrase-tell rule) reports zero warnings
+  against that population today, so there is nothing the gate can flag toward this sweep.
+  **Trigger:** the population is now newly parsed and has never had a register-quality read;
+  no `jsdoc/informative-docs` warning count will move to signal that a read is due.
 
 - **Make the local showcase e2e render match the CI runner (Geoff, 2026-09-09).** After a CI
   baseline regen, this workstation's Chromium renders home and archive2 a few pixels off (the 20

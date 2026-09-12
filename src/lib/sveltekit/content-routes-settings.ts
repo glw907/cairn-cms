@@ -153,7 +153,7 @@ type ParsedSiteConfig =
 const CONFIG_INVALID_MESSAGE = 'This section is not available. Let your site developer know.';
 
 /** The fail(409) copy both saves in this module answer a stale site-config head with. */
-const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Reload and reapply your edits.';
+const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Re-read the config and reapply your edits.';
 
 /**
  * Parse the committed site-config YAML, refusing in place with `fail(500, { error })` on a

@@ -38,14 +38,17 @@ const COVERED_FILES: CoveredFile[] = [
 
 /** Every `let NAME = $state(...)` / `let NAME = $state.raw(...)` declaration in the source, in
  *  declaration order. Matches a bare declarator (`let name = $state(...)`), one carrying a type
- *  annotation (`let name: Foo = $state(...)`), and a later declarator on the same `let` statement
- *  (`let a = $state(1), b: Bar = $state(2)`), each of the last two by allowing an optional
- *  `: Type` run (no `=` or `,`, so it never crosses into a real type's own generic comma) before
- *  the `=`. A comment merely mentioning `$state` (no real `name =` before it) never matches, since
- *  the identifier class requires a real name immediately before the optional type and the `=`. */
+ *  annotation (`let name: Foo = $state(...)`), including a generic type whose own comma sits
+ *  inside balanced angle brackets (`let name: Map<string, number> = $state(...)`), and a later
+ *  declarator on the same `let` statement (`let a = $state(1), b: Bar = $state(2)`). The optional
+ *  `: Type` run refuses a comma at depth zero, which is what separates one declarator from the
+ *  next, while allowing one nested inside `<...>`. A comment merely mentioning `$state` (no real
+ *  `name =` before it) never matches, since the identifier class requires a real name immediately
+ *  before the optional type and the `=`. */
 export function parseDeclaredStateNames(source: string): string[] {
   const names: string[] = [];
-  const pattern = /(?:\blet\s+|,\s*)([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=,]+)?=\s*\$state\b/g;
+  const pattern =
+    /(?:\blet\s+|,\s*)([A-Za-z_][A-Za-z0-9_]*)\s*(?::(?:[^=,<]|<[^>]*>)+)?=\s*\$state\b/g;
   for (const match of source.matchAll(pattern)) names.push(match[1]);
   return names;
 }
@@ -157,6 +160,11 @@ describe('parseDeclaredStateNames widened declaration shapes', () => {
   it('matches $state.raw the same way as $state', () => {
     const source = 'let review = $state.raw<{ x: number } | null>(null);\n';
     expect(parseDeclaredStateNames(source)).toEqual(['review']);
+  });
+
+  it('matches a type annotation carrying a generic comma inside balanced angle brackets', () => {
+    const source = 'let picked: Map<string, number> = $state(new Map());\n';
+    expect(parseDeclaredStateNames(source)).toEqual(['picked']);
   });
 
   it('never matches a bare comment mentioning $state', () => {

@@ -6,7 +6,7 @@ import type { ImagePlaceholderApi } from '../../lib/components/editor-placeholde
 import type { MediaEntry } from '../../lib/media/manifest.js';
 // `UploadResult` retired from the public barrel (4b, Task 1); still exported at its declaring
 // module, which this test imports directly.
-import type { UploadResult } from '../../lib/sveltekit/content-routes-media.js';
+import type { UploadResult } from '../../lib/sveltekit/content-routes-media-ingest.js';
 import * as ingest from '../../lib/components/client-ingest.js';
 import { stringify as devalueStringify } from 'devalue';
 

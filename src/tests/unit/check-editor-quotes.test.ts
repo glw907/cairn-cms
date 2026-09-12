@@ -121,19 +121,17 @@ describe('candidatesForFile', () => {
   });
 
   it('does not strand a literal after a same-line comment-lookalike ("//") inside an earlier string', () => {
-    // The former content-routes-core.ts monolith split across several content-routes-*.ts
-    // siblings (internals-B), and Task 4 folded its discard/delete/rename/revert quarter into
-    // content-routes-entry.ts, which already carried the apostrophe trigger (a fragment refusal
-    // reading "can't"). That file now holds both the trigger and, after it, the rename-conflict
-    // message ('Another editor has unpublished edits referencing this entry'), so the per-file
-    // trigger-before-message coupling this test guards is exercised for that pair. The
-    // create-conflict message ('An unpublished entry with that address already exists') still
-    // sits ahead of its own file's "can't" trigger (createAction runs before saveToBranch), so it
-    // stays uncoupled within content-routes-entry.ts alone; content-routes-shell.ts's
+    // The apostrophe trigger (a fragment refusal reading "can't") lives in
+    // content-routes-entry-write.ts's saveToBranch. The rename-conflict message ('Another editor
+    // has unpublished edits referencing this entry') lives in content-routes-entry-destructive.ts's
+    // renameAction, and the create-conflict message ('An unpublished entry with that address
+    // already exists') lives in content-routes-entry-read.ts's createAction, so all three pieces
+    // this test guards sit in three separate content-routes-*.ts siblings; content-routes-shell.ts's
     // `withRefusalCode` carries a separate "//" trigger (a URL literal against
     // 'https://internal.invalid') with neither asserted message in its own file. Reading every
     // content-routes-*.ts sibling into one candidate pool, the way findStrandedQuotes reads a
-    // whole tree below, is what lets both assertions pass regardless.
+    // whole tree below, is what lets each conflict message register despite sitting in a
+    // different file from its own file's trigger.
     const files = readdirSync(join(LIB_DIR, 'sveltekit'))
       .filter((name) => name.startsWith('content-routes-') && name.endsWith('.ts'))
       .map((name) => join(LIB_DIR, 'sveltekit', name));

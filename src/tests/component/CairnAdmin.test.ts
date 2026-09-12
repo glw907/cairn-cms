@@ -290,7 +290,7 @@ describe('form-action contract', () => {
     // examples/showcase/src/routes/admin/[...path]/+page.server.ts), reconstructs the exact type a
     // consumer's `<CairnAdmin {form} />` receives, rather than a hand-copied guess. A future action
     // whose success payload shares a field name with another action's failure payload (the
-    // TidyResult.usage/MediaDeleteRefusal.usage collision this test was written against) fails this
+    // TidyResult.usage/MediaDeleteFailure.usage collision this test was written against) fails this
     // to compile, before it ever reaches a consumer site's own svelte-check.
     const actions = createCairnAdmin(runtime()).actions;
     type ActionOutcome = AwaitedActions<typeof actions>;

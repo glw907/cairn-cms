@@ -420,7 +420,8 @@ repointed read-cluster importers with the two ledger rows the move falsifies.
   `src/lib/reproductions/stories/support.ts`, `src/lib/components/FragmentPicker.svelte`,
   `docs/internal/engine-rulings.md` (`audit-sveltekit-fragmenttarget`, whose internals-B Note at
   `:1751` says the export "moved to `content-routes-entry.ts`"; `audit-adapter-rolehome`, whose
-  internals-B Note at `:726` says the `/admin` landing policy caller moved there),
+  internals-B Note at `:726` misattributes the `/admin` landing policy caller to
+  `content-routes-entry.ts`, when the caller is `content-routes-shell.ts`'s `indexLoad`),
   `docs/internal/src-lib-map.md` (the domain-factory list, the `-entry.ts` shorthand at `:145`, and
   the "well over a thousand lines each" sentence at `:148-149`), `CHANGELOG.md`
 - Test: `src/tests/component/FragmentPicker.test.ts`,
@@ -499,8 +500,10 @@ repointed read-cluster importers with the two ledger rows the move falsifies.
   as the home of something this task moves. `audit-sveltekit-fragmenttarget` gains a
   `- **Note (polish-11a, Task 1):**` line saying `FragmentTarget` moved to
   `content-routes-entry-read.ts`, still imported directly by `FragmentPicker.svelte`.
-  `audit-adapter-rolehome` gains one saying the `/admin` landing policy caller moved to the entry
-  read module. Locate both by slug, never by the line numbers in this plan.
+  `audit-adapter-rolehome` gains one correcting the internals-B Note's misattribution: the `/admin`
+  landing policy caller is `content-routes-shell.ts`'s `indexLoad`, never `content-routes-entry.ts`,
+  so this task's move leaves the row's code path unchanged. Locate both by slug, never by the line
+  numbers in this plan.
 - [ ] **Step 7:** update `docs/internal/src-lib-map.md`'s domain-factory list, its `-entry.ts`
   shorthand, and its line-count sentence to describe the new shape. Append the `CHANGELOG.md` line
   under `## Unreleased` (internal module split, no consumer action).
@@ -527,8 +530,9 @@ repointed read-cluster importers with the two ledger rows the move falsifies.
 - `src/tests/unit/content-routes-edit.test.ts` and `src/tests/unit/content-routes-history.test.ts`
   are not in the diff and pass.
 - `audit-sveltekit-fragmenttarget` and `audit-adapter-rolehome` each carry a new
-  `- **Note (polish-11a, Task 1):**` line naming the new module, their heading ids are unchanged,
-  and `check:rulings-format` passes.
+  `- **Note (polish-11a, Task 1):**` line, `audit-sveltekit-fragmenttarget`'s naming the new module
+  and `audit-adapter-rolehome`'s correcting the internals-B Note's caller misattribution; their
+  heading ids are unchanged and `check:rulings-format` passes.
 - No file outside the named set is in the diff.
 - The report names the importer count found, the count changed, and the deferred list.
 
@@ -1735,5 +1739,133 @@ The split-boundary state at each halt point, so a resuming session knows what it
 
 ## Post-mortem
 
-The `cairn-pass` ritual appends the post-mortem here at pass close, scoring both budgets against
-the ceiling and the interaction counts.
+**Shape.** Thirteen tasks, two `pass-execute-chains` workflow runs (run one Tasks 1 to 7, run two
+Tasks 8 to 13) inside one overnight orchestrator (`wf_2d52758e-603`), plus the pass-end ritual
+(code-simplifier, the full gate, a second CI baseline regen, and the three-reviewer fan-out) run
+by the same orchestrator immediately before this records step. Merge is Geoff's, per the plan's
+own "Pass-end ritual" item 15; this step stops at the commit below.
+
+**What was verified, with evidence.** Every task ran through `cairn-implementer` then
+`diff-reviewer` (Opus 5), each verdict independently re-derived rather than trusted from the
+report:
+
+- Tasks 1 to 3 (the entry split): accepted on `main` before this branch's overnight run, per
+  `docs/STATUS.md`'s 2026-09-09 checkpoint (measured cost about $36 at API list rates for setup
+  plus three tasks).
+- Task 4 (media shared/library/ingest split): `fix` (one blocking, a ledger annotation gap) then
+  `accept` on the round that also restored an escaped control-byte regex the first attempt had
+  literalized (`9ca873f1`).
+- Task 5 (media delete split, `MediaDeleteRefusal` to `MediaDeleteFailure`): `fix` (four blocking,
+  all ledger-row wording) then `accept`.
+- Task 6 (media metadata split, `content-routes-media.ts` retired): `fix` (ledger annotations
+  naming the wrong importers) then `accept`, the reviewer independently confirming a 98
+  percent-similarity git-detected rename with only the header comment and factory name changed.
+- Task 7 (the product-copy sweep and `VocabularyAdmin` rename, the pass's one paint task): `fix`
+  (the report omitted the paint protocol's mandated `CAPTURES:`/`MOVED BASELINES:` lines and the
+  ten per-string verdicts, though the underlying change was already correct) then `accept`; the
+  reviewer independently ran `magick compare -metric AE` on all 253 before/after tile pairs across
+  the six capture surfaces (AE 0 throughout) and confirmed the two moved baselines
+  (`vocabulary-{light,dark}-linux.png`) match the manifest's `INTENDED MOVES:` list name for name.
+- Task 8 (Workers Paid CLI copy): `escalate`. The implementer correctly limited itself to the
+  plan's named line (`chapter2.mjs:680`) and flagged, rather than fixed, that
+  `EMAIL_ADMISSION_DETAIL` one screen above it still framed the plan conditionally, printing a
+  contradiction back to back with the corrected prompt. The conductor authorized the one-line
+  follow-up (`bd5fbae8`), which also dropped a "when you are ready" hedge from the decline-branch
+  reoffer that the accepted branch did not carry.
+- Task 9 (doctor transcript re-record): `escalate`, six blocking findings. The re-recorded
+  transcripts were provenance-clean (hash-verified against the capture harness's own output) but
+  the capture scratch site has drifted off the engine's current render-authoring API, so the
+  doctor's adapter read throws with or without a Cloudflare token and the bare/credentialed
+  contrast the task exists to demonstrate could not be captured; the rewritten page also went
+  stale against its own new fence (a "three zone checks" claim against a two-check transcript, an
+  eight/nine SKIP-count mismatch). The conductor reverted the commit (`414ec37f`) rather than
+  chase a page against fixtures that cannot show the intended contrast; Task 9 is deferred, not
+  shipped.
+- Task 10 (Svelte lint wiring): `accept`, no fix round. The reviewer independently reproduced the
+  pre-fix state (11 `tsdoc/syntax` errors across 6 files, matching the plan's own measurement) and
+  read every hunk to confirm no comment content changed, only syntax repair.
+- Task 11 (JSDoc residuals): `accept`, no fix round.
+- Task 12 (state-reset coverage regex): `accept`, no fix round. The reviewer independently
+  verified the widened pattern against all three real call sites plus three constructed
+  adversarial cases (a depth-zero comma, a multi-declarator line, the target generic-comma case)
+  before accepting.
+- Task 13 (records): `escalate`, two blocking, both `commentOnly`. The new `docs/HISTORY.md`
+  heading named this pass "slice 9" in the same commit that renumbered chassis-B1 to "slice 9a"
+  and chassis-B2 stayed "slice 8" (colliding with chassis-A), while the plan's own title says
+  "slice 11a"; and the ROADMAP `Later` filing's `Trigger:` field read "none from the gate," which
+  is not a trigger at all. The conductor's own commit (`ea2d061b`) fixed both, renumbered
+  chassis-B2 to 9b so the sequence reads 8, 9a, 9b, 10, 11a with no collision, and (per the
+  reviewer's non-blocking flag) dropped a Task 9 deferral entry the plan's own Files line for this
+  task did not authorize, since `docs/HISTORY.md` already carries that record.
+- Pass-end: `code-simplifier` found and removed one piece of dead surface
+  (`ContentRoutesContext.logCommitFailed`, superseded when all three call sites moved to the free
+  `commit-log.ts` import during the split) and reflowed two module-header comments the splits left
+  mid-sentence, committed as `0024b85f`; all gates stayed green. The full gate (`npm run package`
+  through `check:comments`) passed in one run: `npm test` 5061 tests, the component project's
+  vitest project 1370 tests, every by-name check OK. The from-scratch showcase build and install
+  succeeded; the local `e2e` run showed 20 failures, all in `site-visual.spec.ts` (`site home` and
+  `archive2`, both schemes, all five widths), which is the already-documented CI-canonical-baseline
+  gotcha (CLAUDE.md, "Durable gotcha (CI-canonical baselines...)"), not a regression: the branch's
+  own second CI regen (`gh workflow run e2e.yml -f update_snapshots=true`, run `34709505713`)
+  produced zero baseline diffs and no commit. The three domain reviewers
+  (`cloudflare-workers-reviewer`, `svelte-reviewer`, `web-auth-security-reviewer`) each returned
+  zero blocking findings; their non-blocking findings are recorded, not fixed, below.
+
+**Decisions locked during close.** The chassis/polish slice sequence is 8 (chassis-A), 9a
+(chassis-B1), 9b (chassis-B2), 10 (identity-seam), 11a (this pass); a later pass numbering 11b or
+polish-C follows this sequence rather than re-deriving it. `EMAIL_ADMISSION_DETAIL` states the
+first-deploy need in the same voice as the corrected chapter-2 prompt (decision 10 applies
+transitively to every screen naming Workers Paid, not only the lines the plan enumerated). Task
+9's doctor-transcript work is deferred rather than shipped-with-caveats; a later pass repairs the
+capture scratch site's render-authoring API drift before re-attempting it (`docs/HISTORY.md`
+already names the five rename-only drifts already applied there). No `Consumers must:` line
+appears anywhere in this pass's added `CHANGELOG.md` text, including the eight entries reworded
+from the literal phrase "Consumers must: nothing." to "No consumer action." during Task 13.
+
+**What the gate caught, beyond what `docs/HISTORY.md` already records:** the two Task 13
+blocking findings above (a slice-number self-contradiction and a non-trigger `Trigger:` field);
+Task 8 and Task 9's escalations, both real product-copy and product-behavior gaps the implementer
+correctly declined to resolve unilaterally; and the code-simplifier's dead-surface catch. None of
+these reached CI or `main`; every one surfaced inside this branch's own review chain.
+
+**Recorded, not fixed here (handed forward).** Six non-blocking findings from the close-out
+reviewers, none blocking and none in this step's own file list:
+- `content-routes-media-shared.ts:10-12`'s header comment states `R2Bucket` never reaches the
+  shipped `.d.ts`; the split now exports `resolveMediaBucket`, so it does (no consumer break,
+  `check:surface` confirms no public subpath re-exports it, but the comment is factually wrong).
+- A new `MediaEntry.bytes` doc comment (Task 11) says the byte size is "read from disk at
+  ingest"; the Workers runtime has no filesystem, the value is the buffered request body's
+  length.
+- `docs/internal/record/2026-08-26-any-site-audit/int-rank-sveltekit-internals.md:166`'s
+  `commitFailure` half of the "three call styles" finding is still open; this pass's
+  code-simplifier closed only the `logCommitFailed` half the ROADMAP polish-slice bullet named.
+- `CLAUDE.md`'s Authoring section still says the engine's own `src/lib/components/*.svelte`
+  "stays unwired" from the comment gate; Task 10 wired it. This is the file every session reads
+  first, so the false sentence is worth a follow-up edit.
+- `src/lib/sveltekit/guard.ts:116-119`'s advisory-displayName comment now claims parity with the
+  media clusters' `sanitizeField` (control-strip and cap); guard only caps. Low severity (no log
+  or header-injection path), but the parity claim is not real, and `MAX_DISPLAY_NAME` is now an
+  exported constant guard could import instead of hand-copying `120`.
+- `sanitizeField` (now the shared, exported sanitizer for all four media clusters) strips C0 and
+  DEL only, not C1 controls, bidi overrides, or zero-width joiners; pre-existing, newly visible
+  as a shared surface.
+
+**Budgets.**
+
+*Tokens.* Ceiling: 6.5M. The orchestrator's own halt-result reported a cumulative spend of
+907,098 tokens for the dispatches it tracked (Task 4's chain through Task 13's chain, including
+every fix round enumerated above); this close-out step added roughly 0.12M. Total: roughly
+1.03M against the 6.5M ceiling, about 16 percent. This is a lower bound, not a full accounting:
+the retrievable per-agent transcripts for the pass-end ritual (code-simplifier, the full gate, the
+CI regen, and three domain reviewers) sit outside the tracked halt-result figure, each in the
+hundreds of KB, consistent with the plan's own 370K-to-530K-per-task band; no more precise total
+is reconstructable from the session's records than the figure above.
+
+*Attended time.* Planning misses: 0 (no ambiguity surfaced during execution that a planning
+question would have caught; every `escalate` verdict was a conductor judgment call the plan's own
+authority model assigns to the conductor, not a return to Geoff). Execution sittings: 1, the
+2026-09-09 halt at the Task 3 checkpoint, called by Geoff over which budget was paying (usage
+credits versus the plan pool), resumed by arming the 2026-09-12 overnight launch. The 00:01 launch
+failure at the worktree step (resumed 00:09 per a same-session ruling) and both mid-pass
+escalations (Tasks 8, 9, 13) were resolved inside the automation without a fresh Geoff decision,
+so none of the three counts as a separate sitting.

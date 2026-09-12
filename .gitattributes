@@ -2,3 +2,8 @@
 # reference rewriter's CRLF handling. The rewriter preserves CRLF byte for byte, so this
 # keeps the corpus uniform rather than relying on it.
 *.md text eol=lf
+
+# The initial split commit accidentally committed this file with literal control bytes in a
+# regex character class instead of escape sequences, so git's binary heuristic treats every
+# diff against that blob as binary. Force a textual diff so later fixes stay reviewable.
+src/lib/sveltekit/content-routes-media-shared.ts diff

@@ -26,7 +26,7 @@ and slug), the where-used list grouped published-then-branch, the metadata grid,
 Delete opens a two-faced safe-delete alertdialog: a native modal `<dialog>` with no light dismiss.
 The in-use face names the breaking entries and gates Delete behind a typed-slug confirmation; the
 orphan face is a calm confirm. Both post to `?/mediaDelete`. A `form` carrying a fresh
-`MediaDeleteRefusal` re-opens the in-use face on its fresh breaking list.
+`MediaDeleteFailure` re-opens the in-use face on its fresh breaking list.
 
 Its actions are wired only by `createCairnAdmin`, through the wide, unexported
 `createContentRoutesInternal` object. No public route factory carries them: the public

@@ -64,9 +64,9 @@ regen rewrote; merges bring `main` in first with STATUS taking main's. Do not pu
   and the rendered admin against the design system; it also carries the OfficeList
   outright-retire question ruling-first, the `aria-disabled`-versus-native-`disabled`
   busy-idiom ruling, and the items ROADMAP's polish sub-bullet lists); ONE release cut
-  after polish. `content-routes-media.ts` at 1,447 lines is the one file left from the
-  audit's monolith list; ROADMAP's audit-remediation entry is the canonical routing
-  record. Standing chassis mandate (Geoff, 2026-09-01): the chassis is the most
+  after polish. Polish-11a Tasks 4 to 6 retired `content-routes-media.ts`, the last file
+  on the audit's monolith list, into four cluster modules; ROADMAP's audit-remediation
+  entry is the canonical routing record. Standing chassis mandate (Geoff, 2026-09-01): the chassis is the most
   developer-visible part of cairn and SETS the code bar, so its quality bar equals the
   engine's; the chassis plan opens with a fresh showcase review at the exemplar bar and
   treats the ROADMAP's older 14-finding list as input, never the ceiling; chassis precedes

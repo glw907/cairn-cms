@@ -53,7 +53,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
   // points here.
   const entryNoun = $derived(single ? 'entry' : 'entries');
 
-  /** Open the confirm. Exported so a trigger={false} host can drive the dialog itself. */
+  /** Open the confirm. Exported so a `trigger={false}` host can drive the dialog itself. */
   export function open() {
     dialog?.showModal();
   }

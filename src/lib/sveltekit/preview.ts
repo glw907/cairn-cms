@@ -289,7 +289,7 @@ interface PreviewResolvers {
 
 /**
  * Build the preview's marking link/fragment resolvers and its request-time media resolver, mirroring
- *  `editLoad`'s own build (content-routes-entry.ts) so the admin preview and the public preview agree
+ *  `editLoad`'s own build (content-routes-entry-read.ts) so the admin preview and the public preview agree
  *  on what a draft can reach. `manifest` is the default branch's manifest, with the draft's own
  *  re-derived row already upserted by the caller when previewing a draft; the ended page passes the
  *  plain default-branch manifest, since the previewed entry's own row already lives there.

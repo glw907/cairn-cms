@@ -124,7 +124,7 @@
       "name": "MediaUploadFailure",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-mediauploadfailure (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-media.ts per the three-case rule, still named inside the rendered action union."
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-mediauploadfailure (retire, 4b conformance Task 1); the interface keeps its module-level export in content-routes-media-ingest.ts per the three-case rule, still named inside the rendered action union."
     },
     {
       "name": "MediaUsageInfo",
@@ -256,7 +256,7 @@
       "name": "UploadResult",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-uploadresult (retire, 4b conformance Task 1, verify-wins resolution); the interface keeps its module-level export in content-routes-media.ts per the three-case rule, still named inside the rendered action union."
+      "sanctioned-by": "docs/internal/engine-rulings.md#audit-sveltekit-uploadresult (retire, 4b conformance Task 1, verify-wins resolution); the interface keeps its module-level export in content-routes-media-ingest.ts per the three-case rule, still named inside the rendered action union."
     },
     {
       "name": "UsageEntry",

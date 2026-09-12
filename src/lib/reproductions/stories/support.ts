@@ -5,7 +5,7 @@
 // module needs that same one.
 import type { NamedField, SiteRender } from '../../content/types.js';
 import { defineRegistry, type ComponentRegistry } from '../../render/registry.js';
-import type { EditData } from '../../sveltekit/content-routes-entry.js';
+import type { EditData } from '../../sveltekit/content-routes-entry-read.js';
 import type { ListData } from '../../sveltekit/content-routes-list.js';
 import { fixtureConcept, fixtureEntries, fixtureSiteName, fixtureTidyReview } from '../fixtures.js';
 

@@ -246,7 +246,7 @@ export function handoverText({ dir }) {
     'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
     '',
     'This scaffold is local only. Putting the site on the internet needs a GitHub repository, a',
-    'Cloudflare account, and a domain you own; sending sign-in email to anyone but yourself also',
-    "needs Cloudflare's Workers Paid plan. Those steps arrive with the next release.",
+    "Cloudflare account, and a domain you own, plus Cloudflare's Workers Paid plan from the day",
+    'you deploy it. Those steps arrive with the next release.',
   ].join('\n');
 }

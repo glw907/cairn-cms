@@ -10,7 +10,7 @@
 import type { MediaEntry } from '../media/manifest.js';
 // `UploadResult` retired from the public barrel (the verify-wins resolution over the
 // ranked relocate to `/media`); still exported at its declaring module for this file's own typing.
-import type { UploadResult } from '../sveltekit/content-routes-media.js';
+import type { UploadResult } from '../sveltekit/content-routes-media-ingest.js';
 import type { IngestFailureKind } from './client-ingest.js';
 import { formatMediaToken } from '../media/reference.js';
 

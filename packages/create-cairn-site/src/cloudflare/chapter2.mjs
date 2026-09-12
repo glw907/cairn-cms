@@ -191,8 +191,8 @@ const ALREADY_ACTIVE_DETAIL =
 const EMAIL_ADMISSION_DETAIL =
   "Cloudflare's Workers Paid plan costs $5 US per month, as of 2026-08-11 " +
   '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
-  "account rather than once per site. It is what sends this site's sign-in email, so it is " +
-  'needed once anyone other than you needs to sign in. It is not a scaling upgrade: your ' +
+  "account rather than once per site. It is what sends this site's sign-in email, and a " +
+  'cairn site needs it from its first deploy. It is not a scaling upgrade: your ' +
   "site's traffic has nothing to do with it.";
 
 /**
@@ -677,7 +677,7 @@ export async function runChapter2({
           return;
         }
         const answer = await confirm({
-          message: "Turn on Cloudflare's Workers Paid plan now, so anyone besides you can sign in?",
+          message: "A cairn site needs Cloudflare's Workers Paid plan from its first deploy. Turn it on now?",
         });
         if (isCancel(answer)) exitOnCancel();
         emailConsented = Boolean(answer);

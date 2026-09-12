@@ -52,12 +52,19 @@ export interface PublicRoutesConfig {
 
 /** One entry's data: the detail entry, its rendered html, and its canonical URL. */
 export interface EntryData {
+  /** The concept id the entry belongs to, for a template that renders more than one concept. */
   concept: string;
+  /** The raw entry, frontmatter and body, for a field this projection does not surface. */
   entry: ContentEntry;
+  /** The body already run through the site's own `render`; the template never renders markdown itself. */
   html: string;
+  /** The entry's absolute, origin-anchored URL, for SEO tags and feed links that must not be relative. */
   canonicalUrl: string;
+  /** The computed SEO metadata, ready to spread into a page head without a second pass over the entry. */
   seo: SeoMeta;
+  /** The next-published summary for prev/next navigation; absent at the newest entry in the concept. */
   newer?: ContentSummary;
+  /** The previous-published summary for prev/next navigation; absent at the oldest entry in the concept. */
   older?: ContentSummary;
   /**
    * The resolved hero image, a derived projection of the frontmatter `image` field. `url` is the

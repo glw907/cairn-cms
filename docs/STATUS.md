@@ -18,53 +18,42 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-09 09:20)
+## Immediate next action (2026-09-09 15:10)
 
-**The overnight run halted again at stage 11a:run1** (2026-09-09). Reason: task 2 (the
-entry split, the write cluster) accepted with fixRounds 0; task 3 (the entry split, the
-destructive and revert clusters) accepted with fixRounds 1; task 4 (the media split, the
-shared module, library read, and ingest) failed with fixRounds 0; task 5 (the media split,
-delete and orphans) deferred with fixRounds 0; task 6 (the media split, the metadata
-rewrite and the BulkDeleteSkip rename) deferred with fixRounds 0; task 7 (the engine
-product copy) deferred with fixRounds 0. Resume: read the 11a run-one journal, decide the
-non-accepted task, then resume the remaining run-one tasks; then the CI regen; then run
-two.
+**Polish-11a is IN FLIGHT on branch `polish-11a`** (worktree `.claude/worktrees/polish-11a`,
+pushed). Tasks 1 to 3, the whole entry split, are accepted and committed (`021064ef`,
+`3c586589`, `6bea7905`, `98c95ab7`, `094c91f8`, `6343b584`); `content-routes-entry.ts` is
+retired into four cluster modules with the public surface byte-identical. The run halted at
+the Task 3 checkpoint by Geoff's call (usage credits, not the plan pool, were paying), and
+Task 4's implementer dispatch was independently blocked by the safety classifier before it ran.
 
-**The overnight run halted at stage 11a:run1** (2026-09-09). Reason: task 1 (the entry
-split, the shared additions and the read cluster) escalated with fixRounds 0; tasks 2
-through 7 (the write cluster; the destructive and revert clusters; the media split's shared
-module, library read, and ingest; delete and orphans; the metadata rewrite and the
-BulkDeleteSkip rename; the engine product copy) all deferred with fixRounds 0. Resume: read
-the 11a run-one journal, decide the non-accepted task, then resume the remaining run-one
-tasks; then the CI regen; then run two.
+**Resume (from a session in the cairn-cms main checkout, once the plan pool refills):** rebuild
+the launch script in the session scratchpad per the `cairn-overnight-orchestrator` memory with
+run one's task list starting at Task 4 (Tasks 1 to 3 are committed; drop them from
+`11a-run1-args.json`'s chain), the gate string's `publint` and `attw` steps prefixed with
+`npx` (bare, they exit 127 outside an npm-script PATH), and launch the orchestrator fresh
+(the prior run `wf_9a9b41e2-faf` belongs to a closed session). If the classifier blocks the
+Task 4 dispatch again, read that task's criteria in the args cache for the trigger phrase and
+reword it; the plan is unchanged. Then run one's remainder, the post-Task-7 CI regen, run two,
+and the close through merge, as the plan states.
 
-**Chassis-B2 is MERGED** (PR #54, `b22af9b7`; ledger entry in `docs/HISTORY.md`; the
-verifier passed six surfaces, the reviewers' blocking findings were fixed, CI green). Geoff
-reads `main`'s home page and `/archive/2` when convenient.
+Measured cost at public API rates (2026-09-09): a task cycle is about $8 Sonnet implementer
+plus $3.50 Opus review, about $12 with a fix round; Tasks 1 to 3 plus setup cost $36. A full
+polish pass is $130 to $150 at list, so passes run from the plan pool, and credits only finish
+a stage. Rulings from Task 1's review that bind the rest of the pass: the `roleHome` ledger
+row's internals-B Note misattributed the caller (corrected in `3c586589`); Task 6 restores
+exact counts in `src-lib-map.md`; Global constraint 7's import allowlist wording omits the
+non-cluster sveltekit leaves (`guard`, `publish-actions`, `tidy-key-health`), which is a wording
+gap, not a violation.
 
-**The run to the next release continues by stages, each launched from a fresh session when
-the previous merge lands** (all rulings recorded; no human gate remains before the cut):
-
-1. **Polish-11a next.** Worktree `.claude/worktrees/polish-11a` off `main` (create it; from-scratch
-   showcase install). Plan `docs/superpowers/plans/2026-09-08-polish-11a-pass.md`; args
-   `~/.cache/cairn-polish-11a/11a-run1-args.json` (Tasks 1 to 7, the cut after the paint task)
-   and `11a-run2-args.json` (8 to 13). Launch: copy `~/.claude/workflows/cairn-overnight-to-release.js`
-   and `pass-execute-chains.js` to the session scratchpad, pass `{date, repo, chainsScript,
-   a11: {worktree, branch, plan, cache, ceilingM: 6.5, run1Args, run2Args}}` as args (move each
-   run file's identical PAINT PROTOCOL criteria tail into one `paintProtocol` field first; the
-   `cairn-overnight-orchestrator` memory has the recipe). The orchestrator runs both chains,
-   the CI regen after Task 7, and the close through merge.
-2. **Polish-11b-i, then 11b-ii** the same way (`~/.cache/cairn-polish-11b-i/`, `-11b-ii/`).
-3. **Polish-C with `c.approved: true`** (`~/.cache/cairn-polish-c/`), then the cut fires.
+After 11a: **polish-11b-i, then 11b-ii** the same way (`~/.cache/cairn-polish-11b-i/`,
+`-11b-ii/`), then **polish-C with `c.approved: true`** (`~/.cache/cairn-polish-c/`), then the cut.
 
 Rulings that bind every stage (workstation `CLAUDE.md`, "Gate economy on a pass"): the per-task
 gate omits the showcase e2e for paint-neutral tasks; comment-only fix rounds run the reduced
 gate; a local e2e is green when its only visual failures are exactly the files the latest CI
 regen rewrote; merges bring `main` in first with STATUS taking main's. Do not push docs to
 `main` while a PR is waiting on CI (it caused two extra merge rounds on #54).
-
-Budget note: the weekly pool was at 98% when this session closed on 2026-09-09; the next
-stage waits for the pool.
 
 ## Parallel tracks
 

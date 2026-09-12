@@ -125,7 +125,7 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
 ## Appendix: Media actions
 
 The Media Library's orphan scan, purge, and bulk delete
-(`src/lib/sveltekit/content-routes-media.ts`: `mediaOrphanScanAction`, `mediaOrphanPurgeAction`,
+(`src/lib/sveltekit/content-routes-media-delete.ts`: `mediaOrphanScanAction`, `mediaOrphanPurgeAction`,
 `mediaBulkDeleteAction`) are SvelteKit form actions mounted on `/admin/media`, not plain GET
 pages, so smoking them needs the CSRF double-submit pairing on top of the session cookie minted
 above. Run these against throwaway assets: a raw R2 object seeded directly (bypassing the app)

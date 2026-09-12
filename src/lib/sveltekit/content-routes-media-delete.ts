@@ -12,7 +12,7 @@ import type { UsageEntry } from '../media/usage.js';
 import { runReconcile, MEDIA_KEY_RE, type ReconcileBucket } from '../media/reconcile.js';
 import { buildOrphanScan, type MediaOrphanScanResult } from '../media/orphan-scan.js';
 import { planBulkDelete } from '../media/bulk-delete-plan.js';
-import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
+import type { BulkDeleteSkippedAsset } from '../media/bulk-delete-plan.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
@@ -55,7 +55,7 @@ export interface MediaBulkFailure {
  */
 export interface MediaBulkDeleteResult {
   deleted: string[];
-  skipped: BulkDeleteSkip[];
+  skipped: BulkDeleteSkippedAsset[];
   failed: { hash: string; error: string }[];
 }
 

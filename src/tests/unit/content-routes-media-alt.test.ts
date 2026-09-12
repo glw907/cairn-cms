@@ -17,7 +17,7 @@ import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.
 import type {
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
-} from '../../lib/sveltekit/content-routes-media.js';
+} from '../../lib/sveltekit/content-routes-media-metadata.js';
 import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';

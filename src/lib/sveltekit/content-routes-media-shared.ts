@@ -1,4 +1,4 @@
-// cairn-cms: the media primitives every cluster module of content-routes-media.ts's split shares
+// cairn-cms: the media primitives every media cluster module shares
 // (the slug and hash grammars, the human-field caps and sanitizer, the shared fail-closed messages,
 // the R2 bucket resolver, and distinctEntryCount, called from both the library load and the delete
 // action). Each function here is a plain function of its explicit arguments, not a closure over

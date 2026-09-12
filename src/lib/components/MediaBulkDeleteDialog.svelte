@@ -19,7 +19,7 @@ moment so a background re-render never shifts the dry-run.
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type { MediaUsageInfo } from '../sveltekit/content-routes-media-library.js';
   import type { MediaBulkDeleteResult, MediaBulkFailure } from '../sveltekit/content-routes-media-delete.js';
-  import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
+  import type { BulkDeleteSkippedAsset } from '../media/bulk-delete-plan.js';
   import { usageCount as usageCountOf } from './media-library-helpers.js';
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
   import { postFormAction } from './client-action.js';
@@ -85,7 +85,7 @@ moment so a background re-render never shifts the dry-run.
   }
   // The skip reason line: a still-referenced skip names its fresh where-used count; an uncommitted skip
   // says it was not committed (the timing-honest reason the recheck turned up).
-  function bulkSkipReason(skip: BulkDeleteSkip): string {
+  function bulkSkipReason(skip: BulkDeleteSkippedAsset): string {
     if (skip.reason === 'still-referenced') {
       const n = skip.usage.length;
       return `now found in ${n} ${n === 1 ? 'entry' : 'entries'} on the recheck`;

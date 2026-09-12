@@ -16,7 +16,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
 <script lang="ts">
   import { getContext, tick } from 'svelte';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
-  import type { MediaAltPreviewPlan, MediaAltPropagateFailure } from '../sveltekit/content-routes-media.js';
+  import type { MediaAltPreviewPlan, MediaAltPropagateFailure } from '../sveltekit/content-routes-media-metadata.js';
   import type { AltPlacement } from '../content/media-rewrite.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';

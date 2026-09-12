@@ -331,6 +331,16 @@
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
   Consumers must: nothing.
 
+- The `content-routes-media.ts` split finishes with the metadata cluster (internal, no public
+  surface change): `content-routes-media-metadata.ts` now declares `createMediaMetadataActions`
+  (`mediaUpdateAction`, `mediaReplacePreviewAction`, `mediaReplaceAction`, `mediaAltPreviewAction`,
+  `mediaAltPropagateAction`) and the exported `MediaUpdateFailure`, `MediaReplaceFailure`,
+  `MediaAltPropagateFailure`, `MediaReplacePreviewEntry`, and `MediaReplacePreviewPlan` types.
+  `content-routes-media.ts` is retired: every cluster it held now lives in one of the four sibling
+  modules. `BulkDeleteSkip` renamed to `BulkDeleteSkippedAsset` (the `Skip`-suffix retirement); its
+  `skipped` field name is unaffected. `content-routes.ts`'s public shape, key order, and
+  re-exported type names are unchanged. Consumers must: nothing.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

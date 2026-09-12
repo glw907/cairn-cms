@@ -14,7 +14,7 @@ import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.
 import type {
   MediaReplacePreviewPlan,
   MediaReplaceFailure,
-} from '../../lib/sveltekit/content-routes-media.js';
+} from '../../lib/sveltekit/content-routes-media-metadata.js';
 import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, parseMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { formatMediaToken } from '../../lib/media/reference.js';

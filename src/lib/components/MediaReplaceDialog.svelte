@@ -22,7 +22,7 @@ full-page POST to `?/mediaReplace` navigates away.
     MediaReplacePreviewPlan,
     MediaReplaceFailure,
     MediaReplacePreviewEntry,
-  } from '../sveltekit/content-routes-media.js';
+  } from '../sveltekit/content-routes-media-metadata.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import {

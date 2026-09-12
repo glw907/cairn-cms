@@ -1,6 +1,6 @@
-// cairn-cms: the remaining media actions after the delete cluster split, metadata edit, and the
-// replace-in-place / alt-propagation preview and apply pairs. createMediaActions closes over the
-// shared ContentRoutesContext (content-routes-context.ts), built once per call by
+// cairn-cms: the media metadata cluster: the metadata-edit action, and the replace-in-place and
+// alt-propagation preview and apply pairs. createMediaMetadataActions closes over the shared
+// ContentRoutesContext (content-routes-context.ts), built once per call by
 // createContentRoutesInternal; the public createContentRoutes only forwards to that internal
 // factory.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
@@ -147,10 +147,10 @@ export interface MediaAltPreviewPlan {
 }
 
 /**
- * Build the remaining media actions (metadata edit, replace-in-place, and alt-propagation), closed
+ * Build the media metadata actions (metadata edit, replace-in-place, and alt-propagation), closed
  *  over the shared content-routes context.
  */
-export function createMediaActions(ctx: ContentRoutesContext) {
+export function createMediaMetadataActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
 
   /**

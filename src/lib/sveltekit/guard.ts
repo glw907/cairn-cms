@@ -114,8 +114,8 @@ export interface IdentityRefusal {
 const IDENTITY_OPERATOR_FAULT_REASONS = new Set(['audience', 'issuer', 'keys', 'error']);
 
 // The cap, in characters, on the resolver's advisory displayName, matching MAX_DISPLAY_NAME in
-// content-routes-media.ts: the value reaches the git commit author, so it is bounded the same
-// way any other author-controlled display string is.
+// content-routes-media-shared.ts: the value reaches the git commit author, so it is bounded the
+// same way any other author-controlled display string is.
 const MAX_ADVISORY_DISPLAY_NAME = 120;
 
 const LOGOUT_URL_PATTERN = /^\/(?![\\/])/;

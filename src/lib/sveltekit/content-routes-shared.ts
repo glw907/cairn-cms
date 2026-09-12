@@ -6,10 +6,10 @@
 // not a closure over ContentRoutesContext, so a caller passes `runtime` (or nothing) directly
 // rather than threading `ctx`.
 //
-// Name-collision note: `content-routes-media.ts` declares its own block-scoped `const manifestRow`
-// inside `mediaAltPreviewAction`, unrelated to this module's exported `manifestRow`. That module
-// does not import this one's export today; if it ever does, the local `const` must be renamed
-// first, since the two would otherwise shadow silently.
+// Name-collision note: `content-routes-media-metadata.ts` declares its own block-scoped `const
+// manifestRow` inside `mediaAltPreviewAction`, unrelated to this module's exported `manifestRow`.
+// That module does not import this one's export today; if it ever does, the local `const` must be
+// renamed first, since the two would otherwise shadow silently.
 import { error } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { isValidId } from '../content/ids.js';

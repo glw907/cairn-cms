@@ -7,7 +7,8 @@
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
 // factories (content-routes-shell.ts, -list.ts, -entry-read.ts, -entry-write.ts,
 // -entry-destructive.ts, -entry-revert.ts, -preview.ts, -media-library.ts, -media-ingest.ts,
-// -media-delete.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the one returned object.
+// -media-delete.ts, -media-metadata.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the one
+// returned object.
 // content-routes-shared.ts is not one
 // of those factories, only the primitives several of them import (concept and entry-id resolution,
 // the flattened action-failure shape); this file re-exports its `ContentFormFailure` type below
@@ -33,7 +34,7 @@ import { createPreviewActions } from './content-routes-preview.js';
 import { createMediaLibraryActions } from './content-routes-media-library.js';
 import { createMediaIngestActions } from './content-routes-media-ingest.js';
 import { createMediaDeleteActions } from './content-routes-media-delete.js';
-import { createMediaActions } from './content-routes-media.js';
+import { createMediaMetadataActions } from './content-routes-media-metadata.js';
 import { createTidyActions } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
 import { createDictionaryActions } from './content-routes-dictionary.js';
@@ -73,7 +74,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const mediaLibrary = createMediaLibraryActions(ctx);
   const mediaIngest = createMediaIngestActions(ctx);
   const mediaDelete = createMediaDeleteActions(ctx);
-  const media = createMediaActions(ctx);
+  const mediaMetadata = createMediaMetadataActions(ctx);
   const tidy = createTidyActions(ctx);
   const settings = createSettingsActions(ctx);
   const dictionary = createDictionaryActions(ctx);
@@ -106,11 +107,11 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     mediaBulkDeleteAction: mediaDelete.mediaBulkDeleteAction,
     mediaOrphanScanAction: mediaDelete.mediaOrphanScanAction,
     mediaOrphanPurgeAction: mediaDelete.mediaOrphanPurgeAction,
-    mediaUpdateAction: media.mediaUpdateAction,
-    mediaReplacePreviewAction: media.mediaReplacePreviewAction,
-    mediaReplaceAction: media.mediaReplaceAction,
-    mediaAltPreviewAction: media.mediaAltPreviewAction,
-    mediaAltPropagateAction: media.mediaAltPropagateAction,
+    mediaUpdateAction: mediaMetadata.mediaUpdateAction,
+    mediaReplacePreviewAction: mediaMetadata.mediaReplacePreviewAction,
+    mediaReplaceAction: mediaMetadata.mediaReplaceAction,
+    mediaAltPreviewAction: mediaMetadata.mediaAltPreviewAction,
+    mediaAltPropagateAction: mediaMetadata.mediaAltPropagateAction,
     dictionaryAddAction: dictionary.dictionaryAddAction,
     tidyAction: tidy.tidyAction,
   };

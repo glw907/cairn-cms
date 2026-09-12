@@ -228,6 +228,9 @@ open edits, not part of the shape itself.
 - **Note (polish-11a, Task 5):** the media delete refusal carrier is now `MediaDeleteFailure`,
   the media-delete half of the same suffix-scope clause; it declares in
   `content-routes-media-delete.ts`. Verdict unchanged.
+- **Progress note (polish-11a, Task 6):** `BulkDeleteSkip` renamed to `BulkDeleteSkippedAsset`,
+  the last member of the F1 rename set; it declares in `media/bulk-delete-plan.ts`. Every rename
+  this ruling names is now executed. Verdict unchanged.
 
 ## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -258,6 +261,9 @@ open edits, not part of the shape itself.
   `adminAction` audits and throws `error(403)` so its return type never widens.
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 6, and Task 1/Task 6/Task 7.
+- **Note (polish-11a, Task 6):** the three named anchors are dead; `mediaReplacePreviewAction`
+  and `mediaAltPreviewAction` (the two `requireCookieJar` call sites the friction note counted
+  under those line numbers) now declare in `content-routes-media-metadata.ts`. Verdict unchanged.
 
 ## convention-internal-sibling-comment: an internal sibling of a public export gets one barrel sentence naming why  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -1499,6 +1505,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `media/bulk-delete-plan.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 3.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** renamed to `BulkDeleteSkippedAsset` (`convention-failure-suffix`'s
+  suffix-scope clause); the module-level export stays in `media/bulk-delete-plan.ts`, still
+  imported directly by `CairnMediaLibrary.svelte` for its own typing.
 
 ## audit-sveltekit-repointplacement: `RepointPlacement`  (retire, 2026-08-26, any-site audit)
 
@@ -1506,6 +1515,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content/media-rewrite.ts`, the retires pass's three-case rule: `content-routes-media.ts` imports it directly for `MediaReplacePreviewEntry.placements` and the replace action's own plan typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 4.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the direct import moved to `content-routes-media-metadata.ts`,
+  for `MediaReplacePreviewEntry.placements` and the replace action's own plan typing. Verdict
+  unchanged.
 
 ## audit-sveltekit-altplacement: `AltPlacement`  (retire, 2026-08-26, any-site audit)
 
@@ -1513,6 +1525,8 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content/media-rewrite.ts`, the retires pass's three-case rule: both `content-routes-media.ts` and `CairnMediaLibrary.svelte` import it directly for their own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 5.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** both direct imports moved to `content-routes-media-metadata.ts`.
+  Verdict unchanged.
 
 ## audit-sveltekit-branchref: `BranchRef`  (retire, 2026-08-26, any-site audit)
 
@@ -1550,6 +1564,8 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: the interface lost its `export` (no cross-module consumer) and stays module-internal in `content-routes-media.ts`. Survives structurally inside `MediaAltPreviewPlan.entries`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 9.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** stays module-internal, now in `content-routes-media-metadata.ts`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediaaltpreviewplan: `MediaAltPreviewPlan`  (retire, 2026-08-26, any-site audit)
 
@@ -1557,6 +1573,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 10.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the module-level export moved to
+  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediareplacepreviewentry: `MediaReplacePreviewEntry`  (retire, 2026-08-26, any-site audit)
 
@@ -1564,6 +1583,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 11.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the module-level export moved to
+  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediareplacepreviewplan: `MediaReplacePreviewPlan`  (retire, 2026-08-26, any-site audit)
 
@@ -1571,6 +1593,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 12.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the module-level export moved to
+  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediabulkdeleteresult: `MediaBulkDeleteResult`  (retire, 2026-08-26, any-site audit)
 
@@ -1608,6 +1633,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 17.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the module-level export moved to
+  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediabulkfailure: `MediaBulkFailure`  (retire, 2026-08-26, any-site audit)
 
@@ -1625,6 +1653,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `mediaUpdateAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 19.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the module-level export moved to
+  `content-routes-media-metadata.ts`; `mediaUpdateAction`'s return type still composes into
+  `createContentRoutesInternal` there. Verdict unchanged.
 
 ## audit-sveltekit-mediareplacefailure: `MediaReplaceFailure`  (retire, 2026-08-26, any-site audit)
 
@@ -1632,6 +1663,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 20.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 6):** the module-level export moved to
+  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediadeleterefusal: `MediaDeleteFailure`  (retire, 2026-08-26, any-site audit)
 
@@ -1817,6 +1851,8 @@ when the remediation pass lands.
   `MediaDeleteFailure`, per `convention-failure-suffix`, and its module moved to
   `content-routes-media-delete.ts`; `content-routes-media.ts` stays a namer too, through the
   surviving `MediaReplaceFailure.usage: UsageEntry[]`. Verdict unchanged.
+- **Note (polish-11a, Task 6):** the surviving `MediaReplaceFailure.usage: UsageEntry[]` namer
+  moved to `content-routes-media-metadata.ts`. Verdict unchanged.
 
 ## audit-sveltekit-mediausageinfo: `MediaUsageInfo`  (retire, 2026-08-26, any-site audit)
 

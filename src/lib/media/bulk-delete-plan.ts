@@ -12,7 +12,7 @@ import type { MediaManifest } from './manifest.js';
  * One selected hash that is not deleted, with why and (for the where-used) its usage rows. The rows
  *  are present only for 'still-referenced'; an 'uncommitted' skip carries an empty list.
  */
-export interface BulkDeleteSkip {
+export interface BulkDeleteSkippedAsset {
   hash: string;
   reason: 'still-referenced' | 'uncommitted';
   usage: UsageEntry[];
@@ -24,7 +24,7 @@ export interface BulkDeleteSkip {
  */
 export interface BulkDeletePlan {
   deletable: string[];
-  skipped: BulkDeleteSkip[];
+  skipped: BulkDeleteSkippedAsset[];
 }
 
 /**
@@ -41,7 +41,7 @@ export function planBulkDelete(
   manifest: MediaManifest,
 ): BulkDeletePlan {
   const deletable: string[] = [];
-  const skipped: BulkDeleteSkip[] = [];
+  const skipped: BulkDeleteSkippedAsset[] = [];
 
   for (const hash of selected) {
     const usage = index.get(hash);

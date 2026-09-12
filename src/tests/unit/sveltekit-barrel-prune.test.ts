@@ -24,7 +24,8 @@ const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteFailure', 'RenameFailure', 'Cre
 
 // Six of this list's own names, retired from the /sveltekit barrel by the 4b conformance pass,
 // Task 1 (the Tier 1 media-janitorial retires): each stays a module-level export at its
-// declaring module, `content-routes-media.ts`, either for an in-process consumer
+// declaring module (content-routes-media-delete.ts, content-routes-media-ingest.ts, or
+// content-routes-media-metadata.ts, per symbol), either for an in-process consumer
 // (CairnMediaLibrary.svelte, media-upload-outcome.ts) or because its action's return type
 // composes into `createContentRoutesInternal` (content-routes.ts), whose `.d.ts` emit must be
 // able to name it. ContentFormFailure, at the same original position in KEPT, is NOT one of

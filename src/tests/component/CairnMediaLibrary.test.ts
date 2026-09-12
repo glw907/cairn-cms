@@ -21,7 +21,7 @@ import type {
   MediaReplaceFailure,
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
-} from '../../lib/sveltekit/content-routes-media.js';
+} from '../../lib/sveltekit/content-routes-media-metadata.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import * as ingest from '../../lib/components/client-ingest.js';
 import { gotoCalls, gotoOptsCalls } from './_app-navigation.js';

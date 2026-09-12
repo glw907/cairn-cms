@@ -20,13 +20,6 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action (2026-09-09 15:10)
 
-**The overnight run halted at stage 11a:run1 on 2026-09-12.** Reason: task 4 (the media
-split, the shared module, library read, and ingest) accepted, fixRounds 1; task 5 (the media
-split, delete and orphans) accepted, fixRounds 1; task 6 (the media split, the metadata
-rewrite and the BulkDeleteSkip rename) needs-decision, fixRounds 1; task 7 (the engine
-product copy) deferred, fixRounds 0. Resume prompt: Read the 11a run-one journal, decide the
-non-accepted task, then resume the remaining run-one tasks; then the CI regen; then run two.
-
 **Polish-11a is IN FLIGHT on branch `polish-11a`** (worktree `.claude/worktrees/polish-11a`,
 pushed). Tasks 1 to 3, the whole entry split, are accepted and committed (`021064ef`,
 `3c586589`, `6bea7905`, `98c95ab7`, `094c91f8`, `6343b584`); `content-routes-entry.ts` is

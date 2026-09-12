@@ -5561,12 +5561,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 
 ## polish-busy-idiom: the admin's busy idiom  (accept, 2026-09-08, polish-11b-i)
 
-- **Verdict:** accept. "The busy idiom is ruled architecture" and states its two shapes: "A
-  control that stays on screen while a short round trip runs takes native `disabled` plus an
-  always-mounted status region. A guarded control, refused with a reason, keeps `aria-disabled`
-  with the `cairn-btn-guarded` marker so its tooltip survives"
+- **Verdict:** accept. The spec rules the busy idiom as architecture ("Busy idiom, ruled as
+  architecture") and states its two shapes: "a control that stays on screen while a short round
+  trip runs takes native `disabled` plus an always-mounted status region; a guarded control,
+  refused with a reason, keeps `aria-disabled` with the `cairn-btn-guarded` marker so its
+  tooltip survives"
   (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, decision 7, 2026-09-08).
-  `ShareLinkPanel` converges on the guarded shape at the pass's own Task 6.
+  `ShareLinkPanel` converges on the first shape, native `disabled` plus the always-mounted
+  status region, at this pass's Task 6.
 - **Reopens on:** a third busy shape a future screen needs that neither native `disabled` plus a
   status region nor `aria-disabled` plus `cairn-btn-guarded` can express.
 - **Shape:** see `docs/internal/admin-design-system.md`, `## Component recipes`, the bullet "The

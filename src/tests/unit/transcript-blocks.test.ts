@@ -128,14 +128,14 @@ describe('renderTranscript: real fixture ground truths', () => {
     }
   });
 
-  it('renders 03-doctor-credentialed.txt to exactly 28 lines with the documented shape', () => {
+  it('renders 03-doctor-credentialed.txt to exactly 36 lines with the documented shape', () => {
     const raw = readFileSync(join(FIXTURES_DIR, '03-doctor-credentialed.txt'), 'utf8');
     const lines = renderTranscript(raw).split('\n');
-    expect(lines).toHaveLength(28);
+    expect(lines).toHaveLength(36);
     expect(lines[0]).toContain('deprecated in favour of');
     expect(lines[1]).toContain('deprecated in favour of');
     expect(lines[2]).toBe('PASS  Wrangler bindings: EMAIL and AUTH_DB are declared');
-    expect(lines.at(-2)).toBe('9 passed, 1 failed, 9 skipped, 0 info, 0 unchecked');
+    expect(lines.at(-2)).toBe('8 passed, 3 failed, 8 skipped');
     expect(lines.at(-1)).toBe('');
   });
 });

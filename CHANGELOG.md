@@ -1280,14 +1280,6 @@
   `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map recipe
   to close the gap.
 
-- The two `cairn-doctor` transcript fixtures (`02-doctor-bare.txt`, `03-doctor-credentialed.txt`)
-  are re-recorded against the current engine and the deployed `cairn-capture-scratch` site, and
-  `docs/admin/is-it-working.md` is updated to match: the quoted credentialed transcript, its
-  bare-run totals, and the zone-derived-check count (two, since `Zone HSTS` no longer exists) all
-  track the new capture. The router jump list's `Provision the auth store` row now names all five
-  condition ids, including `auth.store-unmigrated`, which the row's own section already covered.
-  Doc and fixture correction only; no engine behavior changes.
-
 ### Fixed
 
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or

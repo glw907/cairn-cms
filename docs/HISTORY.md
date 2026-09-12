@@ -57,7 +57,20 @@ sharper eye than a global constraint sentence alone provides. Every one of the t
 ruling rows naming the two retired monolith paths by their old filename already carries its
 `- **Note (polish-11a, Task N):**` line naming the new module (verified by
 `check:rulings-format` plus a manual grep-and-cross-reference against every row's enclosing
-heading); no row needed a fresh annotation at this final step.
+heading); no row needed a fresh annotation at this final step. The pass-end
+`code-simplifier` pass found and removed one further piece of dead surface,
+`ContentRoutesContext.logCommitFailed`, superseded once every split module's calls moved to the
+free `commit-log.ts` import (`0024b85f`); its sibling `commitFailure`, a separate three-call-style
+finding recorded at `docs/internal/record/2026-08-26-any-site-audit/int-rank-sveltekit-internals.md:166`,
+is untouched and still open. The three pass-end domain reviewers
+(`cloudflare-workers-reviewer`, `svelte-reviewer`, `web-auth-security-reviewer`) returned zero
+blocking findings against the whole diff; the full post-mortem in the plan file carries their
+non-blocking findings verbatim, including one this repo's own `CLAUDE.md` should have a later pass
+correct (the Authoring section still calls the engine's `src/lib/components/*.svelte` "unwired"
+from the comment gate, which Task 10 wired). The pass's local `e2e` run showed 20 failures, all in
+`site-visual.spec.ts`; a same-branch CI regen (`update_snapshots=true`) produced zero baseline
+diffs, confirming the failures are this workstation's already-documented Chromium-rendering gap
+against the CI runner, not a regression this pass introduced.
 
 ## Chassis-B2 (audit remediation slice 9b, the paint-changing half's second slice), code complete and reviewed 2026-09-09
 

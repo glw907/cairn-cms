@@ -904,6 +904,15 @@ the named human gates only):**
   `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md` after step 2.
   **Trigger:** polish-C merged and the release cut.
 
+- **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after borrow-1
+  lands.** The cairn-case front-door initiative is dead; its frozen record under
+  `docs/internal/record/2026-09-04-cairn-case/` is history, not an input. The rewrite follows
+  the `docs-rebuild-not-edit` method (each page rebuilt from a brief, the old page mined for
+  facts, reference entries edited in place) and carries the borrowable-patterns recipe pages,
+  one per pattern with its engine ruling linked, that borrow-2's skills route to; borrow-2
+  lands in or just after it. Sequenced after borrow-1 so the extend track documents exports
+  that exist. **Trigger:** borrow-1 merged.
+
 - **Two `showcase`-flavored strings survive in what a scaffolded site ships (chassis-B2's
   Task 7 read, filed rather than fixed since both sit outside a docs task's scope and one
   would move a rendered baseline).** `src/routes/(site)/+page.svelte`'s home masthead copy

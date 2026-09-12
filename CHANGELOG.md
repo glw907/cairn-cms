@@ -288,6 +288,12 @@
 
 ### Changed
 
+- The engine's own admin components (`src/lib/components/*.svelte`) now sit under the same
+  `check:comments` TSDoc gate the showcase's `.svelte` files carry: the ESLint `.svelte` block's
+  `files` glob widens to include `src/lib/components/**/*.svelte`. Eleven `tsdoc/syntax` errors
+  the widened glob turned up across six components are fixed in place (unclosed code spans,
+  unescaped `{}`/`>` characters), with no comment's content changed. Consumers must: nothing.
+
 - The `content-routes-entry.ts` monolith begins splitting into one module per entry cluster
   (internal, no public surface change): `content-routes-entry-read.ts` now declares
   `createEntryReadActions` (`createAction`, `editLoad`, `historyLoad`) and the exported

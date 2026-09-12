@@ -203,7 +203,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     editRange = null;
   }
 
-  /** Open the picker. Exported so a trigger={false} host can drive the dialog itself. */
+  /** Open the picker. Exported so a `trigger={false}` host can drive the dialog itself. */
   export function open() {
     picked = null;
     query = '';

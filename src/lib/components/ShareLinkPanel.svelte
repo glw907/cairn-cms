@@ -48,9 +48,9 @@ entry's minted link from surviving onto another entry's panel.
     return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(expiresAt));
   }
 
-  /** The POST both preview round trips make: an empty body, the CSRF header, and `redirect:
-   *  'manual'` so the guard's expired-session 303 arrives as `sessionExpired` instead of a
-   *  followed redirect (the tidy and dictionary calls the shell makes post the same way). */
+  /** The POST both preview round trips make: an empty body, the CSRF header, and
+   *  `redirect: 'manual'` so the guard's expired-session 303 arrives as `sessionExpired` instead
+   *  of a followed redirect (the tidy and dictionary calls the shell makes post the same way). */
   function postPreviewAction<T>(action: 'previewMint' | 'previewRevoke'): Promise<ActionOutcome<T>> {
     return postFormAction<T>(`/admin/${conceptId}/${entryId}?/${action}`, {
       method: 'POST',

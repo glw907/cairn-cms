@@ -18,42 +18,32 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-09 15:10)
+## Immediate next action (2026-09-12 11:20)
 
-**Polish-11a is IN FLIGHT on branch `polish-11a`** (worktree `.claude/worktrees/polish-11a`,
-pushed). Tasks 1 to 3, the whole entry split, are accepted and committed (`021064ef`,
-`3c586589`, `6bea7905`, `98c95ab7`, `094c91f8`, `6343b584`); `content-routes-entry.ts` is
-retired into four cluster modules with the public surface byte-identical. The run halted at
-the Task 3 checkpoint by Geoff's call (usage credits, not the plan pool, were paying), and
-Task 4's implementer dispatch was independently blocked by the safety classifier before it ran.
+**Polish-11a is MERGED** (PRs #55 and #56, CI green; the pass entry and post-mortem are in
+[`HISTORY.md`](HISTORY.md)). Twelve of its thirteen tasks shipped; Task 9 (the doctor transcripts
+re-recorded) is deferred because the capture scratch site under
+`~/Projects/cairn-scratch/2026-08-16-capture/` no longer builds against the current engine's
+render-authoring API, so the bare-versus-credentialed doctor contrast cannot be captured. Redo it
+after rebuilding or repairing that site on the current engine.
 
-**Resume (from a session in the cairn-cms main checkout, once the plan pool refills):** rebuild
-the launch script in the session scratchpad per the `cairn-overnight-orchestrator` memory with
-run one's task list starting at Task 4 (Tasks 1 to 3 are committed; drop them from
-`11a-run1-args.json`'s chain), the gate string's `publint` and `attw` steps prefixed with
-`npx` (bare, they exit 127 outside an npm-script PATH), and launch the orchestrator fresh
-(the prior run `wf_9a9b41e2-faf` belongs to a closed session). If the classifier blocks the
-Task 4 dispatch again, read that task's criteria in the args cache for the trigger phrase and
-reword it; the plan is unchanged. Then run one's remainder, the post-Task-7 CI regen, run two,
-and the close through merge, as the plan states.
+**Polish-11b-i is the stage in flight**, driven by the overnight orchestrator from the session
+that ran 11a (run `wf_2d52758e-603`, scratchpad copy of `~/.cache/cairn-overnight-2026-09-12/`);
+11b-ii follows in the same launch. Polish-C with `c.approved: true` and the release cut are the
+next launch (`~/.cache/cairn-polish-c/`). If this session is gone, resume per that cache dir's
+`LAUNCH.md` with the merge-step and gate-runner fixes recorded there.
 
-Measured cost at public API rates (2026-09-09): a task cycle is about $8 Sonnet implementer
-plus $3.50 Opus review, about $12 with a fix round; Tasks 1 to 3 plus setup cost $36. A full
-polish pass is $130 to $150 at list, so passes run from the plan pool, and credits only finish
-a stage. Rulings from Task 1's review that bind the rest of the pass: the `roleHome` ledger
-row's internals-B Note misattributed the caller (corrected in `3c586589`); Task 6 restores
-exact counts in `src-lib-map.md`; Global constraint 7's import allowlist wording omits the
-non-cluster sveltekit leaves (`guard`, `publish-actions`, `tidy-key-health`), which is a wording
-gap, not a violation.
-
-After 11a: **polish-11b-i, then 11b-ii** the same way (`~/.cache/cairn-polish-11b-i/`,
-`-11b-ii/`), then **polish-C with `c.approved: true`** (`~/.cache/cairn-polish-c/`), then the cut.
+Carry-forwards from 11a's reviews, none gated: `docs/admin/own-your-domain.md` still carries
+the free-until framing and quotes the old Workers Paid prompt (the CLI copy changed in Task 8);
+the scaffold transcript fixture `01-create-cairn-site.txt` carries the old hand-over sentence;
+HISTORY's identity-seam heading lacks the "audit remediation" prefix its siblings carry.
 
 Rulings that bind every stage (workstation `CLAUDE.md`, "Gate economy on a pass"): the per-task
 gate omits the showcase e2e for paint-neutral tasks; comment-only fix rounds run the reduced
 gate; a local e2e is green when its only visual failures are exactly the files the latest CI
-regen rewrote; merges bring `main` in first with STATUS taking main's. Do not push docs to
-`main` while a PR is waiting on CI (it caused two extra merge rounds on #54).
+regen rewrote; merges bring `main` in first with STATUS taking main's. Gates run only through
+`cairn-run-gate`, which now paces its own wait (an implementer re-calls it, never polls a log).
+A merge step pushes main after its STATUS commit so the next stage's pull fast-forwards.
 
 ## Parallel tracks
 

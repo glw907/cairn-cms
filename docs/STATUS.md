@@ -18,7 +18,22 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-12 11:20)
+## Immediate next action (2026-09-12 14:15)
+
+**The overnight run stood down at the 11% battery floor at 14:15 on 2026-09-12, inside
+polish-11b-i run one, Task 2 (its gate was running).** Task 1 is accepted (two commits on
+`polish-11b-i`); Task 2's partial work is WIP-committed as `df1100f2`, ungated. The before
+capture set is complete at `~/.cache/cairn-polish-11b-i/verify/before/` (48 files). Resume
+prompt, from a session in the cairn-cms main checkout on AC: re-arm all guards per
+`~/.claude/docs/unattended-work-guards.md`; the launch script is
+`~/.cache/cairn-overnight-2026-09-12/cairn-overnight-to-release.js` (copy it and
+`pass-execute-chains.js` to the session scratchpad, rewrite the embedded `chainsScript` to
+the scratchpad copy); edit the embedded `b11` run-one chain to drop Task 1, and give Task 2's
+criteria a leading note to review `df1100f2` and keep or revert it; then
+`Workflow({scriptPath, resumeFromRunId: "wf_2d52758e-603"})`, which replays 11a and the 11b-i
+worktree and capture from cache. `LAUNCH.md` in that cache dir carries the day's rulings.
+
+**Earlier state (11:20):**
 
 **Polish-11a is MERGED** (PRs #55 and #56, CI green; the pass entry and post-mortem are in
 [`HISTORY.md`](HISTORY.md)). Twelve of its thirteen tasks shipped; Task 9 (the doctor transcripts

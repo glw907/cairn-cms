@@ -1637,6 +1637,12 @@
   detail now says so and names the deploy-fault possibility directly.
   See [`docs/extend/sign-in-through-your-organization.md`](docs/extend/sign-in-through-your-organization.md).
 
+- The state-reset coverage test's `parseDeclaredStateNames` pattern now matches a declarator whose
+  type annotation carries its own generic comma inside balanced angle brackets (`let picked:
+  Map<string, number> = $state(new Map())`); the previous pattern excluded every comma in the
+  optional type run, so a declaration shaped like this was invisible to the gate. Internal
+  test-only fix; no consumer action.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

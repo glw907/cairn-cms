@@ -18,20 +18,15 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-12 14:15)
+## Immediate next action (2026-09-12 15:50)
 
-**The overnight run stood down at the 11% battery floor at 14:15 on 2026-09-12, inside
-polish-11b-i run one, Task 2 (its gate was running).** Task 1 is accepted (two commits on
-`polish-11b-i`); Task 2's partial work is WIP-committed as `df1100f2`, ungated. The before
-capture set is complete at `~/.cache/cairn-polish-11b-i/verify/before/` (48 files). Resume
-prompt, from a session in the cairn-cms main checkout on AC: re-arm all guards per
-`~/.claude/docs/unattended-work-guards.md`; the launch script is
-`~/.cache/cairn-overnight-2026-09-12/cairn-overnight-to-release.js` (copy it and
-`pass-execute-chains.js` to the session scratchpad, rewrite the embedded `chainsScript` to
-the scratchpad copy); edit the embedded `b11` run-one chain to drop Task 1, and give Task 2's
-criteria a leading note to review `df1100f2` and keep or revert it; then
-`Workflow({scriptPath, resumeFromRunId: "wf_2d52758e-603"})`, which replays 11a and the 11b-i
-worktree and capture from cache. `LAUNCH.md` in that cache dir carries the day's rulings.
+**Polish-11b-i is IN FLIGHT** on branch `polish-11b-i`, driven by the overnight orchestrator
+from the session that ran 11a (run `wf_2d52758e-603`). The run stood down at the 11% battery
+floor at 14:15 inside Task 2 and resumed on AC at 14:20 in the same session. Task 1 is
+accepted; Task 2 is in a conductor-ruled fix round (the drawer opener becomes a real button
+and the sidebar e2e spec's three locators follow it); Tasks 3 to 10 and the records follow,
+then the close, then 11b-ii. If this session is gone, resume per
+`~/.cache/cairn-overnight-2026-09-12/LAUNCH.md` with `resumeFromRunId: "wf_2d52758e-603"`.
 
 **Earlier state (11:20):**
 

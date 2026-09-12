@@ -225,8 +225,8 @@ open edits, not part of the shape itself.
 - **Note (polish-11a, Task 3):** `DeleteRefusal` renamed to `DeleteFailure`, matching this ruling's
   own suffix-scope clause; it now declares in `content-routes-entry-destructive.ts`. Verdict
   unchanged.
-- **Note (polish-11a, Task 5):** `MediaDeleteRefusal` renamed to `MediaDeleteFailure`, the
-  media-delete half of the same suffix-scope clause; it now declares in
+- **Note (polish-11a, Task 5):** the media delete refusal carrier is now `MediaDeleteFailure`,
+  the media-delete half of the same suffix-scope clause; it declares in
   `content-routes-media-delete.ts`. Verdict unchanged.
 
 ## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
@@ -1633,7 +1633,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 20.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
-## audit-sveltekit-mediadeleterefusal: `MediaDeleteRefusal`  (retire, 2026-08-26, any-site audit)
+## audit-sveltekit-mediadeleterefusal: `MediaDeleteFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The engine's own still-referenced refusal, rendered by the engine's own delete dialog.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `mediaDeleteAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
@@ -1809,12 +1809,12 @@ when the remediation pass lands.
   delete or replace), so the flat keep is its own surviving carrier; retiring the name here would
   leave `ContentFormFailure.usage`'s element type unnameable. `UsageEntry` stays exported. The
   retire decision routes to 4b, beside Tier 1 (where `UsageEntry`'s other carriers,
-  `MediaDeleteRefusal`/`MediaReplaceFailure`, retire), which must decide inline-vs-keep for the
+  `MediaDeleteFailure`/`MediaReplaceFailure`, retire), which must decide inline-vs-keep for the
   whole family together rather than splitting `ContentFormFailure`'s carrier from its siblings'.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 36.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
-- **Note (polish-11a, Task 5):** `MediaDeleteRefusal`, one of the carriers named above, is now
-  `MediaDeleteFailure` per `convention-failure-suffix`, and its module moved to
+- **Note (polish-11a, Task 5):** the media delete carrier named above is now
+  `MediaDeleteFailure`, per `convention-failure-suffix`, and its module moved to
   `content-routes-media-delete.ts`; `content-routes-media.ts` stays a namer too, through the
   surviving `MediaReplaceFailure.usage: UsageEntry[]`. Verdict unchanged.
 

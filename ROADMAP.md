@@ -884,6 +884,26 @@ the named human gates only):**
 
 ## Next
 
+- **Borrowable patterns (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
+  developer extending cairn borrows the refined patterns instead of reinventing them.**
+  Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three
+  layers: gates a consumer runs on its own code (`cairn-audit` wired by the scaffold plus a new
+  `cairn-check` carrying the comment standard, the hygiene idioms, a log-event grammar rule,
+  and a form-outcome shape rule); a closed list of six composable atoms (the outcome family
+  and the structured logger exported, `createSectionAction`, the admin identity, the admin
+  toolkit, and a site-owned admin stylesheet seam); and Claude guidance shipped in the package
+  and installed by `cairn-doctor --fix` (a `CLAUDE.md` fragment, `cairn-extend` and
+  `cairn-consult` skills, a `cairn-extension-reviewer` agent, a save hook). Exemplars stay
+  read-only in the showcase, one per archetype; the scaffold copies wiring, never code. The
+  evidence is the aksailingclub-org and ecxc-ski surveys (working examples, not exemplars).
+  The pass opens in a FRESH session: (1) update the draft spec against post-C export names
+  (C renames outcomes, verbs, and the log vocabulary), (2) an adversarial review of the
+  design, (3) `writing-plans` for borrow-1 (gates and atoms, a minor release) and borrow-2
+  (guidance, with the docs rewrite it routes to). Draft spec:
+  `~/.cache/cairn-overnight-2026-09-12/borrowable-patterns-design-DRAFT.md`; it lands at
+  `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md` after step 2.
+  **Trigger:** polish-C merged and the release cut.
+
 - **Two `showcase`-flavored strings survive in what a scaffolded site ships (chassis-B2's
   Task 7 read, filed rather than fixed since both sit outside a docs task's scope and one
   would move a rendered baseline).** `src/routes/(site)/+page.svelte`'s home masthead copy

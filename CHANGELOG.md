@@ -311,6 +311,17 @@
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
   Consumers must: nothing.
 
+- The `content-routes-media.ts` monolith begins splitting into one module per media cluster
+  (internal, no public surface change): `content-routes-media-shared.ts` now declares the
+  fifteen module-level primitives every cluster shares (the slug and hash grammars, the human-field
+  caps and sanitizer, the shared fail-closed messages, and the R2 bucket resolver) plus
+  `distinctEntryCount`. `content-routes-media-library.ts` now declares `createMediaLibraryActions`
+  (`mediaLibraryLoad`) and the exported `MediaLibraryData` and `MediaUsageInfo` types, and
+  `content-routes-media-ingest.ts` now declares `createMediaIngestActions` (`uploadAction`,
+  `mediaLibraryUploadAction`) and the exported `MediaUploadFailure` and `UploadResult` types.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  Consumers must: nothing.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

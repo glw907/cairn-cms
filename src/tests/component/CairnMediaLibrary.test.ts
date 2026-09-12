@@ -15,8 +15,8 @@ import type { MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
 // and `MediaAltPropagateFailure` retired from the public barrel (4b, Task 1, the Tier 1
 // media-janitorial retires). All four still exported at their declaring module for this
 // fixture's own typing.
+import type { MediaUsageInfo } from '../../lib/sveltekit/content-routes-media-library.js';
 import type {
-  MediaUsageInfo,
   MediaReplacePreviewPlan,
   MediaReplaceFailure,
   MediaAltPreviewPlan,

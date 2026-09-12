@@ -1,23 +1,18 @@
-// cairn-cms: the Media Library's load and every media action (upload, safe-delete, bulk delete,
-// the orphan scan and purge, metadata edit, and the replace-in-place / alt-propagation preview and
-// apply pairs). createMediaActions closes over the shared ContentRoutesContext
+// cairn-cms: every media action except the Library load and the upload ingest (safe-delete, bulk
+// delete, the orphan scan and purge, metadata edit, and the replace-in-place / alt-propagation
+// preview and apply pairs). createMediaActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), built once per call by createContentRoutesInternal; the public
 // createContentRoutes only forwards to that internal factory.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
-import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
-import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
-import { formatMediaToken } from '../media/reference.js';
+import { r2Key } from '../media/naming.js';
 import { r2Store } from '../media/store.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, removeMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
-import { mediaLibraryEntry } from '../media/library-entry.js';
-import type { MediaLibraryEntry } from '../media/library-entry.js';
 import { buildUsageIndex } from '../media/usage.js';
 import type { UsageEntry } from '../media/usage.js';
 import { runReconcile, MEDIA_KEY_RE, type ReconcileBucket } from '../media/reconcile.js';
-import type { ResolvedAssetConfig } from '../media/config.js';
 import { buildOrphanScan, type MediaOrphanScanResult } from '../media/orphan-scan.js';
 import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
@@ -26,56 +21,23 @@ import type { BranchRef } from '../media/rewrite-plan.js';
 import { planBulkDelete } from '../media/bulk-delete-plan.js';
 import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
 import type { FileChange } from '../github/repo.js';
-import { PENDING_PREFIX } from '../content/pending.js';
-import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { validateCsrfHeader } from './csrf.js';
 import { requireEditor, requireEngineAccess, requireCookieJar } from './guard.js';
-import { canReach } from '../auth/access.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
-// R2Bucket is named only to cast the raw binding for r2Store. It is a type-only import that never
-// appears in an exported signature, so it does not reach the public `.d.ts`.
-import type { R2Bucket } from '@cloudflare/workers-types';
-
-// Re-exported here so every type this module's own action results name down to their nested
-// shapes is importable from the one file `content-routes.ts` already re-exports. The Tier 1
-// media-janitorial retire dropped the republication of `UsageEntry`, `MediaOrphanScanResult`,
-// `OrphanByteRow`, `BrokenRefRow`, `RepointPlacement`, `AltPlacement`, `BranchRef`, and
-// `BulkDeleteSkip`: each
-// stays a module-level export at its own declaring module for this file's in-process use, per
-// the retires-pass precedent (`docs/internal/engine-rulings.md`).
-export type { MediaLibraryEntry } from '../media/library-entry.js';
-
-/**
- * One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
- *  projection stays decoupled from the Library-only usage facts.
- */
-export interface MediaUsageInfo {
-  /** Distinct content entries that reference the asset (count by distinct concept+id). */
-  count: number;
-  /** Every where-used row (published and edit-branch origins), for the detail's grouped list. */
-  entries: UsageEntry[];
-}
-
-/**
- * The Media Library screen's data: the unioned assets, the per-hash usage overlay, and the
- *  degraded-load error. The usage overlay is keyed by content hash; an asset with no references
- *  simply has no key, which the screen renders as "no references found".
- */
-export interface MediaLibraryData {
-  assets: MediaLibraryEntry[];
-  /** Per-hash usage overlay, kept separate from MediaLibraryEntry so the popover stays decoupled. */
-  usage: Record<string, MediaUsageInfo>;
-  /** The degraded-load error: a failed token mint or media read. */
-  error: string | null;
-  /**
-   * The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
-   *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`,
-   *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, `uploaded` from
-   *  `?uploaded=1`, null otherwise. The component renders a polite success strip for each.
-   */
-  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | 'uploaded' | null;
-}
+import {
+  MEDIA_SLUG_RE,
+  MEDIA_HASH_RE,
+  MAX_ALT,
+  MAX_DISPLAY_NAME,
+  sanitizeField,
+  replacementToken,
+  resolveMediaBucket,
+  MEDIA_DISABLED_MESSAGE,
+  MANIFEST_CONFLICT_MESSAGE,
+  CONTENT_CONFLICT_MESSAGE,
+  distinctEntryCount,
+} from './content-routes-media-shared.js';
 
 /**
  * A refused media delete: `fail(404)` for an asset not committed on the default branch, or
@@ -150,18 +112,6 @@ export interface MediaAltPropagateFailure {
  *  export stays, since `CairnMediaLibrary.svelte` imports it directly for its own typing.
  */
 export interface MediaBulkFailure {
-  error: string;
-}
-
-/**
- * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
- *  disallowed content) and the mediaLibraryUploadAction commit's own `fail(409)` on a conflict.
- *  Just the one-line summary; a refusal here never stores bytes or commits a row. Retired from
- *  the public surface; the module-level export stays, since `uploadAction`'s and
- *  `mediaLibraryUploadAction`'s return type composes into `createContentRoutesInternal`
- *  (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
- */
-export interface MediaUploadFailure {
   error: string;
 }
 
@@ -259,61 +209,6 @@ export interface MediaAltPreviewPlan {
 }
 
 /**
- * The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
- *  optimistic client state and commits with the entry at Save (the upload itself commits nothing).
- *  `reused` is true when identical bytes were already stored, so the second upload did no second put;
- *  `mismatch` flags an existing object whose stored content type differs from this sniff. Retired
- *  from the public surface (the verify-wins resolution of the rank/verify divergence on
- *  `audit-sveltekit-uploadresult`, a flat retire rather than the ranked relocate to `/media`).
- *  The module-level export stays, since `media-upload-outcome.ts` imports it directly.
- */
-export interface UploadResult {
-  reference: string;
-  record: MediaEntry;
-  reused: boolean;
-  mismatch: boolean;
-}
-
-/** A media slug is the same lowercase-alphanumeric-with-hyphens grammar the reference token uses. */
-const MEDIA_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-/** A 16-hex content-hash prefix, the immutable asset key. */
-const MEDIA_HASH_RE = /^[0-9a-f]{16}$/;
-
-/**
- * The cap, in characters, on the stored alt text. The human fields are display copy, not content,
- *  so a generous cap rejects only abuse-scale input.
- */
-const MAX_ALT = 160;
-/** The cap, in characters, on the stored display name. */
-const MAX_DISPLAY_NAME = 120;
-/** The cap, in characters, on the stored original filename. */
-const MAX_ORIGINAL_FILENAME = 120;
-/** The largest pixel dimension kept; anything larger is treated as bogus and clamped to null. */
-const MAX_DIMENSION = 60000;
-
-/**
- * Decode a percent-encoded header value, yielding `''` on a malformed sequence or an absent header,
- *  so a hostile `X-Cairn-*` value cannot throw past the gate.
- */
-function safeDecode(value: string | null): string {
-  if (value === null) return '';
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return '';
-  }
-}
-
-/**
- * The basename of a decoded filename: the final path segment after any `/` or `\`. A client value
- *  of `../../evil.png` yields `evil.png`, so no path component reaches the stored record.
- */
-function basename(name: string): string {
-  const parts = name.split(/[/\\]/);
-  return parts[parts.length - 1];
-}
-
-/**
  * Sort key for a where-used row's origin: published rows rank before branch rows, so the in-use
  *  refusal lists "Published on the site" first, then the edit-branch references.
  */
@@ -330,347 +225,10 @@ function branchKey(entry: UsageEntry): string {
 }
 
 /**
- * The distinct-entry count behind a where-used set: a published use and an edit-branch edit of the
- *  same entry are two rows but one distinct entry, so count by concept/id.
- */
-function distinctEntryCount(rows: UsageEntry[]): number {
-  return new Set(rows.map((e) => `${e.concept}/${e.id}`)).size;
-}
-
-/**
- * Strip control characters from a human field and cap it at `max` characters. Control characters
- *  (C0 and DEL) never belong in display copy and could corrupt a log line or a committed JSON.
- */
-function sanitizeField(value: string, max: number): string {
-
-  return value.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
-}
-
-/**
- * Parse an advisory pixel dimension header. A valid integer in `[1, MAX_DIMENSION]` is kept; an
- *  absent, non-numeric, or out-of-range value becomes null (MediaEntry dimensions are `number | null`).
- */
-function clampDimension(value: string | null): number | null {
-  if (value === null) return null;
-  const n = Number(value);
-  if (!Number.isInteger(n) || n < 1 || n > MAX_DIMENSION) return null;
-  return n;
-}
-
-/**
- * Build the canonical `media:` token for a replacement, treating a slug that fails the grammar (or
- *  an empty one) as absent so the bare-hash form is used. The slug is cosmetic: the resolver keys on
- *  the hash, so a missing slug still resolves. Shared by the preview and apply token construction.
- */
-function replacementToken(slug: string, hash: string): string {
-  return formatMediaToken({ slug: MEDIA_SLUG_RE.test(slug) ? slug : null, hash });
-}
-
-/** The fail(503) message every media action returns when the site declares no assets block. */
-const MEDIA_DISABLED_MESSAGE = 'Media is not enabled for this site.';
-/** The fail(409) message every action that read-modify-commits media.json answers a conflict with. */
-const MANIFEST_CONFLICT_MESSAGE = 'The media manifest changed since you opened it. Reload and try again.';
-/**
- * The fail(409) message the two actions that rewrite entry bodies (replace-in-place, alt fill)
- *  answer a conflict with. Names the site rather than the manifest, since what moved under the
- *  editor is the content, not media.json.
- */
-const CONTENT_CONFLICT_MESSAGE = 'The site changed since you opened it. Reload and try again.';
-
-/**
- * Resolve the R2 bucket for an action that reads or writes raw bytes, refusing before any write
- *  when media is disabled for the site or the platform has no binding under the site's configured
- *  name. Shared by every action that touches the bucket directly (delete, bulk delete, orphan scan,
- *  orphan purge); replace and alt-fill write no bytes, so they check `resolved.enabled` alone against
- *  MEDIA_DISABLED_MESSAGE and skip this step.
- */
-function resolveMediaBucket(
-  event: CairnEvent,
-  resolved: ResolvedAssetConfig,
-): { bucket: R2Bucket } | { error: string } {
-  if (!resolved.enabled) return { error: MEDIA_DISABLED_MESSAGE };
-  const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-  const rawBucket = platformEnv[resolved.bucketBinding];
-  if (!rawBucket) return { error: 'The media bucket is not bound.' };
-  return { bucket: rawBucket as R2Bucket };
-}
-
-/**
- * Build every media load and action, closed over the shared content-routes context.
+ * Build every remaining media action, closed over the shared content-routes context.
  */
 export function createMediaActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
-
-  /**
-   * The admin Media Library load: union the media manifest across main and every open cairn/*
-   *  branch (so a not-yet-published asset shows), project each row through the shared
-   *  mediaLibraryEntry helper, and attach the cross-branch where-used overlay keyed by content
-   *  hash. The assets union and the usage overlay degrade independently: a usage-build failure
-   *  still lists the assets with an empty overlay, and a wholesale read failure degrades to the
-   *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture.
-   */
-  async function mediaLibraryLoad(event: CairnEvent): Promise<MediaLibraryData> {
-    const editor = requireEditor(event);
-    requireEngineAccess(runtime.access, editor, 'media');
-    // Read the flash flags a redirected action carried back: a deleted/updated/etc success flag.
-    // No media action redirects with a `?error=` any more (every refusal answers in place through
-    // `fail()`), so this load carries no conflict-error slot to collide with the one below.
-    let flash: MediaLibraryData['flash'] = null;
-    if (event.url.searchParams.get('deleted') === '1') flash = 'deleted';
-    else if (event.url.searchParams.get('updated') === '1') flash = 'updated';
-    else if (event.url.searchParams.get('replaced') === '1') flash = 'replaced';
-    else if (event.url.searchParams.get('altPropagated') === '1') flash = 'altPropagated';
-    else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
-    else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
-    else if (event.url.searchParams.get('uploaded') === '1') flash = 'uploaded';
-    const backend = ctx.resolveBackend(event);
-
-    // Union the media manifest by hash: main's rows first, then any branch hash not already present.
-    // Identical bytes share one row, so a hash on both branches prefers main's row. A failed or
-    // absent branch read degrades to no rows for that branch (the tolerant parse yields {} on null).
-    // The branch list is taken ONCE here and handed to buildUsageIndex below, so the load path does
-    // not enumerate the open branches twice (the per-page subrequest budget is tight at ~25+ branches).
-    // The token mint is now lazy inside the first read, so a token or a network failure both land in
-    // this one degrade rather than the old separate could-not-authenticate tier.
-    const union = new Map<string, MediaEntry>();
-    let branchNames: string[] = [];
-    try {
-      const mediaRaw = await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch);
-      for (const [hash, e] of Object.entries(parseMediaManifest(ctx.parseMediaJson(mediaRaw)))) {
-        union.set(hash, e);
-      }
-      const names = await backend.listBranches(PENDING_PREFIX);
-      branchNames = names;
-      const branchManifests = await Promise.all(
-        names.map((name) =>
-          backend.readFile(runtime.mediaManifestPath, name)
-            .then((raw) => parseMediaManifest(ctx.parseMediaJson(raw)))
-            .catch(() => ({}) as Record<string, MediaEntry>),
-        ),
-      );
-      for (const manifest of branchManifests) {
-        for (const [hash, e] of Object.entries(manifest)) {
-          if (!union.has(hash)) union.set(hash, e);
-        }
-      }
-    } catch {
-      // A wholesale read failure leaves whatever rows were already unioned; the screen lists them
-      // with no usage overlay rather than failing.
-      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.', flash };
-    }
-    const assets = [...union.values()].map(mediaLibraryEntry);
-
-    // Build the where-used overlay from main's content manifest plus the open branches. A failure
-    // here keeps the asset list intact with an empty overlay, since the screen still lists assets.
-    let usage: Record<string, MediaUsageInfo> = {};
-    try {
-      const manifestRaw = await backend.readFile(runtime.manifestPath, backend.defaultBranch);
-      const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
-      // Reuse the branch list from the media-union above; the Library DISPLAY keeps the default
-      // best-effort behavior (a failed branch read degrades that one branch, not the screen).
-      const index = await buildUsageIndex(backend, runtime.concepts, manifest, { branches: branchNames });
-      for (const [hash, entries] of index) {
-        usage[hash] = { count: distinctEntryCount(entries), entries };
-      }
-    } catch {
-      usage = {};
-    }
-
-    return { assets, usage, error: null, flash };
-  }
-
-  /**
-   * Ingest an uploaded image: the shared store-and-derive body for the upload endpoint (spec piece
-   * 2, decisions 1 to 3) and, later, the Media Library's direct-upload action. The body is the raw
-   * file bytes, read once; the human metadata travels in percent-encoded `X-Cairn-*` request
-   * headers. The server owns every committed field and trusts no client value: it sniffs the real
-   * type, screens the engine deny-list, re-hashes, re-derives the ext and slug, caps and sanitizes
-   * the human fields, and clamps the advisory dimensions. It stores put-first to R2 with
-   * content-addressed dedup (no second put for identical bytes, no compensating delete) and commits
-   * nothing to git; a caller that wants a git-committed row derives one from the returned record.
-   *
-   * Session authority: behind `createAuthGuard` the guard is the production session gate. An
-   * unauthenticated admin POST is redirected 303 by the guard before this action runs (an opaque,
-   * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session_expired')`
-   * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
-   */
-  async function ingestAndStore(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
-    // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
-    // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
-    const editor = event.locals.cairnEditor ?? null;
-    const refuse = (status: number, reason: string): ActionFailure<MediaUploadFailure> => {
-      log.warn('media.upload_failed', { editor: editor?.email, reason });
-      return fail(status, { error: reason } satisfies MediaUploadFailure);
-    };
-
-    // 1. Media on.
-    const resolved = runtime.resolvedAssets;
-    if (!resolved.enabled) return refuse(503, 'media_disabled');
-
-    // 2. Content-Length before the body is read: an absent or non-positive-integer length is a 411,
-    //    an oversize length is a 413. Both refuse before the bytes are buffered. The header is
-    //    client-advisory, so the real DoS bound is the Worker request-size limit, not maxUploadBytes:
-    //    a lying client still buffers up to the platform ceiling before the post-read recheck (step 5).
-    const lengthHeader = event.request.headers.get('content-length');
-    const length = lengthHeader === null ? NaN : Number(lengthHeader);
-    if (!Number.isInteger(length) || length <= 0) return refuse(411, 'length_required');
-    if (length > resolved.maxUploadBytes) return refuse(413, 'too_large');
-
-    // 3. CSRF from the X-Cairn-CSRF header (no body clone): the action is the CSRF authority for the
-    //    raw-body upload, since the guard runs its form-CSRF only on form content types. An untyped
-    //    caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
-    const cookies = requireCookieJar(event);
-    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
-      return refuse(403, 'csrf');
-    }
-
-    // 4. JSON-aware session (belt-and-suspenders; see the docstring): behind the guard an
-    //    unauthenticated POST is already 303'd before this runs. For a direct or un-guarded call,
-    //    read the resolved editor directly and refuse with a 401 envelope rather than a 303 redirect.
-    if (!editor) return refuse(401, 'session_expired');
-
-    // 4.5. The access map's own admission gate for the media screen, the same one every other media
-    //      action enforces. The concept editor's inline image picker calls this exact endpoint, so
-    //      restricting `media` restricts it too (the documented media-picker landmine): a role edits
-    //      an image-bearing concept only when it also reaches `media`.
-    if (!canReach(runtime.access, editor, 'media')) {
-      log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: 'media' });
-      return refuse(403, 'access_denied');
-    }
-
-    // 5. Read the body once. Content-Length is client-advisory, so a lying client could send more
-    //    than it declared; recheck the real size against the cap after the read.
-    const bytes = new Uint8Array(await event.request.arrayBuffer());
-    if (bytes.length > resolved.maxUploadBytes) return refuse(413, 'too_large');
-
-    // 6. Server re-derivation: trust nothing the client declared.
-    const declaredType = event.request.headers.get('content-type') ?? undefined;
-    const sniffed = sniffMediaType(bytes);
-    if (isDeniedUpload(bytes, declaredType) || sniffed === null || !resolved.allowedTypes.includes(sniffed)) {
-      return refuse(415, 'unsupported_type');
-    }
-    const ext = extForMediaType(sniffed);
-    if (ext === null) return refuse(415, 'unsupported_type');
-
-    const full = await hashBytes(bytes);
-    const hash = shortHash(full);
-
-    const decodedFilename = safeDecode(event.request.headers.get('x-cairn-filename'));
-    const slug = slugifyFilename(decodedFilename);
-    const originalFilename = sanitizeField(basename(decodedFilename), MAX_ORIGINAL_FILENAME);
-    const alt = sanitizeField(safeDecode(event.request.headers.get('x-cairn-alt')), MAX_ALT);
-    const displayNameRaw = sanitizeField(safeDecode(event.request.headers.get('x-cairn-display-name')), MAX_DISPLAY_NAME);
-    const displayName = displayNameRaw || slug;
-    const width = clampDimension(event.request.headers.get('x-cairn-width'));
-    const height = clampDimension(event.request.headers.get('x-cairn-height'));
-
-    // 7. Store put-first with R2-head dedup, commit nothing. The raw bucket binding lives on
-    //    platform.env, which the engine reads through a structural cast (the engine does not declare
-    //    App.Platform). r2Store wraps it as the narrow MediaStore seam; R2Bucket is named only for
-    //    this cast and never in an exported signature.
-    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-    const rawBucket = platformEnv[resolved.bucketBinding];
-    if (!rawBucket) return refuse(503, 'binding_missing');
-    const store = r2Store(rawBucket as R2Bucket);
-
-    const key = r2Key(hash, ext);
-    const existing = await store.head(key);
-    let reused: boolean;
-    let mismatch = false;
-    if (existing !== null) {
-      // The key derives from the 16-hex short hash (64 bits), so a distinct file could in principle
-      // collide on it. The put stores the full sha256 as custom metadata; verify it here. A stored
-      // sha256 that differs from this upload's full hash is a genuine short-hash collision: refuse,
-      // never serve the first file's bytes under the second's reference. A stored object with no
-      // sha256 (a legacy or manually-put object we cannot verify) proceeds as a dedup hit, best effort.
-      const storedSha = existing.customMetadata?.sha256;
-      if (storedSha !== undefined && storedSha !== full) return refuse(409, 'hash_collision');
-      // Identical bytes are already stored: skip the put. A second upload does no second put, so a
-      // concurrent dedup-reuse is never clobbered. Flag a stored type that disagrees with this sniff.
-      reused = true;
-      mismatch = existing.httpMetadata?.contentType !== undefined && existing.httpMetadata.contentType !== sniffed;
-    } else {
-      await store.put(
-        key,
-        bytes,
-        { contentType: sniffed, cacheControl: 'public, max-age=31536000, immutable' },
-        { sha256: full },
-      );
-      reused = false;
-    }
-
-    const record: MediaEntry = {
-      hash,
-      sha256: full,
-      slug,
-      displayName,
-      originalFilename,
-      alt,
-      ext,
-      contentType: sniffed,
-      bytes: bytes.length,
-      width,
-      height,
-      createdAt: new Date().toISOString(),
-    };
-    const reference = formatMediaToken({ slug, hash });
-
-    log.info('media.uploaded', { editor: editor.email, hash, bytes: bytes.length, contentType: sniffed, reused });
-    return { reference, record, reused, mismatch };
-  }
-
-  /**
-   * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
-   * result into a 200 JSON envelope `{ type, status, data }`. A `fail(status, ...)` rides the
-   * envelope's `status` field, NOT the HTTP response status (the HTTP status stays 200); a client
-   * parses `type`/`status` from the body, never `Response.status`. Success returns a plain
-   * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
-   * `media.uploaded` on success. Delegates to `ingestAndStore`, the shared store-and-derive body.
-   */
-  async function uploadAction(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
-    return ingestAndStore(event);
-  }
-
-  /**
-   * Upload straight into the Library: store the bytes and derive the record via `ingestAndStore`
-   *  (the editor upload's shared body), then commit the row to `main` in the same step, since a
-   *  Library-direct upload has no entry and no Save to ride. The client posts only the file; the
-   *  server derives and commits every field, trusting nothing client-posted (`ingestAndStore`'s
-   *  contract). A hash already present in the manifest is an idempotent no-op: the asset (and its
-   *  row) already exist, so the upload commits nothing and still returns the success envelope.
-   *  Mirrors the safe-delete/rename commit shape: a conflict answers with a `fail(409)` envelope,
-   *  which this action's client reads as JSON rather than following.
-   */
-  async function mediaLibraryUploadAction(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
-    const result = await ingestAndStore(event);
-    if (!('record' in result)) return result;
-    const editor = event.locals.cairnEditor!; // ingestAndStore already refused a missing session.
-    const backend = ctx.resolveBackend(event);
-
-    // Read the head BEFORE the manifest, so this expectedHead is at-or-before the bytes the commit
-    // sends; media.json has no regenerate-from-files backstop, so a concurrent upload fails closed
-    // rather than last-writer-wins dropping a row.
-    const head = await backend.branchHead(backend.defaultBranch);
-    const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
-    if (manifest[result.record.hash]) return result; // Bytes and row already committed: nothing to do.
-
-    const commitFields = { scope: 'media' as const, id: result.record.hash, editor: editor.email };
-    try {
-      await backend.commit(
-        backend.defaultBranch,
-        [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, result.record)) }],
-        { name: editor.displayName, email: editor.email },
-        `Upload media: ${result.record.slug}`,
-        head ?? undefined,
-      );
-      log.info('commit.succeeded', commitFields);
-    } catch (err) {
-      ctx.logCommitFailed(commitFields, err);
-      if (!isConflict(err)) throw err;
-      return fail(409, { error: MANIFEST_CONFLICT_MESSAGE } satisfies MediaUploadFailure);
-    }
-    return result;
-  }
 
   /**
    * Safe-delete a committed media asset. The gate rechecks usage server-side against a FRESH index
@@ -1430,9 +988,6 @@ export function createMediaActions(ctx: ContentRoutesContext) {
   }
 
   return {
-    mediaLibraryLoad,
-    uploadAction,
-    mediaLibraryUploadAction,
     mediaDeleteAction,
     mediaBulkDeleteAction,
     mediaOrphanScanAction,

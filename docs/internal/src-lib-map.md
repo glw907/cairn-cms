@@ -145,12 +145,16 @@ directory:
   cross-cutting helpers `draftFromBranchHead`, `commitEditorName`, `HISTORY_LIMIT`, and
   `invalidIdMessage`).
 - `content-routes-shell.ts`, `-list.ts`, `-entry-read.ts`, `-entry-write.ts`,
-  `-entry-destructive.ts`, `-entry-revert.ts`, `-preview.ts`, `-media.ts`, `-tidy.ts`,
-  `-settings.ts`, `-dictionary.ts`: the domain factories, each named for what it does rather than
-  the earlier single `content-routes-core.ts` this pass's predecessor split it out of. The earlier
-  entry monolith is now four cluster modules (read, write, destructive, revert);
-  `content-routes-media.ts` (the media library actions) is still the largest, at well over a
-  thousand lines; the other files range from 139 lines (`content-routes-preview.ts`) to 553
+  `-entry-destructive.ts`, `-entry-revert.ts`, `-preview.ts`, `-media-library.ts`,
+  `-media-ingest.ts`, `-media.ts`, `-tidy.ts`, `-settings.ts`, `-dictionary.ts`: the domain
+  factories, each named for what it does rather than the earlier single `content-routes-core.ts`
+  this pass's predecessor split it out of. The earlier entry monolith is now four cluster modules
+  (read, write, destructive, revert); the media monolith's split is under way: the Library load
+  moved to `content-routes-media-library.ts` and the upload ingest to
+  `content-routes-media-ingest.ts`, each closing over `content-routes-media-shared.ts`'s fifteen
+  module-level primitives plus `distinctEntryCount`. `content-routes-media.ts` (the remaining
+  delete, orphan, and metadata actions) is still the largest, at well over a thousand lines; the
+  other files range from 139 lines (`content-routes-preview.ts`) to 553
   (`content-routes-entry-write.ts`).
 
 Every type `content-routes.ts` used to declare inline now lives with the domain that owns it and

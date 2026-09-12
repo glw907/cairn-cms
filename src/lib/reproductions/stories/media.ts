@@ -16,7 +16,7 @@ import MediaHeroField from '../../components/MediaHeroField.svelte';
 import MediaInsertPopover from '../../components/MediaInsertPopover.svelte';
 import type { MediaLibrary, MediaLibraryEntry } from '../../media/library-entry.js';
 import { formatMediaToken } from '../../media/reference.js';
-import type { MediaLibraryData } from '../../sveltekit/content-routes-media.js';
+import type { MediaLibraryData } from '../../sveltekit/content-routes-media-library.js';
 import { fixtureCaptureFile, fixtureConcept, fixtureMediaLibrary } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
 import { ENTRY, clickWhenPresent, waitFor } from './support.js';

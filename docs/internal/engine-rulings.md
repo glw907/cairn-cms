@@ -1629,6 +1629,7 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `uploadAction`'s and `mediaLibraryUploadAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 22.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 4):** the module-level export moved to `content-routes-media-ingest.ts`, still named inside the rendered action union.
 
 ## audit-sveltekit-vocabularysavefailure: `VocabularySaveFailure`  (retire, 2026-08-26, any-site audit)
 
@@ -1798,6 +1799,7 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content-routes-media.ts` (`reproductions/fixtures.ts` imports it directly); its re-export dropped from `content-routes.ts` and its barrel line from `sveltekit/index.ts`. Survives structurally inside `MediaLibraryData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 37.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 4):** the module-level export moved to `content-routes-media-library.ts`, still imported directly by `reproductions/fixtures.ts`.
 
 ## audit-sveltekit-uploadresult: `UploadResult`  (retire, 2026-08-26, any-site audit)
 
@@ -1816,6 +1818,7 @@ when the remediation pass lands.
 - **Shape:** Move it to /media beside MediaEntry, whose type its own body names, so a developer finds cairn's media vocabulary in one subpath instead of split between /media and /sveltekit. Declined at execution: the verify-wins resolution above runs the flat retire instead.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 38.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Note (polish-11a, Task 4):** the module-level export moved to `content-routes-media-ingest.ts`, still imported directly by `media-upload-outcome.ts`, and `uploadAction`'s/`mediaLibraryUploadAction`'s return type still composes into `createContentRoutesInternal` there.
 
 ## audit-sveltekit-navpageoption: `NavPageOption`  (retire, 2026-08-26, any-site audit)
 
@@ -4597,6 +4600,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 64.
 - **Any-site case:** "My editor can't upload images" is the highest-volume support ticket a content site fields, and this resolves it without a repro. Nine closed snake_case reasons cover the whole refusal ladder in ingestAndStore, each mapping to a distinct HTTP status and a distinct fix. One noted redundancy that is not a defect: an access-denied upload emits both auth.access.denied (content-routes-media.ts:508) and media.upload_failed reason access_denied (:475) — deliberate, one record per story, and it costs an operator nothing. Listed in docs/admin/troubleshooting.md.
+- **Note (polish-11a, Task 4):** `ingestAndStore` and both emission sites moved to `content-routes-media-ingest.ts`; the verdict and the emission pairing are unchanged.
 
 ## audit-log-turnstile-verify-failed: `turnstile.verify_failed`  (keep, 2026-08-26, any-site audit)
 

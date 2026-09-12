@@ -6,8 +6,9 @@
 // This module is the composition root: `createContentRoutesInternal` builds the shared
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
 // factories (content-routes-shell.ts, -list.ts, -entry-read.ts, -entry-write.ts,
-// -entry-destructive.ts, -entry-revert.ts, -preview.ts, -media.ts, -tidy.ts, -settings.ts,
-// -dictionary.ts) into the one returned object. content-routes-shared.ts is not one
+// -entry-destructive.ts, -entry-revert.ts, -preview.ts, -media-library.ts, -media-ingest.ts,
+// -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the one returned object.
+// content-routes-shared.ts is not one
 // of those factories, only the primitives several of them import (concept and entry-id resolution,
 // the flattened action-failure shape); this file re-exports its `ContentFormFailure` type below
 // alongside the domain types. Every type this file used to declare inline now lives with the
@@ -29,6 +30,8 @@ import { createEntryWriteActions } from './content-routes-entry-write.js';
 import { createEntryDestructiveActions } from './content-routes-entry-destructive.js';
 import { createEntryRevertActions } from './content-routes-entry-revert.js';
 import { createPreviewActions } from './content-routes-preview.js';
+import { createMediaLibraryActions } from './content-routes-media-library.js';
+import { createMediaIngestActions } from './content-routes-media-ingest.js';
 import { createMediaActions } from './content-routes-media.js';
 import { createTidyActions } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
@@ -44,10 +47,7 @@ export type { ContentFormFailure } from './content-routes-shared.js';
 
 export type { EditData } from './content-routes-entry-read.js';
 
-export type {
-  MediaLibraryData,
-  MediaLibraryEntry,
-} from './content-routes-media.js';
+export type { MediaLibraryData, MediaLibraryEntry } from './content-routes-media-library.js';
 
 export type { SettingsData, VocabularyLoadData } from './content-routes-settings.js';
 
@@ -69,6 +69,8 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
   const entryDestructive = createEntryDestructiveActions(ctx);
   const entryRevert = createEntryRevertActions(ctx);
   const preview = createPreviewActions(ctx);
+  const mediaLibrary = createMediaLibraryActions(ctx);
+  const mediaIngest = createMediaIngestActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
   const settings = createSettingsActions(ctx);
@@ -78,7 +80,7 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     helpLoad: shell.helpLoad,
     indexLoad: shell.indexLoad,
     listLoad: list.listLoad,
-    mediaLibraryLoad: media.mediaLibraryLoad,
+    mediaLibraryLoad: mediaLibrary.mediaLibraryLoad,
     settingsLoad: settings.settingsLoad,
     settingsSaveAction: settings.settingsSaveAction,
     vocabularyLoad: settings.vocabularyLoad,
@@ -96,8 +98,8 @@ export function createContentRoutesInternal(runtime: CairnRuntime, config: Conte
     previewMintAction: preview.previewMintAction,
     previewRevokeAction: preview.previewRevokeAction,
     revertAction: entryRevert.revertAction,
-    uploadAction: media.uploadAction,
-    mediaLibraryUploadAction: media.mediaLibraryUploadAction,
+    uploadAction: mediaIngest.uploadAction,
+    mediaLibraryUploadAction: mediaIngest.mediaLibraryUploadAction,
     mediaDeleteAction: media.mediaDeleteAction,
     mediaBulkDeleteAction: media.mediaBulkDeleteAction,
     mediaOrphanScanAction: media.mediaOrphanScanAction,

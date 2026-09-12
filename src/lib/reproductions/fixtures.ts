@@ -20,7 +20,7 @@ import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { EntrySummary } from '../sveltekit/content-routes-list.js';
 import type { HistoryData } from '../sveltekit/types.js';
-import type { MediaLibraryData, MediaUsageInfo } from '../sveltekit/content-routes-media.js';
+import type { MediaLibraryData, MediaUsageInfo } from '../sveltekit/content-routes-media-library.js';
 import type { MediaLibraryEntry } from '../media/library-entry.js';
 import type { VocabularyLoadData } from '../sveltekit/content-routes-settings.js';
 import type { ResolvedNavLayout } from '../sveltekit/admin-nav.js';

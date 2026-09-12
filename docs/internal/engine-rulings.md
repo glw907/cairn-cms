@@ -261,9 +261,10 @@ open edits, not part of the shape itself.
   `adminAction` audits and throws `error(403)` so its return type never widens.
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 6, and Task 1/Task 6/Task 7.
-- **Note (polish-11a, Task 6):** the three named anchors are dead; `mediaReplacePreviewAction`
-  and `mediaAltPreviewAction` (the two `requireCookieJar` call sites the friction note counted
-  under those line numbers) now declare in `content-routes-media-metadata.ts`. Verdict unchanged.
+- **Note (polish-11a, Task 6):** the three named anchors are dead; two of the three sites now
+  declare in `content-routes-media-metadata.ts` (`mediaReplacePreviewAction`,
+  `mediaAltPreviewAction`) and the third, the upload action, declares in
+  `content-routes-media-ingest.ts`. Verdict unchanged.
 
 ## convention-internal-sibling-comment: an internal sibling of a public export gets one barrel sentence naming why  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -1537,6 +1538,9 @@ when the remediation pass lands.
 - **Note (polish-11a, Task 5):** unaffected by the media-delete split; `content-routes-media.ts` still
   imports `BranchRef` directly for `MediaReplacePreviewPlan.branchDelta` and
   `MediaAltPreviewPlan.branchDelta`, neither of which moved. Verdict unchanged.
+- **Note (polish-11a, Task 6):** the direct import moved to `content-routes-media-metadata.ts`,
+  still for `MediaReplacePreviewPlan.branchDelta` and `MediaAltPreviewPlan.branchDelta`.
+  Verdict unchanged.
 
 ## audit-sveltekit-mediaorphanscanresult: `MediaOrphanScanResult`  (retire, 2026-08-26, any-site audit)
 

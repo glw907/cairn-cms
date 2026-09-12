@@ -8,12 +8,12 @@ a calmer fourth:
   - ADD a tag. A typed label derives a slug `value` live (matching SAFE_TAG_VALUE); an empty,
     invalid, or colliding slug is rejected in the AA error ink and nothing is appended.
   - RENAME a tag's label. The Name input edits `label` only; the `value` slug is immutable once
-    created, so a rename never rewrites a post.
+    created, so a rename never rewrites an entry.
   - REMOVE a tag nothing uses. The delete control is active only for a zero-usage entry. An in-use
     entry's delete is GUARDED with `aria-disabled="true"` (never native `disabled`, which drops it
     from the tab order and kills the explanatory title) and names the count, mirroring the route's
     strict cross-branch delete gate, so the screen never offers a delete the route would reject.
-  - SEED the list from tags already on posts. The `unlisted` set (in use, not in the vocabulary)
+  - SEED the list from tags already on entries. The `unlisted` set (in use, not in the vocabulary)
     each gets an "Add to list" control appending `{ value, label }` to the working copy.
 
 The a11y spine is an always-present `role="status" aria-live="polite"` region that narrates the last
@@ -159,7 +159,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   <PageHeader
     eyebrow="Settings"
     title="Tags"
-    meta="A tag groups related posts. This list is shared across the site, so every editor picks from the same names. Add one, rename it, or remove a tag nothing uses."
+    meta="A tag groups related entries. This list is shared across the site, so every editor picks from the same names. Add one, rename it, or remove a tag nothing uses."
   />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
@@ -217,10 +217,10 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
         <span class="text-muted"
           >Stored as
           <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">{newSlug}</code>
-          &middot; editors see the name, posts keep the slug</span
+          &middot; editors see the name, entries keep the slug</span
         >
       {:else}
-        <span class="text-muted">Editors see the name; posts keep a short slug.</span>
+        <span class="text-muted">Editors see the name; entries keep a short slug.</span>
       {/if}
     </div>
   </section>
@@ -241,7 +241,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       {#if working.length === 0}
         <div class="p-6 text-center type-subtitle text-muted">
           No tags yet. Add your first one above{seedCandidates.length
-            ? ', or seed from tags already on your posts'
+            ? ', or seed from tags already on your entries'
             : ''}.
         </div>
       {:else}
@@ -275,7 +275,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
               <code class="font-mono text-muted">{entry.value}</code>
               <span aria-hidden="true" class="text-muted">·</span>
               {#if count > 0}
-                <span class="whitespace-nowrap tabular-nums text-subtle">{count} {count === 1 ? 'post' : 'posts'}</span>
+                <span class="whitespace-nowrap tabular-nums text-subtle">{count} {count === 1 ? 'entry' : 'entries'}</span>
               {:else}
                 <span class="whitespace-nowrap text-subtle">Unused</span>
               {/if}
@@ -283,7 +283,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
             <code class="hidden font-mono type-meta text-muted sm:block">{entry.value}</code>
             {#if count > 0}
               <span class="hidden whitespace-nowrap type-meta tabular-nums text-subtle sm:inline"
-                >{count} {count === 1 ? 'post' : 'posts'}</span
+                >{count} {count === 1 ? 'entry' : 'entries'}</span
               >
             {:else}
               <span class="hidden whitespace-nowrap type-meta text-subtle sm:inline">Unused</span>
@@ -296,9 +296,9 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
                 data-value={entry.value}
                 aria-disabled="true"
                 aria-label="Cannot remove {entry.label}. Used on {count} {count === 1
-                  ? 'post'
-                  : 'posts'}. Remove it from those posts first."
-                title="Used on {count} {count === 1 ? 'post' : 'posts'}. Remove it from those posts first."
+                  ? 'entry'
+                  : 'entries'}. Remove it from those entries first."
+                title="Used on {count} {count === 1 ? 'entry' : 'entries'}. Remove it from those entries first."
                 onclick={() => remove(entry.value)}
                 class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-subtle opacity-50 sm:col-start-4 sm:row-span-1"
               >
@@ -327,7 +327,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {#if seedCandidates.length > 0}
     <section class="mt-5">
       <div class="mb-2.5 px-0.5">
-        <h2 class="type-heading font-bold font-[family-name:var(--font-display)]">Already on your posts</h2>
+        <h2 class="type-heading font-bold font-[family-name:var(--font-display)]">Already on your entries</h2>
         <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">
           These tags are in use but not in your list yet. Add the ones you want editors to keep
           picking.
@@ -344,7 +344,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
             <div class="min-w-0 flex-1">
               <code class="font-mono type-subtitle">{candidate.value}</code>
               <span class="ml-2 type-meta tabular-nums text-subtle"
-                >{candidate.count} {candidate.count === 1 ? 'post' : 'posts'}</span
+                >{candidate.count} {candidate.count === 1 ? 'entry' : 'entries'}</span
               >
             </div>
             <button

@@ -31,15 +31,14 @@ The editor keeps your typing on screen whenever it refuses a save or a publish. 
 need to retype anything. Read the message, fix what it asks (if anything), and try
 again.
 
-**"This file changed since you opened it. Reload and reapply your edits."** Despite what
-this says, don't reload the page. Your text is already right there in the editor. This
-usually means another editor saved to this same entry around the same time you did. Read
-through your draft, make sure it still says what you want, and save again.
+**"This file changed since you opened it. Re-read the draft and save again."** Your text
+is already right there in the editor. You never need to retype anything. This usually
+means another editor saved to this same entry around the same time you did. Read through
+your draft, make sure it still says what you want, and save again.
 
-**"Your edits are saved. Reload and publish again."** You'll see this only from
-**Publish**, not Save, and it means something different: your edit did save privately,
-but making it live ran into the same kind of conflict above. Nothing is lost. Select
-Publish again.
+**"Your edits are saved. Publish again."** You'll see this only from **Publish**, not
+Save, and it means something different: your edit did save privately, but making it live
+ran into the same kind of conflict above. Nothing is lost. Select Publish again.
 
 <!-- vale Microsoft.Quotes = NO -->
 <!-- False positive under Vale 3.19.0: the period sits correctly inside the quote already; -->

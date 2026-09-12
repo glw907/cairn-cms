@@ -34,7 +34,7 @@ describe('VocabularyAdmin', () => {
     const screen = await render(VocabularyAdmin, { data: data() });
     const header = screen.container.querySelector('header.mb-10');
     expect(header).not.toBeNull();
-    expect(header?.textContent).toContain('A tag groups related posts.');
+    expect(header?.textContent).toContain('A tag groups related entries.');
   });
 
   it('renders each entry with its label and its in-use count', async () => {
@@ -43,7 +43,7 @@ describe('VocabularyAdmin', () => {
     // stable mid-edit; the in-use count reads on the in-use row.
     await expect.element(screen.getByLabelText('Tag name (snow-report)')).toHaveValue('Snow report');
     await expect.element(screen.getByLabelText('Tag name (gear)')).toHaveValue('Gear');
-    expect(screen.container.textContent).toContain('8 posts');
+    expect(screen.container.textContent).toContain('8 entries');
   });
 
   it('flows a rename into the posted vocabulary JSON (the deep bind:value path)', async () => {

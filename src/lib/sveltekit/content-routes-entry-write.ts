@@ -303,7 +303,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       return ctx.commitFailure(
         commitFields,
         err,
-        saveRefusal('This file changed since you opened it. Reload and reapply your edits.', body),
+        saveRefusal('This file changed since you opened it. Re-read the draft and save again.', body),
       );
     }
     return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
@@ -394,7 +394,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       return ctx.commitFailure(
         commitFields,
         err,
-        saveRefusal('Your edits are saved. Reload and publish again.', body),
+        saveRefusal('Your edits are saved. Publish again.', body),
         { event: 'publish.failed' },
       );
     }

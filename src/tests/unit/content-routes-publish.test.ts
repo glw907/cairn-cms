@@ -359,7 +359,7 @@ describe('publishAction', () => {
       actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
     expect(result.status).toBe(409);
-    expect(result.data.error).toBe('Your edits are saved. Reload and publish again.');
+    expect(result.data.error).toBe('Your edits are saved. Publish again.');
     // The posted body rides the failure, mirroring saveAction's own conflict.
     expect(result.data.body).toBe('typed text');
 

@@ -1187,6 +1187,13 @@
   built-in directive output; a site's own chassis copy (forked from the showcase's) still carries
   the old names until that site's own pass re-homes them.
 
+- Product copy drops the misleading "Reload" instruction from four conflict-refusal messages
+  (the two entry conflict refusals, the nav-menu conflict refusal, and the site-settings conflict
+  refusal) where the editor's own unsaved typing is what a reload would discard, and the
+  `VocabularyAdmin` tag-vocabulary screen now names its counted things "entries" rather than
+  "posts", matching the concept-neutral vocabulary the rest of the admin uses. Consumers must:
+  nothing.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

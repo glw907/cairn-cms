@@ -20,26 +20,28 @@ It reads your local config, your Cloudflare account, and your GitHub App, and pr
 check. The full command reference is [`cairn-doctor`](../reference/doctor.md).
 
 This report is a real run, against a site named `cairn-capture-scratch` that `create-cairn-site`
-had just finished building. The shell running it carried a `CLOUDFLARE_API_TOKEN`, the credential
-**Making the Cloudflare zone checks run** explains below. That's why its three zone-derived checks
-report a real result instead of a skip. Run the same command with no token, and those three lines
-read SKIP instead, with the totals at 8 passed, 0 failed, 11 skipped:
+had built. The shell running it carried a `CLOUDFLARE_API_TOKEN` and a `CLOUDFLARE_ACCOUNT_ID`,
+the credentials **Making the Cloudflare zone checks run** explains below. Its two zone-derived
+checks still read SKIP, not for want of the token but because the doctor couldn't read this
+site's from-address off its adapter. Each check's own detail line names that reason. Run the same
+command with no token at all, and the totals come out the same, because the missing from-address
+blocks the checks either way:
 
 <!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt -->
 ```
 PASS  Wrangler bindings: EMAIL and AUTH_DB are declared
-PASS  Media bucket binding: media bucket MEDIA_BUCKET is declared
+SKIP  Media bucket binding: no media assets configured
 PASS  Workers Logs sink: observability.enabled is true
-PASS  Framework CSRF handoff: checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)
-SKIP  Site config: no site.config.yaml found (looked in site.config.yaml, src/lib/site.config.yaml, src/site.config.yaml)
+PASS  Framework CSRF handoff: checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)
+PASS  Site config: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
 PASS  Public origin: PUBLIC_ORIGIN is https://cairn-capture-scratch.glw907.workers.dev (wrangler vars)
-SKIP  Tidy API key: no site.config.yaml found, so tidy enablement is unknown
+FAIL  Tidy API key: tidy is enabled but ANTHROPIC_API_KEY is in neither the wrangler vars nor .dev.vars; verify the secret is configured with wrangler secret put ANTHROPIC_API_KEY
+PASS  Blanket no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
 SKIP  admin-screens skill: the admin-screens skill is not installed at .claude/skills/cairn-admin-screens; run cairn-doctor --fix to install it
-PASS  Dependency floors: @sveltejs/kit 2.70.2 and svelte 5.56.9 satisfy the engine peer ranges
-FAIL  Email sending domain: no zone named showcase.test is visible to this token
-FAIL  Always Use HTTPS: no zone named showcase.test is visible to this token
-FAIL  Zone HSTS: no zone named showcase.test is visible to this token
+PASS  Dependency floors: @cloudflare/workers-types 5.20260817.1 and @sveltejs/kit 2.70.2 and svelte 5.57.0 satisfy the engine peer ranges
+SKIP  Email sending domain: pass --from, set CAIRN_FROM, or configure the cairnManifest plugin so the doctor can read the adapter
+SKIP  Always Use HTTPS: pass --from, set CAIRN_FROM, or configure the cairnManifest plugin so the doctor can read the adapter
 SKIP  Auth store (D1): no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
 SKIP  Editor role vocabulary: no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
 SKIP  Guard role wiring: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
@@ -47,23 +49,17 @@ SKIP  Editor email normalization: no AUTH_DB database_id in wrangler.jsonc or wr
 SKIP  GitHub App: set GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 to run this check
 PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and https://cairn-capture-scratch.glw907.workers.dev/robots.txt carries no AI-crawler directives, consistent with stating nothing.
 [...]
-8 passed, 3 failed, 8 skipped
+9 passed, 1 failed, 9 skipped, 0 info, 0 unchecked
 ```
 
-This report reflects an earlier engine release, so the dependency-floor version numbers you see
-when you run this yourself are newer. It also predates two statuses a current run can show
-alongside PASS, FAIL, and SKIP. `INFO` marks a heuristic that couldn't see enough to answer, or an
-advisory finding; it's never a deploy blocker. `UNCHECKED` marks a check that genuinely needed an
-input, like a lockfile or a config file, and found none of the candidates it looks for. That's
-different from a SKIP, which means the check doesn't apply at all.
-
-Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
-this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the
-token to check. A workers.dev-only site fails those three zone-derived checks until you connect
-one; see [Own your domain](./own-your-domain.md). Two of the three failures here, the
-sending-domain and HTTPS checks, are blockers as the next paragraph defines it: they bind at the
-point a second person needs their own sign-in, which is also when connecting a domain becomes
-necessary.
+Every `create-cairn-site` scaffold reads its from-address, GitHub owner, and repository off the
+site's own adapter, through the `cairnManifest` Vite plugin wired into `vite.config.ts`. The
+preceding recorded site's own theme code has drifted from a later engine rename, so the doctor can
+no longer evaluate its adapter module at all. Both zone-derived checks fall through to `--from`
+and `CAIRN_FROM`, find neither set, and skip. A scaffold whose theme code matches its installed
+engine doesn't hit this. `Email sending domain` and `Always Use HTTPS` are blockers once they run
+and fail: they bind at the point a second person needs their own sign-in, which is also when
+connecting a domain becomes necessary. See [Own your domain](./own-your-domain.md).
 
 Each check in the report above carries a **title**, like `Email sending domain`. The report itself
 never prints a condition id. This page files the same checks by **condition id** instead,
@@ -145,8 +141,8 @@ Match what your doctor printed to the section that explains it:
   `ai.posture-not-effective`
 - `Auth store (D1)`, `Editor role vocabulary`, `Guard role wiring`,
   `Editor email normalization`—[Provision the auth store](#provision-the-auth-store),
-  `auth.store-unreachable`, `auth.unknown-role`, `auth.role-wiring-missing`,
-  `auth.email-not-normalized`
+  `auth.store-unreachable`, `auth.store-unmigrated`, `auth.unknown-role`,
+  `auth.role-wiring-missing`, `auth.email-not-normalized`
 - `GitHub App`—[Install the GitHub App](#install-the-github-app), `github.app-unreachable`
 - `Custom /admin mount`—[Wire the admin mount](#wire-the-admin-mount),
   `admin.mount-incomplete`

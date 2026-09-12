@@ -8,7 +8,7 @@ Two rules govern this directory. **No invented output, ever**: a transcript is r
 does not ship. **A fixture is never edited**: the gate normalizes the pty control stream, and a
 run that needs different bytes is re-captured, never patched.
 
-## The run
+## The 2026-08-17 run
 
 - **Date:** 2026-08-17
 - **Tool commit:** `4e725be1b752f75ba2fba8b778775708ffceb5d8` (tree clean at capture time)
@@ -26,7 +26,39 @@ node scripts/bake-template.mjs --to template --engine-spec '^0.95.0-rc.1' --dev-
 Both specs resolve to `0.95.0-rc.1`, published under the `next` dist-tag. Engine `latest` stayed
 at `0.94.0` throughout.
 
-## Capture method
+## The 2026-09-08 run
+
+Re-records only the two `cairn-doctor` fixtures, against the same deployed site the 2026-08-17
+run built. The scaffold transcripts above are untouched and still describe that earlier run.
+
+- **Date:** 2026-09-08
+- **Tool commit:** `bd5fbae804525f7b6b8a4348248c87b2192de761` (tree clean at capture time)
+- **Site:** `cairn-capture-scratch`, workers.dev only, on the glw907 Cloudflare account
+- **Live at:** `https://cairn-capture-scratch.glw907.workers.dev` (still up; not torn down)
+- **Scratch directory:** `~/Projects/cairn-scratch/2026-08-16-capture/`
+- **Harness:** `~/Projects/cairn-scratch/2026-08-16-capture/capture.sh`, modes `doctor-bare` and
+  `doctor-cred`
+
+Before capture, `cairn-capture-scratch`'s `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`
+dependencies were repointed at the engine build under test with
+`npm run link:consumer -- <site-dir>`, run from the engine worktree.
+
+```
+./capture.sh 02-doctor-bare.txt doctor-bare cairn-capture-scratch
+./capture.sh 03-doctor-credentialed.txt doctor-cred cairn-capture-scratch
+```
+
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` were exported in a separate, uncaptured shell
+step ahead of the second invocation, the same as the 2026-08-17 run.
+
+Both reports came back identical in their totals, `9 passed, 1 failed, 9 skipped, 0 info, 0
+unchecked`, because this site's own theme code has since drifted from a later engine rename
+(`extractMenu` to `readMenu`, among others) and the doctor's adapter read now throws on this site
+regardless of credentials, so the two zone-derived checks skip either way rather than differing
+with and without a token. `docs/admin/is-it-working.md` explains this for a reader.
+
+The secret sweep (below) was run over both new captures before they were copied in; result:
+clean, no hits on any pattern.
 
 Every invocation ran on a pseudo-terminal pinned to **100 columns by 40 rows**, recorded by
 `ptycapture.py` (kept with the run, outside this repo). A pty is what a real reader has: the
@@ -75,8 +107,8 @@ edited, per the never-edit rule.
 | `01b-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Failed: repository already exists |
 | `01c-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Stopped at the sign-in email prompt |
 | `01d-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Reached the live summary |
-| `02-doctor-bare.txt` | `npx cairn-doctor` | 8 passed, 0 failed, 11 skipped |
-| `03-doctor-credentialed.txt` | `npx cairn-doctor` | 8 passed, 3 failed, 8 skipped |
+| `02-doctor-bare.txt` | `npx cairn-doctor` (2026-09-08) | 9 passed, 1 failed, 9 skipped |
+| `03-doctor-credentialed.txt` | `npx cairn-doctor` (2026-09-08) | 9 passed, 1 failed, 9 skipped |
 
 Four invocations reached a live site where the plan expected one. Three of the four stops have
 causes worth naming, since two of them are tool behavior a reader can hit:
@@ -99,16 +131,15 @@ causes worth naming, since two of them are tool behavior a reader can hit:
 alongside credential and structural skips.
 
 `03-doctor-credentialed.txt` ran with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
-exported in a separate, uncaptured step, so no token ever reached a captured command line. It
-carries pass, fail, and skip lines together, which is what the page's contract needs. The three
-failures are honest and come from the scaffold's placeholder from-address `cms@showcase.test`,
-which belongs to no zone.
+exported in a separate, uncaptured step, so no token ever reached a captured command line.
 
 The token used was this workstation's existing account-scoped token, not a freshly minted
-read-scoped one. The output is identical either way, and the reason is visible in the report:
-the zone checks fail with "no zone named showcase.test is visible to this token", which holds
-for any token because the zone does not exist, and the D1 checks skip structurally on "no
-AUTH_DB database_id in wrangler.jsonc" rather than on any credential. Minting a narrower token
+read-scoped one. As of the 2026-09-08 run, the two outputs came back with identical totals: the
+site's own theme code has drifted from a later engine rename, so the doctor's adapter read throws
+on this site regardless of credentials, and the zone-derived checks (`Email sending domain`,
+`Always Use HTTPS`) skip on "pass --from, set CAIRN_FROM, or configure the cairnManifest plugin"
+in both files, rather than differing on whether a token is present. The D1 checks skip
+structurally on "no AUTH_DB database_id in wrangler.jsonc" either way. Minting a narrower token
 would have produced the same bytes, so none was minted and none is owed at teardown.
 
 ## The captured sign-in token is dead
@@ -132,7 +163,8 @@ ghs_    ?token=    \b[0-9a-fA-F]{40}\b    clientSecret
 ```
 
 Result: one hit, `?token=` in `01d-resume.txt`, the bootstrap magic link handled by the
-supersede above. Every other file was clean on every pattern.
+supersede above. Every other file was clean on every pattern, including the two doctor fixtures
+re-captured on 2026-09-08.
 
 A name-only comparison against `~/.local/secrets` showed `CLOUDFLARE_API_TOKEN`,
 `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` appearing by

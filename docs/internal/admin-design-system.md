@@ -125,14 +125,15 @@ The admin runs two contexts, and each gets the chrome that serves it. **List and
 the office**: the persistent sidebar and the full topbar, for moving between content and managing it.
 **An open document is the desk**: the editor takes the shell, and the surrounding chrome recedes so
 the manuscript is the page. A route is a desk route when its path has three segments
-(`/admin/<concept>/<id>`); `AdminLayout` derives this as `isDeskRoute`.
+(`/admin/<concept>/<id>`); `CairnAdminShell` (`src/lib/components/CairnAdminShell.svelte`) derives
+this as `isDeskRoute`.
 
 Three rules carry the model:
 
 - **One header band on a desk route.** A desk route renders exactly one header band, the 64px topbar.
   The edit page owns no header of its own; it feeds its controls (status, save-state, Details,
   overflow, Publish, Save) up into the topbar through a context portal (`topbar-context.ts`:
-  `AdminLayout` holds a `$state` holder, `EditPage` registers a `desk` snippet into it in an `$effect`
+  `CairnAdminShell` holds a `$state` holder, `EditPage` registers a `desk` snippet into it in an `$effect`
   and clears it on teardown). The band reads as three clusters, not a uniform row: the way back (drawer
   toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
   hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save).
@@ -529,7 +530,7 @@ alongside the component recipes above and below it.
   `<ul class="dropdown menu" popover id="<id>">` with the matching `position-anchor`. Escape and light
   dismiss come from the Popover API. A pick runs its action, then `hidePopover()` if still open.
 - **Command palette:** `<dialog>` opened by the topbar trigger or Cmd/Ctrl+K; commands are the nav
-  destinations plus View-site and theme, filtered as you type. Built in `AdminLayout.svelte`. The box
+  destinations plus View-site and theme, filtered as you type. Built in `CairnAdminShell`. The box
   keeps a top inset at every width (`mt-4` below `sm`, `sm:mt-[12vh]` above) so it never sits flush
   against the viewport top on a phone, and its search input carries no `outline-hidden`, so the admin's
   `:focus-visible` brand ring applies rather than a bare UA outline.
@@ -540,7 +541,7 @@ alongside the component recipes above and below it.
   FIRST, then Details, the overflow popover, a hairline, outline Publish, solid Save), all tied to the
   form by `form="cairn-edit-form"`. The `sr-only` default submit must stay first in the actions cluster:
   the band precedes the form, so it is the first form-owned submit in tree order, which keeps Enter in a
-  single-line field saving rather than firing the Publish formaction. On a desk route `AdminLayout`
+  single-line field saving rather than firing the Publish formaction. On a desk route `CairnAdminShell`
   drops its own palette trigger and the site-wide Publish, so the band has one job. Publish renders in
   every entry state (the 2026-07 CMS survey norm: WordPress, Ghost, Sanity, and Contentful all keep it
   persistent) and is actionable whenever anything could go live (dirty, pending, or a new entry).
@@ -553,6 +554,25 @@ alongside the component recipes above and below it.
   (the Details trigger and the shell's theme toggle, the latter mirrored into the band through the
   context portal) fold into the overflow popover, so Save and Publish stay directly reachable at every
   width without any control clipping or overlapping.
+- **The busy idiom (wait versus refusal):** a control mid-action takes one of two shapes, chosen by
+  whether the busy state is a wait or a refusal, never a third improvised in between. A control that stays
+  on screen while a short round trip runs (Save's own submit, Publish's mid-submit state above) takes
+  native `disabled` plus an always-mounted status region: the region sits in the DOM before and after
+  the action, its text swapping rather than the region itself appearing or disappearing, so a screen
+  reader already tracking the region hears the update without a fresh-mount announcement race. Native
+  `disabled` is honest here, since the control truly cannot be activated again until the round trip
+  resolves. A control refused with a reason instead (Publish with nothing new to publish, the Figure
+  button off the caret below) keeps `aria-disabled` plus the `cairn-btn-guarded` marker: the control
+  stays perceivable and its title tooltip keeps naming the reason, which native `disabled` would strip
+  from the accessibility tree and which DaisyUI 5.6's `[aria-disabled="true"]` `pointer-events: none`
+  rule would also silence without the marker's unlayered restore. The two shapes are not
+  interchangeable: a wait resolves on its own and needs no reason attached, while a refusal needs its
+  reason to stay readable for as long as the refusal holds. The upload recipe's own
+  replace-the-control-with-a-status-panel shape (`MediaUploadDialog`, `MediaHeroField`,
+  `MediaReplaceDialog`, `MediaCaptureCard`) is that recipe's own case, not a third busy shape: it swaps
+  the whole control for a status panel rather than disabling either control in place, and it is
+  promoted to a family shape only when a second instance of it appears outside the media upload
+  family.
 - **The details slide-over panel:** the frontmatter fields live in a right slide-over (`role="region"`,
   `aria-label="Entry details"`), opened by the band's Details trigger and `Ctrl+.`. It stays physically
   inside the edit form and toggles with the `hidden` attribute, so a closed panel is out of the a11y
@@ -562,7 +582,7 @@ alongside the component recipes above and below it.
   shows once. The capture-phase `invalid` handler opens the panel when an invalid control lives in it.
 - **Zen:** a footer toggle (and `Ctrl+Shift+.`) fades the chrome to leave the manuscript alone on the
   recessed ground. It is a `localStorage` preference (`cairn-editor-zen`), and it composes with focus
-  mode and the postures. The band disappears through the context holder's `zen` flag (`AdminLayout`
+  mode and the postures. The band disappears through the context holder's `zen` flag (`CairnAdminShell`
   drops the whole topbar and the persistent sidebar, at every width), and a floating `.cairn-zen-chip`
   keeps the two things that never vanish: the
   live save state and an Exit control with the `Esc` hint. Escape exits zen, after closing the details
@@ -998,11 +1018,11 @@ alongside the component recipes above and below it.
 - **The empty-state recipe gains an optional starter-content slot:** beside the create CTA, a site may
   surface labeled, openable starter entries. The label marks them as starters so they read as
   removable, not as the author's own work.
-- **The Help home recipe** (`HelpHome.svelte`) is one calm column inside `AdminLayout`: a masthead (a
+- **The Help home recipe** (`HelpHome.svelte`) is one calm column inside `CairnAdminShell`: a masthead (a
   plain eyebrow over a real-sentence h1, the page's single Bricolage display beat), then three co-equal
   eyebrow-plus-display sections, getting started, formatting, and get help. The cadence carries the
   equality (one section icon per section would break it), not a per-section accent. Because it mounts
-  inside `AdminLayout`, it roots on a bare `<div>`, never a second `<main>` (a nested `main` is a
+  inside `CairnAdminShell`, it roots on a bare `<div>`, never a second `<main>` (a nested `main` is a
   duplicate landmark), and it carries no `data-theme` wrapper and imports no CSS; it consumes the Warm
   Stone tokens through its scoped `<style>`. Getting started follows the preceding progress recipe
   and recedes-and-omits: at 0 of 3 the cairn mark presides in the warmer empty-state shape with a faint
@@ -1181,7 +1201,7 @@ carry (never hand-rolled token CSS), built and served with `npm run design:mocku
 README has the recipe). That keeps the screenshot honest to what ships and the Svelte port a
 transcription. Ground the mockup in the closest live component, since the live components are the bar.
 
-Then build the component: wrap it in a `data-theme` wrapper (or render it inside `AdminLayout`, which
+Then build the component: wrap it in a `data-theme` wrapper (or render it inside `CairnAdminShell`, which
 already provides one), import `./cairn-admin.css`, build it from the recipes above (the card, the eyebrow,
 the type vars, the theme-adaptive border and shadow), and preview on the showcase. Add component or unit
 tests for new behavior and keep `npm run check` 0/0 and `npm test` exit 0.

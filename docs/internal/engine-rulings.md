@@ -5558,3 +5558,26 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** a second consumer hand-rolling this verifier, an engine-internal consumer of
   it, or an evidenced defect in a family site's own resolver.
 - **Record:** [`docs/internal/record/2026-09-07-identity-seam/`](record/2026-09-07-identity-seam/).
+
+## polish-busy-idiom: the admin's busy idiom  (accept, 2026-09-08, polish-11b-i)
+
+- **Verdict:** accept. "The busy idiom is ruled architecture" and states its two shapes: "A
+  control that stays on screen while a short round trip runs takes native `disabled` plus an
+  always-mounted status region. A guarded control, refused with a reason, keeps `aria-disabled`
+  with the `cairn-btn-guarded` marker so its tooltip survives"
+  (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, decision 7, 2026-09-08).
+  `ShareLinkPanel` converges on the guarded shape at the pass's own Task 6.
+- **Reopens on:** a third busy shape a future screen needs that neither native `disabled` plus a
+  status region nor `aria-disabled` plus `cairn-btn-guarded` can express.
+- **Shape:** see `docs/internal/admin-design-system.md`, `## Component recipes`, the bullet "The
+  busy idiom (wait versus refusal)".
+- **Record:** decision 7's promotion condition for the upload recipe's own
+  replace-the-control-with-a-status-panel shape is narrowed here, from decision 7's own "a second
+  instance" to a second instance outside the media upload family, since the sweep already counts
+  four components on that shape before the rule was written
+  (`MediaUploadDialog`, `MediaHeroField`, `MediaReplaceDialog`, `MediaCaptureCard`); the narrowing
+  is this plan's own declared amendment
+  (`docs/superpowers/plans/2026-09-08-polish-11b-i-pass.md`, the Reconciliation block's
+  Corrections section), not decision 7's text.
+- **Verified:** `docs/internal/admin-design-system.md`'s busy section names both shapes with their
+  conditions and reasons, and no code in this pass's diff.

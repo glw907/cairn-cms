@@ -1297,6 +1297,15 @@
   names its two documented cross-subpath exceptions, `PublicRoutesConfig` and `EntryData`, both
   canonical on `/delivery`. No signature changed and no export moved.
 
+- `docs/internal/admin-design-system.md` gains a busy section naming the admin's two busy shapes
+  (native `disabled` plus an always-mounted status region for a control mid-wait, `aria-disabled`
+  plus `cairn-btn-guarded` for a control refused with a reason) and the upload recipe's own
+  replace-the-control-with-a-status-panel case, with its promotion condition narrowed to a second
+  instance outside the media upload family. `docs/internal/engine-rulings.md` gains the
+  `polish-busy-idiom` row recording the ruling. The eight stale `AdminLayout` references in the
+  design system are corrected to `CairnAdminShell`, the component's real name. Internal
+  documentation only; no code changed.
+
 ### Fixed
 
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or

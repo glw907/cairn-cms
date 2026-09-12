@@ -8,14 +8,12 @@
 // factories (content-routes-shell.ts, -list.ts, -entry-read.ts, -entry-write.ts,
 // -entry-destructive.ts, -entry-revert.ts, -preview.ts, -media-library.ts, -media-ingest.ts,
 // -media-delete.ts, -media-metadata.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the one
-// returned object.
-// content-routes-shared.ts is not one
-// of those factories, only the primitives several of them import (concept and entry-id resolution,
-// the flattened action-failure shape); this file re-exports its `ContentFormFailure` type below
-// alongside the domain types. Every type this file used to declare inline now lives with the
-// domain that owns it and is re-exported here, so every existing
-// importer (the public `/sveltekit` barrel and the admin components that import this file
-// directly) sees the same names at the same path.
+// returned object. content-routes-shared.ts is not one of those factories, only the primitives
+// several of them import (concept and entry-id resolution, the flattened action-failure shape);
+// this file re-exports its `ContentFormFailure` type below alongside the domain types. Every type
+// this file used to declare inline now lives with the domain that owns it and is re-exported here,
+// so every existing importer (the public `/sveltekit` barrel and the admin components that import
+// this file directly) sees the same names at the same path.
 //
 // The factory comes in two: `createContentRoutesInternal`, whose wide shape the single-mount
 // composer drives, and the public `createContentRoutes`, whose declared return is the narrow

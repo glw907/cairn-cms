@@ -308,14 +308,11 @@ The original decision framing, for the record:
     `as never` retirement, the least-churn formatter default), the exhaustiveness idiom
     (`FieldDescriptor`'s dispatch sites), and the newcomer walk's `src/lib` internals map,
     all behind unchanged public surfaces except the `ec-*` rename's own `Consumers must:`
-    line. `content-routes-media.ts` at 1,447 lines is the remaining tracked monolith. Two
-    items internals-B's close routed here stay open, carried forward: `content-routes-entry.ts`
-    still does two jobs at 1,630 lines, the create/edit/save/publish half and the
-    delete/rename half, the latter a self-contained ~330-line concern with its own
-    reference-index gates, worth a `-mutations.ts` sibling; and
-    `edit-page-state-reset-coverage.test.ts`'s declared-state regex cannot match a type
-    annotation containing a generic comma (`let x: Record<string, boolean> = $state({})`),
-    so such a declaration silently escapes the gate.
+    line. Both remaining tracked monoliths this bullet once carried forward,
+    `content-routes-media.ts` at 1,447 lines and `content-routes-entry.ts` at 1,630 lines,
+    split into per-cluster modules under polish-11a (2026-09-12), and that pass's
+    `edit-page-state-reset-coverage.test.ts` fix closed the generic-comma gap
+    (`let x: Record<string, boolean> = $state({})`) the same window.
   - **The chassis improvement round**: three plans,
     `docs/superpowers/plans/2026-09-04-chassis-a-pass.md`,
     `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`, and

@@ -32,7 +32,8 @@ export type SiteIndexes<A extends CairnAdapter> = {
  * Build typed per-concept indexes and a site resolver from one adapter. Pass the per-concept raw
  * globs as `{ posts: import.meta.glob('...?raw', { eager: true }), ... }`; Vite needs the literal
  * glob at the call site, so the engine cannot glob on the site's behalf. `validate: false` opts out
- * of the build gate, exactly as on `createSiteResolver`.
+ * of the build-time schema validation the returned resolver otherwise runs against every concept's
+ * frontmatter, for a caller that needs the indexes before every entry satisfies its schema.
  */
 export function createSiteIndexes<const A extends CairnAdapter>(
   adapter: A,

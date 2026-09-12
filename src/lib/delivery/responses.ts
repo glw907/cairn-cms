@@ -6,21 +6,30 @@ import { buildSitemap, type SitemapUrl } from './sitemap.js';
 import { buildRobots } from './robots.js';
 import type { AiPosture } from '../content/types.js';
 
-/** An RSS 2.0 feed response. */
+/**
+ * An RSS 2.0 feed response, served as `application/rss+xml; charset=utf-8` and with no cache
+ *  header, so a site that wants one sets it at the route.
+ */
 export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
   return new Response(buildRssFeed(channel, items), {
     headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
   });
 }
 
-/** A JSON Feed 1.1 response. */
+/**
+ * A JSON Feed 1.1 response, served as `application/feed+json; charset=utf-8` and with no cache
+ *  header, so a site that wants one sets it at the route.
+ */
 export function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Response {
   return new Response(buildJsonFeed(channel, items), {
     headers: { 'Content-Type': 'application/feed+json; charset=utf-8' },
   });
 }
 
-/** A sitemap response. */
+/**
+ * A sitemap response, served as `application/xml; charset=utf-8` and with no cache header, so a
+ *  site that wants one sets it at the route.
+ */
 export function sitemapResponse(urls: SitemapUrl[]): Response {
   return new Response(buildSitemap(urls), {
     headers: { 'Content-Type': 'application/xml; charset=utf-8' },

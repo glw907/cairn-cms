@@ -112,9 +112,11 @@ export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from 
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';
 
 // Every remaining type a factory or wrapper's own signature names is re-exported here so a site
-// importing only from this subpath can still name the value it holds. `CairnRuntime`'s own
-// structural body in turn names most of the rest below it, the same recursive closure
-// `/delivery` and root carry.
+// importing only from this subpath can still name the value it holds, except two documented
+// cross-subpath exceptions that stay on `/delivery` alone: `PublicRoutesConfig`, which
+// `previewLoad`'s second parameter names, and `EntryData`, which `PreviewData` extends.
+// `CairnRuntime`'s own structural body in turn names most of the rest below it, the same
+// recursive closure `/delivery` and root carry.
 //
 // Canonical home for everything below this line is the root barrel `.`, except `MediaRef`
 // (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded

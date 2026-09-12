@@ -4,7 +4,10 @@
 // URLs built from PUBLIC_ORIGIN.
 import { escapeXml } from './xml.js';
 
-/** Feed channel metadata. URLs are absolute. */
+/**
+ * Feed channel metadata. `siteUrl` and `feedUrl` must be absolute URLs built from the site's
+ *  origin; a relative URL here produces a feed that validates but that no reader can resolve.
+ */
 export interface FeedChannel {
   title: string;
   description: string;
@@ -97,7 +100,10 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
     .join('\n');
 }
 
-/** Build a JSON Feed 1.1 document. */
+/**
+ * Build a JSON Feed 1.1 document as a JSON string. The caller wraps it in a `Response` with the
+ *  `application/feed+json` content type; this function does no HTTP work of its own.
+ */
 export function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string {
   return JSON.stringify(
     {

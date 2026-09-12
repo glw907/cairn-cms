@@ -1286,6 +1286,17 @@
   `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map recipe
   to close the gap.
 
+- Four doc-comment residuals close: `createSiteIndexes` (`/delivery`) no longer sends a reader to
+  `createSiteResolver`, an internal name the shipped `.d.ts` does not export, and instead states
+  what `validate: false` opts out of directly; `rssResponse`, `jsonFeedResponse`, and
+  `sitemapResponse` (`/delivery`), `FeedChannel` and `buildJsonFeed` (`/delivery`), and `ListData`
+  (`/sveltekit`) each gain a doc comment stating its contract in place of a one-line paraphrase of
+  its own name; `EntryData`'s eight members and `MediaEntry`'s twelve each gain a member-level doc
+  comment, with `MediaEntry`'s block comment naming `sha256` and `originalFilename` as the two
+  fields its `MediaLibraryEntry` projection drops; and the `/sveltekit` barrel's doc comment now
+  names its two documented cross-subpath exceptions, `PublicRoutesConfig` and `EntryData`, both
+  canonical on `/delivery`. No signature changed and no export moved.
+
 ### Fixed
 
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or

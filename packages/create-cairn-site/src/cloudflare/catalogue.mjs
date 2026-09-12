@@ -535,7 +535,7 @@ const ROWS = {
           'email; it keeps serving its pages, and you keep editing and publishing as the owner.\n' +
           `Your own way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
-          'Next: turn on Workers Paid when you are ready. Re-run npx create-cairn-site --dir ' +
+          'Next: turn on Workers Paid. Re-run npx create-cairn-site --dir ' +
           `${params.dir} to do it.`
         );
       }

@@ -292,7 +292,7 @@
   `check:comments` TSDoc gate the showcase's `.svelte` files carry: the ESLint `.svelte` block's
   `files` glob widens to include `src/lib/components/**/*.svelte`. Eleven `tsdoc/syntax` errors
   the widened glob turned up across six components are fixed in place (unclosed code spans,
-  unescaped `{}`/`>` characters), with no comment's content changed. Consumers must: nothing.
+  unescaped `{}`/`>` characters), with no comment's content changed. No consumer action.
 
 - The `content-routes-entry.ts` monolith begins splitting into one module per entry cluster
   (internal, no public surface change): `content-routes-entry-read.ts` now declares
@@ -300,13 +300,13 @@
   `EditData` and `FragmentTarget` types, and `content-routes-shared.ts` gains the cross-cluster
   helpers `draftFromBranchHead`, `commitEditorName`, `HISTORY_LIMIT`, and `invalidIdMessage`.
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
-  Consumers must: nothing.
+  No consumer action.
 
 - The `content-routes-entry.ts` split continues with the write cluster (internal, no public
   surface change): `content-routes-entry-write.ts` now declares `createEntryWriteActions`
   (`saveAction`, `publishAction`, `publishAllAction`, `discardAction`) with the `saveToBranch`
   core and the `saveRefusal`, `SaveHold`, and `SaveFailure` types it shares. `content-routes.ts`'s
-  public shape, key order, and re-exported type names are unchanged. Consumers must: nothing.
+  public shape, key order, and re-exported type names are unchanged. No consumer action.
 
 - The `content-routes-entry.ts` split finishes and the file retires (internal, no public surface
   change): `content-routes-entry-destructive.ts` now declares `createEntryDestructiveActions`
@@ -315,7 +315,7 @@
   (the `Refusal`-suffix retirement); it stays a module-level export of
   `content-routes-entry-destructive.ts`, reached from no package subpath.
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
-  Consumers must: nothing.
+  No consumer action.
 
 - The `content-routes-media.ts` monolith begins splitting into one module per media cluster
   (internal, no public surface change): `content-routes-media-shared.ts` now declares the
@@ -326,7 +326,7 @@
   `content-routes-media-ingest.ts` now declares `createMediaIngestActions` (`uploadAction`,
   `mediaLibraryUploadAction`) and the exported `MediaUploadFailure` and `UploadResult` types.
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
-  Consumers must: nothing.
+  No consumer action.
 
 - The `content-routes-media.ts` split continues with the destructive cluster (internal, no public
   surface change): `content-routes-media-delete.ts` now declares `createMediaDeleteActions`
@@ -335,7 +335,7 @@
   `MediaOrphanPurgeResult` types. `MediaDeleteRefusal` renamed to `MediaDeleteFailure` (the
   `Refusal`-suffix retirement); it stays a module-level export, reached from no package subpath.
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
-  Consumers must: nothing.
+  No consumer action.
 
 - The `content-routes-media.ts` split finishes with the metadata cluster (internal, no public
   surface change): `content-routes-media-metadata.ts` now declares `createMediaMetadataActions`
@@ -345,7 +345,14 @@
   `content-routes-media.ts` is retired: every cluster it held now lives in one of the four sibling
   modules. `BulkDeleteSkip` renamed to `BulkDeleteSkippedAsset` (the `Skip`-suffix retirement); its
   `skipped` field name is unaffected. `content-routes.ts`'s public shape, key order, and
-  re-exported type names are unchanged. Consumers must: nothing.
+  re-exported type names are unchanged. No consumer action.
+
+- Re-recording the two `cairn-doctor` transcript fixtures (`02-doctor-bare.txt`,
+  `03-doctor-credentialed.txt`) against the current engine is deferred: the capture scratch site
+  has drifted off the current render-authoring API, so the doctor's adapter read throws with or
+  without a Cloudflare token and the bare/credentialed contrast cannot be captured. Five
+  rename-only drifts in that scratch site are already applied. Neither fixture nor
+  `docs/admin/is-it-working.md` changed. No consumer action.
 
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
@@ -1197,8 +1204,8 @@
   (the two entry conflict refusals, the nav-menu conflict refusal, and the site-settings conflict
   refusal) where the editor's own unsaved typing is what a reload would discard, and the
   `VocabularyAdmin` tag-vocabulary screen now names its counted things "entries" rather than
-  "posts", matching the concept-neutral vocabulary the rest of the admin uses. Consumers must:
-  nothing.
+  "posts", matching the concept-neutral vocabulary the rest of the admin uses. No consumer
+  action.
 
 ### Documentation
 

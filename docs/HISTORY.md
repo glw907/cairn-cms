@@ -7,6 +7,58 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Polish-11a (audit remediation slice 9, the engine and CLI half, non-breaking), thirteen tasks complete on its worktree 2026-09-12
+
+Branch `polish-11a`, thirteen tasks executed on `.claude/worktrees/polish-11a` off post-chassis-B2
+`main`; plan at `docs/superpowers/plans/2026-09-08-polish-11a-pass.md`.
+
+**What landed.** Both retired route monoliths named on the audit's own monolith list split into
+named cluster modules with the public surface byte-identical: `content-routes-entry.ts` (1,630
+lines) into a read, write, destructive, and revert cluster plus the cross-cluster helpers in
+`content-routes-shared.ts`; `content-routes-media.ts` (1,447 lines) into a shared module, a
+library-read cluster, an ingest cluster, a delete cluster, and a metadata cluster. Three
+`Refusal`/`Skip`-suffix retirements rode the split (`DeleteRefusal` to `DeleteFailure`,
+`MediaDeleteRefusal` to `MediaDeleteFailure`, `BulkDeleteSkip` to `BulkDeleteSkippedAsset`),
+closing the file's last holdouts against `convention-failure-suffix`. Product copy dropped a
+misleading "Reload" instruction from four conflict-refusal messages and renamed
+`VocabularyAdmin`'s counted things from "posts" to "entries"; `create-cairn-site`'s cost copy
+stopped offering Workers Paid as a later or optional step, matching the standing "from first
+deploy" ruling. The engine's own `src/lib/components/*.svelte` files joined the showcase's under
+the `check:comments` TSDoc gate (eleven `tsdoc/syntax` errors fixed, zero `informative-docs`
+warnings). Four `jsdoc/informative-docs` residuals closed. The state-reset coverage regex now
+matches a declared state name whose type annotation carries its own generic comma inside balanced
+angle brackets.
+
+**What the gate caught.** Re-recording the two `cairn-doctor` transcript fixtures against the
+current engine (Task 9) was reverted after landing: the capture scratch site has drifted off the
+engine's re-architected render-authoring API (`glyph`, `iconSpan`, `cardShell`, `headRow`,
+`strAttr`, `ContentRoutesOptions`), so the doctor's adapter read throws with or without a
+Cloudflare token and the bare/credentialed contrast the task needed cannot be captured; that
+task is deferred, not shipped, and its `CHANGELOG.md` line says so instead of naming a change.
+This records step (Task 13) itself caught a drift the per-task gate never checks: eight of the
+first ten tasks' own `CHANGELOG.md` entries wrote "Consumers must: nothing." literally, even
+though this pass is non-breaking end to end, since `check:vale`, `check:prose`, and
+`check:version` have no rule against the literal string appearing with a no-op payload. Fixed in
+this commit by rewording each to plain "No consumer action." (Tasks 8, 11, and 12 had already
+independently avoided the phrase.) A later pass whose gate wants to catch this mechanically
+would need a lint on the literal string co-occurring with a non-breaking pass marker, which does
+not exist today.
+
+**What a later pass would be wrong to rediscover.** The doctor-transcript capture site
+(`~/Projects/cairn-scratch/2026-08-16-capture/cairn-capture-scratch`) needs re-scaffolding or
+repair against the current engine before Task 9's work can be redone; the five rename-only
+drifts (`extractMenu`, `extractVocabulary`, `siteDescriptors`, `buildLinkResolver`,
+`buildMediaResolver`) are already applied there, so only the render-authoring API gap remains.
+`docs/admin/own-your-domain.md:92-99` still carries the free-until framing and quotes the old
+Workers Paid prompt verbatim; Task 8 changed only the CLI copy, and no gate catches the page's
+own drift from it. A "no `Consumers must:` line" constraint on a non-breaking pass is not
+self-enforcing prose discipline; a task that reaches for the phrase out of habit needs a
+sharper eye than a global constraint sentence alone provides. Every one of the twenty-four
+ruling rows naming the two retired monolith paths by their old filename already carries its
+`- **Note (polish-11a, Task N):**` line naming the new module (verified by
+`check:rulings-format` plus a manual grep-and-cross-reference against every row's enclosing
+heading); no row needed a fresh annotation at this final step.
+
 ## Chassis-B2 (audit remediation slice 8, the paint-changing half's second slice), code complete and reviewed 2026-09-09
 
 Branch `chassis-b2`, eight tasks executed on `.claude/worktrees/chassis-b2` off `chassis-b`
@@ -60,7 +112,7 @@ against its 6M ceiling, concentrated in the pass-end ritual: four of five tasks 
 needed a `diff-reviewer` fix round, and a mid-ritual wall-clock halt added a second cold start.
 Full detail and the reviewer/verifier verdicts are in the plan's own post-mortem.
 
-## Chassis-B1, merged 2026-09-08
+## Chassis-B1 (audit remediation slice 9a, the paint-changing half's first slice), merged 2026-09-08
 
 Branch `chassis-b`, seven tasks executed on `.claude/worktrees/chassis-b` off post-chassis-A
 `main`; plan and post-mortem at `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` (PR #51,
@@ -104,7 +156,7 @@ bit-for-bit lives in the `contact-sheet-montage-recipe` implementer memory, not 
 commit; the next pass needing contact sheets should read it rather than re-deriving the
 pipeline.
 
-## Identity seam, code complete and reviewed 2026-09-08
+## Identity seam (slice 10), code complete and reviewed 2026-09-08
 
 Branch `identity-seam`, seven tasks executed on `.claude/worktrees/identity-seam` off `main`, in
 parallel with chassis-B1; plan and post-mortem at

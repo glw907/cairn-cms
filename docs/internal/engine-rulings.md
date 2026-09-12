@@ -1508,7 +1508,7 @@ when the remediation pass lands.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 - **Note (polish-11a, Task 6):** renamed to `BulkDeleteSkippedAsset` (`convention-failure-suffix`'s
   suffix-scope clause); the module-level export stays in `media/bulk-delete-plan.ts`, still
-  imported directly by `CairnMediaLibrary.svelte` for its own typing.
+  imported directly by `MediaBulkDeleteDialog.svelte` for its own typing.
 
 ## audit-sveltekit-repointplacement: `RepointPlacement`  (retire, 2026-08-26, any-site audit)
 
@@ -1578,7 +1578,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 10.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 - **Note (polish-11a, Task 6):** the module-level export moved to
-  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  `content-routes-media-metadata.ts`, still imported directly by `MediaAltFillDialog.svelte`.
   Verdict unchanged.
 
 ## audit-sveltekit-mediareplacepreviewentry: `MediaReplacePreviewEntry`  (retire, 2026-08-26, any-site audit)
@@ -1588,7 +1588,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 11.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 - **Note (polish-11a, Task 6):** the module-level export moved to
-  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  `content-routes-media-metadata.ts`, still imported directly by `MediaReplaceDialog.svelte`.
   Verdict unchanged.
 
 ## audit-sveltekit-mediareplacepreviewplan: `MediaReplacePreviewPlan`  (retire, 2026-08-26, any-site audit)
@@ -1598,7 +1598,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 12.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 - **Note (polish-11a, Task 6):** the module-level export moved to
-  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  `content-routes-media-metadata.ts`, still imported directly by `MediaReplaceDialog.svelte`.
   Verdict unchanged.
 
 ## audit-sveltekit-mediabulkdeleteresult: `MediaBulkDeleteResult`  (retire, 2026-08-26, any-site audit)
@@ -1638,7 +1638,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 17.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 - **Note (polish-11a, Task 6):** the module-level export moved to
-  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  `content-routes-media-metadata.ts`, still imported directly by `MediaAltFillDialog.svelte`.
   Verdict unchanged.
 
 ## audit-sveltekit-mediabulkfailure: `MediaBulkFailure`  (retire, 2026-08-26, any-site audit)
@@ -1668,7 +1668,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 20.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 - **Note (polish-11a, Task 6):** the module-level export moved to
-  `content-routes-media-metadata.ts`, still imported directly by `CairnMediaLibrary.svelte`.
+  `content-routes-media-metadata.ts`, still imported directly by `MediaReplaceDialog.svelte`.
   Verdict unchanged.
 
 ## audit-sveltekit-mediadeleterefusal: `MediaDeleteFailure`  (retire, 2026-08-26, any-site audit)

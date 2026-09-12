@@ -545,11 +545,13 @@ at this task's parent commit (no predecessor in this pass had captured a pass-wi
 Task 1 was doc-only). After set at `~/.cache/cairn-polish-11b-i/task-2/after/`.
 
 - INTENDED MOVES: none. The Open menu opener's markup keeps the same `btn btn-square btn-ghost`
-  classes and the same `MenuIcon` child it had before; it stays a `<label>` element (a real
-  `<button>` would break `examples/showcase/e2e/admin-shell-sidebar.spec.ts`'s existing
-  `label[for="cairn-shell-drawer"]` locator, out of this change's scope), gaining `role="button"`,
-  `tabindex`, `aria-expanded`, `aria-controls`, and a keydown handler. None of that changes a
-  rendered pixel, since the drawer is closed by default on every captured width and scheme.
+  classes and the same `MenuIcon` child it had before; a fix round changed the element itself
+  from a `<label role="button">` to a real `<button type="button">` (the conductor's ruling: the
+  spec-untouched clause protected scope, not the element type), which
+  `examples/showcase/e2e/admin-shell-sidebar.spec.ts` now locates by
+  `getByRole('button', { name: 'Open menu' })`. None of that changes a rendered pixel, since a
+  `<button>` with the same classes renders identically to the prior `<label>` and the drawer is
+  closed by default on every captured width and scheme.
 - MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
   ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
   regeneration, so no baseline needed moving.

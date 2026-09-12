@@ -17,7 +17,9 @@ export type ShortcutRow = { label: string; keys: string };
  * ride MarkdownEditor's own CodeMirror keymap (the latter binds the stock `\@codemirror/lint`
  * `nextDiagnostic` / `previousDiagnostic` commands); Undo / redo rides CodeMirror's own
  * `historyKeymap`, wired alongside the lint keymap; the command palette rides CairnAdminShell's
- * Ctrl K; Continue list / quote is the built-in markdown keymap on Enter.
+ * Ctrl K, which the shell excludes while an editable target (an input, textarea, select, or
+ * contenteditable surface) has focus; Continue list / quote is the built-in markdown keymap on
+ * Enter.
  */
 export const editorShortcuts: ShortcutRow[] = [
   { label: 'Undo / redo', keys: 'Ctrl Z / Ctrl Y' },

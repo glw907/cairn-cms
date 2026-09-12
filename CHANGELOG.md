@@ -1315,10 +1315,10 @@
   stacking the command palette on top of it. The shell's own window keydown handler additionally
   yields whenever the event already carries `defaultPrevented` or originates inside an editable
   target (an input, a textarea, a select, or a `contenteditable` surface), a second guard that
-  holds even if a future handler forgets to prevent. The drawer's Open menu opener gains a full
-  keyboard contract (a `role="button"` with `tabindex`, `aria-expanded` mirroring the drawer state,
-  `aria-controls` naming the drawer nav, and Enter/Space activation) it never had as a bare label;
-  the underlying pointer click is unchanged. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
+  holds even if a future handler forgets to prevent. The drawer's Open menu opener is now a real
+  `<button type="button">` (previously a `label` with a `role="button"` and its own keyboard
+  handler bolted on), flipping `drawerOpen` directly on click; the hidden checkbox stays a pure
+  CSS mechanism. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
   consistently: the Web link row keeps the chord, and the Command palette row states it is
   unavailable while the editor has focus. Consumers must: nothing.
 

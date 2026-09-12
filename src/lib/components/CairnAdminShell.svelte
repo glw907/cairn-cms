@@ -252,7 +252,21 @@ discriminant, not the fields, gates the chrome).
     };
   });
 
+  // True for an input, a textarea, a select, an element with isContentEditable, or an element
+  // inside one. CodeMirror's editing surface is a contenteditable div, so this is what lets
+  // Ctrl+K there open the Web link dialog (EditPage's own card handler) rather than stacking the
+  // command palette on top of it, even for a chord a handler forgot to stopPropagate.
+  function isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false;
+    if (target instanceof HTMLElement && target.isContentEditable) return true;
+    return target.closest('input, textarea, select, [contenteditable="true"]') !== null;
+  }
+
   function onKeydown(e: KeyboardEvent) {
+    // Yields whenever a descendant already consumed the chord (defaultPrevented) or the event
+    // originates inside an editable surface, so the shell never fires alongside a handler closer
+    // to the focus, and never fires from an editable target that failed to prevent.
+    if (e.defaultPrevented || isEditableTarget(e.target)) return;
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       drawerOpen = !drawerOpen;
@@ -588,9 +602,10 @@ discriminant, not the fields, gates the chrome).
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
     <!-- tabindex="-1" and aria-hidden pull this checkbox out of the tab order and the a11y tree: it
-         is DaisyUI's drawer-state mechanism (the for=/id= label toggle and the lg:/xl:drawer-open
-         responsive open all key off it), not an affordance an editor should ever land keyboard
-         focus on with no accessible name. The hamburger label and Ctrl/Cmd+B are the real triggers. -->
+         is DaisyUI's own drawer-state mechanism (the lg:/xl:drawer-open responsive open keys off
+         it), not an affordance an editor should ever land keyboard focus on with no accessible
+         name. The Open menu button and Ctrl/Cmd+B are the real triggers, both flipping
+         drawerOpen directly; this checkbox mirrors that state for the CSS. -->
     <input
       id="cairn-shell-drawer"
       type="checkbox"
@@ -632,7 +647,29 @@ discriminant, not the fields, gates the chrome).
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
              band, where the desk sidebar is receded). -->
         <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
-          <label for="cairn-shell-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
+          <!-- A real accessible opener, kept as a label rather than a bare button: the pointer
+               route is the native for= click-forwarding to the checkbox (unchanged from before,
+               so a plain click still just works), and role/tabindex/the Enter-Space handler below
+               add the keyboard route a bare label never had. aria-expanded mirrors drawerOpen and
+               aria-controls names the drawer nav it opens, so it is reachable and announced like
+               any other disclosure button. svelte-ignore: the compiler's noninteractive-element
+               heuristic does not know this element already carries a full keyboard contract. -->
+          <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+          <label
+            for="cairn-shell-drawer"
+            aria-label="Open menu"
+            role="button"
+            tabindex="0"
+            aria-expanded={drawerOpen}
+            aria-controls="cairn-shell-drawer-nav"
+            class="btn btn-square btn-ghost"
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                drawerOpen = !drawerOpen;
+              }
+            }}
+          >
             <MenuIcon class="h-5 w-5" />
           </label>
         </div>
@@ -811,12 +848,18 @@ discriminant, not the fields, gates the chrome).
     </div>
 
     <div class="drawer-side">
+      <!-- A click-to-dismiss backdrop, not a tab stop: it sits before the drawer's own nav in
+           DOM order, so a focusable button here would land a second toggle ahead of the drawer's
+           contents in the tab order. The label's for=/id= click still closes the drawer through
+           the checkbox above; the Ctrl/Cmd+B chord and Escape (onDrawerOverlayKeydownCapture)
+           are the keyboard routes. -->
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
       <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (the APG
            treatment): at the persistent breakpoint this is a plain nav landmark beside the document,
            never a modal, so the two attributes stay conditional rather than standing. -->
       <nav
         bind:this={drawerNavEl}
+        id="cairn-shell-drawer-nav"
         class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]"
         aria-label="Site content"
         role={isDrawerOverlay ? 'dialog' : undefined}

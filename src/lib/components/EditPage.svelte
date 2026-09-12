@@ -1281,15 +1281,19 @@ persistent "?" carries Markdown help).
     const fmt = formatForKeydown(e);
     if (fmt) {
       e.preventDefault();
+      e.stopPropagation();
       format(fmt);
     } else if (key === 'b') {
       e.preventDefault();
+      e.stopPropagation();
       format('bold');
     } else if (key === 'i') {
       e.preventDefault();
+      e.stopPropagation();
       format('italic');
     } else if (key === 'k') {
       e.preventDefault();
+      e.stopPropagation();
       webLinkDialog?.open();
     }
   }

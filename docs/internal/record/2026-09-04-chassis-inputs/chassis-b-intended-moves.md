@@ -534,3 +534,25 @@ predecessor in this pass had captured a pass-wide before set). After set at
 - The six capture-matrix surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`,
   `signups`) touch no code this task changes: `magick compare -metric AE` is 0 on every
   before/after tile pair.
+
+## Polish-11b-i
+
+### Task 2: the shell's keyboard blockers
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`; the other five render no
+code this task changes. Before set at `~/.cache/cairn-polish-11b-i/task-2/before/`, captured fresh
+at this task's parent commit (no predecessor in this pass had captured a pass-wide before set, and
+Task 1 was doc-only). After set at `~/.cache/cairn-polish-11b-i/task-2/after/`.
+
+- INTENDED MOVES: none. The Open menu opener's markup keeps the same `btn btn-square btn-ghost`
+  classes and the same `MenuIcon` child it had before; adding `role`, `tabindex`, `aria-expanded`,
+  `aria-controls`, and a keydown handler changes no rendered pixel, since the drawer is closed by
+  default on every captured width and scheme.
+- MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
+  ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
+  regeneration, so no baseline needed moving.
+- TILE DIFF: `magick compare -metric AE` is 0 on all ten `signups` tiles (every width, both
+  schemes) between `task-2/before/tiles/` and `task-2/after/tiles/`. The other five capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) also show AE 0 on every tile;
+  their differing manifest sha256 hashes are PNG re-encoding only, the same pattern B2 and
+  polish-11a recorded, not a pixel change.

@@ -521,12 +521,12 @@ describe('CairnAdminShell', () => {
     const deskScreen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
-    const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
+    const deskToggleWrap = deskScreen.container.querySelector('[aria-label="Open menu"]')!.parentElement!;
     expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
     expect(deskToggleWrap.classList.contains('xl:hidden')).toBe(true);
 
     const listScreen = await render(CairnAdminShell, { data: data(true), children: child });
-    const listToggleWrap = listScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
+    const listToggleWrap = listScreen.container.querySelector('[aria-label="Open menu"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
     expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
   });
@@ -603,6 +603,17 @@ describe('CairnAdminShell', () => {
     const before = toggle().checked;
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
     await expect.poll(() => toggle().checked).toBe(!before);
+  });
+
+  it('exposes the drawer opener as a button whose aria-expanded mirrors the drawer state', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    const opener = screen.getByRole('button', { name: 'Open menu' });
+    await expect.element(opener).toHaveAttribute('aria-expanded', 'false');
+    const drawerNav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
+    expect(drawerNav.id.length).toBeGreaterThan(0);
+    await expect.element(opener).toHaveAttribute('aria-controls', drawerNav.id);
+    await opener.click();
+    await expect.element(opener).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('moves focus into the drawer nav on Ctrl+B open, and restores it on Ctrl+B close', async () => {

@@ -1308,6 +1308,20 @@
 
 ### Fixed
 
+- `CairnAdminShell`'s two keyboard blockers are cleared. The editor card's own chords (bold,
+  italic, inline code, the heading pair, the list pair, quote, and the web-link dialog) now call
+  `stopPropagation()` alongside their existing `preventDefault()`, so Ctrl/Cmd+B inside the editor
+  no longer also toggles the admin drawer, and Ctrl/Cmd+K there opens the web-link dialog without
+  stacking the command palette on top of it. The shell's own window keydown handler additionally
+  yields whenever the event already carries `defaultPrevented` or originates inside an editable
+  target (an input, a textarea, a select, or a `contenteditable` surface), a second guard that
+  holds even if a future handler forgets to prevent. The drawer's Open menu opener gains a full
+  keyboard contract (a `role="button"` with `tabindex`, `aria-expanded` mirroring the drawer state,
+  `aria-controls` naming the drawer nav, and Enter/Space activation) it never had as a bare label;
+  the underlying pointer click is unchanged. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
+  consistently: the Web link row keeps the chord, and the Command palette row states it is
+  unavailable while the editor has focus. Consumers must: nothing.
+
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
   optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
   both `paid-plan-declined` messages now all state plainly that a cairn site needs Workers Paid

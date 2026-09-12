@@ -33,7 +33,7 @@ export const editorShortcuts: ShortcutRow[] = [
   { label: 'Heading / smaller', keys: 'Ctrl Alt 2 / 3' },
   { label: 'Focus mode', keys: 'Ctrl Shift F' },
   { label: 'Quote', keys: 'Ctrl Shift 9' },
-  { label: 'Command palette', keys: 'Ctrl K (global)' },
+  { label: 'Command palette', keys: 'Ctrl K (not while editing)' },
   { label: 'Bulleted / numbered list', keys: 'Ctrl Shift 8 / 7' },
   { label: 'Fold / unfold', keys: 'Ctrl Shift [ / ]' },
   { label: 'Next / previous issue', keys: 'F8 / Shift F8' },

@@ -1248,6 +1248,26 @@ describe('EditPage', () => {
       .toContain('****');
   });
 
+  it('stops a consumed Ctrl+B from reaching a window listener, so the shell drawer never toggles', async () => {
+    // CairnAdminShell's own window keydown listener toggles the drawer on the same chord
+    // (admin-shell-sidebar.spec.ts covers that side); this proves the editor card consumes the
+    // chord before it bubbles there, rather than exercising the shell itself.
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
+    let reachedWindow = false;
+    const onWindowKeydown = () => (reachedWindow = true);
+    window.addEventListener('keydown', onWindowKeydown);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
+      card.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(reachedWindow).toBe(false);
+    } finally {
+      window.removeEventListener('keydown', onWindowKeydown);
+    }
+  });
+
   // Edits the body through the registered format seam (an empty-selection bold wrap) and waits
   // for the save-state indicator to acknowledge the change.
   async function makeDirty(screen: Awaited<ReturnType<typeof render>>) {
@@ -2240,7 +2260,7 @@ describe('EditPage', () => {
     expect(text).toContain('Zen');
     expect(text).toContain('This sheet');
     expect(text).toContain('Command palette');
-    expect(text).toContain('Ctrl K (global)');
+    expect(text).toContain('Ctrl K (not while editing)');
     expect(text).toContain('Typing markdown always works');
     // The sheet renders the single source in full: every row from editor-shortcuts appears.
     for (const row of editorShortcuts) expect(text).toContain(row.label);

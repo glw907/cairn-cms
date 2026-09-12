@@ -653,7 +653,7 @@ describe('CairnMediaLibrary safe-delete alertdialog', () => {
     expect(dialog.textContent ?? '').toContain('meadow-fence');
   });
 
-  it('re-opens the in-use face on a fresh MediaDeleteRefusal with the server fresh list', async () => {
+  it('re-opens the in-use face on a fresh MediaDeleteFailure with the server fresh list', async () => {
     // A stale load-time overlay says no references, but the FRESH refusal carries a breaking entry.
     const refusal = {
       error: 'Cannot delete meadow-fence: found in 1 entry.',

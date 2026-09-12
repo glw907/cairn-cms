@@ -146,16 +146,17 @@ directory:
   `invalidIdMessage`).
 - `content-routes-shell.ts`, `-list.ts`, `-entry-read.ts`, `-entry-write.ts`,
   `-entry-destructive.ts`, `-entry-revert.ts`, `-preview.ts`, `-media-library.ts`,
-  `-media-ingest.ts`, `-media.ts`, `-tidy.ts`, `-settings.ts`, `-dictionary.ts`: the domain
-  factories, each named for what it does rather than the earlier single `content-routes-core.ts`
-  this pass's predecessor split it out of. The earlier entry monolith is now four cluster modules
-  (read, write, destructive, revert); the media monolith's split is under way: the Library load
-  moved to `content-routes-media-library.ts` and the upload ingest to
-  `content-routes-media-ingest.ts`, each closing over `content-routes-media-shared.ts`'s fifteen
-  module-level primitives plus `distinctEntryCount`. `content-routes-media.ts` (the remaining
-  delete, orphan, and metadata actions) is still the largest, at well over a thousand lines; the
-  other files range from 139 lines (`content-routes-preview.ts`) to 553
-  (`content-routes-entry-write.ts`).
+  `-media-ingest.ts`, `-media-delete.ts`, `-media.ts`, `-tidy.ts`, `-settings.ts`,
+  `-dictionary.ts`: the domain factories, each named for what it does rather than the earlier
+  single `content-routes-core.ts` this pass's predecessor split it out of. The earlier entry
+  monolith is now four cluster modules (read, write, destructive, revert); the media monolith's
+  split is under way: the Library load moved to `content-routes-media-library.ts`, the upload
+  ingest to `content-routes-media-ingest.ts`, and the safe-delete, bulk-delete, and orphan
+  scan/purge actions to `content-routes-media-delete.ts`, each closing over
+  `content-routes-media-shared.ts`'s fifteen module-level primitives plus `distinctEntryCount`.
+  `content-routes-media.ts` (the remaining metadata edit, replace-in-place, and alt-propagation
+  actions) is now 562 lines and `content-routes-media-delete.ts` 461; the other files range from
+  139 lines (`content-routes-preview.ts`) to 553 (`content-routes-entry-write.ts`).
 
 Every type `content-routes.ts` used to declare inline now lives with the domain that owns it and
 is re-exported from `content-routes.ts`, so an existing importer sees the same names at the same

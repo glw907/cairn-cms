@@ -210,7 +210,7 @@ params the wrapped action reads, and delegates:
 The table above summarizes each view's actions in one line; the Media Library's own vocabulary
 carries more detail worth stating once. `mediaDeleteAction` safe-deletes a committed asset: it
 rechecks usage against a fresh server-side index at delete time, refuses an in-use asset
-(`MediaDeleteRefusal`) unless the form carries the typed-slug override, then commits the
+(`MediaDeleteFailure`) unless the form carries the typed-slug override, then commits the
 `media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
 rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
 alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad

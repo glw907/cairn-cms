@@ -9,7 +9,7 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
 // `MediaBulkDeleteResult` retired from the public barrel (4b, Task 1); still exported at its
 // declaring module, which this test imports directly.
-import type { MediaBulkDeleteResult } from '../../lib/sveltekit/content-routes-media.js';
+import type { MediaBulkDeleteResult } from '../../lib/sveltekit/content-routes-media-delete.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { r2Key } from '../../lib/media/naming.js';

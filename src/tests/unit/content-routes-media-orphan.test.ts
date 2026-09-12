@@ -12,7 +12,7 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
 // `MediaOrphanPurgeResult` retired from the public barrel (4b, Task 1); still exported at its
 // declaring module, which this test imports directly.
-import type { MediaOrphanPurgeResult } from '../../lib/sveltekit/content-routes-media.js';
+import type { MediaOrphanPurgeResult } from '../../lib/sveltekit/content-routes-media-delete.js';
 import type { MediaOrphanScanResult } from '../../lib/media/orphan-scan.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';

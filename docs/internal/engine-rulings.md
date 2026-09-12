@@ -225,6 +225,9 @@ open edits, not part of the shape itself.
 - **Note (polish-11a, Task 3):** `DeleteRefusal` renamed to `DeleteFailure`, matching this ruling's
   own suffix-scope clause; it now declares in `content-routes-entry-destructive.ts`. Verdict
   unchanged.
+- **Note (polish-11a, Task 5):** `MediaDeleteRefusal` renamed to `MediaDeleteFailure`, the
+  media-delete half of the same suffix-scope clause; it now declares in
+  `content-routes-media-delete.ts`. Verdict unchanged.
 
 ## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -1517,6 +1520,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `media/rewrite-plan.ts`, the retires pass's three-case rule: `content-routes-media.ts` imports it directly for `MediaReplacePreviewPlan.branchDelta` and `MediaAltPreviewPlan.branchDelta`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 6.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** unaffected by the media-delete split; `content-routes-media.ts` still
+  imports `BranchRef` directly for `MediaReplacePreviewPlan.branchDelta` and
+  `MediaAltPreviewPlan.branchDelta`, neither of which moved. Verdict unchanged.
 
 ## audit-sveltekit-mediaorphanscanresult: `MediaOrphanScanResult`  (retire, 2026-08-26, any-site audit)
 
@@ -1524,6 +1530,10 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes-media.ts`, `content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `media/orphan-scan.ts`, the retires pass's three-case rule: both `content-routes-media.ts` and `CairnMediaLibrary.svelte` import it directly for their own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 7.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** `mediaOrphanScanAction` and its `MediaOrphanScanResult` return type
+  moved to `content-routes-media-delete.ts`; the direct import now comes from there, not
+  `content-routes-media.ts`. `MediaOrphanTools.svelte` still imports `MediaOrphanScanResult` directly
+  (from `media/orphan-scan.ts`, unaffected by the split). Verdict unchanged.
 
 ## audit-sveltekit-mediaorphanpurgeresult: `MediaOrphanPurgeResult`  (retire, 2026-08-26, any-site audit)
 
@@ -1531,6 +1541,8 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 8.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** the module-level export moved to `content-routes-media-delete.ts`,
+  still imported directly by `MediaOrphanTools.svelte`. Verdict unchanged.
 
 ## audit-sveltekit-mediaaltpreviewentry: `MediaAltPreviewEntry`  (retire, 2026-08-26, any-site audit)
 
@@ -1566,6 +1578,8 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 13.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** the module-level export moved to `content-routes-media-delete.ts`,
+  still imported directly by `MediaBulkDeleteDialog.svelte`. Verdict unchanged.
 
 ## audit-sveltekit-dictionaryaddresult: `DictionaryAddResult`  (retire, 2026-08-26, any-site audit)
 
@@ -1601,6 +1615,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, the retires pass's three-case rule: `CairnMediaLibrary.svelte` imports it directly for its own typing.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 18.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** the module-level export moved to `content-routes-media-delete.ts`,
+  still imported directly by `MediaOrphanTools.svelte` and `MediaBulkDeleteDialog.svelte`. Verdict
+  unchanged.
 
 ## audit-sveltekit-mediaupdatefailure: `MediaUpdateFailure`  (retire, 2026-08-26, any-site audit)
 
@@ -1622,6 +1639,10 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 1: its barrel and subpath re-exports drop (`content-routes.ts`, `sveltekit/index.ts`), but the interface keeps its module-level `export` in `content-routes-media.ts`, since `mediaDeleteAction`'s return type composes into `createContentRoutesInternal` (`content-routes.ts`, a different module), which the `.d.ts` emitter must be able to name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 21.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** renamed to `MediaDeleteFailure` per `convention-failure-suffix`,
+  matching `DeleteRefusal`'s own rename in Task 3; the module-level export moved to
+  `content-routes-media-delete.ts`, since `mediaDeleteAction`'s return type still composes into
+  `createContentRoutesInternal`. Verdict unchanged.
 
 ## audit-sveltekit-mediauploadfailure: `MediaUploadFailure`  (retire, 2026-08-26, any-site audit)
 
@@ -1792,6 +1813,10 @@ when the remediation pass lands.
   whole family together rather than splitting `ContentFormFailure`'s carrier from its siblings'.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 36.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-11a, Task 5):** `MediaDeleteRefusal`, one of the carriers named above, is now
+  `MediaDeleteFailure` per `convention-failure-suffix`, and its module moved to
+  `content-routes-media-delete.ts`; `content-routes-media.ts` stays a namer too, through the
+  surviving `MediaReplaceFailure.usage: UsageEntry[]`. Verdict unchanged.
 
 ## audit-sveltekit-mediausageinfo: `MediaUsageInfo`  (retire, 2026-08-26, any-site audit)
 

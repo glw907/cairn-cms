@@ -322,6 +322,15 @@
   `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
   Consumers must: nothing.
 
+- The `content-routes-media.ts` split continues with the destructive cluster (internal, no public
+  surface change): `content-routes-media-delete.ts` now declares `createMediaDeleteActions`
+  (`mediaDeleteAction`, `mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`)
+  and the exported `MediaDeleteFailure`, `MediaBulkFailure`, `MediaBulkDeleteResult`, and
+  `MediaOrphanPurgeResult` types. `MediaDeleteRefusal` renamed to `MediaDeleteFailure` (the
+  `Refusal`-suffix retirement); it stays a module-level export, reached from no package subpath.
+  `content-routes.ts`'s public shape, key order, and re-exported type names are unchanged.
+  Consumers must: nothing.
+
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

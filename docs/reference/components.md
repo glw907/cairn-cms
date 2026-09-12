@@ -230,7 +230,7 @@ closes the slide-over and returns focus to the originating tile or row. Delete o
 safe-delete alertdialog (a native modal `<dialog>` with no light dismiss): the in-use face names
 the breaking entries and gates Delete behind a typed-slug confirmation, the orphan face is a calm
 confirm, and both post to `?/mediaDelete`. `form` carries the last media action's result, so a
-`MediaDeleteRefusal` re-opens the in-use face on its fresh breaking list and a `MediaUpdateFailure`
+`MediaDeleteFailure` re-opens the in-use face on its fresh breaking list and a `MediaUpdateFailure`
 surfaces in the slide-over.
 
 ```svelte

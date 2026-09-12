@@ -18,7 +18,7 @@ moment so a background re-render never shifts the dry-run.
   import { invalidateAll } from '$app/navigation';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type { MediaUsageInfo } from '../sveltekit/content-routes-media-library.js';
-  import type { MediaBulkDeleteResult, MediaBulkFailure } from '../sveltekit/content-routes-media.js';
+  import type { MediaBulkDeleteResult, MediaBulkFailure } from '../sveltekit/content-routes-media-delete.js';
   import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
   import { usageCount as usageCountOf } from './media-library-helpers.js';
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';

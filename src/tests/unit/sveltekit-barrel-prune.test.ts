@@ -29,7 +29,7 @@ const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteFailure', 'RenameFailure', 'Cre
 // composes into `createContentRoutesInternal` (content-routes.ts), whose `.d.ts` emit must be
 // able to name it. ContentFormFailure, at the same original position in KEPT, is NOT one of
 // these: it is the flattened carrier that survives, not a retire.
-const RETIRED_TIER1 = ['MediaDeleteRefusal', 'MediaUpdateFailure', 'MediaReplaceFailure', 'MediaAltPropagateFailure', 'MediaBulkFailure', 'UploadResult'];
+const RETIRED_TIER1 = ['MediaDeleteFailure', 'MediaUpdateFailure', 'MediaReplaceFailure', 'MediaAltPropagateFailure', 'MediaBulkFailure', 'UploadResult'];
 
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the

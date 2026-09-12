@@ -7,7 +7,7 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
-## Polish-11a (audit remediation slice 9, the engine and CLI half, non-breaking), thirteen tasks complete on its worktree 2026-09-12
+## Polish-11a (audit remediation slice 11a, the engine and CLI half, non-breaking), thirteen tasks complete on its worktree 2026-09-12
 
 Branch `polish-11a`, thirteen tasks executed on `.claude/worktrees/polish-11a` off post-chassis-B2
 `main`; plan at `docs/superpowers/plans/2026-09-08-polish-11a-pass.md`.
@@ -59,7 +59,7 @@ ruling rows naming the two retired monolith paths by their old filename already 
 `check:rulings-format` plus a manual grep-and-cross-reference against every row's enclosing
 heading); no row needed a fresh annotation at this final step.
 
-## Chassis-B2 (audit remediation slice 8, the paint-changing half's second slice), code complete and reviewed 2026-09-09
+## Chassis-B2 (audit remediation slice 9b, the paint-changing half's second slice), code complete and reviewed 2026-09-09
 
 Branch `chassis-b2`, eight tasks executed on `.claude/worktrees/chassis-b2` off `chassis-b`
 across four `pass-execute-chains` workflow runs and one overnight halt-and-resume, 2026-09-08

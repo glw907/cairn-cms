@@ -347,13 +347,6 @@
   `skipped` field name is unaffected. `content-routes.ts`'s public shape, key order, and
   re-exported type names are unchanged. No consumer action.
 
-- Re-recording the two `cairn-doctor` transcript fixtures (`02-doctor-bare.txt`,
-  `03-doctor-credentialed.txt`) against the current engine is deferred: the capture scratch site
-  has drifted off the current render-authoring API, so the doctor's adapter read throws with or
-  without a Cloudflare token and the bare/credentialed contrast cannot be captured. Five
-  rename-only drifts in that scratch site are already applied. Neither fixture nor
-  `docs/admin/is-it-working.md` changed. No consumer action.
-
 - The showcase scaffold, `examples/showcase` and the emitted `create-cairn-site` template,
   adopts the chassis it ships (chassis-B1 pass): the shared Prettier format now covers the
   chassis and theme CSS; the site shell classes (`cairn-site-shell`, `cairn-site-main`) replace

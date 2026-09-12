@@ -2036,9 +2036,8 @@ the named human gates only):**
   parser the showcase already carries, so the file family's roughly 317 comments are parsed for
   the first time; `jsdoc/informative-docs` (the paraphrase-tell rule) reports zero warnings
   against that population today, so there is nothing the gate can flag toward this sweep.
-  **Trigger:** none from the gate; a register-quality read of the newly-parsed population
-  becomes worthwhile once it is scheduled for its own read, not when a warning count moves,
-  since none will.
+  **Trigger:** the population is now newly parsed and has never had a register-quality read;
+  no `jsdoc/informative-docs` warning count will move to signal that a read is due.
 
 - **Make the local showcase e2e render match the CI runner (Geoff, 2026-09-09).** After a CI
   baseline regen, this workstation's Chromium renders home and archive2 a few pixels off (the 20

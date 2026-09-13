@@ -2065,9 +2065,11 @@ the named human gates only):**
   guard degrades each. Purpose (Geoff, 2026-09-13): professional-level visual polish and nothing novel; the
   transitions fit the admin's register, clean, conventional, polished, understated, and
   professional. Direction (Geoff, 2026-09-13): gentle and minimal (short, eased, one property at a time,
-  nothing that draws attention to itself), with a web-based reference for both the feel and the
-  ruleset: the web-native systems (Carbon, Atlassian, Material) and the industry-default
-  components (shadcn's sidebar). GNOME is not the reference, since its idiom is a desktop toolkit
+  nothing that draws attention to itself), with ONE web-based reference for both the feel and the
+  ruleset: IBM Carbon's productive motion set (its duration and easing tokens under cairn names,
+  its entrance and exit pairing, its distance rule), with Atlassian as the tiebreaker only where
+  Carbon is silent, and the industry-default component (shadcn's sidebar) for the one exception
+  (Geoff, 2026-09-13). GNOME is not the reference, since its idiom is a desktop toolkit
   and it publishes no motion rules; the named
   example is zen mode, whose entry and exit are abrupt today. The bar for the adopted system
   (Geoff, 2026-09-13): restrained, polished, and complete, meaning it covers every web case

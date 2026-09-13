@@ -2064,7 +2064,9 @@ the named human gates only):**
   change (hover, press, enter, exit, layout), how enter and exit differ, and how the reduced-motion
   guard degrades each. Direction (Geoff, 2026-09-13): gentle and minimal, in the register of
   modern GNOME (short, eased, one property at a time, nothing that draws attention to itself); the
-  named example is zen mode, whose entry and exit are abrupt today. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
+  named example is zen mode, whose entry and exit are abrupt today. Research brief with the
+  seven-system comparison and a proposed token set:
+  `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
   sweep of the admin components onto it. Borrowable by consumers through the audit and the
   design tokens, per the borrowable-patterns architecture. **Trigger:** after the release cut

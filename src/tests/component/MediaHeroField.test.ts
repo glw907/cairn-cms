@@ -185,6 +185,15 @@ describe('MediaHeroField empty state', () => {
     await expect.element(screen.getByRole('button', { name: /choose a file/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('combobox')).toBeInTheDocument();
   });
+
+  it('mounts the upload status region before any upload happens, empty', async () => {
+    const screen = await mount();
+    await screen.getByRole('button', { name: /add hero image/i }).click();
+    await tick();
+    const status = screen.container.querySelector('dialog [role="status"]');
+    expect(status).not.toBeNull();
+    expect(status?.textContent).toBe('');
+  });
 });
 
 describe('MediaHeroField dropzone focus indicator', () => {

@@ -130,9 +130,14 @@ title the menu's own declared label; the sortable-list card below stays untouche
 <PageHeader eyebrow="Settings" title={data.menu.label} />
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
-{#if data.saved}
-  <div role="status" class="alert alert-success mb-4 type-body">Navigation saved.</div>
-{/if}
+<!-- Mounted unconditionally so a later save still announces (the needs-alt notice's live-region
+     rule, WCAG 4.1.3): a region conditionally mounted with its first content is not reliably
+     observed by assistive tech. Only the visible box moves inside. -->
+<div role="status">
+  {#if data.saved}
+    <div class="alert alert-success mb-4 type-body">Navigation saved.</div>
+  {/if}
+</div>
 {#if lifecycleError}
   <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
 {/if}

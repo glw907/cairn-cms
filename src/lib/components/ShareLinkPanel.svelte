@@ -120,11 +120,17 @@ entry's minted link from surviving onto another entry's panel.
 
   /** Copy the minted URL to the clipboard. A denied or unavailable clipboard falls back to selecting
    *  the field's text, so a manual copy still works. The Media Library's own copy affordance answers
-   *  the same failure with a notice instead, since the reference it copies sits in no field. */
+   *  the same failure with a notice instead, since the reference it copies sits in no field. The
+   *  unavailable case is a guard before the call, not a `.catch`: an insecure context or an older
+   *  browser exposes no `navigator.clipboard` at all, so there is no promise to reject and catch. */
   function copyShareUrl() {
     if (!shareResult) return;
+    if (!navigator.clipboard) {
+      shareUrlInput?.select();
+      return;
+    }
     const url = shareResult.url;
-    void navigator.clipboard?.writeText(url).then(
+    void navigator.clipboard.writeText(url).then(
       () => {
         shareCopied = true;
         clearTimeout(copiedTimer);
@@ -173,24 +179,24 @@ entry's minted link from surviving onto another entry's panel.
       Share a private link so someone who is not an editor can read this draft before it publishes.
     </p>
     <div class="flex flex-wrap items-center gap-2">
-      <!-- aria-disabled, not the native attribute (the repo's guarded-control pattern,
-           EditPage.svelte's Publish button): the control stays focusable and mintPreview's own
-           early return (`if (shareBusy) return;`) makes the busy click inert, so no extra
-           onclick wrapper is needed here the way the form-submitting Publish button needs one. -->
+      <!-- Native disabled, not the guarded-control pattern: mint and revoke are waits (a short
+           round trip that resolves on its own), not refusals, so the control truly cannot be
+           activated again until it resolves and needs no reason attached. The always-mounted
+           role="status" region below carries the result rather than the button's own label
+           mutation, so a screen reader already tracking the region hears the update without a
+           fresh-mount announcement race. -->
       <button
         type="button"
-        class="btn btn-ghost btn-sm cairn-btn-guarded"
-        class:cursor-not-allowed={shareBusy}
-        aria-disabled={shareBusy ? true : undefined}
+        class="btn btn-ghost btn-sm"
+        disabled={shareBusy}
         onclick={mintPreview}
       >
         {#if shareBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Minting…{:else}Share preview link{/if}
       </button>
       <button
         type="button"
-        class="btn btn-ghost btn-sm cairn-btn-guarded"
-        class:cursor-not-allowed={revokeBusy}
-        aria-disabled={revokeBusy ? true : undefined}
+        class="btn btn-ghost btn-sm"
+        disabled={revokeBusy}
         onclick={revokePreview}
       >
         {#if revokeBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Revoking…{:else}Revoke all links{/if}

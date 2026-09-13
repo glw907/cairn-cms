@@ -99,9 +99,10 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         This site signs in through {data.identity.label}. <a href="/admin" class="link link-primary">Go to /admin</a>.
       </p>
     {:else if (form?.status === 'sent' || form?.sent) && !dismissed}
-      <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
-           instruction. The fallback help sits in a gentle inset note below. -->
-      <div role="status" class="flex flex-col items-center text-center">
+      <!-- No role="status" here: the block mounts fresh on this branch switch, so a live region
+           on it would never observe its own first content (WCAG 4.1.3). The "Check your email"
+           heading is what carries the announcement, the same way a fresh page's title does. -->
+      <div class="flex flex-col items-center text-center">
         <div class="mb-7">{@render brand()}</div>
         <div
           class="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--color-success)]"

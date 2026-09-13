@@ -79,6 +79,13 @@ describe('NavTree', () => {
     await expect.element(screen.getByText(/navigation saved/i)).toBeInTheDocument();
   });
 
+  it('mounts the saved status region before any save happens, empty', async () => {
+    const screen = await render(NavTree, { data: data({ saved: false }) });
+    const status = screen.container.querySelector('[role="status"]');
+    expect(status).not.toBeNull();
+    expect(status?.textContent).toBe('');
+  });
+
   it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {
     // A validation or conflict refusal now answers in place through `form`, not a ?error= redirect
     // read back into `data.error`; the shell must wire `form` through for the message to reach here.

@@ -343,9 +343,14 @@ bespoke (ruling 7): a single-use control, not a repeated device.
   />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
-  {#if data.saved}
-    <div role="status" class="alert alert-success mt-4 type-body">Tidy settings saved.</div>
-  {/if}
+  <!-- Mounted unconditionally so a later save still announces (the needs-alt notice's live-region
+       rule, WCAG 4.1.3): a region conditionally mounted with its first content is not reliably
+       observed by assistive tech. Only the visible box moves inside. -->
+  <div role="status">
+    {#if data.saved}
+      <div class="alert alert-success mt-4 type-body">Tidy settings saved.</div>
+    {/if}
+  </div>
   {#if lifecycleError}
     <div class="alert alert-error mt-4 type-body">{lifecycleError}</div>
   {/if}

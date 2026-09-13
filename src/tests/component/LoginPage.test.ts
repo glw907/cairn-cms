@@ -16,6 +16,13 @@ describe('LoginPage', () => {
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
+  it('carries no role="status" on the confirmation block, since it never observes its own first content', async () => {
+    // The block mounts fresh on the branch switch to "sent", so a live region on it would never
+    // announce; the "Check your email" heading carries the announcement instead.
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    expect(screen.container.querySelector('[role="status"]')).toBeNull();
+  });
+
   it('guides an editor whose link never arrives without leaking allowlist membership', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
     await expect.element(screen.getByText(/check your spam folder/i)).toBeInTheDocument();

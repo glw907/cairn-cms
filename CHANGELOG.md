@@ -1700,6 +1700,19 @@
   optional type run, so a declaration shaped like this was invisible to the gate. Internal
   test-only fix; no consumer action.
 
+- Five `role="status"` regions (`MediaUploadDialog`, `MediaHeroField`, `MediaReplaceDialog`,
+  `CairnTidySettings`, `NavTree`) that mounted only alongside their first content now mount
+  unconditionally, with only their contents gated, so a screen reader already tracking each region
+  observes its later updates (WCAG 4.1.3 requires the region be present before the change it
+  reports). `ShareLinkPanel`'s Share and Revoke buttons converge onto the busy idiom's wait shape
+  (native `disabled` plus its own always-mounted status region), dropping the guarded-control
+  marker and `aria-disabled` a wait never needed. Its copy affordance now guards for a missing
+  `navigator.clipboard` before calling it, rather than relying on a rejected promise that never
+  arrives, so a denied or unavailable clipboard reliably falls back to selecting the field.
+  `LoginPage`'s confirmation block drops a `role="status"` that never announced anything (the
+  block mounts fresh with the branch switch, so the region never observed its own first content);
+  the "Check your email" heading carries the announcement instead. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

@@ -115,13 +115,4 @@ export const ADMIN_CSS_SAFELIST = [
   // fall out of date the next time daisyUI's recipe moves.
   'badge-error',
   'badge-success',
-  // `badge-warning`/`badge-info`/`badge-neutral`: `EditPage`'s desk band was cairn's last caller,
-  // retired onto `StatusChip`'s quiet/outline registers as part of the second-generation chip
-  // vocabulary. The same badge-ghost precedent above applies: the shipped sheet's class inventory
-  // is a de facto public API, so a class that leaves cairn's own tree stays blessed here rather
-  // than silently dropping out of the compiled sheet for any consumer's own hand-authored admin
-  // markup still riding the stock daisyUI fills.
-  'badge-warning',
-  'badge-info',
-  'badge-neutral',
 ] as const;

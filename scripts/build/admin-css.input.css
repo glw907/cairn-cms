@@ -38,8 +38,11 @@
    that silently stopped resolving. `badge-ghost` stays shipped for consumers on the same reasoning
    even though cairn's own Pass 3 retired its last internal use. A class leaves this block only as a
    deliberate, changelog-carried act, never as a side effect of cairn's own tree moving on; the
-   admin-sheet-inventory.test.ts gate exists precisely to make that removal loud instead of silent. */
-@source inline("badge-ghost gap-6 text-2xl text-3xl text-[0.625rem] text-[0.6875rem] text-[0.6rem] text-[0.75rem] text-[0.7rem] text-[0.8125rem] text-[0.875rem] text-[0.9375rem] text-[0.9em] text-[1.0625rem] text-base text-lg text-sm text-xs tracking-tight");
+   admin-sheet-inventory.test.ts gate exists precisely to make that removal loud instead of silent.
+   badge-warning, badge-info, and badge-neutral join this list for the same reason: EditPage's desk
+   band was cairn's own last caller, retired onto StatusChip's chip vocabulary, and they stay
+   compiled here for any consumer's own hand-authored admin markup still riding them. */
+@source inline("badge-ghost badge-warning badge-info badge-neutral gap-6 text-2xl text-3xl text-[0.625rem] text-[0.6875rem] text-[0.6rem] text-[0.75rem] text-[0.7rem] text-[0.8125rem] text-[0.875rem] text-[0.9375rem] text-[0.9em] text-[1.0625rem] text-base text-lg text-sm text-xs tracking-tight");
 /* SKILL-EXEMPLAR SAFELIST (ASC Assets-trial harvest finding 2, 2026-07-30). The
    cairn-admin-screens skill's own reference docs teach class recipes cairn's own tree never
    calls, so a Tailwind tree-shake drops them from the shipped sheet with no warning: a consumer

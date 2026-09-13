@@ -415,8 +415,9 @@ full-page POST to `?/mediaReplace` navigates away.
                is not reliably observed by assistive tech. This announces the upload step's own
                working state, a distinct event from the sr-only review-impact region above. Its
                content renders in the exclusive chain below rather than beside it, so the working
-               branch there stays empty. -->
-          <div role="status">
+               branch there stays empty. The wrapper is display: contents so an empty region
+               never becomes a flex item of its own, adding no gap to the idle and failed states. -->
+          <div class="contents" role="status">
             {#if replaceUpload.kind === 'working'}
               <div class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
                 <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>

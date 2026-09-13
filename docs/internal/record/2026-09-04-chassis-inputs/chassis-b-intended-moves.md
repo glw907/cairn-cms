@@ -791,3 +791,42 @@ fix, is `~/.cache/cairn-polish-11b-i/task-10-round2/after/` (`signups` only, `--
   regions, two schemes, two states). Both measured causes fall under Playwright's own snapshot
   tolerance, which is why the unmodified admin-visual suite passed with zero diffs at every one of
   the ten `signups` cases even though `AE` against the original is nonzero throughout.
+
+## Polish-11b-ii
+
+### Task 3: The signups form's labels, composition, and outcome
+
+`signups` is the only capture-matrix surface reaching the route this task rewrites. Before set
+captured fresh at this task's parent commit (`e6e342c4`, Task 2's commit; no predecessor in this
+pass had captured a pass-wide before set), `~/.cache/cairn-polish-11b-ii/task-3/before/`
+(`--only signups`). After set `~/.cache/cairn-polish-11b-ii/task-3/after/` (`--only signups`).
+
+- INTENDED MOVES: `signups 320 light`: the two sr-only labels become a visible stacked
+  `type-body font-medium` register above each input, adding two lines of label text above the
+  row / moves `admin-signups-light-320`. `signups 320 dark`: same reason, dark scheme / moves
+  `admin-signups-dark-320`. `signups 390 light`: same reason / moves `admin-signups-light-390`.
+  `signups 390 dark`: same reason / moves `admin-signups-dark-390`. `signups 768 light`: same
+  reason / moves `admin-signups-light-768`. `signups 768 dark`: same reason / moves
+  `admin-signups-dark-768`. `signups 1440 light`: same reason / moves `admin-signups-light-1440`.
+  `signups 1440 dark`: same reason / moves `admin-signups-dark-1440`. `signups 2560 light`: same
+  reason / moves `admin-signups-light-2560`. `signups 2560 dark`: same reason / moves
+  `admin-signups-dark-2560`.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this task's source edits, produced exactly 10 failures,
+  all ten `admin-signups-{light,dark}-{320,390,768,1440,2560}` cases (18 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those ten files and none other; the regenerated suite passes 28 of 28.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 1405.42, light 390
+  1643.21, light 768 4415.12, light 1440 4440.69, light 2560 4440.5, dark 320 1781.68, dark 390
+  2172.81, dark 768 6169.49, dark 1440 6227.07, dark 2560 6226.81 pixels of AE, nonzero on every
+  tile as expected for the added label text; the change is confined to the form row above the
+  fold (the table stays empty in every capture, so the rest of each tile is unaffected).
+- READ ME: the four render-proof pairs (A12): `~/.cache/cairn-polish-11b-ii/task-3/before/full/
+  signups-light-320.png`, `signups-light-390.png`, `signups-dark-320.png`, `signups-dark-390.png`,
+  and their after-set counterparts under `~/.cache/cairn-polish-11b-ii/task-3/after/full/` (eight
+  files). A12 verdict: retire. Both the before and after renders show the create row (two inputs
+  and the Add button, `flex gap-2`) composing without overflow, clipping, or wrapping at 320 and
+  390 in both schemes; adding the stacked labels grows each field's own column height, not the
+  row's width, so the horizontal composition the finding named is unaffected. No composition fix
+  applied.

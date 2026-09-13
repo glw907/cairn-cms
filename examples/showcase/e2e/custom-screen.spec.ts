@@ -39,3 +39,26 @@ test("the shell's global logout action targets the absolute catch-all path from 
   await page.goto('/admin/signups');
   await expect(page.locator('form[action="/admin?/logout"]')).toHaveCount(1);
 });
+
+test('the signups form fields resolve their accessible name through a visible label', async ({
+  page,
+}) => {
+  await page.goto('/admin/signups');
+  const nameLabel = page.locator('label').filter({ hasText: 'Name' });
+  const emailLabel = page.locator('label').filter({ hasText: 'Email' });
+  await expect(page.getByLabel('Name')).toBeVisible();
+  await expect(nameLabel).toBeVisible();
+  await expect(page.getByLabel('Email')).toBeVisible();
+  await expect(emailLabel).toBeVisible();
+});
+
+test('the signups outcome region is mounted empty on first load and announces a create failure', async ({
+  page,
+}) => {
+  await page.goto('/admin/signups');
+  const outcome = page.getByRole('status');
+  await expect(outcome).toBeAttached();
+  await expect(outcome).toBeEmpty();
+  await page.getByRole('button', { name: 'Add' }).click();
+  await expect(outcome).not.toBeEmpty();
+});

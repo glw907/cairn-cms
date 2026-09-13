@@ -1332,6 +1332,19 @@
 
 ### Fixed
 
+- The showcase's Signups admin screen, and the Waymark template that mirrors it, give the create
+  form's Name and Email fields a visible label in place of the `sr-only` pair: each control now
+  sits inside a `<label>` carrying a `type-body font-medium` span above it, the same stacked
+  register `LoginPage` uses, so a sighted user reads the field's name rather than only a
+  placeholder that vanishes on the first keystroke. The screen also gains one always-mounted
+  `role="status"` region beneath the form, present and empty on first load, that reads any
+  `form.error` (the create validation failure and both of `createSectionAction`'s own refusal
+  paths share that field) or either action's own success outcome, so adding or removing a signup,
+  and a denied or misconfigured request, all announce something instead of nothing. The render
+  proof at 320 and 390 in both color schemes showed the existing `flex gap-2` row composing
+  without overflow before and after the label change, so the finding that it could not compose at
+  those widths does not hold and the row's composition is unchanged. Consumers must: nothing.
+
 - `CairnAdminShell`'s two keyboard blockers are cleared. The editor card's own chords (bold,
   italic, inline code, the heading pair, the list pair, quote, and the web-link dialog) now call
   `stopPropagation()` alongside their existing `preventDefault()`, so Ctrl/Cmd+B inside the editor

@@ -5,21 +5,39 @@
 <script lang="ts">
   import { CsrfField } from '@glw907/cairn-cms/components';
   import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
-  import type { PageData } from './$types';
+  import type { PageData, ActionData } from './$types';
 
-  let { data }: { data: PageData } = $props();
+  let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <PageHeader title="Signups" />
 
 <form method="POST" action="?/create" class="my-4 flex gap-2">
   <CsrfField />
-  <label class="sr-only" for="signup-name">Name</label>
-  <input id="signup-name" name="name" placeholder="Name" class="input" />
-  <label class="sr-only" for="signup-email">Email</label>
-  <input id="signup-email" name="email" placeholder="Email" class="input" />
+  <label class="flex flex-col gap-label">
+    <span class="type-body font-medium">Name</span>
+    <input name="name" class="input" />
+  </label>
+  <label class="flex flex-col gap-label">
+    <span class="type-body font-medium">Email</span>
+    <input name="email" class="input" />
+  </label>
   <button class="btn btn-primary">Add</button>
 </form>
+
+<!-- Always mounted and content-gated (the admin's ruled busy/live-region idiom), so it reads any
+     outcome either action produces without re-mounting mid-interaction (WCAG 4.1.3, 3.3.1).
+     form.error is read generically: createSectionAction's own denial and misconfigured branches
+     carry the same field the create action's validation failure does. -->
+<p role="status" aria-live="polite" class="type-body mt-2">
+  {#if form?.error}
+    {form.error}
+  {:else if form?.created}
+    Signup added.
+  {:else if form?.removed}
+    Signup removed.
+  {/if}
+</p>
 
 <AdminTable density="sm" rowCount={data.signups.length}>
   {#snippet header()}

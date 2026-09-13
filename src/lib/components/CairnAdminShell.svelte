@@ -703,6 +703,7 @@ discriminant, not the fields, gates the chrome).
             <button
               type="button"
               onclick={openPalette}
+              aria-haspopup="dialog"
               class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -716,7 +717,7 @@ discriminant, not the fields, gates the chrome).
           {#await data.pendingEntries then pending}
             {#if pending && pending.length > 0}
               <div class="flex-none">
-                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" aria-controls="cairn-shell-publish-all" onclick={() => publishAllDialog?.showModal()}>
                   Publish site ({pending.length})
                 </button>
               </div>
@@ -750,7 +751,7 @@ discriminant, not the fields, gates the chrome).
         {/if}
       </main>
 
-      <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">
+      <dialog bind:this={paletteDialog} class="modal" aria-label="Commands">
         <div class="modal-box max-w-xl self-start mt-4 p-0 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
@@ -773,7 +774,7 @@ discriminant, not the fields, gates the chrome).
                  display: flex, which strips the implicit list role in WebKit/VoiceOver
                  (cairn-audit's list-role rule, rendered mode). -->
             <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2" role="list">
-              {#each paletteResults as cmd, i (i)}
+              {#each paletteResults as cmd (cmd.label)}
                 <li role="listitem">
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
@@ -808,7 +809,7 @@ discriminant, not the fields, gates the chrome).
       {#await data.pendingEntries then pending}
         {#if pending && pending.length > 0}
           {@const groups = groupPending(pending)}
-          <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-shell-publish-all-title">
+          <dialog bind:this={publishAllDialog} id="cairn-shell-publish-all" class="modal" aria-labelledby="cairn-shell-publish-all-title">
             <div class="modal-box">
               <div class="mb-3 flex items-center justify-between">
                 <h2 id="cairn-shell-publish-all-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Publish the whole site?</h2>

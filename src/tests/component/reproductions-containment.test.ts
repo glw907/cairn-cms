@@ -426,7 +426,7 @@ describe('the event firewall (M3)', () => {
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
     await nextFrame();
-    expect(screen.container.querySelector('dialog[aria-label="Search or jump to"][open]')).toBeNull();
+    expect(screen.container.querySelector('dialog[aria-label="Commands"][open]')).toBeNull();
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true }));
     await nextFrame();

@@ -1323,6 +1323,15 @@
   consistently: the Web link row keeps the chord, and the Command palette row states it is
   unavailable while the editor has focus. Consumers must: nothing.
 
+- `CairnAdminShell`'s command palette trigger now carries `aria-haspopup="dialog"`, matching its
+  Publish-site sibling, and the palette's `<dialog>` is named "Commands" so its accessible name no
+  longer repeats the search input's own label and placeholder string three times over. The
+  `{#each}` over the palette's results now keys on `cmd.label` in place of the array index, so a
+  result keeps its own DOM node as the list is filtered rather than swapping identity with
+  whatever now sits at the same position. The site-wide Publish confirm gains an `id` and its
+  trigger an `aria-controls` naming it, since the palette trigger now shares the same
+  `aria-haspopup` value. Consumers must: nothing.
+
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
   optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
   both `paid-plan-declined` messages now all state plainly that a cairn site needs Workers Paid

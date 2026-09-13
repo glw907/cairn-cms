@@ -181,6 +181,42 @@ describe('CairnAdminShell', () => {
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(false);
   });
 
+  it('marks the palette trigger as opening a dialog', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    const trigger = screen.getByRole('button', { name: /search or jump to/i }).element() as HTMLElement;
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+  });
+
+  it('names the palette dialog distinctly from its search input', async () => {
+    // The dialog and its input each need their own accessible name; before this fix both carried
+    // the same "Search or jump to" string as the placeholder too, so a screen reader announced one
+    // string three times.
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const input = screen.getByRole('textbox').element() as HTMLInputElement;
+    const dialogLabel = dialog.getAttribute('aria-label');
+    const inputLabel = input.getAttribute('aria-label');
+    expect(dialogLabel).toBeTruthy();
+    expect(inputLabel).toBeTruthy();
+    expect(dialogLabel).not.toBe(inputLabel);
+    expect(dialogLabel).not.toBe(input.getAttribute('placeholder'));
+  });
+
+  it('keys the palette results on a unique command label', async () => {
+    // The each block keys on cmd.label rather than the index, so the population (nav destinations
+    // plus View site and theme) must carry no duplicate label, or two commands would collide on one
+    // key.
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const labels = Array.from(dialog.querySelectorAll('li[role="listitem"]')).map(
+      (li) => li.textContent?.trim() ?? '',
+    );
+    expect(labels.length).toBeGreaterThan(0);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
   it('renders the built-in engine entries as loose top-level links, not inside a section', async () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
@@ -1264,7 +1300,7 @@ describe('CairnAdminShell', () => {
       const screen = await render(CairnAdminShell, { data: data(true), children: child });
       await screen.getByRole('button', { name: /search or jump to/i }).click();
       const box = screen.container.ownerDocument.querySelector<HTMLElement>(
-        'dialog[aria-label="Search or jump to"] .modal-box',
+        'dialog[aria-label="Commands"] .modal-box',
       )!;
       // A modest margin off the top edge (mt-4, 1rem), not the near-zero gap the bare self-start
       // produced. Assert the computed style that PRODUCES the inset rather than the measured
@@ -1278,7 +1314,7 @@ describe('CairnAdminShell', () => {
       const screen = await render(CairnAdminShell, { data: data(true), children: child });
       await screen.getByRole('button', { name: /search or jump to/i }).click();
       const input = screen.container.ownerDocument.querySelector<HTMLInputElement>(
-        'dialog[aria-label="Search or jump to"] input[aria-label="Search or jump to"]',
+        'dialog[aria-label="Commands"] input[aria-label="Search or jump to"]',
       )!;
       expect(input.className).not.toContain('outline-hidden');
       input.focus();

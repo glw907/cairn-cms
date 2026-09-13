@@ -560,3 +560,23 @@ Task 1 was doc-only). After set at `~/.cache/cairn-polish-11b-i/task-2/after/`.
   surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) also show AE 0 on every tile;
   their differing manifest sha256 hashes are PNG re-encoding only, the same pattern B2 and
   polish-11a recorded, not a pixel change.
+
+### Task 3: the palette's trigger, its keying, and its names
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`, and the palette dialog is
+closed in every captured state, so the trigger's `aria-haspopup`, the dialog and input's distinct
+`aria-label`s, and the `{#each}` key change touch no visible pixel. Before set at
+`~/.cache/cairn-polish-11b-i/task-3/before/`, captured fresh at this task's parent commit. After
+set at `~/.cache/cairn-polish-11b-i/task-3/after/`.
+
+- INTENDED MOVES: none. Every change is an attribute or a keyed-each expression on an element that
+  renders the same way whether the palette dialog is open or closed, and the dialog is closed in
+  every captured state.
+- MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
+  ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
+  regeneration, so no baseline needed moving.
+- TILE DIFF: `magick compare -metric AE` is 0 on all ten `signups` tiles (every width, both
+  schemes) between `task-3/before/tiles/` and `task-3/after/tiles/`. The other five capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) also show AE 0 on every tile;
+  their differing manifest sha256 hashes are PNG re-encoding only, the same pattern B2, polish-11a,
+  and this pass's Task 2 recorded, not a pixel change.

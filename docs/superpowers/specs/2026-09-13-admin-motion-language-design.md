@@ -1,6 +1,6 @@
 # Admin motion language design (the motion pass, after polish-C, before the cut)
 
-**Status:** revision 2, 2026-09-13. One pass. Plan follows through `writing-plans`; the pass runs
+**Status:** revision 2, folded 2026-09-13 against three adversarial reviews. One pass. Plan follows through `writing-plans`; the pass runs
 unread on the adversarially reviewed plan as soon as polish-C merges (Geoff, 2026-09-13).
 
 **Inputs.** Three research records on `main`, all revision 2:
@@ -19,10 +19,65 @@ the admin" and "Borrowable patterns".
 **Numbering.** The motion pass is its own slice, after polish-C (slice 12) and before the release
 cut. The conductor writes the slice number into `docs/STATUS.md` when the plan is committed.
 
+## Fold (2026-09-13)
+
+Three adversarial reviews ran against revision 2 and the plan's draft 1: a contract-and-criteria
+lens, a mechanics-and-feasibility lens, and a domain-risk lens. Every ranked change from all three is
+applied here and in the plan. Six items had two lenses disagreeing, and each is resolved on the
+standing rule that the domain lens wins on safety and the mechanics lens wins on executability.
+
+1. **The resize stopper is cut from the pass.** The domain lens showed the specified form is a no-op:
+   a class on the bare theme wrapper never matches the scoped sheet, whose every rule is
+   `:where([data-theme]) .thing`, and `transition-*` and `animation-*` do not inherit, so the class
+   suppresses nothing on the drawer or the sidebar. Its working form is a universal descendant rule,
+   which is unlayered and costs an allowlist entry. The mechanics lens measured the components layer
+   at 19 selectors against a cap of 19, so the specified form could not land either. Safety wins: the
+   stopper becomes a documented limitation in the design system's Motion section and a ROADMAP Later
+   entry carrying the finding that its working form costs an unlayered rule. A layout change on
+   resize snaps structurally already, because no layout property transitions.
+2. **The vendor exemption reaches `motion-property`'s class join.** The domain lens measured four
+   DaisyUI component classes transitioning snap-list properties in the shipped sheet, one of them on
+   cairn's own markup, so the rule as specified could not go green in the engine's own tree. The
+   mechanics lens showed the `conditions` array reports at-rule preludes only, so it cannot tell
+   DaisyUI's `@layer components` output from a cairn rule in the same layer. Executability wins on
+   the discriminator: the exemption tests whether the compiled declaration's rule came from DaisyUI's
+   plugin output, and where the sheet cannot answer that, it falls back to an explicit list of
+   DaisyUI component class names shipped with the rule.
+3. **The zen offset is authored in `cairn-admin.css`.** Both the domain lens and the mechanics lens
+   found that `CairnAdminShell.svelte` carries no `<style>` block, no `margin-left`, and no
+   `setZen()`, so the exception's file key matched nothing that could exist. Executability decides
+   the authoring site: `cairn-admin.css` is the only file a `.drawer-content` selector can live in,
+   and the exception is keyed on that file plus that selector plus `margin-left`.
+4. **The upload fill keeps the native `<progress>` and loses its motion.** The domain lens measured
+   that `PlaceholderWidget.eq()` compares the progress fraction, so CodeMirror destroys and recreates
+   the widget on every tick and no transition can apply to it. Safety wins: the element's ARIA is
+   already correct and stays, the transform overlay is dropped, and the changelog line says what
+   ships, which is a snap.
+5. **The hover gate's predicate widens.** The domain lens showed both shipped exemplars declare paint
+   rather than motion, so the rule as specified was vacuous over the engine tree and the migration it
+   mandated was an unrequested paint change that would have removed hover paint on coarse pointers.
+   The predicate now reaches a `:hover` state whose element carries a transition or animation, the
+   migration is dropped, and the fixtures are synthetic.
+6. **The consumer scope question is answered in the audit rather than in the gate.** The domain lens
+   showed `DEFAULT_STATIC_SCOPE`'s `src/lib/components` is where a consuming site keeps its public
+   components, which the charter gives the developer. The mechanics lens wanted the restriction in
+   the gate script, where the engine's own red would be fixed. Both are served by a rule-level
+   `adminOnly` scope: a consumer gets the boundary with no configuration, and the engine's gate maps
+   the same declaration onto its own roots.
+
+Two consequences the fold carries beyond the six. The vendor property exemption records four more
+disagreements, so the DaisyUI section enumerates eleven rather than seven. And the dropzone's
+drag-over paint takes `base` rather than `instant`, because it rides the element's existing
+`transition-colors`, and the alternatives are a CSS rule the components layer has no room for or a
+duration class that would retime the same element's hover paint.
+
 ## Revision 2 (2026-09-13)
 
-Revision 1 went to an adversarial review, which returned fifteen ranked changes, a fidelity table
-against Carbon, and thirteen completeness items. This revision applies all of them. What changed:
+This section records what revision 2 changed against revision 1. It is history: where an item below
+conflicts with the Fold above, the Fold governs, and three of them do (the per-rule root restriction,
+the transform overlay, and the resize stopper). Revision 1 went to an adversarial review, which
+returned fifteen ranked changes, a fidelity table against Carbon, and thirteen completeness items.
+This revision applied all of them. What changed:
 
 - **The CI wiring no longer runs the admin language over the showcase's public theme.** The three new
   ids are restricted to the two engine roots, and the per-rule root restriction is a task 10
@@ -64,10 +119,9 @@ language, ships it as tokens the admin sheet carries, enforces it as `cairn-audi
 the admin onto it, and hands the result to the borrowable-patterns work as the extend track's first
 per-pattern recipe.
 
-Three things bound the scope. The pass adds motion in exactly three places, each named here and
-nowhere else: the zen offset (decision 3), the dropzone's drag-over paint state, and the resize
-stopper's suppression class. Every other transition it touches is a migration of a declaration that
-ships today. It takes no rendered rule beyond the delay check. And it changes no public export.
+Three things bound the scope. The pass adds motion in exactly two places, each named here and
+nowhere else: the zen offset (decision 3) and the dropzone's drag-over paint state. Every other
+transition it touches is a migration of a declaration that ships today. It takes no rendered rule beyond the delay check. And it changes no public export.
 No paint opts back in under reduced motion this pass, for the budget reason the migration states.
 
 ## Decisions (Geoff, 2026-09-13)
@@ -119,9 +173,13 @@ developer's, and the pass adds none.
 
 ## The token set
 
-Five durations and three curves, authored in `scripts/build/admin-css.input.css` and carried on both
-admin theme roots. Every value is Carbon's, read from the shipped `@carbon/motion` 11.52.0 package
-and its DTCG `motion.json` (enforcement, Part 5).
+Five durations and three curves, authored in `src/lib/components/cairn-admin.css`'s two existing
+`[data-theme=…]` blocks, near `:81` and `:255`, which `scripts/build/admin-css.input.css` imports.
+That file declares no theme root and no `@theme` block of its own, so the two existing blocks are the
+only authoring site that needs no new rule, and adding declarations to a rule that already ships
+costs no `unlayeredAllowlist` entry, because the check compares whole-rule selector sets. Every value
+is Carbon's, read from the shipped `@carbon/motion` 11.52.0 package and its DTCG `motion.json`
+(enforcement, Part 5).
 
 | cairn token | Value | Carbon token | Use |
 |---|---|---|---|
@@ -179,6 +237,15 @@ Carbon's `duration-moderate-01`. The easing half is a real change, from Tailwind
 `cubic-bezier(.4, 0, .2, 1)` to Carbon's productive standard curve, and it reaches every bare
 `transition` utility in the admin and in a consumer's custom screens. It is a `Consumers must:` line.
 
+The defaults themselves are Tailwind's, declared inside `@layer theme` on the admin scope by the
+built sheet, and every transition utility reads
+`var(--tw-duration, var(--default-transition-duration))`. Overriding them takes an unlayered
+restatement on the same two roots, which outranks the layered declaration, or a `@theme` block if the
+build accepts one on those roots. Task 1 measures which form the build produces and reports it, and
+asserts by computed style that both defaults resolve to the token values on the admin root at
+runtime. That runtime assertion is the only proof the curve change has, because a resting frame
+carries no curve.
+
 ## The property allowlist
 
 A transition or a finite animation may name only these properties:
@@ -217,20 +284,28 @@ distance.
 
 ### The one exception
 
-`CairnAdminShell.svelte`'s `.drawer-content` transitions `margin-left`, at `--cairn-dur-shift` on
+The admin sheet's `.drawer-content` rule transitions `margin-left`, at `--cairn-dur-shift` on
 `--cairn-ease-entrance` entering zen and one band faster (`--cairn-dur-base`) on `--cairn-ease-exit`
 leaving it. Under reduced motion it takes the blanket block and snaps.
+
+**The authoring site is `src/lib/components/cairn-admin.css`, and the exception is keyed on it.**
+`CairnAdminShell.svelte` carries no `<style>` block, so a `.drawer-content` rule cannot come from
+that file at all, and the shipped offset is two conditional Tailwind margin utilities on the
+drawer-content element (`CairnAdminShell.svelte:692-693`), which the class-token join would see as
+the compiled sheet's own utility selector rather than as `.drawer-content`. The admin sheet is the
+one file a `.drawer-content` selector can live in, so the transition rule is authored there beside
+the margin utilities the shell keeps.
 
 The exception is an allowlist entry scoped to one engine-owned file, one selector in it, and one
 property, never a global relaxation. Keying it on the selector alone would hand the licence to any
 consumer element that happens to be called `.drawer-content`, which is DaisyUI's class name and
-therefore likely. The key is the pair: the file must resolve inside the engine's own tree
-(`src/lib/components/CairnAdminShell.svelte`, or its `dist` equivalent when the rule runs from an
-installed package), and the selector must be `.drawer-content`. Any other element transitioning a
-snap-list property still fails, in the engine and on a consumer's custom screens alike. It ships
-with a three-sided fixture: the shell's own offset passes, a second element in the same file
-transitioning `margin-left` fails, and a consumer-owned `.drawer-content` transitioning
-`margin-left` fails.
+therefore likely. The key is the triple: the file must resolve inside the engine's own tree
+(`src/lib/components/cairn-admin.css`, or its `dist` equivalent when the rule runs from an installed
+package), the selector must be `.drawer-content`, and the property must be `margin-left`. Any other
+element transitioning a snap-list property still fails, in the engine and on a consumer's custom
+screens alike. It ships with a three-sided fixture: the admin sheet's own offset passes, a second
+selector in the same file transitioning `margin-left` fails, and a consumer-owned file's
+`.drawer-content` transitioning `margin-left` fails.
 
 The evidence for it, from the zen record: shadcn/ui, the most-copied admin sidebar on the web,
 animates `width` and `left` for 200ms and ships that way, so the industry default is a
@@ -261,6 +336,12 @@ rather than a departing one, and Carbon names no side-panel case. The carve-out 
 of that text, recorded as cairn's. The zen chrome is the case, which is why it leaves and returns at
 `quick`.
 
+One accessibility obligation travels with the offset. `setZen()`'s `flushSync()` focus lands while
+`.drawer-content` is still traveling 224px, so 2.4.11's non-obscured requirement is a question about
+the travel window rather than about the resting frame, which is the only thing a screenshot can see.
+Keeping the focus sequence synchronous is necessary and not sufficient; the Motion section records
+that the travel window is unasserted, so a later pass knows the gap is known rather than missed.
+
 The zen offset fits the same description and does not take the carve-out. The offset leaves and
 stays nearby in exactly the chrome's sense, so the carve-out would give it `shift` in both
 directions on the standard curve. Decision 3 settles it the other way, at `shift` in on the entrance
@@ -271,6 +352,16 @@ carve-out rather than an oversight, and the design system's Motion section says 
 ## The modality gate
 
 Every hover-state transition cairn authors sits inside `@media (hover: hover)`.
+
+**The rule's predicate is wider than the rule name suggests, and the widening is what makes it
+detect anything.** It fires on a hand-authored `:hover` state whose element carries a transition or
+an animation, or on a `:hover` rule that itself declares motion, when neither sits inside a hover
+media feature. The narrow reading, a `:hover` rule that itself declares motion, finds nothing in the
+engine's tree: both candidates the migration named declare paint on the `:hover` alternative and
+carry their `transition` on the base selector (`HelpHome.svelte:562` and `:787`), and the shipped
+guarded rule at `cairn-admin.css:1002` declares `--btn-bg` alone. A rule that convicts nothing in
+the tree it ships from is the vacuous-gate failure this repo has recorded once already, so the
+predicate reaches the pairing rather than the declaration.
 
 The gate governs cairn's own authored rules. It does not reach a vendor component, because reaching
 one means an unlayered rule pinned by a DaisyUI internal selector, which decision 4 refuses. Two
@@ -283,15 +374,24 @@ rule leaves it out of scope, exactly as `focus-parity` does. A hand-authored `:h
 guard added. The admin already models it once, at `cairn-admin.css:1002`, whose comment names the
 reason: "so a touch device does not strand the lighter fill on the last-tapped segment."
 
-**Adding the guard splits a hover and focus selector list in two.** The admin authors its pairs as
-one selector list; `HelpHome.svelte:789-790` is the shipped shape, `.btn-quiet:hover,
-.btn-quiet:focus-visible`. Wrapping that list in `@media (hover: hover)` carries the
-`:focus-visible` half into the guard and kills focus motion for a keyboard attached to a touch
-device. So the migration splits each pair: the `:hover` alternative moves inside the guard and the
-`:focus-visible` alternative stays outside it. `focus-parity` still passes after the split, because
-it looks for the sibling selector anywhere in the same file rather than in the same selector list
-(`focus-parity.ts:33-40`, `knownByFile`). Every hand-authored pair in the migration gets this
-treatment, and the recipe page carries it as the one non-obvious step.
+**Adding the guard splits a hover and focus selector list in two, and that is authoring guidance
+rather than a migration this pass runs.** The admin authors its pairs as one selector list;
+`HelpHome.svelte:789-790` is the shipped shape, `.btn-quiet:hover, .btn-quiet:focus-visible`.
+Wrapping that list in `@media (hover: hover)` carries the `:focus-visible` half into the guard and
+kills focus motion for a keyboard attached to a touch device. So a pair splits before the guard goes
+on: the `:hover` alternative moves inside it and the `:focus-visible` alternative stays outside.
+`focus-parity` still passes after the split, because it looks for the sibling selector anywhere in
+the same file rather than in the same selector list (`focus-parity.ts:33-40`, `knownByFile`).
+
+**The engine tree has no shipped instance to migrate.** Both `HelpHome` pairs declare paint on their
+`:hover` alternative and carry their `transition` on the base selector, so the widened predicate
+reaches them through the base rule's motion rather than through the alternative, and the remedy the
+fix message asks for is a guard on the alternative, not a rewrite of the paint. This pass migrates
+those two rules onto the tokens and adds no guard, because wrapping a paint-only pair would remove
+hover paint on a coarse pointer for no enforcement gain. The split is carried by the rule's fix
+message and by the recipe page, as the one non-obvious step a consumer meets when their own rule
+does declare motion. The rule ships a fixture that FIRES on a `:focus-visible` alternative sitting
+inside the guard, so the mistake the fix message warns about is itself detected.
 
 On touch, press carries the same feedback at `--cairn-dur-instant` with no delay. Nothing cairn
 authors is revealed by hover at any width: in cairn's own surfaces hover carries feedback and never
@@ -323,6 +423,18 @@ what nobody named. It keeps `0.01ms` rather than `0s`, so `transitionend` still 
 | The zen offset | Stays at the floor. Snap, per decision 3 |
 | Looping motion (a skeleton shimmer) | Off entirely, static tint instead. DaisyUI already gates `.skeleton`, so nothing is owed |
 | Indeterminate progress (a spinner) | Runs. It conveys state, and WCAG 2.2.2 reaches auto-starting motion presented in parallel with other content, which a spinner replacing the content is not |
+
+**The skeleton's own 2.2.2 answer, since the spinner's reasoning does not cover it.** A skeleton
+shimmer is an infinite loop presented in parallel with other content, which is exactly what 2.2.2
+reaches, and it runs longer than five seconds. What discharges it is the reduced-motion off switch
+DaisyUI already ships on `.skeleton`, which is the mechanism 2.2.2 accepts. The spinner's argument
+(it replaces the content rather than accompanying it) does not transfer, and the design system's
+Motion section states both answers rather than one.
+
+**Transitioning `outline-width` and `outline-offset` has a bound.** Mid-transition the focus
+indicator can be thinner than 2.4.13's minimum. At `instant`, 70ms, the exposure is negligible, so
+the allowlist keeps both properties and the Motion section carries the bound in a line: a focus
+indicator's own geometry animates at `instant` and at no longer band.
 
 **What the opt-back-in costs, and why cairn takes none of it.** Nine rows of the case table carry a
 paint transition the floor would zero. None of them is restated this pass. The mechanism is the
@@ -412,27 +524,30 @@ Three rules follow from the split, each of which the audit reaches:
   names. **Dropped** (Geoff, 2026-09-13). The persistent drawer's vendor transition is recorded as
   the fifth vendor disagreement in the DaisyUI section, the language keeps its rule, and the design
   system states that the shipped sheet does not honor it at the breakpoint flip. What still holds the
-  flip is the resize stopper below, which suppresses motion for the duration of the resize that
-  crosses the breakpoint.
+  flip is nothing this pass ships, which the Motion section states as a limitation rather than
+  leaving a reader to infer conformance the sheet does not have.
 - **A breakpoint flip snaps.** The reader is already producing the motion by dragging or rotating, the
   properties that change at a breakpoint are the ones the snap list already bans, and the change is
   not feedback for an action taken inside the interface.
-- **A resize suppresses motion while it runs.** The resize stopper is the published backstop
-  (language, §10), and it is specified here in full because it is the one genuinely new mechanism in
-  the migration. The class is `cairn-resizing`, set on the same element the admin theme attribute
-  sits on, by `CairnAdminShell.svelte`'s own `resize` listener. **Shape:** the class is added on the
-  first `resize` event of a burst and removed by a trailing timer, restarted by every subsequent
-  `resize`, that fires 400ms after the last one. **Clear conditions:** the trailing timer, and
-  component teardown, which clears both the timer and the class so a navigation away mid-resize never
-  strands it. **What it declares:** one rule in `cairn-admin.css`, inside `@layer components` on
-  cairn's own class, zeroing `transition-duration`, `animation-duration`, `transition-delay`, and
-  `animation-delay` in the same `0.01ms` and `0s` idiom the reduced-motion block uses, so the admin
-  has one idiom rather than two. Being a cairn-owned class inside the components layer, it costs no
-  unlayered allowlist entry; it counts against `componentsLayerCap`, which has headroom at 19.
-  **Its test:** a unit test with fake timers asserting the class appears on the first `resize`,
-  survives a second `resize` at 300ms, clears 400ms after the last one, and is gone after teardown,
-  plus an `admin-sheet-inventory.test.ts` assertion that the built sheet's `.cairn-resizing` rule
-  zeroes all four properties. It is keyed on `resize`, which an orientation change also fires.
+- **A resize suppresses motion while it runs, and this pass does not ship that suppression.** The
+  resize stopper is the published backstop (language, §10) and revision 2 specified it in full. It is
+  **cut**, for two measured reasons that the plan's fold records. Its specified form is a no-op: the
+  class would sit on the bare element the `data-theme` attribute sits on, and the admin sheet's every
+  scoped rule is `:where([data-theme]) .thing`, so a class on the theme element itself never matches
+  (`CairnAdminShell.svelte:632-635` states that rule); and `transition-*` and `animation-*` do not
+  inherit, so even a matching rule on that one element would suppress nothing on the drawer or the
+  sidebar. Its working form is a universal descendant rule in the blanket block's shape, which is
+  unlayered and costs one `unlayeredAllowlist` entry, the budget cost this pass declines everywhere
+  else. The measured components layer is 19 selectors against a `componentsLayerCap` of 19, so the
+  specified form had no room either.
+
+  **What holds the resize case meanwhile.** A layout change caused by a resize snaps structurally,
+  because no layout property in the admin transitions: every one of them is on the named-error list
+  and the one exception is the zen offset, which a resize does not drive. The residue is the vendor
+  drawer transition at the breakpoint flip, recorded as a disagreement. The design system's Motion
+  section states the limitation in the responsive rules, and ROADMAP's Later tier carries the stopper
+  with the finding that its working form costs an unlayered rule, which is what a future pass needs
+  in hand before it re-argues the entry.
 
 Input modality is the gate above. Nothing else in the language is modality-dependent.
 
@@ -446,8 +561,9 @@ table named a superseded token, the mapping is `tap` to `instant`, `quick` to `q
 
 Read the Token column as what the language prescribes for that case. Where the owner is a DaisyUI
 component, the vendor's shipped behavior stands and decision 4 declines the override, so the row
-states the language and the sheet ships the vendor's. There are seven such disagreements, enumerated
-in the DaisyUI section below. The modality gate does not buy an exception either: after the two
+states the language and the sheet ships the vendor's. There are eleven such disagreements, enumerated
+in the DaisyUI section below: seven over timing, curve, or modality, and four over property, which
+the vendor exemption records rather than convicts. The modality gate does not buy an exception either: after the two
 escalations were ruled (2026-09-13), it governs cairn's own authored rules and nothing else.
 
 | Case | Desktop pointer | Touch | Reduced motion | Token | Owner |
@@ -468,19 +584,19 @@ escalations were ruled (2026-09-13), it governs cairn's own authored rules and n
 | Login and confirm pages | No motion of their own | Same | Nothing to reduce | - | `LoginPage.svelte`, `ConfirmPage.svelte` |
 | Drawer, overlay | Reachable below 1024 on content routes, below 1280 on desk routes | Translate from the inline start, scrim fades | Scrim fades, panel snaps | `settle` | DaisyUI `.drawer-side`, vendor timing kept (disagreement 3) |
 | Drawer, persistent | The language says no motion, because it is furniture. The vendor transition runs anyway at the breakpoint flip and stays (disagreement 5) | Not reachable at this width | The blanket block zeroes it | - | DaisyUI `.drawer-side`; `isPersistentSidebar` at `CairnAdminShell.svelte:556` |
-| Zen content offset | `margin-left`, the one exception | Not reachable; no offset below 1024 | Snap | `shift` in, `base` out | `CairnAdminShell.svelte:692-693` |
+| Zen content offset | `margin-left`, the one exception | Not reachable; no offset below 1024 | Snap | `shift` in, `base` out | `cairn-admin.css`, on `.drawer-content`; the shell keeps the margin utilities at `CairnAdminShell.svelte:692-693` |
 | Zen chrome regions | Opacity out at `quick` on the exit curve, back at `quick` on the standard curve | Same | Snap | `quick` | `EditPage.svelte` |
 | Zen chip | In at `base` on the entrance curve after a 110ms delay, the delay authored inside a `(prefers-reduced-motion: no-preference)` guard; out at `quick` on the exit curve with no delay | Same, and the short exit matters more: the finger is still on the glass | Snap, and the guard means the delay never resolves nonzero, so rule 4 does not fire on it | `base` in, `quick` out | `EditPage.svelte` |
 | Zen editor card box | Snaps. `padding` is a named error and `max-width` is outside the allowlist, so both snap for different reasons | Snaps; at 390 there is nothing to reclaim | Snaps | - | `EditPage.svelte` |
-| Breakpoint flip | Snap | Snap | Snap | - | the resize stopper |
-| Window resize | All motion suppressed while resizing | Not reachable | Suppressed | - | the resize stopper |
-| Orientation change | Not reachable | Snap, same suppression | Snap | - | the resize stopper |
+| Breakpoint flip | Snap, because every layout property that changes is on the named-error list; the vendor drawer transition runs anyway (disagreement 5) | Snap | Snap | - | no owner; the rule is that nobody writes one |
+| Window resize | Snap, for the same reason. The published suppression backstop is cut from this pass and filed | Not reachable | Snap | - | no owner; the limitation is stated in the Motion section |
+| Orientation change | Not reachable | Snap, same reason | Snap | - | no owner; same limitation |
 | Route change | Snap | Snap | Snap | - | no owner; the rule is that nobody writes one |
 | List or table row added, removed, reordered | Snap | Snap | Snap | - | `ConceptList.svelte`, `AdminTable` |
 | Table row hover | `transition-colors` on the row ground | No hover state exists | Snaps to the new paint | `base` | `ConceptList.svelte:400`, `CairnMediaLibrary.svelte:845` |
 | Media grid, selection change | `transition-shadow`; the `ring` changes with the selection | Same, on tap | Snaps to the new paint | `base` | `CairnMediaLibrary.svelte:747` |
-| Drag-and-drop dropzone | Hover and focus paint; a drag-over paint state is added, since none exists today | Not reachable | Snaps to the new paint | `instant` | `MediaHeroField.svelte:450` is the class, `:453-454` the drag wiring |
-| Upload progress bar | A determinate fill, on `transform: scaleX`, painted by an overlay over the native `<progress>` the element keeps | Same | Runs; it conveys information | `base` | `MarkdownEditor.svelte:530` |
+| Drag-and-drop dropzone | Hover and focus paint; a drag-over paint state is added, since none exists today | Not reachable | Snaps to the new paint | `base`, the theme default the element's own `transition-colors` resolves to | `MediaHeroField.svelte:450` is the class, `:453-454` the drag wiring |
+| Upload progress bar | The determinate fill snaps. The native `<progress>` keeps its role and its values, and its `width` transition is removed with no replacement | Same | Snaps | - | `MarkdownEditor.svelte:530`, `editor-placeholder.ts:49-84` |
 | Preview pane width | Removed. The split-pane resize snaps | Not reachable; no split below `lg` | Snaps | - | `EditPage.svelte:2047` |
 | Editor fold chevron | `opacity` plus `transform` | Persistent at 0.65 opacity on a coarse pointer | Already guarded to `none` | `quick` | `MarkdownEditor.svelte:584`, `:607`, `:612` |
 | Editor unfold flash | `background-color`, one shot | Same | Already guarded to `none` | `base` | `MarkdownEditor.svelte:654`, `editor-folding.ts:277` |
@@ -497,7 +613,7 @@ escalations were ruled (2026-09-13), it governs cairn's own authored rules and n
 | Smooth scrolling, `scroll-behavior` | None. No admin surface sets it, and the language prescribes none | None | The blanket block sets `scroll-behavior: auto` regardless | - | no owner; the rule is that nobody writes one |
 | Pull to refresh, overscroll | None | None; `overscroll-behavior: contain` on the editor pane | Nothing to reduce | - | `MarkdownEditor.svelte` |
 
-Five rows depart from something and need their reason recorded.
+Six rows depart from something and need their reason recorded.
 
 **The feedback alert is not the live region.** `EditPage.svelte:1637-1638` are two `sr-only` divs
 carrying `aria-live`; they are invisible and "no motion" is correct for them. The visible success
@@ -509,21 +625,27 @@ list bans, and the change it animates is a split-pane resize, which the resize r
 for an independent reason. Removing it is a behavior change a reader will notice, so it is a named
 removal with a `Consumers must:` line, not a silent consequence.
 
-**The upload progress bar changes property rather than losing its motion, and it keeps its
-semantics.** Today it is `width 200ms ease` on a native `<progress>`'s `::-webkit-progress-value`
-(`MarkdownEditor.svelte:530`). `width` is on the snap list, and the motion conveys information, so
-the animated fill moves to a cairn-owned bar transitioning `transform: scaleX()`, which is the one
-allowlisted expression of a determinate fill. The property allowlist grows no exception for it.
+**The upload progress bar loses its motion and keeps everything else.** Today it is
+`width 200ms ease` on a native `<progress>`'s `::-webkit-progress-value`
+(`MarkdownEditor.svelte:530`). `width` is on the snap list, so the transition goes. Revision 2
+replaced it with a `transform: scaleX()` overlay; that is **cut**, because the overlay would animate
+nothing. `PlaceholderWidget.eq()` compares the placeholder's progress fraction
+(`editor-placeholder.ts:49-84`), so CodeMirror destroys and recreates the widget on every progress
+tick, and a fresh element has no previous value to transition from. The same mechanism means today's
+`width 200ms ease` almost certainly already snaps. So the fill snaps, deliberately and visibly, and
+the changelog line says so rather than promising motion the change cannot deliver.
 
-**The native `<progress>` element stays.** Revision 1 replaced it outright, which would have dropped
-the implicit `progressbar` role and the `value` and `max` mapping to `aria-valuenow` and
-`aria-valuemax` that assistive technology reads. The element keeps both: `<progress>` remains the
-accessible object and keeps its `value` and `max` attributes, its own painted fill is suppressed
-(`::-webkit-progress-value` and `::-moz-progress-bar` at zero-width or transparent), and the visible
-fill is a decorative `aria-hidden` overlay whose `scaleX` tracks the same value. No new ARIA is
-authored, because none is needed. If a later pass drops the native element, it owes an explicit
-`role="progressbar"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`, and that is a
-`daisyui-a11y-reviewer` gate, not a silent substitution.
+**The native `<progress>` element stays, untouched.** Revision 1 replaced it outright, which would
+have dropped the implicit `progressbar` role and the `value` and `max` mapping to `aria-valuenow`
+and `aria-valuemax` that assistive technology reads. The element keeps all of it: it remains the
+accessible object with its `value` and `max` attributes, it paints its own fill, and the widget
+deliberately hosts no live region (`editor-placeholder.ts:44-48`, whose comment gives the reason).
+No new ARIA is authored and no overlay is added, because neither is needed. The one edit is the
+removal of the `width` transition from the CodeMirror theme string, and of the reduced-motion pin on
+`::-webkit-progress-value` at `MarkdownEditor.svelte:614`, which has nothing left to pin. If a later
+pass drops the native element, it owes an explicit `role="progressbar"` with `aria-valuenow`,
+`aria-valuemin`, and `aria-valuemax`, and that is a `daisyui-a11y-reviewer` gate, not a silent
+substitution.
 
 **The dropzone gains a state rather than losing one.** `MediaHeroField.svelte:453-454` wires
 `ondrop` and `ondragover` on the button whose class list is at `:450`, and nothing changes visually
@@ -533,9 +655,18 @@ specified rather than left to the implementer: a `dragOver` boolean set on `ondr
 `ondragover` (which must also `preventDefault` for the drop to be allowed), cleared on `ondrop` and
 on `ondragleave` only when the event's `relatedTarget` lies outside the button, so the dropzone's
 own child spans do not flicker it off. The paint it applies is the same border and background tint
-the `:hover` rule gives, at `--cairn-dur-instant`, applied through a class rather than a hover
+the `:hover` rule gives, at the band the element's own `transition-colors` resolves to, applied
+through a class rather than a hover
 selector so it reaches a coarse pointer and needs no modality guard. Nothing moves and nothing
 resizes.
+
+The paint is applied by toggling, on the `dragOver` boolean, the same utility classes the element's
+own `hover:` variants already carry, so no CSS rule is authored and the components layer is not
+touched. That is why the row's token is `base` rather than `instant`: the paint rides the element's
+existing `transition-colors`, which resolves to the theme default, and the two ways to reach
+`instant` are a CSS rule the components layer has no room for or an unconditional duration class
+that would retime the same element's hover paint. `base` on a paint change is inside the language,
+and the departure from the token the register would otherwise pick is recorded here.
 
 **The theme-change cross-fade is cut.** Revision 1's case table gave the explicit theme toggle a
 scoped cross-fade on the shell's chrome surfaces. No such transition exists in the admin today, and
@@ -560,11 +691,13 @@ than intentions, and the review found besides that a transition guard does not f
 justified by. The tooltip's long-press-opens-and-sticks behavior is a **visibility** rule, not a
 transition, so gating the transition changes nothing a reader would notice. Both guards are dropped.
 
-### The seven vendor disagreements
+### The eleven vendor disagreements
 
 The cost is stated rather than hidden. The published language and the shipped sheet disagree in
-seven places, every one of them a place where cairn declines an override. The design system's Motion
-section carries this list rather than claiming a conformance the sheet does not have.
+eleven places, every one of them a place where cairn declines an override. The design system's Motion
+section carries this list rather than claiming a conformance the sheet does not have. Seven are
+disagreements over timing, curve, or modality. Four are over property, and they are what the vendor
+exemption on rule 1's class join records instead of convicting.
 
 1. **`.btn`, press.** Runs 200ms where the language says `instant` (70ms), and transitions
    `transform`, which the language allows but would not have chosen for a press.
@@ -578,8 +711,9 @@ section carries this list rather than claiming a conformance the sheet does not 
    breakpoint media query, so the sidebar slides and resizes when the viewport crosses `lg` or `xl`,
    where the language says furniture snaps. Revision 1 proposed scoping it away and **Geoff ruled
    against** (2026-09-13), because the only form that change can take is a rule targeting
-   `.drawer-side`, an unlayered override of `.drawer`. The resize stopper covers the common case, a
-   drag across the breakpoint; a scripted or rotation-driven flip still shows the vendor slide.
+   `.drawer-side`, an unlayered override of `.drawer`. Nothing in this pass covers it: the resize
+   stopper that would have suppressed the drag case is cut, so every flip, dragged or scripted, shows
+   the vendor slide, and the Motion section says so.
 6. **`.tooltip`, hover.** Ships an ungated `:hover` transition, so a coarse pointer can long-press
    the tooltip open and strand it. Filed to the borrowable-patterns borrow-1 pass, beside the
    rendered half of `motion-hover-gate`, with the review's finding that fixing it means gating the
@@ -587,6 +721,24 @@ section carries this list rather than claiming a conformance the sheet does not 
    decision in its own right.
 7. **`.menu`, hover.** Ships an ungated `:hover` transition, same shape, no reader-visible defect
    found. Filed with the same follow-up.
+
+The four property disagreements, each measured in the built sheet at the line named.
+
+8. **`.drawer-side > :not(.drawer-overlay)`** transitions `width` beside `translate`
+   (`dist/components/cairn-admin.css:1689`). `width` is on the named-error list, and
+   `CairnAdminShell.svelte:949` carries `class="drawer-side"`, so without the exemption cairn's own
+   markup produces an error-tier finding it cannot fix without the unlayered override decision 4
+   refuses.
+9. **`.filter input`** transitions `margin`, `padding`, and `border-width` beside `visibility` and
+   `opacity` (`:2541`). Three named errors in one declaration.
+10. **`.collapse …::details-content`** transitions `min-height`, `padding`, and `height` among seven
+    properties (`:5243`), which is also the shorthand the vocabulary rule abstains on.
+11. **`.toggle:before`** transitions `inset-inline-start` (`:2763`), a logical `left`, which the
+    allowlist does not carry and the named-error list does not name, so it would fail as outside the
+    vocabulary.
+
+None of the four is reachable without an override of `.drawer`, `.collapse`, or a vendor internal,
+so each is recorded here and none is fixed.
 
 The reason the disagreement is acceptable: an override is not a CSS edit in this repo, it is a budget
 change. No layered admin rule can outrank a DaisyUI rule, because DaisyUI emits inside `@layer
@@ -609,9 +761,21 @@ means the vendor surface, which is where the ungated hover rules and the three d
 reached only by the two rules that read it deliberately: the rendered delay rule, at advisory tier,
 and the property clause, which still applies to what the class animates.
 
-The exemption must be enumerable rather than a hand-maintained list. It is defined as "a class whose
-declarations resolve, in the built sheet, only inside DaisyUI's own nested component layer", which
-`CompiledSheet.declarations()` already reports through each rule's `conditions` array.
+The exemption must be enumerable rather than a hand-maintained list, and the discriminator is named
+here because the obvious one does not work. `CompiledSheet.declarations()` reports each rule's
+`conditions`, but `conditions` is the enclosing at-rule preludes (`sheet.ts:23`), so the only layer
+signal it carries is `@layer components`, which cairn's own rules also sit in. The exemption is
+therefore defined as "a class whose declarations, in the built sheet, come from a rule the sheet
+attributes to DaisyUI's plugin output". Where the compiled sheet cannot answer that, the rule falls
+back to an explicit list of DaisyUI component class names shipped beside it, and the fallback is a
+stated limitation rather than a hidden one: a cairn class that collides with a DaisyUI component
+name would be exempted, which is why the list is explicit and reviewed rather than pattern-matched.
+
+**The exemption applies to rule 1's class join as well as to rule 2.** Revision 2 gave it to the
+vocabulary rule alone and left `motion-property` "checked for the properties it animates", which the
+four property disagreements above show is unreachable: the rule would convict `class="drawer-side"`
+on cairn's own shell. The CSS-family half of rule 1 keeps the full check, because a rule the audit
+reads out of an authored CSS file is authored code by definition.
 
 ### The one candidate override, declined
 
@@ -643,29 +807,37 @@ object. Each has a fix, and the fix per site is the migration.
 |---|---|---|
 | `EditPage.svelte:1643` | `transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0` | Name the property list (`transition-[opacity,translate]`) and take the duration from the token form. The `@starting-style` entrance stays: it is what the transition exists for |
 | `EditPage.svelte:2047` | `transition-[width] duration-[250ms]` on the preview frame | Removed. The split-pane resize snaps, per the resize rule and the snap list, and the removal is a `Consumers must:` line |
-| `MarkdownEditor.svelte:530` | `width 200ms ease` on `::-webkit-progress-value` | The native `<progress>` stays, keeping its implicit `progressbar` role and its `value`/`max` mapping; its own fill is suppressed and an `aria-hidden` overlay transitions `transform: scaleX()` at `base`. The property allowlist grows no exception |
+| `MarkdownEditor.svelte:530` | `width 200ms ease` on `::-webkit-progress-value` | The transition is removed with no replacement, and the reduced-motion pin on the same pseudo-element at `:614` goes with it, having nothing left to pin. The native `<progress>` is untouched and keeps its role, its `value`, and its `max`. No overlay is added: the widget is recreated on every progress tick, so no transition can apply to it |
 | `cairn-admin.css:545` | `transition: rotate 150ms ease` on `.cairn-caret` | Onto `var(--cairn-dur-quick)` and `var(--cairn-ease-standard)`. Bare `ease` is `cubic-bezier(0.25, 0.1, 0.25, 1)` and matches no token |
-| `HelpHome.svelte:562`, `:787` | `border-color 150ms ease, background-color 150ms ease` at `:562`, and `border-color 150ms ease, color 150ms ease` at `:787` | Onto the tokens, same shape. Both rules pair `:hover` with `:focus-visible` in one selector list (`:789-790` is the second), so each pair splits: the `:hover` alternative moves inside `@media (hover: hover)` and the `:focus-visible` alternative stays outside it |
+| `HelpHome.svelte:562`, `:787` | `border-color 150ms ease, background-color 150ms ease` at `:562`, and `border-color 150ms ease, color 150ms ease` at `:787` | Onto the tokens, same shape, and nothing else. Both `transition` declarations sit on the base selector; the paired `:hover, :focus-visible` lists at `:566-567` and `:789-790` declare paint alone. No guard is added, because wrapping a paint-only pair removes hover paint on a coarse pointer for no enforcement gain |
 | `EditPage.svelte:1428` | `transition-opacity duration-[250ms]` | Drop the `duration-*` class; the theme default carries it at `base` |
-| `MarkdownEditor.svelte:584`, `:654` | The fold chevron's `opacity`/`transform` pair and the unfold flash's `background-color`, inside the CodeMirror theme object | Onto the tokens. Both already sit inside a `prefers-reduced-motion: reduce` block in the same theme object, and the chevron carries a `@media (hover: none)` rest state at `:607`. That is the best motion in the admin and it keeps its shape |
+| `MarkdownEditor.svelte:584`, `:654` | The fold chevron's `opacity`/`transform` pair and the unfold flash's `background-color`, inside the CodeMirror theme object | Onto the tokens. Both already sit inside a `prefers-reduced-motion: reduce` block in the same theme object, and the chevron carries a `@media (hover: none)` rest state at `:607`. That is the best motion in the admin and it keeps its shape. The flash's own lifetime is `editor-folding.ts`'s `FLASH_MS = 400` timer, which removes the class; the CSS transition is what paints the fade and the two are independent, so `FLASH_MS` does not move with the token |
 | `CairnAdminShell.svelte:775`, `:971`, `:1024`, `:1035` | `transition-colors` and `transition-opacity`, bare | No edit. The theme default resolves them to `base` on the standard curve |
 | `CairnMediaLibrary.svelte:747`, `:845`, `ConceptList.svelte:400`, `MediaHeroField.svelte:450` | `transition-shadow` and `transition-colors`, bare | No edit, same reason. `MediaHeroField` additionally gains the drag-over paint state it has never had, on the `ondragover`/`ondrop` wiring at `:453-454` |
 | Three `animate-spin` uses | `spin 1s linear infinite` through `--animate-spin` | No edit. An `infinite` animation is exempt from the vocabulary and governed by the reduced-motion guard instead |
 | DaisyUI `.tooltip` and `.menu` | `:hover` transitions with no capability guard anywhere in the vendor file | **No edit.** Revision 1 proposed two pinned unlayered `@media (hover: hover)` guards; Geoff ruled against them (2026-09-13). Recorded as vendor disagreements 6 and 7, and the touch-tooltip defect filed to borrow-1 |
 | DaisyUI `.drawer-side`, at the breakpoint flip | The vendor transition runs at every width, so the sidebar slides across `lg` and `xl` | **No edit.** Revision 1 proposed scoping it to `isPersistentSidebar`; Geoff ruled against it (2026-09-13), because the only form is a rule targeting `.drawer-side`. Recorded as vendor disagreement 5 |
 | The nine reduced-motion paint opt-back-ins | Nothing; the blanket block zeroes all nine today | **No edit.** The opt-back-in is a permission the policy grants, and cairn takes none of it this pass: each restatement costs one unlayered allowlist entry (`check-custom-surface.mjs:158` compares by length), and the paint still changes instantly under the floor. Owned by task 6a, which writes the case-table cells to match |
-| The hand-authored `:hover` and `:focus-visible` selector lists | One selector list per pair, ungated | Each pair splits before the `@media (hover: hover)` guard is added, so focus motion survives on a touch device with a keyboard. `focus-parity` still passes, since it matches a sibling anywhere in the same file (`focus-parity.ts:33-40`) |
+| The hand-authored `:hover` and `:focus-visible` selector lists | One selector list per pair, ungated, declaring paint | **No edit.** The engine tree has no pair whose `:hover` alternative declares motion, so no guard is owed and none is added. The split remains the authoring step the fix message and the recipe page teach for a consumer whose own pair does declare motion, and the rule ships a fixture that fires on a `:focus-visible` alternative wrongly left inside the guard |
 
 The accounting closes against the seventeen. Eleven sites are Tailwind utilities: two are fixed by
 hand (`EditPage.svelte:2047` removed, `:1643` given a property list), one drops its `duration-*`
 sibling (`:1428`), and eight need no edit at all because the theme defaults resolve them. Three are
-CSS rules and three are CodeMirror theme strings, and all six move onto the tokens. The three
-`animate-spin` uses are exempt.
+CSS rules and move onto the tokens. Three are CodeMirror theme strings: two move onto the tokens and
+one, the progress fill at `:530`, is removed. The three `animate-spin` uses are exempt.
+
+Three of the eleven Tailwind utility sites leave the shipped sheet when the pass lands, which is a
+consumer-visible act rather than a side effect. `transition-[width]`, `transition-all`, and
+`duration-[250ms]` each have exactly the call sites task 6a removes or rewrites and no others, so
+Tailwind tree-shakes all three out of the packaged sheet. `src/tests/unit/fixtures/admin-sheet-inventory.txt`
+freezes the shipped class inventory in both directions and its own contract says a class may only
+leave as a deliberate act carried in `CHANGELOG.md`, so the departure is a `Consumers must:` line and
+a fixture regeneration, in that order.
 
 Nothing outside the inventory is added to the sheet. Revision 1 added two vendor hover guards; both
-are dropped, so the migration touches only declarations that already ship, plus the two new
-behaviors task 6b owns (the dropzone's drag-over state and the resize stopper) and the zen work task
-7 owns. That is the whole of what this pass paints.
+are dropped, and the resize stopper is cut, so the migration touches only declarations that already
+ship, plus the dropzone's drag-over paint state task 6b owns and the zen work task 7 owns. That is
+the whole of what this pass paints.
 
 ## The four rules
 
@@ -674,16 +846,36 @@ it prints. Tier is a property of the rule, not of the run, so one tier serves bo
 and a consumer's. Three rules ship error tier, matching every other static rule in the registry; the
 one advisory rule is advisory because its findings are vendor CSS the consumer did not write.
 
+### The `adminOnly` scope, which all three static rules declare
+
+The static rule type gains one optional field, `adminOnly`, and the three motion rules set it. A rule
+that declares it runs over the admin roots alone: `src/routes/admin` and `src/lib/admin-toolkit` by
+default, never `src/lib/components`. Every other static rule is unaffected and keeps the full
+`static.scope`.
+
+The reason is the charter boundary, and it is a consumer problem before it is an engine one.
+`DEFAULT_STATIC_SCOPE` is `src/routes/admin`, `src/lib/components`, and `src/lib/admin-toolkit`
+(`config.ts:16-20`), and in a SvelteKit site the middle root is where shared **public** components
+live. Shipping three error-tier admin-motion rules over that root runs the admin's language across a
+developer's public UI, which "The bar" and the non-goal "No motion on public pages" both give to the
+developer. A consumer has no escape short of narrowing `static.scope` for every static rule at once,
+which would also drop `no-uncompiled-class`, `focus-parity`, and the rest.
+
+Declaring it on the rule rather than in a gate script is what makes the boundary free for a consumer.
+The engine's own gate then maps the same declaration onto its own tree, which is laid out
+differently: `src/lib/components` plus `src/lib/admin-toolkit` plus
+`examples/showcase/src/routes/admin`. That mapping is the gate's, not the rule's, and it is specified
+under "CI wiring" below.
+
 ### Rule 1: `motion-property`, static, error
 
 **What it reads in a site's tree.** Both CSS-family surfaces `cssScopeRules` already yields (a
 component's own scoped `<style>` block, plus any file `static.cssFiles` names), and the per-element
-class-token join against `ctx.sheet.declarations()`, keyed on `ClassToken.elementStart`. A consumer
-needs no configuration for either: `DEFAULT_STATIC_SCOPE` covers `src/routes/admin`,
-`src/lib/components`, and `src/lib/admin-toolkit`, and `DEFAULT_SHEET_CANDIDATES` names the
-engine's own `dist/components/cairn-admin.css` first and the installed
-`node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css` second, taking the first that
-exists (`config.ts:24-27`, `:185`). A consumer resolves to the second. When neither exists the
+class-token join against `ctx.sheet.declarations()`, keyed on `ClassToken.elementStart`. It declares
+`adminOnly`, so the markup it reads is `src/routes/admin` and `src/lib/admin-toolkit`.
+`DEFAULT_SHEET_CANDIDATES` names the engine's own `dist/components/cairn-admin.css` first and the
+installed `node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css` second, taking the first
+that exists (`config.ts:24-27`, `:185`). A consumer resolves to the second. When neither exists the
 last-resort default is the first entry, the library's own dist path, which is a library-tree
 default rather than a consumer one.
 
@@ -698,24 +890,33 @@ default rather than a consumer one.
   a snap-list property is the same finding as transitioning one.
 - `transition: all` and `transition-all` are **not** this rule's findings. `motion-band` owns that
   construct, per the reconciliation below, so one construct produces one finding under one id.
-- The one exception passes: `margin-left` on `.drawer-content`, keyed on the engine-owned file plus
-  that selector, never on the selector alone.
+- **A vendor component class is exempt on the class-join half only.** The four DaisyUI components
+  enumerated as disagreements 8 through 11 transition named-error properties, and one of them,
+  `.drawer-side`, sits on cairn's own shell markup, so without the exemption the rule convicts the
+  engine and every consumer on run one for CSS neither wrote. The exemption uses the same
+  discriminator rule 2 uses, including the explicit class-name fallback. The CSS-family half keeps
+  the full check, because a declaration the audit reads out of an authored CSS file is authored code
+  by definition.
+- The one exception passes: `margin-left` on `.drawer-content` in `cairn-admin.css`, keyed on that
+  file plus that selector plus that property, never on the selector alone.
 
 **Fix message.** Names the property, the rule ("the admin's motion language transitions paint,
 transform, and `grid-template-rows`"), and the remedy.
 
 **Fixtures, from the shipped examples.** `EditPage.svelte:2047` (`transition-[width]`, fails);
 `MarkdownEditor.svelte:530` (`width 200ms`, fails); `EditPage.svelte:1643` (`transition-all`, this
-rule does not report, `motion-band` does); the shell's own `margin-left` in
-`CairnAdminShell.svelte` (passes); a second element in the same file transitioning `margin-left`
-(fails); a consumer-owned `.drawer-content` transitioning `margin-left` (fails).
+rule does not report, `motion-band` does); the admin sheet's own `margin-left` on `.drawer-content`
+(passes); a second selector in the same file transitioning `margin-left` (fails); a consumer-owned
+file's `.drawer-content` transitioning `margin-left` (fails); `class="drawer-side"` joined to the
+vendor's `width` transition (exempt, no finding); the same `width` transition authored in a CSS file
+the audit reads (fails).
 
 This is the cheapest rule and the one that catches every shipped violation on day one. Build it
 first.
 
 ### Rule 2: `motion-vocabulary`, static, error
 
-**What it reads.** The same two surfaces and the same join.
+**What it reads.** The same two surfaces and the same join. It declares `adminOnly`.
 
 **What it asserts.**
 
@@ -782,20 +983,33 @@ the recipe page rather than claimed away.
 
 ### Rule 3: `motion-hover-gate`, static, error
 
-**What it reads.** The CSS-family surfaces only. No class join.
+**What it reads.** The CSS-family surfaces only. No class join. It declares `adminOnly`.
 
-**What it asserts.** A hand-authored `:hover` selector that declares motion, whose conditions carry
-no hover media feature, is a finding. Tailwind's `hover:` variant is out of scope by construction,
-exactly as it is in `focus-parity`, because it already compiles to
-`@media (hover: hover) { &:hover }`.
+**What it asserts.** Two predicates, both requiring the absence of a hover media feature in the
+rule's conditions.
+
+- A hand-authored `:hover` state whose element carries a transition or an animation is a finding,
+  whether the motion is declared on the `:hover` rule itself or on a base rule the same selector
+  matches. The narrow reading, motion declared on the `:hover` rule, convicts nothing in the engine's
+  own tree, so the rule would ship unable to detect the thing it exists for.
+- A `:focus-visible` rule declaring motion that sits **inside** `@media (hover: hover)` is a finding.
+  That is the mistake the fix message's own remedy invites, and a rule that warns about a mistake it
+  cannot detect is prose.
+
+Tailwind's `hover:` variant is out of scope by construction, exactly as it is in `focus-parity`,
+because it already compiles to `@media (hover: hover) { &:hover }`.
 
 **Fix message.** Names the selector and the guard to wrap it in, cites `cairn-admin.css:1002` as the
 shipped model, and warns that a selector list pairing `:hover` with `:focus-visible` must be split
 before the guard goes on, or focus motion dies on a touch device with a keyboard.
 
-**Fixtures.** `cairn-admin.css:1002` (passes, guarded); a hand-authored `:hover` transition with no
-guard (fails); a `hover:` utility (not read); a split pair, the `:hover` half guarded and the
-`:focus-visible` half outside (both pass, and `focus-parity` passes alongside).
+**Fixtures, synthetic, because the engine tree has no shipped instance of either predicate.**
+`cairn-admin.css:1002` (passes, guarded, and declares paint rather than motion); a hand-authored
+`:hover` state on an element whose base rule declares a transition, ungated (fails); a `:hover` rule
+declaring a transition directly, ungated (fails); a `hover:` utility (not read); a correctly split
+pair, the `:hover` half guarded and the `:focus-visible` half outside (both pass, and `focus-parity`
+passes alongside); and a `:focus-visible` alternative declaring motion from inside the guard
+(**fails**, which is the migration hazard made detectable).
 
 The rendered half, which would reach DaisyUI's ten ungated components through a touch context, is
 **not in this pass**. It needs the same emulation axis rule 4 needs, it is advisory, and its remedy
@@ -906,6 +1120,19 @@ Rule 2's easing half needs it widened, and widening it changes what `motion-band
 Both are re-baselined against the widened predicate in the same task, and the re-baselining is the
 work rather than the predicate change.
 
+The widened set is nine: the four it matches today plus `transition-property`,
+`transition-timing-function`, `transition-delay`, `animation-delay`, and `animation-timing-function`.
+`transition-property` is included deliberately, and the consequence is named rather than discovered:
+a rule declaring `transition-property` alone is not discharged by the floor, which zeroes durations
+and delays and never touches it. The regex is anchored, so no longhand outside the nine is matched.
+
+Two consumer-visible consequences of the widening carry no rule change and are named here because
+they carry a changelog obligation. A consumer's `transition-delay: 600ms` now reaches `motion-band`'s
+band check, since its duration regex reads any time value in the declaration. And a rule declaring
+only `transition-timing-function` now owes a reduced-motion sibling under the error-tier
+`reduced-motion` rule. The engine's own tree has zero such declarations, so neither reddens cairn's
+gate; the whole exposure is the consumer's, and changelog line 2 states it.
+
 **`cairn-admin.css:545` fires `reduced-motion` falsely the moment that file joins `CSS_FILES`.**
 `reduced-motion.ts:45` matches by normalized selector-text equality while the blanket guard at
 `:1115` names `[data-theme='cairn-admin'] *` among its four alternatives, so the rule fires on
@@ -921,7 +1148,15 @@ selector must match the rule's selector, and the floor must declare the motion p
 declares. The blanket block sets `animation-duration`, `animation-iteration-count`,
 `transition-duration`, `scroll-behavior`, and after task 1 the two delays. A rule declaring only
 `transition-timing-function`, which the widened `isMotionProperty` now sees, is **not** discharged,
-because the floor does not zero it. That residue is the rule's remaining coverage over the file, and
+because the floor does not zero it.
+
+**A shorthand counts as declaring the longhands the floor zeroes.** `.cairn-caret` declares
+`transition` (`cairn-admin.css:545`) and the floor declares `transition-duration`, so read literally
+the clause would not discharge the one false positive it exists to kill. It reads the other way: a
+`transition` shorthand declares `transition-duration`, and an `animation` shorthand declares
+`animation-duration` and `animation-iteration-count`, for the purpose of the match. The reverse does
+not hold, because a longhand the floor does not carry stays undischarged, which is what keeps the
+residue real. That residue is the rule's remaining coverage over the file, and
 it is real rather than nominal. The file-scoped matching (`guardedByFile`) is unchanged, so the
 blanket block still cannot satisfy a component's obligation from a distance in another file.
 
@@ -933,6 +1168,9 @@ Sized against the runner as it is, not as a rule's line item wishes it were.
 |---|---|---|
 | `RenderedBrowser.newContext` gains `reducedMotion` and `hasTouch` | Small | Two members on a narrow type (`rendered/types.ts:60`) |
 | `runRendered` gains an emulation axis, declared by rules the way `states` is | **Large** | `runRendered` (`rendered.ts:149-252`) nests pages, then themes, then one context, then states, then one page, and `RenderedRule.check` takes one page with no mechanism to carry state between invocations. An axis above the context threads a new loop level through the runner, extends the rule declaration surface, and multiplies contexts: six pages by two themes by one reduced pass is twelve new contexts and twelve new page loads, each re-running the hydration settle |
+| The axis is **opt-in per rule**, declared the way `states` is | Small, and load-bearing | A rule that declares no axis runs in the default context alone, so the seventeen registered rendered rules run exactly the context count they run today. Without the opt-in the axis multiplies every rule's contexts for the sake of one |
+| `RenderedRuleContext` gains the axis value | Small | It carries `pagePath`, `theme`, `state`, and `config` today. A rule running under two axis values that cannot tell them apart cannot decide whether to check |
+| `ResolvedRenderedFinding` gains the axis, and `RenderedPageVisit.selectorsSeen` is keyed by it | Small | `rendered.ts:229` keys a resolved finding on page, theme, and state. With an axis above, the same element fires twice under different axis values and the allowlist bookkeeping has no dimension to tell the two apart |
 | A shared CSSOM walker joins `__cairnAudit` beside `signature` and `isVisible` | Medium | A throwaway probe is about forty lines; a shared one handles `CSSNestedDeclarations`, `CSSSupportsRule`, `CSSContainerRule`, `CSSLayerBlockRule`, `@starting-style`, and a per-sheet `SecurityError`. It is rule 4's locator. The detector is a per-element `getComputedStyle` read, which needs no harness member at all |
 | `RenderedPage.hover` | Not needed | The modality gate reads the CSSOM rather than a forced state, and the rendered hover half is out of this pass anyway |
 
@@ -952,32 +1190,37 @@ at `.github/workflows/test.yml:71`. Three additions, and no second config and no
 
 - `RULE_IDS` gains `motion-property`, `motion-vocabulary`, and `motion-hover-gate`.
 - `CSS_FILES` gains `src/lib/components/cairn-admin.css`.
-- **A per-rule root restriction**, which the gate does not have today. It is a code deliverable of
-  task 10, not a config line.
+- **An admin-root mapping for the rules that declare `adminOnly`**, which the gate does not have
+  today. It is a code deliverable of task 10, not a config line.
 
-**Why the restriction is required rather than nice.** The gate's `SCAN_SCOPE` is
-`src/lib/components`, `src/lib/admin-toolkit`, and three showcase roots,
+**Why the mapping is required rather than nice.** The gate's `SCAN_SCOPE` is `src/lib/components`,
+`src/lib/admin-toolkit`, and three showcase roots,
 `examples/showcase/src/{chassis,routes,theme}` (`check-invisible-craft.mjs:41-47`), and `scopeReport`
 filters the report **by rule id alone** (`audit-gate.mjs:16-25`). There is no path term. So adding
-the three ids without a restriction runs the admin's motion language, at error tier, over the
-showcase's public site theme and chassis. That tree is not the admin, it declares no `--cairn-dur-*`
-token, and it carries the exact constructs the rules convict: three literal `0.2s ease-out`
-durations on the theme-flip cross-fade (`examples/showcase/src/theme/theme.css:365-368`) and
+the three ids without a mapping runs the admin's motion language, at error tier, over the showcase's
+public site theme and chassis. That tree is not the admin, it declares no `--cairn-dur-*` token, and
+it carries the exact constructs the rules convict: three literal `0.2s ease-out` durations on the
+theme-flip cross-fade (`examples/showcase/src/theme/theme.css:365-368`) and
 `animation-duration: 0.18s` on the root view-transition pseudo-elements (`:384`). The gate would be
 red the moment the wiring lands, and it would be red for the right reason under the wrong rule: the
 non-goal "No motion on public pages" and the charter boundary in "The bar" both say the language
-governs the admin frame only. Revision 1 noticed the scope mismatch, used it to decline a root
-config, and then drew the opposite conclusion from it.
+governs the admin frame only.
 
-**The shape of the restriction.** `check-invisible-craft.mjs` gains a per-rule root map beside
-`RULE_IDS`: a rule id may name the subset of `SCAN_SCOPE` it runs over, defaulting to all of it. The
-three motion ids name `src/lib/components` and `src/lib/admin-toolkit`, the two engine roots.
-`gap-scale`, `token-colors`, and `motion-band` keep the full scope, so no existing coverage narrows,
-which the gate's own header comment requires ("a graduation may not shrink the ground the gate
-covered"). `CSS_FILES` keeps both entries, and the CSS-family rules read the file that belongs to
-their roots. The filtering happens where `scopeReport` runs, so the engine's `runStatic` is
-untouched and a consumer's own run is unaffected: a consumer's `DEFAULT_STATIC_SCOPE` is admin
-surfaces only, which is why this problem is the engine gate's alone.
+**The shape of the mapping.** The boundary itself lives on the rule, as `adminOnly` above, so the
+consumer gets it for free and the gate only has to say which of its own roots are admin. It names
+three: `src/lib/components`, `src/lib/admin-toolkit`, and `examples/showcase/src/routes/admin`. The
+first two are the engine's admin frame. The third is deliberate and is a gain rather than a
+concession: `examples/showcase/src/routes/admin/signups/+page.svelte` is the repo's one
+consumer-shaped admin screen, so including it dogfoods the rules on the surface a consumer's own
+screen most resembles, while the two public roots and the site routes stay out. Today that screen
+produces no finding, which is the result the wiring records rather than a reason to skip it.
+
+`gap-scale`, `token-colors`, and `motion-band` declare no `adminOnly` and keep the full five-root
+scope, so no existing coverage narrows, which the gate's own header comment requires ("a graduation
+may not shrink the ground the gate covered"). `CSS_FILES` keeps both entries, and the CSS-family
+rules read the file that belongs to their roots. `scopeReport` is where the mapping is applied, and
+it has a second caller, `check-admin-css-classes.mjs:35`, which passes no admin roots and must keep
+working unchanged.
 
 A root `cairn-audit.config.json` plus two npm scripts was considered and declined: it would create a
 second, narrower gate beside the one already running, since `DEFAULT_STATIC_SCOPE` drops the three
@@ -986,13 +1229,28 @@ showcase roots this gate covers, and `motion-band` would run twice against two d
 Order matters. The `cairn-admin.css:545` false positive is resolved before `CSS_FILES` gains the
 file, per the reconciliation above.
 
-**The rendered half gets its own workflow step, owning its own preview server.** The alternative, a
-Playwright spec inside the showcase e2e suite, is declined. The e2e server is Playwright's own
-`webServer` (`examples/showcase/playwright.config.ts:29-34`), its lifetime is the `playwright test`
-process, and `.github/workflows/e2e.yml:118` runs only the e2e command, while the audit harness
-refuses to start a server (`rendered.ts:15-17`). The deciding reason is second-order: that server is
-built with `VITE_CAIRN_E2E=1`, so riding it would audit an e2e-flagged build rather than the build a
-consumer ships, and the rendered rule is the one that reads vendor CSS.
+**The rendered half gets its own workflow step, owning its own preview server, and the recipe is
+`norms.yml`'s verbatim.** The alternative, a Playwright spec inside the showcase e2e suite, is
+declined: the e2e server is Playwright's own `webServer`
+(`examples/showcase/playwright.config.ts:29-34`), its lifetime is the `playwright test` process, and
+`.github/workflows/e2e.yml:118` runs only the e2e command, while the audit harness refuses to start
+a server (`rendered.ts:15-17`).
+
+Revision 2 also declined the e2e-flagged build, reasoning that riding it would audit a flagged build
+rather than the one a consumer ships. **That reasoning is withdrawn**, because a default build cannot
+serve the pages the rule reads at all. `__CAIRN_DEV_BUILD__` (`examples/showcase/vite.config.ts:28`)
+folds the dev backend out of a default build, and the runtime `CAIRN_DEV_BACKEND=1` half then has
+nothing to enable. `DEFAULT_RENDERED_PAGES` is six `/admin/*` routes (`config.ts:41-49`), so the step
+would either fail to load them or, worse, audit `/admin/login` redirects and report clean, which is a
+vacuous advisory rule wearing a green tick.
+
+The recipe is the one `norms.yml:51-56` already proves on CI: `VITE_CAIRN_E2E=1` build, then
+`CAIRN_DEV_BACKEND=1 nohup … run preview -- --port <its own port>` detached with its output
+redirected, then a readiness poll on `/admin/posts` that fails the step if the server never answers.
+The port is the step's own and is never 4173. Before the step is wired, the `CAIRN_DEV_BACKEND`
+tripwire recorded in `docs/HISTORY.md` (the internals pass, round A), which refuses the variable when
+it is set alongside a non-local host, is re-read, since the step is the second place in the repo to
+set it.
 
 Per the gate-economy rule, the static half joins the per-task gate, because it is fast and already
 there. The rendered half runs at the pass-end gate and in CI.
@@ -1004,9 +1262,18 @@ Four artifacts beyond the code.
 **The design system's Motion section** (`docs/internal/admin-design-system.md`). The token table, the
 allowlist and the snap list with the one exception, the enter and exit rule with its floor, the
 modality gate, the reduced-motion policy by property class, the responsive rules, and the DaisyUI
-decision with its seven disagreements, its declined override, and its reopen trigger. Written in that
-document's own register: agent-facing, rules first, the load-bearing mechanics that are not visible
-in the markup called out.
+decision with its eleven disagreements, its declined override, and its reopen trigger. Written in
+that document's own register: agent-facing, rules first, the load-bearing mechanics that are not
+visible in the markup called out.
+
+Four limitations belong in it rather than in a reader's inference. The resize stopper is not shipped,
+and the section says what does hold the resize case (every layout property snaps already) and what
+does not (the vendor drawer transition at the breakpoint flip). The zen offset's travel window is
+unasserted against 2.4.11, so the synchronous focus sequence is necessary and not sufficient. The
+skeleton shimmer's own 2.2.2 answer is DaisyUI's reduced-motion off switch, not the spinner's
+replaces-the-content reasoning. And a focus indicator's own geometry animates at `instant` and no
+longer band, so `outline-width` and `outline-offset` stay allowlisted with a bound rather than
+openly.
 
 **This section is canonical.** Where the design system and the recipe page state the same rule, the
 design system is the source and the recipe cites it by heading rather than restating it. Without
@@ -1032,9 +1299,10 @@ error tier once the rendered advisory lands, and `:24-25` says "All 28 registere
 becomes 32. `check:reference` gates an undocumented export; this page is gated by review, so the plan
 makes it a task acceptance criterion.
 
-**The records.** `docs/HISTORY.md`, the ROADMAP entry closed and the two follow-ups filed (the
-rendered hover half, and the `modal-bottom` reopen trigger if it is not carried as a `WATCH:`), the
-friction log triaged, and the `CHANGELOG.md` entry under `## Unreleased`.
+**The records.** `docs/HISTORY.md`, the ROADMAP entry closed and the follow-ups filed (the rendered
+hover half, the `.tooltip` and `.menu` gates, the `modal-bottom` reopen trigger if it is not carried
+as a `WATCH:`, and the resize stopper in the Later tier with the finding that its working form costs
+an unlayered rule), the friction log triaged, and the `CHANGELOG.md` entry under `## Unreleased`.
 
 ## Verification
 
@@ -1058,39 +1326,57 @@ currently rendered across the bar.
 Baselines are CI-canonical: they regenerate on CI through `e2e.yml`'s `update_snapshots` run and are
 committed from there, never from this workstation.
 
-**The cost of the six surfaces is stated.** Six surfaces across five widths in two themes is up to 60
-new CI-canonical baseline files, committed by the regen run. That is the pass's largest artifact and
+**The cost of the six surfaces is stated.** Six surfaces across five widths in two themes is exactly
+60 new CI-canonical baseline files, committed by the regen run, plus whatever the five paint tasks
+move in the existing set. That is the pass's largest artifact and
 the reason task 10 depends on every task that paints. The standing gotcha applies to the regen: after
 it lands, this workstation's Chromium renders some of those files a few pixels differently, so a
 local `CI=1 test:e2e` is green when its only visual failures are exactly the files the regen commit
 rewrote.
 
-**The zen toggle's layout-count assertion is the regression guard.** The zen record's measurement
-gives the method and the numbers: entering zen with the margin untransitioned produces two distinct
-computed `margin-left` values and one layout, and with the transition it produces ten or more values
-and ten to eleven layouts (zen, "cairn's own zen toggle, measured"). The spec turns that into two
-assertions in the showcase e2e:
+**The zen toggle's layout-count assertion is the regression guard, and it lands in the task that
+ships the motion.** The zen record's measurement gives the method and the numbers: entering zen with
+the margin untransitioned produces two distinct computed `margin-left` values and one layout, and
+with the transition it produces ten or more values and ten to eleven layouts (zen, "cairn's own zen
+toggle, measured"). The spec turns that into two assertions in the showcase e2e, **owned by task 7**
+rather than by task 10, because they are the pass's only real proof of motion and a task that ships
+motion should gate on it:
 
 - In a default context at 1440, toggling zen produces more than two distinct computed `margin-left`
   values on `.drawer-content` during the toggle window. This fails if the transition is ever dropped,
   scoped away, or beaten by a later rule.
-- In a `reducedMotion: 'reduce'` context at the same width, it produces exactly two. This fails if
-  the exception ever escapes the blanket block.
+- In a `reducedMotion: 'reduce'` context at the same width, it produces **at most two**. The floor
+  keeps `0.01ms` rather than `0s`, deliberately, so `transitionend` still fires, which leaves a
+  0.01ms window a sample could in principle land inside. The assertion is stated as a bound rather
+  than an exact count, and the companion `LayoutCount` reading is the signal the text elsewhere calls
+  reliable. It fails if the exception ever escapes the blanket block.
 
 Frame-interval counts are deliberately not asserted. The same 700ms window returned 40 to 46 frames
 in some runs and 88 to 92 in others under headless Chromium, so the over-threshold counts are a noise
 floor and `LayoutCount` is the reliable signal.
 
 **The fresh-context read.** The pass carries rendered paint, so it ends with a `visual-verifier`
-dispatch over the new surfaces in both schemes, and the zen toggle at 390 and at 1440 joins the
-reproduction manifest as a motion case. Adding it edits two files, not one:
-`src/lib/reproductions/manifest.ts` and `src/tests/unit/reproductions-manifest.test.ts`, which
-asserts a frozen 25-id list against it (`:13`, `:77`). Both are in task 10's files. The builder's own
-"matches" is never the verdict.
+dispatch over the new surfaces in both schemes. The builder's own "matches" is never the verdict.
+
+**The zen reproduction-manifest entry is cut.** Revision 2 added the zen toggle to
+`src/lib/reproductions/manifest.ts` as a motion case. Three things rule against it. The frozen id
+list is a cross-repo contract: `reproductions-manifest.test.ts:13-15` records that cairn-pub's
+`2026-08-15-live-reproduction-seam-design.md` owns it and that changing one id is a spec edit. The
+edit needs a third file nobody listed, since `getStory` throws for an unregistered id, so the new id
+owes either a story component under `src/lib/reproductions/stories/` or a `PENDING_STORY_IDS` entry
+in `src/tests/component/reproductions-stories.test.ts`. And a reproduction is a static mount, so the
+case it would carry cannot show motion at all. The cost is a cross-repo contract edit for no motion
+evidence.
+
+**The per-task capture set is narrowed to what the change can reach.** Global constraint 6 forbids
+touching any file `site-visual.spec.ts` renders, so `home`, `article`, `archive2`, and `error404`
+cannot move, and five paint tasks capturing all six surfaces twice is about a thousand captures of
+pure leak proof against a constraint `git status` already enforces. A paint task's capture pair
+covers `signups` and `styleguide`; the pass-end `visual-verifier` runs the full set.
 
 ## The changelog window
 
-Six `Consumers must:` lines, all in one release.
+Seven `Consumers must:` lines, all in one release.
 
 1. `cairn-audit` gains three error-tier static rules (`motion-property`, `motion-vocabulary`,
    `motion-hover-gate`) and one advisory rendered rule (`motion-reduced-delay`). A custom admin screen
@@ -1099,7 +1385,12 @@ Six `Consumers must:` lines, all in one release.
    `--cairn-dur-*` and `--cairn-ease-*` tokens, or suppress with a reason.
 2. `motion-band`'s band widens from 150ms to 250ms to 70ms to 400ms, and it no longer reports a call
    site that references a token. A site relying on the narrow band loses that check; the vocabulary
-   rule is what replaces it.
+   rule is what replaces it. An existing `cairn-audit-disable-next-line motion-band` directive that
+   covered a finding inside the old band and outside the new one now silences nothing, which
+   `cairn-audit` reports as a dead suppression at error tier that cannot itself be suppressed:
+   delete the directive on upgrade. The motion predicate also widens, so a `transition-delay` reaches
+   `motion-band`'s band check and a rule declaring only `transition-timing-function` now owes a
+   reduced-motion sibling under `reduced-motion`.
 3. The admin sheet sets `--default-transition-duration` and `--default-transition-timing-function` to
    cairn tokens on the admin root. A bare `transition` utility on a custom screen changes curve from
    Tailwind's `cubic-bezier(0.4, 0, 0.2, 1)` to Carbon's productive standard
@@ -1107,10 +1398,14 @@ Six `Consumers must:` lines, all in one release.
 4. The admin's reduced-motion block now zeroes `transition-delay` and `animation-delay`. A custom
    screen that relied on a delay surviving a reduced-motion preference loses it, which is the fix.
 5. The edit page's preview pane no longer animates its width when the split changes. The resize snaps.
-6. The upload progress fill is painted by a `transform`-driven overlay rather than by the native
-   `<progress>` fill transitioning `width`. The `<progress>` element itself stays, keeping its
-   implicit `progressbar` role and its `value`/`max` mapping, so nothing changes for assistive
-   technology. A site that styled `::-webkit-progress-value` on that element restyles the overlay.
+6. The upload progress fill no longer transitions its `width`, and no motion replaces it: the fill
+   snaps to each new value. The native `<progress>` element is unchanged and keeps its implicit
+   `progressbar` role and its `value`/`max` mapping, so nothing changes for assistive technology. The
+   reduced-motion pin on `::-webkit-progress-value` goes with the transition it pinned.
+7. Three utility classes leave the packaged admin sheet, because their last call sites go:
+   `transition-all`, `transition-[width]`, and `duration-[250ms]`. A site whose own markup carries any
+   of the three was relying on the engine's sheet to compile it; add the class to that site's own
+   Tailwind content or restate the declaration.
 
 No export changes, so `check:surface` stays byte-identical. That is a narrower statement than it
 looks, and the gap is named here rather than discovered later: the `--cairn-dur-*` and
@@ -1153,12 +1448,21 @@ and their values in the built sheet, and task 1 owns that assertion.
   `EditPage.svelte:1643` fires under `motion-band`, which owns `transition-all`. The gate goes red
   between the rule tasks and the migration task. Mitigation: task 10 lands after tasks 6a, 6b, and 7,
   and the plan orders them that way explicitly.
-- **The per-rule root restriction is a gate mechanism that does not exist yet.** Without it the three
-  new ids run over the showcase's public theme and the gate is red on landing for a reason the
-  charter forbids. It is a task 10 deliverable rather than a config line, and it is the one place in
-  the pass where a rule change requires a gate-script change. Mitigation: task 10's acceptance
-  criterion is that `gap-scale`, `token-colors`, and `motion-band` keep the full five-root scope and
-  the three motion ids report nothing from the three showcase roots.
+- **The `adminOnly` scope is a rule-type change and a gate mapping, neither of which exists yet.**
+  Without them the three new ids run at error tier over a consumer's public components and over the
+  showcase's public theme, and the engine's gate is red on landing for a reason the charter forbids.
+  The field is task 3's and task 4's (each rule declares it) and the gate mapping is task 10's.
+  Mitigation: task 10's acceptance criterion is that `gap-scale`, `token-colors`, and `motion-band`
+  keep the full five-root scope and the three motion ids report nothing from
+  `examples/showcase/src/{chassis,theme}` or from the showcase's public routes, proved by a paired
+  run.
+- **The vendor exemption is a coverage loss on cairn's own markup, not only a false-positive fix.**
+  Exempting the four DaisyUI property disagreements means `motion-property` cannot see a snap-list
+  transition that arrives through a vendor class, and `CairnAdminShell.svelte:949` carries one today.
+  The exposure is bounded by the CSS-family half, which keeps the full check on anything authored,
+  and by the eleven disagreements being enumerated rather than silent. Mitigation: the explicit
+  class-name fallback list is reviewed rather than pattern-matched, so a cairn class never inherits
+  the exemption by accident.
 - **The emulation axis is the one large item, for one advisory rule.** If it overruns, the cut is the
   rendered half in its entirety, per the enforcement record's own sequencing advice, and the pass
   still delivers the token set, the three static rules, and the migration, which is the ruling's core.
@@ -1190,121 +1494,144 @@ revision 1. Each row names its files, its dependencies, and whether it moves ren
 therefore carries the showcase e2e in its own gate.
 
 **1. The token set, the theme defaults, and the two shipped bugs. Paint.**
-Files (6): `scripts/build/admin-css.input.css`, `src/lib/components/cairn-admin.css`,
+Files: `src/lib/components/cairn-admin.css`, `scripts/build/admin-css.input.css`,
 `src/lib/audit/rules/static/motion.ts`, `src/tests/unit/admin-css-build.test.ts`,
 `src/tests/unit/admin-sheet-inventory.test.ts`, `src/tests/unit/audit/rules/reduced-motion.test.ts`.
-Authors the five durations and three curves on both theme roots, points
-`--default-transition-duration` and `--default-transition-timing-function` at them, and fixes both
-shipped bugs decision 8 names: `transition-delay: 0s !important` and `animation-delay: 0s !important`
-in the blanket block, and `isReducedMotionGuarded` no longer treating
-`(prefers-reduced-motion: no-preference)` as a guard. The second fix moves what the existing
-`reduced-motion` fixtures assert, so their update is part of the fix rather than task 2's
-re-baseline. Also proves two things in the built sheet: that a restatement inside the reduced guard
-beats the blanket block by source order, and that the chosen Tailwind duration authoring form
-compiles to a token reference. Asserts the eight token names and values, which is what holds the
-public namespace. Depends on nothing. **Independent.**
+Authors the five durations and three curves into `cairn-admin.css`'s two existing `[data-theme=…]`
+blocks, points `--default-transition-duration` and `--default-transition-timing-function` at them in
+whichever form the build accepts (an unlayered restatement on the same roots, or a `@theme` block),
+reports which form it measured, and fixes both shipped bugs decision 8 names:
+`transition-delay: 0s !important` and `animation-delay: 0s !important` in the blanket block, and
+`isReducedMotionGuarded` no longer treating `(prefers-reduced-motion: no-preference)` as a guard. The
+second fix moves what the existing `reduced-motion` fixtures assert, so their update is part of the
+fix rather than task 2's re-baseline. Also proves three things: that a restatement inside the reduced
+guard beats the blanket block by source order, that the chosen Tailwind duration authoring form
+compiles to a token reference, and, by computed style on the admin root at runtime, that both theme
+defaults resolve to the token values. That third proof is the only evidence the curve change has.
+Asserts the eight token names and values, which is what holds the public namespace. Depends on
+nothing. **Independent.**
 
 **2. The shipped-rule reconciliation. Not paint.**
-Files (6): `src/lib/audit/rules/static/motion.ts`, `motion-band.ts`, `reduced-motion.ts`, and their
-three fixture suites.
-Widens `isMotionProperty`, widens `motion-band`'s band to 70ms to 400ms, makes `motion-band` the one
-owner of `transition: all` and gives its fix message the `@starting-style` clause, adds
-`reduced-motion`'s floor clause scoped to the properties the floor actually zeroes, and re-baselines
-all three against the widened predicate. The `no-preference` fix is task 1's, not this task's.
-Depends on task 1. Not independent of it.
+Files: `src/lib/audit/rules/static/motion.ts`, `motion-band.ts`, `reduced-motion.ts`, and the two
+fixture suites that exist, `src/tests/unit/audit/rules/motion-band.test.ts` and
+`reduced-motion.test.ts`. `motion.ts` carries the shared predicates and has no fixture suite of its
+own, so the re-baseline is two suites rather than three.
+Widens `isMotionProperty` to the nine properties, `transition-property` included, widens
+`motion-band`'s band to 70ms to 400ms, makes `motion-band` the one owner of `transition: all` and
+gives its fix message the `@starting-style` clause, adds `reduced-motion`'s floor clause scoped to
+the properties the floor actually zeroes with the shorthand-counts-as-longhand reading stated, and
+re-baselines the two existing suites against the widened predicate. The `no-preference` fix is task
+1's, not this task's. Depends on task 1. Not independent of it.
 
 **3. `motion-property` and `motion-hover-gate`. Not paint.**
-Files (5): `src/lib/audit/rules/static/motion-property.ts`, `motion-hover-gate.ts`, the static
-registry `src/lib/audit/rules/static/index.ts`, and the two fixture suites under
+Files: `src/lib/audit/rules/static/motion-property.ts`, `motion-hover-gate.ts`, `src/lib/audit/types.ts`
+(the optional `adminOnly` field), `src/lib/audit/run.ts` (honoring it), the static registry
+`src/lib/audit/rules/static/index.ts`, and the two fixture suites under
 `src/tests/unit/audit/rules/`.
-`motion-property` carries the allowlist, the snap list, the three-property cap, the `animate-*`
-keyframe clause, the deferral of `transition: all` to `motion-band`, and the shell exception keyed on
-engine-owned file plus selector with its three-sided fixture. `motion-hover-gate` mirrors
-`focus-parity`'s shape and its fix message warns about the hover and focus selector-list split.
+This task also adds the optional `adminOnly` field to the static rule type and declares it on both
+new rules. `motion-property` carries the allowlist, the snap list, the three-property cap, the
+`animate-*` keyframe clause, the deferral of `transition: all` to `motion-band`, the vendor-class
+exemption on its class-join half, and the zen exception keyed on `cairn-admin.css` plus
+`.drawer-content` plus `margin-left`, with its three-sided fixture. `motion-hover-gate` mirrors
+`focus-parity`'s shape, carries both predicates, and its fix message warns about the hover and focus
+selector-list split, a warning its own firing fixture makes detectable.
 Revision 1 gave `motion-hover-gate` its own task; it is one 59-line rule in the same file family with
 the same dependency, and folding it saves a task's fixed overhead. Depends on task 2. **Shares the
 static registry with task 4**, so the two are not file-disjoint.
 
 **4. `motion-vocabulary`. Not paint.**
-Files (3): `src/lib/audit/rules/static/motion-vocabulary.ts`, the static registry
+Files: `src/lib/audit/rules/static/motion-vocabulary.ts`, the static registry
 `src/lib/audit/rules/static/index.ts`, `src/tests/unit/audit/rules/motion-vocabulary.test.ts`.
-The token check on both surfaces, the class join on `elementStart`, the vendor-class exemption, the
-companion built-sheet assertion, the positive `infinite` clause, the three abstention shapes, and the
+The token check on both surfaces, the class join on `elementStart`, the vendor-class exemption with
+its named discriminator and its explicit class-name fallback, the companion built-sheet assertion,
+the positive `infinite` clause, the three abstention shapes, the `adminOnly` declaration, and the
 three join limits documented in the rule's own doc comment. Depends on tasks 1 and 2. **Shares the
 static registry with task 3.**
 
 **6a. The admin migrated onto the language. Paint.**
-Files (8): `src/lib/components/EditPage.svelte`, `MarkdownEditor.svelte`, `CairnAdminShell.svelte`,
+Files: `src/lib/components/EditPage.svelte`, `MarkdownEditor.svelte`, `CairnAdminShell.svelte`,
 `CairnMediaLibrary.svelte`, `ConceptList.svelte`, `MediaHeroField.svelte`, `HelpHome.svelte`,
-`cairn-admin.css`.
+`cairn-admin.css`, `editor-folding.ts`, and
+`src/tests/unit/fixtures/admin-sheet-inventory.txt`.
 The seventeen shipped declarations, and nothing else. The three violations fixed (the feedback
-alert's named property list, the preview pane's width transition removed, the upload fill moved to a
-`transform` overlay over the native `<progress>` that stays), `cairn-admin.css:545` onto tokens, the
-three `duration-[250ms]` classes onto the token form, the two `HelpHome` rules onto tokens with their
-hover and focus selector lists split before the modality guard goes on, and the case table's nine
-reduced-motion cells written to read "Snaps to the new paint", with the migration row recording that
-no opt-back-in is authored and why. No entry is added to `custom-surface-budget.json`, which is the
-test that this task stayed inside the two rulings. Depends on tasks 3 and 4, so the rules exist
-before the code is measured against them.
+alert's named property list, the preview pane's width transition removed, and the upload fill's
+`width` transition removed with its reduced-motion pin, the native `<progress>` untouched),
+`cairn-admin.css:545` onto tokens, the three `duration-[250ms]` classes onto the token form, the two
+`HelpHome` rules onto tokens with no guard added, the fold chevron and unfold flash onto tokens with
+`editor-folding.ts`'s `FLASH_MS` left alone and the independence recorded. It owns the seventh
+`Consumers must:` line, for the three utility classes that leave the packaged sheet, and regenerates
+`admin-sheet-inventory.txt` after writing that line. No entry is added to
+`custom-surface-budget.json`, which is the test that this task stayed inside the two rulings. Depends
+on tasks 3 and 4, so the rules exist before the code is measured against them.
 
-**6b. The two new behaviors. Paint.**
-Files (5): `src/lib/components/MediaHeroField.svelte`, `CairnAdminShell.svelte`, `cairn-admin.css`,
-`src/tests/unit/resize-stopper.test.ts`, `src/tests/unit/admin-sheet-inventory.test.ts`.
+**6b. The dropzone's drag-over state. Paint.**
+Files: `src/lib/components/MediaHeroField.svelte`,
+`src/tests/component/media-hero-field-dropzone.test.ts`, and
+`src/tests/unit/fixtures/admin-sheet-inventory.txt`.
 The dropzone's drag-over paint state, fully specified in the case table's notes: a `dragOver` boolean
 set on `ondragenter` and `ondragover`, cleared on `ondrop` and on `ondragleave` only when
-`relatedTarget` lies outside the button, painting the hover rule's border and background tint at
-`--cairn-dur-instant` through a class rather than a hover selector. And the resize stopper, also
-fully specified: the class `cairn-resizing` on the theme-attribute element, added on the first
-`resize` of a burst, cleared by a 400ms trailing timer that each `resize` restarts and by component
-teardown, declaring one `@layer components` rule that zeroes the two durations and the two delays.
-Its test uses fake timers for the add, the restart, the clear, and the teardown, and
-`admin-sheet-inventory.test.ts` asserts the built rule. Depends on task 6a, whose files it shares.
+`relatedTarget` lies outside the button, toggling the same utility classes the element's own `hover:`
+variants carry, so the paint reaches a coarse pointer, needs no modality guard, and authors no CSS
+rule. Its component test drives the four handlers and the `relatedTarget` boundary, which is the
+task's one piece of real logic. The resize stopper that revision 2 paired with it is **cut** and
+filed; the responsive rules section carries the reasons. Depends on task 6a, whose file it shares.
 
 **7. Zen. Paint.**
-Files (3): `src/lib/components/CairnAdminShell.svelte`, `EditPage.svelte`, `cairn-admin.css`.
-The `.drawer-content` `margin-left` transition at `shift` in and `base` out on the paired curves, the
-chrome regions' fade in and out, the chip's delayed entrance and immediate exit with the 110ms delay
-authored inside a `(prefers-reduced-motion: no-preference)` guard, the card's box left snapping, and
-`setZen()`'s `flushSync()` focus sequence kept synchronous so motion never gates focus. Depends on
-tasks 1, 6a, and 6b.
+Files: `src/lib/components/cairn-admin.css`, `CairnAdminShell.svelte`, `EditPage.svelte`,
+`examples/showcase/e2e/admin-visual.spec.ts`, and
+`src/tests/unit/fixtures/admin-sheet-inventory.txt`.
+The `.drawer-content` `margin-left` transition authored in `cairn-admin.css` at `shift` in and `base`
+out on the paired curves, the chrome regions' fade in and out, the chip's delayed entrance and
+immediate exit with the 110ms delay authored inside a `(prefers-reduced-motion: no-preference)`
+guard, the card's box left snapping, and `setZen()`'s `flushSync()` focus sequence at
+`EditPage.svelte:441` kept synchronous so motion never gates focus. It also carries the two zen
+layout-count assertions, which revision 2 parked in task 10: the task that ships the motion is the
+task that gates on the proof of it. Depends on tasks 1, 6a, and 6b.
 
 **8. The rendered harness, `motion-reduced-delay`, and its CI step. Not paint.**
-Files (8): `src/lib/audit/rendered/types.ts`, `src/lib/audit/rendered.ts`,
+Files: `src/lib/audit/rendered/types.ts`, `src/lib/audit/rendered.ts`,
 `src/lib/audit/rendered/page-surface.ts`, `src/lib/audit/rules/rendered/motion-reduced-delay.ts`, the
 rendered registry `src/lib/audit/rules/rendered/index.ts`,
-`src/tests/unit/audit/rules/motion-reduced-delay.test.ts`, the rendered harness tests, and
-`.github/workflows/`.
-`newContext` gains `reducedMotion` and `hasTouch`; `runRendered` gains the emulation axis declared by
-rules the way `states` is; the shared CSSOM walker joins `__cairnAudit`, handling nested
-declarations, supports, container, layer-block, and `@starting-style` nodes plus a per-sheet
-`SecurityError`. The rule reads computed delays per element and uses the walker to name the authored
-rule in its fix message, with three positive fixtures and two negatives. The workflow step starts and
-holds its own `npm run preview` on a dedicated port and runs `cairn-audit --rendered`. Revision 1
-gave the rule and its step a separate task; it is one rule and one workflow step against a harness
-task with no other consumer. Depends on nothing. **Independent.**
+`src/tests/unit/audit/rules/rendered/motion-reduced-delay.test.ts`, the rendered harness suite
+`src/tests/unit/audit/rendered.test.ts`, and `.github/workflows/norms.yml`.
+`newContext` gains `reducedMotion` and `hasTouch`; `runRendered` gains the emulation axis, opt-in per
+rule and declared the way `states` is, with `RenderedRuleContext` and `ResolvedRenderedFinding` both
+carrying the axis value and `selectorsSeen` keyed by it; the shared CSSOM walker joins `__cairnAudit`,
+handling nested declarations, supports, container, layer-block, and `@starting-style` nodes plus a
+per-sheet `SecurityError`. The rule reads computed delays per element and uses the walker to name the
+authored rule in its fix message, with three positive fixtures and two negatives. The workflow step
+follows `norms.yml`'s recipe verbatim, a `VITE_CAIRN_E2E=1` build plus a detached
+`CAIRN_DEV_BACKEND=1` preview on its own port with a readiness poll on `/admin/posts`, and re-reads
+the `CAIRN_DEV_BACKEND` tripwire before wiring. Revision 1 gave the rule and its step a separate task;
+it is one rule and one workflow step against a harness task with no other consumer. Depends on
+nothing. **Independent.**
 
 **10. The engine's tree wired, and the visual suite. Paint.**
-Files (5): `scripts/checks/check-invisible-craft.mjs`, `scripts/checks/audit-gate.mjs`,
-`examples/showcase/e2e/admin-visual.spec.ts`, `src/lib/reproductions/manifest.ts`,
-`src/tests/unit/reproductions-manifest.test.ts`.
-The per-rule root restriction, which is the deliverable that makes the wiring legal, since
-`scopeReport` filters by rule id alone today. Then `RULE_IDS` and `CSS_FILES` with the gate green and
-the three existing ids keeping their full scope, the six new surfaces across the five-viewport bar,
-the zen toggle's two layout-count assertions, and the zen toggle added to the reproduction manifest
-as a motion case, which edits the manifest and the test that freezes its id list. Baselines
-regenerate on CI, up to 60 files. Depends on tasks 6a, 6b, 7, and 8.
+Files: `scripts/checks/check-invisible-craft.mjs`, `scripts/checks/audit-gate.mjs`,
+`scripts/checks/check-admin-css-classes.mjs`, `examples/showcase/e2e/admin-visual.spec.ts`, and the
+gate's own test file.
+The gate's admin-root mapping for the rules that declare `adminOnly`, which is the deliverable that
+makes the wiring legal, since `scopeReport` filters by rule id alone today and has a second caller
+that must keep working. Then `RULE_IDS` and `CSS_FILES` with the gate green and the three existing
+ids keeping their full scope, and the six new surfaces across the five-viewport bar. The zen
+layout-count assertions belong to task 7 and the reproduction-manifest entry is cut, so this task
+touches neither. Baselines regenerate on CI, 60 new files. Depends on tasks 6a, 6b, 7, and 8 by merge
+order; it shares no file with task 8.
 
 **11. Docs and records. Not paint.**
-Files (8): `docs/internal/admin-design-system.md`, `docs/extend/animate-a-custom-screen.md`,
-`docs/extend/README.md`, `docs/reference/cairn-audit.md`, `docs/HISTORY.md`, `ROADMAP.md`,
-`CHANGELOG.md`, `docs/internal/engine-rulings.md`.
-The Motion section, canonical, with the seven vendor disagreements; the recipe page, citing it rather
-than restating it; the reference rows plus the two prose counts at `cairn-audit.md:66` and `:24-25`;
-the ruling rows quoting decisions 3 and 4 and the two escalation rulings of 2026-09-13; the
-follow-ups filed (the rendered hover half, the `.tooltip` touch defect with the
-visibility-not-transition finding, the `.menu` gate, and the `modal-bottom` reopen trigger if it is
-not carried as a `WATCH:`); and the `## Unreleased` block read whole. The conductor writes
-`docs/STATUS.md`, never this task. Depends on everything.
+Files: `docs/internal/admin-design-system.md`, `docs/extend/animate-a-custom-screen.md`,
+`docs/extend/README.md`, `docs/reference/cairn-audit.md`, `docs/extend/migration-notes.md`,
+`docs/HISTORY.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/internal/engine-rulings.md`,
+`docs/internal/docs-friction-log.md`.
+The Motion section, canonical, with the eleven vendor disagreements and the four stated limitations;
+the recipe page, citing it rather than restating it; the reference rows plus the two prose counts at
+`cairn-audit.md:66` and `:24-25`; the migration-notes entry this window's behavior changes owe; the
+ruling rows quoting decisions 3 and 4 and the two escalation rulings of 2026-09-13; the follow-ups
+filed (the rendered hover half, the `.tooltip` touch defect with the visibility-not-transition
+finding, the `.menu` gate, the `modal-bottom` reopen trigger if it is not carried as a `WATCH:`, and
+the resize stopper in the Later tier); and the `## Unreleased` block read whole, carrying all seven
+`Consumers must:` lines. The conductor writes `docs/STATUS.md`, never this task. Depends on
+everything.
 
 **Parallelism.** Two chains, not four. Task 8 is genuinely independent and runs alongside the static
 work from the start. Tasks 3 and 4 both register a rule in

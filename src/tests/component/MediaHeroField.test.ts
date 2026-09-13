@@ -1,9 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import { tick } from 'svelte';
 import type { ComponentProps } from 'svelte';
 import MediaHeroField from '../../lib/components/MediaHeroField.svelte';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
+// The compiled sheet carries the utility layer (focus-visible ring/outline utilities) and the
+// admin's own :focus-visible rule the dropzone focus test below measures against; the plain
+// component render carries neither.
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 // A small projected library keyed by 16-hex hash, the shape EditData.mediaLibrary carries (the merged
 // committed-plus-uploaded projection the picker and the resting thumbnail both resolve against).
@@ -179,6 +184,48 @@ describe('MediaHeroField empty state', () => {
     // The chooser leads with an upload control and the library combobox below.
     await expect.element(screen.getByRole('button', { name: /choose a file/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('combobox')).toBeInTheDocument();
+  });
+});
+
+
+describe('MediaHeroField dropzone focus indicator', () => {
+  let sheet: HTMLStyleElement;
+
+  beforeAll(() => {
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    sheet = document.createElement('style');
+    sheet.textContent = compiledAdminCss;
+    document.head.appendChild(sheet);
+  });
+
+  afterAll(() => {
+    document.documentElement.removeAttribute('data-theme');
+    sheet.remove();
+  });
+
+  it('gives the empty-state dropzone the admin brand-violet outline, not a ring the sheet cannot see', async () => {
+    const screen = await mount();
+    const trigger = screen.getByRole('button', { name: /add hero image/i }).element() as HTMLElement;
+    expect(trigger.className).not.toMatch(/focus-visible:(outline|ring)/);
+    // Tab into the trigger so :focus-visible applies the way it does for a keyboard user (a
+    // programmatic .focus() on a button does not satisfy Chromium's focus-visible heuristic).
+    await userEvent.tab();
+    expect(document.activeElement).toBe(trigger);
+    // The trigger's transition-colors utility animates outline-color, so a read immediately
+    // after focus catches an interpolated frame; wait past the transition before reading it.
+    await new Promise((r) => setTimeout(r, 300));
+    const style = getComputedStyle(trigger);
+    expect(style.outlineStyle).toBe('solid');
+    expect(style.outlineWidth).toBe('2px');
+    // The same custom property the admin's global :focus-visible ring reads, resolved to a
+    // color rather than compared as a raw string (getComputedStyle normalizes oklch()).
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+    const probe = document.createElement('div');
+    probe.style.outline = `2px solid ${primary}`;
+    document.body.appendChild(probe);
+    const resolvedPrimary = getComputedStyle(probe).outlineColor;
+    probe.remove();
+    expect(style.outlineColor).toBe(resolvedPrimary);
   });
 });
 

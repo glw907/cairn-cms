@@ -627,9 +627,13 @@
 
   /* The one header band is the 4rem topbar, and a control the browser scrolls into view could land
      hidden beneath it (WCAG 2.4.11 Focus Not Obscured). The scroll margin keeps any focus or
-     fragment scroll clear of the sticky band, with a little slack. */
+     fragment scroll clear of the sticky band, with a little slack. The below-sm fixed bottom
+     action bar (EditPage.svelte) is the same kind of obscuring band from the other edge: its
+     min-h-11 button plus its pt-2/pb-2 padding and border measure about 3.8rem before
+     env(safe-area-inset-bottom), so the bottom margin rounds up with slack for that inset too. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 5.5rem;
+    scroll-margin-bottom: 6rem;
   }
 
   /* DaisyUI ships .modal-box with a single flat, theme-invariant shadow and no border, so the

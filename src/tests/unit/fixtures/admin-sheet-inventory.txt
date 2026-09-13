@@ -215,9 +215,6 @@ flex-shrink
 flex-wrap
 floating-label
 focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]
-focus-visible:outline-none
-focus-visible:ring-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]
-focus-visible:ring-1
 focus-visible:ring-2
 focus-visible:ring-primary/70
 focus-visible:text-base-content
@@ -576,7 +573,7 @@ right-4.5
 ring
 ring-1
 ring-2
-ring-base-content/20
+ring-base-content/55
 ring-inset
 ring-primary/35
 ring-primary/40

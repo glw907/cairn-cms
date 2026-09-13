@@ -1342,6 +1342,20 @@
   result count and an active-option narration, replace the closed-conditioned "No matches" text,
   so a query narrowing to zero announces. Consumers must: nothing.
 
+- The admin's pressed-segment cue and two focus edges are settled. `segmentTintClass`'s active
+  ring now mixes `base-content` at 55% instead of 20%: the old mix measured 1.492:1 light and
+  1.773:1 dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor, and the new mix
+  measures 3.586:1 light and 4.959:1 dark, the same mix already locked for the unchecked
+  checkbox/radio edge and the unfocused input edge; the wash beside it, `bg-base-content/[0.07]`,
+  stays as is since it is a fill tone rather than the 1.4.11-bearing cue. The admin's one
+  fixed-bottom-bar scroll-margin rule gains `scroll-margin-bottom` alongside its existing
+  `scroll-margin-top`, so a focused or fragment-scrolled control on a narrow edit page no longer
+  lands hidden beneath the below-sm Save/Publish bar (WCAG 2.4.11). `MediaHeroField`'s empty-state
+  dropzone drops its own `focus-visible:outline-none`/`ring-1`/`ring-[...]` utilities, so its
+  keyboard focus now shows the admin's own brand-violet `:focus-visible` outline (the sheet's own
+  rule, `outline: 2px solid var(--color-primary)`) instead of the ring its own
+  `focus-visible:outline-none` was quietly suppressing that rule for. Consumers must: nothing.
+
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
   optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
   both `paid-plan-declined` messages now all state plainly that a cairn site needs Workers Paid

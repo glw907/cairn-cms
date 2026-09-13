@@ -602,3 +602,45 @@ figures come from is the second, verified capture.**
 - TILE DIFF: `magick compare -metric AE` is 0 on all 253 tiles across all six capture-matrix
   surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`, every width and
   scheme) between `task-4/before/tiles/` and the verified `task-4/after/tiles/`.
+
+### Task 5: the pressed cue, the bottom-bar scroll margin, and the dropzone focus indicator
+
+`signups` is the only capture-matrix surface reaching `cairn-admin.css`, and this task's three
+changes (the segmented-control ring mix, the scroll-margin rule's added property, and the dropzone
+trigger's focus utilities) touch no element the `signups` route renders. Before set at
+`~/.cache/cairn-polish-11b-i/task-5/before/`, captured fresh at this task's parent commit (no
+predecessor in this run had a pass-wide before set to symlink). After set at
+`~/.cache/cairn-polish-11b-i/task-5/after/`.
+
+The plan named `admin-edit-page-{light,dark,1440,768}`, `admin-media-{light,dark}`, and
+`admin-media-detail-{light,dark}` (the `e2e/admin-visual.spec.ts` snapshots, a different set from
+the six-surface capture matrix above) as the expected movers for the ring raise and the dropzone
+fix. **A first `CI=1 npx playwright test e2e/admin-visual.spec.ts` run against a not-yet-rebuilt
+`dist/` (invoked directly rather than through `npm run test:e2e`'s `pretest:e2e` hook) showed 28 of
+28 passing with zero diffs, which would have been a false "nothing moves" result: the showcase's
+`file:../..` dependency resolves straight to this repo's `dist/`, so a check that skips the
+package rebuild proves the PRIOR commit's engine, not this task's. The full gate's own
+`npm run package` head step rebuilt `dist/`, and the same suite then showed four real failures;
+the capture-matrix `before`/`after` pair below was also recaptured against the rebuilt `dist/` for
+the same reason.**
+
+- INTENDED MOVES: none on the six-surface capture matrix, since `signups` is the only one reaching
+  `cairn-admin.css` and none of this task's three changes touch an element `signups` renders.
+  `admin-edit-page-{light,dark,1440,768}` on the `e2e/admin-visual.spec.ts` snapshots (the ring
+  raise, visible in the footer's Prose/Wide segmented control).
+- MOVED BASELINES: `admin-edit-page-{light,dark,1440,768}`, produced by `CI=1 npx playwright test
+  e2e/admin-visual.spec.ts` against the rebuilt `dist/` (4 of 28 failed, all four
+  `admin-edit-page-*`), then regenerated locally with `CI=1 npx playwright test
+  e2e/admin-visual.spec.ts --update-snapshots=changed`, which rewrote exactly those four files and
+  none other. `admin-media-{light,dark}` and `admin-media-detail-{light,dark}` did not move: the
+  ring's opacity change (20% to 55% of `base-content`) is a single 1px inset hairline around the
+  media library's density toggle, small enough in absolute pixel count to stay under the suite's
+  `maxDiffPixels: 120` tolerance on a full-page screenshot, and the dropzone focus utilities only
+  paint on real `:focus-visible`, which no visual-suite test triggers (the suite screenshots
+  resting state). The `MediaHeroField` dropzone additionally never renders on either
+  `admin-media-detail-*` baseline: that panel is the media library's own asset-detail slide-over
+  (`CairnMediaLibrary`), not `DetailsPanel`'s hero-field host, so no baseline in the family renders
+  the dropzone at all, resting or focused.
+- TILE DIFF: `magick compare -metric AE` is 0 on all 253 tiles across all six capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`, every width and
+  scheme) between `task-5/before/tiles/` and the rebuilt-`dist/` `task-5/after/tiles/`.

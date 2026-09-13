@@ -105,8 +105,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       <div class="flex flex-col items-center text-center">
         <div class="mb-7">{@render brand()}</div>
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--color-success)]"
-          style="background-color: color-mix(in oklch, var(--color-success) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-success) 22%, transparent);"
+          class="flex h-12 w-12 items-center justify-center rounded-xl bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success"
         >
           <MailCheckIcon class="h-6 w-6" />
         </div>
@@ -123,7 +122,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         </div>
         <button
           type="button"
-          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 type-body font-medium text-primary hover:underline"
+          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 type-body font-medium text-primary underline underline-offset-2"
           onclick={() => (dismissed = true)}
         >
           Use a different email
@@ -170,7 +169,6 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
             name="email"
             required
             autocomplete="email"
-            aria-label="Email"
             class="input w-full"
             placeholder="you@example.com"
           />

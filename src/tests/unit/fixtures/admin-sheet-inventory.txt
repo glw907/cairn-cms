@@ -79,6 +79,7 @@ bg-primary/[0.06]
 bg-primary/[0.12]
 bg-primary/10
 bg-success
+bg-success/15
 bg-transparent
 bg-warning
 bg-warning/[0.08]
@@ -578,6 +579,7 @@ ring-inset
 ring-primary/35
 ring-primary/40
 ring-primary/70
+ring-success/22
 rotate-180
 rounded
 rounded-[0.55rem]
@@ -731,7 +733,6 @@ text-[var(--cairn-error-ink)]
 text-[var(--color-accent)]
 text-[var(--color-error-content)]
 text-[var(--color-primary)]
-text-[var(--color-success)]
 text-2xl
 text-3xl
 text-balance

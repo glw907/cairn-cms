@@ -163,6 +163,19 @@ describe('LoginPage', () => {
     expect(screen.container.querySelector('[data-theme="cairn-admin"]')).toBeTruthy();
   });
 
+  it('names the email input from its visible label, with no redundant aria-label', async () => {
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
+    const input = screen.container.querySelector('input[name="email"]');
+    expect(input).not.toHaveAttribute('aria-label');
+    await expect.element(screen.getByRole('textbox', { name: 'Email' })).toBeInTheDocument();
+  });
+
+  it('paints the confirmation mark with the on-surface success ink token', async () => {
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const mark = screen.container.querySelector('.rounded-xl');
+    expect(mark).toHaveClass('cairn-text-success');
+  });
+
   it('renders the identity hand-off page with a brand, a heading, the marker, a link to /admin, and no form', async () => {
     const screen = await render(LoginPage, { data: { identity: { label: 'Acme SSO' } }, form: null });
     await expect

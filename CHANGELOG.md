@@ -1734,6 +1734,15 @@
   is correct at first paint with no post-hydration swap, and exactly one Save control and one
   Publish control is ever reachable at any width. Consumers must: nothing.
 
+- `LoginPage`'s confirmation mark drops its bracketed `text-[var(--color-success)]` and inline
+  `style` for `cairn-text-success` plus `bg-success/15 ring-1 ring-inset ring-success/22`, the
+  same theme-color-and-opacity utility form the rest of the tree uses for a fill and an inset
+  hairline off one token. The "Use a different email" escape hatch now carries `underline
+  underline-offset-2` at rest, the borderless-underlined reference-link recipe, rather than only
+  on hover. The email input's redundant `aria-label="Email"` is removed; its accessible name now
+  comes from the visible `<span>Email</span>` label wrapping it, as it already did before the
+  attribute was ever read. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

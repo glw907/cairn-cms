@@ -718,3 +718,29 @@ narrow (below-sm) bottom action bar branch this task also touches; the evidence 
   `admin-edit-page-light-band.png`, `admin-edit-page-dark-band.png`,
   `admin-edit-page-1440-band.png`, `admin-edit-page-768-band.png`
   (`~/.cache/cairn-polish-11b-i/task-8/after/crops/`).
+
+### Task 9: The login page's tokens and its two small conformance items
+
+Not a capture-matrix task: `LoginPage.svelte` is the only file this task touches, and no
+capture-matrix surface (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`) renders
+it. `admin-visual.spec.ts` baselines `/admin/login` in its form state only
+(`auth-login-{light,dark}`); the confirmation block this task's color and underline changes reach is
+unbaselined, so its evidence is the by-hand capture named below.
+
+- INTENDED MOVES: none. The plan named `auth-login-{light,dark}` as candidates, on the theory that
+  the fill-tone rewrite (a bracketed `text-[var(--color-success)]` plus an inline `style` becoming
+  `bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success`) or the escape-hatch
+  underline could shift the form-state screenshot; the unmodified suite run below shows neither
+  reaches the form state, since both changed elements render only in the confirmation branch the
+  form-state baseline never exercises.
+- MOVED BASELINES: none. An unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run
+  after `npm run package` rebuilt `dist/` from this task's source edits, passed all 28 of 28 tests
+  with zero diffs, so no regeneration step ran.
+- TILE DIFF: not applicable. This task reaches no capture-matrix surface, so there is no
+  before/after tile pair to diff; `git status` shows no file changed under
+  `examples/showcase/e2e/*.spec.ts-snapshots/`.
+- READ ME: the two by-hand confirmation-state captures, `/admin/login` submitted once against the
+  dev backend at 390x800, cookie-selected theme with matching `emulateMedia`, `fullPage: true`:
+  `confirm-light.png` and `confirm-dark.png`
+  (`~/.cache/cairn-polish-11b-i/task-9/`). Both show the mark's green fill, ring, and icon reading
+  clearly as a success mark against the panel background in its own scheme.

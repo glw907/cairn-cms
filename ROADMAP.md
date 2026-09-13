@@ -2075,7 +2075,12 @@ the named human gates only):**
   and per input modality: touch has no hover state, the drawer is a slide on a phone and a
   persistent column at desktop widths, a layout change caused by a resize or an orientation change
   snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
-  390, 768, 1440, 2560). Sequence (Geoff, 2026-09-13): a second research read on the responsive
+  390, 768, 1440, 2560). Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
+  developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
+  runs on its own screens (the borrowable-patterns gates layer), which means the checker must
+  reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not
+  only a component's own `<style>` block, and the audit must run over the engine's own tree so
+  cairn is held to the rules first. Sequence (Geoff, 2026-09-13): a second research read on the responsive
   axis extends the brief; the settled document gets a fresh-context adversarial review; then a
   spec through brainstorming and a plan through writing-plans. Research brief with the
   seven-system comparison and a proposed token set:

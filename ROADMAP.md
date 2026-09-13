@@ -2056,6 +2056,19 @@ the named human gates only):**
 
 ## Later
 
+- **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
+  browser).** The admin animates in places (the drawer's width, the palette's opacity, the
+  desk band's dot, `transition-colors` on controls), and `cairn-audit` holds two rules about it
+  (`motion-band` on durations, `reduced-motion` on the guard), but no design-system section says
+  which state changes animate and which snap, the easing curves, the duration bands per class of
+  change (hover, press, enter, exit, layout), how enter and exit differ, and how the reduced-motion
+  guard degrades each. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
+  with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
+  sweep of the admin components onto it. Borrowable by consumers through the audit and the
+  design tokens, per the borrowable-patterns architecture. **Trigger:** after the release cut
+  and the borrowable-patterns pass, when the next admin-surface pass is planned; a consumer
+  custom screen animating its own way is the reopening signal.
+
 - **The bracketed fill-tone population outside `check:custom-surface`'s reach (polish-11b-i,
   2026-09-13).** The admin tree's `retiredTokenPattern` in
   `scripts/checks/custom-surface-budget.json` only matches `--color-muted` and `--color-subtle`

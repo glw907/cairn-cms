@@ -2107,6 +2107,17 @@ the named human gates only):**
 
 ## Later
 
+- **Carbon for AI's label-plus-explainability pattern on the Tidy surface (filed 2026-09-13
+  from the Carbon AI-tooling survey, `docs/internal/record/2026-09-13-carbon-ai-tooling.md`).**
+  cairn's in-buffer Tidy copy-edit and the `CairnTidySettings` screen show AI-touched content
+  with no visual marker and no "how was this built" affordance; Carbon for AI's pattern (a label
+  on AI-generated content plus an explainability disclosure) is the conventional answer and
+  copies as a design pattern, never a package. The survey rules out Carbon's MCP server, its
+  docs skill, `carbon-ai-chat`, and its `llms.txt` (Carbon's own component vocabulary, or
+  chat-widget products outside scope) and keeps `stylelint-plugin-carbon-tokens` watch-only, since
+  `cairn-audit`'s token rules already do the same job. **Trigger:** the next pass that touches
+  the Tidy surface, or the docs rewrite reaching the AI posture page.
+
 - **The bracketed fill-tone population outside `check:custom-surface`'s reach (polish-11b-i,
   2026-09-13).** The admin tree's `retiredTokenPattern` in
   `scripts/checks/custom-surface-budget.json` only matches `--color-muted` and `--color-subtle`

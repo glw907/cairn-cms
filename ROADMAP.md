@@ -2062,7 +2062,9 @@ the named human gates only):**
   (`motion-band` on durations, `reduced-motion` on the guard), but no design-system section says
   which state changes animate and which snap, the easing curves, the duration bands per class of
   change (hover, press, enter, exit, layout), how enter and exit differ, and how the reduced-motion
-  guard degrades each. Direction (Geoff, 2026-09-13): gentle and minimal, with modern GNOME as the reference for
+  guard degrades each. Purpose (Geoff, 2026-09-13): professional-level visual polish and nothing novel; the
+  transitions fit the admin's register, clean, conventional, polished, understated, and
+  professional. Direction (Geoff, 2026-09-13): gentle and minimal, with modern GNOME as the reference for
   the feel (short, eased, one property at a time, nothing that draws attention to itself) and the
   web-native systems (Carbon, Atlassian, Material) as the reference for the ruleset, since GNOME
   publishes no motion rules and its idiom is a desktop toolkit rather than the web; the named

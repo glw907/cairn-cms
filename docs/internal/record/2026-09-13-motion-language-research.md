@@ -7,7 +7,43 @@ Geoff's direction (2026-09-13): gentle and minimal, in the register of modern GN
 one property at a time, nothing that draws attention to itself. The named defect is the zen-mode
 toggle, which is abrupt.
 
+## Revision 2 (2026-09-13)
+
+An adversarial review of revision 1, run in a fresh context against the tree at `main`, returned
+fourteen ranked corrections. All are applied here. What changed:
+
+- **The zen diagnosis was wrong.** The abruptness is `.drawer-content`'s untransitioned 224px
+  `margin-left` snap, not the `{#if}` regions and not the sidebar's own exit. Rewritten under "Zen
+  mode's real defect" and in section (d).
+- **The admin's motion inventory replaces a claim that it declares almost none.** Seventeen
+  declarations across seven components plus `cairn-admin.css`. Two transition `width` and one is
+  `transition-all`.
+- **A new section, "Layer order and the custom-surface budget",** states what a DaisyUI override
+  costs in this repo: an unlayered rule pinned by exact selector in a gate's allowlist.
+- **`cairn-audit` does not run over the engine's own tree.** `motion-band` and `reduced-motion`
+  govern consuming sites only.
+- **Seven factual errors corrected:** M3's legacy easing tokens, DaisyUI's `swap` and `textrotate`
+  gating, `.modal-bottom`'s corner radii, the M3 Android duration rows, three quotations that were
+  paraphrases, and the 1440 sidebar row.
+- **The worked example, the reduced-motion policy, the resize stopper, the exit-asymmetry floor,
+  the verification claim, and the case table** were each rewritten against the tree.
+
+Two decisions belong to Geoff, and the spec pass should not start until both are settled:
+
+1. **How zen's content offset becomes transitionable.** A sanctioned exception letting
+   `margin-left` transition on `.drawer-content`, or a shell restructure that puts the offset on a
+   transitionable property. Costed in section (d), "Decision for Geoff: the content offset".
+2. **Whether to override DaisyUI's component timings at all.** Ten to fourteen additions to a
+   custom-surface budget that pins 17 selectors today and is built to ratchet toward zero. Costed
+   in "Layer order and the custom-surface budget".
+
+One review item was answered against the review rather than with it: WCAG 2.4.13 Focus Appearance
+is **Level AAA** in WCAG 2.2, not Level AA. Both the normative text and the Understanding document
+say AAA.
+
 ## What the admin has today
+
+### The audit rules, and where they reach
 
 `src/lib/audit/rules/static/motion-band.ts` requires every duration a component's own CSS declares
 to land in a 150ms to 250ms band, and bans `transition: all`. `src/lib/audit/rules/static/reduced-motion.ts`
@@ -15,16 +51,78 @@ requires every selector that carries motion to be named again inside a `prefers-
 guard in the same file. `src/lib/components/cairn-admin.css` line 1115 collapses every admin
 transition and animation to `0.01ms !important` under that guard.
 
-The admin declares almost no motion of its own. The only transition in `cairn-admin.css` is
-`transition: rotate 150ms ease` on `.cairn-caret` (line 545). Everything else the admin appears to
-animate comes from DaisyUI.
+Both rules reach consuming sites only. No npm script in this repo runs `cairn-audit` over the
+engine's own tree, and the shared iteration surface the CSS-family rules read, `cssScopeRules`
+(`src/lib/audit/rules/static/css-scope.ts` line 33), yields two things: every rule in a component's
+own scoped `<style>` block, and every rule in a CSS file the consumer's config names. Of the
+admin's own components only `HelpHome.svelte` carries a scoped `<style>` block, and `cairn-admin.css`
+is not a config-named consumer file. So the inventory below is unaudited today. Whether the audit
+should be pointed at the admin is a decision for the spec, not a finding of this brief, and every
+rule change proposed in section (e) is a change to what consuming sites are held to unless that
+decision is taken first.
 
-Zen mode carries no motion at all. `EditPage.svelte` gates the topbar band, the document title, the
-toolbar strip, the footer, and the zen chip behind `{#if !prefs.zen}` / `{#if prefs.zen}` blocks
-(lines 1804, 1835, 2098, 2313, 2345). A Svelte `{#if}` adds and removes the node in one frame, so
-every one of those regions appears and vanishes instantly. `setZen()` (line 441) then calls
-`flushSync()` to move focus into the editing surface before the old nodes detach. That is the whole
-defect: the toggle is not a slow or badly eased animation, it is the absence of one.
+### The motion the admin declares
+
+Seventeen declarations across seven components plus `cairn-admin.css`. Every line number was read
+from `main`.
+
+| Where | What |
+| --- | --- |
+| `cairn-admin.css:545` | `transition: rotate 150ms ease` on `.cairn-caret` |
+| `HelpHome.svelte:562` | `border-color 150ms ease, background-color 150ms ease` on the quiet button |
+| `HelpHome.svelte:787` | `border-color 150ms ease, color 150ms ease` on the step action |
+| `MarkdownEditor.svelte:530` | `width 200ms ease` on the upload progress bar's `::-webkit-progress-value` |
+| `MarkdownEditor.svelte:584` | `opacity 150ms ease, transform 150ms ease` on the fold chevron |
+| `MarkdownEditor.svelte:654` | `background-color 250ms ease` on `.cm-cairn-fold-flash` |
+| `EditPage.svelte:1428` | `transition-opacity duration-[250ms]` on the save-state line |
+| `EditPage.svelte:1643` | `transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0` on the feedback alert |
+| `EditPage.svelte:2047` | `transition-[width] duration-[250ms]` on the preview frame |
+| `CairnAdminShell.svelte:775, 971, 1024` | `transition-colors` on the palette trigger, the brand tile, and a nav section header |
+| `CairnAdminShell.svelte:1035` | `transition-opacity` on the caret |
+| `CairnMediaLibrary.svelte:747` | `transition-shadow` on a media card, whose selected state changes a `ring` |
+| `CairnMediaLibrary.svelte:845` | `transition-colors` on a media table row |
+| `ConceptList.svelte:400` | `transition-colors` on an entry table row |
+| `MediaHeroField.svelte:450` | `transition-colors` on the hero dropzone button |
+
+Three of those already sit outside the ruleset this brief recommends. Two transition `width`
+(`MarkdownEditor.svelte:530`, `EditPage.svelte:2047`) and one is `transition-all`
+(`EditPage.svelte:1643`). The durations cluster on 150ms and 250ms, the current band's two edges,
+and every explicit easing is the bare `ease` keyword, which is `cubic-bezier(0.25, 0.1, 0.25, 1)`
+and matches no system surveyed below.
+
+Where they live matters as much as what they say. Three are CSS rules. Eleven are Tailwind utility
+classes inside a `class` attribute. Three are string values inside a CodeMirror JS theme object
+(`MarkdownEditor.svelte` lines 530, 584, and 654). A rule that parses CSS reads three of the
+seventeen. Section (e) states what that costs.
+
+### Zen mode's real defect
+
+Zen is a mixed toggle. One set of regions snaps, one element slides, and one edge jumps.
+
+**The regions snap.** `EditPage.svelte` gates the topbar band, the document title, the toolbar
+strip, the footer, and the zen chip behind `{#if !prefs.zen}` / `{#if prefs.zen}` blocks (lines
+1804, 1835, 2098, 2313, 2345). A Svelte `{#if}` adds and removes the node in one frame, so those
+regions appear and vanish instantly. `setZen()` (line 441) calls `flushSync()` to move focus into
+the editing surface before the old nodes detach.
+
+**The sidebar slides.** `CairnAdminShell.svelte` lines 669 and 670 set
+`class:lg:drawer-open={!isDeskRoute && !topbar.zen}` and
+`class:xl:drawer-open={isDeskRoute && !topbar.zen}`, so entering zen drops the drawer-open class at
+whichever breakpoint applies, and DaisyUI's `.drawer-side > :not(.drawer-overlay)` carries
+`transition: translate .3s ease-out, width .2s ease-out`.
+
+**The content edge jumps, and that is the defect.** Lines 692 and 693 toggle `lg:ml-56` and
+`xl:ml-56` on `.drawer-content` off the same `!topbar.zen` condition. `ml-56` is 14rem, 224px.
+Nothing transitions `margin-left`, so the content pane's left edge moves 224px in a single frame
+while the sidebar beside it is one frame into a 300ms slide. The persistent sidebar is
+`position: fixed` (`cairn-admin.css` lines 772 and 784) rather than in flow, so it reserves no
+column in the drawer's grid and leaves the layout the instant its class drops, which is exactly why
+a margin is carrying the content offset in the first place.
+
+So the abruptness is a 224px instantaneous translation of the whole editing surface, running
+against a 300ms slide, at the widest viewports, where 224px is the largest single positional change
+the admin makes anywhere. It is not the absence of motion, and it is not the `{#if}` regions, which
+snap in place and move nothing beside them. Section (d) costs the two ways out.
 
 ## 1. GNOME HIG and libadwaita
 
@@ -44,7 +142,8 @@ claim below comes from the source.
 
 ### The Adwaita stylesheet uses one duration and one curve
 
-`src/stylesheet/_common.scss` defines the whole CSS-level motion vocabulary in six lines
+`src/stylesheet/_common.scss` defines the CSS-level motion vocabulary as a handful of SCSS
+variables, reproduced in full here
 ([source](https://gitlab.gnome.org/GNOME/libadwaita/-/raw/main/src/stylesheet/_common.scss)):
 
 ```scss
@@ -61,12 +160,14 @@ Four observations, all of them directly on Geoff's direction:
 
 - One duration, 200ms, covers every button, focus ring, and backdrop in the desktop.
 - One curve, `cubic-bezier(0.25, 0.46, 0.45, 0.94)`, an ease-out quad. Nothing overshoots.
-- Every property is named individually. `transition: all` appears nowhere.
+- Every property is named individually. `transition: all` appears nowhere in `_common.scss`, which
+  is the file that was read. This was not checked across the whole libadwaita stylesheet.
 - The transitioned properties are `background`, `box-shadow`, `outline-color`, `outline-width`, and
   `outline-offset`. All are paint-only. No Adwaita hover or focus state moves anything.
 
-The one animation in the file is `animation: needs_attention 150ms ease-in`, an attention cue, which
-is the single case where GNOME deliberately does draw the eye.
+The file is not only those variables. It also declares `animation: needs_attention 150ms ease-in`,
+an attention cue, which is the one case where GNOME deliberately does draw the eye. The finding is
+the smallness of the shared vocabulary, not a literal line count.
 
 ### AdwTimedAnimation defaults to ease-out-cubic
 
@@ -149,8 +250,23 @@ user setting is Settings > Accessibility > Seeing > Reduced animation, which map
 | `linear` | `cubic-bezier(0, 0, 1, 1)` |
 
 `emphasized` is not expressible as a single CSS `cubic-bezier()`. M3 publishes it as a two-segment
-spline, and web implementations chain the decelerate and accelerate halves instead. A `legacy` token
-was not found in the current spec.
+spline, and web implementations chain the decelerate and accelerate halves instead.
+
+M3 also publishes a legacy trio, carried for compatibility and marked "do not use them in new code"
+because they are the pre-M3 named constants:
+
+| Token | Value | Pre-M3 name |
+| --- | --- | --- |
+| `easing-legacy` | `cubic-bezier(0.4, 0, 0.2, 1)` | `FastOutSlowInEasing` |
+| `easing-legacy-accelerate` | `cubic-bezier(0.4, 0, 1, 1)` | `FastOutLinearInEasing` |
+| `easing-legacy-decelerate` | `cubic-bezier(0, 0, 0.2, 1)` | `LinearOutSlowInEasing` |
+
+Those three values are exactly Tailwind 4's `--ease-in-out`, `--ease-in`, and `--ease-out`
+(`tailwindcss/theme.css` lines 434 to 436, measured in section 7). Tailwind's entire default easing
+vocabulary is Material's deprecated one, and `--default-transition-timing-function` is the legacy
+`cubic-bezier(0.4, 0, 0.2, 1)`. That is the sharpest argument in this brief for overriding the
+default: the admin is not inheriting a neutral curve, it is inheriting a curve set its own source
+system has retired.
 
 ### Asymmetry and container transform
 
@@ -340,7 +456,7 @@ Extracted from `daisyui/components/*.css`:
 | `.toggle` | background-color 100ms, translate 200ms, inset-inline-start 200ms; also `rotate 0.4s` |
 | `.checkbox` | background-color and box-shadow 200ms; clip-path, rotate, translate 300ms delayed 100ms |
 | `.tab`, `.select`, `.card` | 200ms |
-| `.swap` | 200ms `cubic-bezier(0, 0, 0.2, 1)` on transform, rotate, opacity |
+| `.swap` | 200ms `cubic-bezier(0, 0, 0.2, 1)` on transform, rotate, opacity, inside `prefers-reduced-motion: no-preference` |
 
 Three things to override by name:
 
@@ -351,11 +467,98 @@ Three things to override by name:
 3. **`.btn` transitions `transform`.** Nothing in the admin should move on hover. Narrowing the
    button transition to the paint properties matches Adwaita's `$button_transition` exactly.
 
-DaisyUI gates some components behind `@media (prefers-reduced-motion: no-preference)`: carousel,
-collapse, toast, tooltip, rating, radio, progress, loading, aura, skeleton, menu, dropdown. It does
-**not** gate modal, drawer, button, checkbox, toggle, tab, card, select, swap, or fab. Those animate
-regardless of the user's preference. The blanket `!important` collapse in `cairn-admin.css` is
-currently the only thing covering them, which is why that block must survive any refactor.
+### Which DaisyUI components gate themselves
+
+Measured by grepping every file under `daisyui/components/` at 5.7.20 for `prefers-reduced-motion`.
+
+Fourteen gate themselves: `aura`, `carousel`, `collapse`, `dropdown`, `loading`, `menu`, `progress`,
+`radio`, `rating`, `skeleton`, `swap`, `textrotate`, `toast`, `tooltip`. The first read put `swap`
+in the ungated column and omitted `textrotate`; both are gated.
+
+Twenty declare motion and gate nothing: `button`, `calendar`, `card`, `checkbox`, `countdown`,
+`diff`, `dock`, `drawer`, `fab`, `fileinput`, `filter`, `hover3d`, `label`, `megamenu`, `modal`,
+`otp`, `radialprogress`, `select`, `tab`, `toggle`. Those animate regardless of the user's
+preference, and the blanket `!important` collapse in `cairn-admin.css` line 1115 is the only thing
+covering them today.
+
+That asymmetry is what sets the reduced-motion position this brief takes. The blanket block is the
+vendor floor, because twenty ungated components is more surface than the admin can name and keep
+named across dependency bumps. The property-class policy in section (f) is what the admin's **own**
+rules do inside the same guard. Section (e) states how the two coexist without contradicting each
+other, and what the blanket block is currently missing.
+
+### Layer order and the custom-surface budget
+
+Overriding a DaisyUI timing in this repo is not a CSS edit. It is a budget change, and the budget
+is built to shrink.
+
+The mechanism, read from the build:
+
+- `scripts/build/admin-css.input.css` declares `@layer theme, base, components, utilities;` up
+  front, and `build-admin-css.mjs` line 103 re-emits `@layer properties, theme, base, components,
+  utilities;` on the shipped sheet.
+- DaisyUI 5.7.20 emits every component inside `@layer utilities`, nested as
+  `@layer utilities{@layer daisyui.l1.l2.l3{...}}`. Its rules therefore sit in the **last** declared
+  layer.
+- `build-admin-css.mjs` line 19 wraps every admin rule in
+  `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])`, which contributes zero
+  specificity by design, so the host can always override.
+
+Put together: no layered admin rule can outrank a DaisyUI rule, because layer order decides before
+specificity does and DaisyUI is later. `cairn-admin.css` lines 766 to 770 say so in its own words,
+and every override already shipped is an **unlayered** rule, which is the only thing that beats a
+layered one.
+
+Unlayered rules are gated. `scripts/checks/check-custom-surface.mjs`, wired as
+`npm run check:custom-surface`, pins the unlayered set by exact selector in
+`scripts/checks/custom-surface-budget.json`. The admin tree pins **17 selectors** today, with
+`componentsLayerCap: 19` and `retiredTokenBudget: 0`, and the gate's own header states the intent:
+"The budget ratchets to zero across the sweep." A selector is neither deletable nor addable without
+editing that file.
+
+What the overrides in section (c) and section (f) would cost, counted as selectors:
+
+| Override | Selectors |
+| --- | --- |
+| `.modal-box` retimed, `scale` dropped | 1 |
+| `.modal` base transition (overlay, visibility, background-color, opacity) | 1 |
+| `.modal.modal-open` open-state transition, a five-alternative selector list | 1 |
+| `.drawer-side > :not(.drawer-overlay)` translate and width | 1 |
+| `.drawer-side` opacity and visibility, with their 100ms delays | 1 |
+| `.drawer-overlay` | 1 |
+| `.collapse` off `transition-property: all` | 1 |
+| `.collapse` `grid-template-rows` | 1 |
+| `.btn` off `transform` | 1 |
+| `@media (hover: hover)` guards for `tooltip`, `select`, `fab`, `menu` | 1 each |
+
+Ten for the timing overrides alone, up to fourteen with the hover guards. Against 17 pinned today,
+that is a 59% to 82% growth in a budget whose stated direction is down, and it puts cairn on the
+hook for DaisyUI's internal selector shapes at every upgrade: a renamed or re-nested selector
+upstream silently stops matching, and the gate reports a pinned rule that no longer overrides
+anything rather than a visual regression.
+
+**Decision for Geoff: what to override.** Three options, none of them free.
+
+- **Override the four components and grow the budget.** The admin's motion then genuinely follows
+  one language, and the WebKit trigger classes (`.modal`'s 300ms scale, `.drawer`'s width) are
+  actually removed rather than described. Cost: 10 to 14 pinned selectors, a reversal of the
+  ratchet's direction, and a per-upgrade maintenance surface on DaisyUI internals.
+- **Leave DaisyUI's timings alone and set the language on cairn's own rules only.** Costs nothing,
+  keeps the ratchet honest, and the admin's own seventeen declarations all move into the vocabulary.
+  Cost: the admin's largest and most visible surfaces, the modal and the drawer, stay at 300ms with
+  a scale and a width transition, so the published rule and the shipped behavior disagree at exactly
+  the places a reader notices.
+- **The middle path: override only what the ruleset calls a hazard, and document the rest.** Three
+  selectors, not fourteen: `.modal-box` (drop the `scale`, the peripheral-scaling trigger class),
+  `.drawer-side > :not(.drawer-overlay)` (drop the `width` transition, a banned layout property),
+  and `.collapse` (off `transition-property: all`, the one construct `motion-band` already bans).
+  The 300ms durations stay, and the token table gains `--cairn-dur-shift` at 300ms partly to make
+  them legal rather than to make them a target. Cost: three pinned selectors, and the ruleset admits
+  in writing that two of its bands exist to describe a dependency.
+
+This brief does not decide. It records that the second and third options are the ones consistent
+with the repo's own stated direction, and that the first is the only one that makes the published
+language true of everything the reader sees.
 
 ## (a) Comparison on the same axes
 
@@ -397,8 +600,9 @@ The three that matter for cairn are in the report summary. Two more, lower stake
 - **Whether to publish numbers at all.** Carbon, M3, and Atlassian publish full token sets. Apple
   publishes principles and almost no numbers. GNOME publishes no motion prose whatsoever, and its
   language is recoverable only by reading libadwaita. Geoff asked for the GNOME register, and the
-  GNOME register turns out to be a stylesheet with six lines in it. That is itself the finding: the
-  register is achieved by having almost no vocabulary, not by having a well-documented one.
+  GNOME register turns out to be a stylesheet with one duration and one curve in it. That is itself
+  the finding: the register is achieved by having almost no shared vocabulary, rather than by having
+  a well-documented one.
 - **Springs versus timed curves for large transitions.** GNOME uses critically damped springs for its
   most prominent transitions and timed curves for everything small. M3 Expressive is moving the same
   way. Carbon and Atlassian stay entirely on cubic-beziers. CSS has no spring primitive that degrades
@@ -419,20 +623,24 @@ Tokens. Four durations and three curves. A component that needs a fifth of eithe
   --cairn-dur-tap:    100ms   hover, press, focus ring, disabled, any paint-only feedback
   --cairn-dur-quick:  150ms   small local state: caret, chip, disclosure, inline validation
   --cairn-dur-settle: 200ms   the default: menus, popovers, tooltips, drawers, modals
-  --cairn-dur-shift:  300ms   page-level mode change only. Zen is the sole use today.
+  --cairn-dur-shift:  300ms   page-level mode change only. Unallocated: see decision 1.
   --cairn-ease-out:   cubic-bezier(0.25, 0.46, 0.45, 0.94)  Adwaita's curve. Enters, settles.
   --cairn-ease-in:    cubic-bezier(0.4, 0, 1, 1)            Exits only.
   --cairn-ease-move:  cubic-bezier(0.4, 0, 0.2, 1)          Visible throughout, moves or resizes.
 
 Enter and exit are asymmetric. An exit runs one duration band faster than its enter and uses
 --cairn-ease-in. A settle-band panel enters at 200ms ease-out and leaves at 150ms ease-in. The
-way out is never a wait.
+way out is never a wait. The floor is tap: a tap-band exit stays at 100ms and changes only its
+curve, because there is no band below it and a shorter exit is a snap with extra machinery.
+Asymmetry applies to a surface entering or leaving. It never applies to hover, press, or focus,
+which are states of one element rather than arrivals and departures, and where a 100ms difference
+in either direction is below what a reader can tell apart.
 
 What animates. Only opacity, color, background-color, border-color, box-shadow, outline-*,
 rotate, translate, scale, and grid-template-rows. A translate stays under 8px.
 
 What snaps, always, with no transition:
-  - Theme change. A whole-admin colour crossfade is a flash on every token.
+  - Theme change. A whole-admin color crossfade is a flash on every token.
   - Route change between admin pages.
   - Text content replacing text content, including a changed label.
   - A list reflowing after a save, a sort, or a filter.
@@ -441,7 +649,7 @@ What snaps, always, with no transition:
   - width, height, top, left, right, bottom, margin, padding, font-size. Ever.
 
 Reduced motion degrades by property class, it does not blank.
-  - Paint (opacity, colour, shadow, outline): unchanged. These carry no positional motion and
+  - Paint (opacity, color, shadow, outline): unchanged. These carry no positional motion and
     removing them removes the feedback.
   - Transform (translate, scale, rotate): duration to 0.01ms, substitute an opacity fade at the
     same band. 0.01ms and not 0s, so transitionend still fires.
@@ -449,19 +657,27 @@ Reduced motion degrades by property class, it does not blank.
   - Page-level mode change: one 150ms opacity cross-fade, no geometry, no delay.
 ```
 
+The reduced-motion block above is revision 1's. Section (e) replaces it with a floor plus an
+opt-back-in, because "unchanged for paint" and "the blanket block survives" cannot both hold as
+written; section (f) carries the corrected form.
+
 That is 40 lines. Two notes for the pass, which belong in prose around the block rather than inside it:
 
 - Set `--default-transition-timing-function: var(--cairn-ease-out)` on the admin root. Tailwind's
   symmetric default otherwise reaches every bare `transition` utility in the admin.
 - Override the DaisyUI components named in section 7 by name: `.modal` and `.drawer` from 300ms to
   `--cairn-dur-settle` with the scale removed, `.collapse` off `transition-property: all`, and `.btn`
-  off `transform`.
+  off `transform`. Each of those is an unlayered rule pinned in a gate's allowlist, and the four
+  together cost ten to fourteen pinned selectors against seventeen today. Whether to spend that is
+  decision 2; see "Layer order and the custom-surface budget".
 
 ## (d) Zen mode under this ruleset
 
-Zen changes four regions at once, which is why it reads as a jump cut. The fix is to give the leaving
-chrome and the arriving chip separate, ordered treatment, and to let the editor card carry the only
-geometry change.
+Zen changes the chrome, the sidebar, and the content offset at once, at three different speeds, which
+is why it reads as a jump cut. The fix has two halves. The ordering half, below, gives the leaving
+chrome and the arriving chip separate, timed treatment. The offset half is a decision for Geoff, and
+it is stated at the end of this section, because the 224px content-edge jump cannot be fixed by
+timing anything.
 
 ### Entering zen, about 350ms total
 
@@ -469,9 +685,19 @@ geometry change.
    `opacity: 0` over `--cairn-dur-quick` (150ms) on `--cairn-ease-in`, then leave the DOM. None of
    them slides. A footer sliding down while a topbar slides up is two directions of peripheral motion
    at once, the WebKit trigger class.
-2. **The editor card reclaims the space.** Its padding and max-width transition over
-   `--cairn-dur-shift` (300ms) on `--cairn-ease-out`, starting at the same instant as the fade rather
-   than after it. The overlap is what makes the change read as one movement.
+2. **The editor card's own box snaps.** The card's padding and max-width both change, and both are
+   layout properties the ruleset bans from transitioning (section (c), "what snaps"). Revision 1's
+   worked example transitioned them, which the allowlist forbids; the example is corrected rather
+   than the allowlist, because `padding` and `max-width` are the layout-thrashing properties the
+   ban exists for and nothing in the survey argues for exempting them. The reclaim therefore lands
+   on the same frame the chrome nodes detach, and the chrome's 150ms fade is what the eye reads as
+   the change. Section (g)'s phone case already worked this way, so one rule now covers every
+   viewport.
+
+   If a visible reclaim is wanted later, the allowed form is `translate` on the card rather than a
+   box change: GPU-composited, on the allowlist, and statically checkable. It cannot express a
+   `max-width` change, so it means restructuring the card's sizing rather than transitioning it,
+   which is the same shape as the content-offset decision below and should be settled with it.
 3. **The zen chip arrives last.** Opacity 0 to 1 plus a 4px downward translate over
    `--cairn-dur-settle` (200ms) on `--cairn-ease-out`, with `transition-delay: 150ms` so it appears
    only once the chrome has gone. No scale. A scaling element fixed in the top-right corner is
@@ -481,14 +707,19 @@ geometry change.
 
 1. **The chip goes immediately.** Opacity to 0 over `--cairn-dur-tap` (100ms), no delay, no translate.
    It is the control the pointer just hit, so it should be gone before anything else moves.
-2. **The card geometry returns** over `--cairn-dur-settle` (200ms) on `--cairn-ease-out`, one band
-   faster than the enter.
+2. **The card's box returns on the same frame**, for the same reason it left on one: `padding` and
+   `max-width` do not transition.
 3. **The chrome fades back in** over `--cairn-dur-quick` (150ms) on `--cairn-ease-out`, no delay,
    concurrent with the card.
 
-Exit is roughly 200ms against the enter's 350ms. That is Atlassian's rule and Carbon's side-panel
+Exit is roughly 150ms against the enter's 350ms. That is Atlassian's rule and Carbon's side-panel
 case: the chrome left but stayed nearby ready to reappear, so it comes back on the standard curve
 rather than a dramatic one.
+
+With the card's box snapping, nothing in either direction uses `--cairn-dur-shift`. The 300ms band
+has no call site in the zen sequence, and the only remaining candidate for it is the content offset
+in the decision below. If that decision lands on "leave the offset a snap", the token should be
+struck from the table rather than shipped unallocated.
 
 ### Reduced motion
 
@@ -496,6 +727,54 @@ Both directions collapse to a single 150ms opacity cross-fade on the editor card
 transition, no chip translate, no delays. The chrome snaps in and out. This follows Apple's
 substitute-a-cross-fade rule for the one surface large enough to need it, and GNOME's snap rule for
 everything else.
+
+### Decision for Geoff: the content offset
+
+The 224px jump at `CairnAdminShell.svelte` lines 692 and 693 is not reachable by any of the timing
+above. `margin-left` is on the ruleset's ban list, and it is on that list for good reasons: it
+triggers layout on every frame, and it is the property a badly-built interface uses to move things.
+So the ruleset as written forbids the one fix that requires no structural change. Two ways out, and
+this brief does not choose between them.
+
+**Option (a): a sanctioned exception for this one rule.** Let `margin-left` transition on
+`.drawer-content`, at `--cairn-dur-shift` on `--cairn-ease-move`, named in the design system as a
+single documented exception with the reason attached, the same way `cairn-admin.css` already carries
+pinned rules with their justification in a comment above each.
+
+- For: one declaration, no restructure, no risk to the editing surface, and it lands inside the
+  pass the spec is being written for.
+- Against: the ruleset's own strongest rule now has an exception in its first application, which is
+  the worst possible precedent for a vocabulary check that is supposed to be un-negotiable. A future
+  `padding` exception has this one to point at. It also animates a layout property on the largest
+  element in the admin, at the widest viewports, on every frame of 300ms, which is a real
+  performance question on a page holding a CodeMirror document.
+- The audit consequence: `motion-property` (section (e)) would need a suppression idiom, and a
+  suppression that exists is a suppression that gets copied.
+
+**Option (b): make the offset a transitionable property.** Two shapes:
+
+- `translate` on `.drawer-content`. The content pane keeps its full width and is translated 224px,
+  which composites rather than relaying out. The cost is that the pane is then wider than its
+  visible area, so the right edge overflows and needs clipping, and anything `position: fixed`
+  inside it acquires a containing block from the transform, which the editor's own floating chip and
+  popovers sit inside.
+- `grid-template-columns` on a grid shell. Replace the fixed sidebar plus margin with a two-column
+  grid on the drawer wrapper, and transition the first column from `14rem` to `0`. This is the
+  structurally honest version: the sidebar is back in flow, the offset is a real column, and nothing
+  needs a compensating margin. `grid-template-columns` is not on the allowlist today and would join
+  it beside `grid-template-rows`, which is the same class of property and already allowed.
+- For: no exception, the fix generalizes to the breakpoint flip, and the `position: fixed` scroll
+  workaround the two pinned rules at `cairn-admin.css` 772 and 784 exist for may become unnecessary,
+  which would retire two pinned selectors rather than add any.
+- Against: this restructures the shell's outermost layout, which is load-bearing for the drawer's
+  overlay behavior, the focus trap, the `inert` treatment, and the five-viewport visual baselines.
+  It is a pass of its own, not a task inside the motion pass, and it would regenerate a large part
+  of the visual suite.
+
+The recommendation this brief can make without deciding: the two options differ in when the cost is
+paid, not in how much. Option (a) ships the fix now and owes the precedent. Option (b) owes a pass
+and pays nothing afterwards. If the motion spec is meant to be the document that makes the ban list
+credible, the exception should not be in its first example.
 
 ### Two constraints the implementation must respect
 
@@ -511,6 +790,48 @@ everything else.
   component that owns the state.
 
 ## (e) Audit rule changes
+
+### First, whose code these rules govern
+
+`cairn-audit` does not run over this repo's own tree. No npm script invokes it on `src/lib`, and
+`cssScopeRules` reads a component's own scoped `<style>` block plus the CSS files a consumer's
+config names, neither of which covers `cairn-admin.css` or the admin's components. Every change
+below therefore tightens what **consuming sites** are held to, and changes nothing about the admin
+unless the spec separately decides to point the audit at the engine. That decision is not this
+brief's to make, and it should be taken explicitly rather than assumed, because pointing the audit
+at the admin today would convict `EditPage.svelte:1643`, `EditPage.svelte:2047`, and
+`MarkdownEditor.svelte:530` on the first run.
+
+### What a CSS rule cannot reach
+
+Of the seventeen motion declarations in the admin, a CSS parser sees three. The other fourteen are
+Tailwind utility classes in a `class` attribute (`transition-colors`, `transition-all`,
+`transition-[width]`, `duration-[250ms]`) and string values in a CodeMirror JS theme object. A
+vocabulary check that reads parsed CSS rules is unenforceable against both, and saying so plainly is
+better than shipping a rule that reports zero findings on a surface that has fourteen.
+
+Three ways to close it, in increasing order of cost and coverage:
+
+1. **A class-attribute scan.** `cairn-audit` already parses markup and already has a rule that reads
+   class attributes (`no-uncompiled-class`). A motion-vocabulary rule can read the same attributes
+   and match the Tailwind motion family: `transition`, `transition-*`, `duration-*`, `ease-*`,
+   `delay-*`, and the arbitrary-value forms. This reaches eleven of the fourteen, it is the cheapest,
+   and it fails on any dynamic class expression, which the admin uses on four of those eleven.
+2. **The built sheet.** Run the check over `dist`'s compiled `cairn-admin.css` instead of the
+   sources. Every utility that actually shipped is a real CSS rule there, so coverage is complete
+   for anything Tailwind compiled, and the arbitrary-value forms resolve to literals. The cost is a
+   finding that points at a generated file with no `file:line` an author can edit, which is exactly
+   the property `cssRulePosition` exists to guarantee. It is a good gate and a bad diagnostic.
+3. **An ESLint rule.** The repo already lints `.svelte` sources through `svelte-eslint-parser`
+   (`eslint.config.js`, `npm run lint`), which reaches both the class attributes and the CodeMirror
+   theme object's string literals, and it reports a real editable position. It is the only one of the
+   three that reaches all seventeen. The cost is that the motion vocabulary now lives in two gates
+   rather than one, and consuming sites do not run cairn's ESLint config.
+
+The honest recommendation: the CSS rules below stay CSS rules and govern what they can govern, and
+the class-attribute half is a separate decision the spec should take on its own terms rather than a
+clause inside `motion-band`. Whichever is chosen, the ruleset's claim to be a vocabulary check is
+false until one of them ships.
 
 ### `motion-band` tightens from a range to a vocabulary
 
@@ -534,17 +855,62 @@ Three changes:
 Keep the `transition: all` ban unchanged. It is correct and it is the one rule DaisyUI's `.collapse`
 violates.
 
-### `reduced-motion` tightens from presence to behavior
+### `reduced-motion` tightens from presence to behavior, and the blanket block stays
 
-Today the rule proves only that the selector is *named* inside a guard, with the comment stating that
-matching is selector-text equality and not property inspection. Under the recommended policy the
-guard has to do the right thing per property class, so presence is no longer sufficient. The rule
-should assert that the guard's own declarations zero the transform and layout properties and leave
-the paint properties alone. A guard that zeroes an `opacity` transition would become a finding, which
-inverts today's behavior.
+Revision 1 held three positions that cannot all be true: that the blanket `!important` block must
+survive any refactor, that paint transitions stay unchanged under reduced motion, and that a guard
+zeroing a paint transition should become a finding. The blanket block zeroes every paint transition
+in the admin, so the third rule convicts the first.
+
+**The position, stated once and used everywhere below.** Reduced motion in the admin has two layers,
+and they have different jobs.
+
+- **The vendor floor.** The blanket block at `cairn-admin.css` line 1115 stays, unchanged in shape
+  and scoped to the two admin theme roots. It exists for the twenty ungated DaisyUI components,
+  which the admin does not author, cannot enumerate stably across upgrades, and must not leave
+  animating a scale or a translate for a reader who asked for less motion. Its universal selector is
+  the point: it covers what nobody named.
+- **The per-property-class opt-back-in.** Any admin rule that wants a paint transition preserved
+  restates it inside the same guard, with `!important`, on a selector carrying at least one class.
+  Two `!important` declarations are resolved by specificity, and a class beats the blanket block's
+  `[data-theme] *`, so the opt-in wins without the floor being weakened for anything that did not
+  opt in. This is the mechanism, and it is the reason the policy can be "unchanged for paint" while
+  the floor is "zero everything".
+
+**What the rule should assert, given that.** A guard that zeroes a transform or layout transition is
+correct. A guard that zeroes a **paint** transition is a finding **only where the same file declares
+that paint transition on a selector the guard names**. A rule whose selector is universal or
+attribute-only, carrying no class, is exempt by construction: that is the floor, and a floor is not
+a per-component obligation being discharged badly.
 
 The file-scoped matching (`guardedByFile`) is right and should stay. It is what stops the blanket
-`!important` block in `cairn-admin.css` from satisfying every component's obligation from a distance.
+block from satisfying every component's obligation from a distance.
+
+### The blanket block is missing `transition-delay`
+
+Measured at `cairn-admin.css` lines 1115 to 1125: the block sets `animation-duration`,
+`animation-iteration-count`, `transition-duration`, and `scroll-behavior`. It sets no delay. Every
+delay in the admin's dependency tree therefore survives a reduced-motion preference intact:
+
+| Source | Delay |
+| --- | --- |
+| DaisyUI `.tooltip` | 75ms on opacity and transform |
+| DaisyUI `.drawer-side` | 100ms on opacity and visibility |
+| DaisyUI `.modal-box` | 50ms on opacity |
+| DaisyUI `.checkbox` | 100ms on clip-path, rotate, translate |
+| This brief's own zen chip | 150ms |
+
+The reader who asked for reduced motion gets an instant transition that starts 75ms after the
+hover, which is worse than either the motion or the snap: the interface is now merely late. Two
+declarations fix it, and they belong in the same block:
+
+```css
+  transition-delay: 0s !important;
+  animation-delay: 0s !important;
+```
+
+This is a shipped bug in the admin today, independent of every recommendation in this brief, and it
+is the smallest correct change in the document.
 
 ### New rule: `motion-property`
 
@@ -557,16 +923,23 @@ property at a time."
   abrupt.
 - A single declaration transitioning more than three properties is an error.
 - A `transition-delay` over 150ms is an error outside an allowlisted page-level mode change. A long
-  delay is how an interface starts to feel laggy rather than gentle.
+  delay is how an interface starts to feel laggy rather than gentle. Any rule declaring a delay must
+  also be covered by a reduced-motion guard that zeroes it, which is the per-component counterpart
+  of the blanket-block fix above.
 
 ### New check: DaisyUI motion overrides
 
-`motion-band` and `reduced-motion` scan the admin's own CSS. Neither reaches `node_modules`, so
+`motion-band` and `reduced-motion` scan a consumer's own CSS. Neither reaches `node_modules`, so
 `.modal` at 300ms, `.drawer` at 300ms, and `.collapse` with `transition-property: all` all ship
 un-audited. A `check:invisible-craft`-style check should assert that `cairn-admin.css` carries an
 explicit override block for each DaisyUI component the admin actually renders. This is the mechanical
 half of the finding, so by the cairn engine rule it belongs in `cairn-audit` rather than in a
 consuming site's own probe.
+
+This check exists only if the first option in "Layer order and the custom-surface budget" is taken.
+Under the second option there are no override blocks to assert, and under the third the check asserts
+three selectors rather than a per-component block. The check is downstream of that decision, not an
+argument for it.
 
 ### What a rendered rule cannot check
 
@@ -595,22 +968,26 @@ desktop-only worked example in section (d).
 
 Two corrections to the first read, both found while reading the shipped code for this pass:
 
-- **Zen mode does carry motion today.** Section (d) states that zen has none. `CairnAdminShell.svelte`
-  lines 669 and 670 set `class:lg:drawer-open={!isDeskRoute && !topbar.zen}` and
-  `class:xl:drawer-open={isDeskRoute && !topbar.zen}`, so entering zen removes the drawer-open class
-  at whichever breakpoint applies. DaisyUI's `.drawer-side > :not(.drawer-overlay)` declares
+- **Zen mode does carry motion today.** Revision 1's section (d) said zen has none.
+  `CairnAdminShell.svelte` lines 669 and 670 set `class:lg:drawer-open={!isDeskRoute && !topbar.zen}`
+  and `class:xl:drawer-open={isDeskRoute && !topbar.zen}`, so entering zen removes the drawer-open
+  class at whichever breakpoint applies. DaisyUI's `.drawer-side > :not(.drawer-overlay)` declares
   `transition: translate .3s ease-out, width .2s ease-out`, and the `.drawer-side` element itself
   declares `transition: opacity .2s ease-out .1s allow-discrete, visibility .3s ease-out .1s
   allow-discrete` (`daisyui/components/drawer.css`, 5.7.20). Removing the class therefore slides the
   sidebar out over 300ms while its width animates over 200ms and its opacity fades after a 100ms
-  delay. The `{#if}` regions still snap. Zen is a mixed toggle rather than a motionless one, which is
-  a likelier explanation for "abrupt" than the absence of motion alone. Verify this on a real render
-  before the pass builds against it.
+  delay. The `{#if}` regions still snap.
+
+  Revision 2 completes the diagnosis. The sidebar slide is not the abruptness either: lines 692 and
+  693 toggle a 224px `margin-left` on `.drawer-content` that nothing transitions, and that is the
+  jump. "Zen mode's real defect", near the top of this document, carries the full account, and
+  section (d) carries the two ways out. Verify on a real render before the pass builds against it.
 - **The family already ships a route transition, and already declines it in the admin.** The
   showcase's public site layout runs the SvelteKit `onNavigate` plus `document.startViewTransition`
   recipe, with a 0.18s root cross-fade in `examples/showcase/src/theme/theme.css` and two independent
-  reduced-motion guards. Its own comment states the scope: "This lives only in the (site) group's
-  layout, so the admin never cross-fades."
+  reduced-motion guards. Its own comment states the scope, verbatim from lines 380 and 381:
+  "`startViewTransition` only ever runs from the (site) group's `onNavigate` hook, so this never
+  fires for the admin, which loads no theme.css."
 
 ## 8. Input modality
 
@@ -635,20 +1012,25 @@ an inconvenient long tap)" ([MDN hover](https://developer.mozilla.org/en-US/docs
 clause is the whole problem: a touch device does not report no hover, it reports a hover that arrives
 on a long press and then sticks.
 
-### DaisyUI gates six components and leaves eleven open
+### DaisyUI gates seven components and leaves ten open
 
-Measured across `daisyui/components/*.css` at 5.7.20, counting `@media (hover:hover)` blocks against
-`:hover` selectors in each file:
+Measured across `daisyui/components/*.css` at 5.7.20, counting `@media (hover:hover)` occurrences
+against `:hover` occurrences in each file. Revision 1 put `dropdown` in the ungated column; it
+carries guards, and the counts below correct the split.
 
-| Gated on hover capability | Ungated |
+| Carries at least one `@media (hover: hover)` guard | No guard anywhere |
 | --- | --- |
-| `button`, `link`, `table`, `tab`, `dock`, `breadcrumbs` | `menu`, `dropdown`, `tooltip`, `select`, `fab`, `calendar`, `diff`, `megamenu`, `hover3d`, `hovergallery`, `textrotate` |
+| `breadcrumbs`, `button`, `dock`, `dropdown`, `link`, `tab`, `table` | `calendar`, `diff`, `fab`, `hover3d`, `hovergallery`, `megamenu`, `menu`, `select`, `textrotate`, `tooltip` |
 
-Three of the ungated components are load-bearing in the admin: `menu` appears throughout the nav
-tree, `dropdown` in three components, and `tooltip` in three. `.tooltip` is the sharpest case. It
-transitions opacity and transform over 200ms with a 75ms delay, triggered by `:hover`, with no
-capability gate, so a long press on a phone opens a tooltip the reader did not ask for and cannot
-dismiss by moving away.
+The split is not clean in either direction, which the raw counts show: `dock` guards 6 of 18
+`:hover` occurrences, `tab` 6 of 18, `dropdown` 12 of 18, `link` 60 of 108. A component in the left
+column is partly gated, not safe.
+
+Two of the ungated components are load-bearing in the admin: `menu` appears throughout the nav tree
+and `tooltip` in three components. `.tooltip` is the sharpest case. It transitions opacity and
+transform over 200ms with a 75ms delay, triggered by `:hover`, with no capability gate anywhere in
+the file, so a long press on a phone opens a tooltip the reader did not ask for and cannot dismiss
+by moving away.
 
 The admin's own CSS already carries one such guard, at `cairn-admin.css` line 1002, wrapping the dark
 theme's `.btn-active:hover` repair. Its comment names the reason: "so a touch device does not strand
@@ -682,9 +1064,13 @@ indicated, but when a text box needing user input has focus, focus is indicated"
 that only paints for keyboard focus only animates for keyboard focus, so the modality split is
 already handled by the selector. No second token and no second media query are needed.
 
-WCAG 2.4.13 Focus Appearance specifies the indicator's size and its 3:1 contrast between focused and
-unfocused states and says nothing about animating it
-([Understanding 2.4.13](https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html)). The one
+WCAG 2.4.13 Focus Appearance, **Level AAA** in WCAG 2.2, specifies the indicator's size and its 3:1
+contrast between focused and unfocused states and says nothing about animating it
+([SC 2.4.13](https://www.w3.org/TR/WCAG22/#focus-appearance),
+[Understanding 2.4.13](https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html)). The
+review that prompted this revision recorded it as Level AA; both the normative text and the
+Understanding document say AAA. The Level AA focus criterion in WCAG 2.2 is 2.4.11 Focus Not
+Obscured (Minimum), which is about occlusion rather than appearance. The one
 constraint that follows is a timing one: the indicator must be at full contrast promptly, which the
 `tap` band at 100ms satisfies and a `shift` band at 300ms would not. Adwaita's own
 `$focus_transition` runs 200ms on `outline-color`, `outline-width`, and `outline-offset`, so the band
@@ -718,13 +1104,21 @@ Note the same doc records that the component "is being deprecated in the Materia
 update" in favor of an expanded navigation rail, so treat the variant split as the durable finding
 and the component as a moving target.
 
-For motion, Material's Android theming doc maps navigation patterns to `motionDurationLong1` at 300ms
-incoming and `motionDurationMedium2` at 250ms outgoing, and dialogs and menus to 150ms in and 75ms
-out ([Motion.md](https://github.com/material-components/material-components-android/blob/master/docs/theming/Motion.md)).
-Two things follow. The enter-versus-exit asymmetry is roughly 1.2:1 for navigation and 2:1 for
-dialogs, which matches section (c)'s one-band-faster exit rule. And nothing in the published spec
-animates a standard or permanent drawer that is simply present, because a drawer that never leaves
-has no entrance to time.
+For motion, Material's Android theming doc maps the **container transform** pattern to
+`motionDurationLong1` incoming and `motionDurationMedium2` outgoing, and the **fade** pattern to
+`motionDurationShort2` at 150ms in and `motionDurationShort1` at 75ms out
+([Motion.md](https://github.com/material-components/material-components-android/blob/master/docs/theming/Motion.md)).
+Revision 1 read these as a navigation rule and a dialog rule. They are neither: they are transition
+patterns a component chooses, and the same doc's navigation-drawer page maps to no duration of its
+own. Android's theme resolves the container transform to 300ms in and 250ms out, which is not
+`motionDurationLong1`'s M3 base; the token table in section 2 puts `long1` at 450ms, so the Android
+number is a platform override rather than the published token, and quoting "300ms" as
+`motionDurationLong1` conflates the two.
+
+Two things still follow. The enter-versus-exit asymmetry is roughly 1.2:1 for the container
+transform and 2:1 for the fade, which matches section (c)'s one-band-faster exit rule from a
+different direction. And nothing in the published spec animates a standard or permanent drawer that
+is simply present, because a drawer that never leaves has no entrance to time.
 
 Apple's equivalent is the split view. "The primary pane can overlay the secondary pane and can be
 hidden offscreen when not in use. This is particularly useful when the device is in portrait
@@ -755,7 +1149,7 @@ an order of magnitude:
 
 | Modifier | Box | Start state |
 | --- | --- | --- |
-| `.modal-bottom` | `width: 100%`, square top corners flush to the bottom edge | `translate: 0 100%`, `scale: 1` |
+| `.modal-bottom` | `width: 100%`, `max-width: none`, **rounded top corners and square bottom**, flush to the bottom edge | `translate: 0 100%`, `scale: 1` |
 | `.modal-middle` | `width: 91.6667%`, `max-width: 32rem` | `translate: 0 2%`, `scale: .98` |
 
 Both run under the same `.modal` transition, 300ms ease-out on translate and scale. At 390px wide a
@@ -874,16 +1268,27 @@ window.addEventListener("resize", () => {
 
 ```css
 .resize-animation-stopper * {
-  animation: none !important;
-  transition: none !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
 }
 ```
+
+That is not the published snippet. CSS-Tricks writes `animation: none !important; transition: none
+!important`, and this brief cannot use it: a `transition` of `none` fires no `transitionend`, which
+is the exact behavior section 6 rejects and section (c) legislates against. The 0.01ms form is
+visually identical, still dispatches the event, and is the same shape `cairn-admin.css` line 1115
+already uses, so the admin has one reduced-motion idiom rather than two. It also leaves
+`transition-property` alone, so a rule whose transition outlives the stopper class is not left with
+its property list reset.
 
 ### GNOME argues the other way, and its own code does not
 
 The GNOME HIG asks for the opposite: "Resizing the window should be smooth and glitch-free. For
 example widgets should not jump around or disappear without an animation"
-([Adaptive](https://developer.gnome.org/hig/guidelines/adaptive.html)). Its own mechanism does not
+([Scaling & Adaptiveness](https://developer.gnome.org/hig/guidelines/adaptive.html)). Its own
+mechanism does not
 deliver that. `AdwBreakpoint` describes a size threshold whose setters set "the target property on
 their target object to the specified value, and reset it back to the original value when it's
 unapplied," with no animation mentioned anywhere in the class
@@ -930,9 +1335,12 @@ between two differently shaped pages is not purely a fade
 
 ### What the frameworks publish
 
-SvelteKit's `onNavigate` "runs the supplied callback immediately before we navigate to a new URL,"
-and returning a promise lets the callback drive `document.startViewTransition`
-([$app/navigation](https://svelte.dev/docs/kit/$app-navigation)). The official recipe:
+SvelteKit's `onNavigate` is "a lifecycle function that runs the supplied `callback` immediately
+before we navigate to a new URL except during full-page navigations," and returning a promise lets
+the callback drive `document.startViewTransition`
+([$app/navigation](https://svelte.dev/docs/kit/$app-navigation)). The trailing clause matters for
+the admin: a full-page navigation, which is what every server-rendered admin entry and every form
+POST that lands on a new URL performs, never reaches the hook at all. The recipe:
 
 ```javascript
 import { onNavigate } from '$app/navigation';
@@ -973,9 +1381,10 @@ rules it out on its own. The default 0.25s duration is paid before the new route
 makes an editing tool feel slower for no gain. A view transition holds a snapshot over the live DOM
 while it runs, which collides with the admin's focus management, and the zen constraint in section (d)
 applies here too: focus must land on the first frame. And the family already made this decision and
-wrote it down. The showcase site runs the recipe at 0.18s, double-guarded, and the comment on the rule
-scopes it deliberately: "This lives only in the (site) group's layout, so the admin never
-cross-fades."
+wrote it down. The showcase site runs the recipe at 0.18s, double-guarded, and the comment on the
+rule scopes it deliberately (`examples/showcase/src/theme/theme.css` lines 380 to 381):
+"`startViewTransition` only ever runs from the (site) group's `onNavigate` hook, so this never fires
+for the admin, which loads no theme.css."
 
 The positive form of the rule: a route change snaps, and the arriving page announces itself through
 focus and a live region rather than through motion. That is also what the reader with reduced motion
@@ -984,43 +1393,92 @@ gets, so there is one behavior to build and one to verify.
 ## 12. Case-by-case rules
 
 Every case in one table. "Token" names the duration from section (f). A dash means the case carries no
-motion at all, which is a decision rather than an omission.
+motion at all, which is a decision rather than an omission. "Owner" names the component that would
+carry the rule, so no row is a case without a home.
 
-| Case | Desktop pointer | Touch phone or tablet | Reduced motion | Token |
-| --- | --- | --- | --- | --- |
-| Hover | Paint only, inside `@media (hover: hover)` | No hover state exists | Unchanged, paint carries no positional motion | `tap` |
-| Press | Paint change on `:active` | Same, and it is the only feedback | Unchanged | `tap` |
-| Focus, keyboard | `outline-*` and `box-shadow` | Same, external keyboard | Unchanged | `tap` |
-| Focus, pointer | No ring paints, so no motion | No ring paints | Nothing to reduce | - |
-| Enter, small element | Opacity plus a translate under 8px | Same | Opacity only | `settle` |
-| Exit, small element | Opacity, `--cairn-ease-in` | Same | Opacity only | `quick` |
-| Disclosure, accordion | `grid-template-rows` plus opacity | Same | Layout snaps, opacity stays | `quick` |
-| Tooltip | Opacity, 75ms delay, hover-gated | Suppressed; no tooltip on a coarse pointer | Unchanged where it shows | `settle` |
-| Popover, menu | Opacity plus 4px from the trigger edge | Full-width bottom sheet below `sm` | Opacity only | `settle`, `sheet` below `sm` |
-| Command palette | Opacity plus 4px, centered | Pinned to the top edge, opacity plus 8px | Opacity only | `settle` |
-| Dialog | Opacity plus a 2% translate, no scale | `modal-bottom`, full width, travels its own height | Opacity only, no geometry | `settle`, `sheet` below `sm` |
-| Drawer, overlay | Not reachable; the sidebar is persistent | Translate 100% from the inline start, scrim fades | Scrim fades, panel snaps | `sheet` |
-| Drawer, persistent | No motion; it is furniture | Not reachable at this width | Nothing to reduce | - |
-| Breakpoint flip | Snap | Snap | Snap | - |
-| Window resize | All motion suppressed while resizing | Not reachable | Suppressed | - |
-| Orientation change | Not reachable | Snap, same suppression | Snap | - |
-| Route change | Snap | Snap | Snap | - |
-| Page-level mode change, zen | The sequence in section (g) | Chrome fade only, no geometry | One 150ms opacity cross-fade | `shift` |
-| List or table row added | Snap | Snap | Snap | - |
-| Row removed | Snap | Snap | Snap | - |
-| Row reorder, sort, filter | Snap | Snap | Snap | - |
-| Toast | Opacity plus 8px from the bottom, bottom inline-end | Same anchor, width capped at the viewport minus gutters | Opacity only | `settle` |
-| Live region, `aria-live` | No motion | No motion | No motion | - |
-| Form validation message | No motion; the layout shift snaps | Same | Snap | - |
-| Theme change, explicit toggle | Scoped cross-fade on the chrome surfaces | Same | Snap | `settle` |
-| Theme change, OS or first paint | Snap | Snap | Snap | - |
-| Skeleton, shimmer | The DaisyUI 1.8s loop | Same | Static tint, no loop | - |
-| Spinner, progress | Runs; it is essential state | Runs | Runs; it conveys information | - |
-| Tabs | Indicator paint only, no sliding underline | Same | Unchanged | `tap` |
-| Sticky header collapse on scroll | None | None | Nothing to reduce | - |
-| Pull to refresh, overscroll | None | None; `overscroll-behavior: contain` on the editor pane | Nothing to reduce | - |
+Two of revision 1's rows described components the admin does not render, and both are struck. The
+admin renders no DaisyUI `.tab` and no `.tabs` container anywhere under `src/lib/components` or
+`src/lib/admin-toolkit`; the tabs row is removed and its DaisyUI override is not needed. The admin
+also uses neither `modal-bottom` nor `modal-middle`: every dialog is a plain `.modal` with a
+`.modal-box`, so the responsive sheet rule in section 9 is a **change** the pass would introduce,
+not a description of what ships.
 
-Four rows need their reasoning recorded, because each departs from something.
+| Case | Desktop pointer | Touch phone or tablet | Reduced motion | Token | Owner |
+| --- | --- | --- | --- | --- | --- |
+| Hover | Paint only, inside `@media (hover: hover)` | No hover state exists | Opts back in; paint carries no positional motion | `tap` | Shell, ConceptList, CairnMediaLibrary, MediaHeroField |
+| Press | Paint change on `:active` | Same, and it is the only feedback | Opts back in | `tap` | DaisyUI `.btn`, overridden |
+| Focus, keyboard | `outline-*` and `box-shadow` | Same, external keyboard | Opts back in | `tap` | `cairn-admin.css` |
+| Focus, pointer | No ring paints, so no motion | No ring paints | Nothing to reduce | - | - |
+| Guarded button, `aria-disabled` flip | `background-color` only; the button stays hit-testable | Same | Opts back in | `tap` | `cairn-admin.css:754`, a pinned unlayered rule |
+| Enter, small element | Opacity plus a translate under 8px | Same | Opacity only | `settle` | per component |
+| Exit, small element | Opacity, `--cairn-ease-in` | Same | Opacity only | `quick` | per component |
+| Disclosure, accordion | `grid-template-rows` plus opacity | Same | Layout snaps, opacity stays | `quick` | DaisyUI `.collapse`, `NavTree.svelte` |
+| Caret rotate on a disclosure | `rotate` only, no box change | Same | Snaps | `quick` | `cairn-admin.css:545`, `CairnAdminShell.svelte:1035` |
+| Tooltip | Opacity, 75ms delay, hover-gated | Suppressed; no tooltip on a coarse pointer | Delay zeroed, then opts back in on opacity | `settle` | DaisyUI `.tooltip`, ungated today |
+| Popover, menu | Opacity plus 4px from the trigger edge | Full-width bottom sheet below `sm` | Opacity only | `settle`, `sheet` below `sm` | `MediaInsertPopover.svelte`, DaisyUI `.menu` |
+| Command palette | Opacity plus 4px, centered | Pinned to the top edge, opacity plus 8px | Opacity only | `settle` | `CairnAdminShell.svelte:823` |
+| Dialog | Opacity plus a 2% translate, no scale | Full width at the bottom edge, travels its own height | Opacity only, no geometry | `settle`, `sheet` below `sm` | `DeleteDialog.svelte`, `ComponentInsertDialog.svelte`, `MediaUploadDialog.svelte`, and eleven siblings; all plain `.modal` today |
+| Login and confirm pages | No motion of their own | Same | Nothing to reduce | - | `LoginPage.svelte`, `ConfirmPage.svelte`; neither declares any transition today |
+| Drawer, overlay | Reachable below 1024 on content routes, below 1280 on desk routes | Translate 100% from the inline start, scrim fades | Scrim fades, panel snaps | `sheet` | DaisyUI `.drawer-side` |
+| Drawer, persistent | No motion; it is furniture | Not reachable at this width | Nothing to reduce | - | `CairnAdminShell.svelte:556` |
+| Zen content offset | **Undecided**; see decision 1 | Not reachable; no offset below 1024 | Snap | `shift` if (a) or (b) lands, otherwise none | `CairnAdminShell.svelte:692-693` |
+| Breakpoint flip | Snap | Snap | Snap | - | the resize stopper |
+| Window resize | All motion suppressed while resizing | Not reachable | Suppressed | - | the resize stopper |
+| Orientation change | Not reachable | Snap, same suppression | Snap | - | the resize stopper |
+| Route change | Snap | Snap | Snap | - | no owner; the rule is that nobody writes one |
+| Page-level mode change, zen | The sequence in section (g) | Chrome fade only, no geometry | One 150ms opacity cross-fade | `shift` | `EditPage.svelte` |
+| List or table row added, removed, reordered | Snap | Snap | Snap | - | `ConceptList.svelte`, `AdminTable` |
+| Table row hover | `transition-colors` on the row ground | No hover state exists | Opts back in | `tap` | `ConceptList.svelte:400`, `CairnMediaLibrary.svelte:845` |
+| Media grid, selection change | `transition-shadow`; the `ring` changes with the selection | Same, on tap | Opts back in | `tap` | `CairnMediaLibrary.svelte:747` |
+| Drag-and-drop dropzone | Hover and focus paint only; **no drag-over state exists today** | Not reachable | Opts back in | `tap` | `MediaHeroField.svelte:450` |
+| Upload progress bar | `width 200ms ease` on the fill | Same | Runs; it conveys information | `settle` | `MarkdownEditor.svelte:530` |
+| Preview pane width | `transition-[width] duration-[250ms]` when the split changes | Not reachable; no split below `lg` | Snaps | banned | `EditPage.svelte:2047` |
+| Editor fold chevron | `opacity` plus `transform`, 150ms | Persistent at 0.65 opacity on a coarse pointer | Already guarded to `none` | `quick` | `MarkdownEditor.svelte:584`, `:607`, `:612` |
+| Editor unfold flash | `background-color 250ms ease`, one shot | Same | Already guarded to `none` | `settle` | `MarkdownEditor.svelte:654`, `editor-folding.ts:277` |
+| Save-state line | `transition-opacity duration-[250ms]` | Same | Opts back in | `settle` | `EditPage.svelte:1428` |
+| Feedback alert, `@starting-style` | `transition-all` plus a `-translate-y-2` entry | Same | Opacity only, no translate | `settle` | `EditPage.svelte:1643` |
+| Live region, `aria-live` | No motion; the two regions are `sr-only` | No motion | No motion | - | `EditPage.svelte:1637-1638` |
+| Form validation message | No motion; the layout shift snaps | Same | Snap | - | `FieldInput.svelte` |
+| Toast | Opacity plus 8px from the bottom, bottom inline-end | Same anchor, width capped at the viewport minus gutters | Opacity only | `settle` | DaisyUI `.toast`, already gated |
+| Theme change, explicit toggle | Scoped cross-fade on the chrome surfaces | Same | Snap | `settle` | `CairnAdminShell.svelte` |
+| Theme change, OS or first paint | Snap | Snap | Snap | - | - |
+| Skeleton, shimmer | The DaisyUI 1.8s loop | Same | Static tint, no loop | - | DaisyUI `.skeleton`, already gated |
+| Spinner, progress | Runs; it is essential state | Runs | Runs; it conveys information | - | DaisyUI `.loading`, already gated |
+| Sticky header collapse on scroll | None | None | Nothing to reduce | - | - |
+| Pull to refresh, overscroll | None | None; `overscroll-behavior: contain` on the editor pane | Nothing to reduce | - | `MarkdownEditor.svelte` |
+
+Six rows need their reasoning recorded, because each departs from something.
+
+**The feedback alert is not the live region, and revision 1 conflated them.** `EditPage.svelte`
+lines 1637 and 1638 are two `sr-only` divs carrying `aria-live="polite"` and `aria-live="assertive"`.
+They are the live regions, they are invisible, and "no motion" is correct for them. The visible
+success strip at line 1643 is a separate element that animates into place with `@starting-style`
+plus `transition-all` and a `-translate-y-2`. So the two rows do not contradict: the announcement
+snaps, the visible confirmation moves. What the strip does violate is the ruleset's own allowlist,
+because `transition-all` is exactly the construct `motion-band` bans. It needs its property list
+named, and the translate is within the 8px bound, so the fix is one class change.
+
+**The preview pane's width transition has no legal form.** `EditPage.svelte` line 2047 transitions
+`width`, which section (f) bans outright, and the change it is animating is a split-pane resize,
+which section 10 rules should snap for an independent reason. It has no token, and the table records
+"banned" rather than a substitute. Removing it is a behavior change a reader will notice, so it
+belongs in the spec as a named removal, not as a silent consequence of the ban list.
+
+**CodeMirror's motion is already correct and should be left alone.** The fold chevron, the unfold
+flash, and the progress fill all sit inside a `@media (prefers-reduced-motion: reduce)` block in the
+same theme object (`MarkdownEditor.svelte` lines 612 to 615), and the chevron additionally carries a
+`@media (hover: none)` rest state at line 607. That is the modality gate and the reduced-motion guard
+this brief recommends, already shipped, in the one place a CSS rule cannot read. It is the best motion
+in the admin and the least checkable, which is the argument for the ESLint option in section (e).
+
+**The dropzone has no drag-over state at all.** `MediaHeroField.svelte` line 450 carries
+`transition-colors` with `hover:` and `focus-visible:` variants, and lines 453 and 454 wire `ondrop`
+and `ondragover`, but nothing changes visually while a file is over the target. That is a gap rather
+than a motion decision, and it is worth recording here because the motion pass is the first pass that
+will look at this element: the correct fix is a paint-only drag-over state at `tap`, which the
+ruleset already permits.
+
+Four more rows depart from a source rather than from the tree.
 
 **Theme change departs from the first read.** Section (c) lists theme change under "what snaps,
 always." The showcase site already ships a narrower rule that is better: a `theme-flip-transition`
@@ -1084,7 +1542,7 @@ Tokens. Five durations and three curves. A component that needs a sixth of eithe
   --cairn-dur-quick:  150ms   small local state: caret, chip, disclosure, inline validation
   --cairn-dur-settle: 200ms   the default: menus, popovers, tooltips, toasts, desktop dialogs
   --cairn-dur-sheet:  250ms   a surface whose travel is the viewport, not its own box
-  --cairn-dur-shift:  300ms   page-level mode change only. Zen is the sole use today.
+  --cairn-dur-shift:  300ms   page-level mode change only. Unallocated until decision 1 lands.
   --cairn-ease-out:   cubic-bezier(0.25, 0.46, 0.45, 0.94)  Adwaita's curve. Enters, settles.
   --cairn-ease-in:    cubic-bezier(0.4, 0, 1, 1)            Exits only.
   --cairn-ease-move:  cubic-bezier(0.4, 0, 0.2, 1)          Visible throughout, moves or resizes.
@@ -1096,12 +1554,17 @@ durations.
 
 Enter and exit are asymmetric. An exit runs one duration band faster than its enter and uses
 --cairn-ease-in. A settle-band panel enters at 200ms ease-out and leaves at 150ms ease-in. The
-way out is never a wait.
+way out is never a wait. Tap is the floor: a tap-band exit stays at 100ms and changes only its
+curve. Asymmetry applies to a surface arriving or leaving, never to hover, press, or focus, which
+are states of one element. A :not(:hover) counterpart per component is declined: it is one more
+pinned unlayered rule each, and a hover-out is paint only, where the difference is below what a
+reader can perceive.
 
 Modality. Every hover-state transition lives inside @media (hover: hover). Tailwind's hover:
 variant already compiles that way; hand-written :hover rules and DaisyUI's ungated components
-(menu, dropdown, tooltip, select, fab) need the guard added. On touch, press carries the same
-feedback at --cairn-dur-tap with no delay. Nothing is revealed by hover at any width.
+(menu, tooltip, select, fab) need the guard added, and its partly gated ones (dropdown, tab,
+dock, link) need the gap closed. On touch, press carries the same feedback at --cairn-dur-tap with
+no delay. Nothing is revealed by hover at any width.
 
 What animates. Only opacity, color, background-color, border-color, box-shadow, outline-*,
 rotate, translate, scale, and grid-template-rows. A translate stays under 8px, except a sheet,
@@ -1121,12 +1584,16 @@ Theme change follows its trigger, not its property. An explicit toggle click get
 --cairn-dur-settle cross-fade, scoped to the shell's chrome surfaces by a class present for
 that flip only. An OS scheme change and a first paint snap.
 
-Reduced motion degrades by property class, it does not blank.
-  - Paint (opacity, colour, shadow, outline): unchanged. These carry no positional motion and
-    removing them removes the feedback.
-  - Transform (translate, scale, rotate): duration to 0.01ms, substitute an opacity fade at the
+Reduced motion has a floor and an opt-back-in, and it never blanks silently.
+  - The floor stays: the blanket block zeroes every duration AND every delay under the guard,
+    which is what covers DaisyUI's twenty ungated components. It also zeroes delays, which the
+    shipped block does not and must.
+  - Paint (opacity, color, shadow, outline): a rule may opt back in by restating its transition
+    inside the same guard with !important on a class-bearing selector, which outranks the floor.
+    Paint carries no positional motion, and removing it removes the feedback.
+  - Transform (translate, scale, rotate): stays at the floor. Substitute an opacity fade at the
     same band. 0.01ms and not 0s, so transitionend still fires.
-  - Layout (grid-template-rows, min-height): 0.01ms. Snap.
+  - Layout (grid-template-rows): stays at the floor. Snap.
   - Page-level mode change: one 150ms opacity cross-fade, no geometry, no delay.
   - Looping motion (skeleton shimmer): off entirely, static tint instead.
 ```
@@ -1164,7 +1631,8 @@ Section (e)'s three changes all still apply. Four additions, in the same spirit:
 - **A hover rule.** A declaration that transitions a property under a `:hover` selector is an error
   unless the rule sits inside `@media (hover: hover)`. This is statically checkable, it is the exact
   construct `cairn-admin.css` line 1002 already models, and the DaisyUI override check in section (e)
-  should assert the guard exists for `menu`, `dropdown`, and `tooltip`.
+  should assert the guard exists for `menu` and `tooltip`, the two ungated components the admin
+  actually renders.
 - **A breakpoint rule.** A property that any media query in the same file changes must not carry a
   transition declared outside that media query. This is the static half of the resize finding, and it
   catches the drawer case without needing a render.
@@ -1173,12 +1641,28 @@ Section (e)'s three changes all still apply. Four additions, in the same spirit:
   route transitions in the admin" as a gate rather than a paragraph, which is the watch-item rule this
   repo already follows.
 
-The responsive half of the ruleset is checkable in a different place. The showcase's visual suite
-already runs the five-viewport bar (`examples/showcase/e2e/admin-visual.spec.ts`, `SIGNUPS_WIDTHS =
-[320, 390, 768, 1440, 2560]`), so the sheet-versus-dialog and overlay-versus-persistent decisions have
-a home. The motion itself does not: a still frame cannot show a duration. Add the zen toggle at 390
-and at 1440, and the drawer open at 390, to the reproduction manifest as motion cases for
-`visual-verifier`, which is where enter and exit asymmetry already lives.
+The responsive half of the ruleset has no home in the visual suite today. Revision 1 said it did,
+and that was wrong. `SIGNUPS_WIDTHS = [320, 390, 768, 1440, 2560]` exists in
+`examples/showcase/e2e/admin-visual.spec.ts` line 7, but it drives exactly one route,
+`/admin/signups`, a read-only list with no editor, no zen state, no dialog, and no open drawer. Of
+the rest of the file, the edit page is captured at 1440 and at 768 and nothing else varies by width.
+So none of the surfaces this ruleset legislates is currently rendered across the bar.
+
+For the responsive half to be verifiable at all, the suite needs these, each across the
+five-viewport bar:
+
+| Surface | Why the bar matters | Owner |
+| --- | --- | --- |
+| The edit page in zen | The content offset, the chrome regions, the chip placement | `EditPage.svelte`, `CairnAdminShell.svelte` |
+| The drawer open as an overlay | Only reachable below `lg` on content routes, below `xl` on desk routes | `CairnAdminShell.svelte` |
+| The persistent sidebar | The other side of the same flip, at 1440 and 2560 | `CairnAdminShell.svelte` |
+| A dialog open | Sheet-versus-centered is the one rule that changes shape at `sm` | `DeleteDialog.svelte` is the smallest instance |
+| The command palette open | Its narrow-width pinning is a cairn-invented rule with no precedent | `CairnAdminShell.svelte` line 823 |
+| The media library with a selection | The selection ring is a paint change the ruleset governs | `CairnMediaLibrary.svelte` |
+
+The motion itself is not reachable from any of them: a still frame cannot show a duration. Add the
+zen toggle at 390 and at 1440, and the drawer open at 390, to the reproduction manifest as motion
+cases for `visual-verifier`, which is where enter and exit asymmetry already lives.
 
 ## (g) Zen mode on phone and tablet
 
@@ -1192,14 +1676,21 @@ routes and 1024 and above elsewhere. Across the five-viewport bar:
 
 | Width | Sidebar before zen | What zen changes |
 | --- | --- | --- |
-| 320, 390, 768 | Overlay, closed | Chrome regions only. No sidebar is on screen to remove. |
-| 1440 | Persistent on content routes, overlay on desk routes | Chrome, plus the sidebar on content routes |
-| 2560 | Persistent everywhere | Chrome, plus the sidebar |
+| 320, 390 | Overlay, closed | Chrome regions only. No sidebar is on screen to remove. |
+| 768 | Overlay, closed | Chrome regions only. Below `lg`, so still an overlay on every route kind. |
+| 1024 to 1279 | Persistent on content routes, overlay on desk routes | Chrome, plus the sidebar on content routes |
+| 1440 | Persistent on every route kind (1440 clears `xl` at 1280) | Chrome, the sidebar, and the 224px content offset |
+| 2560 | Persistent on every route kind | Chrome, the sidebar, and the 224px content offset |
 
-The desktop sequence in section (d) therefore has a fourth actor that section (d) did not name: the
-sidebar recedes, and today it recedes through DaisyUI's 300ms translate plus 200ms width transition,
-which is a layout property animating at the widest viewport. Section (f) bans that. The sidebar should
-leave the same way the chrome does, on opacity, and its width should not transition at all.
+Revision 1 put 1440 in the split row. `xl` is 1280 (`CairnAdminShell.svelte` line 242), so 1440
+clears it and a desk route's sidebar is persistent there too. The split row exists, but it spans
+1024 to 1279 and the five-viewport bar does not sample it.
+
+The desktop sequence in section (d) therefore has two actors section (d) did not name. The sidebar
+recedes through DaisyUI's 300ms translate plus 200ms width transition, and `width` is a layout
+property animating at the widest viewport, which section (f) bans. And the content offset snaps
+224px, which is decision 1. The sidebar should leave the same way the chrome does, on opacity, with
+no width transition at all.
 
 ### Entering zen at 320 and 390
 
@@ -1208,10 +1699,12 @@ geometry change worth animating.
 
 1. **The chrome fades out.** Topbar band, document title, toolbar strip, and footer to `opacity: 0`
    over `--cairn-dur-quick` (150ms) on `--cairn-ease-in`, then leave the DOM. Same as desktop.
-2. **The editor card does not move.** At 390 the card is already full width minus its gutters, so the
-   padding and max-width transition that carries the desktop change has nowhere to go. Skip the
-   `--cairn-dur-shift` geometry step entirely below `sm`. What the reader gains is vertical space, and
-   that arrives as a consequence of the chrome leaving rather than as its own animation.
+2. **The editor card does not move.** At 390 the card is already full width minus its gutters, so
+   there is no reclaim to make. This is now the same rule the desktop case takes, for a different
+   reason: desktop skips the box change because `padding` and `max-width` are banned from
+   transitioning, and the phone skips it because there is nothing to change. One rule, one behavior,
+   every viewport. What the reader gains is vertical space, and that arrives as a consequence of the
+   chrome leaving.
 3. **The zen chip arrives last**, over `--cairn-dur-settle` (200ms) with `transition-delay: 150ms`,
    opacity only, no translate. The 4px downward translate the desktop sequence uses is dropped:
    at 390 the chip sits in a corner of a viewport a third the width, so the same 4px reads as a larger
@@ -1221,17 +1714,18 @@ Total is about 350ms, the same as desktop, with one moving part instead of three
 
 ### Entering zen at 768
 
-The tablet case is the phone case plus the card. The editor card at 768 does have room to widen, so
-step 2 runs as the desktop sequence describes, over `--cairn-dur-shift` on `--cairn-ease-out`,
-overlapping the chrome fade. The sidebar is still an overlay at this width and is closed, so it takes
-no part.
+The tablet case is the phone case. The editor card at 768 does have room to widen, and that widening
+snaps, exactly as it does on desktop and for the same reason: it is a `max-width` change. The sidebar
+is still an overlay at this width and is closed, so it takes no part, and 768 is the widest viewport
+at which the content offset is not in play. That makes 768 the cheapest viewport to verify the
+chrome sequence on in isolation.
 
 ### Leaving zen, every viewport
 
 Unchanged from section (d), with one addition. The chip goes first at `--cairn-dur-tap` (100ms), the
-card geometry returns at `--cairn-dur-settle` where it changed at all, and the chrome fades back at
-`--cairn-dur-quick`. At 1440 and 2560 the sidebar returns with the chrome, on opacity, at the same
-150ms, with no translate and no width transition.
+card's box returns on the frame it changed, and the chrome fades back at `--cairn-dur-quick`. At
+1440 and 2560 the sidebar returns with the chrome, on opacity, at the same 150ms, with no translate
+and no width transition, and the content offset returns however decision 1 settles it.
 
 ### Touch, at every viewport
 
@@ -1243,9 +1737,11 @@ unregistered tap. Nothing else about the sequence is modality-dependent.
 ### Reduced motion, revised for the responsive axis
 
 Section (d)'s rule holds at every viewport: one 150ms opacity cross-fade on the editor card, no
-geometry, no chip translate, no delays. Below `sm` there was no geometry transition to remove, so the
-reduced-motion path and the ordinary path differ only in the chip's delay and the chrome's fade, which
-makes the phone the cheapest viewport to verify the reduced-motion behavior on.
+geometry, no chip translate, no delays. With the box change now snapping in the ordinary path too,
+the reduced-motion path and the ordinary path differ only in the chip's delay and the chrome's fade
+at every viewport below 1024, which makes the phone the cheapest place to verify the reduced-motion
+behavior. Note that the chip's 150ms delay is one of the delays the blanket block does not currently
+zero, so this path does not work today even where the rest of it would.
 
 ## Second-read confidence notes
 
@@ -1271,3 +1767,32 @@ makes the phone the cheapest viewport to verify the reduced-motion behavior on.
 - The two corrections at the top of this second read (zen already animates the sidebar, and the
   showcase already ships a route transition scoped away from the admin) were read from the current
   source on `main` and should be re-verified on a render, not taken from this document.
+
+## Revision 2 confidence notes
+
+- Every line number, selector, and budget figure added in revision 2 was read from the working tree
+  at `main` on 2026-09-13: `CairnAdminShell.svelte`, `EditPage.svelte`, `MarkdownEditor.svelte`,
+  `HelpHome.svelte`, `CairnMediaLibrary.svelte`, `ConceptList.svelte`, `MediaHeroField.svelte`,
+  `cairn-admin.css`, `scripts/build/admin-css.input.css`, `scripts/build/build-admin-css.mjs`,
+  `scripts/checks/check-custom-surface.mjs`, `scripts/checks/custom-surface-budget.json`,
+  `src/lib/audit/rules/static/css-scope.ts`, `examples/showcase/e2e/admin-visual.spec.ts`, and
+  `examples/showcase/src/theme/theme.css`.
+- The DaisyUI gating lists were produced by grepping every file under `daisyui/components/` at
+  5.7.20 for `prefers-reduced-motion`, and the `.modal-bottom` corner values by reading
+  `modal.css`'s `--modal-tl` through `--modal-br` custom properties directly.
+- M3's legacy easing trio was confirmed against a Compose token reference, not against
+  `m3.material.io`, which still renders through JavaScript. The values match Tailwind 4's three
+  defaults exactly, which is itself corroboration.
+- The `motionDurationLong1` correction rests on two sources that disagree by design: the M3 token
+  table publishes `long1` at 450ms, and the Android `Motion.md` resolves the container transform to
+  300ms. Both were read; the brief now names the override rather than picking one.
+- SC 2.4.13's Level AAA was confirmed against both `w3.org/TR/WCAG22` and the Understanding
+  document. The review that prompted this revision recorded Level AA, which is the only item in
+  this revision where the review was not followed.
+- Three claims in this revision are reasoning rather than measurement and should be checked before
+  the spec relies on them: that a class-bearing `!important` rule reliably outranks the blanket
+  block's `[data-theme] *` (specificity says yes; prove it in the built sheet, as the Tailwind v4
+  layer-order memory already requires), that a `translate` on `.drawer-content` establishes a
+  containing block that would capture the editor's fixed-position children, and the
+  ten-to-fourteen selector count, which is an estimate of a DaisyUI override block nobody has
+  written yet.

@@ -1760,6 +1760,16 @@
   reduced-motion rule now also matches the theme roots themselves, not only their descendants.
   Consumers must: nothing.
 
+### Documentation
+
+- `docs/HISTORY.md` gains the polish-11b-i entry (the design system and the engine admin
+  surface), and `ROADMAP.md`'s polish sub-bullet closes the `ShareLinkPanel` busy-idiom ruling
+  and the command palette's own live region by name, files the bracketed fill-tone population
+  outside `check:custom-surface`'s reach to the Later tier with its measured count, and leaves
+  the `formatTimestamp` widening, the `createSectionAction` adoption, and the `OfficeList`/
+  `AdminTable` item open for the passes that ship them. Internal documentation only; no code
+  changed. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

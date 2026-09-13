@@ -323,19 +323,18 @@ The original decision framing, for the record:
     which routes the full inventory (this initiative's routed items, the friction log, and its
     own planning sweeps) into a named pass series; that spec and its plans are the source of
     truth for what polish executes, not a re-derived list here. The items below are the routed
-    inputs that fed it. A ruling on `ShareLinkPanel`'s busy-button idiom against
-    `EditPage`'s own rule: `ShareLinkPanel`'s share/revoke buttons use `aria-disabled` for busy
-    state, while `EditPage.svelte` (~:1573) reserves native `disabled` for busy as its one
-    sanctioned case, so the two idioms now read as contradictory in-repo and the polish slice's
-    design-system read should settle which one the family adopts. The `OfficeList`/`AdminTable`
-    double scroll-container ownership question, ruling-first: raise the `OfficeList`
-    outright-retire question before touching the scroll containers, since
+    inputs that fed it. **Polish-11b-i closed two of them (2026-09-13):** the `ShareLinkPanel`
+    busy-button idiom ruling against `EditPage`'s own rule (the design system now rules the busy
+    idiom, `ShareLinkPanel` converged onto it) and the command palette's own live region (the
+    palette is now a real ARIA combobox with two always-mounted live regions). The
+    `OfficeList`/`AdminTable` double scroll-container ownership question, ruling-first: raise the
+    `OfficeList` outright-retire question before touching the scroll containers, since
     `audit-admin-officelist` is a CLOSED reshape row (`engine-rulings.md:2660-2666`, executed by
     4b, `Reopens on: closed`), so an outright retire there is a new proposal against a closed
-    row, not a reopen. A `formatTimestamp` (`/admin-toolkit`) widening. The command palette's
-    own live region. Chassis-A's close routes one more item here: the `createSectionAction`
-    adoption in `admin/signups/+page.server.ts` with its dev-package seam, deferred past both
-    chassis passes because adopting the helper changes its auth and audit path.
+    row, not a reopen. A `formatTimestamp` (`/admin-toolkit`) widening. Chassis-A's close routes
+    one more item here: the `createSectionAction` adoption in
+    `admin/signups/+page.server.ts` with its dev-package seam, deferred past both chassis passes
+    because adopting the helper changes its auth and audit path.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -2027,6 +2026,21 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **The bracketed fill-tone population outside `check:custom-surface`'s reach (polish-11b-i,
+  2026-09-13).** The admin tree's `retiredTokenPattern` in
+  `scripts/checks/custom-surface-budget.json` only matches `--color-muted` and `--color-subtle`
+  wrapped in a bracket utility or an inline style, so it cannot prove a bracketed
+  `var(--color-*)` fill tone anywhere else is retired. Widening the pattern to every
+  `--color-*` fill tone, measured with the budget file's own regex shape
+  (`\[[^][]*var\(--color-[a-z0-9-]+\)[^][]*\]|style="[^"]*var\(--color-`) over
+  `src/lib/components/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flags **27 lines (41
+  occurrences) across nine files** today: `CairnTidySettings` 1, `ComponentInsertDialog` 2,
+  `EditPage` 2, `LoginPage` 2, `MediaBulkDeleteDialog` 2, `MediaHeroField` 8,
+  `MediaOrphanTools` 5, `RepeatableField` 2, `TidyReview` 3. **Trigger:** a pass willing to widen
+  `retiredTokenPattern` to the full `--color-*` family and convert this population onto named
+  utilities the way `LoginPage`'s own success token converted in polish-11b-i; until then the
+  gate proves only the two tokens it already covers.
 
 - **The 317-comment register sweep over the engine's own admin components.** Polish-11a's
   Svelte lint wiring brought `src/lib/components/**/*.svelte` under the same `check:comments`

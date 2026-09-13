@@ -689,3 +689,32 @@ markup change reaches, not the six-surface capture matrix.
   `hidden-chip-hairline-cairn-admin-dark.png` (dark, measured 4.959:1), both
   `~/.cache/cairn-polish-11b-i/task-7/after/crops/`, both clearing the 3:1 non-text border-contrast
   floor.
+
+### Task 8: the desk band's first-paint composition
+
+Not a capture-matrix task: `EditPage.svelte` is the only file this task touches, and no
+capture-matrix surface renders the edit page. All four of `e2e/admin-visual.spec.ts`'s
+`admin-edit-page-*` baselines are captured at widths of 768px and up, so none of them exercises the
+narrow (below-sm) bottom action bar branch this task also touches; the evidence for that branch is
+`EditPage.test.ts`'s own viewport-pinned component tests, not a visual baseline.
+
+- INTENDED MOVES: none. The plan named `admin-edit-page-{light,dark,1440,768}` as candidates, on
+  the theory that swapping an `{#if}` for an always-rendered `inert`/`hidden` pair could shift
+  layout; the unmodified suite run below shows it does not, at any of the four baseline widths.
+- MOVED BASELINES: none. An unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run
+  after `npm run package` rebuilt `dist/` from this task's source edits, passed all 28 of 28 tests
+  with zero diffs on the first run, so no regeneration step ran. At every one of the four baseline
+  widths (all sm and up), the band's lifecycle pair was already the reachable branch before this
+  task and stays the reachable branch after it; the diff only adds `hidden`/`inert` attributes and
+  a `max-sm:hidden`/`sm:hidden` utility pair, none of which changes computed layout at these
+  widths, so the render is pixel-identical. `admin-edit-page-768` shows the same composition it
+  showed before: 768px is still sm and up, so the band's own Publish/Save pair renders there, not
+  the bottom action bar.
+- TILE DIFF: not applicable. This task reaches no capture-matrix surface, so there is no
+  before/after tile pair to diff; `git status` on the six-surface capture directories shows no
+  file this task's diff touches.
+- READ ME: four band crops, the top `<width>x100+0+0` strip of each unmoved baseline, confirming
+  the Publish/Save pair renders unchanged at every captured width:
+  `admin-edit-page-light-band.png`, `admin-edit-page-dark-band.png`,
+  `admin-edit-page-1440-band.png`, `admin-edit-page-768-band.png`
+  (`~/.cache/cairn-polish-11b-i/task-8/after/crops/`).

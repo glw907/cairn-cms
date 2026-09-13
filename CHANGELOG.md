@@ -1727,6 +1727,13 @@
   consumer's own hand-authored admin markup already riding them keeps compiling. Consumers must:
   nothing.
 
+- The edit page's desk band and its below-sm bottom action bar both render their Save/Publish
+  pair unconditionally now, at every width, instead of swapping the pair in and out of the DOM
+  after mount. Which pair is reachable is a responsive Tailwind class (paint) plus `inert` bound
+  to the live `narrow` match (interaction and the accessibility tree), so the phone composition
+  is correct at first paint with no post-hydration swap, and exactly one Save control and one
+  Publish control is ever reachable at any width. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

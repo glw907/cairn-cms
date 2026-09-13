@@ -2075,7 +2075,10 @@ the named human gates only):**
   and per input modality: touch has no hover state, the drawer is a slide on a phone and a
   persistent column at desktop widths, a layout change caused by a resize or an orientation change
   snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
-  390, 768, 1440, 2560). Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
+  390, 768, 1440, 2560). Decision (Geoff, 2026-09-13): zen mode transitions the content offset the way the industry
+  default (shadcn) does, and the ruleset carries ONE documented exception for it, enforced by
+  selector in the property-allowlist rule; the sidebar prior-art survey and cairn's own toggle
+  measurement are the record. Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
   developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
   runs on its own screens (the borrowable-patterns gates layer), which means the checker must
   reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not

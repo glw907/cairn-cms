@@ -2075,8 +2075,9 @@ the named human gates only):**
   and per input modality: touch has no hover state, the drawer is a slide on a phone and a
   persistent column at desktop widths, a layout change caused by a resize or an orientation change
   snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
-  390, 768, 1440, 2560). The pass's plan carries a second research read on this before the
-  token set is fixed. Research brief with the
+  390, 768, 1440, 2560). Sequence (Geoff, 2026-09-13): a second research read on the responsive
+  axis extends the brief; the settled document gets a fresh-context adversarial review; then a
+  spec through brainstorming and a plan through writing-plans. Research brief with the
   seven-system comparison and a proposed token set:
   `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a

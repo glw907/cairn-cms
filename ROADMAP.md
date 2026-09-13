@@ -2070,7 +2070,13 @@ the named human gates only):**
   (Geoff, 2026-09-13): restrained, polished, and complete, meaning it covers every web case
   (hover, press, focus, enter, exit, layout, page-level mode changes, list and table changes,
   dialogs and drawers, toasts and live regions, route transitions, theme changes, reduced motion)
-  so no surface has to invent its own timing. Research brief with the
+  so no surface has to invent its own timing. Open question the research brief did not
+  cover (Geoff, 2026-09-13): how the rules change under responsive design, meaning per viewport
+  and per input modality: touch has no hover state, the drawer is a slide on a phone and a
+  persistent column at desktop widths, a layout change caused by a resize or an orientation change
+  snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
+  390, 768, 1440, 2560). The pass's plan carries a second research read on this before the
+  token set is fixed. Research brief with the
   seven-system comparison and a proposed token set:
   `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a

@@ -154,7 +154,7 @@ describe('CairnAdminShell', () => {
   it('opens the command palette from the topbar trigger', async () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
-    await expect.element(screen.getByRole('textbox', { name: /search or jump to/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('combobox', { name: /search or jump to/i })).toBeInTheDocument();
     // A palette-only command confirms the dialog is open (a nav link like Posts also exists in the sidebar).
     await expect.element(screen.getByText('View the live site')).toBeInTheDocument();
   });
@@ -194,7 +194,7 @@ describe('CairnAdminShell', () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
-    const input = screen.getByRole('textbox').element() as HTMLInputElement;
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
     const dialogLabel = dialog.getAttribute('aria-label');
     const inputLabel = input.getAttribute('aria-label');
     expect(dialogLabel).toBeTruthy();
@@ -210,11 +210,74 @@ describe('CairnAdminShell', () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
-    const labels = Array.from(dialog.querySelectorAll('li[role="listitem"]')).map(
+    const labels = Array.from(dialog.querySelectorAll('li[role="option"]')).map(
       (li) => li.textContent?.trim() ?? '',
     );
     expect(labels.length).toBeGreaterThan(0);
     expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it('exposes the palette input as a combobox pointed at its listbox', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    expect(input.getAttribute('role')).toBe('combobox');
+    expect(input.getAttribute('aria-expanded')).not.toBeNull();
+    const controlsId = input.getAttribute('aria-controls');
+    expect(controlsId).toBeTruthy();
+    // The controlled element must exist whether or not there are results (WCAG 1.3.1, 4.1.2).
+    expect(document.getElementById(controlsId!)).not.toBeNull();
+    expect(input.getAttribute('aria-activedescendant')).toBeDefined();
+  });
+
+  it('keeps the listbox mounted for a query with no matches, announcing the zero count', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    const controlsId = input.getAttribute('aria-controls')!;
+    input.value = 'no such command exists anywhere';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => document.getElementById(controlsId)).not.toBeNull();
+    const status = document.querySelector('dialog.modal [role="status"]')!;
+    await expect.poll(() => status.textContent?.trim()).toBe('0 results');
+  });
+
+  it('moves the active option on ArrowDown and activates it on Enter, not the first result', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    input.value = 'p';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => dialog.querySelectorAll('li[role="option"]').length).toBeGreaterThan(1);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    await expect
+      .poll(() => dialog.querySelector('li[role="option"][aria-selected="true"]'))
+      .not.toBeNull();
+    const options = Array.from(dialog.querySelectorAll<HTMLElement>('li[role="option"]'));
+    const activeOption = options.find((li) => li.getAttribute('aria-selected') === 'true')!;
+    expect(activeOption).toBeTruthy();
+    expect(activeOption).toBe(options[1]);
+    expect(input.getAttribute('aria-activedescendant')).toBe(activeOption.id);
+    const activeLabel = activeOption.textContent?.trim();
+
+    // A capturing listener that prevents the anchor's real navigation stands in for the pointer
+    // path a real Enter would take on the active option's own element, proving submitPalette reads
+    // the active index rather than the first DOM result.
+    let activated = false;
+    activeOption.querySelector('a, button')!.addEventListener(
+      'click',
+      (e) => {
+        e.preventDefault();
+        activated = true;
+      },
+      { capture: true },
+    );
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(activated).toBe(true);
+    expect(activeLabel).not.toBe(options[0].textContent?.trim());
   });
 
   it('renders the built-in engine entries as loose top-level links, not inside a section', async () => {

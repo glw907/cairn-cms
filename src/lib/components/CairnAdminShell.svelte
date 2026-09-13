@@ -346,6 +346,21 @@ discriminant, not the fields, gates the chrome).
   let paletteDialog = $state<HTMLDialogElement>();
   let paletteList = $state<HTMLUListElement>();
   let paletteQuery = $state('');
+  // The active option within paletteResults, or -1 for none active yet: the combobox pattern
+  // MediaPicker also carries (aria-activedescendant on the input, a roving descendant rather than
+  // a roving tabindex, so focus never leaves the input).
+  let paletteActiveIndex = $state(-1);
+
+  // A stable id base so the listbox and each option carry unique ids the combobox can point at.
+  // $props.id() is Svelte's deterministic, hydration-stable id source, unlike a Math.random() base
+  // that would mismatch across hydration.
+  const paletteUid = $props.id();
+  const paletteListboxId = `cairn-shell-palette-${paletteUid}-listbox`;
+
+  /** The per-option id, used by aria-activedescendant and the active-row narration. */
+  function paletteOptionId(i: number): string {
+    return `cairn-shell-palette-${paletteUid}-opt-${i}`;
+  }
 
   // The site-wide publish action. The trigger and its confirm render only while entries are pending;
   // the count streams as a deferred promise, so the topbar resolves it through an `{#await}` block
@@ -394,9 +409,31 @@ discriminant, not the fields, gates the chrome).
     paletteCommands.filter((c) => c.label.toLowerCase().includes(paletteQuery.trim().toLowerCase())),
   );
 
+  // Keep the active index in range as paletteResults narrows; a filter that drops the active row
+  // clears the active descendant rather than pointing at a gone option (MediaPicker's own rule).
+  $effect(() => {
+    if (paletteActiveIndex >= paletteResults.length) {
+      paletteActiveIndex = paletteResults.length === 0 ? -1 : paletteResults.length - 1;
+    }
+  });
+
+  const paletteActiveCmd = $derived(
+    paletteActiveIndex >= 0 ? (paletteResults[paletteActiveIndex] ?? null) : null,
+  );
+  const paletteActiveDescendant = $derived(
+    paletteActiveCmd ? paletteOptionId(paletteActiveIndex) : undefined,
+  );
+  // The active-row narration text, kept in its own live region so it never clobbers the count.
+  const paletteActiveNarration = $derived(
+    paletteActiveCmd
+      ? `${paletteActiveCmd.label}, ${paletteActiveIndex + 1} of ${paletteResults.length}`
+      : '',
+  );
+
   function openPalette() {
     if (paletteDialog?.open) return; // showModal throws on an already-open dialog
     paletteQuery = '';
+    paletteActiveIndex = -1;
     paletteDialog?.showModal();
   }
   // An action command (theme toggle). Link commands are real <a> elements that navigate on click, so
@@ -405,8 +442,27 @@ discriminant, not the fields, gates the chrome).
     paletteDialog?.close();
     cmd.action?.();
   }
+  // Enter activates the active option; with none active (arrived by typing alone) it keeps the
+  // prior behavior of taking the first result, so a type-and-Enter user loses nothing.
   function submitPalette() {
-    (paletteList?.querySelector('a, button') as HTMLElement | null)?.click();
+    const options = paletteList?.querySelectorAll<HTMLElement>('a, button') ?? [];
+    const target = paletteActiveIndex >= 0 ? options[paletteActiveIndex] : options[0];
+    target?.click();
+  }
+  function onPaletteInputKeydown(e: KeyboardEvent) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (paletteResults.length === 0) return;
+      paletteActiveIndex = Math.min(paletteActiveIndex + 1, paletteResults.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (paletteResults.length === 0) return;
+      paletteActiveIndex = Math.max(paletteActiveIndex - 1, 0);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      submitPalette();
+    }
+    // Escape is handled by the host dialog (its native cancel dismisses it); let it bubble.
   }
 
   interface Crumb {
@@ -758,24 +814,46 @@ discriminant, not the fields, gates the chrome).
             <input
               bind:value={paletteQuery}
               type="text"
+              role="combobox"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
               class="w-full bg-transparent py-3.5 type-body placeholder:text-muted"
-              onkeydown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  submitPalette();
-                }
-              }}
+              aria-expanded={paletteResults.length > 0}
+              aria-controls={paletteListboxId}
+              aria-activedescendant={paletteActiveDescendant}
+              autocomplete="off"
+              spellcheck="false"
+              onkeydown={onPaletteInputKeydown}
             />
           </div>
-          {#if paletteResults.length}
-            <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-                 display: flex, which strips the implicit list role in WebKit/VoiceOver
-                 (cairn-audit's list-role rule, rendered mode). -->
-            <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2" role="list">
-              {#each paletteResults as cmd (cmd.label)}
-                <li role="listitem">
+          <!-- The count region: polite, separate from the active-row narration so neither clobbers
+               the other. -->
+          <p class="sr-only" role="status" aria-live="polite">
+            {paletteResults.length} {paletteResults.length === 1 ? 'result' : 'results'}
+          </p>
+          <!-- The active-row narration, its own polite region. -->
+          <p class="sr-only" aria-live="polite">{paletteActiveNarration}</p>
+
+          <!-- The listbox always renders, even with no matches, so the combobox's aria-controls
+               always resolves to a real element (WCAG 1.3.1, 4.1.2): an aria-controls pointing at a
+               node that does not exist is a broken relationship. The no-match copy lives inside the
+               listbox, announced through the count region above rather than as live text of its own.
+               role="listbox"/"option": daisyUI's .menu :where(li) renders every item at
+               display: flex, which strips the implicit listbox and option roles in
+               WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode), so each row states its
+               role explicitly. -->
+          <ul
+            bind:this={paletteList}
+            id={paletteListboxId}
+            role="listbox"
+            aria-label="Command results"
+            class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2"
+          >
+            {#if paletteResults.length === 0}
+              <li class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</li>
+            {:else}
+              {#each paletteResults as cmd, i (cmd.label)}
+                <li id={paletteOptionId(i)} role="option" aria-selected={i === paletteActiveIndex}>
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
                        so it carries no onclick (closing here would cancel the navigation). An external link
@@ -798,10 +876,8 @@ discriminant, not the fields, gates the chrome).
                   {/if}
                 </li>
               {/each}
-            </ul>
-          {:else}
-            <p class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</p>
-          {/if}
+            {/if}
+          </ul>
         </div>
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
       </dialog>

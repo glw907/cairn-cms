@@ -1332,6 +1332,16 @@
   trigger an `aria-controls` naming it, since the palette trigger now shares the same
   `aria-haspopup` value. Consumers must: nothing.
 
+- `CairnAdminShell`'s command palette is now a real ARIA combobox, following `MediaPicker`'s own
+  shape. The search input carries `role="combobox"` with `aria-expanded`, `aria-controls`, and
+  `aria-activedescendant`; the results list always renders as a `role="listbox"` (even with no
+  matches, so `aria-controls` never points at a node that does not exist), with each row a
+  `role="option"` carrying `aria-selected`. ArrowDown and ArrowUp move the active option, and
+  Enter now activates that active option rather than always the first result, falling back to the
+  first result only when nothing is active yet. Two always-mounted live regions, a `role="status"`
+  result count and an active-option narration, replace the closed-conditioned "No matches" text,
+  so a query narrowing to zero announces. Consumers must: nothing.
+
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
   optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
   both `paid-plan-declined` messages now all state plainly that a cairn site needs Workers Paid

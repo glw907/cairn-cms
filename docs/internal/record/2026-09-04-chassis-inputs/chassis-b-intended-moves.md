@@ -580,3 +580,25 @@ set at `~/.cache/cairn-polish-11b-i/task-3/after/`.
   surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) also show AE 0 on every tile;
   their differing manifest sha256 hashes are PNG re-encoding only, the same pattern B2, polish-11a,
   and this pass's Task 2 recorded, not a pixel change.
+
+### Task 4: the command palette as a combobox
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`, and the palette dialog is
+closed in every captured state, so the combobox ARIA, the listbox roles, the keyboard model, and the
+two live regions all sit inside `dialog:not([open])`, which renders nothing. Before set at
+`~/.cache/cairn-polish-11b-i/task-4/before/`, captured fresh at this task's parent commit. After set
+at `~/.cache/cairn-polish-11b-i/task-4/after/`. **A first `after` capture (same commit) showed a
+nonzero `AE` on `signups`'s top tile at every width and scheme, and a much smaller nonzero `AE` on
+unrelated public surfaces' dark-theme top tile (`archive2`, `article`): a fresh recapture at the
+same commit matched `before` at `AE` 0 on every one of those tiles, so the first `after` run was a
+capture-time flake (recorded here rather than silently discarded), and the `after` set this row's
+figures come from is the second, verified capture.**
+
+- INTENDED MOVES: none. Every change lives inside the palette dialog's markup, closed in every
+  captured state.
+- MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
+  ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
+  regeneration, so no baseline needed moving.
+- TILE DIFF: `magick compare -metric AE` is 0 on all 253 tiles across all six capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`, every width and
+  scheme) between `task-4/before/tiles/` and the verified `task-4/after/tiles/`.

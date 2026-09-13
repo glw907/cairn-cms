@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import { createRawSnippet } from 'svelte';
+import { createRawSnippet, mount, unmount } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
@@ -127,6 +127,74 @@ describe('CairnAdminShell', () => {
     const styleCountBefore = document.head.querySelectorAll('style').length;
     await render(CairnAdminShell, { data: data(true), children: child });
     expect(document.head.querySelectorAll('style').length).toBe(styleCountBefore);
+  });
+
+  // The host body-margin reset lives in the compiled sheet's own build (cairn-admin.css's build,
+  // not a compensating margin on the drawer root), so it has to be proven against a genuine host
+  // body, at either starting margin: the real UA default (8px, nothing else on the page touches
+  // it) and a host that already runs something like Tailwind Preflight and zeroes it itself. The
+  // outer test document's own body is not a stand-in for either: this harness's own base sheet
+  // already carries an unlayered `body { margin: 0 }` rule, which always outranks a layered rule
+  // regardless of order, so nothing this suite could inject into that body would ever expose a
+  // real 8px starting point. A bare iframe with no stylesheet but the one under test gives each
+  // case a genuinely blank host instead.
+  describe('host body-margin reset', () => {
+    let iframe: HTMLIFrameElement;
+
+    beforeEach(() => {
+      iframe = document.createElement('iframe');
+      iframe.style.border = 'none';
+      iframe.style.width = '1280px';
+      iframe.style.height = '720px';
+      document.body.appendChild(iframe);
+    });
+
+    afterEach(() => {
+      iframe.remove();
+    });
+
+    /**
+     * A bare iframe document (no stylesheet but the ones passed in `extraHeadCss`), with the
+     * compiled admin sheet always last so it wins any tie against an equally-unlayered host rule.
+     * @param extraHeadCss any host-authored CSS to install ahead of the compiled sheet (a
+     *   Preflight-style reset, say); empty leaves the real UA default as the only starting point.
+     * @returns the iframe's own document
+     */
+    function freshHostDocument(extraHeadCss: string): Document {
+      const idoc = iframe.contentDocument!;
+      idoc.open();
+      idoc.write('<!doctype html><html><head></head><body></body></html>');
+      idoc.close();
+      if (extraHeadCss) {
+        const hostStyle = idoc.createElement('style');
+        hostStyle.textContent = extraHeadCss;
+        idoc.head.appendChild(hostStyle);
+      }
+      const adminStyle = idoc.createElement('style');
+      adminStyle.textContent = compiledAdminCss;
+      idoc.head.appendChild(adminStyle);
+      return idoc;
+    }
+
+    it('closes the seam on a host carrying the real UA default 8px body margin', () => {
+      const idoc = freshHostDocument('');
+      const app = mount(CairnAdminShell, { target: idoc.body, props: { data: data(true), children: child } });
+      expect(idoc.defaultView!.getComputedStyle(idoc.body).marginLeft).toBe('0px');
+      const rect = idoc.querySelector<HTMLElement>('.drawer')!.getBoundingClientRect();
+      expect(rect.left).toBe(0);
+      expect(rect.width).toBe(idoc.defaultView!.innerWidth);
+      unmount(app);
+    });
+
+    it('closes the seam on a host that already zeroes body margin itself', () => {
+      const idoc = freshHostDocument('body { margin: 0; }');
+      const app = mount(CairnAdminShell, { target: idoc.body, props: { data: data(true), children: child } });
+      expect(idoc.defaultView!.getComputedStyle(idoc.body).marginLeft).toBe('0px');
+      const rect = idoc.querySelector<HTMLElement>('.drawer')!.getBoundingClientRect();
+      expect(rect.left).toBe(0);
+      expect(rect.width).toBe(idoc.defaultView!.innerWidth);
+      unmount(app);
+    });
   });
 
   it('applies the cairn-admin theme and renders the concept nav and child', async () => {

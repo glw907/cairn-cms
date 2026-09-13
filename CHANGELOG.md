@@ -1750,13 +1750,15 @@
   re-grep and fixed alongside it), closing the population to zero. `ConceptList`'s four column
   headers all carry `scope="col"`, with `aria-sort` left exactly where it already was, on the two
   sortable columns. `CairnAdminShell` no longer injects a `<style>` tag into the host document
-  head to zero the body margin; the reset moves onto the shell's own drawer root as `-m-2
-  w-[calc(100%+1rem)]`, cancelling the ambient UA body margin against that element's own box
-  instead. `LoginPage` and `ConfirmPage`, the two screens the shell renders unauthenticated, gain
-  the matching `-m-2` on their own root wrapper for the same reason: both rendered 16px taller
-  once the shared reset stopped covering them. None of it touches a host element.
-  `cairn-admin.css`'s reduced-motion rule now also matches the theme roots themselves, not only
-  their descendants. Consumers must: nothing.
+  head to zero the body margin; the packaged admin sheet resets it itself instead, with a
+  `body:has([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])` rule that fires only
+  while an admin theme root is mounted. An earlier version of this fix put a compensating `-m-2
+  w-[calc(100%+1rem)]` on the shell's own drawer root instead, which assumed the host's ambient
+  body margin was exactly 8px and overhung by 8px on a host that already zeroed it (Tailwind
+  Preflight, say); the sheet-based reset holds at either starting margin and needed no
+  compensating utility on `CairnAdminShell`, `LoginPage`, or `ConfirmPage`. `cairn-admin.css`'s
+  reduced-motion rule now also matches the theme roots themselves, not only their descendants.
+  Consumers must: nothing.
 
 ## 0.96.0
 

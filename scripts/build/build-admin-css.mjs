@@ -101,7 +101,23 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // after `utilities` and outrank it. Re-declaring the full order here, first in the output, pins
   // `properties` ahead of `utilities` regardless of file order.
   const layerOrder = '@layer properties, theme, base, components, utilities;\n';
-  return layerOrder + fontFace + scoped.css;
+  // The idempotent host body-margin reset, declared here rather than in admin-css.input.css. The
+  // real host `<body>` element sits ABOVE the admin theme root in the document, not inside it, so
+  // the usual `[data-theme=...] descendant` scoping this sheet uses everywhere else cannot reach
+  // it, and stage 2's prefixSelector step special-cases a bare `body`/`html`/`:root` selector by
+  // remapping it onto the theme root itself (the trick that lets Tailwind's own `:root` theme
+  // variables land correctly), which would put `margin: 0` on the wrapper div instead of the real
+  // body. Writing the selector here, after both pipeline stages, is the same technique the
+  // self-hosted @font-face rules above already use to reach the output unmangled. `:has()` keeps
+  // the reset provably inert on any page this stylesheet is never a part of, resetting the host's
+  // own body only while an admin theme root is actually mounted in it: CairnAdminShell,
+  // LoginPage, and ConfirmPage each set `data-theme` to exactly one of these two names, and none
+  // of the three assumes the host's ambient body margin is any particular value (8px, the UA
+  // default, or 0, a host that already runs Tailwind Preflight), closing the seam a hard-coded
+  // compensating margin on an inner element could not.
+  const bodyMarginReset =
+    "@layer base{body:has([data-theme='cairn-admin'],[data-theme='cairn-admin-dark']){margin:0}}\n";
+  return layerOrder + fontFace + bodyMarginReset + scoped.css;
 }
 
 // When run as a script, write the compiled sheet into dist, overwriting the variables-only partial

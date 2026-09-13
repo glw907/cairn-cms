@@ -748,30 +748,48 @@ unbaselined, so its evidence is the by-hand capture named below.
 ### Task 10: Small conformance, the second half
 
 `signups` is the only capture-matrix surface reaching `CairnAdminShell`, and this task's body-margin
-rescope is its own named paint risk: the shell's authenticated (`.drawer`) root gains `-m-2
-w-[calc(100%+1rem)]` in place of the removed `<svelte:head>` body-margin injection, and the two
-public screens the shell renders as `children()` when unauthenticated (`LoginPage`'s and
-`ConfirmPage`'s own root wrapper) gain the matching `-m-2` for the same reason: both stopped
-receiving the shared reset and, unfixed, rendered 16px taller (the ambient UA body margin
-reappearing top and bottom). Before set at `~/.cache/cairn-polish-11b-i/task-10/before/`, captured
-fresh at this task's parent commit (no predecessor captured a pass-wide before set). After set at
-`~/.cache/cairn-polish-11b-i/task-10/after/`.
+rescope is its own named paint risk. The task landed in two rounds: the first (`a5938e99`) put a
+compensating `-m-2 w-[calc(100%+1rem)]` on the shell's `.drawer` root and a matching `-m-2` on
+`LoginPage`'s and `ConfirmPage`'s own root wrapper, in place of the removed `<svelte:head>`
+body-margin injection. A conductor ruling found that technique host-margin-dependent (it hard-codes
+an assumed 8px ambient body margin, which overhangs on a host that already zeroes it), so the
+second round replaced it with an idempotent `body:has([data-theme=...]) { margin: 0; }` reset
+carried in the packaged admin sheet itself (`scripts/build/build-admin-css.mjs`), removing the
+compensating utilities from all three components entirely. Before set at
+`~/.cache/cairn-polish-11b-i/task-10/before/`, captured fresh at this task's parent commit (no
+predecessor captured a pass-wide before set). Round 1's after set is
+`~/.cache/cairn-polish-11b-i/task-10/after/`; round 2's after set, captured against the sheet-based
+fix, is `~/.cache/cairn-polish-11b-i/task-10-round2/after/` (`signups` only, `--only signups`).
 
-- INTENDED MOVES: `signups 320/390/768/1440/2560 light/dark: a sub-pixel rendering shift from the
-  margin-cancellation arithmetic (`-m-2` plus `w-[calc(100%+1rem)]` computing the drawer's edges
-  via `calc()` instead of the removed reset's exact zero), visible only under a strict per-pixel
-  compare, not as a layout break`.
-- MOVED BASELINES: none. The unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run
-  after `npm run package` rebuilt `dist/` from this task's source edits, passed all 28 of 28 tests
-  (including all ten `signups-{light,dark}-{320,390,768,1440,2560}` cases and the four `auth-login`/
-  `auth-confirm` cases the `LoginPage`/`ConfirmPage` fix also touches) with no regeneration needed,
-  so nothing in the manifest moved.
+- INTENDED MOVES: none. The unmodified admin-visual suite passed all 28 of 28 tests against both
+  rounds' builds, so no baseline moved either time.
+- MOVED BASELINES: none, matching INTENDED MOVES.
 - TILE DIFF: `magick compare -metric AE` is 0 on every tile of the five non-admin capture-matrix
-  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`), confirming the change stays
-  scoped to the admin tree. On `signups`, AE is nonzero on every tile (roughly 0.001 to 0.05 of
-  pixels, largest at the narrow dark-theme widths: `320` 13807.9, `390` 13818.5, `768` 12719.1,
-  `1440` 14432.7, `2560` 14432.5 pixels of AE at dark; substantially smaller at light), which is the
-  named paint risk showing up as a small, sub-pixel-scale rendering variance from the CSS-arithmetic
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) in both rounds, confirming the
+  change stays scoped to the admin tree. On `signups`, round 2's `full/` captures are byte-identical
+  to round 1's (`magick compare -metric AE` is exactly `0` on all ten `signups-{light,dark}-
+  {320,390,768,1440,2560}.png` pairs): the showcase host carries no Preflight, so it sits in the one
+  state (an unreset ambient body margin) both techniques already handled the same way, and the
+  ruling's actual target, a host that already zeroes body margin, has no representative in this
+  capture matrix. Diffed against the ORIGINAL before set, AE is nonzero on every `signups` tile in
+  both rounds (round 2: `320` 1940.99 light / 13807.9 dark, `390` 1952.15 / 13818.5, `768` 1106.75 /
+  12719.1, `1440` 2657.83 / 14432.7, `2560` 2657.69 / 14432.5 pixels of AE, identical to round 1's
+  own figures). Two measured, non-defect causes, not a "sub-pixel rendering shift" from CSS
+  arithmetic: (1) direct pixel sampling at `1440x800` finds the before capture carries a genuine
+  16px white scrollbar-gutter reservation at the right edge (`x=1424` through `x=1439`, sampled at
+  `y=400`, `#FFFFFF`), which the after capture no longer shows (the page's own `#F6F3EF` background
+  fills that strip instead): the shell's own load-bearing comment already named this exact 16px of
+  permanent vertical overscroll, and this round closes it outright rather than leaving it reduced.
+  Reclaiming that reserved gutter widens the whole page's available layout width by the same amount,
+  which is what the uniform sub-pixel text- and control-edge doubling `AE` measures across the page
+  at every width; nothing moves as a layout break. (2) At 320 (the narrowest width, where the
+  sidebar collapses to the mobile overlay and there is no persistent drawer), the freed width
+  reflows the topbar: the search pill's truncated label grows from `S` to `S...` (confirmed by a
+  side-by-side crop of the topbar row, before/after, both captures). Crops with geometry, signups at
+  1440 both schemes, before and after: `~/.cache/cairn-polish-11b-i/task-10-round2/crops/signups-
+  {light,dark}-1440-{before,after}-{left-260x400+0+0,right-260x400+1180+0}.png` (eight files: two
+  regions, two schemes, two states).
+
   fix, not a layout defect: it falls under Playwright's own snapshot tolerance (the unmodified suite
   passed with zero diffs at every one of those ten cases) and the diff image at every width shows
   uniform text-edge doubling rather than any moved element or broken layout.

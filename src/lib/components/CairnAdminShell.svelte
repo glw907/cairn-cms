@@ -647,17 +647,16 @@ discriminant, not the fields, gates the chrome).
        Fixed positioning is anchored to the viewport outright, the same mechanism the mobile overlay
        already uses, so it carries no such drift and needs no document-level change. -->
   <!-- The seam this closes: a host that omits Preflight leaves the UA's default 8px body margin in
-       place, so this box's own flowing top-left edge sits 8px inside the true viewport while the
-       fixed sidebar above pins flush to it, and the min-h-screen height plus the ambient 16px
-       vertical margin adds a permanent 16px of scroll past the true viewport bottom. `-m-2` cancels
-       that ambient margin against this element's own box: the top and bottom halves collapse
-       against the host's own body margin, and the left and right halves pull this fixed-`width:
-       100%` box's edges out to the viewport, which `w-[calc(100%+1rem)]` widens back out to cover
-       (a fixed-width box, unlike an auto-width one, does not grow on its own to fill a negative
-       margin). None of it touches a host element, honoring the rule that the admin never resets
-       the host's own elements. -->
+       place, so this box's own flowing top-left edge used to sit 8px inside the true viewport while
+       the fixed sidebar above pinned flush to it, and the min-h-screen height plus the ambient 16px
+       vertical margin added a permanent 16px of scroll past the true viewport bottom. The packaged
+       admin sheet resets the real host body margin to zero itself (cairn-admin.css's build, guarded
+       to fire only while an admin theme root is mounted), so this box needs no compensating margin
+       of its own, and the fix holds regardless of whether the host's ambient body margin was 8px or
+       already 0 (a host that runs Tailwind Preflight, say): no negative margin here can overshoot
+       hard-coding a host default cairn does not get to assume. -->
   <div
-    class="drawer min-h-screen -m-2 w-[calc(100%+1rem)] bg-base-200 text-base-content"
+    class="drawer min-h-screen bg-base-200 text-base-content"
     class:lg:drawer-open={!isDeskRoute && !topbar.zen}
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >

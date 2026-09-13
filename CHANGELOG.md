@@ -300,6 +300,18 @@
 
 ### Changed
 
+- The showcase's custom Signups admin screen, and the Waymark template that mirrors it, now build
+  both form actions through `createSectionAction` instead of a hand-rolled
+  `requireOwner`/`formData`/`fail` shape. The exemplar's job is to teach the documented path, and
+  the raw shape taught a developer to copy the minimum that compiles. The wrapper resolves the
+  route's own `APP_DB` binding, emits an audit record per mutation (`create`/`signup` and
+  `remove`/`signup`), and authorizes each POST against the site's access declaration before the
+  binding resolves, with `ownerOnly` still stacked on the destructive action. That authorization is
+  fail-closed on every call, per the `access-semantics-documented-divergence` ruling: an unmapped
+  target refuses, so a site copying this route declares a rule for it. The `load` keeps
+  `requireOwner`, which stays the documented gate for a load. Example and template code only; no
+  consumer action.
+
 - The engine's own admin components (`src/lib/components/*.svelte`) now sit under the same
   `check:comments` TSDoc gate the showcase's `.svelte` files carry: the ESLint `.svelte` block's
   `files` glob widens to include `src/lib/components/**/*.svelte`. Eleven `tsdoc/syntax` errors

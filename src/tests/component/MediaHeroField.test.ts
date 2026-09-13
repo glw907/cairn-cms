@@ -187,7 +187,6 @@ describe('MediaHeroField empty state', () => {
   });
 });
 
-
 describe('MediaHeroField dropzone focus indicator', () => {
   let sheet: HTMLStyleElement;
 

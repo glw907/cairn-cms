@@ -608,8 +608,9 @@ figures come from is the second, verified capture.**
 `signups` is the only capture-matrix surface reaching `cairn-admin.css`, and this task's three
 changes (the segmented-control ring mix, the scroll-margin rule's added property, and the dropzone
 trigger's focus utilities) touch no element the `signups` route renders. Before set at
-`~/.cache/cairn-polish-11b-i/task-5/before/`, captured fresh at this task's parent commit (no
-predecessor in this run had a pass-wide before set to symlink). After set at
+`~/.cache/cairn-polish-11b-i/task-5/before/`: rendered from the parent commit's built `dist/` while
+the worktree already carried this task's source edits, so the stale `dist/` (not yet rebuilt from
+those edits) is what makes it a true before render. After set at
 `~/.cache/cairn-polish-11b-i/task-5/after/`.
 
 The plan named `admin-edit-page-{light,dark,1440,768}`, `admin-media-{light,dark}`, and
@@ -644,3 +645,12 @@ the same reason.**
 - TILE DIFF: `magick compare -metric AE` is 0 on all 253 tiles across all six capture-matrix
   surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`, every width and
   scheme) between `task-5/before/tiles/` and the rebuilt-`dist/` `task-5/after/tiles/`.
+- READ ME: the two density-toggle crops (`density-toggle-{light,dark}-415x276-100x40.png`, cut
+  `100x40+415+276` from `admin-media-{light,dark}-linux.png`) come from an unmoved, pre-change
+  baseline and therefore show the old 20 percent ring, not the raised one; they do not carry the
+  A3 verdict. The A3 verdict rests on the footer-segmented pair
+  (`footer-segmented-{light,dark}-680x708-240x40.png`, cut `240x40+680+708` from the regenerated
+  `admin-edit-page-{light,dark}-linux.png`), which shows the raised ring in both color schemes. The
+  A16 verdict is proven separately, by `MediaHeroField.test.ts`'s real-browser computed-style
+  assertion (a 2px solid `--color-primary` outline on `:focus-visible`), per the conductor's ruling
+  that a resting screenshot cannot show a `:focus-visible` state.

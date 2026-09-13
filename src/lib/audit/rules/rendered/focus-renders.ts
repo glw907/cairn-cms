@@ -15,10 +15,10 @@
 // unreachable, so the rule shipped green on a page carrying the precise defect it exists to catch.
 //
 // And "indicator" is wider than `outline`. The first build scoped itself to `outline` on the stated
-// grounds that the admin uses nothing else, which is false: MediaPicker, ComponentInsertDialog,
-// CairnMediaLibrary, and MediaHeroField all render a Tailwind `ring` (a `box-shadow`) and three of
-// them explicitly clear the outline, so an outline-only check reports four error-tier false
-// positives against cairn's own components. The bar is now the honest one: focus must CHANGE
+// grounds that the admin uses nothing else, which is false: MediaPicker, ComponentInsertDialog, and
+// CairnMediaLibrary all render a Tailwind `ring` (a `box-shadow`) and clear the outline, so an
+// outline-only check reports three error-tier false positives against cairn's own components. The
+// bar is now the honest one: focus must CHANGE
 // something a sighted user can see. Each stop's focused paint is compared against that same
 // element's own resting paint, so a permanent decorative shadow cannot be mistaken for a focus
 // ring, and a real ring in any mechanism counts.

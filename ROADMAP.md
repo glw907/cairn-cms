@@ -950,7 +950,8 @@ the named human gates only):**
   (guidance, with the docs rewrite it routes to). Draft spec:
   `~/.cache/cairn-overnight-2026-09-12/borrowable-patterns-design-DRAFT.md`; it lands at
   `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md` after step 2.
-  **Trigger:** polish-C merged and the release cut.
+  Site migration waits until ALL the borrow work has landed (borrow-1, the docs rewrite,
+  borrow-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
 
 - **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after borrow-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under

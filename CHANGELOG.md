@@ -1345,6 +1345,16 @@
   without overflow before and after the label change, so the finding that it could not compose at
   those widths does not hold and the row's composition is unchanged. Consumers must: nothing.
 
+- The showcase's Signups admin screen, and the Waymark template that mirrors it, name and confirm
+  the destructive row. Each row's Delete trigger now carries an `aria-label` naming its own signup
+  (`ManageEditors.svelte`'s per-row shape), and the click no longer posts directly: it opens one
+  shared confirm, a native `<dialog>` with `role="alertdialog"` and `aria-modal="true"`, opened
+  with `showModal()` and labelled by its own heading, following the design system's safe-delete
+  recipe. There is no light-dismiss backdrop, so a stray click cannot discard a destructive action,
+  and the row survives until the dialog's own Delete button submits the `?/remove` action. One
+  dialog serves every row (opened with the clicked row's id and name) rather than one per row,
+  which avoids a duplicate label id across a table. Consumers must: nothing.
+
 - `CairnAdminShell`'s two keyboard blockers are cleared. The editor card's own chords (bold,
   italic, inline code, the heading pair, the list pair, quote, and the web-link dialog) now call
   `stopPropagation()` alongside their existing `preventDefault()`, so Ctrl/Cmd+B inside the editor

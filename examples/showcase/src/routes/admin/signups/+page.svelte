@@ -15,6 +15,24 @@
   const errorMessages: Record<string, string> = {
     missing: 'Name and email are both required.',
   };
+
+  // One shared confirm dialog for every row, following the design system's safe-delete recipe: a
+  // native dialog, no light dismiss, and the destructive POST inside it. Its id and name are set
+  // from the row that opened it, so the same markup and the same posted form serve every row
+  // without duplicating a dialog per row.
+  let deleteDialog = $state<HTMLDialogElement | null>(null);
+  let pendingDeleteId = $state<number | null>(null);
+  let pendingDeleteName = $state('');
+
+  function confirmDelete(id: number, name: string) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    deleteDialog?.showModal();
+  }
+
+  function cancelDelete() {
+    deleteDialog?.close();
+  }
 </script>
 
 <PageHeader title="Signups" />
@@ -58,13 +76,41 @@
         <td>{s.name}</td>
         <td>{s.email}</td>
         <td>
-          <form method="POST" action="?/remove">
-            <CsrfField />
-            <input type="hidden" name="id" value={s.id} />
-            <button class="btn btn-ghost btn-xs">Delete</button>
-          </form>
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs"
+            aria-label={`Delete ${s.name}`}
+            aria-haspopup="dialog"
+            onclick={() => confirmDelete(s.id, s.name)}
+          >
+            Delete
+          </button>
         </td>
       </tr>
     {/each}
   {/snippet}
 </AdminTable>
+
+<!-- One shared confirm for every row's destructive action, following the design system's
+     safe-delete recipe: a native dialog opened with showModal (native focus trap and Escape),
+     role="alertdialog", and no method="dialog" backdrop, so a stray click cannot dismiss it. -->
+<dialog
+  class="modal"
+  role="alertdialog"
+  aria-modal="true"
+  aria-labelledby="signup-delete-title"
+  bind:this={deleteDialog}
+>
+  <div class="modal-box">
+    <h2 id="signup-delete-title" class="type-heading font-bold">
+      Delete {pendingDeleteName}?
+    </h2>
+    <p class="mb-3 type-body">This cannot be undone.</p>
+    <form method="POST" action="?/remove" class="flex justify-end gap-2">
+      <CsrfField />
+      <input type="hidden" name="id" value={pendingDeleteId} />
+      <button type="button" class="btn btn-sm" onclick={cancelDelete}>Cancel</button>
+      <button type="submit" class="btn btn-sm btn-error">Delete</button>
+    </form>
+  </div>
+</dialog>

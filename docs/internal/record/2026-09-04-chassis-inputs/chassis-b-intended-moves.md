@@ -830,3 +830,28 @@ pass had captured a pass-wide before set), `~/.cache/cairn-polish-11b-ii/task-3/
   390 in both schemes; adding the stacked labels grows each field's own column height, not the
   row's width, so the horizontal composition the finding named is unaffected. No composition fix
   applied.
+
+### Task 4: The signups exemplar's destructive row
+
+`signups` is the only capture-matrix surface reaching the route this task rewrites. Before set
+captured fresh at this task's parent commit (`bbede067`, Task 3's commit),
+`~/.cache/cairn-polish-11b-ii/task-4/before/` (`--only signups`). After set
+`~/.cache/cairn-polish-11b-ii/task-4/after/` (`--only signups`).
+
+- INTENDED MOVES: none. The captured surfaces render the signups table with no rows (the
+  capture harness seeds no data), so the per-row `aria-label` and the shared confirm dialog, both
+  scoped to a row's Delete trigger and to a dialog that is closed by default, have no pixel to
+  move. The Delete button's own text and class stay unchanged.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this task's source edits, produced zero failures (28 of
+  28 passed unchanged). No regeneration was run, since there was nothing to regenerate.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 0, light 390 0, light 768
+  0, light 1440 0, light 2560 0, dark 320 0, dark 390 0, dark 768 0, dark 1440 0, dark 2560 0
+  pixels of AE. Zero on every tile, matching the empty-table capture and the produced zero
+  failures.
+- READ ME: two render-proof pairs: `~/.cache/cairn-polish-11b-ii/task-4/before/full/
+  signups-light-1440.png` and its after-set counterpart under
+  `~/.cache/cairn-polish-11b-ii/task-4/after/full/signups-light-1440.png` (two files). Both show
+  the identical empty table and create row; the shared alertdialog added below the table renders
+  nothing while closed.

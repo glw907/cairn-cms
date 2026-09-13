@@ -50,6 +50,13 @@ test('the signups form fields resolve their accessible name through a visible la
   await expect(nameLabel).toBeVisible();
   await expect(page.getByLabel('Email')).toBeVisible();
   await expect(emailLabel).toBeVisible();
+  // toBeVisible() alone passes for an sr-only label too, since Playwright's visibility test is a
+  // non-empty bounding box and Tailwind's sr-only clip rect is 1x1. A rendered box taller than that
+  // clip rect is what actually discriminates a visible stacked label from an sr-only one.
+  const nameBox = await nameLabel.boundingBox();
+  expect(nameBox?.height ?? 0).toBeGreaterThan(8);
+  const emailBox = await emailLabel.boundingBox();
+  expect(emailBox?.height ?? 0).toBeGreaterThan(8);
 });
 
 test('the signups outcome region is mounted empty on first load and announces a create failure', async ({

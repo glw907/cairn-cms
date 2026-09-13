@@ -68,4 +68,7 @@ test('the signups outcome region is mounted empty on first load and announces a 
   await expect(outcome).toBeEmpty();
   await page.getByRole('button', { name: 'Add' }).click();
   await expect(outcome).not.toBeEmpty();
+  // Discriminates the failure path from either success outcome, since not.toBeEmpty() alone
+  // passes for any content, including a success sentence.
+  await expect(outcome).not.toHaveText(/Signup (added|removed)\./);
 });

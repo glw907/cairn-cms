@@ -8,6 +8,13 @@
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
+
+  // The server's error tokens stay terse (other tests and the exemplar's docs name them), so the
+  // sentence a sighted user reads is built here, with the raw token as a fallback for any token
+  // this map does not yet cover.
+  const errorMessages: Record<string, string> = {
+    missing: 'Name and email are both required.',
+  };
 </script>
 
 <PageHeader title="Signups" />
@@ -31,7 +38,7 @@
      carry the same field the create action's validation failure does. -->
 <p role="status" aria-live="polite" class="type-body mt-2">
   {#if form?.error}
-    {form.error}
+    {errorMessages[form.error] ?? form.error}
   {:else if form?.created}
     Signup added.
   {:else if form?.removed}

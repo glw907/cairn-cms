@@ -883,6 +883,50 @@ the named human gates only):**
 
 ## Next
 
+- **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
+  browser).** The admin animates in places (the drawer's width, the palette's opacity, the
+  desk band's dot, `transition-colors` on controls), and `cairn-audit` holds two rules about it
+  (`motion-band` on durations, `reduced-motion` on the guard), but no design-system section says
+  which state changes animate and which snap, the easing curves, the duration bands per class of
+  change (hover, press, enter, exit, layout), how enter and exit differ, and how the reduced-motion
+  guard degrades each. Purpose (Geoff, 2026-09-13): professional-level visual polish and nothing novel; the
+  transitions fit the admin's register, clean, conventional, polished, understated, and
+  professional. Direction (Geoff, 2026-09-13): gentle and minimal (short, eased, one property at a time,
+  nothing that draws attention to itself), with ONE web-based reference for both the feel and the
+  ruleset: IBM Carbon's productive motion set (its duration and easing tokens under cairn names,
+  its entrance and exit pairing, its distance rule), with Atlassian as the tiebreaker only where
+  Carbon is silent, and the industry-default component (shadcn's sidebar) for the one exception
+  (Geoff, 2026-09-13). GNOME is not the reference, since its idiom is a desktop toolkit
+  and it publishes no motion rules; the named
+  example is zen mode, whose entry and exit are abrupt today. The bar for the adopted system
+  (Geoff, 2026-09-13): restrained, polished, and complete, meaning it covers every web case
+  (hover, press, focus, enter, exit, layout, page-level mode changes, list and table changes,
+  dialogs and drawers, toasts and live regions, route transitions, theme changes, reduced motion)
+  so no surface has to invent its own timing. Open question the research brief did not
+  cover (Geoff, 2026-09-13): how the rules change under responsive design, meaning per viewport
+  and per input modality: touch has no hover state, the drawer is a slide on a phone and a
+  persistent column at desktop widths, a layout change caused by a resize or an orientation change
+  snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
+  390, 768, 1440, 2560). Decision (Geoff, 2026-09-13): zen mode transitions the content offset the way the industry
+  default (shadcn) does, and the ruleset carries ONE documented exception for it, enforced by
+  selector in the property-allowlist rule; the sidebar prior-art survey and cairn's own toggle
+  measurement are the record. Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
+  developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
+  runs on its own screens (the borrowable-patterns gates layer), which means the checker must
+  reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not
+  only a component's own `<style>` block, and the audit must run over the engine's own tree so
+  cairn is held to the rules first. Sequence (Geoff, 2026-09-13): a second research read on the responsive
+  axis extends the brief; the settled document gets a fresh-context adversarial review; then a
+  spec through brainstorming and a plan through writing-plans. Research brief with the
+  seven-system comparison and a proposed token set:
+  `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
+  with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
+  sweep of the admin components onto it. Borrowable by consumers through the audit and the
+  design tokens, per the borrowable-patterns architecture. **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
+  release cut, so the cut carries the tokens and the audit rules; the C launch script now stops
+  at C's merge and the cut fires after this pass merges. Spec through brainstorming and plan
+  through writing-plans start when the revised research records land.
+
 - **Borrowable patterns (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
   developer extending cairn borrows the refined patterns instead of reinventing them.**
   Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three
@@ -2055,49 +2099,6 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
-
-- **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
-  browser).** The admin animates in places (the drawer's width, the palette's opacity, the
-  desk band's dot, `transition-colors` on controls), and `cairn-audit` holds two rules about it
-  (`motion-band` on durations, `reduced-motion` on the guard), but no design-system section says
-  which state changes animate and which snap, the easing curves, the duration bands per class of
-  change (hover, press, enter, exit, layout), how enter and exit differ, and how the reduced-motion
-  guard degrades each. Purpose (Geoff, 2026-09-13): professional-level visual polish and nothing novel; the
-  transitions fit the admin's register, clean, conventional, polished, understated, and
-  professional. Direction (Geoff, 2026-09-13): gentle and minimal (short, eased, one property at a time,
-  nothing that draws attention to itself), with ONE web-based reference for both the feel and the
-  ruleset: IBM Carbon's productive motion set (its duration and easing tokens under cairn names,
-  its entrance and exit pairing, its distance rule), with Atlassian as the tiebreaker only where
-  Carbon is silent, and the industry-default component (shadcn's sidebar) for the one exception
-  (Geoff, 2026-09-13). GNOME is not the reference, since its idiom is a desktop toolkit
-  and it publishes no motion rules; the named
-  example is zen mode, whose entry and exit are abrupt today. The bar for the adopted system
-  (Geoff, 2026-09-13): restrained, polished, and complete, meaning it covers every web case
-  (hover, press, focus, enter, exit, layout, page-level mode changes, list and table changes,
-  dialogs and drawers, toasts and live regions, route transitions, theme changes, reduced motion)
-  so no surface has to invent its own timing. Open question the research brief did not
-  cover (Geoff, 2026-09-13): how the rules change under responsive design, meaning per viewport
-  and per input modality: touch has no hover state, the drawer is a slide on a phone and a
-  persistent column at desktop widths, a layout change caused by a resize or an orientation change
-  snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
-  390, 768, 1440, 2560). Decision (Geoff, 2026-09-13): zen mode transitions the content offset the way the industry
-  default (shadcn) does, and the ruleset carries ONE documented exception for it, enforced by
-  selector in the property-allowlist rule; the sidebar prior-art survey and cairn's own toggle
-  measurement are the record. Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
-  developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
-  runs on its own screens (the borrowable-patterns gates layer), which means the checker must
-  reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not
-  only a component's own `<style>` block, and the audit must run over the engine's own tree so
-  cairn is held to the rules first. Sequence (Geoff, 2026-09-13): a second research read on the responsive
-  axis extends the brief; the settled document gets a fresh-context adversarial review; then a
-  spec through brainstorming and a plan through writing-plans. Research brief with the
-  seven-system comparison and a proposed token set:
-  `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
-  with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
-  sweep of the admin components onto it. Borrowable by consumers through the audit and the
-  design tokens, per the borrowable-patterns architecture. **Trigger:** after the release cut
-  and the borrowable-patterns pass, when the next admin-surface pass is planned; a consumer
-  custom screen animating its own way is the reopening signal.
 
 - **The bracketed fill-tone population outside `check:custom-surface`'s reach (polish-11b-i,
   2026-09-13).** The admin tree's `retiredTokenPattern` in

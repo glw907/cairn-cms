@@ -7,7 +7,7 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
-## Polish-11b-ii (audit remediation slice 11b-ii, the dev-backend access seam and the signups exemplar, non-breaking), five tasks complete on its worktree 2026-09-13
+## Polish-11b-ii (audit remediation slice 11b-ii, the dev-backend access seam and the signups exemplar, non-breaking), six tasks complete on its worktree 2026-09-13
 
 Branch `polish-11b-ii`, executed on `.claude/worktrees/polish-11b-ii` off post-11b-i `main`; plan
 at `docs/superpowers/plans/2026-09-08-polish-11b-ii-pass.md`.
@@ -52,9 +52,11 @@ leaked, only a comment; the fix describes the dev branch without naming its pack
 **Records.** `docs/HISTORY.md` gains this entry; `ROADMAP.md`'s polish sub-bullet closes the
 `formatTimestamp` widening and the `createSectionAction` adoption by name and leaves the
 `OfficeList`/`AdminTable` item open for polish-C; the friction log carried no open finding to
-triage; the whole `## Unreleased` window (covering 11a, 11b-i, and this pass) carries a
-`Consumers must: nothing.` line on every entry these three passes wrote, none with real
-breaking content.
+triage. The entries 11a, 11b-i, and this pass wrote impose no consumer obligation, each now
+reading "No consumer action." where it once read "Consumers must: nothing." The `##
+Unreleased` block itself runs back to the `0.96.0` release, not only these three passes, and
+still carries the earlier audit-remediation passes' breaking `Consumers must:` lines; the
+release body cutting this window must gather those, not assume the block is clean.
 
 ## Polish-11b-i (audit remediation slice 11b-i, the design system and the engine admin surface, non-breaking), eleven tasks complete on its worktree 2026-09-13
 

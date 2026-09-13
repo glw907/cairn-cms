@@ -3670,7 +3670,7 @@ describe('EditPage', () => {
     }
   });
 
-  describe('the desk band first-paint composition (Task 8)', () => {
+  describe('the desk band first-paint composition', () => {
     // Same rationale as the phone-desk composition suite above: the compiled sheet carries the
     // real Tailwind cascade (the utilities-layer `flex` beating the base-layer `[hidden]`), so
     // this is the only harness that can prove which branch actually paints at each width.

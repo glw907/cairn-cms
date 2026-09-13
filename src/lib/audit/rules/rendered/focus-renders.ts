@@ -18,10 +18,9 @@
 // grounds that the admin uses nothing else, which is false: MediaPicker, ComponentInsertDialog, and
 // CairnMediaLibrary all render a Tailwind `ring` (a `box-shadow`) and clear the outline, so an
 // outline-only check reports three error-tier false positives against cairn's own components. The
-// bar is now the honest one: focus must CHANGE
-// something a sighted user can see. Each stop's focused paint is compared against that same
-// element's own resting paint, so a permanent decorative shadow cannot be mistaken for a focus
-// ring, and a real ring in any mechanism counts.
+// bar is now the honest one: focus must CHANGE something a sighted user can see. Each stop's
+// focused paint is compared against that same element's own resting paint, so a permanent
+// decorative shadow cannot be mistaken for a focus ring, and a real ring in any mechanism counts.
 import { resolveColors } from '../../rendered.js';
 import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../rendered.js';
 

@@ -1,8 +1,7 @@
-// Task 6: the upload step's "working" role="status" region (MediaReplaceDialog.svelte:421) must
-// mount unconditionally so a later upload still announces (WCAG 4.1.3), with only its content gated
-// on replaceUpload.kind === 'working'. It announces a distinct event from the always-mounted
-// sr-only review-impact region above it (:355), so both coexist rather than one duplicating the
-// other.
+// The upload step's "working" role="status" region must mount unconditionally so a later upload
+// still announces (WCAG 4.1.3), with only its content gated on replaceUpload.kind === 'working'. It
+// announces a distinct event from the always-mounted sr-only review-impact region above it, so both
+// coexist rather than one duplicating the other.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import MediaReplaceDialog from '../../lib/components/MediaReplaceDialog.svelte';

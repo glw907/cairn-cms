@@ -1,6 +1,5 @@
-// Task 6: the "working" role="status" region (MediaUploadDialog.svelte:264) must mount
-// unconditionally so a later upload still announces (WCAG 4.1.3), with only its content gated on
-// uploadStatus.kind === 'working'.
+// The "working" role="status" region must mount unconditionally so a later upload still announces
+// (WCAG 4.1.3), with only its content gated on uploadStatus.kind === 'working'.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import MediaUploadDialog from '../../lib/components/MediaUploadDialog.svelte';

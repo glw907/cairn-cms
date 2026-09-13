@@ -826,14 +826,13 @@ persistent "?" carries Markdown help).
   // main, whether or not it has a pending branch yet), Edited (a pending branch over a published
   // copy), and Published (main matches, nothing pending). `data.pending` alone cannot carry this:
   // a brand-new entry is `pending: false, published: false` and must still read New, not Published.
+  // All three render on StatusChip's quiet register, the same mapping ConceptList's own status
+  // column uses: the label text itself carries the distinguishing signal, not a fill color, so the
+  // desk band and the concept list speak one chip vocabulary instead of two.
   const status = $derived.by(() => {
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
   });
-  // Edited, New, and Published all take StatusChip's quiet register, the same three-state
-  // mapping ConceptList's own status column uses: the label text itself carries the
-  // distinguishing signal, not a fill color, so the desk band and the concept list speak one
-  // chip vocabulary instead of two.
 
   // The below-sm compact band has room for exactly one status pill, never the
   // desktop's separate status badge, Hidden badge, and save-state text side by side (audit

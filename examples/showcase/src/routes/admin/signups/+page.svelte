@@ -16,10 +16,9 @@
     missing: 'Name and email are both required.',
   };
 
-  // One shared confirm dialog for every row, following the design system's safe-delete recipe: a
-  // native dialog, no light dismiss, and the destructive POST inside it. Its id and name are set
-  // from the row that opened it, so the same markup and the same posted form serve every row
-  // without duplicating a dialog per row.
+  // State for the one shared confirm dialog, whose markup and recipe sit below the table: the
+  // pending row's id and name are set by the trigger that opened it, so the same dialog and the
+  // same posted form serve every row without duplicating a dialog per row.
   let deleteDialog = $state<HTMLDialogElement | null>(null);
   let pendingDeleteId = $state<number | null>(null);
   let pendingDeleteName = $state('');

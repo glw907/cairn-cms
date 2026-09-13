@@ -18,7 +18,17 @@ conformance (4b, PR #46), internals (5, PR #47), internals-B (6, PR #48), and in
 design's amended item 6 and publish ruling (one cut after polish; the chassis work is three
 passes, A, B1, B2). CI on `main` is fully green.
 
-## Immediate next action (2026-09-12 11:20)
+## Immediate next action (2026-09-12 15:50)
+
+**Polish-11b-i is IN FLIGHT** on branch `polish-11b-i`, driven by the overnight orchestrator
+from the session that ran 11a (run `wf_2d52758e-603`). The run stood down at the 11% battery
+floor at 14:15 inside Task 2 and resumed on AC at 14:20 in the same session. Task 1 is
+accepted; Task 2 is in a conductor-ruled fix round (the drawer opener becomes a real button
+and the sidebar e2e spec's three locators follow it); Tasks 3 to 10 and the records follow,
+then the close, then 11b-ii. If this session is gone, resume per
+`~/.cache/cairn-overnight-2026-09-12/LAUNCH.md` with `resumeFromRunId: "wf_2d52758e-603"`.
+
+**Earlier state (11:20):**
 
 **Polish-11a is MERGED** (PRs #55 and #56, CI green; the pass entry and post-mortem are in
 [`HISTORY.md`](HISTORY.md)). Twelve of its thirteen tasks shipped; Task 9 (the doctor transcripts
@@ -29,7 +39,10 @@ after rebuilding or repairing that site on the current engine.
 
 **Polish-11b-i is the stage in flight**, driven by the overnight orchestrator from the session
 that ran 11a (run `wf_2d52758e-603`, scratchpad copy of `~/.cache/cairn-overnight-2026-09-12/`);
-11b-ii follows in the same launch. Polish-C with `c.approved: true` and the release cut are the
+11b-ii follows in the same launch. Polish-C and the release cut are APPROVED (Geoff, 2026-09-12 23:58) and launch
+automatically from this session when 11b-ii merges (`cairn-c-to-release.js` in the launch
+cache); after the cut, the **borrowable patterns** pass (ROADMAP Next, first entry) opens
+in a fresh session with its spec update, adversarial design review, and plans. That is the
 next launch (`~/.cache/cairn-polish-c/`). If this session is gone, resume per that cache dir's
 `LAUNCH.md` with the merge-step and gate-runner fixes recorded there.
 

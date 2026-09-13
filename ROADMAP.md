@@ -2034,9 +2034,11 @@ the named human gates only):**
   `var(--color-*)` fill tone anywhere else is retired. Widening the pattern to every
   `--color-*` fill tone, measured with the budget file's own regex shape
   (`\[[^][]*var\(--color-[a-z0-9-]+\)[^][]*\]|style="[^"]*var\(--color-`) over
-  `src/lib/components/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flags **27 lines (41
-  occurrences) across nine files** today: `CairnTidySettings` 1, `ComponentInsertDialog` 2,
-  `EditPage` 2, `LoginPage` 2, `MediaBulkDeleteDialog` 2, `MediaHeroField` 8,
+  `src/lib/components/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flagged **27 lines (41
+  occurrences) across nine files** at this pass's parent commit, before Task 9 converted
+  `LoginPage`'s own bracketed success token onto a named utility. At this pass's head the
+  population is **25 lines (38 occurrences) across eight files**: `CairnTidySettings` 1,
+  `ComponentInsertDialog` 2, `EditPage` 2, `MediaBulkDeleteDialog` 2, `MediaHeroField` 8,
   `MediaOrphanTools` 5, `RepeatableField` 2, `TidyReview` 3. **Trigger:** a pass willing to widen
   `retiredTokenPattern` to the full `--color-*` family and convert this population onto named
   utilities the way `LoginPage`'s own success token converted in polish-11b-i; until then the

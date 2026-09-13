@@ -49,19 +49,25 @@ ran partway before a battery-floor stand-down (recorded, not gated) and resumed 
 **What a later pass would be wrong to rediscover.**
 - `check:custom-surface`'s admin `retiredTokenPattern` reaches only `--color-muted` and
   `--color-subtle`. Widening it to every `--color-*` fill tone reached through a bracket utility or
-  an inline style would flag **27 lines (41 occurrences) across nine files** it does not see today:
-  `CairnTidySettings` 1, `ComponentInsertDialog` 2, `EditPage` 2, `LoginPage` 2,
-  `MediaBulkDeleteDialog` 2, `MediaHeroField` 8, `MediaOrphanTools` 5, `RepeatableField` 2,
-  `TidyReview` 3 (filed to `ROADMAP.md`'s Later tier, below).
+  an inline style flagged **27 lines (41 occurrences) across nine files**, measured at this pass's
+  parent commit before Task 9 converted `LoginPage`'s own bracketed success token; at this pass's
+  head the population is **25 lines (38 occurrences) across eight files**: `CairnTidySettings` 1,
+  `ComponentInsertDialog` 2, `EditPage` 2, `MediaBulkDeleteDialog` 2, `MediaHeroField` 8,
+  `MediaOrphanTools` 5, `RepeatableField` 2, `TidyReview` 3 (filed to `ROADMAP.md`'s Later tier,
+  below).
 - `segmentTintClass` has **six callers across four files**, not the three the original sweep
   named: `CairnTidySettings.svelte:329,334`, `TidyReview.svelte:277`, `CairnMediaLibrary.svelte:609`,
   and `EditPage.svelte:477,482`. The edit page is a caller the pressed-cue paint had to reach even
   though the sweep never named it.
 - The edit page's desk band composition at SSR is now resolved by **`inert`, not by DOM presence**:
-  both the Save/Publish pairs for narrow and wide render at every width, and Tailwind's display
-  utilities (`hidden`, and its responsive variants) hide the unreachable pair while `inert` also
-  removes it from the accessibility tree and tab order. A later change that toggles a pair's
-  presence with an `{#if}` instead of `inert` reintroduces the first-paint swap this task closed.
+  both the Save/Publish pairs for narrow and wide render unconditionally at every width. The HTML
+  `hidden` attribute states the intent but does not itself compute to `display: none` there,
+  because Tailwind 4 emits the `flex` utility in the utilities layer and `[hidden]{display:none}`
+  only in the base layer, so the utilities layer wins; the responsive `max-sm:hidden` /
+  `sm:hidden` pair is what actually hides the unreachable branch, while `inert` is what removes
+  it from the accessibility tree and tab order regardless of which branch CSS happens to show. A
+  later change that toggles a pair's presence with an `{#if}` instead of `inert` reintroduces the
+  first-paint swap this task closed.
 - The admin sheet's own `:focus-visible` rule (`cairn-admin.css`, `:where([data-theme='cairn-admin'],
   [data-theme='cairn-admin-dark']) :focus-visible`) is an **outline**
   (`outline: 2px solid var(--color-primary); outline-offset: 2px`), not a ring. An

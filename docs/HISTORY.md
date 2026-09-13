@@ -7,6 +7,55 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Polish-11b-ii (audit remediation slice 11b-ii, the dev-backend access seam and the signups exemplar, non-breaking), five tasks complete on its worktree 2026-09-13
+
+Branch `polish-11b-ii`, executed on `.claude/worktrees/polish-11b-ii` off post-11b-i `main`; plan
+at `docs/superpowers/plans/2026-09-08-polish-11b-ii-pass.md`.
+
+**What landed.** `devBackendHandle` (`@glw907/cairn-cms-dev`) accepts `access` and `roles`, so a
+site's dev backend authorizes a `createSectionAction` form action the same way `createAuthGuard`
+does in production, off the one access declaration the site already hands the guard. The showcase's
+Signups admin screen, and the Waymark template that mirrors it byte-for-byte, drop their hand-rolled
+`requireOwner`/`formData`/`fail` shape for `createSectionAction`, gain a visible stacked label on
+each form field in place of an `sr-only` pair, an always-mounted `role="status"` outcome region, and
+a shared safe-delete `<dialog role="alertdialog">` (no light dismiss) naming the row it will remove,
+replacing a bare click-to-post Delete trigger. `formatTimestamp` (`/admin-toolkit`) widens its
+accepted domain to two more ISO 8601 zone spellings, a no-seconds variant and a colonless `+hhmm`
+offset alongside the ISO forms and lowercase `z` it already took.
+
+**What the gate caught.** The access-map handoff's own doc comment on `src/access.ts` named
+`devBackendHandle` while describing the two hook branches; that module ships in the DEFAULT
+(non-dev) build, so Rollup carried the comment into the deployed Worker bundle and the dev-fold
+tripwire, which greps the deploy artifact for literal dev-backend names, caught the mention. No code
+leaked, only a comment; the fix describes the dev branch without naming its package or its handle.
+
+**What a later pass would be wrong to rediscover.**
+- `DeleteDialog` cannot serve a developer's own table row as it stands: its props are shaped for
+  cairn's own content entries, its action is a hardcoded `?/delete`, its dialog carries a fixed
+  label id, and its `trigger` prop lets a caller swap the trigger markup without touching any of
+  that. The signups screen's own safe-delete dialog is hand-built rather than reusing it.
+- The dev handle deliberately leaves `locals.cairnAccess` undefined when no `access` is supplied,
+  rather than defaulting to `{}` the way `guard.ts` does. `section-action.ts` treats an undefined
+  map as a distinct, reachable "misconfigured wiring" signal from an empty map's "no rule matched"
+  refusal; defaulting to `{}` under the dev backend would have collapsed that distinction and made
+  the signal unreachable in local development. This diverges from the guard on purpose.
+- The showcase carries no DOM test harness (no jsdom/Testing-Library setup for its own routes), so
+  assertions against the signups route's rendered markup, labels, and dialog behavior belong in
+  `examples/showcase/e2e/`, not a component test.
+- `formatTimestamp`'s two new non-standard forms (the colonless offset, the lowercase `z`) are
+  normalized to their canonical spelling before `new Date()` ever sees them, rather than reached by
+  widening the parser's own regex to admit them directly. `new Date(input)` is deterministic across
+  a Worker's SSR and a browser's hydration only for strings that already match the ECMAScript Date
+  Time String Format; feeding it a non-standard spelling falls back to implementation-defined
+  `Date.parse` behavior, which SSR and hydration are not guaranteed to agree on.
+
+**Records.** `docs/HISTORY.md` gains this entry; `ROADMAP.md`'s polish sub-bullet closes the
+`formatTimestamp` widening and the `createSectionAction` adoption by name and leaves the
+`OfficeList`/`AdminTable` item open for polish-C; the friction log carried no open finding to
+triage; the whole `## Unreleased` window (covering 11a, 11b-i, and this pass) carries a
+`Consumers must: nothing.` line on every entry these three passes wrote, none with real
+breaking content.
+
 ## Polish-11b-i (audit remediation slice 11b-i, the design system and the engine admin surface, non-breaking), eleven tasks complete on its worktree 2026-09-13
 
 Branch `polish-11b-i`, executed on `.claude/worktrees/polish-11b-i` off post-11a `main`; plan at

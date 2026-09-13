@@ -85,7 +85,11 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
-  <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
+  <!-- `-m-2` cancels the UA's default 8px body margin against this box's own auto-width edges
+       (the top and bottom halves collapse against the host's own body margin, the left and right
+       halves widen the box to the viewport) without resetting a host element, since this page
+       renders standalone with no fixed sidebar to misalign against. -->
+  <div class="flex min-h-screen -m-2 flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if isIdentity(data)}
       <!-- The hand-off page: identity mode's own gate is the sign-in surface, so this renders no
@@ -107,14 +111,14 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         <div
           class="flex h-12 w-12 items-center justify-center rounded-xl bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success"
         >
-          <MailCheckIcon class="h-6 w-6" />
+          <MailCheckIcon class="h-6 w-6" aria-hidden="true" />
         </div>
         <h1 class="mt-5 type-heading font-bold font-[family-name:var(--font-display)]">Check your email</h1>
         <p class="mt-2 type-body leading-relaxed text-muted">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
         <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
-          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" />
+          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
           <p class="type-meta leading-relaxed text-subtle">
             No link after a minute or two? Check your spam folder first. If it still hasn’t arrived, the
             address may not match the one your site owner added.

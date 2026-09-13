@@ -34,7 +34,11 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'}>
-  <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
+  <!-- `-m-2` cancels the UA's default 8px body margin against this box's own auto-width edges
+       (the top and bottom halves collapse against the host's own body margin, the left and right
+       halves widen the box to the viewport) without resetting a host element, since this page
+       renders standalone with no fixed sidebar to misalign against. -->
+  <div class="flex min-h-screen -m-2 flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 text-center card-shadow">
     <div class="mb-6 flex items-center justify-center gap-2">
       <CairnLogo class="h-8 w-8 text-primary" />

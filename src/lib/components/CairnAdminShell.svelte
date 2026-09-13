@@ -615,12 +615,6 @@ discriminant, not the fields, gates the chrome).
 <svelte:head>
   <title>{pageTitle} · {data.siteName}</title>
   <link rel="icon" href={cairnFaviconHref} />
-  <!-- The UA's default 8px body margin misaligns the shell when the host never resets it: the
-       fixed sidebar pins to the true viewport while the flowing content offsets by the margin,
-       which opens a visible seam on both axes and adds 16px of permanent scroll under the
-       min-h-screen drawer. Zeroing it here scopes the reset to the admin's mount lifetime, so
-       the host site's own elements stay untouched (the no-Preflight rule). -->
-  {@html '<style>body { margin: 0; }</style>'}
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />
@@ -652,8 +646,18 @@ discriminant, not the fields, gates the chrome).
        margin gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll.
        Fixed positioning is anchored to the viewport outright, the same mechanism the mobile overlay
        already uses, so it carries no such drift and needs no document-level change. -->
+  <!-- The seam this closes: a host that omits Preflight leaves the UA's default 8px body margin in
+       place, so this box's own flowing top-left edge sits 8px inside the true viewport while the
+       fixed sidebar above pins flush to it, and the min-h-screen height plus the ambient 16px
+       vertical margin adds a permanent 16px of scroll past the true viewport bottom. `-m-2` cancels
+       that ambient margin against this element's own box: the top and bottom halves collapse
+       against the host's own body margin, and the left and right halves pull this fixed-`width:
+       100%` box's edges out to the viewport, which `w-[calc(100%+1rem)]` widens back out to cover
+       (a fixed-width box, unlike an auto-width one, does not grow on its own to fill a negative
+       margin). None of it touches a host element, honoring the rule that the admin never resets
+       the host's own elements. -->
   <div
-    class="drawer min-h-screen bg-base-200 text-base-content"
+    class="drawer min-h-screen -m-2 w-[calc(100%+1rem)] bg-base-200 text-base-content"
     class:lg:drawer-open={!isDeskRoute && !topbar.zen}
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
@@ -716,7 +720,7 @@ discriminant, not the fields, gates the chrome).
               drawerOpen = !drawerOpen;
             }}
           >
-            <MenuIcon class="h-5 w-5" />
+            <MenuIcon class="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
         <!-- Context on the left: the breadcrumb trail inside an entry, the site name on a bare list.
@@ -786,7 +790,7 @@ discriminant, not the fields, gates the chrome).
         {#if offersThemeToggle}
         <div class="flex-none" class:max-sm:hidden={isDeskRoute}>
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
-            {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
+            {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" aria-hidden="true" />{:else}<SunIcon class="h-5 w-5" aria-hidden="true" />{/if}
           </button>
         </div>
         {/if}
@@ -1059,7 +1063,7 @@ discriminant, not the fields, gates the chrome).
           <form method="POST" action="/admin?/logout" class="mt-4">
             <CsrfField token={data.csrf} />
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
-              <LogOutIcon class="h-4 w-4" /> Sign out
+              <LogOutIcon class="h-4 w-4" aria-hidden="true" /> Sign out
             </button>
           </form>
         </div>

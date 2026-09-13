@@ -1743,6 +1743,21 @@
   comes from the visible `<span>Email</span>` label wrapping it, as it already did before the
   attribute was ever read. Consumers must: nothing.
 
+- The engine's small conformance sweep closes its second half. Every bare decorative Lucide glyph
+  across the media, nav, login, and shell components now carries `aria-hidden="true"` directly on
+  the icon (30 lines, 33 tags: the sweep's own 26-line, 29-tag count plus four more of the same
+  standalone-glyph and icon-only-button shape the sweep's own criterion already covers, found on
+  re-grep and fixed alongside it), closing the population to zero. `ConceptList`'s four column
+  headers all carry `scope="col"`, with `aria-sort` left exactly where it already was, on the two
+  sortable columns. `CairnAdminShell` no longer injects a `<style>` tag into the host document
+  head to zero the body margin; the reset moves onto the shell's own drawer root as `-m-2
+  w-[calc(100%+1rem)]`, cancelling the ambient UA body margin against that element's own box
+  instead. `LoginPage` and `ConfirmPage`, the two screens the shell renders unauthenticated, gain
+  the matching `-m-2` on their own root wrapper for the same reason: both rendered 16px taller
+  once the shared reset stopped covering them. None of it touches a host element.
+  `cairn-admin.css`'s reduced-motion rule now also matches the theme roots themselves, not only
+  their descendants. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

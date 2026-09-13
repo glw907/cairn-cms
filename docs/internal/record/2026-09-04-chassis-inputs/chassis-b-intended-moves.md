@@ -744,3 +744,34 @@ unbaselined, so its evidence is the by-hand capture named below.
   `confirm-light.png` and `confirm-dark.png`
   (`~/.cache/cairn-polish-11b-i/task-9/`). Both show the mark's green fill, ring, and icon reading
   clearly as a success mark against the panel background in its own scheme.
+
+### Task 10: Small conformance, the second half
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`, and this task's body-margin
+rescope is its own named paint risk: the shell's authenticated (`.drawer`) root gains `-m-2
+w-[calc(100%+1rem)]` in place of the removed `<svelte:head>` body-margin injection, and the two
+public screens the shell renders as `children()` when unauthenticated (`LoginPage`'s and
+`ConfirmPage`'s own root wrapper) gain the matching `-m-2` for the same reason: both stopped
+receiving the shared reset and, unfixed, rendered 16px taller (the ambient UA body margin
+reappearing top and bottom). Before set at `~/.cache/cairn-polish-11b-i/task-10/before/`, captured
+fresh at this task's parent commit (no predecessor captured a pass-wide before set). After set at
+`~/.cache/cairn-polish-11b-i/task-10/after/`.
+
+- INTENDED MOVES: `signups 320/390/768/1440/2560 light/dark: a sub-pixel rendering shift from the
+  margin-cancellation arithmetic (`-m-2` plus `w-[calc(100%+1rem)]` computing the drawer's edges
+  via `calc()` instead of the removed reset's exact zero), visible only under a strict per-pixel
+  compare, not as a layout break`.
+- MOVED BASELINES: none. The unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run
+  after `npm run package` rebuilt `dist/` from this task's source edits, passed all 28 of 28 tests
+  (including all ten `signups-{light,dark}-{320,390,768,1440,2560}` cases and the four `auth-login`/
+  `auth-confirm` cases the `LoginPage`/`ConfirmPage` fix also touches) with no regeneration needed,
+  so nothing in the manifest moved.
+- TILE DIFF: `magick compare -metric AE` is 0 on every tile of the five non-admin capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`), confirming the change stays
+  scoped to the admin tree. On `signups`, AE is nonzero on every tile (roughly 0.001 to 0.05 of
+  pixels, largest at the narrow dark-theme widths: `320` 13807.9, `390` 13818.5, `768` 12719.1,
+  `1440` 14432.7, `2560` 14432.5 pixels of AE at dark; substantially smaller at light), which is the
+  named paint risk showing up as a small, sub-pixel-scale rendering variance from the CSS-arithmetic
+  fix, not a layout defect: it falls under Playwright's own snapshot tolerance (the unmodified suite
+  passed with zero diffs at every one of those ten cases) and the diff image at every width shows
+  uniform text-edge doubling rather than any moved element or broken layout.

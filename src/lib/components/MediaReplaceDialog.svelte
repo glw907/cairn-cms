@@ -362,7 +362,7 @@ full-page POST to `?/mediaReplace` navigates away.
     <div class="modal-box max-w-xl">
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" />{:else}<RefreshCwIcon class="h-5 w-5" />{/if}
+          {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" aria-hidden="true" />{:else}<RefreshCwIcon class="h-5 w-5" aria-hidden="true" />{/if}
         </span>
         <div class="flex-1">
           <h2 bind:this={replaceTitle} tabindex="-1" id="cairn-ml-replace-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">

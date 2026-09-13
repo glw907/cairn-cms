@@ -1113,6 +1113,8 @@
    own hover transitions otherwise animate regardless. Scoped to the admin roots, so it never
    reaches the host's pages. */
 @media (prefers-reduced-motion: reduce) {
+  [data-theme='cairn-admin'],
+  [data-theme='cairn-admin-dark'],
   [data-theme='cairn-admin'] *,
   [data-theme='cairn-admin-dark'] * {
     animation-duration: 0.01ms !important;

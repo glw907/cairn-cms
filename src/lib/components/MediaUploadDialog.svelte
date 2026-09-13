@@ -237,7 +237,7 @@ the new asset appears.
     <div class="modal-box max-w-md">
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-primary/10 text-primary" aria-hidden="true">
-          <UploadIcon class="h-5 w-5" />
+          <UploadIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-upload-title" class="type-heading font-bold font-[family-name:var(--font-display)]">

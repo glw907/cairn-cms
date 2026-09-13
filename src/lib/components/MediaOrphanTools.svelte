@@ -236,7 +236,7 @@ restores there on close.
            loaded index (an R2 list plus a cross-branch reconcile), so it is on demand, never instant. -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
-          <DatabaseIcon class="h-5 w-5" />
+          <DatabaseIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Scanning storage</h2>
@@ -256,7 +256,7 @@ restores there on close.
            specific branch (naming it is a known carry-forward). -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
-          <DatabaseIcon class="h-5 w-5" />
+          <DatabaseIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">The scan could not finish</h2>
@@ -290,7 +290,7 @@ restores there on close.
            scan, and any per-object failure. The Done action re-reads the load (the bytes are gone). -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-content/[0.07] text-muted" aria-hidden="true">
-          <CheckIcon class="h-5 w-5" />
+          <CheckIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Done. {res.purged.length} purged{res.skippedClaimed.length > 0 ? `, ${res.skippedClaimed.length} kept` : ''}</h2>
@@ -334,7 +334,7 @@ restores there on close.
            count. role="alert" is reserved for a post-action failure below. -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--color-error)] text-[var(--color-error-content)]" aria-hidden="true">
-          <TriangleAlertIcon class="h-5 w-5" />
+          <TriangleAlertIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}?</h2>
@@ -395,7 +395,7 @@ restores there on close.
            data-integrity readout. -->
       <div class="mb-4 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
-          <DatabaseIcon class="h-5 w-5" />
+          <DatabaseIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Orphaned files and broken references</h2>
@@ -492,7 +492,7 @@ restores there on close.
               {#each orphanBroken as ref (ref.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                   <span class="flex h-7 w-9 flex-none items-center justify-center rounded border border-[var(--cairn-card-border)] bg-base-200 text-muted" aria-hidden="true">
-                    <ImageOffIcon class="h-3.5 w-3.5" />
+                    <ImageOffIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="truncate type-meta font-semibold">{ref.slug || ref.hash}</div>

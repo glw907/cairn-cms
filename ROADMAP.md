@@ -922,7 +922,12 @@ the named human gates only):**
   `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
   sweep of the admin components onto it. Borrowable by consumers through the audit and the
-  design tokens, per the borrowable-patterns architecture. **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
+  design tokens, per the borrowable-patterns architecture. **Borrow hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
+  borrowable-patterns work: each rule is specified for a consumer's tree as well as cairn's own
+  (what it reads, error versus advisory tier on first adoption, the fix message naming the cairn
+  token), the DaisyUI component-class decision is written consumer-first, and the pass writes the
+  extend track's motion recipe page (the first per-pattern recipe borrow-2's `cairn-extend` skill
+  routes to). **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
   release cut, so the cut carries the tokens and the audit rules; the C launch script now stops
   at C's merge and the cut fires after this pass merges. Spec through brainstorming and plan
   through writing-plans start when the revised research records land.

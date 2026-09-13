@@ -1316,9 +1316,10 @@
   yields whenever the event already carries `defaultPrevented` or originates inside an editable
   target (an input, a textarea, a select, or a `contenteditable` surface), a second guard that
   holds even if a future handler forgets to prevent. The drawer's Open menu opener is now a real
-  `<button type="button">` (previously a `label` with a `role="button"` and its own keyboard
-  handler bolted on), flipping `drawerOpen` directly on click; the hidden checkbox stays a pure
-  CSS mechanism. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
+  `<button type="button">` in place of a bare `<label for>`, with `aria-expanded` mirroring the
+  drawer state and `aria-controls` naming the drawer nav, so it takes keyboard focus and
+  activation the label never had; it flips `drawerOpen` directly on click, and the hidden
+  checkbox stays the CSS mechanism. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
   consistently: the Web link row keeps the chord, and the Command palette row states it is
   unavailable while the editor has focus. Consumers must: nothing.
 

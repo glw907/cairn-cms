@@ -605,8 +605,8 @@ discriminant, not the fields, gates the chrome).
          is DaisyUI's own drawer-state mechanism (the lg:/xl:drawer-open responsive open keys off
          it), not an affordance an editor should ever land keyboard focus on with no accessible
          name. The Open menu button and Ctrl/Cmd+B are the real triggers, both flipping
-         drawerOpen directly; this checkbox only mirrors that state so the responsive CSS
-         still keys off it. -->
+         drawerOpen directly; this checkbox mirrors that state for the responsive CSS, and
+         the Close menu backdrop still toggles it by for=/id= click. -->
     <input
       id="cairn-shell-drawer"
       type="checkbox"
@@ -649,8 +649,7 @@ discriminant, not the fields, gates the chrome).
              band, where the desk sidebar is receded). -->
         <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
           <!-- A real button, not the checkbox's own for=/id= label: it flips drawerOpen directly
-               on click, so the checkbox stays a pure CSS mechanism with no keyboard or pointer
-               route of its own. -->
+               on click, so the opener never routes through the checkbox. -->
           <button
             type="button"
             aria-label="Open menu"

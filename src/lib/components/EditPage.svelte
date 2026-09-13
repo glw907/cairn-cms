@@ -32,6 +32,7 @@ persistent "?" carries Markdown help).
   import ImageIcon from '@lucide/svelte/icons/image';
   import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+  import { StatusChip } from '../admin-toolkit/index.js';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
@@ -829,15 +830,10 @@ persistent "?" carries Markdown help).
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
   });
-  // Edited and New are attention states and stay on the stock daisyUI badge-warning/badge-info
-  // fills; Published is a settled, put-away state and takes the quiet chip register instead of
-  // the retired stock ghost badge (the register itself is
-  // the second generation's, docs/internal/probes/2026-08-26-chip-registers-v2).
-  const statusBadge = $derived.by(() => {
-    if (status === 'Edited') return 'badge-warning';
-    if (status === 'New') return 'badge-info';
-    return 'cairn-chip-quiet';
-  });
+  // Edited, New, and Published all take StatusChip's quiet register, the same three-state
+  // mapping ConceptList's own status column uses: the label text itself carries the
+  // distinguishing signal, not a fill color, so the desk band and the concept list speak one
+  // chip vocabulary instead of two.
 
   // The below-sm compact band has room for exactly one status pill, never the
   // desktop's separate status badge, Hidden badge, and save-state text side by side (audit
@@ -1407,16 +1403,17 @@ persistent "?" carries Markdown help).
           <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
         </a>
         <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
-        <!-- `role="status"` gives this bare span a non-generic role so `aria-label` actually reaches
-             assistive tech: ARIA-in-HTML drops aria-label on a plain span's default `generic` role,
-             and the badge/status-dot markup below has no other element to carry the accessible
-             name. `status` is also the right semantics here (a live summary of transient document
-             state), unlike StatusChip's own sr-only-legend pattern, which fits a self-explanatory
-             visible label plus optional clarifying text rather than a name that must fully replace
-             three icon-only signals at once. -->
-        <span class="badge badge-sm gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
+        <!-- The chip is now the toolkit's own StatusChip, which publishes no `role` and no
+             `aria-label` prop, so both live on this wrapping span instead. `role="status"` gives
+             the wrapper a non-generic role so `aria-label` actually reaches assistive tech:
+             ARIA-in-HTML drops aria-label on a plain span's default `generic` role, and nothing
+             else here carries the accessible name. `status` is also the right semantics (a live
+             summary of transient document state), unlike StatusChip's own sr-only-legend pattern,
+             which fits a self-explanatory visible label plus optional clarifying text rather than
+             a name that must fully replace three icon-only signals at once. -->
+        <span class="inline-flex shrink-0 items-center gap-1" role="status" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
-          {status}
+          <StatusChip label={status} />
         </span>
         {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
       </div>
@@ -1424,9 +1421,9 @@ persistent "?" carries Markdown help).
       <!-- The document status, fenced off by a hairline on its left. sm and up only (see the
            `{#if narrow}` branch above for the below-sm compact pill this replaces). -->
       <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
-        <span class="badge badge-sm shrink-0 {statusBadge}">{status}</span>
+        <StatusChip label={status} />
         {#if data.frontmatter.draft === true}
-          <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
+          <StatusChip label="Hidden" register="outline" />
         {/if}
         <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
              squashes the transition for editors who asked for that. -->

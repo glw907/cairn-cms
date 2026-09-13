@@ -654,3 +654,38 @@ the same reason.**
   A16 verdict is proven separately, by `MediaHeroField.test.ts`'s real-browser computed-style
   assertion (a 2px solid `--color-primary` outline on `:focus-visible`), per the conductor's ruling
   that a resting screenshot cannot show a `:focus-visible` state.
+
+### Task 7: Chip vocabulary on the desk band
+
+Not a capture-matrix task: `EditPage.svelte` is the only file this task touches, and no
+capture-matrix surface (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`) renders
+the edit page. The evidence is the `e2e/admin-visual.spec.ts` snapshots the desk band's chip
+markup change reaches, not the six-surface capture matrix.
+
+- INTENDED MOVES: `admin-edit-page-light` (sm and up, desktop cluster: the Published pill moves
+  from a raw daisyUI `badge`/`cairn-chip-quiet` fill to `StatusChip`'s own quiet-register markup) /
+  `admin-edit-page-dark` (same reason, dark scheme) / `admin-edit-page-1440` (same reason, 1440px
+  sidebar-present width) / `admin-edit-page-768` (same reason, 768px receded width).
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this task's source edits (the direct-invocation gap Task
+  5's own record names: a not-yet-rebuilt `dist/` shows a false all-pass), produced exactly 4
+  failures: `admin-edit-page — light`, `admin-edit-page — dark`,
+  `admin-edit-page — 1440 (sidebar present)`, `admin-edit-page — 768 (receded)`. `CI=1 npx
+  playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote exactly
+  `admin-edit-page-{light,dark,1440,768}-linux.png` and none other (24 of 28 tests passed
+  unchanged both times).
+- TILE DIFF: not applicable. This task reaches no capture-matrix surface, so there is no
+  before/after tile pair to diff; `git status` on the six-surface capture directories shows no
+  file this task's diff touches.
+- READ ME: four band crops, each the top 1280 (or 1440/768) x96 strip of its regenerated PNG,
+  cut `<width>x96+0+0` from the linked baseline, showing the Published chip in its new
+  quiet-register shape: `admin-edit-page-light-band.png`, `admin-edit-page-dark-band.png`,
+  `admin-edit-page-1440-band.png`, `admin-edit-page-768-band.png`
+  (`~/.cache/cairn-polish-11b-i/task-7/after/crops/`). Two further crops prove the Hidden chip's
+  outline-register hairline in its real desk-band ancestor (a `navbar bg-base-100` wrapping the
+  hairline-fenced status cluster div, neither setting its own text color, composed from the built
+  admin CSS and the same `cairn-chip-outline`/`cairn-chip-quiet` classes `StatusChip`'s own scoped
+  styles declare for parity): `hidden-chip-hairline-cairn-admin.png` (light, measured 3.586:1) and
+  `hidden-chip-hairline-cairn-admin-dark.png` (dark, measured 4.959:1), both
+  `~/.cache/cairn-polish-11b-i/task-7/after/crops/`, both clearing the 3:1 non-text border-contrast
+  floor.

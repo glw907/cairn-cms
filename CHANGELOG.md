@@ -1713,6 +1713,19 @@
   block mounts fresh with the branch switch, so the region never observed its own first content);
   the "Check your email" heading carries the announcement instead. Consumers must: nothing.
 
+- The edit page's desk band now speaks the admin toolkit's own `StatusChip` vocabulary instead of
+  raw daisyUI `badge-warning`/`badge-info`/`badge-neutral` fills. All three publish states
+  (Edited, New, Published) render on `StatusChip`'s quiet register, matching `ConceptList`'s own
+  status column: the label text is the distinguishing signal, not a fill color. The Hidden marker
+  now renders on the `outline` register, a hairline that clears the 3:1 non-text contrast floor
+  against its desk-band ancestor in both themes (measured 3.586:1 light, 4.959:1 dark). The
+  compact phone pill keeps its own `role="status"` and composed `aria-label` on a wrapping span,
+  since `StatusChip` publishes neither, with the eye-off glyph beside the chip rather than inside
+  it. `badge-warning`/`badge-info`/`badge-neutral` were cairn's own last callers of those three
+  classes; rather than let them silently drop out of the packaged sheet, they join
+  `admin-css-safelist.ts`'s compatibility-only badge entries, so a consumer's own hand-authored
+  admin markup already riding them keeps compiling. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

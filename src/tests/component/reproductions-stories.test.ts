@@ -696,7 +696,7 @@ describe('publish/header-band', () => {
       // band's own lifecycle pair (Save, Publish) moves out to a separate fixed bottom bar, leaving
       // only the sr-only default-submit button inside the navbar under the same form attribute.
       await waitFor(screen.container, 'a[aria-label^="Back to"]', 'the narrow band\'s back link');
-      expect(screen.container.querySelector('span[role="status"].badge')).not.toBeNull();
+      expect(screen.container.querySelector('span[role="status"] .badge')).not.toBeNull();
       expect(screen.container.querySelectorAll('.navbar button[form="cairn-edit-form"]')).toHaveLength(1);
 
       const trigger = screen.container.querySelector('button[aria-label="More actions"]');

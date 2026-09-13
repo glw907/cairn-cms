@@ -940,21 +940,25 @@ describe('EditPage', () => {
     await expect.poll(() => screen.container.textContent ?? '').not.toContain('image needs alt text');
   });
 
-  it('shows the Edited badge in the header when the live site lags the edits', async () => {
+  it('shows the Edited chip in the header on StatusChip\'s quiet register, never badge-warning', async () => {
     const screen = await render(EditPage, postProps({ pending: true, published: true }));
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-warning');
-    expect(badge?.textContent?.trim()).toBe('Edited');
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    expect(band.querySelector('.badge-warning')).toBeNull();
+    const chip = band.querySelector('.status-chip-quiet');
+    expect(chip?.textContent?.trim()).toBe('Edited');
   });
 
-  it('shows the New badge in the header for a pending new entry', async () => {
+  it('shows the New chip in the header for a pending new entry on StatusChip\'s quiet register, never badge-info', async () => {
     const screen = await render(EditPage, postProps({ pending: true, published: false }));
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-info');
-    expect(badge?.textContent?.trim()).toBe('New');
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    expect(band.querySelector('.badge-info')).toBeNull();
+    const chip = band.querySelector('.status-chip-quiet');
+    expect(chip?.textContent?.trim()).toBe('New');
   });
 
-  it('shows the Published badge when the live site matches', async () => {
+  it('shows the Published chip when the live site matches, on StatusChip\'s quiet register', async () => {
     const screen = await render(EditPage, postProps());
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .cairn-chip-quiet');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .status-chip-quiet');
     expect(badge?.textContent?.trim()).toBe('Published');
   });
 
@@ -1688,14 +1692,15 @@ describe('EditPage', () => {
     expect(band.textContent ?? '').not.toContain('2026-05-hello');
   });
 
-  it('stacks the Hidden badge beside the status badge for a hidden entry', async () => {
+  it('stacks the Hidden chip, on StatusChip\'s outline register, beside the quiet status chip for a hidden entry', async () => {
     const screen = await render(
       EditPage,
       postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
     );
     const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
-    expect(header.querySelector('.badge-neutral')?.textContent?.trim()).toBe('Hidden');
-    expect(header.querySelector('.cairn-chip-quiet')?.textContent?.trim()).toBe('Published');
+    expect(header.querySelector('.badge-neutral')).toBeNull();
+    expect(header.querySelector('.status-chip-outline')?.textContent?.trim()).toBe('Hidden');
+    expect(header.querySelector('.status-chip-quiet')?.textContent?.trim()).toBe('Published');
   });
 
   it('hosts the save-state indicator inside the header', async () => {
@@ -3612,15 +3617,18 @@ describe('EditPage', () => {
       content.focus();
       await userEvent.keyboard('x');
       const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
-      // One pill total: a single .badge in the band, not the desktop's separate status-plus-Hidden
-      // pair, and the eye-off glyph rides inside it rather than a second badge.
+      // One chip total: a single .badge in the band, not the desktop's separate status-plus-Hidden
+      // pair. The eye-off glyph sits beside the chip inside the live-region wrapper, since
+      // StatusChip itself carries no icon slot.
       await expect.poll(() => band.querySelectorAll('.badge').length).toBe(1);
-      const pill = band.querySelector<HTMLElement>('.badge')!;
-      expect(pill.querySelector('svg')).not.toBeNull();
-      expect(pill.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
-      // A bare span defaults to the generic role, which ARIA-in-HTML drops aria-label from; the
-      // pill needs a non-generic role for its accessible name to actually reach assistive tech.
-      expect(pill.getAttribute('role')).toBe('status');
+      const wrapper = band.querySelector<HTMLElement>('[role="status"]')!;
+      expect(wrapper.querySelector('svg')).not.toBeNull();
+      expect(wrapper.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
+      // Read straight off the accessible-name computation, not the raw attribute: this confirms
+      // the composed label actually reaches assistive tech through the wrapper's role.
+      await expect
+        .element(screen.getByRole('status', { name: 'Published, hidden, unsaved changes' }))
+        .toBeInTheDocument();
     });
 
     for (const width of [320, 390]) {

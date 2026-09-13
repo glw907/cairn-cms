@@ -1562,12 +1562,13 @@ persistent "?" carries Markdown help).
            guarded-Publish pattern is identical). Both branches render unconditionally, so paint
            at every width is a first-paint CSS decision (max-sm:hidden here, its sm:hidden
            counterpart on the bottom bar) rather than a post-mount swap. `hidden` states the
-           intent for a reader of the markup, but Tailwind 4 emits the `flex` utility in the
-           utilities layer and `[hidden]{display:none}` only in the base layer, so `flex` wins
-           and `hidden` does not itself compute to `display: none` here; `inert` is what actually
-           removes this branch from the accessibility tree and from role-based test locators when
-           `narrow`, independently of computed display, so exactly one live Save/Publish pair is
-           ever reachable regardless of which branch CSS happens to show. -->
+           intent for a reader of the markup, but the admin sheet compiles with no Preflight
+           (scripts/build/admin-css.input.css imports only tailwindcss/theme.css and
+           tailwindcss/utilities.css), so the shipped dist/components/cairn-admin.css carries no
+           [hidden] rule at all and hidden does not itself compute to display: none here; `inert`
+           is what actually removes this branch from the accessibility tree and from role-based
+           test locators when `narrow`, independently of computed display, so exactly one live
+           Save/Publish pair is ever reachable regardless of which branch CSS happens to show. -->
       <div
         class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:hidden"
         hidden={narrow}

@@ -62,12 +62,17 @@ ran partway before a battery-floor stand-down (recorded, not gated) and resumed 
 - The edit page's desk band composition at SSR is now resolved by **`inert`, not by DOM presence**:
   both the Save/Publish pairs for narrow and wide render unconditionally at every width. The HTML
   `hidden` attribute states the intent but does not itself compute to `display: none` there,
-  because Tailwind 4 emits the `flex` utility in the utilities layer and `[hidden]{display:none}`
-  only in the base layer, so the utilities layer wins; the responsive `max-sm:hidden` /
-  `sm:hidden` pair is what actually hides the unreachable branch, while `inert` is what removes
-  it from the accessibility tree and tab order regardless of which branch CSS happens to show. A
-  later change that toggles a pair's presence with an `{#if}` instead of `inert` reintroduces the
-  first-paint swap this task closed.
+  because the admin sheet compiles with no Preflight
+  (`scripts/build/admin-css.input.css` imports only `tailwindcss/theme.css` and
+  `tailwindcss/utilities.css`), so the shipped `dist/components/cairn-admin.css` carries no
+  `[hidden]` rule at all and `hidden` is declarative only inside the admin theme; the responsive
+  `max-sm:hidden` / `sm:hidden` pair is what actually hides the unreachable branch, while `inert`
+  is what removes it from the accessibility tree and tab order regardless of which branch CSS
+  happens to show. A context that does load Preflight (the showcase's public chassis) would have
+  Tailwind's own `[hidden]:where(:not([hidden='until-found'])) { display: none !important; }`
+  beat a `flex` utility outright, so this reasoning does not carry over there. A later change
+  that toggles a pair's presence with an `{#if}` instead of `inert` reintroduces the first-paint
+  swap this task closed.
 - The admin sheet's own `:focus-visible` rule (`cairn-admin.css`, `:where([data-theme='cairn-admin'],
   [data-theme='cairn-admin-dark']) :focus-visible`) is an **outline**
   (`outline: 2px solid var(--color-primary); outline-offset: 2px`), not a ring. An

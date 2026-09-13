@@ -217,7 +217,7 @@ while a site stores images only.
        selects without moving focus out of the input. -->
   <ul id={listboxId} role="listbox" aria-label="Media library" class="flex max-h-72 flex-col gap-0.5 overflow-auto p-0">
     {#if filtered.length === 0}
-      <li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+      <li role="presentation" class="flex flex-col items-center gap-2 px-6 py-10 text-center">
         <p class="type-body text-muted">
           {#if entries.length === 0}
             No images in the library yet.

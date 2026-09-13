@@ -464,6 +464,13 @@ discriminant, not the fields, gates the chrome).
     }
     // Escape is handled by the host dialog (its native cancel dismisses it); let it bubble.
   }
+  // Arrowing can move the active option past the visible fold (the listbox scrolls, the input does
+  // not), so the highlighted row needs to follow into view itself; 'nearest' avoids jumping the
+  // whole dialog when the option is already visible.
+  $effect(() => {
+    if (paletteActiveIndex < 0) return;
+    document.getElementById(paletteOptionId(paletteActiveIndex))?.scrollIntoView({ block: 'nearest' });
+  });
 
   interface Crumb {
     label: string;
@@ -823,7 +830,7 @@ discriminant, not the fields, gates the chrome).
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
               class="w-full bg-transparent py-3.5 type-body placeholder:text-muted"
-              aria-expanded={paletteResults.length > 0}
+              aria-expanded="true"
               aria-controls={paletteListboxId}
               aria-activedescendant={paletteActiveDescendant}
               autocomplete="off"
@@ -842,11 +849,18 @@ discriminant, not the fields, gates the chrome).
           <!-- The listbox always renders, even with no matches, so the combobox's aria-controls
                always resolves to a real element (WCAG 1.3.1, 4.1.2): an aria-controls pointing at a
                node that does not exist is a broken relationship. The no-match copy lives inside the
-               listbox, announced through the count region above rather than as live text of its own.
-               role="listbox"/"option": daisyUI's .menu :where(li) renders every item at
-               display: flex, which strips the implicit listbox and option roles in
-               WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode), so each row states its
-               role explicitly. -->
+               listbox, announced through the count region above rather than as live text of its own,
+               and carries role="presentation" (a listbox may own only option/group/presentational
+               children). Each result row is a plain <li role="presentation"> wrapping the real <a>
+               or <button>: role="option" lives on that inner element, not the <li>, because ARIA 1.2
+               treats option as children-presentational, so a focusable descendant under it is
+               invalid (axe's nested-interactive rule). tabindex="-1" keeps the option out of the tab
+               order, since the combobox pattern moves the active option through
+               aria-activedescendant rather than real DOM focus, while the href/onclick still fires
+               normally on a real click. daisyUI's .menu :where(li) renders every item at
+               display: flex, which strips the implicit listitem role in WebKit/VoiceOver
+               (cairn-audit's list-role rule, rendered mode); role="presentation" is explicit either
+               way. -->
           <ul
             bind:this={paletteList}
             id={paletteListboxId}
@@ -855,18 +869,23 @@ discriminant, not the fields, gates the chrome).
             class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2"
           >
             {#if paletteResults.length === 0}
-              <li class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</li>
+              <li role="presentation" class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</li>
             {:else}
               {#each paletteResults as cmd, i (cmd.label)}
-                <li id={paletteOptionId(i)} role="option" aria-selected={i === paletteActiveIndex}>
+                <li role="presentation">
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
                        so it carries no onclick (closing here would cancel the navigation). An external link
                        opens a new tab and leaves this page, so it closes the palette itself. -->
                     <a
+                      id={paletteOptionId(i)}
+                      role="option"
+                      aria-selected={i === paletteActiveIndex}
+                      tabindex="-1"
                       href={cmd.href}
                       target={cmd.external ? '_blank' : undefined}
                       rel={cmd.external ? 'noopener' : undefined}
+                      class={i === paletteActiveIndex ? 'bg-base-content/[0.08]' : ''}
                       onclick={cmd.external ? () => paletteDialog?.close() : undefined}
                     >
                       <cmd.icon class="h-4 w-4 text-muted" aria-hidden="true" />
@@ -874,7 +893,15 @@ discriminant, not the fields, gates the chrome).
                       {#if cmd.external}<ExternalLinkIcon class="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" />{/if}
                     </a>
                   {:else}
-                    <button type="button" onclick={() => runCommand(cmd)}>
+                    <button
+                      id={paletteOptionId(i)}
+                      role="option"
+                      aria-selected={i === paletteActiveIndex}
+                      tabindex="-1"
+                      type="button"
+                      class={i === paletteActiveIndex ? 'bg-base-content/[0.08]' : ''}
+                      onclick={() => runCommand(cmd)}
+                    >
                       <cmd.icon class="h-4 w-4 text-muted" aria-hidden="true" />
                       {cmd.label}
                     </button>

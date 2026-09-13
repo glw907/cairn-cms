@@ -278,8 +278,10 @@ describe('CairnAdminShell', () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
-    const labels = Array.from(dialog.querySelectorAll('li[role="option"]')).map(
-      (li) => li.textContent?.trim() ?? '',
+    // role="option" lives on the row's real <a>/<button>, not the wrapping <li> (a listbox option
+    // is children-presentational, so a focusable descendant under it is invalid).
+    const labels = Array.from(dialog.querySelectorAll('[role="option"]')).map(
+      (el) => el.textContent?.trim() ?? '',
     );
     expect(labels.length).toBeGreaterThan(0);
     expect(new Set(labels).size).toBe(labels.length);
@@ -308,6 +310,30 @@ describe('CairnAdminShell', () => {
     await expect.poll(() => document.getElementById(controlsId)).not.toBeNull();
     const status = document.querySelector('dialog.modal [role="status"]')!;
     await expect.poll(() => status.textContent?.trim()).toBe('0 results');
+    // The listbox stays visibly displayed even with no rows, so aria-expanded reports the popup's
+    // display state rather than tracking the result count (it would otherwise contradict the DOM).
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    // The no-match row carries no role of its own: a listbox may own only option/group/presentation
+    // children (axe aria-required-children).
+    const noMatchRow = document.getElementById(controlsId)!.querySelector('li')!;
+    expect(noMatchRow.getAttribute('role')).toBe('presentation');
+  });
+
+  it('carries role="option" on the row itself, not on a nested focusable child (no nested-interactive)', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const options = Array.from(dialog.querySelectorAll<HTMLElement>('[role="option"]'));
+    expect(options.length).toBeGreaterThan(0);
+    for (const option of options) {
+      // The option is itself the real <a> or <button>, tabindex="-1" so arrow/Enter (not Tab) drive
+      // it, and its wrapping <li> is role="presentation" so exactly one node in the tree is a widget.
+      expect(['A', 'BUTTON']).toContain(option.tagName);
+      expect(option.getAttribute('tabindex')).toBe('-1');
+      expect(option.querySelector('a, button')).toBeNull();
+      expect(option.parentElement?.tagName).toBe('LI');
+      expect(option.parentElement?.getAttribute('role')).toBe('presentation');
+    }
   });
 
   it('moves the active option on ArrowDown and activates it on Enter, not the first result', async () => {
@@ -317,25 +343,30 @@ describe('CairnAdminShell', () => {
     const input = screen.getByRole('combobox').element() as HTMLInputElement;
     input.value = 'p';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await expect.poll(() => dialog.querySelectorAll('li[role="option"]').length).toBeGreaterThan(1);
+    await expect.poll(() => dialog.querySelectorAll('[role="option"]').length).toBeGreaterThan(1);
 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
     await expect
-      .poll(() => dialog.querySelector('li[role="option"][aria-selected="true"]'))
+      .poll(() => dialog.querySelector('[role="option"][aria-selected="true"]'))
       .not.toBeNull();
-    const options = Array.from(dialog.querySelectorAll<HTMLElement>('li[role="option"]'));
-    const activeOption = options.find((li) => li.getAttribute('aria-selected') === 'true')!;
+    // role="option" lives on the real <a>/<button>, not the wrapping <li>.
+    const options = Array.from(dialog.querySelectorAll<HTMLElement>('[role="option"]'));
+    const activeOption = options.find((el) => el.getAttribute('aria-selected') === 'true')!;
     expect(activeOption).toBeTruthy();
     expect(activeOption).toBe(options[1]);
     expect(input.getAttribute('aria-activedescendant')).toBe(activeOption.id);
+    // The active option carries a visible highlight class (mirroring MediaPicker's own active row),
+    // so a sighted keyboard user sees which command Enter will run.
+    expect(activeOption.className).toContain('bg-base-content/[0.08]');
+    expect(options[0].className).not.toContain('bg-base-content/[0.08]');
     const activeLabel = activeOption.textContent?.trim();
 
     // A capturing listener that prevents the anchor's real navigation stands in for the pointer
     // path a real Enter would take on the active option's own element, proving submitPalette reads
     // the active index rather than the first DOM result.
     let activated = false;
-    activeOption.querySelector('a, button')!.addEventListener(
+    activeOption.addEventListener(
       'click',
       (e) => {
         e.preventDefault();
@@ -346,6 +377,16 @@ describe('CairnAdminShell', () => {
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     expect(activated).toBe(true);
     expect(activeLabel).not.toBe(options[0].textContent?.trim());
+  });
+
+  it('scrolls the active option into view as ArrowDown moves it (WCAG 2.4.11)', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    const scrollIntoView = vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(() => {});
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    await expect.poll(() => scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    scrollIntoView.mockRestore();
   });
 
   it('renders the built-in engine entries as loose top-level links, not inside a section', async () => {
@@ -1269,10 +1310,12 @@ describe('CairnAdminShell', () => {
     const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     // Posts is a section child, not a top-level loose node: before this task the palette derived
-    // only from the Core section's own children, so a non-Core section's child was absent.
-    await expect.element(screen.getByRole('dialog').getByRole('link', { name: 'Posts' })).toBeInTheDocument();
+    // only from the Core section's own children, so a non-Core section's child was absent. Each
+    // palette row carries role="option" (not the anchor's implicit "link"), since it is a listbox
+    // option, not a standalone navigation link.
+    await expect.element(screen.getByRole('dialog').getByRole('option', { name: 'Posts' })).toBeInTheDocument();
     // Help, left unreferenced, resolves to the fallback foot; the palette still surfaces it.
-    await expect.element(screen.getByRole('dialog').getByRole('link', { name: 'Help' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('dialog').getByRole('option', { name: 'Help' })).toBeInTheDocument();
   });
 
   // Task 3 (audit finding 8): office screens share one content-width cap, so a wide viewport never

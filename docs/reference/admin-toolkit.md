@@ -69,15 +69,19 @@ Stability tier: Extension API.
 declare function formatTimestamp(input: string | null | undefined, options?: FormatTimestampOptions): string;
 ```
 
-Format a timestamp as a date and time in `options.timeZone`, accepting exactly two input shapes: a
-SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no offset), read as UTC by
-swapping the space for `T` and appending `Z` before parsing, or a full ISO 8601 string carrying its
-own `Z` suffix or an explicit `±hh:mm` offset, parsed as-is. Every other shape, including a
-zone-less near-ISO string (no `Z`, no offset) and a bare calendar day, is returned unchanged rather
-than handed to `new Date()`: a zone-less shape would parse in the runtime's own local zone, so a
+Format a timestamp as a date and time in `options.timeZone`, accepting every shape that names its
+own zone: a full or seconds-less ISO 8601 string with a `Z`/`z` suffix or a colon or colonless
+`±hh:mm` offset, or a SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no
+offset), read as UTC by swapping the space for `T` and appending `Z` before parsing. A non-standard
+zone spelling (a colonless offset, a lowercase `z`) is normalized to its canonical ECMAScript Date
+Time String Format spelling before parsing, which is what keeps `new Date()` deterministic across a
+Worker's SSR and a browser's hydration; parsing either spelling as written would fall back to
+implementation-defined `Date.parse` behavior instead. Every other shape, including a zone-less
+near-ISO string (no `Z`, no offset) and a bare calendar day, is returned unchanged rather than
+handed to `new Date()`: a zone-less shape would parse in the runtime's own local zone, so a
 Worker's SSR and a browser's hydration would render different text for the same input. `input`'s
-own moment is always read from its own text, an offset it names, or the UTC this function assumes
-for the SQLite shape, and never from the runtime's local zone. `options.timeZone` governs only the
+own moment is always read from its own text, a zone it names, or the UTC this function assumes for
+the SQLite shape, and never from the runtime's local zone. `options.timeZone` governs only the
 rendered zone. A nullish `input` reads `options.fallback`. `options.timeZone` defaults `'UTC'`, the
 neutral zone a Cloudflare Worker's own runtime already reads in, never a site's own zone; a site
 that wants its own local time (a club's Anchorage, say) passes `timeZone` explicitly.

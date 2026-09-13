@@ -2751,6 +2751,9 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 3: `formatTimestamp` now accepts any Date-parseable timestamp, including an ISO string with an offset, WIDENING rather than swapping the input domain, since D1 rows still hand it the SQLite `'YYYY-MM-DD HH:MM:SS'` shape and that acceptance stays load-bearing. `CairnHistory`'s `formatVersionDate` is deleted; the component routes every date it renders through `formatTimestamp`, proving the widened shape on cairn's own screen. The `timeZone` zone-pin behavior is asserted by test for both the SQLite shape and the ISO shape, not merely preserved.
 - **Shape:** Take any Date-parseable timestamp (ISO with offset included), not a SQLite 'YYYY-MM-DD HH:MM:SS' string; then delete CairnHistory's formatVersionDate and route it through this formatter instead, proving the shape on cairn's own screen.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 18.
+- **Note (polish-11b-ii, Task 5):** superseded by `polish-formattimestamp-domain`, which states the
+  true accepted domain; this row's `Reopens on:` and `Shape:` sentences claiming "any Date-parseable
+  timestamp" do not hold.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formattimestampoptions: `FormatTimestampOptions`  (keep, 2026-08-26, any-site audit)
@@ -5583,3 +5586,26 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   Corrections section), not decision 7's text.
 - **Verified:** `docs/internal/admin-design-system.md`'s busy section names both shapes with their
   conditions and reasons, and no code in this pass's diff.
+
+## polish-formattimestamp-domain: formatTimestamp's accepted domain  (accept, 2026-09-08, polish-11b-ii)
+
+- **Verdict:** accept. `formatTimestamp`'s accepted domain is stated as a rule: every shape that
+  names its own zone (a full or seconds-less ISO 8601 string with a `Z`/`z` suffix or a colon or
+  colonless `±hh:mm` offset), plus the SQLite `datetime('now')`-shaped `'YYYY-MM-DD HH:MM:SS'`
+  string this function assumes UTC for. Every other shape, including a zone-less near-ISO string,
+  returns unchanged, because a Worker's SSR and a browser's hydration must render identical text
+  and a zone-less string cannot promise that.
+- **Reopens on:** a shape that names its own zone but this rule still rejects.
+- **Shape:** widen `ISO_WITH_ZONE` to admit the no-seconds ISO variant, a colonless `±hhmm` offset,
+  and a lowercase `z`; normalize the two non-standard forms to their canonical ECMAScript Date Time
+  String Format spelling before `new Date()`, since widening the regex alone would hand them to
+  implementation-defined `Date.parse` behavior and break the SSR/hydration determinism the doc
+  block states. This supersedes `audit-admin-formattimestamp`'s `Reopens on:` sentence, "now
+  accepts any Date-parseable timestamp", and its `Shape:` sentence, "Take any Date-parseable
+  timestamp (ISO with offset included)": measured against `src/lib/admin-toolkit/format.ts`, the
+  function has never accepted any Date-parseable timestamp; it accepts the shapes above and returns
+  every other input unchanged by design.
+- **Record:** `src/lib/admin-toolkit/format.ts`, `src/tests/unit/admin-toolkit-format.test.ts`.
+- **Verified:** the widened `ISO_WITH_ZONE` and the normalization step, both asserted by test
+  against each new form's canonical-spelling equivalent, and the zone-less pass-through case
+  asserted unchanged.

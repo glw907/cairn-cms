@@ -64,21 +64,36 @@ export interface FormatTimestampOptions {
 // offset.
 const SQLITE_DATETIME = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
 
-// A full ISO 8601 string that names its own zone, either a `Z` suffix or an explicit `+hh:mm` /
-// `-hh:mm` offset. A zone-less near-ISO shape (no `Z`, no offset) does NOT match this, and is
-// passed through unchanged rather than handed to `new Date()`, which would parse it in the
-// runtime's own local zone; that fall-through is exactly what let a Worker's SSR and a browser's
-// hydration render different text for the same input.
-const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+// A full ISO 8601 string that names its own zone: seconds are optional, the zone is a `Z`/`z`
+// suffix or an explicit `+hh:mm` / `-hh:mm` offset with the colon optional (`+0200` as well as
+// `+02:00`). A zone-less near-ISO shape (no `Z`, no offset) does NOT match this, and is passed
+// through unchanged rather than handed to `new Date()`, which would parse it in the runtime's own
+// local zone; that fall-through is exactly what let a Worker's SSR and a browser's hydration
+// render different text for the same input.
+const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|z|[+-]\d{2}:?\d{2})$/;
+
+// The two zone spellings ISO_WITH_ZONE admits but the ECMAScript Date Time String Format does
+// not: a lowercase `z`, and an offset with no colon. Both are normalized to their canonical
+// spelling before parsing, since `new Date()` is only guaranteed deterministic across a Worker's
+// SSR and a browser's hydration inside that one format; handing either non-standard spelling to
+// `new Date()` as written would fall back to implementation-defined `Date.parse` behavior.
+function toCanonicalIso(input: string): string {
+  return input.replace(/z$/, 'Z').replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
+}
 
 /**
- * Format a SQLite `datetime('now')`-shaped UTC string with no offset, or a full ISO 8601 string
- * carrying its own `Z` suffix or explicit offset, as a date and time in `timeZone`. Any other
- * shape, including a zone-less near-ISO string, is returned unchanged: the input's own moment is
- * always read from its own text, an offset it names or the UTC this function assumes for the
- * SQLite shape, and NEVER from the runtime's local zone, so a Worker's SSR and a browser's
- * hydration render identical text for every shape this function accepts. `timeZone` governs only
- * the RENDERED zone. A nullish `input` reads `options.fallback`.
+ * Format a timestamp as a date and time in `timeZone`, accepting every shape that names its own
+ * zone (a full or seconds-less ISO 8601 string with a `Z`/`z` suffix or a colon or colonless
+ * `+hh:mm` offset) plus the SQLite `datetime('now')`-shaped UTC string with no offset
+ * (`"YYYY-MM-DD HH:MM:SS"`), which this function assumes UTC for. Any other shape, including a
+ * zone-less near-ISO string, is returned unchanged: the input's own moment is always read from its
+ * own text, a zone it names or the UTC this function assumes for the SQLite shape, and NEVER from
+ * the runtime's local zone, so a Worker's SSR and a browser's hydration render identical text for
+ * every shape this function accepts. A non-standard zone spelling (a colonless offset, a lowercase
+ * `z`) is normalized to its canonical ECMAScript Date Time String Format spelling before parsing,
+ * which is what keeps that guarantee rather than falling back to implementation-defined
+ * `Date.parse` behavior. `timeZone` governs only the RENDERED zone. A nullish `input` reads
+ * `options.fallback`.
  */
 export function formatTimestamp(input: string | null | undefined, options: FormatTimestampOptions = {}): string {
   const { timeZone = 'UTC', locale = 'en-US', fallback = '' } = options;
@@ -87,7 +102,7 @@ export function formatTimestamp(input: string | null | undefined, options: Forma
   if (SQLITE_DATETIME.test(input)) {
     parsed = new Date(`${input.replace(' ', 'T')}Z`);
   } else if (ISO_WITH_ZONE.test(input)) {
-    parsed = new Date(input);
+    parsed = new Date(toCanonicalIso(input));
   } else {
     return input;
   }

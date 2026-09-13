@@ -300,6 +300,14 @@
 
 ### Changed
 
+- `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
+  names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
+  alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone
+  spellings are normalized to their canonical spelling before parsing, so `new Date()` stays
+  deterministic across a Worker's SSR and a browser's hydration rather than falling back to
+  implementation-defined `Date.parse` behavior. A zone-less near-ISO string still returns
+  unchanged. The signature is unchanged. No consumer action.
+
 - The showcase's custom Signups admin screen, and the Waymark template that mirrors it, now build
   both form actions through `createSectionAction` instead of a hand-rolled
   `requireOwner`/`formData`/`fail` shape. The exemplar's job is to teach the documented path, and

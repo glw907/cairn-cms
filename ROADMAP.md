@@ -2066,7 +2066,11 @@ the named human gates only):**
   the feel (short, eased, one property at a time, nothing that draws attention to itself) and the
   web-native systems (Carbon, Atlassian, Material) as the reference for the ruleset, since GNOME
   publishes no motion rules and its idiom is a desktop toolkit rather than the web; the named
-  example is zen mode, whose entry and exit are abrupt today. Research brief with the
+  example is zen mode, whose entry and exit are abrupt today. The bar for the adopted system
+  (Geoff, 2026-09-13): restrained, polished, and complete, meaning it covers every web case
+  (hover, press, focus, enter, exit, layout, page-level mode changes, list and table changes,
+  dialogs and drawers, toasts and live regions, route transitions, theme changes, reduced motion)
+  so no surface has to invent its own timing. Research brief with the
   seven-system comparison and a proposed token set:
   `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a

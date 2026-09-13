@@ -1333,14 +1333,22 @@
   `aria-haspopup` value. Consumers must: nothing.
 
 - `CairnAdminShell`'s command palette is now a real ARIA combobox, following `MediaPicker`'s own
-  shape. The search input carries `role="combobox"` with `aria-expanded`, `aria-controls`, and
-  `aria-activedescendant`; the results list always renders as a `role="listbox"` (even with no
-  matches, so `aria-controls` never points at a node that does not exist), with each row a
-  `role="option"` carrying `aria-selected`. ArrowDown and ArrowUp move the active option, and
-  Enter now activates that active option rather than always the first result, falling back to the
-  first result only when nothing is active yet. Two always-mounted live regions, a `role="status"`
-  result count and an active-option narration, replace the closed-conditioned "No matches" text,
-  so a query narrowing to zero announces. Consumers must: nothing.
+  shape. The search input carries `role="combobox"` with `aria-expanded="true"` for as long as the
+  dialog is open (it no longer tracks the result count, which used to contradict the always-rendered
+  listbox beneath it), plus `aria-controls` and `aria-activedescendant`; the results list always
+  renders as a `role="listbox"` (even with no matches, so `aria-controls` never points at a node
+  that does not exist, and the no-match row itself carries `role="presentation"`). Each result's
+  `role="option"` lives on its own `<a>` or `<button>`, not the wrapping `<li>` (a listbox option is
+  children-presentational, so a focusable descendant under it is invalid ARIA that axe flags as
+  nested-interactive); the row stays out of the tab order with `tabindex="-1"` and carries a visible
+  highlight, `MediaPicker`'s own active-row tint, so a sighted keyboard user can see which command
+  Enter will run, and it scrolls into view as the arrow keys move past the listbox's own fold.
+  ArrowDown and ArrowUp move the active option, and Enter now activates that active option rather
+  than always the first result, falling back to the first result only when nothing is active yet.
+  Two always-mounted live regions, a `role="status"` result count and an active-option narration,
+  replace the closed-conditioned "No matches" text, so a query narrowing to zero announces.
+  `MediaPicker`'s own no-match row picks up the same `role="presentation"` fix, since it shares this
+  listbox shape. Consumers must: nothing.
 
 - The admin's pressed-segment cue and two focus edges are settled. `segmentTintClass`'s active
   ring now mixes `base-content` at 55% instead of 20%: the old mix measured 1.492:1 light and

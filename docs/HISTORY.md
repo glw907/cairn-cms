@@ -44,7 +44,21 @@ Tailwind ring, not four, since one of the four the rule's comment named turned o
 hoisted `role="status"` wrapper in `MediaReplaceDialog`'s replace step, made unconditional by the
 live-region task, was adding a 12px flex gap in the idle and failed states; `display: contents`
 on the wrapper closed it before the gate's visual suite could catch it as a moved baseline. Task 2
-ran partway before a battery-floor stand-down (recorded, not gated) and resumed cleanly on AC.
+ran partway before a battery-floor stand-down (recorded, not gated) and resumed cleanly on AC. The
+pass-end reviewer fan-out caught two nested-interactive blockers in Task 4's new combobox after
+this entry's first draft: the active option's `role="option"` sat on the wrapping `<li>` while a
+real focusable `<a>`/`<button>` nested inside it (invalid ARIA, since a listbox option is
+children-presentational, and axe's own nested-interactive rule flags it), and ArrowDown/ArrowUp
+moved `aria-activedescendant` with no visible highlight, so a sighted keyboard user could not see
+which command Enter would run. Both are fixed: `role="option"` now lives on the row's own
+`<a>`/`<button>`, `tabindex="-1"` keeps it out of the tab order, and the active row carries
+`MediaPicker`'s own highlight tint plus a `scrollIntoView` so it follows the arrow keys past the
+listbox's fold; the no-match row and `MediaPicker`'s own no-match row (the same listbox shape) both
+gained the `role="presentation"` the fix's grep found missing; `aria-expanded` now reports the
+popup's real display state instead of the result count. Covered by new component assertions in
+`CairnAdminShell.test.ts` rather than a fresh visual capture, since the defect was structural
+(DOM role placement, tab order) and the one visible change, the highlight tint, is exercised by an
+assertion on the option's own class list.
 
 **What a later pass would be wrong to rediscover.**
 - `check:custom-surface`'s admin `retiredTokenPattern` reaches only `--color-muted` and

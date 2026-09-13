@@ -1731,3 +1731,86 @@ stay open.
 
 The `cairn-pass` ritual appends the post-mortem here at pass close, scoring both budgets against
 the ceiling and the interaction counts.
+
+**What landed.** All eleven tasks completed and are on `polish-11b-i`: the design system's busy
+idiom and its eight `AdminLayout` corrections (Task 1), the shell's two keyboard blockers cleared
+(Task 2), the palette's `aria-haspopup` and stable keying (Task 3), the palette rebuilt as a real
+ARIA combobox (Task 4), the pressed-cue contrast raise and two focus edges (Task 5), five
+components converged onto the busy idiom (Task 6), the desk band on `StatusChip` (Task 7), the
+desk band's Save/Publish composition resolved at SSR with `inert` (Task 8), the login page off its
+bracketed var and inline style (Task 9), and the small conformance sweep's second half (Task 10).
+Full detail is `docs/HISTORY.md`'s Polish-11b-i entry, kept current with this post-mortem in the
+same commit.
+
+**Decisions locked.**
+- Task 2's Open menu opener took the real-`<button>` shape rather than the label-plus-chord shape,
+  a conductor ruling made mid-pass: the plan's "spec-untouched" clause protects scope, not the
+  element type, so `examples/showcase/e2e/admin-shell-sidebar.spec.ts`'s three locators moved to
+  `getByRole('button', { name: 'Open menu' })` in the same fix round (`89d5ff5a`, `94ce57cb`).
+- Task 10's body-margin reset took the admin-sheet route on its second attempt. The first attempt
+  (`282aff71`) compensated the shell's own drawer root with `-m-2 w-[calc(100%+1rem)]`, assuming an
+  8px host body margin; that assumption failed on a host that already zeroed it, so the sheet-based
+  reset (`a5938e99`) replaced it, holding at either starting margin with no compensating utility.
+- The command palette's `role="option"` placement, fixed after this entry's own first draft
+  (`ae87dc4b`, detailed below), took the row's real `<a>`/`<button>` over the wrapping `<li>`,
+  matching ARIA 1.2's children-presentational rule for `option` and `MediaPicker`'s own existing
+  shape, rather than leaving the `<li>` as the option and accepting the nested-interactive
+  violation.
+- The command palette's `aria-expanded` now reports the popup's real display state (`"true"` for
+  as long as the dialog is open) rather than the result count, so it never contradicts the
+  always-rendered listbox beneath it.
+
+**What the gate and the reviewers caught.**
+- Task 5's own render proof was overstated on first draft (the density-toggle crops it named came
+  from an unmoved baseline); corrected before commit, detailed in `docs/HISTORY.md`.
+- A hoisted `role="status"` wrapper in `MediaReplaceDialog`'s replace step added a 12px flex gap
+  once made unconditional; closed with `display: contents` before the visual suite could catch it
+  as a moved baseline (`98d37c23`).
+- Task 4's first `after` capture (same commit) showed a nonzero AE on unrelated tiles, a
+  capture-time flake; a fresh recapture at the same commit matched `before` at AE 0, recorded in
+  the intended-moves manifest rather than silently discarded.
+- **The pass-end reviewer fan-out** (`daisyui-a11y-reviewer` over the markup and CSS this pass
+  touched) caught two nested-interactive blockers in Task 4's combobox after this entry's records
+  were first closed: `role="option"` sat on the wrapping `<li>` while a real focusable
+  `<a>`/`<button>` nested inside it (axe's nested-interactive rule), and ArrowDown/ArrowUp moved
+  `aria-activedescendant` with no visible highlight, so a sighted keyboard user could not see which
+  command Enter would run. A third, smaller finding rode with the fix: the no-match row inside the
+  listbox carried no role of its own, and `aria-expanded` tracked the result count rather than the
+  popup's display state. **Verdict: fixed** (`ae87dc4b`), with `MediaPicker`'s own no-match row
+  picking up the same `role="presentation"` fix since it shares the listbox shape. Confirmed by
+  four new/extended assertions in `CairnAdminShell.test.ts` (role placement and DOM structure, the
+  active row's highlight class, `aria-expanded`'s constant `"true"`, and `scrollIntoView` firing on
+  ArrowDown) rather than a fresh visual capture, since the defect was structural (DOM role
+  placement, tab order) and the one visible change, the highlight tint, is exercised by the class
+  assertion directly. `svelte-reviewer`'s pass over the same files raised no findings needing a
+  fix round.
+- **Open item for the conductor:** the fresh-context `visual-verifier`'s before/after capture set
+  (`~/.cache/cairn-polish-11b-i/verify/`, including the hand-opened palette states at 390 and
+  1440) was captured before the `ae87dc4b` fix, so it carries the un-highlighted active row this
+  fix changed. No second capture round exists confirming the fix's one visible change (the active
+  row's tint) by screenshot; the component assertions are the fix's only current visual evidence.
+  A fresh palette capture at 390/1440 before merge would close that gap if the conductor judges it
+  load-bearing; the six standard capture-matrix surfaces are unaffected, since the palette dialog
+  is closed in all of them (`AE` 0 confirmed per the intended-moves manifest's Task 4 row).
+- An untracked scratch file, `examples/showcase/e2e/capture-11b-i-verify-after.spec.ts`, remains
+  in the worktree; its own header comment calls for deletion once the verifier's read is done. Left
+  in place here since that read's completeness against the `ae87dc4b` fix is the open item above.
+
+**Both budgets.**
+- **Tokens.** Ceiling 7.0M. This close-out dispatch (post-mortem, `docs/HISTORY.md`,
+  `CHANGELOG.md`, the ROADMAP and migration-notes confirmation, and the three doc gates) spent
+  approximately 0.22M, added to the eleven-task chain's own execution spend as
+  `pass-execute-chains.js` reported it at pass end; that execution-spend figure is not preserved
+  in any committed artifact this dispatch can read; the conductor holds it from the workflow's own
+  run summary and completes the total against the ceiling from there.
+- **Attended time.** Planning misses: 0. Execution sittings: 0. The run stood down once at the 11%
+  battery floor inside Task 2 and resumed cleanly on AC in the same session (`docs/HISTORY.md`); that
+  is a mechanical guard event with no question put to Geoff, so it counts as neither a planning miss
+  nor an execution sitting.
+
+**Gate.** `check:docs`, `check:vale`, and `check:rulings-format` run clean in this close-out commit.
+The eleven tasks' own full-gate runs (`npm run check` at 0/0, `npm test`, the from-scratch showcase
+e2e) are each recorded task-by-task in the chain's own reports; this dispatch did not re-run them.
+
+**Release.** No version bump, no tag, no publish. `package.json` is untouched in this pass's diff.
+The window holds for polish-C's single cut, per the plan's Ruled inputs.

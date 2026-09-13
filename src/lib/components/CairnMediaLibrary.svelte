@@ -631,7 +631,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 <div bind:this={rootEl}>
 {#snippet uploadAction()}
   <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
-    <UploadIcon class="h-4 w-4" /> Upload
+    <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload
   </button>
 {/snippet}
 
@@ -658,7 +658,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   {#snippet emptyUploadAction()}
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
       <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
-        <UploadIcon class="h-4 w-4" /> Upload an image
+        <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload an image
       </button>
       <span class="type-meta">or drop a file anywhere on this page</span>
     </div>
@@ -688,10 +688,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
       <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-center gap-1 rounded-lg border border-[var(--cairn-card-border)] p-0.5">
         <button type="button" aria-label="Grid view" aria-pressed={density === 'grid'} class={densityButtonClass(density === 'grid')} onclick={() => (density = 'grid')}>
-          <LayoutGridIcon class="h-4 w-4" />
+          <LayoutGridIcon class="h-4 w-4" aria-hidden="true" />
         </button>
         <button type="button" aria-label="List view" aria-pressed={density === 'list'} class={densityButtonClass(density === 'list')} onclick={() => (density = 'list')}>
-          <ListIcon class="h-4 w-4" />
+          <ListIcon class="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     {/snippet}
@@ -888,7 +888,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <td class="w-24 text-right type-body tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>
               <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
-                  <Trash2Icon class="h-4 w-4" />
+                  <Trash2Icon class="h-4 w-4" aria-hidden="true" />
                 </button>
               </td>
             </tr>
@@ -1167,7 +1167,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <div class="modal-box max-w-lg">
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box {deleteInUse ? 'bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]' : 'bg-base-content/[0.07] text-muted'}" aria-hidden="true">
-          {#if deleteInUse}<TriangleAlertIcon class="h-5 w-5" />{:else}<Trash2Icon class="h-5 w-5" />{/if}
+          {#if deleteInUse}<TriangleAlertIcon class="h-5 w-5" aria-hidden="true" />{:else}<Trash2Icon class="h-5 w-5" aria-hidden="true" />{/if}
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-delete-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete {asset.displayName}?</h2>

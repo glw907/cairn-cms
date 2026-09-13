@@ -16,6 +16,13 @@ describe('LoginPage', () => {
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
+  it('carries no role="status" on the confirmation block, since it never observes its own first content', async () => {
+    // The block mounts fresh on the branch switch to "sent", so a live region on it would never
+    // announce; the "Check your email" heading carries the announcement instead.
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    expect(screen.container.querySelector('[role="status"]')).toBeNull();
+  });
+
   it('guides an editor whose link never arrives without leaking allowlist membership', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
     await expect.element(screen.getByText(/check your spam folder/i)).toBeInTheDocument();
@@ -154,6 +161,19 @@ describe('LoginPage', () => {
   it('falls back to the light theme when no theme is given', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
     expect(screen.container.querySelector('[data-theme="cairn-admin"]')).toBeTruthy();
+  });
+
+  it('names the email input from its visible label, with no redundant aria-label', async () => {
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
+    const input = screen.container.querySelector('input[name="email"]');
+    expect(input).not.toHaveAttribute('aria-label');
+    await expect.element(screen.getByRole('textbox', { name: 'Email' })).toBeInTheDocument();
+  });
+
+  it('paints the confirmation mark with the on-surface success ink token', async () => {
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const mark = screen.container.querySelector('.rounded-xl');
+    expect(mark).toHaveClass('cairn-text-success');
   });
 
   it('renders the identity hand-off page with a brand, a heading, the marker, a link to /admin, and no form', async () => {

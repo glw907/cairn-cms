@@ -692,12 +692,20 @@ describe('publish/header-band', () => {
       const screen = await renderStory(getStory('publish/header-band'));
 
       // The narrow face this row exists to picture: the back link, the truncating title, and the
-      // status pill replace the desktop status cluster (EditPage's `narrow` branch), and the
-      // band's own lifecycle pair (Save, Publish) moves out to a separate fixed bottom bar, leaving
-      // only the sr-only default-submit button inside the navbar under the same form attribute.
+      // status pill replace the desktop status cluster (EditPage's `narrow` branch). The band's
+      // own lifecycle pair (Save, Publish) still renders in the navbar (both branches render
+      // unconditionally), but it is `inert` at this width, its reachable counterpart having moved
+      // to a separate fixed bottom bar; the navbar carries the sr-only default-submit button plus
+      // that inert pair under the same form attribute.
       await waitFor(screen.container, 'a[aria-label^="Back to"]', 'the narrow band\'s back link');
-      expect(screen.container.querySelector('span[role="status"].badge')).not.toBeNull();
-      expect(screen.container.querySelectorAll('.navbar button[form="cairn-edit-form"]')).toHaveLength(1);
+      expect(screen.container.querySelector('span[role="status"] .badge')).not.toBeNull();
+      const navbarSubmitters = screen.container.querySelectorAll<HTMLElement>('.navbar button[form="cairn-edit-form"]');
+      expect(navbarSubmitters).toHaveLength(3);
+      // Every story mounts inside ReproContext's own picture wrapper, itself always `inert`, so the
+      // check below reads the band pair's own `inert` div directly rather than `closest('[inert]')`,
+      // which the wrapper would satisfy for all three regardless of the band's own `narrow` state.
+      const inertSubmitters = Array.from(navbarSubmitters).filter((button) => button.parentElement?.hasAttribute('inert'));
+      expect(inertSubmitters).toHaveLength(2);
 
       const trigger = screen.container.querySelector('button[aria-label="More actions"]');
       expect(trigger?.getAttribute('aria-expanded')).toBe('true');

@@ -294,7 +294,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
 {#snippet headerAction()}
   <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-    <PlusIcon class="h-4 w-4" /> New {createNoun}
+    <PlusIcon class="h-4 w-4" aria-hidden="true" /> New {createNoun}
   </button>
 {/snippet}
 
@@ -357,7 +357,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
        create CTA centered on a tall fill, so a first-run office reads as composed. -->
   {#snippet emptyAction()}
     <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-      <PlusIcon class="h-4 w-4" /> New {createNoun}
+      <PlusIcon class="h-4 w-4" aria-hidden="true" /> New {createNoun}
     </button>
   {/snippet}
   <EmptyState heading={`No ${data.label.toLowerCase()} yet`} message="Stack your first one and it will show up here." action={emptyAction} />
@@ -367,7 +367,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       {#snippet header()}
         <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are
              the card's only white rows; the first column insets to the card's rounded edge. -->
-        <th class="pl-6" aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+        <th class="pl-6" scope="col" aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
           <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
             Title
             {#if sortKey === 'title'}
@@ -380,7 +380,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                column had (audit finding 10), which wrapped it to two lines while a single-digit
                day fit. whitespace-nowrap on the cell below is the actual no-wrap guarantee; the
                wider column keeps that text from crowding the Status column beside it. -->
-          <th class="hidden w-32 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+          <th class="hidden w-32 sm:table-cell" scope="col" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
             <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
               Date
               {#if sortKey === 'date'}
@@ -392,8 +392,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
         <!-- Status and Actions trade the table's default cell padding for a tighter one below sm,
              so their columns give the title column the freed width instead of the desktop-width
              columns the audit flagged (finding 8). -->
-        <th class="{headerLabel} w-16 px-2 sm:w-28 sm:px-4">Status</th>
-        <th class="w-12 px-2 text-right sm:px-4"><span class="sr-only">Actions</span></th>
+        <th class="{headerLabel} w-16 px-2 sm:w-28 sm:px-4" scope="col">Status</th>
+        <th class="w-12 px-2 text-right sm:px-4" scope="col"><span class="sr-only">Actions</span></th>
       {/snippet}
       {#snippet children()}
         {#each pageRows as entry (entry.id)}
@@ -438,7 +438,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                   <CsrfField />
                   <input type="hidden" name="id" value={entry.id} />
                   <button type="submit" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
-                    <Trash2Icon class="h-4 w-4" />
+                    <Trash2Icon class="h-4 w-4" aria-hidden="true" />
                   </button>
                 </form>
               {/if}

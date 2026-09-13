@@ -90,7 +90,10 @@ const pendingList: ReproStory = {
   shellData: { pendingEntries: Promise.resolve(PENDING_IDS) },
   props: { data: { displayName: fixtureEditor.displayName, siteName: fixtureSiteName } },
   pose: async (root) => {
-    await clickWhenPresent(root, 'button[aria-haspopup="dialog"]', 'the "Publish site" trigger');
+    // The command-palette trigger also carries `aria-haspopup="dialog"`, so the bare attribute
+    // selector no longer picks out this button alone; `aria-controls` naming the confirm dialog
+    // does.
+    await clickWhenPresent(root, 'button[aria-controls="cairn-shell-publish-all"]', 'the "Publish site" trigger');
     await waitFor(root, 'dialog[aria-labelledby="cairn-shell-publish-all-title"][open]', 'the opened publish confirm');
   },
 };

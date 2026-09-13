@@ -27,6 +27,25 @@ function conventions(over: Partial<TidyConventions> = {}): TidyConventions {
   return { ...defaultTidyConventions(), ...over };
 }
 
+describe('CairnTidySettings: the saved status region', () => {
+  it('mounts before a save happens, empty', async () => {
+    const screen = await render(CairnTidySettings, {
+      data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing', saved: false }),
+    });
+    const status = screen.container.querySelector('[role="status"]');
+    expect(status).not.toBeNull();
+    expect(status?.textContent).toBe('');
+  });
+
+  it('fills with the confirmation once saved is true', async () => {
+    const screen = await render(CairnTidySettings, {
+      data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing', saved: true }),
+    });
+    const status = screen.container.querySelector('[role="status"]');
+    expect(status?.textContent).toContain('Tidy settings saved.');
+  });
+});
+
 describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
   it('renders the honest gate region and no editor-tier section', async () => {
     const screen = await render(CairnTidySettings, {

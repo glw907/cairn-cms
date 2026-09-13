@@ -362,7 +362,7 @@ full-page POST to `?/mediaReplace` navigates away.
     <div class="modal-box max-w-xl">
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" />{:else}<RefreshCwIcon class="h-5 w-5" />{/if}
+          {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" aria-hidden="true" />{:else}<RefreshCwIcon class="h-5 w-5" aria-hidden="true" />{/if}
         </span>
         <div class="flex-1">
           <h2 bind:this={replaceTitle} tabindex="-1" id="cairn-ml-replace-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">
@@ -410,6 +410,22 @@ full-page POST to `?/mediaReplace` navigates away.
             </span>
           </div>
 
+          <!-- Mounted unconditionally so a later upload still announces (the needs-alt notice's
+               live-region rule, WCAG 4.1.3): a region conditionally mounted with its first content
+               is not reliably observed by assistive tech. This announces the upload step's own
+               working state, a distinct event from the sr-only review-impact region above. Its
+               content renders in the exclusive chain below rather than beside it, so the working
+               branch there stays empty. The wrapper is display: contents so an empty region
+               never becomes a flex item of its own, adding no gap to the idle and failed states. -->
+          <div class="contents" role="status">
+            {#if replaceUpload.kind === 'working'}
+              <div class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
+                <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                <span class="type-meta">Preparing the new file…</span>
+              </div>
+            {/if}
+          </div>
+
           {#if replaceUpload.kind === 'failed'}
             <!-- A typed ingest/upload failure: an assertive alert with the message and a Retry. -->
             <div role="alert" class="flex flex-col items-center gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-4 text-center">
@@ -418,10 +434,7 @@ full-page POST to `?/mediaReplace` navigates away.
               <button type="button" class="btn btn-sm" onclick={replaceUpload.retry}>Try another file</button>
             </div>
           {:else if replaceUpload.kind === 'working'}
-            <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
-              <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-              <span class="type-meta">Preparing the new file…</span>
-            </div>
+            <!-- Rendered in the always-mounted status region above. -->
           {:else}
             <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
               <UploadIcon class="h-6 w-6 text-primary" aria-hidden="true" />

@@ -7,6 +7,98 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Polish-11b-i (audit remediation slice 11b-i, the design system and the engine admin surface, non-breaking), eleven tasks complete on its worktree 2026-09-13
+
+Branch `polish-11b-i`, executed on `.claude/worktrees/polish-11b-i` off post-11a `main`; plan at
+`docs/superpowers/plans/2026-09-08-polish-11b-i-pass.md`.
+
+**What landed.** The design system gains a ruled busy idiom (native `disabled` plus an
+always-mounted status region for a control mid-wait, `aria-disabled` plus `cairn-btn-guarded` for
+a refusal, the upload recipe's own replace-the-control case kept as its own exception) and its
+eight stale `AdminLayout` references corrected to `CairnAdminShell`, the component's real name.
+`CairnAdminShell`'s two keyboard blockers are cleared: the editor card's chords call
+`stopPropagation()` alongside `preventDefault()` so bold/italic/web-link no longer double-fire the
+drawer or stack the palette, and the drawer's Open menu opener is a real `<button>` in place of a
+bare `<label for>`. The command palette is now a real ARIA combobox (`role="combobox"`, always-
+rendered `listbox`, arrow-key active-option movement, two always-mounted live regions), following
+`MediaPicker`'s own shape. The pressed-segment cue (`segmentTintClass`) raises its active ring from
+a 20 percent to a 55 percent `base-content` mix, clearing the WCAG 1.4.11 non-text floor; the
+fixed bottom bar gains `scroll-margin-bottom`; `MediaHeroField`'s dropzone drops its own
+focus-visible ring utilities in favor of the sheet's own outline. Five `role="status"` regions
+mount unconditionally, and `ShareLinkPanel` converges onto the busy idiom's wait shape. The edit
+page's desk band moves onto the admin toolkit's `StatusChip` vocabulary, and its Save/Publish pair
+now renders unconditionally at every width with `inert` (not DOM presence) deciding reachability,
+closing the first-paint composition swap. The login page drops its bracketed
+`text-[var(--color-success)]` and inline style for named utilities, and its redundant
+`aria-label="Email"` is removed. The small conformance sweep closes its second half: every bare
+decorative Lucide glyph carries `aria-hidden="true"` directly, `ConceptList`'s four column headers
+carry `scope="col"`, and `CairnAdminShell` no longer injects a `<style>` tag into the host head to
+zero the body margin (the packaged sheet resets it itself).
+
+**What the gate caught.** Task 5's own render proof was overstated on first draft: the
+density-toggle crops it named came from an unmoved baseline (the old 20 percent ring), not the
+raised one, so the record was corrected to name the footer-segmented crop as the one that actually
+carries the raised-ring verdict, and `MediaHeroField.svelte`'s own render list was corrected to
+drop it from the outline-only rendered-focus rule's false-positive count (three call sites clear a
+Tailwind ring, not four, since one of the four the rule's comment named turned out not to). A
+hoisted `role="status"` wrapper in `MediaReplaceDialog`'s replace step, made unconditional by the
+live-region task, was adding a 12px flex gap in the idle and failed states; `display: contents`
+on the wrapper closed it before the gate's visual suite could catch it as a moved baseline. Task 2
+ran partway before a battery-floor stand-down (recorded, not gated) and resumed cleanly on AC. The
+pass-end reviewer fan-out caught two nested-interactive blockers in Task 4's new combobox after
+this entry's first draft: the active option's `role="option"` sat on the wrapping `<li>` while a
+real focusable `<a>`/`<button>` nested inside it (invalid ARIA, since a listbox option is
+children-presentational, and axe's own nested-interactive rule flags it), and ArrowDown/ArrowUp
+moved `aria-activedescendant` with no visible highlight, so a sighted keyboard user could not see
+which command Enter would run. Both are fixed: `role="option"` now lives on the row's own
+`<a>`/`<button>`, `tabindex="-1"` keeps it out of the tab order, and the active row carries
+`MediaPicker`'s own highlight tint plus a `scrollIntoView` so it follows the arrow keys past the
+listbox's fold; the no-match row and `MediaPicker`'s own no-match row (the same listbox shape) both
+gained the `role="presentation"` the fix's grep found missing; `aria-expanded` now reports the
+popup's real display state instead of the result count. Covered by new component assertions in
+`CairnAdminShell.test.ts` rather than a fresh visual capture, since the defect was structural
+(DOM role placement, tab order) and the one visible change, the highlight tint, is exercised by an
+assertion on the option's own class list.
+
+**What a later pass would be wrong to rediscover.**
+- `check:custom-surface`'s admin `retiredTokenPattern` reaches only `--color-muted` and
+  `--color-subtle`. Widening it to every `--color-*` fill tone reached through a bracket utility or
+  an inline style flagged **27 lines (41 occurrences) across nine files**, measured at this pass's
+  parent commit before Task 9 converted `LoginPage`'s own bracketed success token; at this pass's
+  head the population is **25 lines (38 occurrences) across eight files**: `CairnTidySettings` 1,
+  `ComponentInsertDialog` 2, `EditPage` 2, `MediaBulkDeleteDialog` 2, `MediaHeroField` 8,
+  `MediaOrphanTools` 5, `RepeatableField` 2, `TidyReview` 3 (filed to `ROADMAP.md`'s Later tier,
+  below).
+- `segmentTintClass` has **six callers across four files**, not the three the original sweep
+  named: `CairnTidySettings.svelte:329,334`, `TidyReview.svelte:277`, `CairnMediaLibrary.svelte:609`,
+  and `EditPage.svelte:477,482`. The edit page is a caller the pressed-cue paint had to reach even
+  though the sweep never named it.
+- The edit page's desk band composition at SSR is now resolved by **`inert`, not by DOM presence**:
+  both the Save/Publish pairs for narrow and wide render unconditionally at every width. The HTML
+  `hidden` attribute states the intent but does not itself compute to `display: none` there,
+  because the admin sheet compiles with no Preflight
+  (`scripts/build/admin-css.input.css` imports only `tailwindcss/theme.css` and
+  `tailwindcss/utilities.css`), so the shipped `dist/components/cairn-admin.css` carries no
+  `[hidden]` rule at all and `hidden` is declarative only inside the admin theme; the responsive
+  `max-sm:hidden` / `sm:hidden` pair is what actually hides the unreachable branch, while `inert`
+  is what removes it from the accessibility tree and tab order regardless of which branch CSS
+  happens to show. A context that does load Preflight (the showcase's public chassis) would have
+  Tailwind's own `[hidden]:where(:not([hidden='until-found'])) { display: none !important; }`
+  beat a `flex` utility outright, so this reasoning does not carry over there. A later change
+  that toggles a pair's presence with an `{#if}` instead of `inert` reintroduces the first-paint
+  swap this task closed.
+- The admin sheet's own `:focus-visible` rule (`cairn-admin.css`, `:where([data-theme='cairn-admin'],
+  [data-theme='cairn-admin-dark']) :focus-visible`) is an **outline**
+  (`outline: 2px solid var(--color-primary); outline-offset: 2px`), not a ring. An
+  `outline-hidden` utility on an admin control silently removes the admin's whole focus
+  indicator rather than merely clearing a decorative outline underneath a ring, which is why
+  `MediaHeroField`'s dropzone needed its own ring utilities removed rather than layered.
+- Task 1 inserted the busy-idiom section and the `AdminLayout` corrections into
+  `docs/internal/admin-design-system.md`, moving every anchor below its insertion point by **20
+  net lines** (1,299 to 1,319). Every later task in this pass located its own anchors by section
+  heading and quoted phrase rather than by line number for exactly this reason, and any future
+  citation of a line number in that file predating this pass's merge is stale.
+
 ## Polish-11a (audit remediation slice 11a, the engine and CLI half, non-breaking), thirteen tasks complete on its worktree 2026-09-12
 
 Branch `polish-11a`, thirteen tasks executed on `.claude/worktrees/polish-11a` off post-chassis-B2

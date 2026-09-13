@@ -447,7 +447,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     <span class="type-body font-medium">{field.label}</span>
     <button
       type="button"
-      class="flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left transition-colors hover:border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)] focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
+      class="flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left transition-colors hover:border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)] focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
       aria-haspopup="dialog"
       onclick={() => openDialog('chooser')}
       ondrop={onDropzoneDrop}
@@ -492,11 +492,21 @@ popover's runUpload but resolves to this field, not an editor placeholder.
       </button>
     </div>
 
+    <!-- Mounted unconditionally so a later upload still announces (the needs-alt notice's
+         live-region rule, WCAG 4.1.3): a region conditionally mounted with its first content is
+         not reliably observed by assistive tech. Its content renders in the exclusive chain
+         below rather than beside it, so the uploading branch there stays empty. -->
+    <div role="status">
+      {#if upload.kind === 'uploading'}
+        <div class="flex flex-col items-center gap-3 py-8">
+          <span class="loading loading-spinner loading-md text-[var(--color-primary)]"></span>
+          <p class="type-body text-muted">Adding your image…</p>
+        </div>
+      {/if}
+    </div>
+
     {#if upload.kind === 'uploading'}
-      <div class="flex flex-col items-center gap-3 py-8" role="status">
-        <span class="loading loading-spinner loading-md text-[var(--color-primary)]"></span>
-        <p class="type-body text-muted">Adding your image…</p>
-      </div>
+      <!-- Rendered in the always-mounted status region above. -->
     {:else if upload.kind === 'failed'}
       <div class="flex flex-col gap-2" role="alert">
         <p class="type-body">{upload.message}</p>

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import { createRawSnippet } from 'svelte';
+import { createRawSnippet, mount, unmount } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
@@ -123,9 +123,77 @@ describe('CairnAdminShell', () => {
     document.cookie = 'cairn-admin-theme=; path=/admin; max-age=0';
   });
 
-  it('zeroes the body margin while mounted (the fixed sidebar and the flowing content misalign under the UA default)', async () => {
+  it('never injects a style tag into the host document head', async () => {
+    const styleCountBefore = document.head.querySelectorAll('style').length;
     await render(CairnAdminShell, { data: data(true), children: child });
-    expect(getComputedStyle(document.body).margin).toBe('0px');
+    expect(document.head.querySelectorAll('style').length).toBe(styleCountBefore);
+  });
+
+  // The host body-margin reset lives in the compiled sheet's own build (cairn-admin.css's build,
+  // not a compensating margin on the drawer root), so it has to be proven against a genuine host
+  // body, at either starting margin: the real UA default (8px, nothing else on the page touches
+  // it) and a host that already runs something like Tailwind Preflight and zeroes it itself. The
+  // outer test document's own body is not a stand-in for either: the ambient test document does
+  // not reproduce a UA-default body margin, so nothing this suite could inject into that body
+  // would reliably expose a real 8px starting point. A bare iframe with no stylesheet but the one
+  // under test gives each case a genuinely blank host instead, real UA default or real zeroed.
+  describe('host body-margin reset', () => {
+    let iframe: HTMLIFrameElement;
+
+    beforeEach(() => {
+      iframe = document.createElement('iframe');
+      iframe.style.border = 'none';
+      iframe.style.width = '1280px';
+      iframe.style.height = '720px';
+      document.body.appendChild(iframe);
+    });
+
+    afterEach(() => {
+      iframe.remove();
+    });
+
+    /**
+     * A bare iframe document (no stylesheet but the ones passed in `extraHeadCss`), with the
+     * compiled admin sheet always last so it wins any tie against an equally-unlayered host rule.
+     * @param extraHeadCss any host-authored CSS to install ahead of the compiled sheet (a
+     *   Preflight-style reset, say); empty leaves the real UA default as the only starting point.
+     * @returns the iframe's own document
+     */
+    function freshHostDocument(extraHeadCss: string): Document {
+      const idoc = iframe.contentDocument!;
+      idoc.open();
+      idoc.write('<!doctype html><html><head></head><body></body></html>');
+      idoc.close();
+      if (extraHeadCss) {
+        const hostStyle = idoc.createElement('style');
+        hostStyle.textContent = extraHeadCss;
+        idoc.head.appendChild(hostStyle);
+      }
+      const adminStyle = idoc.createElement('style');
+      adminStyle.textContent = compiledAdminCss;
+      idoc.head.appendChild(adminStyle);
+      return idoc;
+    }
+
+    it('closes the seam on a host carrying the real UA default 8px body margin', () => {
+      const idoc = freshHostDocument('');
+      const app = mount(CairnAdminShell, { target: idoc.body, props: { data: data(true), children: child } });
+      expect(idoc.defaultView!.getComputedStyle(idoc.body).marginLeft).toBe('0px');
+      const rect = idoc.querySelector<HTMLElement>('.drawer')!.getBoundingClientRect();
+      expect(rect.left).toBe(0);
+      expect(rect.width).toBe(idoc.defaultView!.innerWidth);
+      unmount(app);
+    });
+
+    it('closes the seam on a host that already zeroes body margin itself', () => {
+      const idoc = freshHostDocument('body { margin: 0; }');
+      const app = mount(CairnAdminShell, { target: idoc.body, props: { data: data(true), children: child } });
+      expect(idoc.defaultView!.getComputedStyle(idoc.body).marginLeft).toBe('0px');
+      const rect = idoc.querySelector<HTMLElement>('.drawer')!.getBoundingClientRect();
+      expect(rect.left).toBe(0);
+      expect(rect.width).toBe(idoc.defaultView!.innerWidth);
+      unmount(app);
+    });
   });
 
   it('applies the cairn-admin theme and renders the concept nav and child', async () => {
@@ -154,7 +222,7 @@ describe('CairnAdminShell', () => {
   it('opens the command palette from the topbar trigger', async () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
-    await expect.element(screen.getByRole('textbox', { name: /search or jump to/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('combobox', { name: /search or jump to/i })).toBeInTheDocument();
     // A palette-only command confirms the dialog is open (a nav link like Posts also exists in the sidebar).
     await expect.element(screen.getByText('View the live site')).toBeInTheDocument();
   });
@@ -179,6 +247,146 @@ describe('CairnAdminShell', () => {
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(true);
     await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(false);
+  });
+
+  it('marks the palette trigger as opening a dialog', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    const trigger = screen.getByRole('button', { name: /search or jump to/i }).element() as HTMLElement;
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+  });
+
+  it('names the palette dialog distinctly from its search input', async () => {
+    // The dialog and its input each need their own accessible name; before this fix both carried
+    // the same "Search or jump to" string as the placeholder too, so a screen reader announced one
+    // string three times.
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    const dialogLabel = dialog.getAttribute('aria-label');
+    const inputLabel = input.getAttribute('aria-label');
+    expect(dialogLabel).toBeTruthy();
+    expect(inputLabel).toBeTruthy();
+    expect(dialogLabel).not.toBe(inputLabel);
+    expect(dialogLabel).not.toBe(input.getAttribute('placeholder'));
+  });
+
+  it('keys the palette results on a unique command label', async () => {
+    // The each block keys on cmd.label rather than the index, so the population (nav destinations
+    // plus View site and theme) must carry no duplicate label, or two commands would collide on one
+    // key.
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    // role="option" lives on the row's real <a>/<button>, not the wrapping <li> (a listbox option
+    // is children-presentational, so a focusable descendant under it is invalid).
+    const labels = Array.from(dialog.querySelectorAll('[role="option"]')).map(
+      (el) => el.textContent?.trim() ?? '',
+    );
+    expect(labels.length).toBeGreaterThan(0);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it('exposes the palette input as a combobox pointed at its listbox', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    expect(input.getAttribute('role')).toBe('combobox');
+    expect(input.getAttribute('aria-expanded')).not.toBeNull();
+    const controlsId = input.getAttribute('aria-controls');
+    expect(controlsId).toBeTruthy();
+    // The controlled element must exist whether or not there are results (WCAG 1.3.1, 4.1.2).
+    expect(document.getElementById(controlsId!)).not.toBeNull();
+    expect(input.getAttribute('aria-activedescendant')).toBeDefined();
+  });
+
+  it('keeps the listbox mounted for a query with no matches, announcing the zero count', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    const controlsId = input.getAttribute('aria-controls')!;
+    input.value = 'no such command exists anywhere';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => document.getElementById(controlsId)).not.toBeNull();
+    const status = document.querySelector('dialog.modal [role="status"]')!;
+    await expect.poll(() => status.textContent?.trim()).toBe('0 results');
+    // The listbox stays visibly displayed even with no rows, so aria-expanded reports the popup's
+    // display state rather than tracking the result count (it would otherwise contradict the DOM).
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    // The no-match row carries no role of its own: a listbox may own only option/group/presentation
+    // children (axe aria-required-children).
+    const noMatchRow = document.getElementById(controlsId)!.querySelector('li')!;
+    expect(noMatchRow.getAttribute('role')).toBe('presentation');
+  });
+
+  it('carries role="option" on the row itself, not on a nested focusable child (no nested-interactive)', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const options = Array.from(dialog.querySelectorAll<HTMLElement>('[role="option"]'));
+    expect(options.length).toBeGreaterThan(0);
+    for (const option of options) {
+      // The option is itself the real <a> or <button>, tabindex="-1" so arrow/Enter (not Tab) drive
+      // it, and its wrapping <li> is role="presentation" so exactly one node in the tree is a widget.
+      expect(['A', 'BUTTON']).toContain(option.tagName);
+      expect(option.getAttribute('tabindex')).toBe('-1');
+      expect(option.querySelector('a, button')).toBeNull();
+      expect(option.parentElement?.tagName).toBe('LI');
+      expect(option.parentElement?.getAttribute('role')).toBe('presentation');
+    }
+  });
+
+  it('moves the active option on ArrowDown and activates it on Enter, not the first result', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    input.value = 'p';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => dialog.querySelectorAll('[role="option"]').length).toBeGreaterThan(1);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    await expect
+      .poll(() => dialog.querySelector('[role="option"][aria-selected="true"]'))
+      .not.toBeNull();
+    // role="option" lives on the real <a>/<button>, not the wrapping <li>.
+    const options = Array.from(dialog.querySelectorAll<HTMLElement>('[role="option"]'));
+    const activeOption = options.find((el) => el.getAttribute('aria-selected') === 'true')!;
+    expect(activeOption).toBeTruthy();
+    expect(activeOption).toBe(options[1]);
+    expect(input.getAttribute('aria-activedescendant')).toBe(activeOption.id);
+    // The active option carries a visible highlight class (mirroring MediaPicker's own active row),
+    // so a sighted keyboard user sees which command Enter will run.
+    expect(activeOption.className).toContain('bg-base-content/[0.08]');
+    expect(options[0].className).not.toContain('bg-base-content/[0.08]');
+    const activeLabel = activeOption.textContent?.trim();
+
+    // A capturing listener that prevents the anchor's real navigation stands in for the pointer
+    // path a real Enter would take on the active option's own element, proving submitPalette reads
+    // the active index rather than the first DOM result.
+    let activated = false;
+    activeOption.addEventListener(
+      'click',
+      (e) => {
+        e.preventDefault();
+        activated = true;
+      },
+      { capture: true },
+    );
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(activated).toBe(true);
+    expect(activeLabel).not.toBe(options[0].textContent?.trim());
+  });
+
+  it('scrolls the active option into view as ArrowDown moves it (WCAG 2.4.11)', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    const input = screen.getByRole('combobox').element() as HTMLInputElement;
+    const scrollIntoView = vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(() => {});
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    await expect.poll(() => scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    scrollIntoView.mockRestore();
   });
 
   it('renders the built-in engine entries as loose top-level links, not inside a section', async () => {
@@ -521,12 +729,12 @@ describe('CairnAdminShell', () => {
     const deskScreen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
-    const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
+    const deskToggleWrap = deskScreen.container.querySelector('[aria-label="Open menu"]')!.parentElement!;
     expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
     expect(deskToggleWrap.classList.contains('xl:hidden')).toBe(true);
 
     const listScreen = await render(CairnAdminShell, { data: data(true), children: child });
-    const listToggleWrap = listScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
+    const listToggleWrap = listScreen.container.querySelector('[aria-label="Open menu"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
     expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
   });
@@ -603,6 +811,17 @@ describe('CairnAdminShell', () => {
     const before = toggle().checked;
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
     await expect.poll(() => toggle().checked).toBe(!before);
+  });
+
+  it('exposes the drawer opener as a button whose aria-expanded mirrors the drawer state', async () => {
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+    const opener = screen.getByRole('button', { name: 'Open menu' });
+    await expect.element(opener).toHaveAttribute('aria-expanded', 'false');
+    const drawerNav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
+    expect(drawerNav.id.length).toBeGreaterThan(0);
+    await expect.element(opener).toHaveAttribute('aria-controls', drawerNav.id);
+    await opener.click();
+    await expect.element(opener).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('moves focus into the drawer nav on Ctrl+B open, and restores it on Ctrl+B close', async () => {
@@ -1091,10 +1310,12 @@ describe('CairnAdminShell', () => {
     const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     // Posts is a section child, not a top-level loose node: before this task the palette derived
-    // only from the Core section's own children, so a non-Core section's child was absent.
-    await expect.element(screen.getByRole('dialog').getByRole('link', { name: 'Posts' })).toBeInTheDocument();
+    // only from the Core section's own children, so a non-Core section's child was absent. Each
+    // palette row carries role="option" (not the anchor's implicit "link"), since it is a listbox
+    // option, not a standalone navigation link.
+    await expect.element(screen.getByRole('dialog').getByRole('option', { name: 'Posts' })).toBeInTheDocument();
     // Help, left unreferenced, resolves to the fallback foot; the palette still surfaces it.
-    await expect.element(screen.getByRole('dialog').getByRole('link', { name: 'Help' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('dialog').getByRole('option', { name: 'Help' })).toBeInTheDocument();
   });
 
   // Task 3 (audit finding 8): office screens share one content-width cap, so a wide viewport never
@@ -1253,7 +1474,7 @@ describe('CairnAdminShell', () => {
       const screen = await render(CairnAdminShell, { data: data(true), children: child });
       await screen.getByRole('button', { name: /search or jump to/i }).click();
       const box = screen.container.ownerDocument.querySelector<HTMLElement>(
-        'dialog[aria-label="Search or jump to"] .modal-box',
+        'dialog[aria-label="Commands"] .modal-box',
       )!;
       // A modest margin off the top edge (mt-4, 1rem), not the near-zero gap the bare self-start
       // produced. Assert the computed style that PRODUCES the inset rather than the measured
@@ -1267,7 +1488,7 @@ describe('CairnAdminShell', () => {
       const screen = await render(CairnAdminShell, { data: data(true), children: child });
       await screen.getByRole('button', { name: /search or jump to/i }).click();
       const input = screen.container.ownerDocument.querySelector<HTMLInputElement>(
-        'dialog[aria-label="Search or jump to"] input[aria-label="Search or jump to"]',
+        'dialog[aria-label="Commands"] input[aria-label="Search or jump to"]',
       )!;
       expect(input.className).not.toContain('outline-hidden');
       input.focus();

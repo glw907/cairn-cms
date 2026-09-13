@@ -1297,7 +1297,72 @@
   names its two documented cross-subpath exceptions, `PublicRoutesConfig` and `EntryData`, both
   canonical on `/delivery`. No signature changed and no export moved.
 
+- `docs/internal/admin-design-system.md` gains a busy section naming the admin's two busy shapes
+  (native `disabled` plus an always-mounted status region for a control mid-wait, `aria-disabled`
+  plus `cairn-btn-guarded` for a control refused with a reason) and the upload recipe's own
+  replace-the-control-with-a-status-panel case, with its promotion condition narrowed to a second
+  instance outside the media upload family. `docs/internal/engine-rulings.md` gains the
+  `polish-busy-idiom` row recording the ruling. The eight stale `AdminLayout` references in the
+  design system are corrected to `CairnAdminShell`, the component's real name. Internal
+  documentation only; no code changed.
+
 ### Fixed
+
+- `CairnAdminShell`'s two keyboard blockers are cleared. The editor card's own chords (bold,
+  italic, inline code, the heading pair, the list pair, quote, and the web-link dialog) now call
+  `stopPropagation()` alongside their existing `preventDefault()`, so Ctrl/Cmd+B inside the editor
+  no longer also toggles the admin drawer, and Ctrl/Cmd+K there opens the web-link dialog without
+  stacking the command palette on top of it. The shell's own window keydown handler additionally
+  yields whenever the event already carries `defaultPrevented` or originates inside an editable
+  target (an input, a textarea, a select, or a `contenteditable` surface), a second guard that
+  holds even if a future handler forgets to prevent. The drawer's Open menu opener is now a real
+  `<button type="button">` in place of a bare `<label for>`, with `aria-expanded` mirroring the
+  drawer state and `aria-controls` naming the drawer nav, so it takes keyboard focus and
+  activation the label never had; it flips `drawerOpen` directly on click, and the hidden
+  checkbox stays the CSS mechanism. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
+  consistently: the Web link row keeps the chord, and the Command palette row states it is
+  unavailable while the editor has focus. Consumers must: nothing.
+
+- `CairnAdminShell`'s command palette trigger now carries `aria-haspopup="dialog"`, matching its
+  Publish-site sibling, and the palette's `<dialog>` is named "Commands" so its accessible name no
+  longer repeats the search input's own label and placeholder string three times over. The
+  `{#each}` over the palette's results now keys on `cmd.label` in place of the array index, so a
+  result keeps its own DOM node as the list is filtered rather than swapping identity with
+  whatever now sits at the same position. The site-wide Publish confirm gains an `id` and its
+  trigger an `aria-controls` naming it, since the palette trigger now shares the same
+  `aria-haspopup` value. Consumers must: nothing.
+
+- `CairnAdminShell`'s command palette is now a real ARIA combobox, following `MediaPicker`'s own
+  shape. The search input carries `role="combobox"` with `aria-expanded="true"` for as long as the
+  dialog is open (it no longer tracks the result count, which used to contradict the always-rendered
+  listbox beneath it), plus `aria-controls` and `aria-activedescendant`; the results list always
+  renders as a `role="listbox"` (even with no matches, so `aria-controls` never points at a node
+  that does not exist, and the no-match row itself carries `role="presentation"`). Each result's
+  `role="option"` lives on its own `<a>` or `<button>`, not the wrapping `<li>` (a listbox option is
+  children-presentational, so a focusable descendant under it is invalid ARIA that axe flags as
+  nested-interactive); the row stays out of the tab order with `tabindex="-1"` and carries a visible
+  highlight, `MediaPicker`'s own active-row tint, so a sighted keyboard user can see which command
+  Enter will run, and it scrolls into view as the arrow keys move past the listbox's own fold.
+  ArrowDown and ArrowUp move the active option, and Enter now activates that active option rather
+  than always the first result, falling back to the first result only when nothing is active yet.
+  Two always-mounted live regions, a `role="status"` result count and an active-option narration,
+  replace the closed-conditioned "No matches" text, so a query narrowing to zero announces.
+  `MediaPicker`'s own no-match row picks up the same `role="presentation"` fix, since it shares this
+  listbox shape. Consumers must: nothing.
+
+- The admin's pressed-segment cue and two focus edges are settled. `segmentTintClass`'s active
+  ring now mixes `base-content` at 55% instead of 20%: the old mix measured 1.492:1 light and
+  1.773:1 dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor, and the new mix
+  measures 3.586:1 light and 4.959:1 dark, the same mix already locked for the unchecked
+  checkbox/radio edge and the unfocused input edge; the wash beside it, `bg-base-content/[0.07]`,
+  stays as is since it is a fill tone rather than the 1.4.11-bearing cue. The admin's one
+  fixed-bottom-bar scroll-margin rule gains `scroll-margin-bottom` alongside its existing
+  `scroll-margin-top`, so a focused or fragment-scrolled control on a narrow edit page no longer
+  lands hidden beneath the below-sm Save/Publish bar (WCAG 2.4.11). `MediaHeroField`'s empty-state
+  dropzone drops its own `focus-visible:outline-none`/`ring-1`/`ring-[...]` utilities, so its
+  keyboard focus now shows the admin's own brand-violet `:focus-visible` outline (the sheet's own
+  rule, `outline: 2px solid var(--color-primary)`) instead of the ring its own
+  `focus-visible:outline-none` was quietly suppressing that rule for. Consumers must: nothing.
 
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
   optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
@@ -1642,6 +1707,76 @@
   Map<string, number> = $state(new Map())`); the previous pattern excluded every comma in the
   optional type run, so a declaration shaped like this was invisible to the gate. Internal
   test-only fix; no consumer action.
+
+- Five `role="status"` regions (`MediaUploadDialog`, `MediaHeroField`, `MediaReplaceDialog`,
+  `CairnTidySettings`, `NavTree`) that mounted only alongside their first content now mount
+  unconditionally, with only their contents gated, so a screen reader already tracking each region
+  observes its later updates (WCAG 4.1.3 requires the region be present before the change it
+  reports). `ShareLinkPanel`'s Share and Revoke buttons converge onto the busy idiom's wait shape
+  (native `disabled` plus its own always-mounted status region), dropping the guarded-control
+  marker and `aria-disabled` a wait never needed. Its copy affordance now guards for a missing
+  `navigator.clipboard` before calling it, rather than relying on a rejected promise that never
+  arrives, so a denied or unavailable clipboard reliably falls back to selecting the field.
+  `LoginPage`'s confirmation block drops a `role="status"` that never announced anything (the
+  block mounts fresh with the branch switch, so the region never observed its own first content);
+  the "Check your email" heading carries the announcement instead. Consumers must: nothing.
+
+- The edit page's desk band now speaks the admin toolkit's own `StatusChip` vocabulary instead of
+  raw daisyUI `badge-warning`/`badge-info`/`badge-neutral` fills. All three publish states
+  (Edited, New, Published) render on `StatusChip`'s quiet register, matching `ConceptList`'s own
+  status column: the label text is the distinguishing signal, not a fill color. The Hidden marker
+  now renders on the `outline` register, a hairline that clears the 3:1 non-text contrast floor
+  against its desk-band ancestor in both themes (measured 3.586:1 light, 4.959:1 dark). The
+  compact phone pill keeps its own `role="status"` and composed `aria-label` on a wrapping span,
+  since `StatusChip` publishes neither, with the eye-off glyph beside the chip rather than inside
+  it. `badge-warning`/`badge-info`/`badge-neutral` were cairn's own last callers of those three
+  classes; rather than let them silently drop out of the packaged sheet, they join the
+  compatibility safelist in `scripts/build/admin-css.input.css` beside `badge-ghost`, so a
+  consumer's own hand-authored admin markup already riding them keeps compiling. Consumers must:
+  nothing.
+
+- The edit page's desk band and its below-sm bottom action bar both render their Save/Publish
+  pair unconditionally now, at every width, instead of swapping the pair in and out of the DOM
+  after mount. Which pair is reachable is a responsive Tailwind class (paint) plus `inert` bound
+  to the live `narrow` match (interaction and the accessibility tree), so the phone composition
+  is correct at first paint with no post-hydration swap, and exactly one Save control and one
+  Publish control is ever reachable at any width. Consumers must: nothing.
+
+- `LoginPage`'s confirmation mark drops its bracketed `text-[var(--color-success)]` and inline
+  `style` for `cairn-text-success` plus `bg-success/15 ring-1 ring-inset ring-success/22`, the
+  same theme-color-and-opacity utility form the rest of the tree uses for a fill and an inset
+  hairline off one token. The "Use a different email" escape hatch now carries `underline
+  underline-offset-2` at rest, the borderless-underlined reference-link recipe, rather than only
+  on hover. The email input's redundant `aria-label="Email"` is removed; its accessible name now
+  comes from the visible `<span>Email</span>` label wrapping it, as it already did before the
+  attribute was ever read. Consumers must: nothing.
+
+- The engine's small conformance sweep closes its second half. Every bare decorative Lucide glyph
+  across the media, nav, login, and shell components now carries `aria-hidden="true"` directly on
+  the icon (30 lines, 33 tags: the sweep's own 26-line, 29-tag count plus four more of the same
+  standalone-glyph and icon-only-button shape the sweep's own criterion already covers, found on
+  re-grep and fixed alongside it), closing the population to zero. `ConceptList`'s four column
+  headers all carry `scope="col"`, with `aria-sort` left exactly where it already was, on the two
+  sortable columns. `CairnAdminShell` no longer injects a `<style>` tag into the host document
+  head to zero the body margin; the packaged admin sheet resets it itself instead, with a
+  `body:has([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])` rule that fires only
+  while an admin theme root is mounted. An earlier version of this fix put a compensating `-m-2
+  w-[calc(100%+1rem)]` on the shell's own drawer root instead, which assumed the host's ambient
+  body margin was exactly 8px and overhung by 8px on a host that already zeroed it (Tailwind
+  Preflight, say); the sheet-based reset holds at either starting margin and needed no
+  compensating utility on `CairnAdminShell`, `LoginPage`, or `ConfirmPage`. `cairn-admin.css`'s
+  reduced-motion rule now also matches the theme roots themselves, not only their descendants.
+  Consumers must: nothing.
+
+### Documentation
+
+- `docs/HISTORY.md` gains the polish-11b-i entry (the design system and the engine admin
+  surface), and `ROADMAP.md`'s polish sub-bullet closes the `ShareLinkPanel` busy-idiom ruling
+  and the command palette's own live region by name, files the bracketed fill-tone population
+  outside `check:custom-surface`'s reach to the Later tier with its measured count, and leaves
+  the `formatTimestamp` widening, the `createSectionAction` adoption, and the `OfficeList`/
+  `AdminTable` item open for the passes that ship them. Internal documentation only; no code
+  changed. Consumers must: nothing.
 
 ## 0.96.0
 

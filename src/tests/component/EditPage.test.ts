@@ -940,21 +940,25 @@ describe('EditPage', () => {
     await expect.poll(() => screen.container.textContent ?? '').not.toContain('image needs alt text');
   });
 
-  it('shows the Edited badge in the header when the live site lags the edits', async () => {
+  it('shows the Edited chip in the header on StatusChip\'s quiet register, never badge-warning', async () => {
     const screen = await render(EditPage, postProps({ pending: true, published: true }));
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-warning');
-    expect(badge?.textContent?.trim()).toBe('Edited');
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    expect(band.querySelector('.badge-warning')).toBeNull();
+    const chip = band.querySelector('.status-chip-quiet');
+    expect(chip?.textContent?.trim()).toBe('Edited');
   });
 
-  it('shows the New badge in the header for a pending new entry', async () => {
+  it('shows the New chip in the header for a pending new entry on StatusChip\'s quiet register, never badge-info', async () => {
     const screen = await render(EditPage, postProps({ pending: true, published: false }));
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-info');
-    expect(badge?.textContent?.trim()).toBe('New');
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    expect(band.querySelector('.badge-info')).toBeNull();
+    const chip = band.querySelector('.status-chip-quiet');
+    expect(chip?.textContent?.trim()).toBe('New');
   });
 
-  it('shows the Published badge when the live site matches', async () => {
+  it('shows the Published chip when the live site matches, on StatusChip\'s quiet register', async () => {
     const screen = await render(EditPage, postProps());
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .cairn-chip-quiet');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .status-chip-quiet');
     expect(badge?.textContent?.trim()).toBe('Published');
   });
 
@@ -1246,6 +1250,26 @@ describe('EditPage', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('****');
+  });
+
+  it('stops a consumed Ctrl+B from reaching a window listener, so the shell drawer never toggles', async () => {
+    // CairnAdminShell's own window keydown listener toggles the drawer on the same chord
+    // (admin-shell-sidebar.spec.ts covers that side); this proves the editor card consumes the
+    // chord before it bubbles there, rather than exercising the shell itself.
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
+    let reachedWindow = false;
+    const onWindowKeydown = () => (reachedWindow = true);
+    window.addEventListener('keydown', onWindowKeydown);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
+      card.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(reachedWindow).toBe(false);
+    } finally {
+      window.removeEventListener('keydown', onWindowKeydown);
+    }
   });
 
   // Edits the body through the registered format seam (an empty-selection bold wrap) and waits
@@ -1668,14 +1692,15 @@ describe('EditPage', () => {
     expect(band.textContent ?? '').not.toContain('2026-05-hello');
   });
 
-  it('stacks the Hidden badge beside the status badge for a hidden entry', async () => {
+  it('stacks the Hidden chip, on StatusChip\'s outline register, beside the quiet status chip for a hidden entry', async () => {
     const screen = await render(
       EditPage,
       postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
     );
     const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
-    expect(header.querySelector('.badge-neutral')?.textContent?.trim()).toBe('Hidden');
-    expect(header.querySelector('.cairn-chip-quiet')?.textContent?.trim()).toBe('Published');
+    expect(header.querySelector('.badge-neutral')).toBeNull();
+    expect(header.querySelector('.status-chip-outline')?.textContent?.trim()).toBe('Hidden');
+    expect(header.querySelector('.status-chip-quiet')?.textContent?.trim()).toBe('Published');
   });
 
   it('hosts the save-state indicator inside the header', async () => {
@@ -1753,11 +1778,13 @@ describe('EditPage', () => {
 
   it('renders no second header band in the page body', async () => {
     const screen = await render(EditPage, postProps({ pending: true }));
-    // The sticky glass header is gone: the page body (EditPage's own render) carries no <header>
-    // and no second copy of the lifecycle controls.
+    // The sticky glass header is gone: the page body (EditPage's own render) carries no <header>.
     const main = screen.container.querySelector('main')!;
     expect(main.querySelector('header')).toBeNull();
-    expect(main.querySelector('button[formaction="?/publish"]')).toBeNull();
+    // The bottom action bar's own Publish control also lives in the page body; at this default
+    // (wide) viewport it is the inert branch, so it carries no reachable duplicate of the band's.
+    const publish = main.querySelector<HTMLElement>('button[formaction="?/publish"]')!;
+    expect(publish.closest('[inert]')).not.toBeNull();
   });
 
   it('renders the feedback strip directly under the band', async () => {
@@ -2240,7 +2267,7 @@ describe('EditPage', () => {
     expect(text).toContain('Zen');
     expect(text).toContain('This sheet');
     expect(text).toContain('Command palette');
-    expect(text).toContain('Ctrl K (global)');
+    expect(text).toContain('Ctrl K (not while editing)');
     expect(text).toContain('Typing markdown always works');
     // The sheet renders the single source in full: every row from editor-shortcuts appears.
     for (const row of editorShortcuts) expect(text).toContain(row.label);
@@ -3507,7 +3534,7 @@ describe('EditPage', () => {
     });
 
     for (const width of [320, 390]) {
-      it(`renders the bottom action bar with Save and Publish at a 44px floor at ${width}px, and drops the band's own pair`, async () => {
+      it(`renders the bottom action bar with Save and Publish at a 44px floor at ${width}px, with the band's own pair present but inert`, async () => {
         await page.viewport(width, 700);
         const screen = await render(EditPage, postProps());
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
@@ -3524,18 +3551,19 @@ describe('EditPage', () => {
         for (const button of [publish, save]) {
           expect(button.getBoundingClientRect().height, `${button.textContent} under the 44px floor`).toBeGreaterThanOrEqual(44);
         }
-        // The band's own lifecycle pair is gone outright (not merely hidden): exactly one
-        // Save/Publish pair exists in the DOM at this width, the bottom bar's. The band's sr-only
-        // default submit also reads "Save" (it is the fallback for implicit Enter submission, always
-        // present regardless of width), so it is excluded here rather than mistaken for the band's
-        // own visible Save button.
+        // The band's own lifecycle pair still renders (both branches render unconditionally now),
+        // but it is `inert` at this width: it stays in the DOM but leaves the accessibility tree
+        // and role-based locators, so exactly one Save/Publish pair is reachable, the bottom
+        // bar's.
         const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
-        expect(band.querySelector('button[formaction="?/publish"]')).toBeNull();
-        expect(
-          Array.from(band.querySelectorAll('button')).some(
-            (b) => !b.classList.contains('sr-only') && b.textContent?.trim() === 'Save',
-          ),
-        ).toBe(false);
+        const bandPublish = band.querySelector<HTMLElement>('button[formaction="?/publish"]')!;
+        expect(bandPublish).not.toBeNull();
+        expect(bandPublish.closest('[inert]')).not.toBeNull();
+        const bandSave = Array.from(band.querySelectorAll<HTMLElement>('button')).find(
+          (b) => !b.classList.contains('sr-only') && b.textContent?.trim() === 'Save',
+        )!;
+        expect(bandSave).not.toBeUndefined();
+        expect(bandSave.closest('[inert]')).not.toBeNull();
       });
     }
 
@@ -3566,19 +3594,24 @@ describe('EditPage', () => {
           'button[type="submit"][form="cairn-edit-form"], #cairn-edit-form button[type="submit"]',
         ),
       );
-      // Two lifecycle submitters (Publish, Save) live in the bottom action bar at this width, so
-      // three total: the sr-only fallback plus that pair.
-      expect(owned.length).toBe(3);
+      // Both Save/Publish pairs render unconditionally now, so five total: the sr-only fallback,
+      // the band's own (inert) Publish and Save, then the action bar's own Publish and Save.
+      expect(owned.length).toBe(5);
       const fallback = owned[0];
       expect(fallback.hasAttribute('formaction')).toBe(false);
       expect(fallback.getAttribute('aria-hidden')).toBe('true');
       expect(fallback.classList.contains('sr-only')).toBe(true);
-      // The other two are the action bar's own Publish and Save, confirming the sr-only default
-      // precedes them in tree order (the actionbar sits after the form in the template; the band
-      // that carries the sr-only default renders ahead of the whole page body).
+      // The band's inert pair follows, confirming the sr-only default precedes every other
+      // lifecycle submitter in tree order (the band renders ahead of the whole page body).
+      const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+      expect(band.contains(owned[1])).toBe(true);
+      expect(band.contains(owned[2])).toBe(true);
+      expect(owned[1].closest('[inert]')).not.toBeNull();
+      expect(owned[2].closest('[inert]')).not.toBeNull();
+      // The action bar's own Publish and Save come last, and are the reachable pair at this width.
       const bar = screen.container.querySelector<HTMLElement>('[data-testid="cairn-edit-actionbar"]')!;
-      expect(bar.contains(owned[1])).toBe(true);
-      expect(bar.contains(owned[2])).toBe(true);
+      expect(bar.contains(owned[3])).toBe(true);
+      expect(bar.contains(owned[4])).toBe(true);
     });
 
     it('carries one status pill whose aria-label spells out the Published + Hidden + dirty triple', async () => {
@@ -3592,15 +3625,18 @@ describe('EditPage', () => {
       content.focus();
       await userEvent.keyboard('x');
       const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
-      // One pill total: a single .badge in the band, not the desktop's separate status-plus-Hidden
-      // pair, and the eye-off glyph rides inside it rather than a second badge.
+      // One chip total: a single .badge in the band, not the desktop's separate status-plus-Hidden
+      // pair. The eye-off glyph sits beside the chip inside the live-region wrapper, since
+      // StatusChip itself carries no icon slot.
       await expect.poll(() => band.querySelectorAll('.badge').length).toBe(1);
-      const pill = band.querySelector<HTMLElement>('.badge')!;
-      expect(pill.querySelector('svg')).not.toBeNull();
-      expect(pill.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
-      // A bare span defaults to the generic role, which ARIA-in-HTML drops aria-label from; the
-      // pill needs a non-generic role for its accessible name to actually reach assistive tech.
-      expect(pill.getAttribute('role')).toBe('status');
+      const wrapper = band.querySelector<HTMLElement>('[role="status"]')!;
+      expect(wrapper.querySelector('svg')).not.toBeNull();
+      expect(wrapper.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
+      // Read straight off the accessible-name computation, not the raw attribute: this confirms
+      // the composed label actually reaches assistive tech through the wrapper's role.
+      await expect
+        .element(screen.getByRole('status', { name: 'Published, hidden, unsaved changes' }))
+        .toBeInTheDocument();
     });
 
     for (const width of [320, 390]) {
@@ -3632,6 +3668,57 @@ describe('EditPage', () => {
         expect(dialog.open).toBe(true);
       });
     }
+  });
+
+  describe('the desk band first-paint composition', () => {
+    // Same rationale as the phone-desk composition suite above: the compiled sheet carries the
+    // real Tailwind cascade (the utilities-layer `flex` beating the base-layer `[hidden]`), so
+    // this is the only harness that can prove which branch actually paints at each width.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      await page.viewport(1280, 720);
+    });
+
+    it('reaches exactly one Save control and one Publish control at 390px, and it is the bottom bar\'s', async () => {
+      await page.viewport(390, 700);
+      const screen = await render(EditPage, postProps({ pending: true }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await expect.poll(() => screen.container.querySelector('[data-testid="cairn-edit-actionbar"]')).not.toBeNull();
+      const saveControls = screen.getByRole('button', { name: 'Save', exact: true }).all();
+      const publishControls = screen.getByRole('button', { name: 'Publish', exact: true }).all();
+      expect(saveControls.length).toBe(1);
+      expect(publishControls.length).toBe(1);
+      const bar = screen.container.querySelector<HTMLElement>('[data-testid="cairn-edit-actionbar"]')!;
+      expect(bar.contains(saveControls[0].element())).toBe(true);
+      expect(bar.contains(publishControls[0].element())).toBe(true);
+    });
+
+    it('reaches exactly one Save control and one Publish control at 1440px, and it is the band\'s', async () => {
+      await page.viewport(1440, 700);
+      const screen = await render(EditPage, postProps({ pending: true }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const saveControls = screen.getByRole('button', { name: 'Save', exact: true }).all();
+      const publishControls = screen.getByRole('button', { name: 'Publish', exact: true }).all();
+      expect(saveControls.length).toBe(1);
+      expect(publishControls.length).toBe(1);
+      const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+      expect(band.contains(saveControls[0].element())).toBe(true);
+      expect(band.contains(publishControls[0].element())).toBe(true);
+      // The bottom bar still renders at this width (both branches render unconditionally under
+      // the zen gate), marked inert so its own Save/Publish never appear in the role queries above.
+      const bar = screen.container.querySelector<HTMLElement>('[data-testid="cairn-edit-actionbar"]')!;
+      expect(bar.hasAttribute('inert')).toBe(true);
+    });
   });
 
   describe('guarded Figure control emphasis (audit finding 7)', () => {

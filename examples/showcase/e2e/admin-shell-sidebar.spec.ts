@@ -66,7 +66,7 @@ test('at mobile width, the drawer still opens on demand and auto-closes after a 
   const sidebar = page.locator('.drawer-side');
   await expect(sidebar).toBeHidden();
 
-  await page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]').click();
+  await page.getByRole('button', { name: 'Open menu' }).click();
   await expect(sidebar).toBeVisible();
 
   await sidebar.getByRole('link', { name: 'Library' }).click();
@@ -87,9 +87,7 @@ test('at 1440, a desk route persists the sidebar the same as an office route', a
   await expect(drawer).toHaveClass(/xl:drawer-open/);
   await expect(page.locator('.drawer-side')).toBeVisible();
   // The toggle stands in for the sidebar once it persists, so it hides rather than dangling beside it.
-  await expect(
-    page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]'),
-  ).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
 });
 
 test('at 768, a desk route recedes the sidebar behind the toggle, same as below lg on an office route', async ({
@@ -102,6 +100,6 @@ test('at 768, a desk route recedes the sidebar behind the toggle, same as below 
   const sidebar = page.locator('.drawer-side');
   await expect(sidebar).toBeHidden();
 
-  await page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]').click();
+  await page.getByRole('button', { name: 'Open menu' }).click();
   await expect(sidebar).toBeVisible();
 });

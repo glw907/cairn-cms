@@ -32,6 +32,7 @@ persistent "?" carries Markdown help).
   import ImageIcon from '@lucide/svelte/icons/image';
   import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+  import { StatusChip } from '../admin-toolkit/index.js';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
@@ -825,18 +826,12 @@ persistent "?" carries Markdown help).
   // main, whether or not it has a pending branch yet), Edited (a pending branch over a published
   // copy), and Published (main matches, nothing pending). `data.pending` alone cannot carry this:
   // a brand-new entry is `pending: false, published: false` and must still read New, not Published.
+  // All three render on StatusChip's quiet register, the same mapping ConceptList's own status
+  // column uses: the label text itself carries the distinguishing signal, not a fill color, so the
+  // desk band and the concept list speak one chip vocabulary instead of two.
   const status = $derived.by(() => {
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
-  });
-  // Edited and New are attention states and stay on the stock daisyUI badge-warning/badge-info
-  // fills; Published is a settled, put-away state and takes the quiet chip register instead of
-  // the retired stock ghost badge (the register itself is
-  // the second generation's, docs/internal/probes/2026-08-26-chip-registers-v2).
-  const statusBadge = $derived.by(() => {
-    if (status === 'Edited') return 'badge-warning';
-    if (status === 'New') return 'badge-info';
-    return 'cairn-chip-quiet';
   });
 
   // The below-sm compact band has room for exactly one status pill, never the
@@ -856,16 +851,14 @@ persistent "?" carries Markdown help).
   let actionsMenu = $state<HTMLUListElement | null>(null);
   let actionsOpen = $state(false);
 
-  // Tracks the sm breakpoint live (CairnAdminShell's matchesLg/matchesXl pattern): the
-  // phone composition (docs/internal/2026-07-15-design-arc-log.md) needs exclusive rendering, not
-  // a CSS-hidden duplicate, for any control whose accessible name would otherwise exist twice in
-  // the DOM at once (Save, Publish, the status cluster) outside a popover. A popover's own closed
-  // state hides its contents natively (the Details/theme-toggle fold already relies on that), but
-  // a fixed bottom action bar cannot be a popover and still read as always-visible, so its
-  // sibling-in-the-band pair must not also be in the DOM at the same time: role- and text-based
-  // test locators do not themselves filter by computed visibility, so two same-named live
-  // controls are ambiguous to a query regardless of which one CSS would show. Defaults false
-  // (today's desktop-shaped markup, matching SSR); the effect corrects it once mounted.
+  // Tracks the sm breakpoint live (CairnAdminShell's matchesLg/matchesXl pattern). Both the
+  // band's lifecycle pair and the bottom action bar render unconditionally at every width, so
+  // paint is governed by the responsive display utilities alone and the first paint on a phone
+  // is the narrow composition with no post-mount swap. `narrow` drives which branch is reachable:
+  // the inactive one carries `inert`, which removes it from the accessibility tree and from
+  // role-based locators regardless of which branch CSS happens to show, so exactly one Save and
+  // one Publish control is ever reachable. Defaults false (matching the wide composition's own
+  // rendering at first paint); the effect corrects it once mounted.
   let narrow = $state(false);
   $effect(() => {
     if (!window.matchMedia) return;
@@ -1281,15 +1274,19 @@ persistent "?" carries Markdown help).
     const fmt = formatForKeydown(e);
     if (fmt) {
       e.preventDefault();
+      e.stopPropagation();
       format(fmt);
     } else if (key === 'b') {
       e.preventDefault();
+      e.stopPropagation();
       format('bold');
     } else if (key === 'i') {
       e.preventDefault();
+      e.stopPropagation();
       format('italic');
     } else if (key === 'k') {
       e.preventDefault();
+      e.stopPropagation();
       webLinkDialog?.open();
     }
   }
@@ -1403,16 +1400,17 @@ persistent "?" carries Markdown help).
           <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
         </a>
         <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
-        <!-- `role="status"` gives this bare span a non-generic role so `aria-label` actually reaches
-             assistive tech: ARIA-in-HTML drops aria-label on a plain span's default `generic` role,
-             and the badge/status-dot markup below has no other element to carry the accessible
-             name. `status` is also the right semantics here (a live summary of transient document
-             state), unlike StatusChip's own sr-only-legend pattern, which fits a self-explanatory
-             visible label plus optional clarifying text rather than a name that must fully replace
-             three icon-only signals at once. -->
-        <span class="badge badge-sm gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
+        <!-- The chip is now the toolkit's own StatusChip, which publishes no `role` and no
+             `aria-label` prop, so both live on this wrapping span instead. `role="status"` gives
+             the wrapper a non-generic role so `aria-label` actually reaches assistive tech:
+             ARIA-in-HTML drops aria-label on a plain span's default `generic` role, and nothing
+             else here carries the accessible name. `status` is also the right semantics (a live
+             summary of transient document state), unlike StatusChip's own sr-only-legend pattern,
+             which fits a self-explanatory visible label plus optional clarifying text rather than
+             a name that must fully replace three icon-only signals at once. -->
+        <span class="inline-flex shrink-0 items-center gap-1" role="status" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
-          {status}
+          <StatusChip label={status} />
         </span>
         {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
       </div>
@@ -1420,9 +1418,9 @@ persistent "?" carries Markdown help).
       <!-- The document status, fenced off by a hairline on its left. sm and up only (see the
            `{#if narrow}` branch above for the below-sm compact pill this replaces). -->
       <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
-        <span class="badge badge-sm shrink-0 {statusBadge}">{status}</span>
+        <StatusChip label={status} />
         {#if data.frontmatter.draft === true}
-          <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
+          <StatusChip label="Hidden" register="outline" />
         {/if}
         <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
              squashes the transition for editors who asked for that. -->
@@ -1557,14 +1555,24 @@ persistent "?" carries Markdown help).
         </li>
       </ul>
 
-      {#if !narrow}
-      <!-- The lifecycle pair, sm and up only: this composition moves Save and Publish out of the band
-           below sm, onto the fixed bottom action bar near the end of this component's template
-           (both buttons ride the same form="cairn-edit-form" this pair does, so the guarded-Publish
-           pattern is identical). An `{#if}`, not a CSS-hidden duplicate: two live Save/Publish
-           controls with the same accessible name would be ambiguous regardless of which one CSS
-           hides, so exactly one pair exists in the DOM at a time. -->
-      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+      <!-- The lifecycle pair, sm and up only: this composition moves Save and Publish out of the
+           band below sm, onto the fixed bottom action bar near the end of this component's
+           template (both buttons ride the same form="cairn-edit-form" this pair does, so the
+           guarded-Publish pattern is identical). Both branches render unconditionally, so paint
+           at every width is a first-paint CSS decision (max-sm:hidden here, its sm:hidden
+           counterpart on the bottom bar) rather than a post-mount swap. `hidden` states the
+           intent for a reader of the markup, but the admin sheet compiles with no Preflight
+           (scripts/build/admin-css.input.css imports only tailwindcss/theme.css and
+           tailwindcss/utilities.css), so the shipped dist/components/cairn-admin.css carries no
+           [hidden] rule at all and hidden does not itself compute to display: none here; `inert`
+           is what actually removes this branch from the accessibility tree and from role-based
+           test locators when `narrow`, independently of computed display, so exactly one live
+           Save/Publish pair is ever reachable regardless of which branch CSS happens to show. -->
+      <div
+        class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:hidden"
+        hidden={narrow}
+        inert={narrow}
+      >
         <!-- Publish always renders (the grounding survey favors permanent visibility over hiding
              the control until a draft exists). Outline keeps Save the single solid primary action;
              Publish reads as its peer. With nothing new to publish it guards rather than hides,
@@ -1598,7 +1606,6 @@ persistent "?" carries Markdown help).
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
       </div>
-      {/if}
     </div>
   </div>
 {/snippet}
@@ -2288,22 +2295,27 @@ persistent "?" carries Markdown help).
      the one-handed dead zone) for a bar fixed to the bottom of the visual viewport, each button at
      least 44px tall (min-h-11). Both ride form="cairn-edit-form" the way the band's own pair does
      (see the desk snippet above), including the identical guarded-Publish pattern and reason
-     (publishButton binds here too, so the Ctrl+Shift+S shortcut's requestSubmit finds whichever
-     of the two Publish buttons is actually mounted). Gated on the live `narrow` match, not CSS,
-     the same reasoning as the band's own pair: exactly one of the two Save/Publish pairs exists in
-     the DOM at a time, so a role- or text-based test locator, and a real screen reader, never sees
-     two controls sharing one accessible name. The sr-only default submit in the band always
-     precedes this bar in tree order (the band renders ahead of this form-external bar) and the
-     band's own pair never coexists with this one, so Enter-in-a-field keeps saving rather than
-     publishing either way. The bar's own vertical padding plus env(safe-area-inset-bottom) keeps
-     it off the physical screen edge (Geoff's note on the mockup: "hard-smashed against the
-     bottom"); staying above an open keyboard depends on the interactive-widget viewport hint
-     above. Hidden under zen with the rest of the chrome, the same gate the band and the footer
-     strip use. -->
-{#if !prefs.zen && narrow}
+     (publishButton binds here too; both Publish buttons carry the same formaction, so it makes
+     no difference which one a `bind:this` on two always-mounted elements lands on). Both branches
+     render unconditionally now, so which one is reachable is a `narrow`-driven `inert`, not a
+     `{#if}`: `inert` removes this branch from the accessibility tree and from role-based test
+     locators when not narrow, independently of computed display, so a role- or text-based test
+     locator, and a real screen reader, never sees two controls sharing one accessible name. The
+     sr-only default submit in the band always precedes this bar in tree order (the band renders
+     ahead of this form-external bar), so Enter-in-a-field keeps saving rather than publishing
+     either way. The bar's own vertical padding plus env(safe-area-inset-bottom) keeps it off the
+     physical screen edge (Geoff's note on the mockup: "hard-smashed against the bottom"); staying
+     above an open keyboard depends on the interactive-widget viewport hint above. The `{#if}`
+     here gates only zen, which drops the whole chrome (topbar, sidebar, this bar) at every width
+     per the design system's context model, the same gate the band and the footer strip use;
+     narrowing the composition below sm stays an attribute, not a second condition on this gate,
+     so a phone under zen never gets this bar back through a stale-condition gap. -->
+{#if !prefs.zen}
   <div
     data-testid="cairn-edit-actionbar"
-    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:hidden"
+    hidden={!narrow}
+    inert={!narrow}
   >
     <button
       bind:this={publishButton}

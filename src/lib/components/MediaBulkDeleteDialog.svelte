@@ -178,7 +178,7 @@ moment so a background re-render never shifts the dry-run.
            it deletes, not now). -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          <Trash2Icon class="h-5 w-5" />
+          <Trash2Icon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete {bulkHashes.length} selected {bulkHashes.length === 1 ? 'image' : 'images'}?</h2>
@@ -272,7 +272,7 @@ moment so a background re-render never shifts the dry-run.
            region is role=status (role=alert is reserved for a post-action failure). No review-time tick. -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          <Trash2Icon class="h-5 w-5" />
+          <Trash2Icon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Deleting images</h2>
@@ -292,7 +292,7 @@ moment so a background re-render never shifts the dry-run.
            recheck). The Done action re-reads the load behind the dialog. -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-content/[0.07] text-muted" aria-hidden="true">
-          <CheckIcon class="h-5 w-5" />
+          <CheckIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 bind:this={bulkSummaryTitle} tabindex="-1" id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Done. {res.deleted.length} deleted{res.skipped.length > 0 ? `, ${res.skipped.length} skipped` : ''}</h2>
@@ -366,7 +366,7 @@ moment so a background re-render never shifts the dry-run.
            is the one place role="alert" belongs (an action was attempted and failed). -->
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
-          <TriangleAlertIcon class="h-5 w-5" />
+          <TriangleAlertIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)]">The delete did not run</h2>

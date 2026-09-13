@@ -194,7 +194,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
     <div class="modal-box max-w-xl">
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-primary/10 text-primary" aria-hidden="true">
-          <MegaphoneIcon class="h-5 w-5" />
+          <MegaphoneIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-alt-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
@@ -231,7 +231,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
               <div class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
                   <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-primary/10 text-primary" aria-hidden="true">
-                    <CheckIcon class="h-3.5 w-3.5" />
+                    <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="type-meta font-semibold">Will fill the gap</div>
@@ -288,7 +288,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
               <div data-cairn-alt-custom class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
                   <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-[var(--cairn-warning-ink)]/10 cairn-text-warning" aria-hidden="true">
-                    <MegaphoneIcon class="h-3.5 w-3.5" />
+                    <MegaphoneIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="type-meta font-semibold">Already has custom alt</div>
@@ -347,7 +347,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
               <div data-cairn-alt-skip class="overflow-hidden card-shell opacity-90">
                 <div class="flex items-center gap-2.5 p-3">
                   <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-base-content/[0.07] text-muted" aria-hidden="true">
-                    <ImageOffIcon class="h-3.5 w-3.5" />
+                    <ImageOffIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="type-meta font-semibold">Marked decorative, skipped</div>

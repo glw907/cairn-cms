@@ -534,3 +534,260 @@ predecessor in this pass had captured a pass-wide before set). After set at
 - The six capture-matrix surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`,
   `signups`) touch no code this task changes: `magick compare -metric AE` is 0 on every
   before/after tile pair.
+
+## Polish-11b-i
+
+### Task 2: the shell's keyboard blockers
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`; the other five render no
+code this task changes. Before set at `~/.cache/cairn-polish-11b-i/task-2/before/`, captured fresh
+at this task's parent commit (no predecessor in this pass had captured a pass-wide before set, and
+Task 1 was doc-only). After set at `~/.cache/cairn-polish-11b-i/task-2/after/`.
+
+- INTENDED MOVES: none. The Open menu opener's markup keeps the same `btn btn-square btn-ghost`
+  classes and the same `MenuIcon` child it had before; a fix round changed the element itself
+  from a `<label role="button">` to a real `<button type="button">` (the conductor's ruling: the
+  spec-untouched clause protected scope, not the element type), which
+  `examples/showcase/e2e/admin-shell-sidebar.spec.ts` now locates by
+  `getByRole('button', { name: 'Open menu' })`. None of that changes a rendered pixel, since a
+  `<button>` with the same classes renders identically to the prior `<label>` and the drawer is
+  closed by default on every captured width and scheme.
+- MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
+  ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
+  regeneration, so no baseline needed moving.
+- TILE DIFF: `magick compare -metric AE` is 0 on all ten `signups` tiles (every width, both
+  schemes) between `task-2/before/tiles/` and `task-2/after/tiles/`. The other five capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) also show AE 0 on every tile;
+  their differing manifest sha256 hashes are PNG re-encoding only, the same pattern B2 and
+  polish-11a recorded, not a pixel change.
+
+### Task 3: the palette's trigger, its keying, and its names
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`, and the palette dialog is
+closed in every captured state, so the trigger's `aria-haspopup`, the dialog and input's distinct
+`aria-label`s, and the `{#each}` key change touch no visible pixel. Before set at
+`~/.cache/cairn-polish-11b-i/task-3/before/`, captured fresh at this task's parent commit. After
+set at `~/.cache/cairn-polish-11b-i/task-3/after/`.
+
+- INTENDED MOVES: none. Every change is an attribute or a keyed-each expression on an element that
+  renders the same way whether the palette dialog is open or closed, and the dialog is closed in
+  every captured state.
+- MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
+  ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
+  regeneration, so no baseline needed moving.
+- TILE DIFF: `magick compare -metric AE` is 0 on all ten `signups` tiles (every width, both
+  schemes) between `task-3/before/tiles/` and `task-3/after/tiles/`. The other five capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) also show AE 0 on every tile;
+  their differing manifest sha256 hashes are PNG re-encoding only, the same pattern B2, polish-11a,
+  and this pass's Task 2 recorded, not a pixel change.
+
+### Task 4: the command palette as a combobox
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`, and the palette dialog is
+closed in every captured state, so the combobox ARIA, the listbox roles, the keyboard model, and the
+two live regions all sit inside `dialog:not([open])`, which renders nothing. Before set at
+`~/.cache/cairn-polish-11b-i/task-4/before/`, captured fresh at this task's parent commit. After set
+at `~/.cache/cairn-polish-11b-i/task-4/after/`. **A first `after` capture (same commit) showed a
+nonzero `AE` on `signups`'s top tile at every width and scheme, and a much smaller nonzero `AE` on
+unrelated public surfaces' dark-theme top tile (`archive2`, `article`): a fresh recapture at the
+same commit matched `before` at `AE` 0 on every one of those tiles, so the first `after` run was a
+capture-time flake (recorded here rather than silently discarded), and the `after` set this row's
+figures come from is the second, verified capture.**
+
+- INTENDED MOVES: none. Every change lives inside the palette dialog's markup, closed in every
+  captured state.
+- MOVED BASELINES: none. The unmodified `e2e/admin-visual.spec.ts` run (28 tests, including all
+  ten `signups-{light,dark}-{320,390,768,1440,2560}` cases) passed in full before any
+  regeneration, so no baseline needed moving.
+- TILE DIFF: `magick compare -metric AE` is 0 on all 253 tiles across all six capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`, every width and
+  scheme) between `task-4/before/tiles/` and the verified `task-4/after/tiles/`.
+
+### Task 5: the pressed cue, the bottom-bar scroll margin, and the dropzone focus indicator
+
+`signups` is the only capture-matrix surface reaching `cairn-admin.css`, and this task's three
+changes (the segmented-control ring mix, the scroll-margin rule's added property, and the dropzone
+trigger's focus utilities) touch no element the `signups` route renders. Before set at
+`~/.cache/cairn-polish-11b-i/task-5/before/`: rendered from the parent commit's built `dist/` while
+the worktree already carried this task's source edits, so the stale `dist/` (not yet rebuilt from
+those edits) is what makes it a true before render. After set at
+`~/.cache/cairn-polish-11b-i/task-5/after/`.
+
+The plan named `admin-edit-page-{light,dark,1440,768}`, `admin-media-{light,dark}`, and
+`admin-media-detail-{light,dark}` (the `e2e/admin-visual.spec.ts` snapshots, a different set from
+the six-surface capture matrix above) as the expected movers for the ring raise and the dropzone
+fix. **A first `CI=1 npx playwright test e2e/admin-visual.spec.ts` run against a not-yet-rebuilt
+`dist/` (invoked directly rather than through `npm run test:e2e`'s `pretest:e2e` hook) showed 28 of
+28 passing with zero diffs, which would have been a false "nothing moves" result: the showcase's
+`file:../..` dependency resolves straight to this repo's `dist/`, so a check that skips the
+package rebuild proves the PRIOR commit's engine, not this task's. The full gate's own
+`npm run package` head step rebuilt `dist/`, and the same suite then showed four real failures;
+the capture-matrix `before`/`after` pair below was also recaptured against the rebuilt `dist/` for
+the same reason.**
+
+- INTENDED MOVES: none on the six-surface capture matrix, since `signups` is the only one reaching
+  `cairn-admin.css` and none of this task's three changes touch an element `signups` renders.
+  `admin-edit-page-{light,dark,1440,768}` on the `e2e/admin-visual.spec.ts` snapshots (the ring
+  raise, visible in the footer's Prose/Wide segmented control).
+- MOVED BASELINES: `admin-edit-page-{light,dark,1440,768}`, produced by `CI=1 npx playwright test
+  e2e/admin-visual.spec.ts` against the rebuilt `dist/` (4 of 28 failed, all four
+  `admin-edit-page-*`), then regenerated locally with `CI=1 npx playwright test
+  e2e/admin-visual.spec.ts --update-snapshots=changed`, which rewrote exactly those four files and
+  none other. `admin-media-{light,dark}` and `admin-media-detail-{light,dark}` did not move: the
+  ring's opacity change (20% to 55% of `base-content`) is a single 1px inset hairline around the
+  media library's density toggle, small enough in absolute pixel count to stay under the suite's
+  `maxDiffPixels: 120` tolerance on a full-page screenshot, and the dropzone focus utilities only
+  paint on real `:focus-visible`, which no visual-suite test triggers (the suite screenshots
+  resting state). The `MediaHeroField` dropzone additionally never renders on either
+  `admin-media-detail-*` baseline: that panel is the media library's own asset-detail slide-over
+  (`CairnMediaLibrary`), not `DetailsPanel`'s hero-field host, so no baseline in the family renders
+  the dropzone at all, resting or focused.
+- TILE DIFF: `magick compare -metric AE` is 0 on all 253 tiles across all six capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`, every width and
+  scheme) between `task-5/before/tiles/` and the rebuilt-`dist/` `task-5/after/tiles/`.
+- READ ME: the two density-toggle crops (`density-toggle-{light,dark}-415x276-100x40.png`, cut
+  `100x40+415+276` from `admin-media-{light,dark}-linux.png`) come from an unmoved, pre-change
+  baseline and therefore show the old 20 percent ring, not the raised one; they do not carry the
+  A3 verdict. The A3 verdict rests on the footer-segmented pair
+  (`footer-segmented-{light,dark}-680x708-240x40.png`, cut `240x40+680+708` from the regenerated
+  `admin-edit-page-{light,dark}-linux.png`), which shows the raised ring in both color schemes. The
+  A16 verdict is proven separately, by `MediaHeroField.test.ts`'s real-browser computed-style
+  assertion (a 2px solid `--color-primary` outline on `:focus-visible`), per the conductor's ruling
+  that a resting screenshot cannot show a `:focus-visible` state.
+
+### Task 7: Chip vocabulary on the desk band
+
+Not a capture-matrix task: `EditPage.svelte` is the only file this task touches, and no
+capture-matrix surface (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`) renders
+the edit page. The evidence is the `e2e/admin-visual.spec.ts` snapshots the desk band's chip
+markup change reaches, not the six-surface capture matrix.
+
+- INTENDED MOVES: `admin-edit-page-light` (sm and up, desktop cluster: the Published pill moves
+  from a raw daisyUI `badge`/`cairn-chip-quiet` fill to `StatusChip`'s own quiet-register markup) /
+  `admin-edit-page-dark` (same reason, dark scheme) / `admin-edit-page-1440` (same reason, 1440px
+  sidebar-present width) / `admin-edit-page-768` (same reason, 768px receded width).
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this task's source edits (the direct-invocation gap Task
+  5's own record names: a not-yet-rebuilt `dist/` shows a false all-pass), produced exactly 4
+  failures: `admin-edit-page — light`, `admin-edit-page — dark`,
+  `admin-edit-page — 1440 (sidebar present)`, `admin-edit-page — 768 (receded)`. `CI=1 npx
+  playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote exactly
+  `admin-edit-page-{light,dark,1440,768}-linux.png` and none other (24 of 28 tests passed
+  unchanged both times).
+- TILE DIFF: not applicable. This task reaches no capture-matrix surface, so there is no
+  before/after tile pair to diff; `git status` on the six-surface capture directories shows no
+  file this task's diff touches.
+- READ ME: four band crops, each the top 1280 (or 1440/768) x96 strip of its regenerated PNG,
+  cut `<width>x96+0+0` from the linked baseline, showing the Published chip in its new
+  quiet-register shape: `admin-edit-page-light-band.png`, `admin-edit-page-dark-band.png`,
+  `admin-edit-page-1440-band.png`, `admin-edit-page-768-band.png`
+  (`~/.cache/cairn-polish-11b-i/task-7/after/crops/`). Two further crops prove the Hidden chip's
+  outline-register hairline in its real desk-band ancestor (a `navbar bg-base-100` wrapping the
+  hairline-fenced status cluster div, neither setting its own text color, composed from the built
+  admin CSS and the same `cairn-chip-outline`/`cairn-chip-quiet` classes `StatusChip`'s own scoped
+  styles declare for parity): `hidden-chip-hairline-cairn-admin.png` (light, measured 3.586:1) and
+  `hidden-chip-hairline-cairn-admin-dark.png` (dark, measured 4.959:1), both
+  `~/.cache/cairn-polish-11b-i/task-7/after/crops/`, both clearing the 3:1 non-text border-contrast
+  floor.
+
+### Task 8: the desk band's first-paint composition
+
+Not a capture-matrix task: `EditPage.svelte` is the only file this task touches, and no
+capture-matrix surface renders the edit page. All four of `e2e/admin-visual.spec.ts`'s
+`admin-edit-page-*` baselines are captured at widths of 768px and up, so none of them exercises the
+narrow (below-sm) bottom action bar branch this task also touches; the evidence for that branch is
+`EditPage.test.ts`'s own viewport-pinned component tests, not a visual baseline.
+
+- INTENDED MOVES: none. The plan named `admin-edit-page-{light,dark,1440,768}` as candidates, on
+  the theory that swapping an `{#if}` for an always-rendered `inert`/`hidden` pair could shift
+  layout; the unmodified suite run below shows it does not, at any of the four baseline widths.
+- MOVED BASELINES: none. An unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run
+  after `npm run package` rebuilt `dist/` from this task's source edits, passed all 28 of 28 tests
+  with zero diffs on the first run, so no regeneration step ran. At every one of the four baseline
+  widths (all sm and up), the band's lifecycle pair was already the reachable branch before this
+  task and stays the reachable branch after it; the diff only adds `hidden`/`inert` attributes and
+  a `max-sm:hidden`/`sm:hidden` utility pair, none of which changes computed layout at these
+  widths, so the render is pixel-identical. `admin-edit-page-768` shows the same composition it
+  showed before: 768px is still sm and up, so the band's own Publish/Save pair renders there, not
+  the bottom action bar.
+- TILE DIFF: not applicable. This task reaches no capture-matrix surface, so there is no
+  before/after tile pair to diff; `git status` on the six-surface capture directories shows no
+  file this task's diff touches.
+- READ ME: four band crops, the top `<width>x100+0+0` strip of each unmoved baseline, confirming
+  the Publish/Save pair renders unchanged at every captured width:
+  `admin-edit-page-light-band.png`, `admin-edit-page-dark-band.png`,
+  `admin-edit-page-1440-band.png`, `admin-edit-page-768-band.png`
+  (`~/.cache/cairn-polish-11b-i/task-8/after/crops/`).
+
+### Task 9: The login page's tokens and its two small conformance items
+
+Not a capture-matrix task: `LoginPage.svelte` is the only file this task touches, and no
+capture-matrix surface (`home`, `article`, `styleguide`, `archive2`, `error404`, `signups`) renders
+it. `admin-visual.spec.ts` baselines `/admin/login` in its form state only
+(`auth-login-{light,dark}`); the confirmation block this task's color and underline changes reach is
+unbaselined, so its evidence is the by-hand capture named below.
+
+- INTENDED MOVES: none. The plan named `auth-login-{light,dark}` as candidates, on the theory that
+  the fill-tone rewrite (a bracketed `text-[var(--color-success)]` plus an inline `style` becoming
+  `bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success`) or the escape-hatch
+  underline could shift the form-state screenshot; the unmodified suite run below shows neither
+  reaches the form state, since both changed elements render only in the confirmation branch the
+  form-state baseline never exercises.
+- MOVED BASELINES: none. An unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run
+  after `npm run package` rebuilt `dist/` from this task's source edits, passed all 28 of 28 tests
+  with zero diffs, so no regeneration step ran.
+- TILE DIFF: not applicable. This task reaches no capture-matrix surface, so there is no
+  before/after tile pair to diff; `git status` shows no file changed under
+  `examples/showcase/e2e/*.spec.ts-snapshots/`.
+- READ ME: the two by-hand confirmation-state captures, `/admin/login` submitted once against the
+  dev backend at 390x800, cookie-selected theme with matching `emulateMedia`, `fullPage: true`:
+  `confirm-light.png` and `confirm-dark.png`
+  (`~/.cache/cairn-polish-11b-i/task-9/`). Both show the mark's green fill, ring, and icon reading
+  clearly as a success mark against the panel background in its own scheme.
+
+### Task 10: Small conformance, the second half
+
+`signups` is the only capture-matrix surface reaching `CairnAdminShell`, and this task's body-margin
+rescope is its own named paint risk. The task landed in two rounds: the first (`a5938e99`) put a
+compensating `-m-2 w-[calc(100%+1rem)]` on the shell's `.drawer` root and a matching `-m-2` on
+`LoginPage`'s and `ConfirmPage`'s own root wrapper, in place of the removed `<svelte:head>`
+body-margin injection. A conductor ruling found that technique host-margin-dependent (it hard-codes
+an assumed 8px ambient body margin, which overhangs on a host that already zeroes it), so the
+second round replaced it with an idempotent `body:has([data-theme=...]) { margin: 0; }` reset
+carried in the packaged admin sheet itself (`scripts/build/build-admin-css.mjs`), removing the
+compensating utilities from all three components entirely. Before set at
+`~/.cache/cairn-polish-11b-i/task-10/before/`, captured fresh at this task's parent commit (no
+predecessor captured a pass-wide before set). Round 1's after set is
+`~/.cache/cairn-polish-11b-i/task-10/after/`; round 2's after set, captured against the sheet-based
+fix, is `~/.cache/cairn-polish-11b-i/task-10-round2/after/` (`signups` only, `--only signups`).
+
+- INTENDED MOVES: none. The unmodified admin-visual suite passed all 28 of 28 tests against both
+  rounds' builds, so no baseline moved either time.
+- MOVED BASELINES: none, matching INTENDED MOVES.
+- TILE DIFF: `magick compare -metric AE` is 0 on every tile of the five non-admin capture-matrix
+  surfaces (`home`, `article`, `styleguide`, `archive2`, `error404`) in both rounds, confirming the
+  change stays scoped to the admin tree. On `signups`, round 2's `full/` captures are byte-identical
+  to round 1's (`magick compare -metric AE` is exactly `0` on all ten `signups-{light,dark}-
+  {320,390,768,1440,2560}.png` pairs): the showcase host carries no Preflight, so it sits in the one
+  state (an unreset ambient body margin) both techniques already handled the same way, and the
+  ruling's actual target, a host that already zeroes body margin, has no representative in this
+  capture matrix. Diffed against the ORIGINAL before set, AE is nonzero on every `signups` tile in
+  both rounds (round 2: `320` 1940.99 light / 13807.9 dark, `390` 1952.15 / 13818.5, `768` 1106.75 /
+  12719.1, `1440` 2657.83 / 14432.7, `2560` 2657.69 / 14432.5 pixels of AE, identical to round 1's
+  own figures). Two measured, non-defect causes, not a "sub-pixel rendering shift" from CSS
+  arithmetic: (1) direct pixel sampling at `1440x800` finds the before capture carries a genuine
+  16px white scrollbar-gutter reservation at the right edge (`x=1424` through `x=1439`, sampled at
+  `y=400`, `#FFFFFF`), which the after capture no longer shows (the page's own `#F6F3EF` background
+  fills that strip instead): the shell's own load-bearing comment already named this exact 16px of
+  permanent vertical overscroll, and this round closes it outright rather than leaving it reduced.
+  Reclaiming that reserved gutter widens the whole page's available layout width by the same amount,
+  which is what the uniform sub-pixel text- and control-edge doubling `AE` measures across the page
+  at every width; nothing moves as a layout break. (2) At 320 (the narrowest width, where the
+  sidebar collapses to the mobile overlay and there is no persistent drawer), the freed width
+  reflows the topbar: the search pill's truncated label grows from `S` to `S...` (confirmed by a
+  side-by-side crop of the topbar row, before/after, both captures). Crops with geometry, signups at
+  1440 both schemes, before and after: `~/.cache/cairn-polish-11b-i/task-10-round2/crops/signups-
+  {light,dark}-1440-{before,after}-{left-260x400+0+0,right-260x400+1180+0}.png` (eight files: two
+  regions, two schemes, two states). Both measured causes fall under Playwright's own snapshot
+  tolerance, which is why the unmodified admin-visual suite passed with zero diffs at every one of
+  the ten `signups` cases even though `AE` against the original is nonzero throughout.

@@ -252,7 +252,21 @@ discriminant, not the fields, gates the chrome).
     };
   });
 
+  // True for an input, a textarea, a select, an element with isContentEditable, or an element
+  // inside one. CodeMirror's editing surface is a contenteditable div, so this is what lets
+  // Ctrl+K there open the Web link dialog (EditPage's own card handler) rather than stacking the
+  // command palette on top of it, even for a chord a handler forgot to stopPropagate.
+  function isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false;
+    if (target instanceof HTMLElement && target.isContentEditable) return true;
+    return target.closest('input, textarea, select, [contenteditable="true"]') !== null;
+  }
+
   function onKeydown(e: KeyboardEvent) {
+    // Yields whenever a descendant already consumed the chord (defaultPrevented) or the event
+    // originates inside an editable surface, so the shell never fires alongside a handler closer
+    // to the focus, and never fires from an editable target that failed to prevent.
+    if (e.defaultPrevented || isEditableTarget(e.target)) return;
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       drawerOpen = !drawerOpen;
@@ -332,6 +346,21 @@ discriminant, not the fields, gates the chrome).
   let paletteDialog = $state<HTMLDialogElement>();
   let paletteList = $state<HTMLUListElement>();
   let paletteQuery = $state('');
+  // The active option within paletteResults, or -1 for none active yet: the combobox pattern
+  // MediaPicker also carries (aria-activedescendant on the input, a roving descendant rather than
+  // a roving tabindex, so focus never leaves the input).
+  let paletteActiveIndex = $state(-1);
+
+  // A stable id base so the listbox and each option carry unique ids the combobox can point at.
+  // $props.id() is Svelte's deterministic, hydration-stable id source, unlike a Math.random() base
+  // that would mismatch across hydration.
+  const paletteUid = $props.id();
+  const paletteListboxId = `cairn-shell-palette-${paletteUid}-listbox`;
+
+  /** The per-option id, used by aria-activedescendant and the active-row narration. */
+  function paletteOptionId(i: number): string {
+    return `cairn-shell-palette-${paletteUid}-opt-${i}`;
+  }
 
   // The site-wide publish action. The trigger and its confirm render only while entries are pending;
   // the count streams as a deferred promise, so the topbar resolves it through an `{#await}` block
@@ -380,9 +409,31 @@ discriminant, not the fields, gates the chrome).
     paletteCommands.filter((c) => c.label.toLowerCase().includes(paletteQuery.trim().toLowerCase())),
   );
 
+  // Keep the active index in range as paletteResults narrows; a filter that drops the active row
+  // clears the active descendant rather than pointing at a gone option (MediaPicker's own rule).
+  $effect(() => {
+    if (paletteActiveIndex >= paletteResults.length) {
+      paletteActiveIndex = paletteResults.length === 0 ? -1 : paletteResults.length - 1;
+    }
+  });
+
+  const paletteActiveCmd = $derived(
+    paletteActiveIndex >= 0 ? (paletteResults[paletteActiveIndex] ?? null) : null,
+  );
+  const paletteActiveDescendant = $derived(
+    paletteActiveCmd ? paletteOptionId(paletteActiveIndex) : undefined,
+  );
+  // The active-row narration text, kept in its own live region so it never clobbers the count.
+  const paletteActiveNarration = $derived(
+    paletteActiveCmd
+      ? `${paletteActiveCmd.label}, ${paletteActiveIndex + 1} of ${paletteResults.length}`
+      : '',
+  );
+
   function openPalette() {
     if (paletteDialog?.open) return; // showModal throws on an already-open dialog
     paletteQuery = '';
+    paletteActiveIndex = -1;
     paletteDialog?.showModal();
   }
   // An action command (theme toggle). Link commands are real <a> elements that navigate on click, so
@@ -391,9 +442,35 @@ discriminant, not the fields, gates the chrome).
     paletteDialog?.close();
     cmd.action?.();
   }
+  // Enter activates the active option; with none active (arrived by typing alone) it keeps the
+  // prior behavior of taking the first result, so a type-and-Enter user loses nothing.
   function submitPalette() {
-    (paletteList?.querySelector('a, button') as HTMLElement | null)?.click();
+    const options = paletteList?.querySelectorAll<HTMLElement>('a, button') ?? [];
+    const target = paletteActiveIndex >= 0 ? options[paletteActiveIndex] : options[0];
+    target?.click();
   }
+  function onPaletteInputKeydown(e: KeyboardEvent) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (paletteResults.length === 0) return;
+      paletteActiveIndex = Math.min(paletteActiveIndex + 1, paletteResults.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (paletteResults.length === 0) return;
+      paletteActiveIndex = Math.max(paletteActiveIndex - 1, 0);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      submitPalette();
+    }
+    // Escape is handled by the host dialog (its native cancel dismisses it); let it bubble.
+  }
+  // Arrowing can move the active option past the visible fold (the listbox scrolls, the input does
+  // not), so the highlighted row needs to follow into view itself; 'nearest' avoids jumping the
+  // whole dialog when the option is already visible.
+  $effect(() => {
+    if (paletteActiveIndex < 0) return;
+    document.getElementById(paletteOptionId(paletteActiveIndex))?.scrollIntoView({ block: 'nearest' });
+  });
 
   interface Crumb {
     label: string;
@@ -545,12 +622,6 @@ discriminant, not the fields, gates the chrome).
 <svelte:head>
   <title>{pageTitle} · {data.siteName}</title>
   <link rel="icon" href={cairnFaviconHref} />
-  <!-- The UA's default 8px body margin misaligns the shell when the host never resets it: the
-       fixed sidebar pins to the true viewport while the flowing content offsets by the margin,
-       which opens a visible seam on both axes and adds 16px of permanent scroll under the
-       min-h-screen drawer. Zeroing it here scopes the reset to the admin's mount lifetime, so
-       the host site's own elements stay untouched (the no-Preflight rule). -->
-  {@html '<style>body { margin: 0; }</style>'}
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />
@@ -582,15 +653,28 @@ discriminant, not the fields, gates the chrome).
        margin gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll.
        Fixed positioning is anchored to the viewport outright, the same mechanism the mobile overlay
        already uses, so it carries no such drift and needs no document-level change. -->
+  <!-- The seam this closes: a host that omits Preflight leaves the UA's default 8px body margin in
+       place, so this box's own flowing top-left edge used to sit 8px inside the true viewport while
+       the fixed sidebar above pinned flush to it, and the min-h-screen height plus the ambient 16px
+       vertical margin added a permanent 16px of scroll past the true viewport bottom. The packaged
+       admin sheet resets the real host body margin to zero itself (cairn-admin.css's build, guarded
+       to fire only while an admin theme root is mounted), so this box needs no compensating margin
+       of its own, and the fix holds regardless of whether the host's ambient body margin was 8px or
+       already 0 (a host that runs Tailwind Preflight, say): no negative margin here can overshoot
+       hard-coding a host default cairn does not get to assume. A host's own unlayered author rule
+       on body margin still wins over this base-layer reset, which is the host's explicit choice
+       and needs no `!important` to hold. -->
   <div
     class="drawer min-h-screen bg-base-200 text-base-content"
     class:lg:drawer-open={!isDeskRoute && !topbar.zen}
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
     <!-- tabindex="-1" and aria-hidden pull this checkbox out of the tab order and the a11y tree: it
-         is DaisyUI's drawer-state mechanism (the for=/id= label toggle and the lg:/xl:drawer-open
-         responsive open all key off it), not an affordance an editor should ever land keyboard
-         focus on with no accessible name. The hamburger label and Ctrl/Cmd+B are the real triggers. -->
+         is DaisyUI's own drawer-state mechanism (the lg:/xl:drawer-open responsive open keys off
+         it), not an affordance an editor should ever land keyboard focus on with no accessible
+         name. The Open menu button and Ctrl/Cmd+B are the real triggers, both flipping
+         drawerOpen directly; this checkbox mirrors that state for the responsive CSS, and
+         the Close menu backdrop still toggles it by for=/id= click. -->
     <input
       id="cairn-shell-drawer"
       type="checkbox"
@@ -632,9 +716,20 @@ discriminant, not the fields, gates the chrome).
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
              band, where the desk sidebar is receded). -->
         <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
-          <label for="cairn-shell-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
-            <MenuIcon class="h-5 w-5" />
-          </label>
+          <!-- A real button, not the checkbox's own for=/id= label: it flips drawerOpen directly
+               on click, so the opener never routes through the checkbox. -->
+          <button
+            type="button"
+            aria-label="Open menu"
+            aria-expanded={drawerOpen}
+            aria-controls="cairn-shell-drawer-nav"
+            class="btn btn-square btn-ghost"
+            onclick={() => {
+              drawerOpen = !drawerOpen;
+            }}
+          >
+            <MenuIcon class="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
         <!-- Context on the left: the breadcrumb trail inside an entry, the site name on a bare list.
              Hidden on small screens to leave room for the palette trigger. -->
@@ -676,6 +771,7 @@ discriminant, not the fields, gates the chrome).
             <button
               type="button"
               onclick={openPalette}
+              aria-haspopup="dialog"
               class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -689,7 +785,7 @@ discriminant, not the fields, gates the chrome).
           {#await data.pendingEntries then pending}
             {#if pending && pending.length > 0}
               <div class="flex-none">
-                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" aria-controls="cairn-shell-publish-all" onclick={() => publishAllDialog?.showModal()}>
                   Publish site ({pending.length})
                 </button>
               </div>
@@ -702,7 +798,7 @@ discriminant, not the fields, gates the chrome).
         {#if offersThemeToggle}
         <div class="flex-none" class:max-sm:hidden={isDeskRoute}>
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
-            {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
+            {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" aria-hidden="true" />{:else}<SunIcon class="h-5 w-5" aria-hidden="true" />{/if}
           </button>
         </div>
         {/if}
@@ -723,39 +819,73 @@ discriminant, not the fields, gates the chrome).
         {/if}
       </main>
 
-      <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">
+      <dialog bind:this={paletteDialog} class="modal" aria-label="Commands">
         <div class="modal-box max-w-xl self-start mt-4 p-0 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
               bind:value={paletteQuery}
               type="text"
+              role="combobox"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
               class="w-full bg-transparent py-3.5 type-body placeholder:text-muted"
-              onkeydown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  submitPalette();
-                }
-              }}
+              aria-expanded="true"
+              aria-controls={paletteListboxId}
+              aria-activedescendant={paletteActiveDescendant}
+              autocomplete="off"
+              spellcheck="false"
+              onkeydown={onPaletteInputKeydown}
             />
           </div>
-          {#if paletteResults.length}
-            <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-                 display: flex, which strips the implicit list role in WebKit/VoiceOver
-                 (cairn-audit's list-role rule, rendered mode). -->
-            <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2" role="list">
-              {#each paletteResults as cmd, i (i)}
-                <li role="listitem">
+          <!-- The count region: polite, separate from the active-row narration so neither clobbers
+               the other. -->
+          <p class="sr-only" role="status" aria-live="polite">
+            {paletteResults.length} {paletteResults.length === 1 ? 'result' : 'results'}
+          </p>
+          <!-- The active-row narration, its own polite region. -->
+          <p class="sr-only" aria-live="polite">{paletteActiveNarration}</p>
+
+          <!-- The listbox always renders, even with no matches, so the combobox's aria-controls
+               always resolves to a real element (WCAG 1.3.1, 4.1.2): an aria-controls pointing at a
+               node that does not exist is a broken relationship. The no-match copy lives inside the
+               listbox, announced through the count region above rather than as live text of its own,
+               and carries role="presentation" (a listbox may own only option/group/presentational
+               children). Each result row is a plain <li role="presentation"> wrapping the real <a>
+               or <button>: role="option" lives on that inner element, not the <li>, because ARIA 1.2
+               treats option as children-presentational, so a focusable descendant under it is
+               invalid (axe's nested-interactive rule). tabindex="-1" keeps the option out of the tab
+               order, since the combobox pattern moves the active option through
+               aria-activedescendant rather than real DOM focus, while the href/onclick still fires
+               normally on a real click. daisyUI's .menu :where(li) renders every item at
+               display: flex, which strips the implicit listitem role in WebKit/VoiceOver
+               (cairn-audit's list-role rule, rendered mode); role="presentation" is explicit either
+               way. -->
+          <ul
+            bind:this={paletteList}
+            id={paletteListboxId}
+            role="listbox"
+            aria-label="Command results"
+            class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2"
+          >
+            {#if paletteResults.length === 0}
+              <li role="presentation" class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</li>
+            {:else}
+              {#each paletteResults as cmd, i (cmd.label)}
+                <li role="presentation">
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
                        so it carries no onclick (closing here would cancel the navigation). An external link
                        opens a new tab and leaves this page, so it closes the palette itself. -->
                     <a
+                      id={paletteOptionId(i)}
+                      role="option"
+                      aria-selected={i === paletteActiveIndex}
+                      tabindex="-1"
                       href={cmd.href}
                       target={cmd.external ? '_blank' : undefined}
                       rel={cmd.external ? 'noopener' : undefined}
+                      class={i === paletteActiveIndex ? 'bg-base-content/[0.08]' : ''}
                       onclick={cmd.external ? () => paletteDialog?.close() : undefined}
                     >
                       <cmd.icon class="h-4 w-4 text-muted" aria-hidden="true" />
@@ -763,17 +893,23 @@ discriminant, not the fields, gates the chrome).
                       {#if cmd.external}<ExternalLinkIcon class="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" />{/if}
                     </a>
                   {:else}
-                    <button type="button" onclick={() => runCommand(cmd)}>
+                    <button
+                      id={paletteOptionId(i)}
+                      role="option"
+                      aria-selected={i === paletteActiveIndex}
+                      tabindex="-1"
+                      type="button"
+                      class={i === paletteActiveIndex ? 'bg-base-content/[0.08]' : ''}
+                      onclick={() => runCommand(cmd)}
+                    >
                       <cmd.icon class="h-4 w-4 text-muted" aria-hidden="true" />
                       {cmd.label}
                     </button>
                   {/if}
                 </li>
               {/each}
-            </ul>
-          {:else}
-            <p class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</p>
-          {/if}
+            {/if}
+          </ul>
         </div>
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
       </dialog>
@@ -781,7 +917,7 @@ discriminant, not the fields, gates the chrome).
       {#await data.pendingEntries then pending}
         {#if pending && pending.length > 0}
           {@const groups = groupPending(pending)}
-          <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-shell-publish-all-title">
+          <dialog bind:this={publishAllDialog} id="cairn-shell-publish-all" class="modal" aria-labelledby="cairn-shell-publish-all-title">
             <div class="modal-box">
               <div class="mb-3 flex items-center justify-between">
                 <h2 id="cairn-shell-publish-all-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Publish the whole site?</h2>
@@ -811,12 +947,18 @@ discriminant, not the fields, gates the chrome).
     </div>
 
     <div class="drawer-side">
+      <!-- A click-to-dismiss backdrop, not a tab stop: it sits before the drawer's own nav in
+           DOM order, so a focusable button here would land a second toggle ahead of the drawer's
+           contents in the tab order. The label's for=/id= click still closes the drawer through
+           the checkbox above; the Ctrl/Cmd+B chord and Escape (onDrawerOverlayKeydownCapture)
+           are the keyboard routes. -->
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
       <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (the APG
            treatment): at the persistent breakpoint this is a plain nav landmark beside the document,
            never a modal, so the two attributes stay conditional rather than standing. -->
       <nav
         bind:this={drawerNavEl}
+        id="cairn-shell-drawer-nav"
         class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]"
         aria-label="Site content"
         role={isDrawerOverlay ? 'dialog' : undefined}
@@ -949,7 +1091,7 @@ discriminant, not the fields, gates the chrome).
           <form method="POST" action="/admin?/logout" class="mt-4">
             <CsrfField token={data.csrf} />
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
-              <LogOutIcon class="h-4 w-4" /> Sign out
+              <LogOutIcon class="h-4 w-4" aria-hidden="true" /> Sign out
             </button>
           </form>
         </div>

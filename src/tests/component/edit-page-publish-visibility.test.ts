@@ -143,25 +143,25 @@ describe('EditPage Publish visibility', () => {
     expect(fallback.classList.contains('sr-only')).toBe(true);
   });
 
-  it('reads the status badge as New for a brand-new never-published entry', async () => {
+  it('reads the status chip as New for a brand-new never-published entry, on StatusChip\'s quiet register', async () => {
     const screen = await render(EditPage, postProps({ isNew: true, pending: false, published: false }));
     const badge = screen.container.querySelector('.badge.badge-sm');
     expect(badge?.textContent?.trim()).toBe('New');
-    expect(badge?.classList.contains('badge-info')).toBe(true);
+    expect(badge?.classList.contains('status-chip-quiet')).toBe(true);
   });
 
-  it('reads the status badge as Published when main matches and nothing is pending', async () => {
+  it('reads the status chip as Published when main matches and nothing is pending, on StatusChip\'s quiet register', async () => {
     const screen = await render(EditPage, postProps({ pending: false, published: true }));
     const badge = screen.container.querySelector('.badge.badge-sm');
     expect(badge?.textContent?.trim()).toBe('Published');
-    expect(badge?.classList.contains('cairn-chip-quiet')).toBe(true);
+    expect(badge?.classList.contains('status-chip-quiet')).toBe(true);
   });
 
-  it('reads the status badge as Edited for a pending branch over a published copy', async () => {
+  it('reads the status chip as Edited for a pending branch over a published copy, on StatusChip\'s quiet register', async () => {
     const screen = await render(EditPage, postProps({ pending: true, published: true }));
     const badge = screen.container.querySelector('.badge.badge-sm');
     expect(badge?.textContent?.trim()).toBe('Edited');
-    expect(badge?.classList.contains('badge-warning')).toBe(true);
+    expect(badge?.classList.contains('status-chip-quiet')).toBe(true);
   });
 
   it('no-ops the Ctrl+Shift+S chord on a clean, guarded entry', async () => {

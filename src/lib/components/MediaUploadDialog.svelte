@@ -237,7 +237,7 @@ the new asset appears.
     <div class="modal-box max-w-md">
       <div class="mb-3 flex items-start gap-3">
         <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-primary/10 text-primary" aria-hidden="true">
-          <UploadIcon class="h-5 w-5" />
+          <UploadIcon class="h-5 w-5" aria-hidden="true" />
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-upload-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
@@ -252,6 +252,19 @@ the new asset appears.
         </button>
       </div>
 
+      <!-- Mounted unconditionally so a later upload still announces (the needs-alt notice's
+           live-region rule, WCAG 4.1.3): a region conditionally mounted with its first content is
+           not reliably observed by assistive tech. Its content renders in the exclusive chain
+           below rather than beside it, so the working branch there stays empty. -->
+      <div role="status">
+        {#if uploadStatus.kind === 'working'}
+          <div class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
+            <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+            <span class="type-meta">Uploading…</span>
+          </div>
+        {/if}
+      </div>
+
       {#if uploadStatus.kind === 'failed'}
         <!-- A typed ingest/upload failure or an expired session: an assertive alert with a Retry,
              matching the Replace flow's failed-card treatment. -->
@@ -261,10 +274,7 @@ the new asset appears.
           <button type="button" class="btn btn-sm" onclick={uploadStatus.retry}>Try another file</button>
         </div>
       {:else if uploadStatus.kind === 'working'}
-        <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
-          <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-          <span class="type-meta">Uploading…</span>
-        </div>
+        <!-- Rendered in the always-mounted status region above. -->
       {:else}
         <MediaCaptureCard file={uploadCaptureFile} oncapture={runLibraryUpload} submitLabel="Upload image" />
       {/if}

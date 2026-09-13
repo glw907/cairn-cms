@@ -85,6 +85,12 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
+  <!-- The packaged admin sheet resets the real host body margin to zero itself (cairn-admin.css's
+       build, guarded to fire only while an admin theme root is mounted), so this box needs no
+       compensating margin of its own; the fix holds whether the host's ambient body margin was the
+       UA's 8px default or already 0. A host's own unlayered author rule on body margin still wins
+       over this base-layer reset, which is the host's explicit choice and needs no `!important`
+       to hold. -->
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if isIdentity(data)}
@@ -99,22 +105,22 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         This site signs in through {data.identity.label}. <a href="/admin" class="link link-primary">Go to /admin</a>.
       </p>
     {:else if (form?.status === 'sent' || form?.sent) && !dismissed}
-      <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
-           instruction. The fallback help sits in a gentle inset note below. -->
-      <div role="status" class="flex flex-col items-center text-center">
+      <!-- No role="status" here: the block mounts fresh on this branch switch, so a live region
+           on it would never observe its own first content (WCAG 4.1.3). The "Check your email"
+           heading is what carries the announcement, the same way a fresh page's title does. -->
+      <div class="flex flex-col items-center text-center">
         <div class="mb-7">{@render brand()}</div>
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--color-success)]"
-          style="background-color: color-mix(in oklch, var(--color-success) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-success) 22%, transparent);"
+          class="flex h-12 w-12 items-center justify-center rounded-xl bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success"
         >
-          <MailCheckIcon class="h-6 w-6" />
+          <MailCheckIcon class="h-6 w-6" aria-hidden="true" />
         </div>
         <h1 class="mt-5 type-heading font-bold font-[family-name:var(--font-display)]">Check your email</h1>
         <p class="mt-2 type-body leading-relaxed text-muted">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
         <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
-          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" />
+          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
           <p class="type-meta leading-relaxed text-subtle">
             No link after a minute or two? Check your spam folder first. If it still hasn’t arrived, the
             address may not match the one your site owner added.
@@ -122,7 +128,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         </div>
         <button
           type="button"
-          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 type-body font-medium text-primary hover:underline"
+          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 type-body font-medium text-primary underline underline-offset-2"
           onclick={() => (dismissed = true)}
         >
           Use a different email
@@ -169,7 +175,6 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
             name="email"
             required
             autocomplete="email"
-            aria-label="Email"
             class="input w-full"
             placeholder="you@example.com"
           />

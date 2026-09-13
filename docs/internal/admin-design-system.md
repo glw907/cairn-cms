@@ -1236,7 +1236,9 @@ engine may change between versions without a major bump. A screen should not bui
   same lift through the floating-card recipe, which names them; the tokens themselves are cairn's.
 - **The embed-anywhere infrastructure** (the box-sizing reset, the bare-button Preflight replacement, the
   anchor and `summary` resets, the focus-ring rule). These exist because the admin self-styles on any host
-  with no host Preflight. They are the frame that makes the sheet portable, not an API.
+  with no host Preflight. They are the frame that makes the sheet portable, not an API. The packaged sheet
+  also zeroes the host `body` margin while an admin theme root is mounted, the one host-element reset the
+  sheet carries.
 - **The editor (CodeMirror) system** (the directive rails, the fold gutter, the syntax highlight, the
   `--cairn-directive-*` and `--cairn-focus-dim-*` tokens). This is a settled design in the editor's
   `EditorView.theme` territory, walled out of the sweep on purpose.

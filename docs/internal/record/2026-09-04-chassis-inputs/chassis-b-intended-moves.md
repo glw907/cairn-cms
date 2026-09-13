@@ -788,8 +788,6 @@ fix, is `~/.cache/cairn-polish-11b-i/task-10-round2/after/` (`signups` only, `--
   side-by-side crop of the topbar row, before/after, both captures). Crops with geometry, signups at
   1440 both schemes, before and after: `~/.cache/cairn-polish-11b-i/task-10-round2/crops/signups-
   {light,dark}-1440-{before,after}-{left-260x400+0+0,right-260x400+1180+0}.png` (eight files: two
-  regions, two schemes, two states).
-
-  fix, not a layout defect: it falls under Playwright's own snapshot tolerance (the unmodified suite
-  passed with zero diffs at every one of those ten cases) and the diff image at every width shows
-  uniform text-edge doubling rather than any moved element or broken layout.
+  regions, two schemes, two states). Both measured causes fall under Playwright's own snapshot
+  tolerance, which is why the unmodified admin-visual suite passed with zero diffs at every one of
+  the ten `signups` cases even though `AE` against the original is nonzero throughout.

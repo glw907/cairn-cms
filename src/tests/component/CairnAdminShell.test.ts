@@ -133,11 +133,10 @@ describe('CairnAdminShell', () => {
   // not a compensating margin on the drawer root), so it has to be proven against a genuine host
   // body, at either starting margin: the real UA default (8px, nothing else on the page touches
   // it) and a host that already runs something like Tailwind Preflight and zeroes it itself. The
-  // outer test document's own body is not a stand-in for either: this harness's own base sheet
-  // already carries an unlayered `body { margin: 0 }` rule, which always outranks a layered rule
-  // regardless of order, so nothing this suite could inject into that body would ever expose a
-  // real 8px starting point. A bare iframe with no stylesheet but the one under test gives each
-  // case a genuinely blank host instead.
+  // outer test document's own body is not a stand-in for either: the ambient test document does
+  // not reproduce a UA-default body margin, so nothing this suite could inject into that body
+  // would reliably expose a real 8px starting point. A bare iframe with no stylesheet but the one
+  // under test gives each case a genuinely blank host instead, real UA default or real zeroed.
   describe('host body-margin reset', () => {
     let iframe: HTMLIFrameElement;
 

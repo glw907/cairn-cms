@@ -2059,10 +2059,10 @@ the named human gates only):**
   yet. **Trigger:** a consuming site that needs group-to-role mapping.
 
 - **Three pieces of engine hygiene the reproduction seam surfaced, none urgent.** `CairnAdminShell`
-  writes `<svelte:head><title>` and injects a `body { margin: 0 }` style into the host document, which
-  is harmless while every reproduction is iframed and would let the last-mounted story overwrite a
-  docs page's own title if one were ever mounted inline; the reference page should say `ReproContext`
-  belongs in its own document, or the shell should guard it. The `editor/toolbar` story's
+  writes `<svelte:head><title>`, which is harmless while every reproduction is iframed and would let
+  the last-mounted story overwrite a docs page's own title if one were ever mounted inline; the
+  reference page should say `ReproContext` belongs in its own document, or the shell should guard it.
+  The `editor/toolbar` story's
   `createRawSnippet` transcription wraps its buttons in a `<span style="display:contents">` the real
   toolbar does not have, which is a structural divergence in a file whose whole purpose is fidelity
   and will trip a strict `style-src` CSP on a docs origin. And the story-mount harness pins only the

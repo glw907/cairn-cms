@@ -88,7 +88,9 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   <!-- The packaged admin sheet resets the real host body margin to zero itself (cairn-admin.css's
        build, guarded to fire only while an admin theme root is mounted), so this box needs no
        compensating margin of its own; the fix holds whether the host's ambient body margin was the
-       UA's 8px default or already 0. -->
+       UA's 8px default or already 0. A host's own unlayered author rule on body margin still wins
+       over this base-layer reset, which is the host's explicit choice and needs no `!important`
+       to hold. -->
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if isIdentity(data)}

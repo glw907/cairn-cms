@@ -654,7 +654,9 @@ discriminant, not the fields, gates the chrome).
        to fire only while an admin theme root is mounted), so this box needs no compensating margin
        of its own, and the fix holds regardless of whether the host's ambient body margin was 8px or
        already 0 (a host that runs Tailwind Preflight, say): no negative margin here can overshoot
-       hard-coding a host default cairn does not get to assume. -->
+       hard-coding a host default cairn does not get to assume. A host's own unlayered author rule
+       on body margin still wins over this base-layer reset, which is the host's explicit choice
+       and needs no `!important` to hold. -->
   <div
     class="drawer min-h-screen bg-base-200 text-base-content"
     class:lg:drawer-open={!isDeskRoute && !topbar.zen}

@@ -114,7 +114,9 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // LoginPage, and ConfirmPage each set `data-theme` to exactly one of these two names, and none
   // of the three assumes the host's ambient body margin is any particular value (8px, the UA
   // default, or 0, a host that already runs Tailwind Preflight), closing the seam a hard-coded
-  // compensating margin on an inner element could not.
+  // compensating margin on an inner element could not. A host's own unlayered author rule on
+  // `body` margin still wins over this base-layer rule, which is the host's explicit choice and
+  // needs no `!important` to hold.
   const bodyMarginReset =
     "@layer base{body:has([data-theme='cairn-admin'],[data-theme='cairn-admin-dark']){margin:0}}\n";
   return layerOrder + fontFace + bodyMarginReset + scoped.css;

@@ -930,7 +930,8 @@ the named human gates only):**
   routes to). **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
   release cut, so the cut carries the tokens and the audit rules; the C launch script now stops
   at C's merge and the cut fires after this pass merges. Spec through brainstorming and plan
-  through writing-plans start when the revised research records land.
+  through writing-plans start when the revised research records land; both get an adversarial
+  review, and the pass runs UNREAD on the reviewed plan as soon as C merges (Geoff, 2026-09-13).
 
 - **Borrowable patterns (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
   developer extending cairn borrows the refined patterns instead of reinventing them.**

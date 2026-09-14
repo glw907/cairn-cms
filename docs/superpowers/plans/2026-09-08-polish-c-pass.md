@@ -653,6 +653,7 @@ These bind every task. An implementer reads them before its Files block.
    | `migrations/*.sql` and its two emitted copies under `examples/showcase/` and `templates/waymark/` | **Immune.** A migration is immutable once shipped. No table or column name in this window changes, so no rename reaches SQL; the one hit is a comment naming a TypeScript symbol, classified and left |
    | `scripts/lab/**` | **Immune.** A lab tool's own local symbol that collides with an engine name (`serializeManifest` in `generate-norms-manifest.mjs`), on the same reasoning as the doctor's `githubApp` value |
    | `packages/create-cairn-site/test/fixtures/transcripts/**` | **Immune.** Recorded stdout under the directory's own rule that a fixture is never edited and a run needing different bytes is re-captured, which `check:transcripts` asserts byte for byte |
+   | A distinct identifier sharing a renamed name (a form-action key, a component prop, a route segment), left as is because it names a different surface (amendment 2026-09-14, conductor ruling at Task 7) | **Immune.** A different surface than the renamed export, left unrenamed |
    | Anything else | A blocking finding |
 
 8. **The gate record files are part of a rename, routed to the file that holds the name, and a

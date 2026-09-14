@@ -91,6 +91,12 @@ const AXIS_CONTEXT_OPTIONS: Record<EmulationAxis, { reducedMotion?: 'reduce' }> 
   'reduced-motion': { reducedMotion: 'reduce' },
 };
 
+// Measured, not assumed: on the Chromium build this axis was built and tested against, CDP's
+// `Emulation.setEmulatedMedia` with a `features` array covering `hover` and `pointer` was silently
+// ignored (no error, no effect on `matchMedia` reads). That is why this axis reaches motion only
+// through Playwright's own `reducedMotion` context option rather than a raw CDP features array, and
+// why a touch-modality axis (`hasTouch`) is threaded through `newContext` rather than attempted here.
+
 /**
  * The emulation axes the registered rules actually need, `'default'` always included since a rule
  * declaring none still runs under it (the same default {@link RenderedRule.axes} itself

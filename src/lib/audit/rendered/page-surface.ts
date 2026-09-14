@@ -282,6 +282,14 @@ function installPageHelpers(): void {
    * Recorded against `el` (own body: no closure over anything outside this function, the same
    * discipline every other page-side helper here follows), one match per style declaration whose
    * selector reaches `el` under `pseudoElement` and which declares `property`.
+   *
+   * This walker is the LOCATOR, never the detector: a caller that already knows an element's
+   * computed value is wrong asks it to name the authored rule responsible, and it reads that
+   * rule's authored (not computed) `value` back only to decide which of several matching rules is
+   * the nonzero one. It never re-derives the defect itself. Measured, not assumed: `getPropertyValue`
+   * on an authored rule resolves every `var()` reference to its final value, the same as
+   * `getComputedStyle` does, so this walk can compare authored values but can never recover the
+   * token name (e.g. `--cairn-dur-quick`) a declaration actually cited.
    */
   function findAuthoredRules(
     el: Element,

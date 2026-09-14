@@ -17,7 +17,7 @@ import { logCommitFailed } from './commit-log.js';
 import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
-import type { CairnEvent, RevertFailure } from './types.js';
+import type { CairnEvent, RevertOutcome } from './types.js';
 import { requireEntryFromParams, HISTORY_LIMIT, draftFromBranchHead } from './content-routes-shared.js';
 
 /**
@@ -67,13 +67,13 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
    * unlucky discard) degrades to "unknown" rather than throwing: the refusal still stands, since
    * the caller's own attempt already failed.
    */
-  async function draftExistsFailure(backend: Backend, path: string, branch: string): Promise<ActionFailure<RevertFailure>> {
+  async function draftExistsFailure(backend: Backend, path: string, branch: string): Promise<ActionFailure<RevertOutcome>> {
     const draft = await draftFromBranchHead(backend, path, branch, await backend.branchHead(branch));
     return fail(409, {
-      reason: 'draft_exists',
+      outcome: 'draft-exists',
       draftEditor: draft?.editor ?? 'unknown',
       draftLastSavedAt: draft?.lastSavedAt ?? '',
-    } satisfies RevertFailure);
+    } satisfies RevertOutcome);
   }
 
   /**
@@ -91,7 +91,7 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
    * schema-drift advisory the same way save's own advisories ride. There is no force path: every
    * refusal here is a fail-closed `ActionFailure` that stays on the page.
    */
-  async function revertAction(event: CairnEvent): Promise<ActionFailure<RevertFailure>> {
+  async function revertAction(event: CairnEvent): Promise<ActionFailure<RevertOutcome>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
     const path = `${concept.dir}/${filenameFromId(id)}`;
@@ -104,13 +104,13 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
     // (1) Full-sha exact membership in a fresh read, not a trust of the posted row.
     const commits = await backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT);
     if (!commits.slice(0, HISTORY_LIMIT).some((c) => c.ref === ref)) {
-      return fail(404, { reason: 'ref_unknown' } satisfies RevertFailure);
+      return fail(404, { outcome: 'ref-unknown' } satisfies RevertOutcome);
     }
 
     // (2) main must not have moved since the history page rendered.
     const mainHead = await backend.branchHead(backend.defaultBranch);
     if (mainHead !== head) {
-      return fail(409, { reason: 'history_stale' } satisfies RevertFailure);
+      return fail(409, { outcome: 'history-stale' } satisfies RevertOutcome);
     }
 
     // (3) Read and inspect the old content; this never refuses the revert on schema drift, only
@@ -119,7 +119,7 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
     // it) but leaves nothing to read back. That refuses in place, the same as any other listed
     // ref this action cannot honor, rather than escaping as a full 404 page.
     const raw = await backend.readFile(path, ref);
-    if (raw === null) return fail(404, { reason: 'ref_unknown' } satisfies RevertFailure);
+    if (raw === null) return fail(404, { outcome: 'ref-unknown' } satisfies RevertOutcome);
     const { frontmatter } = parseMarkdown(raw);
     const vocabValues = runtime.vocabulary.map((v) => v.value);
     const { retiredFields, retiredTags } = revertSchemaDrift(concept, frontmatter, vocabValues);

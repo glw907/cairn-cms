@@ -159,7 +159,7 @@ describe('the five handlers, unchanged without locals.cairnIdentity', () => {
     const requestResult = await routes.requestAction(
       makeEvent({ url: 'https://test.dev/admin/login', form: { email: 'nobody@test.dev' }, cookies: requestCookies }),
     );
-    expect(requestResult.status).toBe('sent');
+    expect(requestResult.outcome).toBe('sent');
 
     const confirmCookies = makeRecordingCookies();
     const confirmData = routes.confirmLoad(makeEvent({ url: 'https://test.dev/admin/auth/confirm?token=x', cookies: confirmCookies }));

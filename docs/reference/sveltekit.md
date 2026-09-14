@@ -900,16 +900,16 @@ register each handler under that name; a `default` action does not receive a nam
 Stability tier: Unstable API.
 
 ```ts
-type RequestResult =
-  | { status: 'sent'; sent: true }
-  | { status: 'send_error'; sent: false }
-  | { status: 'throttled'; sent: false };
+type RequestOutcome =
+  | { outcome: 'sent'; sent: true }
+  | { outcome: 'send-error'; sent: false }
+  | { outcome: 'throttled'; sent: false };
 
 declare function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes;
 
 type AuthRoutes = {
   loginLoad: (event: CairnEvent<CairnEnv>) => LoginData;
-  requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestResult>;
+  requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestOutcome>;
   confirmLoad: (event: CairnEvent<CairnEnv>) => ConfirmData;
   confirmAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   logoutAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
@@ -947,9 +947,9 @@ token to the requesting browser when the two disagree, which is what keeps repea
 locking an editor out of their own link. See [the security
 model](../extend/security-model.md#sign-in-binds-to-the-browser-that-asked) for the full behavior.
 
-`requestAction` awaits the send, so its `RequestResult` (exported since 0.38.0) reflects the
-outcome. The `sent` status covers both a successful send and a non-allow-listed address (the two
-return identical results, so the response never reveals membership). A `send_error` means the email
+`requestAction` awaits the send, so its `RequestOutcome` (exported since 0.38.0) reflects the
+outcome. The `sent` outcome covers both a successful send and a non-allow-listed address (the two
+return identical results, so the response never reveals membership). A `send-error` means the email
 could not be sent; `throttled` means the same address requested a link inside the cooldown window.
 `sent` mirrors the old boolean, so a site rendering against `form.sent` keeps working.
 
@@ -1071,7 +1071,7 @@ type ContentRoutes = {
   renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
   previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }>;
   previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { count: number }>;
-  revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>;
+  revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertOutcome>>;
   uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
   dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>;
   tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult>;
@@ -1132,16 +1132,16 @@ rename, and `HistoryData.truncated` only ever flags the 25-row bound, never a re
 route can't see. A deleted entry answers a 404 exactly as `editLoad` does. Undelete is out of scope
 (see [ROADMAP.md](../../ROADMAP.md)), and a developer who needs a removed entry's content reads it
 straight from git. `revertAction` starts a fresh draft from an old publish: it re-validates the
-posted `ref` against a fresh `listCommits` read, full-sha exact membership, so `ref_unknown` always
+posted `ref` against a fresh `listCommits` read, full-sha exact membership, so `ref-unknown` always
 means the target fell outside that same 25-row window, either because it named a commit history
 never listed or because the window moved between page render and submit. The 25-row bound therefore
 composes with that membership check into one deliberate consequence: revert reaches only the last
 25 publishes through the UI, and git is the developer's escape hatch for anything older. A stale
-`head`, the default branch moved since the history page rendered, refuses `history_stale`, and a
-pending branch already blocking the entry refuses `draft_exists` with the blocking draft's
+`head`, the default branch moved since the history page rendered, refuses `history-stale`, and a
+pending branch already blocking the entry refuses `draft-exists` with the blocking draft's
 own editor and start date, from either `revertAction`'s own pre-check or `Backend.createBranch`'s
 authoritative `BranchExistsError` under a race. None of the three refusals commits anything; every
-one stays on the page as an `ActionFailure<RevertFailure>`. A successful revert commits the old
+one stays on the page as an `ActionFailure<RevertOutcome>`. A successful revert commits the old
 markdown onto the pending branch (`expectedHead` pinned to the sha the branch was just created at,
 so a save that lands in the narrow window right after still answers a conflict rather than being
 silently overwritten), logs `commit.reverted` alongside the ordinary `commit.succeeded` (see [log
@@ -1971,7 +1971,7 @@ imports the matching `*Data` type to type its `data` prop.
 | --- | --- | --- | --- |
 | <a id="authroutesconfig"></a>`AuthRoutesConfig` | Unstable API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }` | The config `createAuthRoutes` takes: the email branding, an optional custom sender, and the optional [config-declared bootstrap owner](#createauthroutes). |
 | `AuthRoutes` | Unstable API | `type AuthRoutes` | What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers, shown expanded in [`createAuthRoutes`](#createauthroutes). |
-| `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
+| `RequestOutcome` | Unstable API | `type RequestOutcome = { outcome: 'sent'; sent: true } \| { outcome: 'send-error'; sent: false } \| { outcome: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.outcome` (or the legacy `form.sent` boolean) off this. |
 | `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record a `createAdminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
 | `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { actor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus `actor`, the acting identity. `createAdminAction` and `createSectionAction` populate it with the verified editor's email; a direct `createD1AuditSink` call names its own actor, which need not be a cairn editor. |
 | <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`. Optional; every emit logs `admin.action.audited` regardless. |
@@ -1998,7 +1998,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`mintPreview`](#mintpreview): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
 | <a id="previewmintoutcome"></a>`PreviewMintOutcome` | Unstable API | `type PreviewMintOutcome = { outcome: 'minted'; token: string; expiresAt: number } \| { outcome: 'unknown-concept' } \| { outcome: 'invalid-id' } \| { outcome: 'no-draft' }` | What [`mintPreview`](#mintpreview) returns, on the `outcome` discriminant: the minted link's plaintext token and its expiry (epoch milliseconds), or the one refusal the target didn't clear. `unknown-concept` names a concept the runtime doesn't declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending draft, so there's nothing to share. A session the access check refuses never reaches any of these: it gets a 403 instead, the way every other engine content surface refuses. |
 | <a id="previewdata"></a>`PreviewData` | Extension API | `interface PreviewData extends EntryData { preview: { state: 'draft' \| 'published'; expiresAt: string; published: { permalink: string } \| null } }` | [`loadPreview`](#loadpreview)'s data: a public entry page's own [`EntryData`](./delivery.md#entrydata), the exact shape `entryLoad` returns, plus `preview`, the metadata [`PreviewBanner`](./components.md#previewbanner) (or a site's own banner) reads. `preview.state` is `'draft'` while the shared branch is still open and `'published'` once it's gone; `preview.published` names the live permalink only in the `'published'` state, when the entry's file exists on the default branch, and is `null` otherwise (a discarded, never-published entry's branch-gone case never reaches this shape at all, since it answers a 404 instead). A compile-time assertion in the engine's own test suite proves this type adds no key beyond `preview`, so a future `EntryData` field breaks the engine's own build rather than a consuming site's. |
-| `RevertFailure` | Unstable API | `type RevertFailure = { reason: 'draft_exists'; draftEditor: string; draftLastSavedAt: string } \| { reason: 'ref_unknown' } \| { reason: 'history_stale' }` | A refused revert (`ActionFailure<RevertFailure>`), fail-closed with no force path: `draft_exists` (`fail(409, ...)`, the blocking draft's own editor and last-saved moment) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref_unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history_stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth reason for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
+| `RevertOutcome` | Unstable API | `type RevertOutcome = { outcome: 'draft-exists'; draftEditor: string; draftLastSavedAt: string } \| { outcome: 'ref-unknown' } \| { outcome: 'history-stale' }` | A refused revert (`ActionFailure<RevertOutcome>`), fail-closed with no force path: `draft-exists` (`fail(409, ...)`, the blocking draft's own editor and last-saved moment) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref-unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history-stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth outcome for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
 | `ContentFormFailure` | Unstable API | `interface ContentFormFailure { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: 'link' \| 'include'; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. `brokenLinks`/`body` come from a blocked save or publish; `inboundLinks`/`inboundKind`/`id` from a refused delete; `hash`/`usage`/`foundIn` from a refused media delete or replace, and `hash` alone from a refused media update or alt-propagation. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. `UsageEntry`, named in `usage`, carries no export row of its own: a consumer reaches it as `NonNullable<ContentFormFailure['usage']>[number]`. |
 | `EditorRoutesConfig` | Unstable API | `interface EditorRoutesConfig { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |

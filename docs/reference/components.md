@@ -382,13 +382,13 @@ Stability tier: Unstable API.
 ```ts
 let { data, form }: {
   data: { siteName: string; error: string | null; csrf: string } | { identity: { label: string } };
-  form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
+  form: { sent?: boolean; outcome?: 'sent' | 'send-error' | 'throttled' } | null;
 };
 ```
 
 The magic-link request screen. `data` carries the site name, an optional error, and the `csrf`
-double-submit token the page renders into its form. A `sent` status (or the legacy `form.sent`
-boolean) flips the page to the check-your-email state; `send_error` renders a warning that links
+double-submit token the page renders into its form. A `sent` outcome (or the legacy `form.sent`
+boolean) flips the page to the check-your-email state; `send-error` renders a warning that links
 cannot be sent right now, and `throttled` renders a check-your-inbox hint, both above the form so
 the editor can retry. The request form posts the named `?/request` action; on the per-route
 mounting, register `requestAction` under that name in the unauthed

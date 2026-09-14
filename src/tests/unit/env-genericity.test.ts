@@ -12,7 +12,7 @@ import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admi
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
-import { createAuthRoutes, type RequestResult } from '../../lib/sveltekit/auth-routes.js';
+import { createAuthRoutes, type RequestOutcome } from '../../lib/sveltekit/auth-routes.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { loadHealth, type HealthData } from '../../lib/sveltekit/health.js';
 import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
@@ -170,7 +170,7 @@ void typeOnlyNavRoutesAssignability;
 // /admin/auth/* route shims assign from their own SiteRequestEvent.
 function typeOnlyAuthRoutesAssignability(): void {
   const auth = createAuthRoutes({ branding: { siteName: 'Site', from: 'noreply@example.com' } });
-  auth.requestAction satisfies (event: SiteRequestEvent) => Promise<RequestResult>;
+  auth.requestAction satisfies (event: SiteRequestEvent) => Promise<RequestOutcome>;
   auth.loginLoad satisfies (event: SiteRequestEvent) => unknown;
   auth.confirmLoad satisfies (event: SiteRequestEvent) => unknown;
   auth.confirmAction satisfies (event: SiteRequestEvent) => Promise<never>;

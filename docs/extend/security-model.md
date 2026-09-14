@@ -58,7 +58,7 @@ constants an adapter cannot loosen on this path. There is no password anywhere i
 no third-party identity provider; a sign-in proves only membership in the `editor` table.
 
 The request path is deliberately non-enumerating: an address that isn't on the roster gets the
-same `{ status: 'sent' }` response a real editor's address gets, so a stranger probing addresses
+same `{ outcome: 'sent' }` response a real editor's address gets, so a stranger probing addresses
 can't tell allowlist membership from the response alone. The one deliberate exception is the
 cooldown above: a *repeat* request inside the one-minute window returns a distinct `throttled`
 status, which does reveal that the address is on the roster. That's an accepted trade, made so a

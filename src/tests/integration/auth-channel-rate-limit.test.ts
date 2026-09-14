@@ -47,7 +47,7 @@ describe('rate limit: absent binding degrades to open', () => {
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
     const call = warnSpy.mock.calls.find(([event]) => event === 'auth.channel.rate_limit_absent');
     expect(call).toBeDefined();
@@ -72,7 +72,7 @@ describe('rate limit: throwing key()/limit() degrades to open', () => {
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
     expect(warnSpy).toHaveBeenCalledWith(
       'auth.channel.rate_limit_failed',
@@ -92,7 +92,7 @@ describe('rate limit: throwing key()/limit() degrades to open', () => {
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
     expect(warnSpy).toHaveBeenCalledWith(
       'auth.channel.rate_limit_failed',
@@ -132,7 +132,7 @@ describe('rate limit: blocked', () => {
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
-    expect(result).toEqual({ error: 'throttled' });
+    expect(result).toEqual({ outcome: 'throttled' });
     expect(sent).toHaveLength(0);
     expect(await codeRowCount()).toBe(0);
     expect(await budgetSum('send')).toBe(0);
@@ -151,7 +151,7 @@ describe('rate limit: blocked', () => {
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const cookies = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ cookies, code: '00000000' }));
-    expect(result).toEqual({ error: 'throttled' });
+    expect(result).toEqual({ outcome: 'throttled' });
     expect(await codeRowCount()).toBe(1);
     expect(await budgetSum('escalation')).toBe(0);
     const call = warnSpy.mock.calls.find(([event]) => event === 'auth.channel.rate_limited');

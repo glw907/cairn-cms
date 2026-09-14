@@ -23,7 +23,8 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import WelcomeView from './WelcomeView.svelte';
   import type { AdminData } from '../sveltekit/cairn-admin.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
-  import type { RevertFailure } from '../sveltekit/types.js';
+  import type { RevertOutcome } from '../sveltekit/types.js';
+  import type { RequestOutcome } from '../sveltekit/auth-routes.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { SiteRender } from '../content/types.js';
@@ -33,7 +34,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     data: AdminData;
     /** The last action's result, forwarded to whichever view rendered: the shared content-action
      *  failure family (every failure carries `error`), merged with the auth and editors results,
-     *  so the route's one `form` export covers every view. `RevertFailure`'s own fields fold into
+     *  so the route's one `form` export covers every view. `RevertOutcome`'s own fields fold into
      *  the same merged bag, composed the same way `ContentFormFailure` itself Partial-merges every
      *  other action's failure fields, so a real `?/revert` refusal type-carries through this one
      *  prop; the history view narrows it back to the strict disjoint shape at the point it mounts
@@ -41,9 +42,8 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     form?:
       | (ContentFormFailure & {
           sent?: boolean;
-          status?: 'sent' | 'send_error' | 'throttled';
+          outcome?: 'sent' | 'send-error' | 'throttled' | RevertOutcome['outcome'];
           ok?: boolean;
-          reason?: RevertFailure['reason'];
           draftEditor?: string;
           draftLastSavedAt?: string;
         })
@@ -71,7 +71,13 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 </script>
 
 {#if data.view === 'login'}
-  <LoginPage data={{ ...data.page, theme: publicTheme }} {form} />
+  <!-- Only requestAction's own wrapped result (a RequestOutcome, or viewAction's generic
+       { error } catch-all) ever posts to this view, so the broader merged form union narrows
+       here: template narrowing on data.view does not reduce it for us. -->
+  <LoginPage
+    data={{ ...data.page, theme: publicTheme }}
+    form={form as { sent?: boolean; outcome?: RequestOutcome['outcome']; error?: string } | null}
+  />
 {:else if data.view === 'confirm'}
   <ConfirmPage data={{ ...data.page, theme: publicTheme }} {form} />
 {:else if data.view === 'list'}
@@ -92,10 +98,10 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     {previewMint}
   />
 {:else if data.view === 'history'}
-  <!-- Only revertAction's own wrapped result (a RevertFailure refusal, or viewAction's generic
+  <!-- Only revertAction's own wrapped result (a RevertOutcome refusal, or viewAction's generic
        { error } catch-all) ever posts to this view, so the broader merged form union narrows
        here: template narrowing on data.view does not reduce it for us. -->
-  <CairnHistory data={data.page} form={form as RevertFailure | { error: string } | null | undefined} />
+  <CairnHistory data={data.page} form={form as RevertOutcome | { error: string } | null | undefined} />
 {:else if data.view === 'editors'}
   <ManageEditors data={data.page} {form} />
 {:else if data.view === 'nav'}

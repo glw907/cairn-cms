@@ -95,7 +95,7 @@ export function errorCode(err: unknown): string | undefined {
  * as the cause. The not-verified code is the onboarding gap (a real-world consumer fault); the
  * live binding has also been observed throwing the bare "not a verified address" string with no
  * code, so that message maps to the same condition. Everything else is the generic send failure.
- * The caller logs the conditionId and code, and returns a send_error status.
+ * The caller logs the conditionId and code, and returns a send-error outcome.
  */
 export function emailSendFailure(err: unknown): CairnError {
   const onboarding =

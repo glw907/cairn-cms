@@ -239,14 +239,22 @@ export interface DeliverContext<Env> {
 }
 
 /** `request`'s result: `sent` even for an unknown contact, so the response never leaks roster membership. */
-export type ChannelRequestResult =
-  | { sent: true }
-  | { error: 'invalid' | 'throttled' | 'challenge-required' | 'unavailable' };
+export type ChannelRequestOutcome = {
+  outcome: 'sent' | 'invalid' | 'throttled' | 'challenge-required' | 'unavailable';
+};
 
 /** `confirm`'s result. `challenge-required` is a retry invitation, never a hard failure. */
-export type ChannelConfirmResult =
-  | { ok: true }
-  | { error: 'bad-code' | 'expired' | 'locked' | 'throttled' | 'challenge-required' | 'no-pending-request' | 'unavailable' };
+export type ChannelConfirmOutcome = {
+  outcome:
+    | 'confirmed'
+    | 'bad-code'
+    | 'expired'
+    | 'locked'
+    | 'throttled'
+    | 'challenge-required'
+    | 'no-pending-request'
+    | 'unavailable';
+};
 
 /**
  * Construction-time configuration for `createAuthChannel`. Every function here is awaited even
@@ -255,7 +263,7 @@ export type ChannelConfirmResult =
  * transforms respectively and carry no I/O.
  */
 export interface AuthChannelConfig<Env> {
-  /** The channel's own D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent fails an action closed with `{error: 'unavailable'}`. */
+  /** The channel's own D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent fails an action closed with `{outcome: 'unavailable'}`. */
   resolveDb: (env: Env | undefined) => D1Database | undefined;
   /**
    * Send the code to `contact`. A throw is scrubbed, logged, deletes the pending row, and refunds
@@ -356,9 +364,9 @@ export interface AuthChannelConfig<Env> {
 export interface AuthChannel<Env> {
   actions: {
     /** POST handler for the `contact` form field; mints and delivers a code. */
-    request: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelRequestResult>;
+    request: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelRequestOutcome>;
     /** POST handler for the `code` form field; consumes the nonce-bound code and mints a session. */
-    confirm: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelConfirmResult>;
+    confirm: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelConfirmOutcome>;
     /** POST handler that deletes the current session and clears both cookies. */
     logout: (event: CairnEvent<Env>) => Promise<{ ok: true }>;
   };
@@ -651,7 +659,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   /**
    * Resolve the channel's D1 binding and confirm its schema, opening one session a whole flow
    * shares. Returns null on either an absent binding or a schema mismatch, both of which the
-   * caller answers with `{error: 'unavailable'}`.
+   * caller answers with `{outcome: 'unavailable'}`.
    */
   async function resolveVerifiedSession(env: Env | undefined): Promise<D1DatabaseSession | null> {
     const database = config.resolveDb(env);
@@ -673,7 +681,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * Every input past `challenge` writes a code row, known or decoy, so store state and timing
    * stay uniform and the response never leaks roster membership.
    */
-  async function requestAction(event: ChannelEvent<Env>): Promise<ChannelRequestResult> {
+  async function requestAction(event: ChannelEvent<Env>): Promise<ChannelRequestOutcome> {
     // Step 0: the dev-backend leak tripwire, ahead of everything else this action does.
     assertNoDevBackendLeak(event, devBackendFlagCache);
 
@@ -691,7 +699,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // outcome carries no correlation id.
     if (!(await runChallenge(config, event, form))) {
       log.info('auth.channel.requested', { outcome: 'challenge_failed' });
-      return { error: 'challenge-required' };
+      return { outcome: 'challenge-required' };
     }
 
     // Step 3: normalize. A throw or an over-length output is invalid; this outcome is not part
@@ -701,14 +709,14 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     try {
       contact = config.normalize(rawContact);
     } catch {
-      return { error: 'invalid' };
+      return { outcome: 'invalid' };
     }
     if (contact.length === 0 || contact.length > 254) {
-      return { error: 'invalid' };
+      return { outcome: 'invalid' };
     }
 
     const session = await resolveVerifiedSession(event.platform?.env);
-    if (!session) return { error: 'unavailable' };
+    if (!session) return { outcome: 'unavailable' };
 
     // Step 4: lookup, then salted identity derivation. A throwing lookup is treated as a miss
     // (a decoy row still gets written below) but logged under the distinct lookup_failed
@@ -729,7 +737,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     try {
       salt = await resolveSalt(session);
     } catch {
-      return { error: 'unavailable' };
+      return { outcome: 'unavailable' };
     }
     const identity = await deriveIdentity(salt, subject, contact);
     // The first 16 hex of the salted identity hash: long enough not to collide across a roster,
@@ -751,7 +759,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // neither the requester send charge below nor a code row has been touched yet.
     const rateLimitOk = await checkChannelRateLimit(config.rateLimit, event, 'request', fullRequesterBucket, correlationId);
     if (!rateLimitOk) {
-      return { error: 'throttled' };
+      return { outcome: 'throttled' };
     }
 
     // Step 5: requester suppression, the sole denying control in this flow. Charged and checked
@@ -759,7 +767,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const requesterCharge = await charge(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now, limits.requesterCap);
     if (!requesterCharge.admitted) {
       log.info('auth.channel.requested', { outcome: 'suppressed', correlationId });
-      return { error: 'throttled' };
+      return { outcome: 'throttled' };
     }
 
     // Step 6: the identity send ceiling, a charge-shaped read that never denies. Its admitted
@@ -822,7 +830,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
         await refund(session, identity, IDENTITY_CEILING_SCOPE, now);
       }
       log.info('auth.channel.requested', { outcome: 'cooldown', correlationId });
-      return { sent: true };
+      return { outcome: 'sent' };
     }
 
     // A fresh mint prunes the requester bucket's own oldest rows, never the identity's, so an
@@ -854,7 +862,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       } else {
         log.info('auth.channel.requested', { outcome: 'unknown', correlationId });
       }
-      return { sent: true };
+      return { outcome: 'sent' };
     }
 
     // Step 8: deliver, only for a known subject. .catch() is attached before the promise ever
@@ -888,7 +896,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       await deliverPromise;
     }
 
-    return { sent: true };
+    return { outcome: 'sent' };
   }
 
   /**
@@ -899,7 +907,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * same `charge` call that tests it, refunded only when the compare that follows succeeds, so a
    * failed guess accumulates toward escalation and a correct one never does.
    */
-  async function confirmAction(event: ChannelEvent<Env>): Promise<ChannelConfirmResult> {
+  async function confirmAction(event: ChannelEvent<Env>): Promise<ChannelConfirmOutcome> {
     // Step 0: the dev-backend leak tripwire, identical discipline to requestAction.
     assertNoDevBackendLeak(event, devBackendFlagCache);
 
@@ -914,7 +922,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const rawCode = String(form.get('code') ?? '');
     const code = canonicalizeCode(rawCode, limits.codeLength);
     if (code === null) {
-      return { error: 'bad-code' };
+      return { outcome: 'bad-code' };
     }
 
     // Step 3: the pending nonce cookie. Absent is a statement about the requester's own browser,
@@ -924,11 +932,11 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const pendingCookie = buildCookieName(pendingBase, secure);
     const nonceToken = event.cookies.get(pendingCookie);
     if (!nonceToken) {
-      return { error: 'no-pending-request' };
+      return { outcome: 'no-pending-request' };
     }
 
     const session = await resolveVerifiedSession(event.platform?.env);
-    if (!session) return { error: 'unavailable' };
+    if (!session) return { outcome: 'unavailable' };
 
     const now = Date.now();
     const nonceHash = await hashToken(nonceToken);
@@ -937,7 +945,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // expired; this is the only lookup confirm ever performs against the code table.
     const row = await readCodeRow(session, nonceHash, now);
     if (!row) {
-      return { error: 'expired' };
+      return { outcome: 'expired' };
     }
     const correlationId = row.identity.slice(0, 16);
 
@@ -953,7 +961,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       correlationId,
     );
     if (!rateLimitOk) {
-      return { error: 'throttled' };
+      return { outcome: 'throttled' };
     }
 
     // Step 5: the identity failure gate. charge() both tests the gate and provisionally charges
@@ -965,7 +973,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     if (!gateCharge.admitted) {
       if (!(await runChallenge(config, event, form))) {
         log.warn('auth.channel.escalated', { correlationId });
-        return { error: 'challenge-required' };
+        return { outcome: 'challenge-required' };
       }
       // A passing challenge on this retry proceeds to the compare below, having charged nothing
       // on this call: the identity was already at its threshold, so charge() added no unit.
@@ -980,7 +988,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       // No compare occurred: the spec charges the gate "on every failed compare", so this call's
       // gate charge (if it charged one) is refunded rather than left standing.
       await refundGateCharge(session, row.identity, gateCharge, now);
-      return { error: 'expired' };
+      return { outcome: 'expired' };
     }
 
     // Step 7: over the cap, without comparing; refunded for the same reason as the expired branch
@@ -988,7 +996,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     if (incremented.attempts > limits.attemptCap) {
       await refundGateCharge(session, row.identity, gateCharge, now);
       log.warn('auth.channel.locked', { correlationId });
-      return { error: 'locked' };
+      return { outcome: 'locked' };
     }
 
     // Step 8: the sole authority on whether the code matched. A wrong code deletes nothing (the
@@ -996,7 +1004,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // this statement is never preceded by a separate compare.
     const consumed = await consumeCode(session, nonceHash, codeHash, now);
     if (!consumed) {
-      return { error: 'bad-code' };
+      return { outcome: 'bad-code' };
     }
 
     // The code matched: refund the gate charge this call made (if any), since a successful
@@ -1008,12 +1016,12 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       // rather than null. Logged at error since a developer needs to see this, but the wire
       // answer stays identical to a wrong code so the fault carries no distinguishing behavior.
       log.error('auth.channel.confirmed', { correlationId, outcome: 'empty_subject_fault' });
-      return { error: 'bad-code' };
+      return { outcome: 'bad-code' };
     }
     if (consumed.subject === null) {
       // A decoy row, correctly guessed: consumed, never minted, and answered exactly like a
       // wrong code so an attacker cannot distinguish "right code, decoy row" from "wrong code".
-      return { error: 'bad-code' };
+      return { outcome: 'bad-code' };
     }
 
     const subject = consumed.subject;
@@ -1056,7 +1064,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       maxAge: Math.floor(limits.sessionTtlMs / 1000),
     });
 
-    return { ok: true };
+    return { outcome: 'confirmed' };
   }
 
   /**

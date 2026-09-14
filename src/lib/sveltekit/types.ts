@@ -155,18 +155,18 @@ export interface HistoryData {
 
 /**
  * A refused revert (spec "Part 2: revert"): fail-closed, and stays on the page as an
- * `ActionFailure`, never a force path. `draft_exists` and `history_stale` answer `fail(409, ...)`;
- * `ref_unknown` answers `fail(404, ...)`. There is no fourth, "reverted content is invalid"
- * reason: schema drift in the old version warns on the edit screen after a successful revert, it
+ * `ActionFailure`, never a force path. `draft-exists` and `history-stale` answer `fail(409, ...)`;
+ * `ref-unknown` answers `fail(404, ...)`. There is no fourth, "reverted content is invalid"
+ * outcome: schema drift in the old version warns on the edit screen after a successful revert, it
  * never refuses one.
  */
-export type RevertFailure =
+export type RevertOutcome =
   | {
       /**
        * A pending branch already blocks this entry, from `revertAction`'s own fast pre-check or
        * from `createBranch`'s authoritative collision under a race with another save or revert.
        */
-      reason: 'draft_exists';
+      outcome: 'draft-exists';
       /** Who last saved the blocking draft, degraded the same way {@link HistoryEntry.editor} is. */
       draftEditor: string;
       /**
@@ -181,7 +181,7 @@ export type RevertFailure =
        * commit outside the bounded history window, or the window moved between page render and
        * submit.
        */
-      reason: 'ref_unknown';
+      outcome: 'ref-unknown';
     }
   | {
       /**
@@ -189,5 +189,5 @@ export type RevertFailure =
        * mismatches `branchHead(defaultBranch)`), so reverting now would silently undo a publish
        * this request never saw.
        */
-      reason: 'history_stale';
+      outcome: 'history-stale';
     };

@@ -10,7 +10,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { formatManifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, expectRedirect, expectHttpError } from '../unit/_content-harness.js';
 import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
-import type { RevertFailure } from '../../lib/sveltekit/types.js';
+import type { RevertOutcome } from '../../lib/sveltekit/types.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ID = '2026-05-01-hi';
@@ -167,7 +167,7 @@ describe('revertAction', () => {
     expect(gh.branches.has(BRANCH)).toBe(false);
   });
 
-  it('refuses with a populated RevertFailure when the fast pre-check finds an existing draft', async () => {
+  it('refuses with a populated RevertOutcome when the fast pre-check finds an existing draft', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
@@ -181,13 +181,13 @@ describe('revertAction', () => {
 
     const result = (await routes.revertAction(
       revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }),
-    )) as unknown as { status: number; data: RevertFailure };
+    )) as unknown as { status: number; data: RevertOutcome };
     expect(result.status).toBe(409);
-    expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Other Editor' });
+    expect(result.data).toMatchObject({ outcome: 'draft-exists', draftEditor: 'Other Editor' });
     expect((result.data as { draftLastSavedAt: string }).draftLastSavedAt).toBeTruthy();
   });
 
-  it('refuses with a populated RevertFailure when createBranch collides under a race the pre-check missed', async () => {
+  it('refuses with a populated RevertOutcome when createBranch collides under a race the pre-check missed', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
@@ -201,9 +201,9 @@ describe('revertAction', () => {
 
     const result = (await routes.revertAction(
       revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }),
-    )) as unknown as { status: number; data: RevertFailure };
+    )) as unknown as { status: number; data: RevertOutcome };
     expect(result.status).toBe(409);
-    expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Racer' });
+    expect(result.data).toMatchObject({ outcome: 'draft-exists', draftEditor: 'Racer' });
     expect((result.data as { draftLastSavedAt: string }).draftLastSavedAt).toBeTruthy();
   });
 
@@ -244,7 +244,7 @@ describe('revertAction', () => {
     expect(gh.branches.has(BRANCH)).toBe(false);
   });
 
-  it('answers history_stale when main has moved since the history page rendered', async () => {
+  it('answers history-stale when main has moved since the history page rendered', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
@@ -257,12 +257,12 @@ describe('revertAction', () => {
 
     const result = (await routes.revertAction(
       revertEvent(ID, { ref: history.entries[0].ref, head: staleHead }),
-    )) as unknown as { status: number; data: RevertFailure };
+    )) as unknown as { status: number; data: RevertOutcome };
     expect(result.status).toBe(409);
-    expect(result.data).toEqual({ reason: 'history_stale' });
+    expect(result.data).toEqual({ outcome: 'history-stale' });
   });
 
-  it('answers ref_unknown for a sha absent from the fresh history read', async () => {
+  it('answers ref-unknown for a sha absent from the fresh history read', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
@@ -271,12 +271,12 @@ describe('revertAction', () => {
 
     const result = (await routes.revertAction(
       revertEvent(ID, { ref: 'sha-does-not-exist', head: history.head! }),
-    )) as unknown as { status: number; data: RevertFailure };
+    )) as unknown as { status: number; data: RevertOutcome };
     expect(result.status).toBe(404);
-    expect(result.data).toEqual({ reason: 'ref_unknown' });
+    expect(result.data).toEqual({ outcome: 'ref-unknown' });
   });
 
-  it('refuses ref_unknown in place when the listed sha is a delete commit whose content no longer reads', async () => {
+  it('refuses ref-unknown in place when the listed sha is a delete commit whose content no longer reads', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
@@ -296,9 +296,9 @@ describe('revertAction', () => {
 
     const result = (await routes.revertAction(
       revertEvent(ID, { ref: deleteSha, head: history.head! }),
-    )) as unknown as { status: number; data: RevertFailure };
+    )) as unknown as { status: number; data: RevertOutcome };
     expect(result.status).toBe(404);
-    expect(result.data).toEqual({ reason: 'ref_unknown' });
+    expect(result.data).toEqual({ outcome: 'ref-unknown' });
   });
 
   it('refuses an invalid entry id the same way every other entry action does', async () => {

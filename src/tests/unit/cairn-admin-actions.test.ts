@@ -173,7 +173,7 @@ describe('auth actions', () => {
       form: { email: 'who@t' },
       env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
     });
-    await expect(admin.actions.request(event)).resolves.toEqual({ status: 'sent', sent: true });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
   });
 
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {

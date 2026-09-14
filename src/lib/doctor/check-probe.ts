@@ -452,9 +452,9 @@ async function postRequestAction(
     return fail(`POST ?/request answered type ${String(envelope.type)}, expected success`);
   }
   const data = typeof envelope.data === 'string' ? envelope.data : '';
-  if (data.includes('"send_error"')) {
+  if (data.includes('"send-error"')) {
     return fail(
-      'the request action answered send_error; the magic-link send path is failing (see the email checks and the auth.link.send_failed log records)'
+      'the request action answered send-error; the magic-link send path is failing (see the email checks and the auth.link.send_failed log records)'
     );
   }
   // Every payload carries the "sent" field name, so the distinct status spellings go first.

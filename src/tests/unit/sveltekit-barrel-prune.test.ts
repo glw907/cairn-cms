@@ -41,7 +41,7 @@ const KEPT = [
   'requireOwner',
   'createAuthRoutes',
   'AuthRoutesConfig',
-  'RequestResult',
+  'RequestOutcome',
   'createEditorRoutes',
   'createContentRoutes',
   'createMediaRoute',

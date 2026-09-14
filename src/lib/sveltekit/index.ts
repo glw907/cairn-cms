@@ -18,7 +18,7 @@ export {
   createAuthRoutes,
   NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
-  type RequestResult,
+  type RequestOutcome,
   type AuthRoutes,
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
@@ -98,7 +98,7 @@ export type {
   PlatformContext,
   CookieSetOptions,
   HistoryData,
-  RevertFailure,
+  RevertOutcome,
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';

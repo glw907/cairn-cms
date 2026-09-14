@@ -4,7 +4,7 @@
 // is the dev transport's own enable contract (a factory instance serves both dev and prod). No D1
 // binding is needed: the tripwire fires before any store, print, or network call, so `resolveDb`
 // can answer undefined throughout and the action still either throws (the tripwire) or falls
-// through to its own `{ error: 'unavailable' }` no-binding branch.
+// through to its own `{ outcome: 'unavailable' }` no-binding branch.
 //
 // Three axes are pinned here, each a converged review finding from fix round A: the cache latches
 // only a definite observation (the fail-OPEN direction, beside the sticky-true case that was
@@ -128,13 +128,13 @@ describe('createAuthChannel dev-backend leak tripwire', () => {
     const env: TestEnv = { CAIRN_DEV_BACKEND: '1' };
     // request falls through the tripwire and reaches the ordinary no-db branch, never throwing.
     const result = await channel.actions.request(makeEvent(LOCAL_URL, env, 'member@x.test'));
-    expect(result).toEqual({ error: 'unavailable' });
+    expect(result).toEqual({ outcome: 'unavailable' });
   });
 
   it('changes nothing when the flag is absent, on a non-local host', async () => {
     const channel = createAuthChannel<TestEnv>(validConfig());
     const result = await channel.actions.request(makeEvent(NONLOCAL_URL, {}, 'member@x.test'));
-    expect(result).toEqual({ error: 'unavailable' });
+    expect(result).toEqual({ outcome: 'unavailable' });
   });
 
   it('caches the env observation across requests within one channel instance, never re-reading it', async () => {
@@ -233,7 +233,7 @@ describe('createAuthChannel dev-backend leak tripwire', () => {
         makeEvent(LOCAL_URL, { CAIRN_DEV_BACKEND: '1', PUBLIC_ORIGIN: origin }, 'member@x.test'),
       );
       expect(result, `PUBLIC_ORIGIN ${String(origin)} must leave the local flow alone`).toEqual({
-        error: 'unavailable',
+        outcome: 'unavailable',
       });
     }
   });

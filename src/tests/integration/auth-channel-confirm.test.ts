@@ -73,7 +73,7 @@ describe('unavailable (input-independent fault)', () => {
   it('answers unavailable when resolveDb yields no binding', async () => {
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ resolveDb: () => undefined }));
     const result = await channel.actions.confirm(makeEvent({ code: '12345678', cookies: makeCookies({ [PENDING_HTTPS]: 'x' }) }));
-    expect(result).toEqual({ error: 'unavailable' });
+    expect(result).toEqual({ outcome: 'unavailable' });
   });
 });
 
@@ -83,14 +83,14 @@ describe('no attempt spent, no row consumed', () => {
     const { nonceToken, nonceHash } = await seedCode({ contact: 'a@x.test', subject: 'sub-1' });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ code: '123 45', cookies: jar }));
-    expect(result).toEqual({ error: 'bad-code' });
+    expect(result).toEqual({ outcome: 'bad-code' });
     expect(await attemptsFor(nonceHash)).toBe(0);
   });
 
   it('an absent nonce costs no attempt and reaches no store', async () => {
     const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-1' }));
     const result = await channel.actions.confirm(makeEvent({ code: '12345678' }));
-    expect(result).toEqual({ error: 'no-pending-request' });
+    expect(result).toEqual({ outcome: 'no-pending-request' });
     expect(await codeRowCount()).toBe(0);
   });
 
@@ -99,7 +99,7 @@ describe('no attempt spent, no row consumed', () => {
     const { nonceHash } = await seedCode({ contact: 'a@x.test', subject: 'sub-1' });
     const jar = makeCookies({ [PENDING_HTTPS]: crypto.randomUUID() });
     const result = await channel.actions.confirm(makeEvent({ code: '12345678', cookies: jar }));
-    expect(result).toEqual({ error: 'expired' });
+    expect(result).toEqual({ outcome: 'expired' });
     expect(await attemptsFor(nonceHash)).toBe(0);
   });
 
@@ -117,7 +117,7 @@ describe('no attempt spent, no row consumed', () => {
     const { nonceToken, nonceHash } = await seedCode({ contact, subject });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ code: '12345678', cookies: jar }));
-    expect(result).toEqual({ error: 'challenge-required' });
+    expect(result).toEqual({ outcome: 'challenge-required' });
     expect(await attemptsFor(nonceHash)).toBe(0);
     expect(await codeRowCount()).toBe(1);
   });
@@ -130,7 +130,7 @@ describe('expiry (step 4)', () => {
     const { nonceToken, code, nonceHash } = await seedCode({ contact: 'a@x.test', subject: 'sub-1', now: past });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-    expect(result).toEqual({ error: 'expired' });
+    expect(result).toEqual({ outcome: 'expired' });
     expect(await attemptsFor(nonceHash)).toBe(0);
   });
 });
@@ -144,13 +144,13 @@ describe('the attempt cap (steps 6-7)', () => {
 
     for (let i = 0; i < 5; i++) {
       const result = await channel.actions.confirm(makeEvent({ code: wrong, cookies: jar }));
-      expect(result).toEqual({ error: 'bad-code' });
+      expect(result).toEqual({ outcome: 'bad-code' });
     }
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const locked = await channel.actions.confirm(makeEvent({ code: wrong, cookies: jar }));
-      expect(locked).toEqual({ error: 'locked' });
+      expect(locked).toEqual({ outcome: 'locked' });
       const lockedRecords = warnSpy.mock.calls.map((c) => c[0] as { event?: string }).filter((r) => r.event === 'auth.channel.locked');
       expect(lockedRecords.length).toBeGreaterThan(0);
     } finally {
@@ -172,7 +172,7 @@ describe('the attempt cap (steps 6-7)', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const locked = await channel.actions.confirm(makeEvent({ code: wrong, cookies: jar }));
-      expect(locked).toEqual({ error: 'locked' });
+      expect(locked).toEqual({ outcome: 'locked' });
     } finally {
       vi.restoreAllMocks();
     }
@@ -203,7 +203,7 @@ describe('the attempt cap (steps 6-7)', () => {
     expect(await attemptsFor(nonceHash)).toBe(0);
 
     const result = await channel.actions.confirm(makeEvent({ code: freshCode, cookies: jar }));
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ outcome: 'confirmed' });
   });
 });
 
@@ -218,8 +218,8 @@ describe('bad-code, locked, and expired are deep-equal between a decoy identity 
     const decoyResult = await channel.actions.confirm(makeEvent({ code: wrongCodeFor(decoy.code), cookies: decoyJar }));
     const realResult = await channel.actions.confirm(makeEvent({ code: wrongCodeFor(real.code), cookies: realJar }));
 
-    expect(decoyResult).toEqual({ error: 'bad-code' });
-    expect(realResult).toEqual({ error: 'bad-code' });
+    expect(decoyResult).toEqual({ outcome: 'bad-code' });
+    expect(realResult).toEqual({ outcome: 'bad-code' });
     expect(JSON.stringify(decoyResult)).toBe(JSON.stringify(realResult));
     expect(await attemptsFor(decoy.nonceHash)).toBe(1);
     expect(await attemptsFor(real.nonceHash)).toBe(1);
@@ -241,8 +241,8 @@ describe('bad-code, locked, and expired are deep-equal between a decoy identity 
     const decoyResult = await channel.actions.confirm(makeEvent({ code: decoyWrong, cookies: decoyJar }));
     const realResult = await channel.actions.confirm(makeEvent({ code: realWrong, cookies: realJar }));
 
-    expect(decoyResult).toEqual({ error: 'locked' });
-    expect(realResult).toEqual({ error: 'locked' });
+    expect(decoyResult).toEqual({ outcome: 'locked' });
+    expect(realResult).toEqual({ outcome: 'locked' });
     expect(JSON.stringify(decoyResult)).toBe(JSON.stringify(realResult));
   });
 
@@ -257,8 +257,8 @@ describe('bad-code, locked, and expired are deep-equal between a decoy identity 
     const decoyResult = await channel.actions.confirm(makeEvent({ code: decoy.code, cookies: decoyJar }));
     const realResult = await channel.actions.confirm(makeEvent({ code: real.code, cookies: realJar }));
 
-    expect(decoyResult).toEqual({ error: 'expired' });
-    expect(realResult).toEqual({ error: 'expired' });
+    expect(decoyResult).toEqual({ outcome: 'expired' });
+    expect(realResult).toEqual({ outcome: 'expired' });
     expect(JSON.stringify(decoyResult)).toBe(JSON.stringify(realResult));
   });
 });
@@ -269,7 +269,7 @@ describe('a decoy row and an empty-subject row never mint', () => {
     const { nonceToken, code, nonceHash } = await seedCode({ contact: 'decoy4@x.test', subject: null });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-    expect(result).toEqual({ error: 'bad-code' });
+    expect(result).toEqual({ outcome: 'bad-code' });
     expect(await sessionRowCount()).toBe(0);
     // The row is consumed even though nothing minted: it no longer answers by nonce hash.
     expect(await attemptsFor(nonceHash)).toBeNull();
@@ -282,7 +282,7 @@ describe('a decoy row and an empty-subject row never mint', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-      expect(result).toEqual({ error: 'bad-code' });
+      expect(result).toEqual({ outcome: 'bad-code' });
       expect(await sessionRowCount()).toBe(0);
       expect(await attemptsFor(nonceHash)).toBeNull();
       const faultRecords = errorSpy.mock.calls
@@ -308,7 +308,7 @@ describe('concurrency and replay (step 8)', () => {
     ]);
 
     const results = [a, b];
-    const oks = results.filter((r) => 'ok' in r);
+    const oks = results.filter((r) => r.outcome === 'confirmed');
     expect(oks).toHaveLength(1);
     expect(await sessionRowCount()).toBe(1);
   });
@@ -318,14 +318,14 @@ describe('concurrency and replay (step 8)', () => {
     const { nonceToken, code } = await seedCode({ contact: 'replay@x.test', subject: 'replay-subject' });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const first = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-    expect(first).toEqual({ ok: true });
+    expect(first).toEqual({ outcome: 'confirmed' });
     expect(await sessionRowCount()).toBe(1);
 
     // A replay presents the same stale nonce even though the server told the browser to clear
     // it: an attacker who captured the cookie in transit can still resubmit it.
     const replayJar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const replay = await channel.actions.confirm(makeEvent({ code, cookies: replayJar }));
-    expect(replay).not.toEqual({ ok: true });
+    expect(replay).not.toEqual({ outcome: 'confirmed' });
     expect(await sessionRowCount()).toBe(1);
   });
 });
@@ -354,7 +354,7 @@ describe('the confirm-side lockout regression test', () => {
         const result = await channel.actions.confirm(
           makeEvent({ code: wrongCodeFor(attacker.code), cookies: attackerJar, address: `198.51.100.${100 + i}` }),
         );
-        expect(result).toEqual({ error: 'bad-code' });
+        expect(result).toEqual({ outcome: 'bad-code' });
       }
 
       // The gate is now exhausted for this shared identity. The victim's own confirm, using
@@ -362,7 +362,7 @@ describe('the confirm-side lockout regression test', () => {
       // site's confirm form carries no token on the first submission) and never a hard wall.
       const first = await channel.actions.confirm(makeEvent({ code: victim.code, cookies: victimJar }));
       let final = first;
-      if ('error' in first && first.error === 'challenge-required') {
+      if (first.outcome === 'challenge-required') {
         const escalatedRecords = warnSpy.mock.calls
           .map((c) => c[0] as { event?: string })
           .filter((r) => r.event === 'auth.channel.escalated');
@@ -372,8 +372,8 @@ describe('the confirm-side lockout regression test', () => {
         );
       }
 
-      expect(first).not.toEqual({ error: 'locked' });
-      expect(final).toEqual({ ok: true });
+      expect(first).not.toEqual({ outcome: 'locked' });
+      expect(final).toEqual({ outcome: 'confirmed' });
     } finally {
       vi.restoreAllMocks();
     }
@@ -386,7 +386,7 @@ describe('nonce cookie cleared and no contact in any log record', () => {
     const { nonceToken, code } = await seedCode({ contact: 'clear@x.test', subject: 'sub-1' });
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ outcome: 'confirmed' });
     const pendingDelete = jar.deletes.find((d) => d.name === PENDING_HTTPS);
     expect(pendingDelete).toBeDefined();
     expect(pendingDelete?.opts.path).toBe('/');
@@ -402,7 +402,7 @@ describe('nonce cookie cleared and no contact in any log record', () => {
     const result = await channel.actions.confirm(
       makeEvent({ url: 'http://localhost:5173/login', code, cookies: jar }),
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ outcome: 'confirmed' });
     const pendingDelete = jar.deletes.find((d) => d.name === PENDING_HTTP);
     expect(pendingDelete).toBeDefined();
     expect(pendingDelete?.opts.secure).toBe(false);

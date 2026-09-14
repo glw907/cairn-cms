@@ -43,6 +43,18 @@ The release step sets the version number at the cut and renames this section to 
   any call site; every signature, return type, and thrown error is unchanged. `loadHealth` reaches
   every production site's own `src/routes/healthz/+server.ts`; `loadPreview` reaches the two of
   four that mount a preview route, each in its own `src/routes/(site)/preview/[token]/+page.server.ts`.
+- **Four discriminated results move onto the `outcome` idiom, every discriminant value restated in
+  kebab case.** `RequestResult` (`/sveltekit`) renames to `RequestOutcome`: a login form switches
+  from `form.status` to `form.outcome`, and from `'send_error'` to `'send-error'`; `form.sent` is
+  unchanged. `ChannelRequestResult` and `ChannelConfirmResult` (`/auth-channel`) rename to
+  `ChannelRequestOutcome` and `ChannelConfirmOutcome` and drop their `{ sent | ok: true } | {
+  error: ... }` splits for one shape each; a site holding `createAuthChannel`'s return switches its
+  `request` and `confirm` handling to the single `outcome` field, including the renamed success
+  values `'sent'` and `'confirmed'`. `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: a
+  history screen switches from `form.reason` to `form.outcome`, and from
+  `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
+  `'draft-exists'`/`'ref-unknown'`/`'history-stale'`; `draftEditor`, `draftLastSavedAt`, and
+  `revertAction`'s HTTP statuses are unchanged.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and

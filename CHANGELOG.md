@@ -1295,6 +1295,31 @@
   `mintPreview`, `previewRevoke` to `revokePreview`, `previewLoad` to `loadPreview`, and
   `healthLoad` to `loadHealth` at any call site.
 
+- **Breaking:** four discriminated results move onto the `outcome` idiom, widened this pass to
+  cover the whole public surface (`convention-outcome-idiom`), with every discriminant value
+  restated in kebab case. `RequestResult` (`/sveltekit`) renames to `RequestOutcome`: the
+  discriminant key changes from `status` to `outcome`, and `send_error` becomes `send-error`; the
+  `sent` boolean field is unchanged. `ChannelRequestResult` (`/auth-channel`) renames to
+  `ChannelRequestOutcome` and drops its `{ sent: true } | { error: ... }` split for one shape,
+  `{ outcome: 'sent' | 'invalid' | 'throttled' | 'challenge-required' | 'unavailable' }`; the
+  no-roster-leak encoding is unchanged, an unknown contact still answers `outcome: 'sent'`.
+  `ChannelConfirmResult` (`/auth-channel`) renames to `ChannelConfirmOutcome` and drops its
+  `{ ok: true } | { error: ... }` split the same way, with the success arm now
+  `outcome: 'confirmed'` and every other value unchanged
+  (`'bad-code'`, `'expired'`, `'locked'`, `'throttled'`, `'challenge-required'`,
+  `'no-pending-request'`, `'unavailable'`); the challenge-required-is-a-retry ruling is unchanged.
+  `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: the discriminant key changes from
+  `reason` to `outcome`, and `draft_exists`, `ref_unknown`, and `history_stale` become
+  `draft-exists`, `ref-unknown`, and `history-stale`; the `draftEditor` and `draftLastSavedAt`
+  member fields, and `revertAction`'s 409/404 HTTP statuses, are unchanged. Consumers must:
+  rename any imported type reference from the old name to the new one; a site rendering its own
+  login form switches from `form.status` to `form.outcome` and from `'send_error'` to
+  `'send-error'`; a site rendering its own history screen switches from `form.reason` to
+  `form.outcome` and from `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
+  `'draft-exists'`/`'ref-unknown'`/`'history-stale'`; a site holding `createAuthChannel`'s return
+  switches its `request` and `confirm` result handling from the `sent`/`ok`/`error` fields to the
+  single `outcome` field, including the renamed `'sent'`/`'confirmed'` success values.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

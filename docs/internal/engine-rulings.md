@@ -246,6 +246,22 @@ open edits, not part of the shape itself.
   and Task 7 extends (`authorizeAdminTarget`'s `outcome`-grammar return).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 7.
+- **Widening clause (polish-C, Task 8, 2026-09-08):** this row's own scoping phrase, "every
+  discriminated result this pass introduces", is superseded by decision 6 of
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  Geoff's own words: *"no grandfathered exceptions on a surface heading for a 1.0 promise, in the
+  one window where every rename is free."* The `outcome`-discriminant grammar now governs the
+  WHOLE public surface, not only what a later pass introduces, and polish-C's Task 8 reads four
+  existing types into scope under it: `RequestOutcome` (`/sveltekit`, formerly `RequestResult`),
+  `ChannelRequestOutcome` and `ChannelConfirmOutcome` (`/auth-channel`, formerly
+  `ChannelRequestResult` and `ChannelConfirmResult`), and `RevertOutcome` (`/sveltekit`, formerly
+  `RevertFailure`; see `convention-failure-suffix`'s own dated supersession for the name). No
+  ledger row rules discriminant VALUE casing before this clause; the kebab-case string a reader
+  sees on every existing `*Outcome` type (`PreviewMintOutcome`, `PreviewRevokeOutcome`, and the
+  rest) is this pass's own uniformity, not a prior ruling, so this clause states it as the rule
+  going forward: an `outcome` value is a kebab-case string literal (`'send-error'`, not
+  `'send_error'` or `'sendError'`). The snake_case rule at `src/lib/log/events.ts:5-7`, which
+  governs a log record's `reason` and `scope` fields, is a different surface and stays untouched.
 
 ## convention-failure-suffix: `Failure` is the family suffix; `Refusal` and `Skip` retire as TYPE-NAME suffixes  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -267,6 +283,18 @@ open edits, not part of the shape itself.
 - **Progress note (polish-11a, Task 6):** `BulkDeleteSkip` renamed to `BulkDeleteSkippedAsset`,
   the last member of the F1 rename set; it declares in `media/bulk-delete-plan.ts`. Every rename
   this ruling names is now executed. Verdict unchanged.
+- **Dated supersession (polish-C, Task 8, 2026-09-08):** citing
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  line 7, which names the `*Outcome` target for the one type this row's own family-suffix rule
+  would otherwise have kept on `*Failure`. `RevertFailure` (`/sveltekit`) is that type: every arm
+  is a refusal and it is only ever the payload of `ActionFailure<RevertFailure>`, the row's own
+  case rather than an edge of it. Surviving scope: `*Failure` remains the family suffix for a
+  payload whose arms are all refusals; `RevertOutcome` is the one ruled exception, on the ground
+  that `convention-outcome-idiom` governs the discriminated SHAPE and the four types this pass
+  reads onto that grammar (`RequestOutcome`, `ChannelRequestOutcome`, `ChannelConfirmOutcome`,
+  `RevertOutcome`) should look alike. `RevertFailure` is renamed to `RevertOutcome`, re-keyed from
+  `reason` to `outcome`, and declares in `src/lib/sveltekit/types.ts`. No other type this row
+  names is affected.
 
 ## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -1839,6 +1867,10 @@ when the remediation pass lands.
 - **Shape:** Rename draftStartedAt and HistoryData's startedAt to lastSavedAt, dropping the compensating doc-comment prose. The comment admits both are wrong and keeps them 'for API stability', but churn is free until beta, so the stability plea does not license the wrong name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 32.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-C, Task 8):** `RevertFailure` renames to `RevertOutcome`, re-keyed from `reason`
+  to `outcome` with kebab-case values `'draft-exists'`, `'history-stale'`, `'ref-unknown'`, per
+  `convention-outcome-idiom`'s widening clause and `convention-failure-suffix`'s dated
+  supersession. Verdict unchanged.
 
 ## audit-sveltekit-tidyclient: `TidyClient`  (reshape, 2026-08-26, any-site audit)
 
@@ -2124,6 +2156,10 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 65.
 - **Any-site case:** A site rendering its own login form branches on form.status to show check-your-email, try-again, or wait-a-moment.
+- **Note (polish-C, Task 8):** `RequestResult` renames to `RequestOutcome`, re-keyed from `status`
+  to `outcome` (`'sent'`, `'send-error'`, `'throttled'`); the kept `sent` boolean field is
+  unaffected. The any-site case above now reads: a site rendering its own login form branches on
+  `form.outcome` to show check-your-email, try-again, or wait-a-moment. Verdict unchanged.
 
 ## audit-sveltekit-authroutes: `AuthRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -3233,6 +3269,13 @@ when the remediation pass lands.
   Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 8.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Supersession (polish-C, Task 8, 2026-09-08):** citing
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md).
+  This row's `Reopens on:` closure text reads "the type keeps with the factory, unchanged". What
+  changed: the name (`ChannelRequestOutcome`) and the discriminant key (`outcome`, replacing the
+  bare `sent`/`error` split). What did not: the type still declares in `factory.ts`, and the
+  no-roster-leak encoding this row credits it with survives verbatim, `outcome: 'sent'` even for
+  an unknown contact.
 
 ## audit-auth-channelconfirmresult: `ChannelConfirmResult`  (reshape, 2026-08-26, any-site audit)
 
@@ -3247,6 +3290,13 @@ when the remediation pass lands.
   factory itself. Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 9.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Supersession (polish-C, Task 8, 2026-09-08):** citing
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md).
+  This row's `Reopens on:` closure text reads "the type keeps with the factory, unchanged". What
+  changed: the name (`ChannelConfirmOutcome`) and the discriminant key (`outcome`, replacing the
+  `ok: true` / `error: ...` split, with the success arm now `outcome: 'confirmed'`). What did not:
+  the type still declares in `factory.ts`, and the challenge-required-is-a-retry-invitation ruling
+  survives verbatim, `outcome: 'challenge-required'` on an escalated attempt, never a hard failure.
 
 ## audit-auth-authchannelevent: `AuthChannelEvent`  (reshape, 2026-08-26, any-site audit)
 

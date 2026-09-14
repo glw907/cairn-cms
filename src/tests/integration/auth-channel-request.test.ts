@@ -53,7 +53,7 @@ describe('origin and scheme checks', () => {
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const event = makeEvent({ url: 'http://localhost:5173/login', contact: 'a@x.test' });
     const result = await channel.actions.request(event);
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
   });
 });
@@ -111,7 +111,7 @@ describe('housekeeping rides the mint', () => {
     const channel = createAuthChannel<ChannelTestEnv>(config);
     // No platform on the test event, so the sweep awaits inline and is deterministic here.
     const result = await channel.actions.request(makeEvent({ contact: 'sweep@x.test' }));
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
 
     const staleCode = await db
       .prepare("SELECT COUNT(*) AS n FROM cairn_channel_code WHERE nonce_hash = 'stale-nonce'")
@@ -133,7 +133,7 @@ describe('challenge (step 2)', () => {
     const { config, sent } = makeConfig({ challenge: async () => false, lookup: async () => 'sub-1' });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
-    expect(result).toEqual({ error: 'challenge-required' });
+    expect(result).toEqual({ outcome: 'challenge-required' });
     expect(sent).toHaveLength(0);
     expect(await codeRowCount()).toBe(0);
     expect(await budgetSum('send')).toBe(0);
@@ -147,7 +147,7 @@ describe('challenge (step 2)', () => {
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
-    expect(result).toEqual({ error: 'challenge-required' });
+    expect(result).toEqual({ outcome: 'challenge-required' });
     expect(sent).toHaveLength(0);
     expect(await codeRowCount()).toBe(0);
   });
@@ -158,7 +158,7 @@ describe('normalize (step 3)', () => {
     const { config } = makeConfig({ normalize: () => 'x'.repeat(255) });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'anything' }));
-    expect(result).toEqual({ error: 'invalid' });
+    expect(result).toEqual({ outcome: 'invalid' });
     expect(await codeRowCount()).toBe(0);
   });
 
@@ -170,14 +170,14 @@ describe('normalize (step 3)', () => {
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'anything' }));
-    expect(result).toEqual({ error: 'invalid' });
+    expect(result).toEqual({ outcome: 'invalid' });
   });
 
   it('rejects an empty contact', async () => {
     const { config } = makeConfig();
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent());
-    expect(result).toEqual({ error: 'invalid' });
+    expect(result).toEqual({ outcome: 'invalid' });
     expect(await codeRowCount()).toBe(0);
   });
 });
@@ -187,7 +187,7 @@ describe('unavailable (input-independent faults)', () => {
     const { config } = makeConfig({ resolveDb: () => undefined });
     const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'a@x.test' }));
-    expect(result).toEqual({ error: 'unavailable' });
+    expect(result).toEqual({ outcome: 'unavailable' });
   });
 
   it('answers the byte-identical body when the schema does not match', async () => {
@@ -201,8 +201,8 @@ describe('unavailable (input-independent faults)', () => {
       const mismatchChannel = createAuthChannel<ChannelTestEnv>(mismatchConfig);
       const mismatchResult = await mismatchChannel.actions.request(makeEvent({ contact: 'a@x.test' }));
 
-      expect(absentResult).toEqual({ error: 'unavailable' });
-      expect(mismatchResult).toEqual({ error: 'unavailable' });
+      expect(absentResult).toEqual({ outcome: 'unavailable' });
+      expect(mismatchResult).toEqual({ outcome: 'unavailable' });
       expect(JSON.stringify(absentResult)).toBe(JSON.stringify(mismatchResult));
     } finally {
       await db.prepare("UPDATE cairn_channel_meta SET value = '1' WHERE key = 'schema_version'").run();
@@ -211,7 +211,7 @@ describe('unavailable (input-independent faults)', () => {
 });
 
 describe('response uniformity across known, unknown, and cooldown-held inputs', () => {
-  it('known, unknown, and cooldown-held all answer the byte-identical {sent: true}', async () => {
+  it("known, unknown, and cooldown-held all answer the byte-identical {outcome: 'sent'}", async () => {
     const { config: knownConfig, sent: knownSent } = makeConfig({ lookup: async () => 'sub-1' });
     const knownChannel = createAuthChannel<ChannelTestEnv>(knownConfig);
     const knownResult = await knownChannel.actions.request(makeEvent({ contact: 'known@x.test', address: '203.0.113.10' }));
@@ -228,9 +228,9 @@ describe('response uniformity across known, unknown, and cooldown-held inputs', 
       makeEvent({ contact: 'again@x.test', address: '203.0.113.12', cookies: jar }),
     );
 
-    expect(knownResult).toEqual({ sent: true });
-    expect(unknownResult).toEqual({ sent: true });
-    expect(cooldownResult).toEqual({ sent: true });
+    expect(knownResult).toEqual({ outcome: 'sent' });
+    expect(unknownResult).toEqual({ outcome: 'sent' });
+    expect(cooldownResult).toEqual({ outcome: 'sent' });
     expect(JSON.stringify(knownResult)).toBe(JSON.stringify(unknownResult));
     expect(JSON.stringify(unknownResult)).toBe(JSON.stringify(cooldownResult));
 
@@ -248,8 +248,8 @@ describe('nonce reuse and the cooldown (step 7)', () => {
     const jar = makeCookies();
     const first = await channel.actions.request(makeEvent({ contact: 'ed@x.test', cookies: jar }));
     const second = await channel.actions.request(makeEvent({ contact: 'ed@x.test', cookies: jar }));
-    expect(first).toEqual({ sent: true });
-    expect(second).toEqual({ sent: true });
+    expect(first).toEqual({ outcome: 'sent' });
+    expect(second).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
     expect(await codeRowCount()).toBe(1);
     expect(await budgetSum('send')).toBe(1);
@@ -267,7 +267,7 @@ describe('nonce reuse and the cooldown (step 7)', () => {
     // left standing, or a member's own resend taps would silently accrue toward the
     // ceiling_exceeded operator alarm.
     const second = await channel.actions.request(makeEvent({ contact: 'ceiling-cooldown@x.test', cookies: jar }));
-    expect(second).toEqual({ sent: true });
+    expect(second).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
 
     const afterResend = await budgetSum('ceiling');
@@ -291,8 +291,8 @@ describe('nonce reuse and the cooldown (step 7)', () => {
         channel.actions.request(makeEvent({ contact: 'race@x.test', cookies: jar })),
         channel.actions.request(makeEvent({ contact: 'race@x.test', cookies: jar })),
       ]);
-      expect(a).toEqual({ sent: true });
-      expect(b).toEqual({ sent: true });
+      expect(a).toEqual({ outcome: 'sent' });
+      expect(b).toEqual({ outcome: 'sent' });
       // Exactly one of the two concurrent calls won the remint and delivered; the loser held the
       // cooldown and refunded rather than double-sending.
       expect(sent).toHaveLength(2);
@@ -316,13 +316,13 @@ describe('delivery failure (step 8)', () => {
     const jar = makeCookies();
 
     const first = await channel.actions.request(makeEvent({ contact: 'fail@x.test', cookies: jar }));
-    expect(first).toEqual({ sent: true });
+    expect(first).toEqual({ outcome: 'sent' });
     expect(calls).toBe(1);
     expect(await codeRowCount()).toBe(0);
     expect(await budgetSum('send')).toBe(0);
 
     const second = await channel.actions.request(makeEvent({ contact: 'fail@x.test', cookies: jar }));
-    expect(second).toEqual({ sent: true });
+    expect(second).toEqual({ outcome: 'sent' });
     expect(calls).toBe(2);
   });
 
@@ -356,7 +356,7 @@ describe('delivery failure (step 8)', () => {
     const result = await channel.actions.request(
       makeEvent({ contact: 'bg@x.test', waitUntil: (p) => void scheduled.push(p) }),
     );
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     // Two backgrounded promises: the housekeeping sweep that rides every fresh mint, then the
     // delivery itself. Neither runs on the response path.
     expect(scheduled).toHaveLength(2);
@@ -415,7 +415,7 @@ describe('the lockout regression test', () => {
     const victimResult = await channel.actions.request(
       makeEvent({ contact, address: '198.51.100.1', cookies: victimJar }),
     );
-    expect(victimResult).toEqual({ sent: true });
+    expect(victimResult).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
     const victimNonceToken = victimJar.get(PENDING_HTTPS);
     expect(victimNonceToken).toBeDefined();
@@ -433,7 +433,7 @@ describe('the lockout regression test', () => {
         const attackerResult = await channel.actions.request(
           makeEvent({ contact, address: `198.51.100.${100 + i}`, cookies: makeCookies() }),
         );
-        expect(attackerResult).toEqual({ sent: true });
+        expect(attackerResult).toEqual({ outcome: 'sent' });
       }
 
       // The identity ceiling never denies: every attacker send still delivered, and the operator
@@ -449,7 +449,7 @@ describe('the lockout regression test', () => {
       // their code), never the store layer directly.
       const challengeCallsBeforeConfirm = challengeCalls;
       const confirmResult = await channel.actions.confirm(makeEvent({ code: victimCode, cookies: victimJar }));
-      expect(confirmResult).toEqual({ ok: true });
+      expect(confirmResult).toEqual({ outcome: 'confirmed' });
 
       const escalatedRecords = warnSpy.mock.calls
         .map((c) => c[0] as { event?: string })
@@ -485,7 +485,7 @@ describe('a throwing lookup', () => {
         makeEvent({ contact: 'someone@x.test', address: '198.51.100.50' }),
       );
       // The response and store effects match the ordinary unknown-contact path exactly.
-      expect(result).toEqual({ sent: true });
+      expect(result).toEqual({ outcome: 'sent' });
       expect(sent).toHaveLength(0);
       expect(await codeRowCount()).toBe(1);
       // Exactly one requested record across all levels, at warn with the distinct outcome, so a

@@ -43,7 +43,7 @@ async function signIn(channel: ReturnType<typeof createAuthChannel<ChannelTestEn
   const { nonceToken, code } = await seedCode({ contact, subject });
   const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
   const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-  if (!('ok' in result)) throw new Error(`signIn helper: confirm did not succeed: ${JSON.stringify(result)}`);
+  if (result.outcome !== 'confirmed') throw new Error(`signIn helper: confirm did not succeed: ${JSON.stringify(result)}`);
   const set = jar.sets.find((s) => s.name === SESSION_HTTPS);
   if (!set) throw new Error('signIn helper: no session cookie was set');
   return set.value;
@@ -96,7 +96,7 @@ describe('confirm cleans up an orphaned prior session', () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-      expect(result).toEqual({ ok: true });
+      expect(result).toEqual({ outcome: 'confirmed' });
       const destroyed = infoSpy.mock.calls
         .map((c) => c[0] as { event?: string; correlationId?: string })
         .filter((r) => r.event === 'auth.channel.session.destroyed');
@@ -122,7 +122,7 @@ describe('confirm cleans up an orphaned prior session', () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-      expect(result).toEqual({ ok: true });
+      expect(result).toEqual({ outcome: 'confirmed' });
       const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
       expect(events).not.toContain('auth.channel.session.destroyed');
     } finally {
@@ -142,7 +142,7 @@ describe('confirm cleans up an orphaned prior session', () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
-      expect(result).toEqual({ ok: true });
+      expect(result).toEqual({ outcome: 'confirmed' });
       const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
       expect(events).not.toContain('auth.channel.session.destroyed');
     } finally {

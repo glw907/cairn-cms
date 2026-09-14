@@ -86,8 +86,11 @@ durable orientation only.
   conductor (Fable) runs plan and execution in one session and never reads diffs itself; the
   `diff-reviewer` agent does, per the global "Conducting a pass" rule.
 - **DaisyUI reference:** the official DaisyUI skill (`~/.claude/skills/daisyui/`, dotfiles) is the
-  component reference for every admin markup change, and `.mcp.json` adds the free DaisyUI GitMCP
-  server for on-demand docs in the main loop. Prefer a stock DaisyUI component over a home-grown one
+  component reference for every admin markup change, and `.mcp.json` adds three servers for the main loop: the free DaisyUI GitMCP
+  docs mirror, the official Svelte MCP (`mcp.svelte.dev`, versioned Svelte 5 and SvelteKit 2 docs plus
+  a static check of Svelte code), and Microsoft's Playwright MCP for structured DOM inspection when an
+  e2e failure needs reproducing. Implementer and reviewer agents run a fixed tool list without MCP, so
+  what reaches them is the skill on disk. Prefer a stock DaisyUI component over a home-grown one
   unless `docs/internal/engine-rulings.md` records the defect that forced it; the admin design system
   wins over the skill on any conflict.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1

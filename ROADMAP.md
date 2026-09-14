@@ -893,7 +893,10 @@ the named human gates only):**
   carry both: keep the registry's shape and site record (the 2026-08-20 plan's registry adopts
   several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
   site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a
-  loop over sites without reshaping anything beneath (Geoff, 2026-09-13)) runs in parallel with the
+  loop over sites without reshaping anything beneath. The rule generalizes: the spine's API is
+  the product and every front end is a view over it, the CLI first, the HUD second, and a local
+  web interface if wanted, each calling the same actions and reading the same records and
+  results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
   borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
   (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the

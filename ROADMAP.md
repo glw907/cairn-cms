@@ -885,7 +885,11 @@ the named human gates only):**
 
 - **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
   `cairn` tool Pass A (plan `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
-  its Reconciliation block re-verified against the post-C tree first) runs in parallel with the
+  its Reconciliation block re-verified against the post-C tree first, and the plan re-cut at
+  the CLI-versus-HUD boundary: Pass A ships the registry, the health checks, the cobra
+  subcommands, and the scheduled tripwire with every action usable from the shell; the
+  bubbletea HUD becomes a later pass that adds a view over what already works, which the
+  module's downward package order already allows (Geoff, 2026-09-13)) runs in parallel with the
   borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
   (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the

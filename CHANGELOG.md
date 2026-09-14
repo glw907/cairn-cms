@@ -2013,6 +2013,18 @@
   slug instead of the stale count of forty. Internal documentation only; no code changed. No
   consumer action.
 
+- `docs/extend/migration-notes.md`'s `## Unreleased` section is reconciled against the whole
+  window since `0.96.0`: every actionable `Consumers must:` line now carries exactly one bullet,
+  duplicate coverage across passes merged into one bullet each, and the `OfficeList` `subtitle`
+  to `meta` bullet retired, since it taught a rename on a component this same window deletes. The
+  section gains a closing subsection naming the four consumer sites, their touched files, and the
+  upgrade order (`ecxc-ski`, `907-life`, `xcathletes-org`, `aksailingclub-org`). A tree-wide sweep
+  for the thirty identifiers this window renamed found two stale prose mentions outside the
+  changelog, corrected in the same commit: `docs/internal/pre-beta-harvest.md`'s `githubApp()`
+  mentions now read `createGithubApp()`, and `docs/internal/engine-harvest-candidates.md`'s two
+  `adminAction`-shaped-seam mentions now read `createAdminAction`. Internal and extend-track
+  documentation only; no code changed. No consumer action.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

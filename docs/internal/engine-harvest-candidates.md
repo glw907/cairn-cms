@@ -95,7 +95,7 @@ tasks call" (pass-1 plan, Gate 1 amendments), and Task 5 writes a row on every r
 add/edit/archive.
 
 Against today's engine: the packaged implementation is `createD1AuditSink`, which
-returns an `AdminActionAuditSink`, documented as the seam `adminAction` invokes
+returns an `AdminActionAuditSink`, documented as the seam `createAdminAction` invokes
 (`docs/reference/sveltekit.md`). Whether calling the returned sink directly from site
 store code, with domain events rather than admin-action records, is a sanctioned
 pattern is not documented. As planned, the platform hand-rolls its own audit table
@@ -105,7 +105,7 @@ Signals: two sites independently (ASC hand-rolled the first sink, now engine-sid
 xcathletes plans the second, in a plan written before the packaged sink existed), and
 arguably a mechanic (append-only audit persistence carries no domain meaning; the
 event vocabulary is the site's). Site hypothesis: none filed for the domain-event
-half. ASC's brief asked for and received the `adminAction`-shaped sink only.
+half. ASC's brief asked for and received the `createAdminAction`-shaped sink only.
 
 ### 2c. Team-scoped public URLs for platform-rendered content
 

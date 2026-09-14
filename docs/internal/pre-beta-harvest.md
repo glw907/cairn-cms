@@ -278,10 +278,10 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   agent-memory note claimed `GithubAppProvider.owner`/`.repo`/`.branch` are not reachable off
   `CairnAdapter.backend` in site code because it is typed as the generic `BackendProvider` and
   `isGithubApp` is not barrel-exported, so the port re-exported a literal `REPO` constant next
-  to `githubApp({...})` as a workaround. Verified false for the actual friction site
+  to `createGithubApp({...})` as a workaround. Verified false for the actual friction site
   (`svelte-check`, 0/0, both via a raw `tsc --noEmit` probe and the theme's own `npm run
   check`): `defineAdapter<const A extends CairnAdapter>(adapter: A): A`'s const-generic capture
-  preserves `githubApp()`'s concrete `GithubAppProvider` return type, so `cairn.backend.owner`
+  preserves `createGithubApp()`'s concrete `GithubAppProvider` return type, so `cairn.backend.owner`
   reads with no cast from the same module that calls `defineAdapter`, or from any module that
   imports that export. `isGithubApp` would only be needed to narrow a field genuinely widened
   to `BackendProvider` (for example `CairnRuntime.backend`, which `composeRuntime` returns and

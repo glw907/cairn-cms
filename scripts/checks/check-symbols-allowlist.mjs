@@ -136,6 +136,17 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/access-identity.ts', // docs/extend/sign-in-through-your-organization.md's illustrative Access-verifier module, by convention
   'file-path:admin/__data.json', // docs/extend/sign-in-through-your-organization.md, SvelteKit's own data-only fetch path, never a file on disk
 
+  // Real paths in a named production consumer site's own repo, not this repo's tree.
+  // docs/extend/migration-notes.md's closing "upgrade order" subsection names them so a site
+  // owner can find the call sites the breaking window touches; the bracketed/parenthesized route
+  // segments in the same subsection (`[...path]`, `(site)`, `[token]`) already split the
+  // extractor's run and never form a whole candidate, so only these five need listing here.
+  'file-path:src/chassis/cairn.server.ts', // ecxc-ski and 907-life's own adapter module
+  'file-path:src/tests/adapter.test.ts', // aksailingclub-org's own adapter test
+  'file-path:src/member-auth/lib/crypto.ts', // aksailingclub-org's own member-auth cookie module
+  'file-path:src/admin-club/lib/announcements.ts', // aksailingclub-org's own announcements module
+  'file-path:src/tests/announce-list-order.test.ts', // aksailingclub-org's own announcement-order test
+
   // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
   // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits
   // to fix a GitHub App installation's repository access.

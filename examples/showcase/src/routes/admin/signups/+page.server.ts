@@ -1,11 +1,12 @@
 // A developer's own custom admin screen, proving the extension seam. It is a concrete route
 // under /admin (so it wins over the catch-all), inherits the guard-populated locals.cairnEditor, renders
 // inside the shared CairnAdminShell from the parent layout, and reads and writes its own APP_DB
-// binding (the engine never touches it). requireOwner on the load and the section action's own
-// access check on each form action are the real server-side gates; the ownerOnly nav flag is
+// binding (the engine never touches it). requireAccess on the load and the section action's own
+// access check on each form action resolve against the same site access map, so a denied POST's
+// page render exposes nothing the load would already have refused; the ownerOnly nav flag is
 // cosmetic only.
 import type { PageServerLoad, Actions, RequestEvent } from './$types';
-import { createSectionAction, requireOwner } from '@glw907/cairn-cms/sveltekit';
+import { createSectionAction, requireAccess } from '@glw907/cairn-cms/sveltekit';
 import { error, fail } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 
@@ -32,7 +33,7 @@ function requireAppDb(event: RequestEvent): D1Database {
 }
 
 export const load: PageServerLoad = async (event) => {
-  requireOwner(event);
+  requireAccess(event);
   const db = requireAppDb(event);
   const { results } = await db
     .prepare('SELECT id, name, email FROM signups ORDER BY id DESC')

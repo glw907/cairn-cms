@@ -4,8 +4,10 @@ import { defineAccess } from '@glw907/cairn-cms';
  * This site's whole access declaration: which roles reach which admin screen or route. The same
  * object goes to both hook branches, `createAuthGuard` in production and the dev backend's own
  * handle under the opt-in dev build, because that handle replaces the guard rather than running
- * beside it. One declaration read by both keeps a route's authorization identical in local
- * development and in production, so a screen that refuses a role in one refuses it in the other.
+ * beside it. The map is attached under either branch, so `hasAccessRule`, `createSectionAction`'s
+ * `access_map_not_attached` 500, and the nav's `hrefReachable` behave the same in dev and in
+ * production. The dev backend mints an owner session, so a role-based refusal cannot be exercised
+ * locally; only the attached-versus-absent map behaves identically.
  *
  * This module is live in the DEFAULT build, so its comments ride into the deployable Worker's
  * sourcemap. Describe the dev branch here, never name its package or its exported handle: the

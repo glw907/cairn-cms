@@ -80,6 +80,10 @@ test('the signups outcome region is mounted empty on first load and announces a 
   // Discriminates the failure path from either success outcome, since not.toBeEmpty() alone
   // passes for any content, including a success sentence.
   await expect(outcome).not.toHaveText(/Signup (added|removed)\./);
+  // Discriminates an enhanced, no-navigation submit from a native full-page POST: a fresh
+  // document load never carries focus into a field, so this only passes when use:enhance kept
+  // the submit inside the live document and the onCreate callback moved focus to the name input.
+  await expect(page.locator('input[name="name"]')).toBeFocused();
 });
 
 test("each row's Delete trigger names its own signup", async ({ page }) => {

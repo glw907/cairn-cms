@@ -261,15 +261,17 @@
 
 - `devBackendHandle` (`@glw907/cairn-cms-dev`) accepts `access` and `roles`, so the dev backend
   reaches parity with `createAuthGuard` on `locals.cairnAccess`: a site hands the one declaration
-  object it already hands the guard to whichever hook branch is live, and a route gate or a
-  `createSectionAction` form action authorizes identically in local development and in production.
-  `access` is attached verbatim beside the minted owner editor on every `/admin` request; `roles`
-  is carried so the same object needs no reshaping and resolves no capability here, since the dev
-  backend mints the literal owner capability. Given no `access`, the handle leaves
-  `locals.cairnAccess` undefined rather than the guard's `{}` default, keeping
-  `createSectionAction`'s misconfigured-wiring refusal reachable under the dev backend, which
-  replaces the guard rather than running beside it. Both parameters are optional and additive; no
-  consumer action.
+  object it already hands the guard to whichever hook branch is live, and the attached-versus-absent
+  map behaves the same in local development and in production (`hasAccessRule`,
+  `createSectionAction`'s `access_map_not_attached` 500, and the nav's `hrefReachable`). The dev
+  backend mints an owner session, so a role-based refusal cannot be exercised locally; only the
+  map's attachment, not a role decision, is what this parity covers. `access` is attached verbatim
+  beside the minted owner editor on every `/admin` request; `roles` is carried so the same object
+  needs no reshaping and resolves no capability here, since the dev backend mints the literal
+  owner capability. Given no `access`, the handle leaves `locals.cairnAccess` undefined rather
+  than the guard's `{}` default, keeping `createSectionAction`'s misconfigured-wiring refusal
+  reachable under the dev backend, which replaces the guard rather than running beside it. Both
+  parameters are optional and additive; no consumer action.
 
 ### Removed
 

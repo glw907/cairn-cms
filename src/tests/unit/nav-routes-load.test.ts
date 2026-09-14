@@ -39,7 +39,7 @@ describe('navLoad', () => {
       }
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     const data = await routes.navLoad(loadEvent());
     expect(data.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
     expect(data.tree).toEqual([{ label: 'Home', url: '/' }]);
@@ -52,7 +52,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     const data = await routes.navLoad(loadEvent());
     expect(data.tree).toEqual([]);
   });
@@ -62,7 +62,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     const data = await routes.navLoad(loadEvent('?error=You+have+been+signed+out'));
     expect(data).not.toHaveProperty('error');
   });
@@ -74,7 +74,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     const data = await routes.navLoad(loadEvent());
     expect(data.tree).toEqual([]);
   });
@@ -86,7 +86,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     await routes.navLoad(loadEvent());
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; conditionId?: string; scope?: string; error?: string },
@@ -108,7 +108,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     await routes.navLoad(loadEvent());
     expect(errorSpy).not.toHaveBeenCalled();
   });
@@ -118,18 +118,18 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     const data = await routes.navLoad(loadEvent('?saved=1'));
     expect(data.saved).toBe(true);
   });
 
   it('404s when no navMenu is configured', async () => {
-    const routes = createNavRoutes(runtime(undefined));
+    const routes = createNavRoutes({ runtime: runtime(undefined) });
     await expect(routes.navLoad(loadEvent())).rejects.toMatchObject({ status: 404 });
   });
 
   it('refuses a none-capability session with 403 (the nav editor is an engine admin-mutation surface)', async () => {
-    const routes = createNavRoutes(runtime(NAV));
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
     const event = testEvent({
       url: 'https://t.example/admin/nav',
       locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },

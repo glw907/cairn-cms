@@ -101,7 +101,7 @@ void typeOnlyEditorRoutesContract;
 
 // createNavRoutes: NavRoutes replaces the retired `ReturnType<typeof createNavRoutes>`.
 function typeOnlyNavRoutesContract(runtime: CairnRuntime): void {
-  const nav: NavRoutes = createNavRoutes(runtime);
+  const nav: NavRoutes = createNavRoutes({ runtime });
   const roundTrip: ReturnType<typeof createNavRoutes> = nav;
   void roundTrip;
 }

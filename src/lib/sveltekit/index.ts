@@ -32,7 +32,7 @@ export {
   type PreviewTokenConfig,
   type PreviewData,
 } from './preview.js';
-export { createMediaRoute } from './media-route.js';
+export { createMediaRoute, type MediaRouteConfig } from './media-route.js';
 export type {
   AdminShellData,
   ListData,
@@ -51,7 +51,7 @@ export type {
   TidyEffort,
   MediaLibraryEntry,
 } from './content-routes.js';
-export { createNavRoutes, type NavRoutes } from './nav-routes.js';
+export { createNavRoutes, type NavRoutes, type NavRoutesConfig } from './nav-routes.js';
 export type { NavLoadData } from './nav-routes.js';
 export type {
   NavIcon,

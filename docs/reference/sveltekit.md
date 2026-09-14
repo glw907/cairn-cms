@@ -1284,7 +1284,11 @@ client in `examples/showcase` is the working reference.
 Stability tier: Scaffold API.
 
 ```ts
-declare function createMediaRoute(runtime: CairnRuntime): RequestHandler;
+declare function createMediaRoute(config: MediaRouteConfig): RequestHandler;
+
+interface MediaRouteConfig {
+  runtime: CairnRuntime;
+}
 ```
 
 The media delivery route, a SvelteKit `RequestHandler` a media-enabled site mounts at
@@ -1295,8 +1299,8 @@ Every served response carries the load-bearing security headers (`X-Content-Type
 which are the XSS control for the served bytes since the route sits outside `/admin`. It forwards
 `If-None-Match` and `Range` for 304 and 206 responses, short-circuits the Cloudflare Images
 self-loop, returns 503 on a missing bucket binding, and 404 responses a media-off site or a bad path. Pass
-it the composed runtime directly; the factory reads `runtime.resolvedAssets` itself, matching every
-other route factory's convention.
+the composed runtime as the config's `runtime` member; the factory reads `resolvedAssets` off it,
+matching every other route factory's convention.
 
 ```ts
 // src/routes/media/[...path]/+server.ts
@@ -1304,7 +1308,7 @@ import { composeRuntime } from '@glw907/cairn-cms';
 import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
-export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }));
+export const GET = createMediaRoute({ runtime: composeRuntime({ adapter: cairn, siteConfig }) });
 ```
 
 ## Public preview
@@ -1486,7 +1490,11 @@ type PreviewRevokeOutcome =
 Stability tier: Unstable API.
 
 ```ts
-declare function createNavRoutes(runtime: CairnRuntime): NavRoutes;
+declare function createNavRoutes(config: NavRoutesConfig): NavRoutes;
+
+interface NavRoutesConfig {
+  runtime: CairnRuntime;
+}
 
 type NavRoutes = {
   navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>;
@@ -1501,9 +1509,9 @@ shown in the preceding signature, carries no export row of its own: a consumer r
 Build the load and save for the navigation editor at `/admin/nav`. `navLoad` reads the current menu
 tree and the page options for the URL picker, and `navSaveAction` commits an edited tree to the
 git-committed site-config file. Like the content routes, a handler resolves its backend from
-`event.locals.cairnBackend`, falling back to the runtime's connected backend. A production caller
-passes no second argument. The `NavTree` component posts the named `?/save` action, so a
-hand-mounted route registers `navSaveAction` under `save`.
+`event.locals.cairnBackend`, falling back to the runtime's connected backend. The `NavTree`
+component posts the named `?/save` action, so a hand-mounted route registers `navSaveAction`
+under `save`.
 
 ```ts
 // src/routes/admin/(app)/nav/+page.server.ts (per-route mounting)
@@ -1511,7 +1519,7 @@ import { composeRuntime } from '@glw907/cairn-cms';
 import { createNavRoutes } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
-const nav = createNavRoutes(composeRuntime({ adapter: cairn, siteConfig }));
+const nav = createNavRoutes({ runtime: composeRuntime({ adapter: cairn, siteConfig }) });
 
 export const load = nav.navLoad;
 export const actions = { save: nav.navSaveAction };
@@ -1981,6 +1989,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `EditData` | Extension API | `interface EditData { conceptId; id; label; singular; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; fragmentTargets: { id; title; body }[] \| null; routable: boolean; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; publishActions: PublishActionLink[]; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[]; orphanTags: string[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the site's [publish-actions](#the-publish-actions-seam) resolved for this entry (`publishActions`, rendered only alongside `publishedFlash`), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). `singular` is the delete refusal's noun ("This post could not be deleted."), from the descriptor (defaulted to `label`), mirroring `ListData.singular`. `fragmentTargets` carries the published fragments this entry can include, for the fragment picker and the preview's include resolution, each a minimal `{ id; title; body }` projection; null when nothing here can include one, which covers both a site that declares no `fragments` concept and an entry that is itself a fragment (a fragment can't include a fragment), and empty when fragments are includable but none are published yet. `routable` mirrors the entry's concept `routing.routable`, so the Address fieldset shows a bare name instead of a URL for a non-routable concept (Fragments). `orphanTags` carries the entry's prior tags absent from the configured vocabulary, for the closed taxonomy picker's own-tag flag, and stays empty when the site configures no vocabulary, the concept has no taxonomy field, or every prior tag is already in the vocabulary. `AdvisoryNotice`, `PublishActionLink`, and `ResolvedPreview`, named in `advisories`, `publishActions`, and `preview`, carry no export row of their own: a consumer reaches them as `Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`, `Extract<AdminData, { view: 'edit' }>['page']['publishActions'][number]`, and `NonNullable<Extract<AdminData, { view: 'edit' }>['page']['preview']>` respectively. |
 | `HistoryData` | Extension API | `interface HistoryData { entries: HistoryEntry[]; draft: { editor: string; lastSavedAt: string } \| null; truncated: boolean; head: string \| null }` | `historyLoad`'s data for the `history` view: the most recent 25 publishes newest first (`entries`), a synthetic top row for an open draft (`draft`, null when there is none, `lastSavedAt` the draft branch's own last-saved moment), `truncated` when the backend's `limit + 1` probe found more publishes than the 25-row bound holds (an entry with exactly 25 stays `false`), and `head`, the default branch's head sha at load time, carried by the revert form as its staleness comparand. `HistoryEntry`, named in `entries`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'history' }>['page']['entries'][number]`. |
 | `MediaLibraryData` | Extension API | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. `MediaUsageInfo`, named in `usage`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'media' }>['page']['usage'][string]`. |
+| <a id="mediarouteconfig"></a>`MediaRouteConfig` | Scaffold API | `interface MediaRouteConfig { runtime: CairnRuntime }` | The one config bag `createMediaRoute` takes: the composed runtime, mirroring every other route factory's shape. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. `GettingStarted` and `MarkdownReferenceRow`, named in `gettingStarted` and `reference`, carry no export row of their own: a consumer reaches them as `Extract<AdminData, { view: 'help' }>['page']['gettingStarted']` and `Extract<AdminData, { view: 'help' }>['page']['reference'][number]` respectively. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. `TidyKeyProbeResult`, named in `keyStatus`, carries no export row of its own: a consumer reaches it as `Exclude<Extract<AdminData, { view: 'settings' }>['page']['keyStatus'], 'missing'>`. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
@@ -1993,6 +2002,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentFormFailure` | Unstable API | `interface ContentFormFailure { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: 'link' \| 'include'; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. `brokenLinks`/`body` come from a blocked save or publish; `inboundLinks`/`inboundKind`/`id` from a refused delete; `hash`/`usage`/`foundIn` from a refused media delete or replace, and `hash` alone from a refused media update or alt-propagation. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. `UsageEntry`, named in `usage`, carries no export row of its own: a consumer reaches it as `NonNullable<ContentFormFailure['usage']>[number]`. |
 | `EditorRoutesConfig` | Unstable API | `interface EditorRoutesConfig { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
+| <a id="navroutesconfig"></a>`NavRoutesConfig` | Unstable API | `interface NavRoutesConfig { runtime: CairnRuntime }` | The one config bag `createNavRoutes` takes: the composed runtime, mirroring every other route factory's shape. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. `NavPageOption`, named in `pages`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'nav' }>['page']['pages'][number]`. |
 | `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
 | <a id="cairnadminconfig"></a>`CairnAdminConfig` | Extension API | `interface CairnAdminConfig { runtime: CairnRuntime; auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesConfig['tidy']; navFilter?: ContentRoutesConfig['navFilter']; attention?: ContentRoutesConfig['attention']; preview?: ContentRoutesConfig['preview'] }` | The one config bag `createCairnAdmin` takes: `runtime` is the composed runtime the admin bundle closes over, and the rest are injectable dependencies grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, `attention`, and `preview` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, `attention` is the per-session pending-work seam (see `ContentRoutesConfig` below and [the attention seam](#the-attention-seam)), and `preview` is the preview-link lifetime `previewMint` mints against, so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |

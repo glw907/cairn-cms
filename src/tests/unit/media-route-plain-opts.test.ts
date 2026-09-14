@@ -60,7 +60,7 @@ describe('media delivery route: plain option objects (media-route local-dev-safe
     };
 
     await invoke(
-      createMediaRoute(runtime(resolvedOn)),
+      createMediaRoute({ runtime: runtime(resolvedOn) }),
       SLUG_PATH,
       {
         headers: {
@@ -82,7 +82,7 @@ describe('media delivery route: plain option objects (media-route local-dev-safe
   });
 
   it('shapes Content-Range correctly when R2 echoes a suffix range, clamping past the object size', async () => {
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const cases = [
       { suffix: 10, header: 'bytes=-10', contentRange: 'bytes 90-99/100' },
       { suffix: 200, header: 'bytes=-200', contentRange: 'bytes 0-99/100' },
@@ -118,7 +118,7 @@ describe('media delivery route: plain option objects (media-route local-dev-safe
       },
     };
 
-    await invoke(createMediaRoute(runtime(resolvedOn)), SLUG_PATH, {}, bucket);
+    await invoke(createMediaRoute({ runtime: runtime(resolvedOn) }), SLUG_PATH, {}, bucket);
 
     const opts = capturedOpts as { onlyIf?: unknown; range?: unknown };
     expect(opts.onlyIf).toBeUndefined();

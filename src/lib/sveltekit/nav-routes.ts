@@ -38,8 +38,18 @@ interface NavSaveFailure {
   error: string;
 }
 
-/** Build the nav editor's load and save functions, closed over the composed runtime. */
-export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
+/**
+ * The bag `createNavRoutes` takes, so the factory shares one shape with every other route
+ *  factory and a later member has a home beside `runtime`.
+ */
+export interface NavRoutesConfig {
+  /** The composed runtime the nav routes close over: the site's menu, roles, and backend. */
+  runtime: CairnRuntime;
+}
+
+/** Build the nav editor's load and save functions, closed over `config.runtime`. */
+export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
+  const { runtime } = config;
   /**
    * Resolve the live content backend for one request: the dev double's `event.locals.cairnBackend`,
    *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.cairnBackend`

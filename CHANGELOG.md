@@ -313,6 +313,12 @@
   `createCairnAdmin({ runtime, ...config })`; a call with no `config` becomes
   `createContentRoutes({ runtime })` or `createCairnAdmin({ runtime })`.
 
+- **Breaking:** `createNavRoutes` and `createMediaRoute` (`/sveltekit`) each take exactly one
+  parameter, a config bag, and lose the positional `runtime` argument. `NavRoutesConfig` and
+  `MediaRouteConfig` are new exported types, each declaring `runtime: CairnRuntime`. Consumers
+  must: change `createNavRoutes(runtime)` to `createNavRoutes({ runtime })`, and
+  `createMediaRoute(runtime)` to `createMediaRoute({ runtime })`.
+
 - `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
   names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
   alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone

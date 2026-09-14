@@ -68,7 +68,7 @@ afterAll(async () => {
 
 describe('media route under getPlatformProxy (Task T3)', () => {
   it('serves the seeded object 200 with the stored Content-Type through the RPC-proxy binding', async () => {
-    const handler: RequestHandler = createMediaRoute(runtime(resolvedOn));
+    const handler: RequestHandler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const request = new Request(`https://site.example/media/${SLUG_PATH}`);
     const event = { params: { path: SLUG_PATH }, platform: { env: platformEnv }, request };
 

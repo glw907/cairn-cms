@@ -2156,6 +2156,8 @@ when the remediation pass lands.
   verdict: `ReturnType<typeof createNavRoutes>` retires under `convention-contract-first-returns`,
   and `NavRoutes` is now a hand-declared interface `createNavRoutes` names in its own signature.
   The name and its members are unchanged.
+- **Note (polish-C, Task 3):** `createNavRoutes(config: NavRoutesConfig): NavRoutes` is now the
+  whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-createnavroutes: `createNavRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -2163,6 +2165,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 73.
 - **Any-site case:** A site editing its public menu beside its own settings mounts navLoad and navSaveAction itself, reusing the engine's config read and commit rather than re-implementing them.
+- **Note (polish-C, Task 3):** `createNavRoutes(config: NavRoutesConfig): NavRoutes` is now the
+  whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-contentroutes: `ContentRoutes`  (reshape, 2026-08-26, any-site audit)
 
@@ -2588,6 +2592,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 122.
 - **Any-site case:** Every media-enabled site mounts /media/[...path]; serving user-uploaded bytes from your own origin without nosniff, inline disposition and a sandbox CSP is an XSS hole.
+- **Note (polish-C, Task 3):** `createMediaRoute(config: MediaRouteConfig): RequestHandler` is now
+  the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-authguardoptions: `AuthGuardOptions`  (keep, 2026-08-26, any-site audit)
 

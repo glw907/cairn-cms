@@ -468,8 +468,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `createContentRoutes`: (config: ContentRoutesConfig) => ContentRoutes
 - `createD1AuditSink`: (db: D1Database, waitUntil: ((promise: Promise<unknown>) => void) | undefined) => AdminActionAuditSink
 - `createEditorRoutes`: (config?: EditorRoutesConfig) => EditorRoutes
-- `createMediaRoute`: (runtime: CairnRuntime) => RequestHandler
-- `createNavRoutes`: (runtime: CairnRuntime) => NavRoutes
+- `createMediaRoute`: (config: MediaRouteConfig) => RequestHandler
+- `createNavRoutes`: (config: NavRoutesConfig) => NavRoutes
 - `createSectionAction`: <Env, Db>(config: SectionActionConfig<Env, Db>) => SectionAction<Env, Db>
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -505,6 +505,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MediaLibraryEntry`: { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number | null; height: number | null; bytes: number; createdAt: string }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
+- `MediaRouteConfig`: { runtime: CairnRuntime }
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
 - `NavIcon`: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"
@@ -516,6 +517,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavMenuConfig`: { configPath: string; menuName: string; label: string; maxDepth?: number }
 - `NavNode`: { label: string; url?: string; children?: NavNode[] }
 - `NavRoutes`: { navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>; navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>> }
+- `NavRoutesConfig`: { runtime: CairnRuntime }
 - `NO_PENDING_REQUEST_ERROR`: "no-pending-request"
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }

@@ -160,7 +160,7 @@ void typeOnlyContentRoutesAssignability;
 // Record<string, X> cast the Pick-derived ContentRoutes tolerates above does not apply here,
 // mirroring AuthRoutes' and EditorRoutes' own per-member checks below.
 function typeOnlyNavRoutesAssignability(): void {
-  const nav = createNavRoutes({} as CairnRuntime);
+  const nav = createNavRoutes({ runtime: {} as CairnRuntime });
   nav.navLoad satisfies (event: SiteRequestEvent) => unknown;
   nav.navSaveAction satisfies (event: SiteRequestEvent) => unknown;
 }
@@ -202,7 +202,7 @@ void typeOnlyHealthLoadAssignability;
 type SiteRequestHandler = (event: SiteRequestEvent) => Promise<Response> | Response;
 
 function typeOnlyMediaRouteAssignability(runtime: CairnRuntime): void {
-  const handler = createMediaRoute(runtime);
+  const handler = createMediaRoute({ runtime });
   handler satisfies SiteRequestHandler;
 }
 void typeOnlyMediaRouteAssignability;

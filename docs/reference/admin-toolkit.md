@@ -617,7 +617,8 @@ let { eyebrow, title, meta, action }: {
 The canonical admin page-header recipe: an optional eyebrow, the page's one display-face `h1`,
 an optional muted meta line, and an optional single right-aligned action. A custom `/admin/`
 screen composes it beside `AdminTable` inside the admin design system's floating-card recipe
-(`card-shell card-shadow`), with `AdminTable`'s own wrapper the one horizontal scroll container. `eyebrow` names a grouping (a custom nav section, "Media") and is omitted
+(`card-shell card-shadow`), with `AdminTable`'s own wrapper the one horizontal scroll
+container. `eyebrow` names a grouping (a custom nav section, "Media") and is omitted
 entirely when a screen has none worth naming. `meta` is the toolkit's one home for a page-level
 count outside a toolbar: `ListToolbar`'s own `computeCountLine` covers a screen with a search or
 filter row, and this line covers a screen with neither (a stats-prose summary, a scope note).

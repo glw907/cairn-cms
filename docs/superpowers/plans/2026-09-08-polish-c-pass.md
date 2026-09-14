@@ -2197,7 +2197,9 @@ gate never observes an intermediate state.
   did NOT change.
 - `src/tests/unit/admin-sheet-inventory.test.ts` passes against an updated fixture whose only
   change is the deletion of the exact line `gap-0`, with `gap-0.5` still present, and the report
-  names that diff exactly.
+  names that diff exactly. (Amendment, 2026-09-14: the fixture diff is the deletion of the two
+  exact lines `gap-0` and `overflow-x-auto`, with `gap-0.5` still present, per the conductor
+  ruling at Task 12: `OfficeList` was the tree's only bare `overflow-x-auto` user.)
 - `check:admin-css-classes`, `check:custom-surface`, and `check:snippets` pass.
 - `docs/internal/api-surface.md` is in the diff, loses exactly one `/admin-toolkit` entry, and the
   plain `check:surface` run is green.

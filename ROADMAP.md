@@ -918,7 +918,9 @@ the named human gates only):**
   gives a developer's Claude Code the live operational surface, health, deploy and build
   state, the auth store, content operations, log queries; a docs-only server is not wanted, since
   the tarball docs reach every agent; the agent-facing docs form is layered instead: the
-  docs rewrite adds an `llms.txt`-shaped index to the tarball, the Go tool gains a `docs`
+  docs rewrite adds a short docs index to the tarball that the shipped Claude fragment and
+  skill point at (not `llms.txt`: that format is for crawlers, which ignore it; this is a
+  file an agent is sent to), the Go tool gains a `docs`
   search subcommand over the installed version so any agent reaches retrieval from Bash,
   and the MCP front end exposes that same search as a tool), each calling the same actions and reading the same records and
   results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the

@@ -913,8 +913,11 @@ the named human gates only):**
   several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
   site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a
   loop over sites without reshaping anything beneath. The rule generalizes: the spine's API is
-  the product and every front end is a view over it, the CLI first, the HUD second, and a local
-  web interface if wanted, each calling the same actions and reading the same records and
+  the product and every front end is a view over it, the CLI first, the HUD second, a local
+  web interface if wanted, and an MCP front end (Geoff, 2026-09-13: a server over the spine
+  gives a developer's Claude Code the live operational surface, health, deploy and build
+  state, the auth store, content operations, log queries; a docs server is not wanted, since
+  the tarball docs plus a skill reach every agent), each calling the same actions and reading the same records and
   results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
   borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;

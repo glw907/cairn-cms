@@ -883,6 +883,23 @@ the named human gates only):**
 
 ## Next
 
+- **Five admin defaults from the Carbon survey, accepted (Geoff, 2026-09-13; record
+  `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Part 5b).** Three land as one
+  bounded task in the pre-cut window on `main`, after the motion pass merges and beside the
+  dependency sweep, since each is a few lines with no new surface: `Pagination`'s selected
+  page gains a non-color cue (the design-system gap below, sweep finding 23); `DeleteDialog`
+  drops its `method="dialog"` backdrop form so a stray click no longer dismisses a destructive
+  confirm (Carbon forbids outside-click dismissal on a danger modal; cairn's safe-delete recipe
+  already agrees); `AdminTable` takes an optional accessible-name prop and every engine screen
+  passes one. Two are borrow-1 work because they reshape a pattern: the native `title`
+  tooltips (never shown on keyboard focus or touch, not dismissable, WCAG 1.4.13) give way to
+  one accessible tooltip primitive, which also retires the `cairn-btn-guarded` workaround; and
+  the batch-action pattern built fully inside `CairnMediaLibrary` graduates onto `AdminTable`
+  so a consumer's multi-select screen composes it rather than reinventing it. Two survey calls
+  stand unless reopened: "sign in" stays over Carbon's "log in" (the editor docs grade under
+  Microsoft), and Carbon Charts is rejected outright (its stylesheet force-loads IBM Plex);
+  Carbon's chart guidance is a recipe reference only.
+
 - **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
   `cairn` tool Pass A (plan `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
   its Reconciliation block re-verified against the post-C tree first, and the plan re-cut at

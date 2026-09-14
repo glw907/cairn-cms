@@ -37,9 +37,10 @@ safety and the mechanics lens wins on executability**.
    shipped exemplars are paint rules, so the narrow predicate was vacuous and the mandated selector
    splits were an unrequested paint change.
 6. **Consumer scope is answered in the audit, not the gate** (domain C2 and C5, mechanics 10). The
-   rules declare `adminOnly` and the gate maps it onto its own roots, so a consumer gets the charter
-   boundary with no configuration and the showcase's one consumer-shaped admin screen is dogfooded
-   rather than dropped.
+   rules declare `adminOnly`, the audit config carries the roots it resolves over, and the gate sets
+   those roots to its own tree, so a consumer gets the charter boundary from the default and the
+   showcase's one consumer-shaped admin screen is dogfooded rather than dropped. The Fold correction
+   below is the mechanism in full.
 
 Two consequences carry beyond the six. The vendor property exemption records four more disagreements,
 so the count is **eleven**, not seven, everywhere it appears. And the dropzone's drag-over paint takes
@@ -48,6 +49,54 @@ so the count is **eleven**, not seven, everywhere it appears. And the dropzone's
 The task count is unchanged at ten and the chain order is unchanged. What moved between tasks: the
 two zen layout-count assertions go from task 10 to task 7, and the reproduction-manifest entry is cut
 from task 10 entirely.
+
+### Fold correction (2026-09-13)
+
+A review of the folded pair escalated one item, and the conductor ruled it. **The admin boundary is
+one mechanism, not two.** The fold left the rule-level `adminOnly` flag and a path term inside the
+gate's own `scopeReport` standing side by side, and the two contradict each other: `scopeReport`
+filters a report `runStatic` has already produced, so a path term there can only subtract, and it can
+never restore a root the flag excluded. Under the fold as written, tasks 6a, 6b, and 7's shared
+zero-findings criterion was vacuous and task 10's paired-run criterion was unsatisfiable. The
+mechanism is now this, and nothing else:
+
+- A static rule declares `adminOnly: true`. The field is new and optional on the static rule type,
+  and `./audit` is not a package export subpath, so no package surface moves.
+- The audit config gains an optional `static.adminScope` root list, a new consumer-facing config key,
+  defaulting to `src/routes/admin` and `src/lib/admin-toolkit`.
+- `runStatic` resolves an `adminOnly` rule over `static.adminScope` alone and every other rule over
+  `static.scope` as today, across both surfaces a rule reads: the components under those roots, and
+  the `static.cssFiles` entries that lie inside them.
+- The engine's gate (`scripts/checks/check-invisible-craft.mjs`) sets `static.adminScope` to
+  `src/lib/components`, `src/lib/admin-toolkit`, and `examples/showcase/src/routes/admin` when it
+  builds its config. **`scopeReport` does not change**, the path term is dropped entirely, and its
+  second caller, `check-admin-css-classes.mjs`, is untouched.
+
+Task 3's claim that the boundary "costs no public surface" is amended: it costs one config key,
+documented in `docs/reference/cairn-audit.md` and in the recipe page. Task 3's Step 0 assertion, task
+10's failing assertion, and the three migration tasks' zero-findings criterion all name this one
+mechanism, which is what makes the last of them real.
+
+Five smaller corrections ride with the ruling. Task 6a's `npx cairn-audit --static` names a flag the
+bin does not parse (`src/lib/audit/config.ts:241-274`), and becomes `npx cairn-audit --config <path>`
+against a task-local config whose contents the task names. Task 6a's third deliverable and Step 4 are
+reconciled with the spec's migration table: of the three `duration-[250ms]` sites, only
+`EditPage.svelte:1643` takes the token form, `:2047` is removed outright, and `:1428` drops its
+duration class to ride the theme default. Task 11 gains a numbered step that writes `Consumers must:`
+line 1, which its criteria already required of it. The unfold flash's token is `base`, which the
+spec's case table carried and this plan now states. And the pass-end `svelte-reviewer` brief loses
+its resize-stopper clause, since the stopper is cut.
+
+Three consequential edits follow from those. The `daisyui-a11y-reviewer` brief reads the upload
+progress **bar**'s preserved `<progress>` semantics, since the overlay is cut too. Task 10's Files
+drop from five to three, because `audit-gate.mjs` and `check-admin-css-classes.mjs` are no longer
+touched, and task 3's rise from seven to eight for `config.ts`. And task 10's conditional over
+`src/tests/unit/audit-gate.test.ts` is dropped: the file exists on `main`.
+
+One disclosure joins the fold's two judgment calls, per the reviewer's finding: leaving
+`editor-folding.ts`'s `FLASH_MS = 400` untouched was a third call the fold made on its own. The
+constant is the timer that removes the flash class; the CSS transition is what paints the fade; the
+two are independent, so the token migration does not reach the constant.
 
 ---
 
@@ -286,7 +335,7 @@ Spot-measured at plan authoring. Every one is re-verified at dispatch.
 | `src/tests/unit/admin-sheet-inventory.test.ts` and `admin-css-build.test.ts` | Both exist | Confirmed. Task 1 reads and extends them |
 | The admin theme roots | `[data-theme='cairn-admin']` at `cairn-admin.css:81` and `[data-theme='cairn-admin-dark']` at `:255`; `scripts/build/admin-css.input.css` declares neither and has no `@theme` block | Confirmed. Task 1's tokens go in the two existing blocks |
 | The zen offset's authoring site | `CairnAdminShell.svelte` has **no `<style>` block**, no `margin-left`, and no `setZen()`. Today's offset is `class:lg:ml-56` and `class:xl:ml-56` at `:692-693`; `setZen()` is `EditPage.svelte:441`; `class="drawer-side"` is at `:949` | Corrected against the spec's revision 2. Task 7 authors the transition in `cairn-admin.css` and task 3 keys the exception there |
-| `scopeReport`'s second caller | `scripts/checks/check-admin-css-classes.mjs:35` calls `scopeReport(runStatic(loadConfig(ROOT)), RULE_IDS)` | Confirmed. Task 10 changes the signature and this call site must keep working |
+| `scopeReport`'s second caller | `scripts/checks/check-admin-css-classes.mjs:35` calls `scopeReport(runStatic(loadConfig(ROOT)), RULE_IDS)` | Confirmed. Per the Fold correction, `scopeReport` keeps its signature and this call site is untouched by the pass |
 | `.github/workflows/norms.yml:51-56` | `VITE_CAIRN_E2E=1` build, then detached `CAIRN_DEV_BACKEND=1 … run preview -- --port 4173` with a 60-try readiness poll on `/admin/posts` | Confirmed. Task 8's step copies the recipe with its own port |
 
 ### Claims this plan states rather than leaving an implementer to guess
@@ -786,43 +835,57 @@ to the blast radius: the inner loop runs only the two named test files; the gate
 **Chain:** A, third. **Paint:** no. **Depends on:** task 2. **Shares the static registry with task 4,
 so the two are serialized.**
 
-**Deliverables: five.** The `adminOnly` field on the static rule type; `motion-property` with the
+**Deliverables: five.** The `adminOnly` field on the static rule type with the `static.adminScope`
+config key it resolves over; `motion-property` with the
 allowlist, the snap list, the three-property cap, the `animate-*` keyframe clause and the vendor-class
 exemption on its class join; the one exception keyed on file plus selector plus property with its
 three-sided fixture; `motion-hover-gate` with both predicates; and both registered.
 
-**Files (7):**
+**Files (8):**
 - Create: `src/lib/audit/rules/static/motion-property.ts`,
   `src/lib/audit/rules/static/motion-hover-gate.ts`,
   `src/tests/unit/audit/rules/motion-property.test.ts`,
   `src/tests/unit/audit/rules/motion-hover-gate.test.ts`
 - Modify: `src/lib/audit/types.ts` (the optional `adminOnly` field on `StaticRule`),
-  `src/lib/audit/run.ts` (honoring it in `runStatic`'s scope resolution),
+  `src/lib/audit/config.ts` (the optional `static.adminScope` key, its default, and its entry on
+  `AuditConfig`), `src/lib/audit/run.ts` (resolving the one over the other in `runStatic`),
   `src/lib/audit/rules/static/index.ts`, `CHANGELOG.md`
+- Test: the `adminOnly` resolution's own assertions join `src/tests/unit/audit/run.test.ts`, which
+  already builds a temporary root with fixture files and drives `runStatic` with an injected rule.
 
 **Interfaces:**
 - Consumes: task 2's widened `isMotionProperty` and `motion-band`'s ownership of `transition: all`.
 - Produces: the rule ids `motion-property` and `motion-hover-gate`, both static, both error tier,
-  which task 10 adds to the gate's `RULE_IDS` and task 11 documents.
+  which task 10 adds to the gate's `RULE_IDS` and task 11 documents; and the `static.adminScope`
+  config key, which task 10 sets in the gate's own config and task 11 documents on the reference page
+  and the recipe page.
 - Unchanged: no package export. Both rules are reached through the registry, not through a new
-  subpath.
+  subpath, and `static.adminScope` is read from a consumer's config file rather than exported.
 
 **Decisions the plan makes:**
-- **`adminOnly` is a new optional field on `StaticRule`, and it costs no public surface.** A rule
-  that sets it runs over the admin roots alone: `src/routes/admin` and `src/lib/admin-toolkit` by
-  default, never `src/lib/components`. `DEFAULT_STATIC_SCOPE`'s middle root is where a consuming site
-  keeps its shared **public** components, and running three error-tier admin-motion rules there is
-  the charter breach the pass exists to avoid; narrowing `static.scope` instead is all-or-nothing and
-  would also drop `no-uncompiled-class` and `focus-parity`. The field is additive and optional, so no
-  existing rule changes, and `./audit` is not a package export subpath, so `check:surface` and
-  `check:reference` never see it and both stay untouched.
+- **`adminOnly` is a new optional field on `StaticRule`, and it costs one config key.** A rule that
+  sets it runs over the roots `static.adminScope` names, which default to `src/routes/admin` and
+  `src/lib/admin-toolkit`, never `src/lib/components` unless a site names it there; every other rule
+  resolves over `static.scope` as today. `DEFAULT_STATIC_SCOPE`'s middle root is where a consuming
+  site keeps its shared **public** components, and running three error-tier admin-motion rules there
+  is the charter breach the pass exists to avoid; narrowing `static.scope` instead is all-or-nothing
+  and would also drop `no-uncompiled-class` and `focus-parity`. The restriction reaches both surfaces
+  a rule reads, the components under those roots and the `static.cssFiles` entries that lie inside
+  them, so an `adminOnly` rule never reads a site's public theme file. Both halves are additive and
+  optional, so no existing rule and no existing config changes. `./audit` is not a package export
+  subpath, so `check:surface` and `check:reference` never see either half and both stay untouched;
+  the key is consumer-facing all the same, so task 11 documents it in
+  `docs/reference/cairn-audit.md` and in the recipe page. This task's plain `CHANGELOG.md` line names
+  the key. It owes no `Consumers must:` line, because the default answers it for a site whose admin
+  screens sit at the default roots.
 - **Both rules are specified consumer-first.** `motion-property` reads both CSS-family surfaces
   `cssScopeRules` already yields (a component's own scoped `<style>` block plus any file
   `static.cssFiles` names) and the per-element class-token join against `ctx.sheet.declarations()`,
-  keyed on `ClassToken.elementStart`. A consumer needs no configuration beyond `adminOnly`'s own
-  default roots, and `DEFAULT_SHEET_CANDIDATES` names the engine's `dist` sheet first and the
-  installed `node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css` second, taking the first
-  that exists. `motion-hover-gate` reads the CSS-family surfaces only, with no class join.
+  keyed on `ClassToken.elementStart`. A consumer whose admin screens sit at `static.adminScope`'s
+  default roots writes no configuration at all, and `DEFAULT_SHEET_CANDIDATES` names the engine's
+  `dist` sheet first and the installed
+  `node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css` second, taking the first that
+  exists. `motion-hover-gate` reads the CSS-family surfaces only, with no class join.
 - **A vendor component class is exempt on `motion-property`'s class-join half, and only there.** Four
   DaisyUI components transition named-error properties in the shipped sheet (`.drawer-side`'s `width`
   at `dist/components/cairn-admin.css:1689`, `.filter input`'s `margin`, `padding`, and
@@ -873,10 +936,13 @@ three-sided fixture; `motion-hover-gate` with both predicates; and both register
   needs, it is advisory, and its remedy would be an override decision 4 declines. Task 11 files it.
 
 **Steps:**
-- [ ] **Step 0:** add the optional `adminOnly` field to `StaticRule` in `src/lib/audit/types.ts` and
-  honor it in `runStatic`'s scope resolution, with a failing assertion first: a rule declaring
-  `adminOnly` reports nothing from a `src/lib/components` fixture path while a rule that does not
-  declare it still reports from the same path.
+- [ ] **Step 0:** add the optional `adminOnly` field to `StaticRule` in `src/lib/audit/types.ts`,
+  the optional `static.adminScope` key to `src/lib/audit/config.ts` with its two-root default, and
+  the resolution in `runStatic`, with a failing assertion first: run with the consumer default, a
+  rule declaring `adminOnly` reports nothing from a `src/lib/components` fixture and a finding from a
+  `src/routes/admin` fixture, while a rule that does not declare it reports from both. Assert the
+  `static.cssFiles` half too: a CSS file outside the admin roots reaches a rule that declares nothing
+  and never reaches one that declares `adminOnly`.
 - [ ] **Step 1: the failing fixtures first, for `motion-property`.** Write the eight fixtures the spec
   names and watch each fail with the rule module absent: a `transition-[width]` class fails; a
   `width 200ms` CSS declaration fails; a `transition-all` construct produces NO `motion-property`
@@ -912,8 +978,13 @@ three-sided fixture; `motion-hover-gate` with both predicates; and both register
   by name, and the fixture's file key is `cairn-admin.css`.
 - The vendor pair is present: `class="drawer-side"` joined to the sheet's `width` transition produces
   zero findings, and the same declaration authored in a CSS file the audit reads produces one.
-- A rule declaring `adminOnly` reports nothing from a `src/lib/components` fixture path while a rule
-  that does not declare it reports from the same path, asserted by name.
+- Run with `static.adminScope`'s consumer default, a rule declaring `adminOnly` reports nothing from
+  a `src/lib/components` fixture and a finding from a `src/routes/admin` fixture, while a rule
+  declaring nothing reports from both; and a `static.cssFiles` entry outside the admin roots reaches
+  the second rule and never the first. All four are asserted by name in
+  `src/tests/unit/audit/run.test.ts`.
+- `static.adminScope` is absent from a config: the run behaves as the two-root default, asserted, so
+  an existing consumer config keeps working unchanged.
 - `grep -n "motion-property\|motion-hover-gate" src/lib/audit/rules/static/index.ts` returns both
   module imports and both ids reach the registry, asserted by a registry test rather than by grep
   alone.
@@ -1078,8 +1149,10 @@ is measured against them.
 
 **Deliverables: four.** The three shipped violations fixed, the five token migrations (three CSS
 rules and two CodeMirror theme strings) with the two `HelpHome` rules moved onto tokens and no guard
-added, the three `duration-[250ms]` classes onto the token form, and the shipped class inventory
-reconciled with its `Consumers must:` line.
+added, the three `duration-[250ms]` sites resolved as the spec's migration table rules them
+(`EditPage.svelte:1643` onto the token form, `:2047` removed with its class, `:1428` dropping the
+class to ride the theme default), and the shipped class inventory reconciled with its
+`Consumers must:` line.
 
 **Files (5 modified, 5 read):**
 - Modify: `src/lib/components/EditPage.svelte`, `src/lib/components/MarkdownEditor.svelte`,
@@ -1143,7 +1216,8 @@ reconciled with its `Consumers must:` line.
   authoring step `motion-hover-gate`'s fix message and the recipe page teach for a consumer whose own
   pair does declare motion. **This task adds no `@media (hover: hover)` guard anywhere.**
 - `EditPage.svelte:1428` drops its `duration-*` class; the theme default carries it at `base`.
-- The `MarkdownEditor` fold chevron and unfold flash move onto the tokens and keep their shape. Both
+- The `MarkdownEditor` fold chevron and unfold flash move onto the tokens and keep their shape. The
+  chevron takes `quick` and the flash takes `base`, per the spec's case table. Both
   already sit inside a `prefers-reduced-motion: reduce` block in the same theme object, and the
   chevron carries a `@media (hover: none)` rest state. That is the best motion in the admin.
 - **`editor-folding.ts`'s `FLASH_MS` does not move with the flash's token.** The constant is the
@@ -1162,15 +1236,25 @@ reconciled with its `Consumers must:` line.
 - [ ] **Step 1:** capture this task's before set per the paint protocol, at the task's parent commit.
   Capture-pair branch, over `signups` and `styleguide`.
 - [ ] **Step 2: measure first.** Run the three new rules over the admin tree and paste the full
-  finding list. The command is `npx cairn-audit --static` from the worktree root with
-  `src/lib/components` and `src/lib/admin-toolkit` named as the admin roots, which is what task 10
-  later wires into the gate; the rules are not in `RULE_IDS` yet, so this is a hand run and the task
-  says so. This is the task's found count, and every later step closes a named finding.
+  finding list. The command is `npx cairn-audit --config <path>` from the worktree root, against a
+  task-local config the task writes outside the repo tree and never commits. The bin resolves from
+  `dist`, so `npm run package` runs first. The config sets three keys and nothing else:
+  `static.scope` to the gate's five roots (`src/lib/components`, `src/lib/admin-toolkit`,
+  `examples/showcase/src/chassis`, `examples/showcase/src/routes`, `examples/showcase/src/theme`),
+  `static.adminScope` to the engine's three admin roots (`src/lib/components`,
+  `src/lib/admin-toolkit`, `examples/showcase/src/routes/admin`), and `static.cssFiles` to
+  `src/lib/components/cairn-admin.css` and `examples/showcase/src/theme/theme.css`. The run reports
+  every registered rule, so the task counts `motion-property`, `motion-vocabulary`, and
+  `motion-hover-gate` findings alone and says which ids it counted. The rules are not in the gate's
+  `RULE_IDS` yet, so this is a hand run and the task says so. This is the task's found count, and
+  every later step closes a named finding.
 - [ ] **Step 3:** the three violations. `EditPage.svelte:1643`'s named property list, the preview
   frame's `transition-[width]` removed, and the upload fill's `width` transition removed along with
   the reduced-motion pin at `MarkdownEditor.svelte:614`, the native `<progress>` untouched.
-- [ ] **Step 4:** `cairn-admin.css:545` onto the tokens, and the three `duration-[250ms]` classes onto
-  the token form task 1 proved and reported.
+- [ ] **Step 4:** `cairn-admin.css:545` onto the tokens, and the three `duration-[250ms]` sites
+  resolved per the migration table: `EditPage.svelte:1643` takes the token form task 1 proved and
+  reported, `:2047`'s class goes with the transition Step 3 removed, and `:1428` drops the class so
+  the theme default carries it at `base`. No `duration-[250ms]` class survives in the tree.
 - [ ] **Step 5:** the two `HelpHome` rules onto the tokens, with no guard added and no selector list
   split. Confirm `focus-parity` still passes and that no `@media (hover: hover)` appears in the diff.
 - [ ] **Step 6:** the two remaining CodeMirror theme strings onto the tokens, the fold chevron and the
@@ -1181,8 +1265,8 @@ reconciled with its `Consumers must:` line.
   utility, and report that there is none, which is why the theme defaults resolve all eight and none
   needs an edit. Read `editor-folding.ts`'s `FLASH_MS` and record that it is the class timer rather
   than the transition, so it stays at 400ms. All five leave the diff, and `git status` proves it.
-- [ ] **Step 7:** re-run the three rules and confirm zero findings over the admin tree. Report counts
-  found, changed, deferred.
+- [ ] **Step 7:** re-run Step 2's command against the same task-local config and confirm zero
+  findings under the three motion ids. Report counts found, changed, deferred.
 - [ ] **Step 8: the shipped class inventory.** Append this task's three `CHANGELOG.md` lines first,
   the third naming `transition-all`, `transition-[width]`, and `duration-[250ms]` as classes leaving
   the packaged sheet. Then run `npm run update-admin-sheet-inventory`, read the fixture diff, and
@@ -1194,9 +1278,12 @@ reconciled with its `Consumers must:` line.
   surface. The full gate. Commit.
 
 **Acceptance criteria:**
-- Running `motion-property`, `motion-vocabulary`, and `motion-hover-gate` over `src/lib/components`
-  and `src/lib/admin-toolkit` returns **zero findings**, pasted in the report, with the command used
-  quoted beside them.
+- Re-running Step 2's command, against the same task-local config, returns **zero findings** under
+  `motion-property`, `motion-vocabulary`, and `motion-hover-gate`, pasted in the report with the
+  command and the config's three keys quoted beside them. The engine's `static.adminScope` is what
+  makes the run reach `src/lib/components`, so the criterion is a real measurement rather than an
+  empty scan, and the report states the file count the run scanned.
+- No `cairn-audit.config.json` appears in the diff: the config is task-local and uncommitted.
 - Every `duration-*` class remaining under `src/lib/components/` uses the token-referencing authoring
   form task 1 measured and reported, and no `duration-*` class carries a millisecond literal. The
   criterion is phrased against that reported form rather than against a guessed spelling, because
@@ -1333,7 +1420,9 @@ drive.
   hand-edited, and every added line is named in the report. No line is removed.
 - No file named `resize-stopper.test.ts` exists and the string `cairn-resizing` appears nowhere in the
   repository.
-- Running the three motion rules over the admin tree still returns zero findings.
+- Running the three motion rules over the admin tree still returns zero findings, through task 6a's
+  command and task-local config (`npx cairn-audit --config <path>`, with `static.adminScope` naming
+  the engine's three admin roots), quoted in the report.
 - `npm run check` reports 0 errors and 0 warnings; `npm test` exits 0; the full gate string exits 0.
 - `CAPTURES:` names `signups` and `styleguide` in both schemes at the five widths, with
   `INTENDED MOVES:` and `MOVED BASELINES:` agreeing name for name.
@@ -1459,9 +1548,12 @@ layout-count assertions in the showcase e2e.
 - `grep -n "drawer-content" src/lib/components/cairn-admin.css` shows exactly one rule transitioning
   `margin-left`, with the four token references in the diff (`shift` and `entrance` in, `base` and
   `exit` out), and `grep -n "margin-left" src/lib/components/CairnAdminShell.svelte` returns nothing.
-- Running `motion-property` over the admin roots returns zero findings, and the report states that
-  the sheet's offset was reached and passed by the exception rather than by absence, naming the
-  fixture that proves the exception's file key is `cairn-admin.css`.
+- Running `motion-property` over the admin roots returns zero findings, through task 6a's command
+  and task-local config (`static.adminScope` naming the engine's three admin roots, `static.cssFiles`
+  naming the admin sheet), and the report states that the sheet's offset was reached and passed by
+  the exception rather than by absence, naming the fixture that proves the exception's file key is
+  `cairn-admin.css`. Reaching it is what the admin scope's inclusion of `src/lib/components`
+  guarantees.
 - `grep -n "prefers-reduced-motion: no-preference" src/lib/components/EditPage.svelte` returns the
   chip's delay guard, and the chip's exit declaration carries no delay.
 - Neither `padding` nor `max-width` appears in any `transition-property` or `transition` shorthand in
@@ -1474,7 +1566,8 @@ layout-count assertions in the showcase e2e.
   count is asserted anywhere in the diff. Both pass in the task's own `CI=1` e2e run.
 - `scripts/checks/custom-surface-budget.json` is not in the diff, `@layer components` gains no rule,
   and `node scripts/checks/check-custom-surface.mjs` exits 0.
-- Running all three motion rules over the admin tree returns zero findings.
+- Running all three motion rules over the admin tree returns zero findings, through the same command
+  and config.
 - `npm run check` reports 0 errors and 0 warnings; `npm test` exits 0; the full gate string exits 0.
 - `CAPTURES:` names `signups` and `styleguide` in both schemes at the five widths, with
   `INTENDED MOVES:` and `MOVED BASELINES:` agreeing name for name.
@@ -1667,67 +1760,75 @@ the showcase e2e, which is what keeps the two chains free of the single port-417
 **Chain:** A, eighth. **Paint:** yes. **Depends on:** tasks 6a, 6b, and 7. **Task 8 is merge order
 only**, not a code dependency: the two share no file and this task wires the three static ids.
 
-**Deliverables: three.** The gate's admin-root mapping for the rules that declare `adminOnly`, the
-three `RULE_IDS` plus the one `CSS_FILES` addition with the gate green, and the six new visual
-surfaces across the five-viewport bar.
+**Deliverables: three.** The gate's own `static.adminScope`, naming its three admin roots, for the
+rules that declare `adminOnly`; the three `RULE_IDS` plus the one `CSS_FILES` addition with the gate
+green; and the six new visual surfaces across the five-viewport bar.
 
-**Two items revision 2 gave this task are gone.** The zen layout-count assertions move to task 7,
-where the motion they prove is authored. The reproduction-manifest entry is **cut**: the frozen id
+**Three items revision 2 gave this task are gone.** The zen layout-count assertions move to task 7,
+where the motion they prove is authored. The `scopeReport` path term is dropped entirely by the Fold
+correction, so `audit-gate.mjs` and its second caller leave this task's Files. And the
+reproduction-manifest entry is **cut**: the frozen id
 list is a cross-repo contract (`reproductions-manifest.test.ts:13-15` records that cairn-pub's
 `2026-08-15-live-reproduction-seam-design.md` owns it and that changing an id is a spec edit), the
 edit needs a third file nobody listed because `getStory` throws for an unregistered id, and a
 reproduction is a static mount that cannot show motion. `src/lib/reproductions/manifest.ts` and
 `src/tests/unit/reproductions-manifest.test.ts` are in no task's Files.
 
-**Files (5):**
-- Modify: `scripts/checks/check-invisible-craft.mjs`, `scripts/checks/audit-gate.mjs`,
-  `scripts/checks/check-admin-css-classes.mjs`, `examples/showcase/e2e/admin-visual.spec.ts`,
+**Files (3):**
+- Modify: `scripts/checks/check-invisible-craft.mjs`, `examples/showcase/e2e/admin-visual.spec.ts`,
   `src/tests/unit/audit-gate.test.ts`, `CHANGELOG.md`,
   `docs/internal/record/2026-09-04-chassis-inputs/chassis-b-intended-moves.md`
+- Not touched: `scripts/checks/audit-gate.mjs` and `scripts/checks/check-admin-css-classes.mjs`.
+  `scopeReport` keeps its signature and its rule-id-only filtering, per the Fold correction, so
+  neither file is in this task's diff.
 - Baselines: 60 new files under `examples/showcase/e2e/admin-visual.spec.ts-snapshots/`, regenerated
   on CI
-
-If `src/tests/unit/audit-gate.test.ts` does not exist at dispatch, the task creates it and names the
-creation in its report; the mapping's failing assertion needs a home either way.
 
 **Interfaces:**
 - Consumes: tasks 3 and 4's three rule ids and the `adminOnly` field they declare; task 2's floor
   clause, which is what lets `cairn-admin.css` join `CSS_FILES` without a false positive; tasks 6a,
   6b, and 7's migrated tree, which is what makes the gate green on landing.
-- Produces: an admin-root list the gate passes to `scopeReport`, which a later pass extends when it
-  adds a consumer-facing gate.
-- Unchanged: `DEFAULT_STATIC_SCOPE` and `runStatic`'s own contract. A consumer's run is unaffected,
-  because `adminOnly` already gives a consumer the boundary and this mapping is the engine gate's
-  own translation of it.
+- Produces: the gate's `static.adminScope`, which a later pass extends when it adds a
+  consumer-facing gate.
+- Unchanged: `DEFAULT_STATIC_SCOPE`, `runStatic`'s own contract, and `scopeReport`'s signature. A
+  consumer's run is unaffected, because `static.adminScope`'s default already gives a consumer the
+  boundary and this key is the engine gate's own translation of it into a differently laid-out
+  tree.
 
 **Decisions the plan makes:**
-- **The boundary lives on the rule and the mapping lives in the gate.** Tasks 3 and 4 gave the three
-  rules `adminOnly`, which is what a consumer gets with no configuration. This task teaches the
-  engine's gate what its own admin roots are, because the engine's tree is laid out differently from
-  a consuming site's: `SCAN_SCOPE` is `src/lib/components`, `src/lib/admin-toolkit`, and three
-  showcase roots, and `scopeReport` filters by rule id alone with no path term
-  (`audit-gate.mjs:16-25`).
-- **The gate's admin roots are three:** `src/lib/components`, `src/lib/admin-toolkit`, and
-  `examples/showcase/src/routes/admin`. The first two are the engine's admin frame. The third is
+- **The boundary lives on the rule, and the gate only says where its own admin roots are.** Tasks 3
+  and 4 gave the three rules `adminOnly` and task 3 added `static.adminScope`, whose default answers
+  a consuming site. This task sets the key in the config `check-invisible-craft.mjs` builds, because
+  the engine's tree is laid out differently from a consuming site's: `SCAN_SCOPE` is
+  `src/lib/components`, `src/lib/admin-toolkit`, and three showcase roots, and the key's default
+  names two roots this tree does not have. `scopeReport` is not involved and does not change.
+- **The gate's `static.adminScope` names three roots:** `src/lib/components`,
+  `src/lib/admin-toolkit`, and `examples/showcase/src/routes/admin`. The first two are the engine's
+  admin frame. The third is
   deliberate and is a gain: `examples/showcase/src/routes/admin/signups/+page.svelte` is the repo's
   one consumer-shaped admin screen, so including it dogfoods the rules on the surface a consumer's
   own screen most resembles, while `examples/showcase/src/chassis`, `examples/showcase/src/theme`,
   and the showcase's public routes stay out. Dropping the whole `examples/showcase/src/routes` root
   would have excluded the dogfood along with the public pages.
-- **Without the mapping the gate is red on landing for a reason the charter forbids.** The showcase's
+- **Without the key the gate is red on landing for a reason the charter forbids.** The showcase's
   public theme declares no `--cairn-dur-*` token and carries the exact constructs the rules convict:
   three literal `0.2s ease-out` durations on the theme-flip cross-fade
   (`examples/showcase/src/theme/theme.css:365-368`) and `animation-duration: 0.18s` on the root
   view-transition pseudo-elements (`:384`).
-- **`scopeReport` has a second caller and it must keep working.**
-  `scripts/checks/check-admin-css-classes.mjs:35` calls `scopeReport(runStatic(loadConfig(ROOT)),
-  RULE_IDS)` with no admin roots. The admin-roots argument is optional and defaults to no filtering,
-  so that call site is unchanged in behavior; it is in Files so the task reads it and proves it.
+- **`scopeReport` grows no path term, and that is the point.** It filters a report `runStatic` has
+  already produced, so a path term there could only subtract and could never restore
+  `src/lib/components` to a rule the admin scope had excluded, which is why the fold's two mechanisms
+  contradicted each other. The whole boundary is resolved inside `runStatic`, before a report exists
+  to filter. `scripts/checks/check-admin-css-classes.mjs:35`, the second caller, is therefore
+  untouched, and its absence from the diff is an acceptance criterion.
 - **A root `cairn-audit.config.json` plus two npm scripts was considered and declined**, because it
   would create a second, narrower gate beside the one already running, since `DEFAULT_STATIC_SCOPE`
   drops the three showcase roots this gate covers, and `motion-band` would run twice against two
   different scopes.
-- **`CSS_FILES` keeps both entries.** The CSS-family rules read the file that belongs to their roots.
+- **`CSS_FILES` keeps both entries**, and the admin scope is what sorts them. The CSS-family rules
+  read the file that belongs to their roots: `src/lib/components/cairn-admin.css` lies inside an
+  admin root, so the three motion rules read it, and `examples/showcase/src/theme/theme.css` does
+  not, so they do not, while `gap-scale`, `token-colors`, and `motion-band` keep reading both.
 - **The six new surfaces** are the spec's list: the edit page in zen, the drawer open as an overlay,
   the persistent sidebar, a dialog open (`DeleteDialog` is the smallest instance), the command palette
   open, and the media library with a selection. Each renders across 320, 390, 768, 1440, 2560 in both
@@ -1739,14 +1840,15 @@ creation in its report; the mapping's failing assertion needs a home either way.
 - [ ] **Step 1:** capture this task's before set per the paint protocol. Capture-pair branch, over
   `signups` and `styleguide`.
 - [ ] **Step 2: the failing assertion first, in `src/tests/unit/audit-gate.test.ts`.** Assert that
-  when `scopeReport` is given the three admin roots, a report carrying a `motion-property` finding
-  from `examples/showcase/src/theme` is filtered out while a `gap-scale` finding from the same path
-  survives, and that a `motion-property` finding from `examples/showcase/src/routes/admin` survives.
-  Assert also that `scopeReport` called with no admin roots filters nothing by path, which is what
-  keeps `check-admin-css-classes.mjs` working. Watch them fail.
-- [ ] **Step 3:** implement the path term in `audit-gate.mjs`'s `scopeReport` and the admin-root list
-  in `check-invisible-craft.mjs` until the assertions pass. Run
-  `node scripts/checks/check-admin-css-classes.mjs` and confirm it still exits 0.
+  with the gate's config, `runStatic` produces a `motion-property` finding from a fixture under
+  `src/lib/components` and none from a fixture under `examples/showcase/src/theme`, while
+  `gap-scale` reports from both. The test builds the config from the gate's own exported lists
+  (`SCAN_SCOPE`, the new admin-root list, and `CSS_FILES`) over a temporary root carrying the two
+  fixtures, which is the idiom `src/tests/unit/audit/run.test.ts` already uses. Watch it fail.
+- [ ] **Step 3:** set `static.adminScope` in the config `check-invisible-craft.mjs` builds, exporting
+  the root list beside `SCAN_SCOPE` and `CSS_FILES` so the test reads one source of truth, until the
+  assertions pass. Run `node scripts/checks/check-admin-css-classes.mjs` and confirm it still exits 0
+  with neither it nor `audit-gate.mjs` in the diff.
 - [ ] **Step 4:** add the three ids to `RULE_IDS` and `src/lib/components/cairn-admin.css` to
   `CSS_FILES`. Run `node scripts/checks/check-invisible-craft.mjs` and confirm it exits 0. If it does
   not, paste every finding and stop: a red gate here means the migration tasks left something, and
@@ -1766,17 +1868,17 @@ creation in its report; the mapping's failing assertion needs a home either way.
   (`gap-scale`, `token-colors`, `motion-band`, `motion-property`, `motion-vocabulary`,
   `motion-hover-gate`) and `CSS_FILES` carrying both entries.
 - The three motion ids report **nothing** from `examples/showcase/src/chassis`,
-  `examples/showcase/src/theme`, or the showcase's public routes, proved by a run with the mapping
-  removed producing findings from those roots and a run with it in place producing none. Both runs
-  are pasted in the report.
+  `examples/showcase/src/theme`, or the showcase's public routes, proved by a run with
+  `static.adminScope` removed from the gate's config producing findings from those roots and a run
+  with it in place producing none. Both runs are pasted in the report.
 - The three motion ids **do** run over `examples/showcase/src/routes/admin`, proved by the same pair
   of runs and by the report stating the finding count there, which is expected to be zero.
 - `gap-scale`, `token-colors`, and `motion-band` keep the full five-root scope, proved by the same
   pair of runs.
-- `npx vitest run src/tests/unit/audit-gate.test.ts` passes with the four named assertions from Step
-  2, including the no-admin-roots case.
-- `node scripts/checks/check-admin-css-classes.mjs` exits 0, and its `scopeReport` call site is
-  unchanged in the diff or its change is quoted in the report with the reason.
+- `npx vitest run src/tests/unit/audit-gate.test.ts` passes with the Step 2 assertions and with the
+  file's existing `scopeReport` assertions unchanged.
+- `node scripts/checks/check-admin-css-classes.mjs` exits 0, and neither it nor
+  `scripts/checks/audit-gate.mjs` is in the diff.
 - No second width array is declared in `examples/showcase/e2e/admin-visual.spec.ts`: the six new
   surfaces reuse the existing bar, verifiable in the diff.
 - The six new surfaces are present by name in the spec file, each at five widths in both themes, which
@@ -1789,13 +1891,14 @@ creation in its report; the mapping's failing assertion needs a home either way.
   `INTENDED MOVES:` agree name for name on the moved set.
 
 **Notes: the pre-flight checklist.**
-- No comment claims what its assertion does not prove. The admin-root list's comment states which ids
-  it narrows and why, and the "no existing coverage narrows" claim is backed by the paired runs rather
-  than asserted.
+- No comment claims what its assertion does not prove. The admin-root list's comment states which
+  ids it narrows and why, and the "no existing coverage narrows" claim is backed by the paired runs
+  rather than asserted.
 - The labeled report block verbatim and in order, with the new-surface count inside `INTENDED MOVES:`.
 - No process citations in shipped comments.
 - Counts found, changed, deferred: the finding count from the showcase public roots with and without
-  the mapping, the finding count from the showcase admin route, and the new baseline file count.
+  `static.adminScope`, the finding count from the showcase admin route, and the new baseline file
+  count.
 - Re-emit before the gate.
 
 **Gate:** the FULL string, run as `cairn-run-gate '<full string>'`. The standing CI-canonical-baseline
@@ -1851,13 +1954,16 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   instead, and the task says which it did.
 - **The recipe page is written for a developer building a custom admin screen**: the tokens they
   write, the four rules they will meet and what each fix message means, the three join limits stated
-  as limits, and the one configuration line a consumer owes (naming their own theme CSS in
-  `static.cssFiles` if they want the CSS-family rules to read it, which is already true of
-  `token-colors`). It carries the one non-obvious authoring step, splitting a `:hover` and
-  `:focus-visible` selector list before adding the modality guard, and the opt-back-in permission with
-  its budget caveat.
-- **The reference gets three static rows, one rendered advisory row, the `motion-band` band
-  correction, and the coverage limits.** Two prose counts move with them: `:66` says "Twelve rules
+  as limits, and the two configuration lines a consumer may owe, neither required by default: naming
+  their own theme CSS in `static.cssFiles` if they want the CSS-family rules to read it, which is
+  already true of `token-colors`, and naming `static.adminScope` if their admin screens sit outside
+  `src/routes/admin` and `src/lib/admin-toolkit`. It carries the one non-obvious authoring step,
+  splitting a `:hover` and `:focus-visible` selector list before adding the modality guard, and the
+  opt-back-in permission with its budget caveat.
+- **The reference gets three static rows, one rendered advisory row, the `static.adminScope` config
+  key with its default, the `motion-band` band correction, and the coverage limits.** The key is the
+  pass's one consumer-facing config addition, so the reference page is where a consumer meets it.
+  Two prose counts move with them: `:66` says "Twelve rules
   run, all error tier", which becomes fifteen and is no longer all error tier once the rendered
   advisory lands; and `:25` says "All 28 registered rules", which becomes 32. Both are named here
   because a reviewer will not find them by reading the tables. This page is gated by review rather
@@ -1899,16 +2005,19 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   `docs/extend/README.md`'s index in the index's own ordering. State in its own line that the design
   system's Motion section is canonical and this page cites it.
 - [ ] **Step 3:** add the three static rows and the one rendered advisory row to
-  `docs/reference/cairn-audit.md`, correct the `motion-band` band, write the coverage limits, and fix
-  both prose counts.
+  `docs/reference/cairn-audit.md`, document `static.adminScope` with its default beside
+  `static.cssFiles` in that page's config section, correct the `motion-band` band, write the coverage
+  limits, and fix both prose counts.
 - [ ] **Step 3b:** read `docs/extend/migration-notes.md`'s `## Unreleased` section whole and append
   this window's entry inside polish-C's ordering, one line per behavior change this pass ships.
 - [ ] **Step 4:** write the ruling rows into `docs/internal/engine-rulings.md` in the full format,
   placed by reading the file's own ordering.
 - [ ] **Step 5:** write the `docs/HISTORY.md` entry: what landed, what the gate caught, and what a
   later pass would be wrong to rediscover from scratch. Name at minimum the five items: that
-  `scopeReport` filtered by rule id alone until this pass and now takes an admin-root path term,
-  which the static rule type's own `adminOnly` field drives; that
+  the admin boundary is one mechanism and not two, an `adminOnly` flag on the static rule type
+  resolved over the config's `static.adminScope` roots inside `runStatic`, while `scopeReport` still
+  filters by rule id alone and grew no path term, because a post-run filter can only subtract and
+  can never restore a root the scope excluded; that
   `isReducedMotionGuarded` treated `(prefers-reduced-motion: no-preference)` as a guard, so a 3000ms
   transition inside an inverse gate was exempt from `motion-band`; that a reduced-motion restatement
   ties the blanket block on specificity and is decided by source order, measured in the built sheet;
@@ -1917,6 +2026,11 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   this pass measured.
 - [ ] **Step 6:** close ROADMAP's motion entry, remove it from the live tier, and file the five
   follow-ups, the resize stopper in the Later tier with its finding.
+- [ ] **Step 6b: write `Consumers must:` line 1.** Check whether
+  `src/lib/audit/rules/rendered/motion-reduced-delay.ts` is in the tree, then append line 1 to
+  `CHANGELOG.md`'s `## Unreleased` block verbatim from the changelog table, or the amended version
+  naming the three static rules alone if task 8 was cut. Report which version it wrote. This is the
+  one `Consumers must:` line this task owns, and no other step writes it.
 - [ ] **Step 7:** triage `docs/internal/docs-friction-log.md` complete-or-move, or record both sections
   empty. Read the `## Unreleased` block whole and confirm all seven `Consumers must:` lines are present
   and correctly worded. Do not touch `package.json`. The check-plus-unit gate, with `check:docs`,
@@ -1934,10 +2048,13 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   geometry.
 - The Motion section and `docs/extend/animate-a-custom-screen.md` each carry a line naming the design
   system as canonical.
-- `docs/extend/animate-a-custom-screen.md` names all four rules, the three join limits, and the one
-  configuration line a consumer owes, and `grep -n "animate-a-custom-screen" docs/extend/README.md`
+- `docs/extend/animate-a-custom-screen.md` names all four rules, the three join limits, and the two
+  configuration lines a consumer may owe (`static.cssFiles` and `static.adminScope`, each with the
+  default that makes it optional), and `grep -n "animate-a-custom-screen" docs/extend/README.md`
   returns the index entry.
-- `docs/reference/cairn-audit.md` carries three new static rows and one rendered advisory row; the
+- `docs/reference/cairn-audit.md` carries three new static rows, one rendered advisory row, and
+  `static.adminScope` documented with its `src/routes/admin` plus `src/lib/admin-toolkit` default;
+  the
   string "Twelve rules run, all error tier" appears nowhere in the file; and the string "All 28
   registered rules" appears nowhere in the file. The replacements read fifteen and 32.
 - `docs/internal/engine-rulings.md` carries rows whose headings match
@@ -2162,12 +2279,12 @@ head of this ritual.
    - **`daisyui-a11y-reviewer`** over every markup and CSS change: `CairnAdminShell.svelte`,
      `EditPage.svelte`, `MarkdownEditor.svelte`, `CairnMediaLibrary.svelte`, `ConceptList.svelte`,
      `MediaHeroField.svelte`, `HelpHome.svelte`, and `cairn-admin.css`. It reads the upload progress
-     overlay's preserved `<progress>` semantics, the dropzone's drag-over state on a coarse pointer,
+     bar's preserved `<progress>` semantics, the dropzone's drag-over state on a coarse pointer,
      the modality gate's selector splits against keyboard focus on a touch device, and the
      reduced-motion policy against WCAG 2.2 and DaisyUI 5.
-   - **`svelte-reviewer`** over the same `.svelte` files, reading for reactivity defects in the resize
-     stopper's listener and teardown, the dropzone's `dragOver` state and its `relatedTarget` test,
-     and zen's `flushSync()` focus sequence.
+   - **`svelte-reviewer`** over the same `.svelte` files, reading for reactivity defects in the
+     dropzone's `dragOver` state and its `relatedTarget` test, and in zen's `flushSync()` focus
+     sequence.
    - **`cloudflare-workers-reviewer` runs only if a worker file changes.** No task in this pass is
      planned to change Worker runtime code, a D1 query, or a binding, so the expected answer is that
      it does not run. The conductor checks the diff rather than assuming.
@@ -2229,12 +2346,14 @@ The spec's six, then this plan's two.
   and `EditPage.svelte`'s feedback alert fires under `motion-band`. **Mitigation:** task 10 lands
   after tasks 6a, 6b, and 7, and the chain orders them that way explicitly. Task 10's Step 4 stops on
   a red gate rather than reaching for a suppression.
-- **The `adminOnly` scope is a rule-type change and a gate mapping, and neither exists yet.** Without
-  them the three new ids run at error tier over a consuming site's public components and over the
-  showcase's public theme, and the engine's gate is red on landing for a reason the charter forbids.
-  The field is tasks 3 and 4's; the mapping is task 10's. **Mitigation:** task 3 asserts the field's
-  behavior directly, and task 10's acceptance criterion is the paired run, one with the mapping
-  removed producing showcase public findings and one with it in place producing none, with
+- **The `adminOnly` scope is a rule-type change, a config key, and one line in the gate's own
+  config, and none of the three exists yet.** Without them the three new ids run at error tier over a
+  consuming site's public components and over the showcase's public theme, and the engine's gate is
+  red on landing for a reason the charter forbids. The field and the key are task 3's, task 4's rule
+  declares the field, and the gate's `static.adminScope` is task 10's. **Mitigation:** task 3 asserts
+  the resolution directly against the consumer default, and task 10's acceptance criterion is the
+  paired run, one with the key removed producing showcase public findings and one with it in place
+  producing none, with
   `gap-scale`, `token-colors`, and `motion-band` keeping the full five-root scope in both and the
   showcase's own admin route staying in scope.
 - **The emulation axis is the one large item, for one advisory rule.** `runRendered` nests pages, then
@@ -2314,7 +2433,9 @@ This plan's own two.
   pattern the cut theme-change row described, so a pass that wants it in the admin has a working
   precedent to port and a `Consumers must:` line to write.
 - **To any later pass, the five things this pass measured that a plan should not re-derive**, all
-  recorded in task 11's HISTORY entry: that `scopeReport` filtered by rule id alone until this pass;
+  recorded in task 11's HISTORY entry: that the admin boundary resolves inside `runStatic`, through
+  `adminOnly` over `static.adminScope`, while `scopeReport` filters by rule id alone and cannot carry
+  it, because a post-run filter can only subtract;
   that `isReducedMotionGuarded` treated the inverse gate as a guard; that a reduced-motion restatement
   ties the blanket block on specificity and is decided by source order; that `signature(el)` names a
   class of elements rather than an element; and the factor by which the emulation axis multiplies

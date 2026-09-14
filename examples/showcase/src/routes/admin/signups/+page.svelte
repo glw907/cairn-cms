@@ -40,11 +40,11 @@
   <CsrfField />
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">Name</span>
-    <input name="name" class="input" />
+    <input name="name" class="input signup-create-field" />
   </label>
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">Email</span>
-    <input name="email" class="input" />
+    <input name="email" class="input signup-create-field" />
   </label>
   <button class="btn btn-primary">Add</button>
 </form>
@@ -113,3 +113,14 @@
     </form>
   </div>
 </dialog>
+
+<style>
+  /* A site's own admin route rides cairn's shipped, precompiled cairn-admin.css: a Tailwind
+     utility written only here (never scanned into that sheet) never resolves, so the field width
+     the stacked labels need is a plain scoped rule instead of a Tailwind class. Matches
+     `.input`'s own preferred width (`clamp(3rem, 20rem, 100%)`), which the stacked label's own
+     column layout otherwise fails to resolve. */
+  .signup-create-field {
+    width: 20rem;
+  }
+</style>

@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "daisyui": {
-      "type": "http",
-      "url": "https://gitmcp.io/saadeghi/daisyui"
-    },
     "playwright": {
       "type": "stdio",
       "command": "npx",

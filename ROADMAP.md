@@ -916,8 +916,11 @@ the named human gates only):**
   the product and every front end is a view over it, the CLI first, the HUD second, a local
   web interface if wanted, and an MCP front end (Geoff, 2026-09-13: a server over the spine
   gives a developer's Claude Code the live operational surface, health, deploy and build
-  state, the auth store, content operations, log queries; a docs server is not wanted, since
-  the tarball docs plus a skill reach every agent), each calling the same actions and reading the same records and
+  state, the auth store, content operations, log queries; a docs-only server is not wanted, since
+  the tarball docs reach every agent; the agent-facing docs form is layered instead: the
+  docs rewrite adds an `llms.txt`-shaped index to the tarball, the Go tool gains a `docs`
+  search subcommand over the installed version so any agent reaches retrieval from Bash,
+  and the MCP front end exposes that same search as a tool), each calling the same actions and reading the same records and
   results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
   borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;

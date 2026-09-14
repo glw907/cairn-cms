@@ -318,9 +318,11 @@
   `remove`/`signup`), and authorizes each POST against the site's access declaration before the
   binding resolves, with `ownerOnly` still stacked on the destructive action. That authorization is
   fail-closed on every call, per the `access-semantics-documented-divergence` ruling: an unmapped
-  target refuses, so a site copying this route declares a rule for it. The `load` keeps
-  `requireOwner`, which stays the documented gate for a load. Example and template code only; no
-  consumer action.
+  target refuses, so a site copying this route declares a rule for it. The `load` moves from
+  `requireOwner` to `requireAccess`, so it resolves against the same site access map the section
+  actions already check: a section's load and its POST actions agreeing on one predicate means a
+  denied POST's page render exposes nothing the load would not already have refused. The `ownerOnly`
+  nav flag stays cosmetic only. Example and template code only; no consumer action.
 
 - The engine's own admin components (`src/lib/components/*.svelte`) now sit under the same
   `check:comments` TSDoc gate the showcase's `.svelte` files carry: the ESLint `.svelte` block's
@@ -1353,7 +1355,24 @@
   and a denied or misconfigured request, all announce something instead of nothing. The render
   proof at 320 and 390 in both color schemes showed the existing `flex gap-2` row composing
   without overflow before and after the label change, so the finding that it could not compose at
-  those widths does not hold and the row's composition is unchanged. No consumer action.
+  those widths does not hold; the row keeps its flex-row shape rather than moving to `flex-col`. No
+  consumer action.
+
+- The showcase's Signups admin screen's create form, and the Waymark template that mirrors it,
+  progressively enhance instead of round-tripping a full-page POST: both actions carry
+  `use:enhance`, so a create or remove outcome mutates the already-mounted `role="status"` region
+  in the live document, which a screen reader announces, rather than arriving on a brand-new
+  document a screen reader never observes. A create failure ties to its fields with
+  `aria-describedby`/`aria-invalid` and moves focus to the Name input. The delete-confirm dialog's
+  `showModal()` is delayed with `tick()` so its `aria-labelledby` heading has flushed the pending
+  row's name before focus moves into the dialog. Wrapping each input in a visible `<label>` had
+  also collapsed the input's own `clamp(3rem, 20rem, 100%)` width (the `100%` term could no longer
+  resolve against the label's auto-sized containing block, shrinking each field from 320px to
+  185px at 768px and above) and left the create row's Add button pinned to `flex-start` while the
+  taller labelled inputs grew past it; the label itself now carries the sizing as a flex item
+  (`flex-basis: 20rem` down to a `3rem` floor, so a field shrinks below 20rem only where the row
+  has no room for it) and the form takes `items-end` so the button shares the inputs' bottom edge
+  at every width and scheme. No consumer action.
 
 - The showcase's Signups admin screen, and the Waymark template that mirrors it, name and confirm
   the destructive row. Each row's Delete trigger now carries an `aria-label` naming its own signup

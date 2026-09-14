@@ -17,17 +17,32 @@ site's dev backend authorizes a `createSectionAction` form action the same way `
 does in production, off the one access declaration the site already hands the guard. The showcase's
 Signups admin screen, and the Waymark template that mirrors it byte-for-byte, drop their hand-rolled
 `requireOwner`/`formData`/`fail` shape for `createSectionAction`, gain a visible stacked label on
-each form field in place of an `sr-only` pair, an always-mounted `role="status"` outcome region, and
-a shared safe-delete `<dialog role="alertdialog">` (no light dismiss) naming the row it will remove,
-replacing a bare click-to-post Delete trigger. `formatTimestamp` (`/admin-toolkit`) widens its
-accepted domain to two more ISO 8601 zone spellings, a no-seconds variant and a colonless `+hhmm`
-offset alongside the ISO forms and lowercase `z` it already took.
+each form field in place of an `sr-only` pair, an always-mounted `role="status"` outcome region that
+progressively enhances via `use:enhance` instead of round-tripping a full-page POST, and a shared
+safe-delete `<dialog role="alertdialog">` (no light dismiss) naming the row it will remove,
+replacing a bare click-to-post Delete trigger. The route's own `load` moves from `requireOwner` to
+`requireAccess`, so it shares the one fail-closed predicate the section actions already check.
+`formatTimestamp` (`/admin-toolkit`) widens its accepted domain to two more ISO 8601 zone spellings,
+a no-seconds variant and a colonless `+hhmm` offset alongside the ISO forms and lowercase `z` it
+already took.
 
 **What the gate caught.** The access-map handoff's own doc comment on `src/access.ts` named
 `devBackendHandle` while describing the two hook branches; that module ships in the DEFAULT
 (non-dev) build, so Rollup carried the comment into the deployed Worker bundle and the dev-fold
 tripwire, which greps the deploy artifact for literal dev-backend names, caught the mention. No code
 leaked, only a comment; the fix describes the dev branch without naming its package or its handle.
+The pass-end `web-auth-security-reviewer` read of the seam and the adoption together caught the
+load's stale `requireOwner`: with the section actions already resolving `requireAccess` on the same
+route, a load left on the coarser owner-only gate could render page content a POST would have
+refused, so the load moved to `requireAccess` to match. The pass-end `visual-verifier`, reading
+Task 3's baselines against its own before set, caught two regressions the label change introduced
+that Task 3's own render proof did not: wrapping each input in a visible `<label>` broke the
+input's `clamp(3rem, 20rem, 100%)` width (the `100%` term could no longer resolve against the
+label's own auto-sized containing block, collapsing each field from 320px to 185px at 768px and
+above), and the taller labelled inputs grew past the Add button, which stayed pinned to
+`flex-start`. Both are fixed in the shipped markup (the sizing constraint moved to the label as a
+flex item, the form gained `items-end`), verified across three further capture rounds before the
+verifier's read closed clean.
 
 **What a later pass would be wrong to rediscover.**
 - `DeleteDialog` cannot serve a developer's own table row as it stands: its props are shaped for
@@ -48,6 +63,12 @@ leaked, only a comment; the fix describes the dev branch without naming its pack
   a Worker's SSR and a browser's hydration only for strings that already match the ECMAScript Date
   Time String Format; feeding it a non-standard spelling falls back to implementation-defined
   `Date.parse` behavior, which SSR and hydration are not guaranteed to agree on.
+- A Tailwind utility class written only inside a showcase route compiles into no stylesheet the
+  page loads: the showcase's own admin routes ride the engine's precompiled `cairn-admin.css`,
+  which scans only `src/lib/components` and `src/lib/admin-toolkit`, so a route-local width fix
+  needs a plain scoped style rule instead. This is what the input-width regression's own fix used,
+  and it is a standing constraint on any route-level CSS in the showcase's admin surface, not
+  particular to this fix.
 
 **Records.** `docs/HISTORY.md` gains this entry; `ROADMAP.md`'s polish sub-bullet closes the
 `formatTimestamp` widening and the `createSectionAction` adoption by name and leaves the

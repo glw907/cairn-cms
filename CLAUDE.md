@@ -85,6 +85,11 @@ durable orientation only.
   the gate), and the `code-simplifier` plugin agent pins Opus in its own frontmatter. The
   conductor (Fable) runs plan and execution in one session and never reads diffs itself; the
   `diff-reviewer` agent does, per the global "Conducting a pass" rule.
+- **DaisyUI reference:** the official DaisyUI skill (`~/.claude/skills/daisyui/`, dotfiles) is the
+  component reference for every admin markup change, and `.mcp.json` adds the free DaisyUI GitMCP
+  server for on-demand docs in the main loop. Prefer a stock DaisyUI component over a home-grown one
+  unless `docs/internal/engine-rulings.md` records the defect that forced it; the admin design system
+  wins over the skill on any conflict.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 

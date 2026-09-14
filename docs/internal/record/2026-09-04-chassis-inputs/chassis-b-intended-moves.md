@@ -956,3 +956,49 @@ pre-regression figure.
   `signups-dark-320.png` before and after (four files). The before pair shows both inputs narrow
   (185px) with a large gap before the Add button; the after pair shows both inputs at full width
   (320px) with the button close behind, matching Task 3's original composition.
+
+### Fix round: restore the create row's narrow-viewport width
+
+The pass-end visual verifier's fourth read found the "restore the create row's input width" fix
+above wrong at 320 and 390: the fixed `.signup-create-field { width: 20rem; }` gave both inputs
+320px each regardless of viewport, so the create row (two 320px inputs plus the Add button, no
+wrap) measured `document.scrollWidth` 731px against a 320px or 390px viewport, overflowing in
+both schemes and, in dark scheme, exposing an unthemed white strip where the overflowed Email
+field and Add button rendered past the shell. Task 3's own render-proof had shown the row
+composing without overflow at 320 and 390 under the original clamp-based sizing
+(`width: clamp(3rem, 20rem, 100%)`), a claim the fixed-320px rule contradicted.
+
+Fixed by moving the sizing constraint from the input to its label: `.signup-create-label { flex: 1
+1 0; min-width: 3rem; max-width: 20rem; }` with `.signup-create-field { width: 100%; }`. As a flex
+item with a definite flex-basis, each label grows to 20rem when the row has room and shrinks below
+that (down to 3rem) when it does not, so the row never overflows or wraps; the input then fills its
+label at 100%, which resolves cleanly because the label (unlike `.input`'s own auto-sized flex-col
+containing block) now has a definite computed width from the flex algorithm. Measured directly
+against the built preview server (`document.documentElement.scrollWidth` versus `clientWidth`,
+and `.signup-create-field` `boundingBox().width`): no overflow at 320 or 390 in either scheme, and
+each input still measures exactly 320px at 768, 1440, and 2560, matching the prior fix round's own
+proof and leaving those five widths' baselines untouched.
+
+- INTENDED MOVES: `signups 320 light`: each input narrows from its fixed 320px to fit the 320px
+  viewport, shortening the create row / moves `admin-signups-light-320`. `signups 320 dark`: same
+  reason, dark scheme, and the white overflow strip is gone / moves `admin-signups-dark-320`.
+  `signups 390 light`: same reason at 390 / moves `admin-signups-light-390`. `signups 390 dark`:
+  same reason, dark scheme / moves `admin-signups-dark-390`. No other width or scheme moves: 768,
+  1440, and 2560 have room for both inputs at their 20rem maximum, so their baselines are
+  unaffected in either scheme.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this fix's source edit, produced exactly 4 failures, the
+  four `admin-signups-{light,dark}-{320,390}` cases (24 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those four files and none other; the regenerated suite passes 28 of 28.
+- TILE DIFF: `magick compare -metric AE` on the full baseline PNG (fullPage capture, one tile) for
+  each of the four moved files, prior baseline against the regenerated one: light 320 17379.8,
+  dark 320 301589, light 390 14773.7, dark 390 250579 pixels of AE, nonzero on every file as
+  expected for the narrowed fields.
+- READ ME: two render-proof pairs:
+  `~/.cache/cairn-polish-11b-ii/fix-narrow-overflow/before/signups-light-320.png` and its after-set
+  counterpart under `~/.cache/cairn-polish-11b-ii/fix-narrow-overflow/after/signups-light-320.png`,
+  plus `signups-dark-320.png` before and after (four files). The before pair shows the Email field
+  and Add button running past the 320px viewport edge (dark scheme also shows the overflow as an
+  unthemed white strip); the after pair shows both inputs and the Add button fitting inside the
+  320px viewport with no overflow.

@@ -38,15 +38,15 @@
 
 <form method="POST" action="?/create" class="my-4 flex items-end gap-2">
   <CsrfField />
-  <label class="flex flex-col gap-label">
+  <label class="flex flex-col gap-label signup-create-label">
     <span class="type-body font-medium">Name</span>
     <input name="name" class="input signup-create-field" />
   </label>
-  <label class="flex flex-col gap-label">
+  <label class="flex flex-col gap-label signup-create-label">
     <span class="type-body font-medium">Email</span>
     <input name="email" class="input signup-create-field" />
   </label>
-  <button class="btn btn-primary">Add</button>
+  <button class="btn btn-primary signup-create-submit">Add</button>
 </form>
 
 <!-- Always mounted and content-gated (the admin's ruled busy/live-region idiom), so it reads any
@@ -117,10 +117,24 @@
 <style>
   /* A site's own admin route rides cairn's shipped, precompiled cairn-admin.css: a Tailwind
      utility written only here (never scanned into that sheet) never resolves, so the field width
-     the stacked labels need is a plain scoped rule instead of a Tailwind class. Matches
-     `.input`'s own preferred width (`clamp(3rem, 20rem, 100%)`), which the stacked label's own
-     column layout otherwise fails to resolve. */
+     the stacked labels need is a plain scoped rule instead of a Tailwind class.
+
+     The label, not the input, carries the sizing: as a flex item with a definite flex-basis it
+     grows to 20rem when the row has room and shrinks below that (down to 3rem) when it does not,
+     so the create row never overflows or wraps at narrow viewports. The input then fills its
+     label at 100%, which resolves cleanly here because the label (unlike `.input`'s own auto-sized
+     flex-col containing block) now has a definite computed width from the flex algorithm. */
+  .signup-create-label {
+    flex: 1 1 0;
+    min-width: 3rem;
+    max-width: 20rem;
+  }
+
   .signup-create-field {
-    width: 20rem;
+    width: 100%;
+  }
+
+  .signup-create-submit {
+    flex-shrink: 0;
   }
 </style>

@@ -2800,3 +2800,90 @@ record is complete; after Task 15 the branch is ready for the conductor's cut.
 ---
 
 ## Post-mortem
+
+Written by Task 15, the records task, from what the branch's own artifacts show. **Two classes of
+number are deliberately absent and are the conductor's close-out records agent's to fill:** the
+token spend per task and the total spend against this pass's 9M ceiling, and the two attended-time
+counts (planning misses and execution sittings). Those exist only in the conductor's session; an
+implementer sees one task and cannot measure them. Do not infer them from this ledger.
+
+### The task ledger
+
+Fifteen tasks and nineteen commits before this one, in branch order off `main` at `f1c72dbf`. The gate column records
+what the task's own implementer reported to the conductor; Task 15 can verify the commits and the
+tree, not another task's terminal.
+
+| Task | Commit | Gate as reported | Note |
+|---|---|---|---|
+| 1 | `08deb6f0` | green | The custom-screen example and its live reproduction recomposed ahead of the removal |
+| 2 | `bcec8890` | green | `createContentRoutes` and `createCairnAdmin` onto one config bag |
+| 3 | `f75167b6` | green | `createNavRoutes` and `createMediaRoute` onto one config bag; two new exported types |
+| 4 | `054f9fc2` | green, and **it was not**: this commit turned `src/tests/unit/check-symbols.test.ts` red | Four bags to `*Config`, two data types drop `Load` |
+| 5 | `94b7b396` | green (inherited the Task 4 red) | The manifest codec formatted, two one-off verbs onto `build*`, `parseManifest` re-homed |
+| 6 | `20b9162d`, `dca8b344` | green (inherited the Task 4 red); the follow-up commit fixed three article disagreements | The three noun-first factories onto a verb |
+| 7 | `ae51af02`, `a3301094` | green | The four preview and health names; also repaired Task 4's red with four allowlist entries |
+| 8 | `1f5c74ac` | green | The four discriminated results onto the `outcome` grammar, with a new `LoginPage` component test |
+| 9 | `64456d21` | green | `UnresolvedEditor` derived from `Editor`; `createMediaRoute` recorded, not renamed |
+| 10 | `5c140723` | green | The six refusal events onto `refused`, plus the header's two-verb table |
+| 11 | `ace295a7`, `d64f226b` | green; the follow-up commit resolved the review's doc findings | The two area moves and the dotted-subject grammar clause |
+| 12 | `e51393bf`, `56da3588` | green; the follow-up commit recorded the conductor's Option A ruling in the plan | `OfficeList` retired, one new full-format ruling row |
+| 13 | `606d740f` | green | Every renamed row annotated, the leak sanction closed, the header's allowlist count corrected |
+| 14 | `f7794d1c`, `6aae02e8` | green; the follow-up commit added two missing migration-notes bullets | The whole `## Unreleased` window reconciled, four consumer sites named |
+| 15 | this commit | see the run recorded with it | The records and the release readiness |
+
+### Decisions a task made that this plan did not specify
+
+- **Task 4 kept `CairnManifestOptions` on `Options`**, reading it as exempt under
+  `convention-interop-carve-out` rather than a bag the `*Config` rule reaches. The plan named six
+  bags and did not disposition this seventh.
+- **Task 6 left the doctor's own `githubApp` `DoctorCheck` value bare**, on the ground that it is an
+  exported value rather than a factory function. The plan's rename list named the function only.
+- **Task 7 left the SvelteKit action names `previewMint` and `previewRevoke`, and the `previewMint`
+  prop the admin components share, unrenamed**, since they name the unrenamed public form-action
+  surface rather than the renamed functions. The conductor ratified this and amended Global
+  constraint 7's taxonomy table the same day (2026-09-14) so a form-action key, a component prop,
+  or a route segment sharing a renamed export's name is a distinct, immune surface rather than a
+  blocking finding. `a3301094` carries both the amendment and the repair of the released `0.96.0`
+  migration-notes section that the sweep had rewritten.
+- **Task 7 repaired a red it did not cause.** Four `config.*` property paths Task 4 introduced into
+  `docs/reference/core.md` and `sveltekit.md` read as log-event names to `check-symbols`'
+  extractor; Task 7 added the four allowlist entries rather than reporting the red and stopping,
+  and said so in its own commit message.
+- **Task 10 added a two-verb table to the events header** (`refused` for a decision the engine made
+  on policy, `failed` for a fault it did not choose). The plan asked for the six renames and the
+  header grammar, not for a table.
+- **Task 11 widened the events grammar rather than flattening a name**, adding a clause admitting a
+  dotted subject inside `area[.subject].verb_phrase` and naming
+  `auth.channel.session.created` as the live case.
+- **Task 12's sheet-inventory question went to the conductor and came back as Option A**: the
+  fixture loses both `gap-0` and `overflow-x-auto`, since `OfficeList.svelte` was the tree's only
+  user of each. `56da3588` appends the dated amendment to Task 12's acceptance criterion.
+- **Task 14 allowlisted five consumer-site file paths** in
+  `scripts/checks/check-symbols-allowlist.mjs`. The plan's constraint 8 routed gate-record edits to
+  `check-self-use-allowlist.json` and `check-surface-reexports.json` and did not anticipate that
+  naming a consumer site's own file in `migration-notes.md` would make `check-symbols` resolve it
+  against this repo's tree.
+- **Task 15 left `docs/internal/docs-friction-log.md` unmodified.** Both live sections still read
+  "None open.", no polish-C task filed a finding, and nothing was cleared, so there was nothing to
+  triage and an "I checked" line would be exactly the append-only rot the file's own header warns
+  against. The verification is recorded in `docs/HISTORY.md` and in the task's report instead.
+- **Task 15 removed the ROADMAP audit-remediation entry outright** rather than leaving a closed
+  stub, per the ledger rule that shipped history lives in `docs/HISTORY.md` and the per-plan
+  post-mortems. It also deleted one live `Now`-tier sub-bullet whose subject was `OfficeList`'s
+  hardcoded `<h1>`, since the component it filed against no longer exists, and left one historical
+  mention of the falsified `csrf_rejected` log row verbatim, since renaming it would falsify the
+  record it makes.
+
+### The gate-fidelity finding
+
+`054f9fc2` (Task 4) turned `src/tests/unit/check-symbols.test.ts` red: four `config.*` property
+paths it introduced into `docs/reference/core.md` and `docs/reference/sveltekit.md` resolve as
+log-event names in `check-symbols`' ground-truth scan. Tasks 4, 5, and 6 each reported a green
+gate, and Task 7 repaired it (`ae51af02`). **The plan's own gate string is not the gap.** The
+string under "## Gate" carries both `npm test`, which runs that test file, and
+`npm run check:symbols`, so a task that ran the string as written could not have reported green.
+No ROADMAP line is filed against the gate string for this reason; what the episode indicts is
+three reports, not the contract. The durable lesson for a future pass: a task inheriting a red it
+did not cause reports it, and a conductor reading three consecutive "green" reports on a branch
+whose head is red has no way to tell from the reports alone. The cheapest tripwire is the
+conductor's own verification run between dispatches, which is what caught it here.

@@ -2025,6 +2025,17 @@
   `adminAction`-shaped-seam mentions now read `createAdminAction`. Internal and extend-track
   documentation only; no code changed. No consumer action.
 
+- `docs/HISTORY.md` gains the polish-C entry (audit remediation slice 12, the breaking window),
+  and `ROADMAP.md`'s any-site audit remediation entry is closed and removed from the live tier,
+  the initiative having shipped all twelve slices; the live tier lines that named a symbol this
+  window renamed now name the new one, and the `check:surface` script's misrouted `--update` flag
+  is filed to the Later tier with its evidence. The release readiness for the cut this window
+  becomes is recorded at
+  `docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md`: the verified free
+  number, the bump size derived against the release skill's own rule, and every
+  `Consumers must:` line in the window gathered in one place. Internal documentation only; no
+  code changed. No consumer action.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

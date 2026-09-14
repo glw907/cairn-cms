@@ -55,6 +55,30 @@ backticked retired event names in a migration-notes bullet that `check:symbols` 
 the live union (`d64f226b`), and two missing or two-step migration-notes bullets Task 14's first
 pass left (`6aae02e8`).
 
+The records were first closed at Task 15 (`8bd41850`), and the pass-end ritual's remaining steps
+caught two more defects on top of it. **`b7694ba0`** is the `code-simplifier` pass over the
+window's own config-bag reshape: `createNavRoutes`' bag argument and its two inner functions'
+`const config = runtime.navMenu` both named `config`, so the inner binding renames to `navMenu`;
+`createContentRoutesContext` took `runtime` as its own parameter while `ContentRoutesConfig` had
+already gained a `runtime` member, so its one caller passed the same value twice; and
+`createAuthGuard` aliased three bag members one line at a time instead of destructuring them
+together. All three are behavior-identical. **`0422b1ff`** is a fix round over the `OfficeList`
+replacement recipe itself: the floating-card composition dropped `overflow-hidden`, so
+`AdminTable`'s square table painted over `card-shell`'s rounded corners in every documented call
+site (`CustomScreen.svelte`, the extend guide, the admin-screens skill, the design system, the
+reference page, and both migration fences), because `OfficeList.svelte`'s own retired
+`overflow-x-auto` had computed both axes to `auto` and clipped as a side effect the replacement
+recipe never named; the two `Consumers must:` fences in `CHANGELOG.md` and `migration-notes.md`
+also omitted `AdminTable`'s required `rowCount` and `header` props, so the primary instruction for
+`aksailingclub-org`'s eighteen-screen migration did not compile. The same commit discloses the
+one silent break the window carries: a held `ChannelRequestResult` or `ChannelConfirmResult` read
+via `if ('error' in result)` still compiles against the new outcome-only shape and now always
+reads `false`, so every refused magic-link request or confirm silently reads as sent or confirmed;
+both fences gained the grep-and-rewrite guidance, citing the showcase's own login route (rewritten
+by this pass) as the pattern's origin. `officelist-retired-for-one-scroll-owner`
+(`docs/internal/engine-rulings.md`) is corrected to state why `overflow-hidden` is needed and to
+claim only what `check:snippets` proves, the fence's import line typechecks, not its markup.
+
 **What a later pass would be wrong to rediscover.**
 - `OfficeList` was retired on the double-scroll-container argument **against a CLOSED reshape
   row**, as a new proposal rather than a reopen: `audit-admin-officelist` was already executed by
@@ -85,6 +109,20 @@ pass left (`6aae02e8`).
   `MediaPicker`, `ToolbarDisclosure`, and the identity seam. The derivation, with the free number
   and the skill's own rule quoted, is at
   `docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md`.
+- **A renamed discriminated result's old narrowing idiom fails silently, not loudly.** The four
+  outcome renames drop the old `{ ok: true } | { error: ... }` split for one `outcome` field, and
+  `result.ok` or `result.error` fails the build wherever TypeScript sees the literal type. But `if
+  ('error' in result)` is a plain `in` check against an object shape, still compiles clean, and now
+  always evaluates `false` because no member is named `error` anymore, so a held
+  `ChannelRequestResult` or `ChannelConfirmResult` reads every refusal as a success. `check:symbols`
+  and the type checker both stay green; only a grep for the literal `'error' in` pattern finds it.
+  A consumer migrating this window greps for it before trusting the type checker's silence.
+- **A `svelte` fence with a real `<AdminTable>` call typechecks on its import line alone.**
+  `check:snippets` proves a documented fence's imports resolve against the built package; it does
+  not run the markup, so a fence missing a required prop (`rowCount`, `header`) or a required
+  wrapper class (`overflow-hidden`) can sit green in the gate while it fails to compile or paints
+  wrong in a real consumer. `officelist-retired-for-one-scroll-owner`'s own `Verified` line now
+  says exactly this, so a later reader does not read `check:snippets` green as more than it proves.
 
 **Records.** `docs/HISTORY.md` gains this entry. `ROADMAP.md`'s any-site audit remediation entry
 is closed and removed from the live tier, the initiative having shipped all twelve slices; the one

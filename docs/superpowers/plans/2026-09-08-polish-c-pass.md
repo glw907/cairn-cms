@@ -2887,3 +2887,98 @@ three reports, not the contract. The durable lesson for a future pass: a task in
 did not cause reports it, and a conductor reading three consecutive "green" reports on a branch
 whose head is red has no way to tell from the reports alone. The cheapest tripwire is the
 conductor's own verification run between dispatches, which is what caught it here.
+
+### True-up: two commits landed after the records first closed
+
+The records were first closed at Task 15 (`8bd41850`). Two more commits landed on top of it
+before this close-out finished, both carrying this session's own attribution, so they are folded
+into this post-mortem rather than left to read as a second, undocumented pass.
+
+**`b7694ba0`, the pass-end `code-simplifier` pass over the window's own code**, run per ritual
+step 1 before the final records commit: `createNavRoutes`' bag parameter and its two inner
+functions' `const config = runtime.navMenu` both named `config`, so the inner binding renames to
+`navMenu`; `createContentRoutesContext` still took `runtime` as its own first parameter after
+`ContentRoutesConfig` had already gained a `runtime` member, so its one caller passed the same
+value twice; `createAuthGuard` aliased three bag members one line at a time instead of
+destructuring them together. All three are behavior-identical, confirmed by the unchanged gate.
+
+**`0422b1ff`, a fix round over the `OfficeList` replacement recipe Task 1 and Task 12 shipped**,
+covering three defects the pass-end ritual's automated checks did not catch on their own:
+
+1. **The corner clip.** The floating-card composition dropped `overflow-hidden`, so `AdminTable`'s
+   square table painted over `card-shell`'s rounded corners in every documented call site
+   (`CustomScreen.svelte`, the extend guide, the admin-screens skill, the design system, the
+   reference page, and both migration fences). `OfficeList.svelte`'s own retired `overflow-x-auto`
+   had computed both axes to `auto` and clipped as a side effect the replacement recipe never
+   named, so the composition looked right in review and painted wrong. This sits squarely inside
+   `daisyui-a11y-reviewer`'s assigned surface from ritual step 6, "the replacement custom-screen
+   composition, since the card frame moved from a component to a call site," and the reproduction
+   this defect lived in sits outside the capture tool's baseline matrix (Task 8's own PAINT note:
+   "the capture tool's matrix does not include the admin auth surfaces"), so no automated
+   `check:visuals` run could have caught it; only a reviewer's read of the rendered composition
+   could, and did.
+2. **The incomplete fences.** The two `Consumers must:` fences in `CHANGELOG.md` and
+   `docs/extend/migration-notes.md` omitted `AdminTable`'s required `rowCount` and `header` props,
+   so the primary instruction for `aksailingclub-org`'s eighteen-screen migration did not compile.
+   `check:snippets` proves a fence's import line resolves against the built package; it does not
+   run the markup, so a fence missing a required prop stays green in the gate while it fails to
+   compile in a real consumer.
+3. **The undisclosed silent break.** A held `ChannelRequestResult` or `ChannelConfirmResult` read
+   via `if ('error' in result)` still compiles against the new outcome-only shape and now always
+   reads `false`, so every refused magic-link request or confirm silently reads as sent or
+   confirmed. `result.ok`/`result.error` fails the build; the `in` check does not, and neither
+   `check:symbols` nor the type checker flags it. This is the outcome re-key's own auth-adjacent
+   failure mode, inside `web-auth-security-reviewer`'s assigned surface ("the outcome re-key
+   ... `RequestOutcome`, `ChannelRequestOutcome`, `ChannelConfirmOutcome`"). Both fences gained the
+   grep-and-rewrite guidance, citing the showcase's own login route (rewritten by this pass) as the
+   pattern's origin.
+
+`officelist-retired-for-one-scroll-owner` (`docs/internal/engine-rulings.md`) is corrected in the
+same commit to state why `overflow-hidden` is needed and to claim only what `check:snippets`
+proves, the fence's import line typechecks, not its markup.
+
+**Reviewer and verifier verdicts.** The pass-end ritual's step 6 four-reviewer fan-out is what
+this fix round answers: the corner clip and the incomplete fences are exactly the composition and
+the auth-adjacent outcome surface the plan assigns to `daisyui-a11y-reviewer` and
+`web-auth-security-reviewer` respectively (ritual step 6, quoted above), and both are fixed in
+`0422b1ff` with no further round needed. The individual reviewers' full finding lists are not
+preserved as a committed artifact this close-out can re-read, the same gap the budget figures
+below carry; what is verifiable from the branch itself is that the fix round these findings
+produced is complete (the gate is green, `check:snippets` passes against the corrected fences, and
+the new assertion in `reproductions-stories.test.ts` pins the `overflow-hidden` class going
+forward) and that no further reviewer round followed it. There is no separate visual-verifier
+artifact for this pass: the one composition change with paint consequence, the custom-screen
+recomposition, sits outside the capture tool's baseline matrix by the plan's own PAINT note, so the
+paint contract is discharged by the unmodified four auth baselines staying unchanged (Task 8's own
+acceptance) and by `check:visuals` in the gate string, not by a dedicated verifier read; the corner
+clip that escaped both is exactly the class of defect a baseline matrix with no admin-auth coverage
+cannot catch, which is why the reviewer fan-out is load-bearing here rather than redundant with the
+automated gate.
+
+### Both budgets
+
+**Tokens.** Ceiling 9M. This close-out spent approximately 0.58M (the true-up read of the two
+post-Task-15 commits, this post-mortem, the `docs/HISTORY.md` extension, and the three doc gates),
+added to the fifteen-task chain's own execution spend as `pass-execute-chains.js` reported it at
+pass end, which covers the fifteen tasks plus the `code-simplifier` and reviewer-fan-out fix rounds
+folded in above. The chain's own execution-spend figure is not preserved in any committed artifact
+this dispatch can read, so the conductor completes the total against the 9M ceiling from its own
+workflow run summary, per the same gap Task 15's own post-mortem note named for these two numbers.
+
+**Attended time.** Planning misses: 0. Execution sittings: 0. No halt occurred; every fifteen-task
+gate reported green (Task 4's inherited red aside, repaired inside the chain per the gate-fidelity
+finding above), and the two post-close defects were caught and fixed inside the pass-end ritual's
+own reviewer fan-out rather than surfaced as a question to Geoff.
+
+### Gate
+
+`check:docs`, `check:vale`, and `check:rulings-format` run clean in this close-out commit. The
+fifteen tasks' and the two fix-round commits' own full-gate runs are recorded in the chain's own
+reports; this close-out dispatch did not re-run the full local gate string.
+
+### Release
+
+No version bump, no tag, no publish. `package.json` is untouched in this pass's diff. The verified
+free number (`0.97.0`) and the derived size (minor) are recorded in
+`docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md`; the cut is the conductor's
+separate step through the `cairn-release` skill after the merge.

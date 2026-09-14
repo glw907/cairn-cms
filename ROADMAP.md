@@ -883,6 +883,15 @@ the named human gates only):**
 
 ## Next
 
+- **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
+  `cairn` tool Pass A (plan `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
+  its Reconciliation block re-verified against the post-C tree first) runs in parallel with the
+  borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
+  the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
+  (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the
+  docs because it changes what the admin track describes and because building its checks
+  surfaces what the operational contract leaves unsaid.
+
 - **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
   browser).** The admin animates in places (the drawer's width, the palette's opacity, the
   desk band's dot, `transition-colors` on controls), and `cairn-audit` holds two rules about it

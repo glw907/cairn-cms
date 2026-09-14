@@ -3,7 +3,7 @@
 // themes, every one at exactly three weights, and every one of them was toolbar, pagination, or
 // eyebrow chrome that happens to live inside `<main>`. These fixtures are built from the REAL
 // shapes those three chrome families render in cairn's own admin, read off the source rather than
-// invented: `PageHeader.svelte`/`OfficeList.svelte`'s own `<header>` band (an eyebrow span
+// invented: `PageHeader.svelte`'s own `<header>` band (an eyebrow span
 // immediately before the page's one `<h1>`), the admin toolkit's `Pagination.svelte` own
 // `<nav aria-label="Pagination">` page-number strip nested inside `<main>` (never a sibling of it,
 // unlike the shell's own nav), and daisyUI's own compiled `.btn` recipe (`font-weight:600`), which
@@ -68,14 +68,14 @@ describe('weight-budget, ruling 4: the content region excludes chrome', () => {
     expect(findings).toEqual([]);
   });
 
-  // PageHeader's/OfficeList's own real shape: an eyebrow span (font-semibold, 600) sitting
+  // PageHeader's own real shape: an eyebrow span (font-semibold, 600) sitting
   // immediately before the page's one h1, both wrapped in one <header>. This case happens to pass
   // even before this ruling too, since the heading boundary already isolates the eyebrow into its
   // own single-candidate region; it is asserted anyway because the chrome definition names
   // `header` as its own clause (the page's title band never spends the budget, on principle, not
   // as an accident of which region it lands in), and a future region-boundary change must not
   // silently start counting it.
-  it('does not count a PageHeader/OfficeList eyebrow against the region its header introduces', async () => {
+  it('does not count a PageHeader eyebrow against the region its header introduces', async () => {
     const findings = await findingsFor(
       weightBudget,
       `<body><main>

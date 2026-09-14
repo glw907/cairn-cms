@@ -275,6 +275,38 @@
 
 ### Removed
 
+- `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
+  horizontal scroll container, and nesting it inside `OfficeList`'s card frame duplicated that
+  wrapper (`officelist-retired-for-one-scroll-owner`, `docs/internal/engine-rulings.md`). The
+  shipped admin sheet also drops `gap-0` and `overflow-x-auto`: `OfficeList.svelte` was the tree's
+  only user of each, and neither compiles into the packaged `cairn-admin.css` now that the
+  component is gone. Consumers must: replace an `<OfficeList eyebrow title meta action>...
+  </OfficeList>` composition with `PageHeader` beside `AdminTable` inside a bare `card-shell
+  card-shadow` div (no `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries
+  the horizontal scroll):
+
+  ```svelte
+  <script lang="ts">
+    import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+  </script>
+
+  <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
+    {#snippet action()}
+      <button type="button" class="btn btn-primary btn-sm">New event</button>
+    {/snippet}
+  </PageHeader>
+  <div class="card-shell card-shadow">
+    <AdminTable>
+      <!-- rows -->
+    </AdminTable>
+  </div>
+  ```
+
+  A site still writing `gap-0` or `overflow-x-auto` in its own admin markup keeps working (the
+  class is Tailwind's own, not a cairn export); only the packaged sheet's compiled inventory
+  changes, so a call site that relied on the class shipping FROM `cairn-admin.css` (rather than
+  compiling it from its own scanned source) needs to add its own `@source` reach.
+
 - `iconSpan`, `cardShell`, and `headRow` (`/render`) are gone from the engine; the subpath is now
   type-only, exporting `ComponentContext` alone (chassis-A pass, Task 8, closing the three
   `audit-render-*` retire rulings). Each was a call-site inlining or a re-home into the consuming

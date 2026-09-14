@@ -13,7 +13,7 @@ annotation says which is which.
 
 A back link, a header with the record's identity and its light verbs, then a stack of cards
 (Roster, Memberships, Money timeline, Assets), each opening its own dialog for a heavier
-verb (edit, add, move, record a payment, refund). No `PageHeader`/`OfficeList`: a desk
+verb (edit, add, move, record a payment, refund). No `PageHeader`: a desk
 route's own header is bespoke because it carries state (a standing chip) and several verbs a
 generic header snippet doesn't have vocabulary for.
 
@@ -64,7 +64,7 @@ exactly one (its own "Save").
 ```
 
 - The eyebrow (`HEADER_CELL`, `type-label` in cairn's vocabulary) plus the `h1` is the same
-  identity pattern the list exemplar's `OfficeList` header carries, hand-rolled here because
+  identity pattern the list exemplar's `PageHeader` carries, hand-rolled here because
   the header's right side needs room for a chip and three verbs a header snippet's own
   `action` slot (one child) can't hold.
   `type-title font-bold font-[family-name:var(--font-display)]` is a cairn-native rewrite of

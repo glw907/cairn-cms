@@ -2867,6 +2867,8 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 9. `PageHeader`'s own `self-start` action wrap ported in first (the two fixes were asymmetric; a naive collapse would have regressed it), then `OfficeList` collapsed to a thin card-frame that composes `PageHeader` for its header band. `OfficeList`'s `subtitle` prop renamed to `meta` (no forwarding alias), and the merged band adopted `PageHeader`'s rhythm (`mb-10`, `gap-0.5`, `text-wrap: balance`) as the toolkit's one office-header rhythm, per the design system's F3 proximity-grouping scale; `OfficeList`'s card keeps its own tighter proximity by sitting directly under that offset. The `WATCH` comment and the parked ROADMAP spacing-convergence entry (`ROADMAP.md:1427-1434` before this pass) both close: this ruling, ratified 2026-08-26, postdates and supersedes the entry's 2026-07-20 parking, which had held the convergence for "a later major" before the any-site audit re-examined and settled it.
 - **Shape:** Collapse to a card-frame wrapper that composes PageHeader for its header band, retiring the second eyebrow/title/subtitle/action implementation and closing the WATCH comment's parked ROADMAP spacing-convergence entry between OfficeList and PageHeader.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 17.
+- **Note (polish-C, Task 12):** superseded by `officelist-retired-for-one-scroll-owner` (this
+  file), which overrules this row's own "both stay" position and retires `OfficeList` outright.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formattimestamp: `formatTimestamp`  (reshape, 2026-08-26, any-site audit)
@@ -3111,6 +3113,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 49.
 - **Any-site case:** It owns table chrome and never a row shape: no rows:T[] prop, the caller's markup stays its own. Plus the nowrap floor and overflow-x fallback a consumer otherwise rediscovers by shipping a wrapped table.
+- **Note (polish-C, Task 12):** `officelist-retired-for-one-scroll-owner` (this file) settles this
+  component's wrapper as the toolkit's one horizontal scroll container; a composing screen never
+  nests a second `overflow-x-auto` around it. Verdict unchanged.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-statuschip: `StatusChip`  (reshape, 2026-08-26, any-site audit)
@@ -3136,6 +3141,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 52.
 - **Any-site case:** A consumer adding a screen to CairnAdminShell needs its header band to match the engine's or the screen reads as foreign; it also carries the placement rule that search never lives in this band.
+- **Note (polish-C, Task 12):** `officelist-retired-for-one-scroll-owner` (this file) settles this
+  as the one page-header primitive: a custom list screen composes it beside `AdminTable` directly,
+  never through a retired second implementation. Verdict unchanged.
 
 ## audit-admin-cairnmedialibrary: `CairnMediaLibrary`  (keep, 2026-08-26, any-site audit)
 
@@ -5790,3 +5798,31 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** the widened `ISO_WITH_ZONE` and the normalization step, both asserted by test
   against each new form's canonical-spelling equivalent, and the zone-less pass-through case
   asserted unchanged.
+
+## officelist-retired-for-one-scroll-owner: `OfficeList`  (retire, 2026-09-14, polish-C)
+
+- **Verdict:** retire. `OfficeList.svelte:8-9` states "`PageHeader` and this component cover
+  different shapes, a header primitive versus a full list-screen scaffold, and both stay: never a
+  duplicate," and `docs/reference/admin-toolkit.md` states "`PageHeader` and `OfficeList` both
+  stay. They cover different shapes, a header primitive versus a full list-screen scaffold, never
+  a duplicate." Both sentences are overruled. `OfficeList`'s own card frame
+  (`overflow-x-auto card-shadow` on `OfficeList.svelte:47`) and `AdminTable`'s own wrapper
+  (`overflow-x: auto` at `AdminTable.svelte:78`) are two scroll containers over one table the
+  moment a caller nests an `AdminTable` inside `OfficeList`'s card, which the ratified
+  `read-from-the-source-rule` (this file, above) makes a shape defect until argued otherwise: a
+  fact with one true source, "the wrapper that owns horizontal scroll," had grown two. The
+  replacement is not a gap; it is a named recipe already in the admin's own design system, the
+  floating-card composition (`card-shell card-shadow`, `docs/internal/admin-design-system.md`,
+  "Component recipes") that a custom `/admin/` screen now composes directly: `PageHeader` for the
+  header band, then a `card-shell card-shadow` div with no `overflow-x-auto` of its own around
+  `AdminTable`, whose own wrapper is the one scroll owner.
+- **Reopens on:** a shape genuinely needing a second, independently-scrolling region inside a
+  screen's own card, distinct from `AdminTable`'s own table wrapper.
+- **Shape:** delete `OfficeList.svelte` and its export from `/admin-toolkit`; a screen composes
+  `PageHeader` beside `AdminTable` inside `card-shell card-shadow` instead of a component that
+  wraps both.
+- **Record:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md` (2026-09-08), decision 8
+  ("`OfficeList` retires... `AdminTable` is the sole scroll owner").
+- **Verified:** `src/lib/admin-toolkit/index.ts` no longer exports `OfficeList`;
+  `docs/extend/migration-notes.md` carries the replacement composition as a typechecked `svelte`
+  fence with no `overflow-x-auto` on the outer card wrapper.

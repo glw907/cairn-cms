@@ -17,7 +17,7 @@
 //     the same read that catches an absolutely positioned pseudo-element bleeding past its parent.
 //  2. `getBoundingClientRect` reports unclipped geometry, so every child of a deliberate
 //     `overflow-x: auto` scroll container was flagged. Both instances are cairn's own idioms
-//     (AdminTable's and OfficeList's table wrapper, EditorToolbar's small-screen rail), and the
+//     (AdminTable's table wrapper, EditorToolbar's small-screen rail), and the
 //     only remedy would have been an allowlist entry keyed on a selector the real defect shares,
 //     which would have silenced the real defect permanently. The whole scan is now gated on the
 //     document actually scrolling horizontally, and any element inside a scroll container is

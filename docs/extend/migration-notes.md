@@ -197,6 +197,30 @@ The release step sets the version number at the cut and renames this section to 
   `content.field_unmarked` and admin.action.sink_threw to `audit.sink.call_failed` in any log
   filter, alert, or subscriber; `audit.sink.write_failed` is unchanged and every record's field
   set is unchanged.
+- **`OfficeList` (`/admin-toolkit`) is retired.** Replace an `<OfficeList>` composition with
+  `PageHeader` beside `AdminTable` inside a bare `card-shell card-shadow` div (no
+  `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries the horizontal
+  scroll):
+
+  ```svelte
+  <script lang="ts">
+    import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+  </script>
+
+  <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
+    {#snippet action()}
+      <button type="button" class="btn btn-primary btn-sm">New event</button>
+    {/snippet}
+  </PageHeader>
+  <div class="card-shell card-shadow">
+    <AdminTable>
+      <!-- rows -->
+    </AdminTable>
+  </div>
+  ```
+
+  The packaged admin sheet also drops `gap-0` and `overflow-x-auto`: `OfficeList.svelte` was the
+  engine's only user of each.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

@@ -135,7 +135,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MediaLibraryEntry`: { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number | null; height: number | null; bytes: number; createdAt: string }
 - `MediaPicker`: Component<Props, {}, "">
 - `MediaSelection`: { entry: MediaLibraryEntry; ref: string; alt: string }
-- `OfficeList`: Component<Props, {}, "">
 - `PageHeader`: Component<Props, {}, "">
 - `Pagination`: Component<Props, {}, "">
 - `StatusChip`: Component<Props, {}, "">

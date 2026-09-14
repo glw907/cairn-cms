@@ -231,7 +231,6 @@ footer
 footer-center
 footer-horizontal
 footer-vertical
-gap-0
 gap-0.5
 gap-1
 gap-1.5
@@ -500,7 +499,6 @@ outline-hidden
 outline-offset-1
 overflow-auto
 overflow-hidden
-overflow-x-auto
 overflow-y-auto
 p-0
 p-0.5

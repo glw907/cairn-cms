@@ -3,8 +3,9 @@
 The admin toolkit's canonical page-header recipe: an optional eyebrow, the page's one
 display-face `h1`, an optional muted meta line, and an optional single action snippet top-right.
 This is the toolkit's one page-header idiom, so every top-level screen mounts the same component
-whether or not it has a standing action to put in the slot; `OfficeList` composes this component
-for its own header band rather than carrying a duplicate implementation.
+whether or not it has a standing action to put in the slot; a custom `/admin/` screen composes it
+beside `AdminTable` inside the admin design system's floating-card recipe rather than hand-rolling
+its own header band.
 
 The meta line is the toolkit's one home for a page-level count outside a toolbar: `ListToolbar`'s
 own `computeCountLine` covers a screen with a search/filter toolbar row, and this component's
@@ -60,8 +61,7 @@ last word; it stays scoped CSS rather than a utility class, which ships the same
   </div>
   {#if action}
     <!-- The flex row default (stretch) pulls the action full-width below `sm`; pin it to its
-         intrinsic content width instead (ported from OfficeList, so a naive OfficeList-onto-PageHeader
-         collapse would not regress it). -->
+         intrinsic content width instead. -->
     <div class="self-start">{@render action()}</div>
   {/if}
 </header>

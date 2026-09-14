@@ -36,7 +36,7 @@
 
 <PageHeader title="Signups" />
 
-<form method="POST" action="?/create" class="my-4 flex gap-2">
+<form method="POST" action="?/create" class="my-4 flex items-end gap-2">
   <CsrfField />
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">Name</span>

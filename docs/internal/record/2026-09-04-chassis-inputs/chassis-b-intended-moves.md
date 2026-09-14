@@ -855,3 +855,48 @@ captured fresh at this task's parent commit (`bbede067`, Task 3's commit),
   `~/.cache/cairn-polish-11b-ii/task-4/after/full/signups-light-1440.png` (two files). Both show
   the identical empty table and create row; the shared alertdialog added below the table renders
   nothing while closed.
+
+### Fix round: the create row's button alignment
+
+The pass-end visual verifier found Task 3's ten moved baselines carried an undisclosed second
+move: the Add button no longer aligns with its inputs, since the create form
+(`examples/showcase/src/routes/admin/signups/+page.svelte:39`) is `class="my-4 flex gap-2"` with
+no `items-end`, so once the labels grew each field's column the button stayed pinned to
+`flex-start` while the fields grew taller beneath their labels. Fixed by adding `items-end` to
+the form's class. Before set captured fresh at this fix round's parent commit (`1d8da38e`),
+`~/.cache/cairn-polish-11b-ii/fix-alignment/before/` (`--only signups`). After set
+`~/.cache/cairn-polish-11b-ii/fix-alignment/after/` (`--only signups`).
+
+- INTENDED MOVES: `signups 320 light`: the Add button's top edge moves down to align with the
+  inputs' bottom edge / moves `admin-signups-light-320`. `signups 320 dark`: same reason, dark
+  scheme / moves `admin-signups-dark-320`. `signups 390 light`: same reason / moves
+  `admin-signups-light-390`. `signups 390 dark`: same reason / moves `admin-signups-dark-390`.
+  `signups 768 light`: same reason / moves `admin-signups-light-768`. `signups 768 dark`: same
+  reason / moves `admin-signups-dark-768`. `signups 1440 light`: same reason / moves
+  `admin-signups-light-1440`. `signups 1440 dark`: same reason / moves
+  `admin-signups-dark-1440`. `signups 2560 light`: same reason / moves
+  `admin-signups-light-2560`. `signups 2560 dark`: same reason / moves
+  `admin-signups-dark-2560`.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this fix's source edit, produced exactly 10 failures,
+  all ten `admin-signups-{light,dark}-{320,390,768,1440,2560}` cases (18 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those ten files and none other; the regenerated suite passes 28 of 28. The full pass
+  gate's `CI=1 npm --prefix examples/showcase run test:e2e` step also ran `site-visual.spec.ts`,
+  which failed on `site home` and `archive page 2` at every width and scheme (20 files, none
+  under this fix's surface). Per global constraint 15, this is the workstation's documented
+  renderer drift, not a finding: none of the twenty are `signups` baselines, this fix touches no
+  file `site-visual.spec.ts` renders, and the same twenty-file set is named in the
+  workstation-cannot-reproduce durable gotcha. Not regenerated.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 1172.96, light 390
+  1172.97, light 768 1172.96, light 1440 1172.97, light 2560 1172.94, dark 320 1711.89, dark 390
+  1711.89, dark 768 1711.89, dark 1440 1711.89, dark 2560 1711.9 pixels of AE, nonzero on every
+  tile as expected for the button's vertical shift; the change is confined to the create row (the
+  table stays empty in every capture, so the rest of each tile is unaffected).
+- READ ME: two render-proof pairs: `~/.cache/cairn-polish-11b-ii/fix-alignment/before/full/
+  signups-light-1440.png` and its after-set counterpart under
+  `~/.cache/cairn-polish-11b-ii/fix-alignment/after/full/signups-light-1440.png`, plus
+  `signups-dark-320.png` before and after (four files). The before pair shows the Add button's
+  top aligned with the labels and its bottom mid-input; the after pair shows the button and both
+  inputs sharing one bottom edge.

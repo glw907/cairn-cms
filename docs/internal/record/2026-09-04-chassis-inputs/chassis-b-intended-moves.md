@@ -1018,8 +1018,8 @@ proof and leaving those five widths' baselines untouched.
 - MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests, the
   full `admin-signups-*` set) passed 28 of 28 with no failures, so none moved.
 - TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
-  five widths (10 `signups` tiles, 78 `styleguide` tiles across its multi-tile widths): AE 0 on
-  every one of the 88 tiles, before against after.
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
 - READ ME: `~/.cache/cairn-admin-motion/task-1/before/full/signups-light-320.png` and
   `~/.cache/cairn-admin-motion/task-1/after/full/signups-light-320.png`; the dark-scheme pair at
   the same width; `~/.cache/cairn-admin-motion/task-1/before/full/styleguide-light-1440.png` and

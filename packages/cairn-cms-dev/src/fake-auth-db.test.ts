@@ -240,7 +240,7 @@ test('the plain setEditorRole and deleteEditor matchers still work alongside the
 });
 
 // The preview_tokens dispatch (src/lib/auth/preview-store.ts's exact SQL), the preview pass's
-// addition to this fixture: previewMint's insert (and its expiry sweep), previewLoad's two
+// addition to this fixture: mintPreview's insert (and its expiry sweep), loadPreview's two
 // lookups, and the revoke/lifecycle-cleanup deletes by entry or by editor.
 
 const INSERT_PREVIEW_TOKEN =
@@ -285,7 +285,7 @@ test('an unknown hash misses both findPreviewToken and findPreviewTokenAnyExpiry
 test('findPreviewToken excludes an expired row that findPreviewTokenAnyExpiry still returns', async () => {
   const db = createFakeAuthDb();
   // Insert directly (bypassing the insert-time sweep) so an already-expired row can exist for the
-  // lookup-time expiry check to exclude, mirroring previewLoad's expired-vs-unknown distinguisher.
+  // lookup-time expiry check to exclude, mirroring loadPreview's expired-vs-unknown distinguisher.
   await db
     .prepare(INSERT_PREVIEW_TOKEN)
     .bind('hash-expired', 'posts', '2026-01-01-hi', 'ed@t', Date.now() - 1000, Date.now() - 2000)

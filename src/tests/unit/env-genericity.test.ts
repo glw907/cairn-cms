@@ -14,7 +14,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import { createAuthRoutes, type RequestResult } from '../../lib/sveltekit/auth-routes.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
-import { healthLoad, type HealthData } from '../../lib/sveltekit/health.js';
+import { loadHealth, type HealthData } from '../../lib/sveltekit/health.js';
 import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
@@ -35,7 +35,7 @@ describe('env-genericity compile fixtures', () => {
     expect(typeof createNavRoutes).toBe('function');
     expect(typeof createAuthRoutes).toBe('function');
     expect(typeof createEditorRoutes).toBe('function');
-    expect(typeof healthLoad).toBe('function');
+    expect(typeof loadHealth).toBe('function');
     expect(typeof createAdminAction).toBe('function');
     expect(typeof createMediaRoute).toBe('function');
   });
@@ -188,10 +188,10 @@ function typeOnlyEditorRoutesAssignability(): void {
 }
 void typeOnlyEditorRoutesAssignability;
 
-// healthLoad: takes CairnEvent (C2 breaking-window, R4), checked against the same
+// loadHealth: takes CairnEvent (C2 breaking-window, R4), checked against the same
 // SiteServerLoadEvent a site's `/admin/healthz` route load calls it with.
 function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): void {
-  healthLoad(siteEvent, runtime) satisfies Promise<HealthData>;
+  loadHealth(siteEvent, runtime) satisfies Promise<HealthData>;
 }
 void typeOnlyHealthLoadAssignability;
 

@@ -1285,6 +1285,16 @@
   "posts", matching the concept-neutral vocabulary the rest of the admin uses. No consumer
   action.
 
+- **Breaking:** four preview and health functions rename per `convention-bare-noun-functions`.
+  `previewMint` (`/sveltekit`) to `mintPreview`, `previewRevoke` (`/sveltekit`) to `revokePreview`,
+  `previewLoad` (`/sveltekit`) to `loadPreview`, and `healthLoad` (`/sveltekit`) to `loadHealth`.
+  Every signature, return type, and thrown error is unchanged; only the four identifiers change.
+  `loadHealth` reaches all four production sites, each importing it in its own
+  `src/routes/healthz/+server.ts`; `loadPreview` reaches two of the four, each importing it in its
+  own `src/routes/(site)/preview/[token]/+page.server.ts`. Consumers must: rename `previewMint` to
+  `mintPreview`, `previewRevoke` to `revokePreview`, `previewLoad` to `loadPreview`, and
+  `healthLoad` to `loadHealth` at any call site.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

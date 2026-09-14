@@ -57,7 +57,7 @@ export interface CairnAdminConfig {
    */
   attention?: ContentRoutesConfig['attention'];
   /**
-   * Forwarded to the content routes verbatim: the preview-link lifetime `previewMint` mints
+   * Forwarded to the content routes verbatim: the preview-link lifetime `mintPreview` mints
    *  against. See `ContentRoutesConfig['preview']`.
    */
   preview?: ContentRoutesConfig['preview'];

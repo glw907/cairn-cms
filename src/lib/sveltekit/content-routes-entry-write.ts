@@ -405,7 +405,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       await backend.deleteBranch(branch);
     }
     // Deliberately no clearPreviewTokens call here, unlike discard/rename/delete: the ended page
-    // (previewLoad) needs a published entry's outstanding rows to outlive the branch, so it can
+    // (loadPreview) needs a published entry's outstanding rows to outlive the branch, so it can
     // still answer a stale link with "this preview has ended" rather than a bare 404. This
     // coupling is stated, not an oversight; do not "fix" it with a cleanup call later.
     throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
@@ -537,7 +537,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     // Only a never-published entry's discard clears preview-token rows: the id is now free for an
     // unrelated future entry to claim, the id-reuse collision the clear closes. Discarding an EDIT
     // of a live entry leaves its rows alone (the same "publish does not clear" coupling), since the
-    // id still names the same, still-live entry and the ended page (previewLoad's own branch-gone,
+    // id still names the same, still-live entry and the ended page (loadPreview's own branch-gone,
     // main-exists path) is the correct answer for an outstanding link, never a bare 404 implying the
     // link never existed.
     await clearPreviewTokens(event, concept, id);

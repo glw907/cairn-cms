@@ -1,4 +1,4 @@
-// cairn-cms: Task 3b (preview pass, spec part 3, "Public preview for a non-editor"): previewLoad,
+// cairn-cms: Task 3b (preview pass, spec part 3, "Public preview for a non-editor"): loadPreview,
 // the load a site wires into `/preview/[token]/+page.server.ts`. Driven against the real
 // GithubDouble the content-routes cluster already uses, plus the real D1 AUTH_DB the workerd
 // integration project provides, since the verification chain reads real rows.
@@ -7,7 +7,7 @@ import { describe, it, expect, expectTypeOf, vi, afterEach, beforeEach } from 'v
 import { isHttpError } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { GithubDouble } from '../unit/_github-double.js';
-import { previewLoad, type PreviewData } from '../../lib/sveltekit/preview.js';
+import { loadPreview, type PreviewData } from '../../lib/sveltekit/preview.js';
 import { insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { generateToken, hashToken } from '../../lib/auth/crypto.js';
 import { formatManifest } from '../../lib/content/manifest.js';
@@ -64,11 +64,11 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
   return {
     site: createSiteResolver([]),
     // Resolves every `cairn:<concept>/<id>` token in the body against the injected resolver,
-    // marking a miss rather than throwing, so the test proves previewLoad wired a non-throwing
+    // marking a miss rather than throwing, so the test proves loadPreview wired a non-throwing
     // resolver in without exercising the real markdown pipeline (covered elsewhere).
     render: async ({ body, resolve }) =>
       body.replace(/cairn:([a-z0-9-]+)\/([a-z0-9-]+)/g, (_m, concept: string, id: string) => {
-        // previewLoad always substitutes a resolveLink override, so `resolve` is always defined here.
+        // loadPreview always substitutes a resolveLink override, so `resolve` is always defined here.
         const url = resolve?.({ concept, id });
         return url ? `[link:${url}]` : '[broken]';
       }),
@@ -156,7 +156,7 @@ function loadEvent(token: string, opts: { env?: Record<string, unknown> } = {}) 
 }
 
 /** Seed a real, valid token row (the default seven-day TTL) and return its plaintext for the
- *  request param. Written through the store rather than previewMint, whose authorization sequence
+ *  request param. Written through the store rather than mintPreview, whose authorization sequence
  *  wants the admin session this public load deliberately never has. */
 async function mintValidToken(concept = 'posts', entryId = ID, editor = 'ed@t'): Promise<string> {
   const token = generateToken();
@@ -165,7 +165,7 @@ async function mintValidToken(concept = 'posts', entryId = ID, editor = 'ed@t'):
   return token;
 }
 
-/** Seed a token row directly, bypassing previewMint's TTL floor, for an already-expired row. */
+/** Seed a token row directly, bypassing mintPreview's TTL floor, for an already-expired row. */
 async function seedExpiredToken(concept = 'posts', entryId = ID): Promise<string> {
   const token = generateToken();
   const tokenHash = await hashToken(token);
@@ -188,11 +188,11 @@ function freshGithub(opts: { branch?: Record<string, string>; main?: Record<stri
   return new GithubDouble(tree);
 }
 
-describe('previewLoad: the build-time guard', () => {
+describe('loadPreview: the build-time guard', () => {
   it('throws a descriptive error naming the fix when building is true', async () => {
     __setBuilding(true);
     const { event } = loadEvent('x'.repeat(43));
-    await expect(previewLoad(runtime(), publicConfig(), event)).rejects.toThrow(/prerender = false/);
+    await expect(loadPreview(runtime(), publicConfig(), event)).rejects.toThrow(/prerender = false/);
   });
 
   // The build-time guard's dynamic `import('$app/environment')` is wrapped in try/catch so a
@@ -200,7 +200,7 @@ describe('previewLoad: the build-time guard', () => {
   // plugin to resolve the virtual module) gets a bundle-time-clean build rather than a resolve
   // error. This models that absence directly, rather than only through the esbuild reproduction
   // in dist-sveltekit-app-import-boundary.test.ts, by making the aliased `$app/environment` throw
-  // on its next import: previewLoad must fall back to `building = false` and proceed to its
+  // on its next import: loadPreview must fall back to `building = false` and proceed to its
   // ordinary token gate instead of surfacing the "not building" branch's own error.
   it('falls back to building = false and proceeds when $app/environment cannot be imported', async () => {
     vi.doMock('$app/environment', () => {
@@ -210,7 +210,7 @@ describe('previewLoad: the build-time guard', () => {
       const { event } = loadEvent('too-short');
       // A malformed token still answers its own ordinary 404, proving the fallback did not
       // short-circuit as "building" and did not itself throw.
-      const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event));
+      const result = await expectNotFound(() => loadPreview(runtime(), publicConfig(), event));
       expect(result.status).toBe(404);
     } finally {
       vi.doUnmock('$app/environment');
@@ -218,28 +218,28 @@ describe('previewLoad: the build-time guard', () => {
   });
 });
 
-describe('previewLoad: the malformed-token gate', () => {
+describe('loadPreview: the malformed-token gate', () => {
   it('answers 404 with no D1 read and no log for a badly-shaped token', async () => {
     const { db: spiedDb, count } = countingDb(db);
     const gh = freshGithub();
     gh.install();
     const { event } = loadEvent('too-short', { env: { AUTH_DB: spiedDb } });
     const captured = await records(async () => {
-      await expectNotFound(() => previewLoad(runtime(), publicConfig(), event));
+      await expectNotFound(() => loadPreview(runtime(), publicConfig(), event));
     });
     expect(count()).toBe(0);
     expect(captured).toEqual([]);
   });
 });
 
-describe('previewLoad: the missing AUTH_DB binding', () => {
+describe('loadPreview: the missing AUTH_DB binding', () => {
   it('answers 503 after a binding-named log, headers still set', async () => {
     const gh = freshGithub();
     gh.install();
     const { event, headers } = loadEvent('x'.repeat(43), { env: {} });
     const captured = await records(async () => {
       try {
-        await previewLoad(runtime(), publicConfig(), event);
+        await loadPreview(runtime(), publicConfig(), event);
         throw new Error('expected an error');
       } catch (e) {
         expect(isHttpError(e) && e.status).toBe(503);
@@ -251,12 +251,12 @@ describe('previewLoad: the missing AUTH_DB binding', () => {
   });
 });
 
-describe('previewLoad: the row-verification chain', () => {
+describe('loadPreview: the row-verification chain', () => {
   it('answers 404 with reason unknown for a well-shaped but unminted token', async () => {
     const gh = freshGithub();
     gh.install();
     const { event } = loadEvent('y'.repeat(43));
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+    const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'unknown' });
   });
 
@@ -265,7 +265,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await seedExpiredToken();
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+    const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'expired' });
   });
 
@@ -274,7 +274,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await mintValidToken('ghost-concept');
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+    const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'row_invalid', concept: 'ghost-concept' });
   });
 
@@ -285,7 +285,7 @@ describe('previewLoad: the row-verification chain', () => {
     await db.exec('DROP TABLE preview_tokens');
     try {
       const { event } = loadEvent(token);
-      const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+      const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
       expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'table_missing' });
     } finally {
       await db.exec(
@@ -299,7 +299,7 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+    const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'draft_invalid' });
   });
 
@@ -308,12 +308,12 @@ describe('previewLoad: the row-verification chain', () => {
     gh.install();
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const captured = await records(() => expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+    const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
     expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'branch_gone' });
   });
 });
 
-describe('previewLoad: identical outward refusals', () => {
+describe('loadPreview: identical outward refusals', () => {
   it('answers the same status and message across every refusal class', async () => {
     const results: { status: number; message: string }[] = [];
 
@@ -322,7 +322,7 @@ describe('previewLoad: identical outward refusals', () => {
       const gh = freshGithub();
       gh.install();
       const { event } = loadEvent('nope');
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+      results.push(await expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
     // unknown
@@ -330,7 +330,7 @@ describe('previewLoad: identical outward refusals', () => {
       const gh = freshGithub();
       gh.install();
       const { event } = loadEvent('z'.repeat(43));
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+      results.push(await expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
     // row_invalid
@@ -339,7 +339,7 @@ describe('previewLoad: identical outward refusals', () => {
       gh.install();
       const token = await mintValidToken('ghost');
       const { event } = loadEvent(token);
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+      results.push(await expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
     // branch_gone
@@ -348,7 +348,7 @@ describe('previewLoad: identical outward refusals', () => {
       gh.install();
       const token = await mintValidToken();
       const { event } = loadEvent(token);
-      results.push(await expectNotFound(() => previewLoad(runtime(), publicConfig(), event)));
+      results.push(await expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
       vi.restoreAllMocks();
     }
 
@@ -358,7 +358,7 @@ describe('previewLoad: identical outward refusals', () => {
   });
 });
 
-describe('previewLoad: the draft render', () => {
+describe('loadPreview: the draft render', () => {
   it('returns the public shape, headers included, with a dangling link marked and a resolvable one resolved, never throwing', async () => {
     const gh = freshGithub({
       branch: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nSee cairn:posts/sibling and cairn:posts/nowhere.' },
@@ -367,7 +367,7 @@ describe('previewLoad: the draft render', () => {
     gh.install();
     const token = await mintValidToken();
     const { event, headers } = loadEvent(token);
-    const data = (await previewLoad(runtime(), publicConfig(), event)) as PreviewData;
+    const data = (await loadPreview(runtime(), publicConfig(), event)) as PreviewData;
 
     expect(data.preview).toEqual({ state: 'draft', expiresAt: expect.any(String), published: null });
     expect(data.entry.id).toBe(ID);
@@ -384,7 +384,7 @@ describe('previewLoad: the draft render', () => {
     gh.install();
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await previewLoad(runtime(), publicConfig(), event)) as PreviewData;
+    const data = (await loadPreview(runtime(), publicConfig(), event)) as PreviewData;
 
     expect(data.seo.links.find((l) => l.rel === 'canonical')).toBeUndefined();
     expect(data.seo.meta.find((m) => m.property === 'og:url')).toBeUndefined();
@@ -430,7 +430,7 @@ describe('previewLoad: the draft render', () => {
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await previewLoad(runtime({ resolvedAssets }), publicConfig(), event)) as PreviewData;
+    const data = (await loadPreview(runtime({ resolvedAssets }), publicConfig(), event)) as PreviewData;
     expect(data.heroImage?.url).toBe(`/media/photo.${hash}.webp`);
   });
 
@@ -472,7 +472,7 @@ describe('previewLoad: the draft render', () => {
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await previewLoad(
+    const data = (await loadPreview(
       runtime({ resolvedAssets }),
       mediaRenderPublicConfig(),
       event,
@@ -482,13 +482,13 @@ describe('previewLoad: the draft render', () => {
   });
 });
 
-describe('previewLoad: the ended page', () => {
+describe('loadPreview: the ended page', () => {
   it('answers the published state once the branch is gone and the file still exists on main', async () => {
     const gh = freshGithub({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nLive body.' } });
     gh.install();
     const token = await mintValidToken();
     const { event, headers } = loadEvent(token);
-    const data = (await previewLoad(runtime(), publicConfig(), event)) as PreviewData;
+    const data = (await loadPreview(runtime(), publicConfig(), event)) as PreviewData;
 
     expect(data.preview.state).toBe('published');
     expect(data.preview.published).toEqual({ permalink: '/posts/hello' });
@@ -501,7 +501,7 @@ describe('previewLoad: the ended page', () => {
     gh.install();
     const token = await seedExpiredToken();
     const { event } = loadEvent(token);
-    const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event));
+    const result = await expectNotFound(() => loadPreview(runtime(), publicConfig(), event));
     expect(result.status).toBe(404);
   });
 });
@@ -546,7 +546,7 @@ describe('PreviewData: the type and runtime shape contract', () => {
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = await previewLoad(runtime({ resolvedAssets }), publicConfig(), event);
+    const data = await loadPreview(runtime({ resolvedAssets }), publicConfig(), event);
 
     // newer/older are unconditional keys on EntryData (always assigned, possibly undefined);
     // heroImage is the one truly optional (conditionally spread) key, populated above.

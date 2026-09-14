@@ -24,9 +24,9 @@ export {
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
 export {
-  previewMint,
-  previewRevoke,
-  previewLoad,
+  mintPreview,
+  revokePreview,
+  loadPreview,
   type PreviewMintOutcome,
   type PreviewRevokeOutcome,
   type PreviewTokenConfig,
@@ -90,7 +90,7 @@ export {
   type SectionActionContext,
 } from './section-action.js';
 export { createCairnAdmin, type CairnAdminConfig, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';
-export { healthLoad, type HealthData } from './health.js';
+export { loadHealth, type HealthData } from './health.js';
 export type {
   CairnEvent,
   CookieJar,
@@ -114,7 +114,7 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // Every remaining type a factory or wrapper's own signature names is re-exported here so a site
 // importing only from this subpath can still name the value it holds, except two documented
 // cross-subpath exceptions that stay on `/delivery` alone: `PublicRoutesConfig`, which
-// `previewLoad`'s second parameter names, and `EntryData`, which `PreviewData` extends.
+// `loadPreview`'s second parameter names, and `EntryData`, which `PreviewData` extends.
 // `CairnRuntime`'s own structural body in turn names most of the rest below it, the same
 // recursive closure `/delivery` and root carry.
 //

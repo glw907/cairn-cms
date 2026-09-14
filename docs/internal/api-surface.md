@@ -490,7 +490,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FragmentResolve`: (id: string) => string | undefined
 - `HandleInput`: { event: CairnEvent<CairnEnv>; resolve: (event: CairnEvent<CairnEnv>) => Response | Promise<Response> }
 - `HealthData`: { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?: string } } }
-- `healthLoad`: (event: CairnEvent<CairnEnv>, runtime: CairnRuntime) => Promise<HealthData>
 - `HelpData`: { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact?: string }
 - `HistoryData`: { entries: HistoryEntry[]; draft: { editor: string; lastSavedAt: string } | null; truncated: boolean; head: string | null }
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -501,12 +500,15 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `InboundLink`: { concept: string; id: string; title: string; permalink: string }
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; routable: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
+- `loadHealth`: (event: CairnEvent<CairnEnv>, runtime: CairnRuntime) => Promise<HealthData>
+- `loadPreview`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
 - `MagicLinkMessage`: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }
 - `MediaLibraryData`: { assets: MediaLibraryEntry[]; usage: { [x: string]: MediaUsageInfo }; error: string | null; flash: "deleted" | "updated" | "replaced" | "altPropagated" | "bulkDeleted" | "orphansPurged" | "uploaded" | null }
 - `MediaLibraryEntry`: { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number | null; height: number | null; bytes: number; createdAt: string }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
 - `MediaRouteConfig`: { runtime: CairnRuntime }
+- `mintPreview`: (runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewMintOutcome>
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
 - `NavData`: { menu: { name: string; label: string; maxDepth: number }; tree: NavNode[]; pages: NavPageOption[]; saved: boolean }
@@ -525,10 +527,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `PlatformContext`: { env?: Env }
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
 - `PreviewData`: { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null }; concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
-- `previewLoad`: (runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>) => Promise<PreviewData>
-- `previewMint`: (runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewMintOutcome>
 - `PreviewMintOutcome`: { outcome: "minted"; token: string; expiresAt: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" } | { outcome: "no-draft" }
-- `previewRevoke`: (runtime: CairnRuntime, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewRevokeOutcome>
 - `PreviewRevokeOutcome`: { outcome: "revoked"; count: number } | { outcome: "unknown-concept" } | { outcome: "invalid-id" }
 - `PreviewTokenConfig`: { ttlMs?: number }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
@@ -548,6 +547,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolvedNavEntry`: { label: string; iconName: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly: boolean }
 - `ResolvedNavLayout`: { items: ResolvedLayoutNode[]; fallback: ResolvedLayoutChild[] }
 - `RevertFailure`: { reason: "draft_exists"; draftEditor: string; draftLastSavedAt: string } | { reason: "ref_unknown" } | { reason: "history_stale" }
+- `revokePreview`: (runtime: CairnRuntime, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }) => Promise<PreviewRevokeOutcome>
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }

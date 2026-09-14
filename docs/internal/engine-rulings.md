@@ -221,6 +221,13 @@ open edits, not part of the shape itself.
   Task 3 executes (`renderGlyph`, `defineFieldset`, `resolveOwnerLevelRoles`, `renderJsonLdScript`).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 4, and Task 1/Task 3.
+- **Progress note (polish-C, Tasks 6 and 7):** the ruling's population is now executed across the
+  public surface, seven names: `cookieName` to `buildCookieName`, `githubApp` to `createGithubApp`,
+  and `adminAction` to `createAdminAction` (Task 6); `previewMint` to `mintPreview`,
+  `previewRevoke` to `revokePreview`, `previewLoad` to `loadPreview`, and `healthLoad` to
+  `loadHealth` (Task 7). Two exemptions argued rather than assumed: the doctor's `githubApp`
+  `DoctorCheck` value, which stays bare because it is an exported value rather than a function; and
+  `cairnManifest`, a host-ecosystem plugin factory, out of the ruling's scope by its own text.
 
 ## convention-outcome-idiom: a more-than-two-outcome operation returns a discriminated result on one `outcome` grammar  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -2108,6 +2115,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 64.
 - **Any-site case:** A PKCS#1-to-PKCS#8 key mistake is invisible until the first publish fails. Every cairn site signs App JWTs, so every site wants a route proving the key decodes.
+- **Note (polish-C, Task 7):** renamed to `loadHealth`, per `convention-bare-noun-functions`.
+  Verdict unchanged.
 
 ## audit-sveltekit-requestresult: `RequestResult`  (keep, 2026-08-26, any-site audit)
 
@@ -2421,6 +2430,9 @@ when the remediation pass lands.
 - **Shape:** Its header admits it 'performs no authorization or draft-existence check of its own, so a caller that reaches it directly owns both'. Either perform the entry-scoped check the admin action performs, or make the caller's obligation part of the name and the signature rather than a header comment.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 97.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-C, Task 7):** `mintPreviewToken` no longer exists in `src/lib`; the operation it
+  named is `mintPreview` after this pass, renamed from `previewMint` per
+  `convention-bare-noun-functions`. This row's reshape verdict refers to the same operation.
 
 ## audit-sveltekit-previewload: `previewLoad`  (keep, 2026-08-26, any-site audit)
 
@@ -2428,6 +2440,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 98.
 - **Any-site case:** Any site letting a non-editor see an unpublished draft — a client, a board member, a copy editor without an account. Resolving the draft off its pending branch is not reproducible site-side.
+- **Note (polish-C, Task 7):** renamed to `loadPreview`, per `convention-bare-noun-functions`.
+  Verdict unchanged.
 
 ## audit-sveltekit-slotdef: `SlotDef`  (keep, 2026-08-26, any-site audit)
 

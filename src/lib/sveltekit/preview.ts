@@ -1,8 +1,8 @@
-// cairn-cms: previewMint, the public entry point for issuing a preview link, and previewLoad, the
-// public entry point for serving one (spec part 3, "Public preview for a non-editor"). previewMint
+// cairn-cms: mintPreview, the public entry point for issuing a preview link, and loadPreview, the
+// public entry point for serving one (spec part 3, "Public preview for a non-editor"). mintPreview
 // carries the engine's own entry-scoped authorization itself, so every path to a minted token runs
-// the same check the previewMint admin action (content-routes-preview.ts) runs, and a caller reaching
-// it from its own workflow route owns nothing beyond signing the editor in. previewLoad is the
+// the same check the mintPreview admin action (content-routes-preview.ts) runs, and a caller reaching
+// it from its own workflow route owns nothing beyond signing the editor in. loadPreview is the
 // mint's counterpart: it needs no authorization at all, since the token itself is the credential,
 // and it never reads locals.cairnEditor or locals.cairnAccess.
 import { error } from '@sveltejs/kit';
@@ -51,7 +51,7 @@ import { log } from '../log/index.js';
 export interface PreviewTokenConfig {
   /**
    * The minted link's lifetime in milliseconds. Defaults to seven days. Must be finite, positive,
-   * and between one minute and thirty days inclusive; `previewMint` throws an actionable,
+   * and between one minute and thirty days inclusive; `mintPreview` throws an actionable,
    * `PreviewTokenConfig:`-prefixed error otherwise.
    */
   ttlMs?: number;
@@ -86,7 +86,7 @@ function resolveTtlMs(config: PreviewTokenConfig): number {
 }
 
 /**
- * What {@link previewMint} returns: the minted link's plaintext token and expiry, or the one
+ * What {@link mintPreview} returns: the minted link's plaintext token and expiry, or the one
  * refusal the target could not clear. `unknown-concept` names a concept the runtime does not
  * declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending
  * branch, so there is nothing to share. A session the engine's own access check refuses never
@@ -125,7 +125,7 @@ export type PreviewMintOutcome =
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
  */
-export async function previewMint(
+export async function mintPreview(
   runtime: CairnRuntime,
   config: PreviewTokenConfig,
   event: CairnEvent,
@@ -144,7 +144,7 @@ export async function previewMint(
   const db = requireDb(env);
 
   // A preview shares a draft; without one there is nothing to share. Reached through the same
-  // `locals.cairnBackend ?? runtime.backend.connect(env)` seam previewLoad and every other engine
+  // `locals.cairnBackend ?? runtime.backend.connect(env)` seam loadPreview and every other engine
   // load ride, so a test needs no real GitHub token.
   const backend = event.locals.cairnBackend ?? runtime.backend.connect(env);
   if ((await backend.branchHead(pendingBranch(concept.id, target.entryId))) === null) {
@@ -166,7 +166,7 @@ export async function previewMint(
 }
 
 /**
- * What {@link previewRevoke} returns: the number of rows deleted, or the one refusal the target
+ * What {@link revokePreview} returns: the number of rows deleted, or the one refusal the target
  * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s own
  * arms; a session the engine's own access check refuses never reaches either, it throws, the way
  * every other engine content surface refuses.
@@ -181,20 +181,20 @@ export type PreviewRevokeOutcome =
  * entry's concept and id match, over {@link deletePreviewTokens}. Idempotent: revoking with
  * nothing minted still succeeds, with a count of zero.
  *
- * Mirrors {@link previewMint}'s authorization sequence exactly, since revoking is the same
+ * Mirrors {@link mintPreview}'s authorization sequence exactly, since revoking is the same
  * authority-scoped act minting is (an entry-scoped credential the site's access map governs), so
  * the auth outcome reaches the caller FIRST and short-circuits: `requireEditor` (the
  * guard-resolved session), the concept lookup, `requireEngineAccess` against `runtime.access`,
  * then the id shape rule. A refusal therefore never reaches the delete, and the `target` is the
  * argument's, never the route's, so a site's own workflow route revokes from anywhere the guard
- * has run, the same way `previewMint` mints from anywhere.
+ * has run, the same way `mintPreview` mints from anywhere.
  *
  * Logs `preview.token.revoked` on success, from inside this function, so the engine's own route
  * and a site's own workflow route both leave the identical record; never called on a refusal.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
  */
-export async function previewRevoke(
+export async function revokePreview(
   runtime: CairnRuntime,
   event: CairnEvent,
   target: { concept: string; entryId: string },
@@ -213,7 +213,7 @@ export async function previewRevoke(
 }
 
 /**
- * `previewLoad`'s public data shape: a public entry page's own data (`EntryData`, the exact shape
+ * `loadPreview`'s public data shape: a public entry page's own data (`EntryData`, the exact shape
  *  `createPublicRoutes`'s `entryLoad` returns) plus the preview metadata a site's banner reads. A
  *  compile-time assertion in the test suite proves this adds no key beyond `preview`, so a future
  *  `EntryData` field breaks this build rather than a consuming site's.
@@ -245,7 +245,7 @@ const TOKEN_SHAPE_RE = /^[A-Za-z0-9_-]{43}$/;
 const NOT_FOUND_MESSAGE = 'Not found';
 
 /**
- * The header set every `previewLoad` response carries, refusals and the ended page included:
+ * The header set every `loadPreview` response carries, refusals and the ended page included:
  *  `/preview` is not an admin path, so the admin guard's header layer never reaches it and this
  *  load owns its own. `x-frame-options: DENY` rather than a CSP `frame-ancestors`, so it never
  *  collides with a site's own kit-generated Content-Security-Policy header.
@@ -428,7 +428,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  path and is never prerendered, so `false`, meaning "proceed, we are not prerendering," is the
  *  correct value for every context this fallback can run in.
  */
-export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
+export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);
 
   let building = false;
@@ -439,7 +439,7 @@ export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesCon
   }
   if (building) {
     throw new Error(
-      'cairn: previewLoad ran during the build. A preview link is a bearer credential; prerendering ' +
+      'cairn: loadPreview ran during the build. A preview link is a bearer credential; prerendering ' +
         'it would ship a token in a static asset. Add `export const prerender = false;` to this route.',
     );
   }

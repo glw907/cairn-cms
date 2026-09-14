@@ -36,7 +36,7 @@ export { default as RenameDialog } from './RenameDialog.svelte';
 export { default as VocabularyAdmin } from './VocabularyAdmin.svelte';
 export { default as WelcomeView } from './WelcomeView.svelte';
 // PreviewBanner is the one exception to this barrel's admin-only membership rule: a design-
-// agnostic notice for the PUBLIC preview route (previewLoad, /sveltekit), not part of the admin
+// agnostic notice for the PUBLIC preview route (loadPreview, /sveltekit), not part of the admin
 // UI. It lives here because /components is the library's one Svelte-component barrel, not because
 // it belongs to the admin view tier.
 export { default as PreviewBanner } from './PreviewBanner.svelte';

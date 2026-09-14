@@ -1,14 +1,14 @@
 // cairn-cms: Task 2a (preview pass, spec part 3, "Public preview for a non-editor"):
-// previewMint, the previewMint/previewRevoke actions, and the lifecycle cleanup wired into
+// mintPreview, the mintPreview/revokePreview actions, and the lifecycle cleanup wired into
 // rename/discard/delete/list-delete. Publish deliberately leaves rows intact (the ended page needs
 // them). Driven against the real GithubDouble the way content-routes-revert.test.ts and
 // content-routes-publish.test.ts are, plus the real D1 AUTH_DB the workerd integration project
-// provides, since previewMint and the actions under test write real rows.
+// provides, since mintPreview and the actions under test write real rows.
 import { env } from 'cloudflare:test';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { previewMint, previewRevoke } from '../../lib/sveltekit/preview.js';
+import { mintPreview, revokePreview } from '../../lib/sveltekit/preview.js';
 import { findPreviewToken, insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { hashToken } from '../../lib/auth/crypto.js';
 import { formatManifest } from '../../lib/content/manifest.js';
@@ -96,7 +96,7 @@ async function records(run: () => Promise<unknown>): Promise<Record<string, unkn
   return captured;
 }
 
-describe('previewMint', () => {
+describe('mintPreview', () => {
   const TARGET = { concept: 'posts', entryId: ID };
   const ROLES = defineRoles({ owner: 'owner', 'other-editor': 'editor', publisher: 'editor' });
   const DENY_POSTS = defineAccess(ROLES, { posts: ['publisher'] });
@@ -107,9 +107,9 @@ describe('previewMint', () => {
     return { ...backend, branchHead: async (branch: string) => (reads.push(branch), head) };
   }
 
-  /** An event for a direct previewMint call. Deliberately OFF `/admin/[concept]/[id]` and carrying
+  /** An event for a direct mintPreview call. Deliberately OFF `/admin/[concept]/[id]` and carrying
    *  no route params at all: a target read from params rather than from the argument fails here,
-   *  which is what keeps previewMint usable from a site's own workflow route. */
+   *  which is what keeps mintPreview usable from a site's own workflow route. */
   function mintEvent(
     opts: { role?: string; capability?: 'owner' | 'editor' | 'none'; email?: string; eventBackend?: Backend } = {},
   ) {
@@ -137,7 +137,7 @@ describe('previewMint', () => {
   it('mints for an authorized editor with a pending draft, defaulting to a seven-day TTL', async () => {
     ghWithDraft().install();
     const before = Date.now();
-    const result = await previewMint(runtime(), {}, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), {}, mintEvent(), TARGET);
     expect(result.outcome).toBe('minted');
     if (result.outcome !== 'minted') return;
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -154,7 +154,7 @@ describe('previewMint', () => {
   it('honors a configured ttlMs', async () => {
     ghWithDraft().install();
     const before = Date.now();
-    const result = await previewMint(runtime(), { ttlMs: 60_000 }, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), { ttlMs: 60_000 }, mintEvent(), TARGET);
     if (result.outcome !== 'minted') throw new Error(`expected a mint, got ${result.outcome}`);
     expect(result.expiresAt).toBeGreaterThanOrEqual(before + 60_000);
     expect(result.expiresAt).toBeLessThan(before + 60_000 + 5_000);
@@ -168,15 +168,15 @@ describe('previewMint', () => {
     ['over thirty days', 31 * 24 * 60 * 60 * 1000],
   ])('rejects a %s ttlMs with a PreviewTokenConfig-prefixed error', async (_label, ttlMs) => {
     ghWithDraft().install();
-    await expect(previewMint(runtime(), { ttlMs }, mintEvent(), TARGET)).rejects.toThrow(
+    await expect(mintPreview(runtime(), { ttlMs }, mintEvent(), TARGET)).rejects.toThrow(
       /^PreviewTokenConfig:/,
     );
   });
 
   it('stores the resolved session editor as the attribution, so the removal cascade always matches', async () => {
     ghWithDraft().install();
-    const first = await previewMint(runtime(), {}, mintEvent({ email: 'alice@t' }), TARGET);
-    const second = await previewMint(runtime(), {}, mintEvent({ email: 'bob@t' }), TARGET);
+    const first = await mintPreview(runtime(), {}, mintEvent({ email: 'alice@t' }), TARGET);
+    const second = await mintPreview(runtime(), {}, mintEvent({ email: 'bob@t' }), TARGET);
     if (first.outcome !== 'minted' || second.outcome !== 'minted') throw new Error('expected two mints');
     expect((await findPreviewToken(db, await hashToken(first.token)))?.editor).toBe('alice@t');
     expect((await findPreviewToken(db, await hashToken(second.token)))?.editor).toBe('bob@t');
@@ -184,16 +184,16 @@ describe('previewMint', () => {
 
   it('refuses no-draft when the entry carries no pending branch', async () => {
     new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } }).install();
-    const result = await previewMint(runtime(), {}, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), {}, mintEvent(), TARGET);
     expect(result).toEqual({ outcome: 'no-draft' });
   });
 
   it('refuses an undeclared concept, and a malformed entry id, without minting', async () => {
     ghWithDraft().install();
-    expect(await previewMint(runtime(), {}, mintEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
+    expect(await mintPreview(runtime(), {}, mintEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
       outcome: 'unknown-concept',
     });
-    expect(await previewMint(runtime(), {}, mintEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
+    expect(await mintPreview(runtime(), {}, mintEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
       outcome: 'invalid-id',
     });
   });
@@ -201,7 +201,7 @@ describe('previewMint', () => {
   it('refuses a none-capability session the same way the engine’s own actions do', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
-      previewMint(runtime(), {}, mintEvent({ role: 'reader', capability: 'none' }), TARGET),
+      mintPreview(runtime(), {}, mintEvent({ role: 'reader', capability: 'none' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -209,7 +209,7 @@ describe('previewMint', () => {
   it('refuses an editor the access map denies', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
-      previewMint(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), TARGET),
+      mintPreview(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -225,7 +225,7 @@ describe('previewMint', () => {
     ] as const) {
       refusals.push(
         await expectHttpError(() =>
-          previewMint(
+          mintPreview(
             denied,
             {},
             mintEvent({ role: 'other-editor', eventBackend: recordingBackend(reads, head) }),
@@ -241,12 +241,12 @@ describe('previewMint', () => {
   });
 });
 
-describe('previewRevoke', () => {
+describe('revokePreview', () => {
   const TARGET = { concept: 'posts', entryId: ID };
   const ROLES = defineRoles({ owner: 'owner', 'other-editor': 'editor', publisher: 'editor' });
   const DENY_POSTS = defineAccess(ROLES, { posts: ['publisher'] });
 
-  /** An event for a direct previewRevoke call, mirroring previewMint's own mintEvent: off
+  /** An event for a direct revokePreview call, mirroring mintPreview's own mintEvent: off
    *  `/admin/[concept]/[id]` and carrying no route params at all, so the target read from the
    *  argument rather than the route is what a site's own workflow route relies on. `db` defaults
    *  to the real harness AUTH_DB and is overridable to prove the authorization-before-delete
@@ -271,36 +271,36 @@ describe('previewRevoke', () => {
   it('revokes for an authorized editor, deleting every row for the entry and reporting the count', async () => {
     await seedToken(ID, 'hash-x1', 'ed@t');
     await seedToken(ID, 'hash-x2', 'other@t');
-    const result = await previewRevoke(runtime(), revokeEvent(), TARGET);
+    const result = await revokePreview(runtime(), revokeEvent(), TARGET);
     expect(result).toEqual({ outcome: 'revoked', count: 2 });
     expect(await findPreviewToken(db, 'hash-x1')).toBeNull();
     expect(await findPreviewToken(db, 'hash-x2')).toBeNull();
   });
 
   it('is idempotent: revoking with nothing minted succeeds with a count of zero', async () => {
-    const result = await previewRevoke(runtime(), revokeEvent(), TARGET);
+    const result = await revokePreview(runtime(), revokeEvent(), TARGET);
     expect(result).toEqual({ outcome: 'revoked', count: 0 });
   });
 
   it('refuses an undeclared concept, and a malformed entry id, without revoking', async () => {
-    expect(await previewRevoke(runtime(), revokeEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
+    expect(await revokePreview(runtime(), revokeEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
       outcome: 'unknown-concept',
     });
-    expect(await previewRevoke(runtime(), revokeEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
+    expect(await revokePreview(runtime(), revokeEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
       outcome: 'invalid-id',
     });
   });
 
   it('refuses a none-capability session the same way the engine’s own actions do', async () => {
     const refusal = await expectHttpError(() =>
-      previewRevoke(runtime(), revokeEvent({ role: 'reader', capability: 'none' }), TARGET),
+      revokePreview(runtime(), revokeEvent({ role: 'reader', capability: 'none' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
 
   it('refuses an editor the access map denies', async () => {
     const refusal = await expectHttpError(() =>
-      previewRevoke(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), TARGET),
+      revokePreview(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -309,7 +309,7 @@ describe('previewRevoke', () => {
     // A throwing AUTH_DB would surface as an uncaught Error, not an HttpError, if the delete ever
     // ran: the 403 alone proves requireEditor/requireEngineAccess short-circuited first.
     const refusal = await expectHttpError(() =>
-      previewRevoke(
+      revokePreview(
         runtime({ access: DENY_POSTS }),
         revokeEvent({ role: 'other-editor', db: throwingDb('boom') }),
         TARGET,
@@ -320,7 +320,7 @@ describe('previewRevoke', () => {
 
   it('logs preview.token.revoked from inside the function, with the right fields', async () => {
     await seedToken(ID, 'hash-x3');
-    const captured = await records(() => previewRevoke(runtime(), revokeEvent(), TARGET));
+    const captured = await records(() => revokePreview(runtime(), revokeEvent(), TARGET));
     const record = captured.find((r) => r.event === 'preview.token.revoked');
     expect(record).toMatchObject({ concept: 'posts', id: ID, editor: 'editor@t', count: 1 });
   });
@@ -582,7 +582,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'discard-live-hash');
     // The entry's file already exists on main: discarding its pending edit removes only the draft,
     // never the published copy, so an outstanding preview link should still resolve, landing on
-    // previewLoad's own branch-gone-but-main-exists "ended" page rather than a bare 404 that would
+    // loadPreview's own branch-gone-but-main-exists "ended" page rather than a bare 404 that would
     // read as the link never having existed.
     const gh = new GithubDouble({
       main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' },

@@ -37,6 +37,12 @@ The release step sets the version number at the cut and renames this section to 
   `adminAction` (`/sveltekit`) to `createAdminAction` at any call site; every signature, return
   type, and thrown error is unchanged. `src/theme/cairn.config.ts` is the site file every consumer
   meets for `createGithubApp`, since every production site's adapter calls it directly.
+- **Four preview and health functions rename per the engine's verb vocabulary.** Rename
+  `previewMint` (`/sveltekit`) to `mintPreview`, `previewRevoke` (`/sveltekit`) to `revokePreview`,
+  `previewLoad` (`/sveltekit`) to `loadPreview`, and `healthLoad` (`/sveltekit`) to `loadHealth` at
+  any call site; every signature, return type, and thrown error is unchanged. `loadHealth` reaches
+  every production site's own `src/routes/healthz/+server.ts`; `loadPreview` reaches the two of
+  four that mount a preview route, each in its own `src/routes/(site)/preview/[token]/+page.server.ts`.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and
@@ -117,12 +123,12 @@ The release step sets the version number at the cut and renames this section to 
 - **Two log event names change to match the vocabulary's own grammar.** `taxonomy.unmarked_field`
   becomes `taxonomy.field_unmarked` and `publish.address_collision` becomes
   `publish.address_collided`. Rename both in any log filter or alert.
-- **`previewMint` replaces `mintPreviewToken`** (`/sveltekit`), taking
+- **`mintPreview` replaces `mintPreviewToken`** (`/sveltekit`), taking
   `(runtime, config, event, { concept, entryId })` and performing the entry-scoped authorization
   and draft check itself, rather than leaving them to the caller. It returns a discriminated
   `PreviewMintOutcome` (`minted`, `unknown-concept`, `invalid-id`, `no-draft`) instead of throwing
   for a bad target. A site calling `mintPreviewToken` from its own workflow route switches to
-  `previewMint` and its new signature and outcome shape.
+  `mintPreview` and its new signature and outcome shape.
 - **`TidyClient` (`/sveltekit`) narrows to an engine-owned contract**: `tidy(request, options)`
   takes `{ model, system, text, effort? }` and returns `{ corrected, refused, tokens: { input,
   output } }`, dropping the transcribed Anthropic wire fields (`max_tokens`, `output_config.effort`,
@@ -191,12 +197,12 @@ One more entry carries a conditional action. The exported `TidyClient` type gain
 `output_config` field, which matters only to a hand-rolled `TidyClient` fake that rejects unknown
 body fields.
 
-Three fixes need no consumer action but are worth knowing about. `previewLoad` (`/sveltekit`) now
+Three fixes need no consumer action but are worth knowing about. `loadPreview` (`/sveltekit`) now
 reads `$app/environment` through a dynamic import guarded by `try`/`catch`, esbuild's own
 documented escape hatch for downgrading an unresolvable specifier from a bundle-time error to a
 runtime concern, so a site that added a Wrangler alias for `$app/environment` to work around the
 barrel failing to resolve in a raw, non-Vite esbuild bundle (a Cron handler wired outside Vite,
-for example) can remove that workaround. `previewLoad` now also strips `canonical`, `og:url`, and
+for example) can remove that workaround. `loadPreview` now also strips `canonical`, `og:url`, and
 `jsonLd.url` from the `seo` it returns, so a site that already stripped those fields itself before
 rendering a preview can drop its own strip. `PreviewBanner` (`/components`) now renders its expiry
 as a fixed UTC string instead of the visitor's locale, closing a possible hydration mismatch; a

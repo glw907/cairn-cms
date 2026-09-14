@@ -3,7 +3,7 @@ import { resolve, relative, join } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
 
 // The preview pass's e2e proof (spec part 3, "Public preview for a non-editor"): the whole chain,
-// end to end, against the real previewMint/previewRevoke admin actions and the real previewLoad
+// end to end, against the real mintPreview/revokePreview admin actions and the real loadPreview
 // route, wired to the SAME fake AUTH_DB and in-memory GitHub double the rest of the showcase's e2e
 // suite runs against (packages/cairn-cms-dev's handle.ts now reaches /preview/[token] as well as
 // /admin and /media, and fake-auth-db.ts's dispatch table carries the preview_tokens SQL
@@ -35,7 +35,7 @@ This note proves the role default reaches the build.
 :::`;
 }
 
-/** The five headers previewLoad sets on every response, refusals and the ended page included. */
+/** The five headers loadPreview sets on every response, refusals and the ended page included. */
 const PREVIEW_HEADERS: Record<string, string> = {
   'x-robots-tag': 'noindex, nofollow',
   'cache-control': 'private, no-store',
@@ -376,7 +376,7 @@ test.describe('public preview for a non-editor', () => {
     // manifest at save time (a helpful typo catch for an editor), so a genuinely broken link can
     // only exist in an already-saved draft when its target existed at save time and vanished
     // afterward: publish a sibling, link a draft to it (a save that succeeds), then delete the
-    // sibling. previewLoad's marking resolver, unlike the build's throwing one, must still render
+    // sibling. loadPreview's marking resolver, unlike the build's throwing one, must still render
     // the now-stale draft rather than 500 on it.
     const siblingSlug = `broken-link-sibling-${Date.now()}`;
     const siblingId = await createDraftPost(page, {

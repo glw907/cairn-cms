@@ -268,16 +268,16 @@ import the engine's admin components onto a host page.
 
 The auth guard gates every `/admin/*` path. A deploy health check has to be reachable without a
 session, so it cannot live under `/admin`. Mount it at the site root and call the engine's
-`healthLoad(event, runtime)` (event first):
+`loadHealth(event, runtime)` (event first):
 
 ```ts
 // src/routes/healthz/+server.ts
 import { json } from '@sveltejs/kit';
-import { healthLoad } from '@glw907/cairn-cms/sveltekit';
+import { loadHealth } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$lib/cairn.server.js';
 
 export const prerender = false;  // see below
-export const GET = async (event) => json(await healthLoad(event, runtime));
+export const GET = async (event) => json(await loadHealth(event, runtime));
 ```
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it

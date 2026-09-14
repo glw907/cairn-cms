@@ -390,7 +390,7 @@
       "name": "CairnRuntime",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `createContentRoutes`, `previewLoad`, `createMediaRoute` name it on this subpath."
+      "reason": "R4 closure: `createContentRoutes`, `loadPreview`, `createMediaRoute` name it on this subpath."
     },
     {
       "name": "Capability",

@@ -25,7 +25,7 @@ export interface HealthData {
  * the `GITHUB_APP_PRIVATE_KEY_B64` property name with `CairnEnv`, which is exactly what keeps
  * TypeScript's weak-type detection (TS2559) from rejecting the assignment.
  */
-export async function healthLoad(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
+export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
   const key = event.platform?.env?.GITHUB_APP_PRIVATE_KEY_B64;
   const provider = runtime.backend;
   const githubAppSigning =

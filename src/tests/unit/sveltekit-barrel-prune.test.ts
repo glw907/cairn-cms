@@ -59,7 +59,7 @@ const KEPT = [
   'createCairnAdmin',
   'CairnAdminConfig',
   'AdminData',
-  'healthLoad',
+  'loadHealth',
   'HealthData',
   'CairnEvent',
   'CookieJar',

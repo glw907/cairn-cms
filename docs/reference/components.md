@@ -820,7 +820,7 @@ guarantee a test independently proves; the component carries it on its own.
 
 `PreviewBanner` is the one exception to this barrel's admin-only membership rule: a design-agnostic
 component for a page a site's own visitors reach, not the admin. See [Public
-preview](./sveltekit.md#public-preview) for the `previewLoad` seam it pairs with, and [Share a
+preview](./sveltekit.md#public-preview) for the `loadPreview` seam it pairs with, and [Share a
 draft preview](../extend/share-a-draft-preview.md) for the full walkthrough.
 
 ### `PreviewBanner`
@@ -832,7 +832,7 @@ let { preview, formatExpiry }: { preview: PreviewData['preview']; formatExpiry?:
 ```
 
 A status notice for a shared preview link, driven only by the `preview` field
-[`previewLoad`](./sveltekit.md#previewload) adds to its data. It renders one of two states and
+[`loadPreview`](./sveltekit.md#loadpreview) adds to its data. It renders one of two states and
 nothing else: no fetch, no internal state, no interactivity. `state: 'draft'` names the expiry so
 the holder knows the link ages out; `state: 'published'` reports only that the preview has ended,
 since a discarded edit and a published entry both reach this state and the copy must never claim

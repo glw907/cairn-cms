@@ -4,7 +4,7 @@
 // preview-token maps, so /admin/editors and the preview mint/revoke/load chain work under
 // CAIRN_DEV_BACKEND=1 without a real D1 binding. Installed from hooks.server.ts as
 // platform.env.AUTH_DB (the admin routes AND, since the preview pass, /preview/[token] too, the
-// only non-admin path this fixture reaches: previewLoad reads the same rows previewMintAction
+// only non-admin path this fixture reaches: loadPreview reads the same rows previewMintAction
 // wrote, and both must share this one instance); never part of the published engine.
 //
 // Dispatch is on the store's exact SQL strings, matched as normalized substrings. Unknown SQL
@@ -67,8 +67,8 @@ export function createFakeAuthDb(): FakeAuthDb {
   const ownerCount = (ownerRoles: string[]) =>
     [...editors.values()].filter((e) => ownerRoles.includes(e.role)).length;
 
-  // Preview tokens, keyed by their hash (the store never sees the plaintext): previewMint's
-  // insert, previewLoad's two lookups (with and without the expiry predicate), and the
+  // Preview tokens, keyed by their hash (the store never sees the plaintext): mintPreview's
+  // insert, loadPreview's two lookups (with and without the expiry predicate), and the
   // revoke/lifecycle-cleanup deletes by entry or by editor.
   const previewTokens = new Map<string, PreviewTokenRow>();
 
@@ -249,7 +249,7 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, row: row && row.expires_at > now ? row : null };
     }
 
-    // findPreviewTokenAnyExpiry: the same lookup with no expiry predicate, previewLoad's
+    // findPreviewTokenAnyExpiry: the same lookup with no expiry predicate, loadPreview's
     // expired-versus-unknown distinguisher.
     if (sql.includes('FROM preview_tokens WHERE token_hash = ?')) {
       return { ...none, row: previewTokens.get(String(args[0])) ?? null };

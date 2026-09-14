@@ -2,7 +2,7 @@
 // statements only. No ORM. Follows the D1 access idiom in src/lib/auth/store.ts exactly: each
 // function takes the AUTH_DB binding plus primitives, so it is testable against a real local D1
 // and free of SvelteKit. This module is internal, never exported from any package subpath: a
-// site reaches it only through previewMint and the mint/revoke actions
+// site reaches it only through mintPreview and the mint/revoke actions
 // (src/lib/sveltekit/preview.ts).
 import type { D1Database } from '@cloudflare/workers-types';
 
@@ -63,7 +63,7 @@ export async function findPreviewToken(db: D1Database, tokenHash: string): Promi
 }
 
 /**
- * Look a preview token up by its hash with no expiry predicate, for `previewLoad`'s distinct
+ * Look a preview token up by its hash with no expiry predicate, for `loadPreview`'s distinct
  *  expired-versus-unknown refusal log: `findPreviewToken` already excludes an expired row (the
  *  ordinary validity check every other caller wants), so a miss there cannot by itself tell "this
  *  hash never existed" from "this hash expired". This reads the same row through the same key with

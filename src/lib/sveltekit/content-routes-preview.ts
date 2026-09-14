@@ -4,7 +4,7 @@
 // createContentRoutes, the public entry point, is only a thin wrapper around it.
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import { requireOrigin } from '../env.js';
-import { previewMint, previewRevoke, type PreviewMintOutcome, type PreviewRevokeOutcome } from './preview.js';
+import { mintPreview, revokePreview, type PreviewMintOutcome, type PreviewRevokeOutcome } from './preview.js';
 import { isMissingTableError, type ContentFormFailure } from './content-routes-shared.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
@@ -41,10 +41,10 @@ function missingPreviewTableFailure(): ActionFailure<ContentFormFailure> {
 export function createPreviewActions(ctx: ContentRoutesContext) {
   /**
    * Mint a public preview link for an entry's pending draft (spec part 3, "Public preview for a
-   *  non-editor"). This action is the route half of `previewMint` (preview.ts): it names the
+   *  non-editor"). This action is the route half of `mintPreview` (preview.ts): it names the
    *  target from the route's own params and dresses each outcome in the refusal this screen
    *  speaks, while the entry-scoped authorization, the draft check, the token hygiene, and the
-   *  `preview.token.minted` log all live in `previewMint` itself, so the engine's own route and a
+   *  `preview.token.minted` log all live in `mintPreview` itself, so the engine's own route and a
    *  site's custom mint run the identical sequence and log the identical event.
    *
    *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
@@ -57,16 +57,16 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
     const conceptId = event.params.concept ?? '';
     const id = event.params.id ?? '';
 
-    // previewMint runs its own authorization sequence first (requireEditor, then
+    // mintPreview runs its own authorization sequence first (requireEditor, then
     // requireEngineAccess against the target concept), so a refused editor's outcome reaches them
     // before requireOrigin's site-misconfiguration throw ever runs. requireOrigin only guards the
     // URL this action addresses on success, so it waits until a mint actually succeeds. The trade:
-    // a site with no PUBLIC_ORIGIN configured still lets previewMint write the preview-token row
+    // a site with no PUBLIC_ORIGIN configured still lets mintPreview write the preview-token row
     // before requireOrigin throws, so that row sits unreachable (no URL was ever returned to share
     // it) until its own TTL expires it, rather than the misconfiguration being caught up front.
     let result: PreviewMintOutcome;
     try {
-      result = await previewMint(ctx.runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
+      result = await mintPreview(ctx.runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
     } catch (err) {
       if (isMissingTableError(err)) return missingPreviewTableFailure();
       throw err;
@@ -98,10 +98,10 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
 
   /**
    * Revoke every outstanding preview link for an entry: one delete by concept and id, the
-   *  mis-shared-link remedy. This action is the route half of `previewRevoke` (preview.ts): it
+   *  mis-shared-link remedy. This action is the route half of `revokePreview` (preview.ts): it
    *  names the target from the route's own params and dresses each outcome in the refusal this
    *  screen speaks, while the entry-scoped authorization, the delete, and the
-   *  `preview.token.revoked` log all live in `previewRevoke` itself, so the engine's own route and
+   *  `preview.token.revoked` log all live in `revokePreview` itself, so the engine's own route and
    *  a site's custom revoke run the identical sequence and log the identical event. Idempotent:
    *  revoking with no minted links succeeds with a count of zero. The engine ships this affordance
    *  to every upgraded site's edit screen regardless of adoption, so a missing `preview_tokens`
@@ -112,12 +112,12 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
     const conceptId = event.params.concept ?? '';
     const id = event.params.id ?? '';
 
-    // previewRevoke runs its own authorization sequence first (requireEditor, then
-    // requireEngineAccess against the target concept), the same ordering previewMint runs, so a
+    // revokePreview runs its own authorization sequence first (requireEditor, then
+    // requireEngineAccess against the target concept), the same ordering mintPreview runs, so a
     // refused editor's outcome reaches them before any D1 read.
     let result: PreviewRevokeOutcome;
     try {
-      result = await previewRevoke(ctx.runtime, event, { concept: conceptId, entryId: id });
+      result = await revokePreview(ctx.runtime, event, { concept: conceptId, entryId: id });
     } catch (err) {
       if (isMissingTableError(err)) return missingPreviewTableFailure();
       throw err;

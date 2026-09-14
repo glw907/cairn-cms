@@ -103,7 +103,7 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
     // /preview/[token] is the one non-admin route the engine reaches AUTH_DB and cairnBackend
-    // from (previewLoad, spec part 3): it needs the SAME fakeAuthDb instance previewMintAction
+    // from (loadPreview, spec part 3): it needs the SAME fakeAuthDb instance previewMintAction
     // wrote its row into (both admin and preview must share this one process-lifetime store, or
     // a minted token would never resolve) and the same in-memory repo, but never the owner
     // session bypass below, which is admin-only.
@@ -118,7 +118,7 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
       // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
       // ones. The template's App.Platform also declares context and caches, which the dev routes
       // never touch, so this partial value casts through unknown; the engine reads the env
-      // structurally at runtime. AUTH_DB serves /admin and /preview (previewLoad's own binding
+      // structurally at runtime. AUTH_DB serves /admin and /preview (loadPreview's own binding
       // read); MEDIA_BUCKET serves the upload action under /admin and the delivery route under
       // /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
       // building a client when it is absent, so the value is set even though the fake client

@@ -7,7 +7,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { markdownReference } from '../../lib/components/markdown-reference.js';
-import { serializeManifest, type Manifest } from '../../lib/content/manifest.js';
+import { formatManifest, type Manifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, REPO, contentEvent } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
@@ -61,7 +61,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('helpLoad', () => {
   it('derives progress from the committed manifest, returns the reference, and passes the support contact through', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest(ONE_PUBLISHED_POST) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest(ONE_PUBLISHED_POST) } });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
     const result = await routes.helpLoad(event());

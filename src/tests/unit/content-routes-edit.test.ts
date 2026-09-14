@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes, type EditData } from '../../lib/sveltekit/content-routes.js';
 import { markKeyUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import { fields } from '../../lib/content/fields.js';
@@ -333,7 +333,7 @@ describe('editLoad', () => {
   });
 
   it('ships the manifest link targets, and an empty list when the manifest is missing', async () => {
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
     });
@@ -351,7 +351,7 @@ describe('editLoad', () => {
 
   it('ships the entry inbound links for the delete guard', async () => {
     // A manifest where post 'b' links to the post '2026-05-hello' being edited.
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [
         { id: '2026-05-hello', concept: 'posts', title: 'Hello', permalink: '/posts/hello', draft: false, links: [] },
@@ -403,7 +403,7 @@ describe('editLoad with a pending branch', () => {
   const ENTRY_PATH = 'src/content/posts/2026-05-hello.md';
 
   it('reads a published-and-edited entry from its branch and the manifest from main', async () => {
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
     });
@@ -485,7 +485,7 @@ describe('editLoad address-collision advisory', () => {
   it('warns when a different entry already resolves to the same address', async () => {
     // A published entry id "about" sits at /about in the manifest. A different published entry
     // "welcome" is manually configured to the same /about, so the edited "about" collides with it.
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [
         { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
@@ -511,7 +511,7 @@ describe('editLoad address-collision advisory', () => {
   });
 
   it('returns an empty advisory list when the address is free', async () => {
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
     });
@@ -533,7 +533,7 @@ describe('editLoad address-collision advisory', () => {
     // to /posts/hello. A sibling cairn/* branch holds 2026-02-20-hello, which resolves to the same
     // /posts/hello (the slug strips the YYYY-MM-DD- prefix), but it is absent from the manifest, so it is
     // a branch-only collision. Edit-load stays silent; the publish-time re-check still detects it.
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [
         { id: '2026-01-15-hello', concept: 'posts', title: 'Hello', permalink: '/posts/hello', draft: false, links: [] },

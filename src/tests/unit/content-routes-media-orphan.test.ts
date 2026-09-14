@@ -14,7 +14,7 @@ import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.
 // declaring module, which this test imports directly.
 import type { MediaOrphanPurgeResult } from '../../lib/sveltekit/content-routes-media-delete.js';
 import type { MediaOrphanScanResult } from '../../lib/media/orphan-scan.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -74,7 +74,7 @@ function mediaManifest(...entries: MediaEntry[]): string {
 }
 
 function contentManifest(mediaRefs: string[]): string {
-  return serializeManifest({
+  return formatManifest({
     version: 1,
     entries: [
       { concept: 'posts', id: '2026-05-hi', permalink: '/posts/hi', title: 'Hi', date: '2026-05-01', draft: false, links: [], mediaRefs },

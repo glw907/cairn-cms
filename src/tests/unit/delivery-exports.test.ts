@@ -6,7 +6,7 @@ describe('delivery exports', () => {
     const data = await import('../../lib/delivery/data.js');
     for (const name of [
       'createSiteIndexes',
-      'deriveExcerpt',
+      'buildExcerpt',
       'buildRssFeed',
       'buildJsonFeed',
       'buildSitemap',

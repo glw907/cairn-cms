@@ -803,8 +803,8 @@ const vocabulary = readVocabulary(siteConfig);
 
 The manifest is the committed, build-verified link graph. The content index that projects raw
 markdown into the query surfaces lives at [`/delivery`](./delivery.md). The write and diff side of
-the manifest is the engine's own save path, so only its serialize and verify operations stay public,
-for a build script or a custom regenerate tool to call.
+the manifest is the engine's own save path, so only its format, parse, and verify operations stay
+public, for a build script or a custom regenerate tool to call.
 
 Each manifest entry also records which fragment ids its body includes, an inclusion edge alongside
 the outbound link and reference edges the same entry already carries. The delete guard reads it to
@@ -822,21 +822,27 @@ the manifest rather than to the corpus, regenerating with
 [`cairn-manifest`](./cli-cairn-manifest.md) merges the committed stamps back into the rebuilt file,
 and `verifyManifest` accepts a committed stamp the corpus can't produce.
 
-#### Manifest serialize and verify
+#### Manifest format, parse, and verify
 
 Stability tier: Extension API.
 
 ```ts
-declare function serializeManifest(manifest: Manifest): string;
+declare function formatManifest(manifest: Manifest): string;
+declare function parseManifest(raw: string): Manifest;
 declare function verifyManifest(built: Manifest, committedRaw: string): void;
 declare function verifyReferences(manifest: Manifest): void;
 ```
 
-`serializeManifest` writes the canonical, sorted, deduped form that diffs cleanly. The `cairnManifest`
-Vite plugin uses it in write mode. `verifyManifest` throws when the committed manifest drifts from the
-corpus, so a raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter
-reference edge points at a missing target, naming the source entry, the field, and the missing target.
-References have no prerender backstop, so this build gate is their only integrity authority.
+`formatManifest` writes the canonical, sorted, deduped form that diffs cleanly. The `cairnManifest`
+Vite plugin uses it in write mode. `parseManifest` is its codec partner: it parses a committed
+manifest's raw text, throwing on malformed JSON, a wrong version, or a malformed entry, so a caller
+gets a well-formed graph or a clear error rather than a broken shape fed silently into further use.
+Use it to validate a manifest your own code fetches, such as when building the `before`/`after` pair
+[`buildNewlyPublished`](./delivery-data.md#buildnewlypublished) takes, instead of casting the fetched
+JSON yourself. `verifyManifest` throws when the committed manifest drifts from the corpus, so a
+raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter reference edge
+points at a missing target, naming the source entry, the field, and the missing target. References
+have no prerender backstop, so this build gate is their only integrity authority.
 
 ```ts
 import { verifyManifest, type Manifest } from '@glw907/cairn-cms';
@@ -845,6 +851,16 @@ declare const built: Manifest;
 declare const committedRaw: string;
 
 verifyManifest(built, committedRaw); // throws on drift
+```
+
+```ts
+import { parseManifest, type Manifest } from '@glw907/cairn-cms';
+
+declare function fetchManifestFile(): Promise<string>;
+
+async function readDeployedManifest(): Promise<Manifest> {
+  return parseManifest(await fetchManifestFile());
+}
 ```
 
 ### Auth and GitHub App

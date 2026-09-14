@@ -79,7 +79,7 @@ broken build. Render the resolved value as a link to the target's page:
 ## The integrity guarantee
 
 A dangling reference, an id naming an entry that doesn't exist, fails the build.
-[`verifyReferences`](../reference/core.md#manifest-serialize-and-verify) walks the manifest and
+[`verifyReferences`](../reference/core.md#manifest-format-parse-and-verify) walks the manifest and
 throws, naming the source entry, the field, and the missing target, the moment a build runs it.
 Unlike a `cairn:` link, a reference has no prerender-time resolver fallback, so this build gate is
 its only integrity check.

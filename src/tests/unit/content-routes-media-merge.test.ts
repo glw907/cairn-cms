@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import {
   parseMediaManifest,
   serializeMediaManifest,
@@ -71,7 +71,7 @@ async function redirectedTo(action: Promise<unknown>): Promise<string> {
 }
 
 const seededManifest = (id: string, draft = false) =>
-  serializeManifest({
+  formatManifest({
     version: 1,
     entries: [{ concept: 'posts', id, permalink: `/posts/${id}`, title: 'Hi', date: '2026-05-01', draft, links: [] }],
   });

@@ -25,7 +25,7 @@ import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX, pendingBranch } from '../content/pending.js';
 import {
   manifestEntryFromFile,
-  serializeManifest,
+  formatManifest,
   stampFirstPublish,
   upsertEntry,
   type Manifest,
@@ -349,7 +349,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     // in one atomic commit, or commit those two alone when the save touched no media.
     const changes: FileChange[] = [
       { path, content: markdown },
-      { path: runtime.manifestPath, content: serializeManifest(manifest) },
+      { path: runtime.manifestPath, content: formatManifest(manifest) },
     ];
     if (mediaChange) changes.push(mediaChange);
 
@@ -474,7 +474,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     if (published.length === 0) {
       throw redirect(303, `${listPage}?error=nothing_to_publish`);
     }
-    changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
+    changes.push({ path: runtime.manifestPath, content: formatManifest(next) });
 
     const noun = published.length === 1 ? 'entry' : 'entries';
     try {

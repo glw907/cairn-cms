@@ -4,7 +4,7 @@
 // every operation reads the descriptor and its routing rule, never a hardcoded concept id.
 import { parseMarkdown } from '../content/frontmatter.js';
 import { entryId, entryIdentity, asDate, asString, asTags } from '../content/identity.js';
-import { deriveExcerpt, wordCount } from '../content/excerpt.js';
+import { buildExcerpt, wordCount } from '../content/excerpt.js';
 import { resolveTaxonomyField } from '../content/taxonomy.js';
 import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
@@ -127,7 +127,7 @@ export function createContentIndex<F = Record<string, unknown>>(
       date,
       updated: asDate(raw.updated),
       tags: taxonomyField ? asTags(result.data[taxonomyField]) : [],
-      excerpt: deriveExcerpt(body, { description: asString(raw.description) }),
+      excerpt: buildExcerpt(body, { description: asString(raw.description) }),
       wordCount: wordCount(body),
       draft,
       fields: summaryFieldValues,

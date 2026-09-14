@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { parseManifest, serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
+import { parseManifest, formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
@@ -144,7 +144,7 @@ describe('publishAction', () => {
     const gh = new GithubDouble({
       main: {
         [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
-        [MANIFEST_PATH]: serializeManifest({
+        [MANIFEST_PATH]: formatManifest({
           version: 1,
           entries: [{ concept: 'posts', id: '2026-05-01-hi', permalink: '/posts/hi', title: 'Old', date: '2026-05-01', draft: false, links: [] }],
         }),
@@ -175,7 +175,7 @@ describe('publishAction', () => {
 
   it('adds the manifest row for a never-published entry', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -225,7 +225,7 @@ describe('publishAction', () => {
   });
 
   it('returns the broken-link fail like save, with no commit anywhere', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
 
@@ -241,7 +241,7 @@ describe('publishAction', () => {
 
   it('leaves the branch alone when a concurrent save moves its head mid-publish', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -262,7 +262,7 @@ describe('publishAction', () => {
   it('logs entry.published with batch: false on success', async () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -290,7 +290,7 @@ describe('publishAction', () => {
     const gh = new GithubDouble({
       main: {
         'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
-        [MANIFEST_PATH]: serializeManifest({
+        [MANIFEST_PATH]: formatManifest({
           version: 1,
           entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about-copy', draft: false, links: [] }],
         }),
@@ -327,7 +327,7 @@ describe('publishAction', () => {
     const rt = pagesRuntime();
     const gh = new GithubDouble({
       main: {
-        [MANIFEST_PATH]: serializeManifest({
+        [MANIFEST_PATH]: formatManifest({
           version: 1,
           entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
         }),
@@ -348,7 +348,7 @@ describe('publishAction', () => {
   it('logs publish.failed on a main-commit conflict, keeps the just-saved branch, and bounces', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -393,7 +393,7 @@ describe('publishAllAction', () => {
     const gh = new GithubDouble({
       main: {
         [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
-        [MANIFEST_PATH]: serializeManifest({
+        [MANIFEST_PATH]: formatManifest({
           version: 1,
           entries: [{ concept: 'posts', id: '2026-05-01-hi', permalink: '/posts/hi', title: 'Old', date: '2026-05-01', draft: false, links: [] }],
         }),
@@ -438,7 +438,7 @@ describe('publishAllAction', () => {
 
   it('skips a ref whose concept is not configured instead of failing the batch', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
       'cairn/widgets/x': { 'src/content/widgets/x.md': '---\ntitle: W\n---\nw' },
     });
@@ -461,7 +461,7 @@ describe('publishAllAction', () => {
 
   it('publishes the batch but leaves a branch whose head moved mid-publish', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
       [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
     });
@@ -483,7 +483,7 @@ describe('publishAllAction', () => {
   });
 
   it('redirects back with a flash and no commit when nothing is pending', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
 
@@ -499,7 +499,7 @@ describe('publishAllAction', () => {
     // commit failure must stay on this action's own redirect channel instead.
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -530,7 +530,7 @@ describe('publishAllAction', () => {
   it('logs publish.failed on a commit conflict and bounces to the list page', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -551,7 +551,7 @@ describe('publishAllAction', () => {
 
   it('publishes only the pending entries the access map admits, leaving the rest pending', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
       [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
     });
@@ -569,7 +569,7 @@ describe('publishAllAction', () => {
 
   it('publishes every mapped concept for a role the access map admits to all of them', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
       [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
     });
@@ -604,7 +604,7 @@ describe('the publishedAt first-publish stamp', () => {
     return new GithubDouble({
       main: {
         [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
-        [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [row] }),
+        [MANIFEST_PATH]: formatManifest({ version: 1, entries: [row] }),
       },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
@@ -628,7 +628,7 @@ describe('the publishedAt first-publish stamp', () => {
 
   it('stamps a brand-new entry with no committed row', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
@@ -678,7 +678,7 @@ describe('the publishedAt first-publish stamp', () => {
     const gh = new GithubDouble({
       main: {
         [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
-        [MANIFEST_PATH]: serializeManifest({
+        [MANIFEST_PATH]: formatManifest({
           version: 1,
           entries: [
             draftRow,

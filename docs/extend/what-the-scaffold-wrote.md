@@ -120,7 +120,7 @@ site by hand](./build-a-site-by-hand.md) writes the first two from nothing.
 
 One directory per concept, plus a hidden `.cairn/` directory the build writes and a person never
 edits by hand: `src/content/.cairn/index.json` (the committed content manifest
-[`serializeManifest`/`verifyManifest`](../reference/core.md#manifest-serialize-and-verify)
+[`formatManifest`/`verifyManifest`](../reference/core.md#manifest-format-parse-and-verify)
 maintain) and `src/content/.cairn/media.json` (the media asset registry, when the media library
 is turned on). The scaffold seeds `posts/`, `pages/`, and `fragments/` with sample entries, so
 you have something to look at, edit, and delete before you write your own.

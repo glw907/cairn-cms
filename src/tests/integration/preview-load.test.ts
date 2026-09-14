@@ -10,7 +10,7 @@ import { GithubDouble } from '../unit/_github-double.js';
 import { previewLoad, type PreviewData } from '../../lib/sveltekit/preview.js';
 import { insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { generateToken, hashToken } from '../../lib/auth/crypto.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { EntryData, PublicRoutesConfig } from '../../lib/delivery/public-routes.js';
@@ -95,7 +95,7 @@ function mediaRenderPublicConfig(overrides: Partial<PublicRoutesConfig> = {}): P
 }
 
 function manifestWith(entries: ManifestEntry[]): string {
-  return serializeManifest({ version: 1, entries });
+  return formatManifest({ version: 1, entries });
 }
 
 function row(overrides: Partial<ManifestEntry> = {}): ManifestEntry {

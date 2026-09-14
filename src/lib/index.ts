@@ -87,11 +87,11 @@ export type {
 // `ConceptConfig.datePrefix` names this granularity type.
 export type { DatePrefix } from './content/ids.js';
 // The committed content manifest (content-graph design). The corpus builder and the
-// request-time resolver ship from the delivery entry; only the manifest's serialize and verify
-// operations stay public, for a build script or a custom regenerate tool. `CairnRef` and
+// request-time resolver ship from the delivery entry; only the manifest's format, parse, and
+// verify operations stay public, for a build script or a custom regenerate tool. `CairnRef` and
 // `LinkResolve` name `createRenderer`'s link-resolution signature.
 export type { CairnRef, LinkResolve } from './content/links.js';
-export { serializeManifest, verifyManifest, verifyReferences } from './content/manifest.js';
+export { formatManifest, parseManifest, verifyManifest, verifyReferences } from './content/manifest.js';
 // `Manifest.entries` names `ManifestEntry`.
 export type { Manifest, ManifestEntry } from './content/manifest.js';
 // Render engine: generic directive pipeline; sites own the component registry.

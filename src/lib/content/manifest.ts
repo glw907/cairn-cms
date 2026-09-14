@@ -4,7 +4,7 @@
 // it; the save path patches one entry and commits it with the content in one commit. Each entry
 // carries its identity and its outbound cairn: edges, so the manifest is the link graph.
 import { parseMarkdown } from './frontmatter.js';
-import { deriveExcerpt } from './excerpt.js';
+import { buildExcerpt } from './excerpt.js';
 import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import { extractMediaRefs } from './media-refs.js';
@@ -106,7 +106,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     permalink,
     // Coalesce an empty excerpt to undefined, so an empty-body entry carries no summary key at all
     // (matching serialize's optional-spread) and the in-memory and serialized shapes agree.
-    summary: deriveExcerpt(body, { description: asString(frontmatter.description) }) || undefined,
+    summary: buildExcerpt(body, { description: asString(frontmatter.description) }) || undefined,
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
     ...(mediaRefs.length ? { mediaRefs } : {}),
@@ -133,7 +133,7 @@ function compareEdge(a: ReferenceEdge, b: ReferenceEdge): number {
  * Serialize canonically: entries sorted by concept then id, links sorted and deduped, a fixed key
  *  order, two-space pretty, and a trailing newline, so the committed file diffs cleanly in a PR.
  */
-export function serializeManifest(manifest: Manifest): string {
+export function formatManifest(manifest: Manifest): string {
   const entries = [...manifest.entries].sort(compareRef).map((e) => ({
     id: e.id,
     concept: e.concept,
@@ -306,7 +306,7 @@ function formatDiff(d: ManifestDiff): string {
  *  committed manifest stale fails the build loudly with what drifted.
  */
 export function verifyManifest(built: Manifest, committedRaw: string): void {
-  const builtRaw = serializeManifest(built);
+  const builtRaw = formatManifest(built);
   if (committedRaw === builtRaw) return;
   // mediaRefs is additive: a site whose committed manifest predates the field must still build,
   // even when its content references media (open risk 3, the migration landmine). Before diffing,
@@ -363,9 +363,9 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
       return entry;
     }),
   };
-  const normalizedRaw = serializeManifest(normalized);
+  const normalizedRaw = formatManifest(normalized);
   if (committedRaw === normalizedRaw) return;
-  // Diff the canonical built form, not the raw one. serializeManifest sorts each entry's links, so a
+  // Diff the canonical built form, not the raw one. formatManifest sorts each entry's links, so a
   // build whose links are in extraction order would otherwise report a false (links) drift for an
   // entry whose link set is identical and only the order differs. Reuse the serialized form so both
   // sides are canonical.
@@ -401,7 +401,7 @@ export function verifyReferences(manifest: Manifest): void {
 
 /**
  * Replace the entry with the same concept and id, or add it. Order does not matter, since
- *  serializeManifest sorts. This is the save path's incremental patch.
+ *  formatManifest sorts. This is the save path's incremental patch.
  *
  * Invariant: a `publishedAt` already held for that concept and id survives the replacement. The
  *  replacement row is re-derived from a content file, which can never carry the stamp, so without

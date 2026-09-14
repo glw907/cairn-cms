@@ -27,6 +27,11 @@ The release step sets the version number at the cut and renames this section to 
   `DevBackendOptions` to `DevBackendConfig` (`@glw907/cairn-cms-dev`), `NavLoadData` to `NavData`
   (`/sveltekit`), and `VocabularyLoadData` to `VocabularyData` (`/sveltekit`). A call site passing
   the bag positionally or by inference needs no change.
+- **Three functions rename per the engine's verb vocabulary.** Rename `serializeManifest` (`.`) to
+  `formatManifest`, `deriveExcerpt` (`/delivery/data`) to `buildExcerpt`, and `diffNewlyPublished`
+  (`/delivery/data`) to `buildNewlyPublished` at any call site; every signature and behavior is
+  unchanged. `parseManifest`'s canonical home also moves to `.`, beside `formatManifest`, but it
+  stays importable from `/delivery/data` too, so this half needs no action.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and

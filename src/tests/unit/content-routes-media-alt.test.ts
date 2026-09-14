@@ -18,7 +18,7 @@ import type {
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
 } from '../../lib/sveltekit/content-routes-media-metadata.js';
-import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
+import { formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
@@ -87,7 +87,7 @@ function mediaManifest(...entries: MediaEntry[]): string {
 
 /** A content manifest with the given entries (each carries its mediaRefs, title, and permalink). */
 function contentManifest(entries: ManifestEntry[]): string {
-  return serializeManifest({ version: 1, entries });
+  return formatManifest({ version: 1, entries });
 }
 
 function postEntry(id: string, title: string, mediaRefs: string[]): ManifestEntry {

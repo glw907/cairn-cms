@@ -198,13 +198,13 @@
       "name": "Manifest",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `buildSiteManifest`, `newlyPublishedEntries`, `parseManifest` name it on this subpath."
+      "reason": "R4 closure: `buildSiteManifest`, `buildNewlyPublished`, `parseManifest` name it on this subpath."
     },
     {
       "name": "ManifestEntry",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `newlyPublishedEntries`, `Manifest` name it on this subpath."
+      "reason": "R4 closure: `buildNewlyPublished`, `Manifest` name it on this subpath."
     },
     {
       "name": "MultiselectField",
@@ -229,6 +229,12 @@
       "subpath": "/delivery/data",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "parseManifest",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "A re-export from the stated canonical home, not a second home: `parseManifest`'s home moves to `.` beside `formatManifest`, its codec partner, and stays importable here so `buildNewlyPublished`'s `before`/`after` pair has a validator on the same subpath that consumes it."
     },
     {
       "name": "ReferenceEdge",

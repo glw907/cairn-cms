@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, expectRedirect, expectHttpError } from '../unit/_content-harness.js';
 import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
 import type { RevertFailure } from '../../lib/sveltekit/types.js';
@@ -137,7 +137,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('revertAction', () => {
   it('reverts to an earlier publish, and the existing publish path publishes the reverted content and deletes the branch', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
 
@@ -168,7 +168,7 @@ describe('revertAction', () => {
   });
 
   it('refuses with a populated RevertFailure when the fast pre-check finds an existing draft', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -188,7 +188,7 @@ describe('revertAction', () => {
   });
 
   it('refuses with a populated RevertFailure when createBranch collides under a race the pre-check missed', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -208,7 +208,7 @@ describe('revertAction', () => {
   });
 
   it('does not falsely conflict when a publish lands between the staleness check and createBranch', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -228,7 +228,7 @@ describe('revertAction', () => {
   });
 
   it('best-effort deletes the branch it just created when the revert commit fails for a reason other than conflict', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -245,7 +245,7 @@ describe('revertAction', () => {
   });
 
   it('answers history_stale when main has moved since the history page rendered', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -263,7 +263,7 @@ describe('revertAction', () => {
   });
 
   it('answers ref_unknown for a sha absent from the fresh history read', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -277,7 +277,7 @@ describe('revertAction', () => {
   });
 
   it('refuses ref_unknown in place when the listed sha is a delete commit whose content no longer reads', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -318,7 +318,7 @@ describe('revertAction', () => {
 
   it('logs commit.reverted with the exact field set, alongside commit.succeeded for the branch commit', async () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
@@ -345,7 +345,7 @@ describe('revertAction', () => {
   });
 
   it('surfaces a schema-drift advisory when the reverted version carries a field the schema has since retired', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const v1Fields: NamedField[] = [TITLE_FIELD, { type: 'text', name: 'subtitle', label: 'Subtitle' }];
     const routesV1 = createContentRoutes({ runtime: echoRuntime({ fields: v1Fields }) });
@@ -369,7 +369,7 @@ describe('revertAction', () => {
   });
 
   it('names a retired vocabulary tag rather than silently laundering it back into the allowed set (vocabulary-union interaction)', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const taxField: NamedField = { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true, creatable: true };
     const fields = [TITLE_FIELD, taxField];
@@ -404,7 +404,7 @@ describe('revertAction', () => {
   });
 
   it('carries no advisory for description, a builtin frontmatter key the schema never declares', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     const form = new URLSearchParams();
@@ -428,7 +428,7 @@ describe('revertAction', () => {
   });
 
   it('carries no advisory query param on a plain revert with no schema drift', async () => {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));

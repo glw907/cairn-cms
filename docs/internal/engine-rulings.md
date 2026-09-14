@@ -206,6 +206,10 @@ open edits, not part of the shape itself.
   `diffNewlyPublished`, `buildSitemapView`, `formatMediaToken`/`parseMediaToken`).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 3, and Task 1/Task 3.
+- **Note (polish-C, Task 5):** the three residuals this ruled vocabulary already covered executed:
+  `serializeManifest` to `formatManifest` (`parse*`'s codec partner), `deriveExcerpt` to
+  `buildExcerpt`, and `diffNewlyPublished` to `buildNewlyPublished` (both `build*`'s "derives pure
+  data"). Per `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
 
 ## convention-bare-noun-functions: an exported function's name begins with a verb, an exported value's does not  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -1065,6 +1069,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 60.
 - **Any-site case:** Any site using the cairnManifest Vite plugin resolves it from the root barrel at build time. Demoting it breaks the build of every consumer that has never heard of the function.
+- **Note (polish-C, Task 5):** renamed to `formatManifest`, `parse*`'s codec partner under
+  `convention-verb-rules`. Verdict unchanged.
 
 ## audit-adapter-verifyreferences: `verifyReferences`  (keep, 2026-08-26, any-site audit)
 
@@ -3764,6 +3770,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 15.
 - **Any-site case:** Validating a fetched manifest before newlyPublishedEntries: version guard plus entry-shape checks over an engine-owned schema. Friction: the one live consumer cast instead (sweep.ts:144).
+- **Note (polish-C, Task 5):** stays `parseManifest`, its canonical home moves to `.` beside its
+  codec partner `formatManifest`, with a recorded re-export keeping it importable from
+  `/delivery/data`. Verdict unchanged.
 
 ## audit-delivery-deriveexcerpt: `deriveExcerpt`  (keep, 2026-08-26, any-site audit)
 
@@ -3771,6 +3780,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 16.
 - **Any-site case:** Excerpting text outside the corpus (a search hit, a custom card) so it matches ContentSummary.excerpt on the same page. The description-first, word-boundary, 200-char rule is engine policy.
+- **Note (polish-C, Task 5):** renamed to `buildExcerpt`, `build*`'s "derives pure data" meaning
+  under `convention-verb-rules`. Verdict unchanged.
 
 ## audit-delivery-seoinput: `SeoInput`  (keep, 2026-08-26, any-site audit)
 
@@ -3862,6 +3873,12 @@ when the remediation pass lands.
 - **Annotation (conventions pass, Task 3):** renamed `newlyPublishedEntries` → `diffNewlyPublished`
   (`convention-bare-noun-functions`: an exported function's name begins with a verb; `diff*` states
   it compares a before/after manifest pair). Names only; the signature and behavior are unchanged.
+- **Note (polish-C, Task 5):** renamed `diffNewlyPublished` → `buildNewlyPublished`
+  (`convention-verb-rules`: `build*` derives pure data from its inputs). This is the second rename
+  of one function inside one unpublished window: both this rename and the conventions-pass
+  annotation above sit under the same `## Unreleased` heading, so a consumer upgrading across the
+  release crosses one rename, `newlyPublishedEntries` to `buildNewlyPublished`, not two. Verdict
+  unchanged.
 
 ## audit-delivery-buildfragmentresolver: `buildFragmentResolver`  (keep, 2026-08-26, any-site audit)
 

@@ -24,7 +24,7 @@ import { requireEntryFromParams, HISTORY_LIMIT, draftFromBranchHead } from './co
  * The frontmatter keys every entry carries regardless of the site's own declared fields: the
  * engine reads these directly (`manifestEntryFromFile`, the list-row summarizer) rather than
  * gating them on a field declaration, so they are never "retired" even when a concept declares no
- * field of the same name. `description` feeds `deriveExcerpt` in both readers the same way.
+ * field of the same name. `description` feeds `buildExcerpt` in both readers the same way.
  * Shared by `revertSchemaDrift`.
  */
 const BUILTIN_FRONTMATTER_KEYS = new Set(['title', 'date', 'draft', 'description']);

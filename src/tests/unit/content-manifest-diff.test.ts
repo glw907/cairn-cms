@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diffManifests, verifyManifest, serializeManifest, type Manifest, type ManifestEntry } from '../../lib/content/manifest.js';
+import { diffManifests, verifyManifest, formatManifest, type Manifest, type ManifestEntry } from '../../lib/content/manifest.js';
 
 const entry = (over: Partial<ManifestEntry> = {}): ManifestEntry => ({
   id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], ...over,
@@ -35,17 +35,17 @@ describe('diffManifests', () => {
 describe('verifyManifest', () => {
   it('throws an error that names what drifted', () => {
     const built: Manifest = { version: 1, entries: [entry({ title: 'New' })] };
-    const committed = serializeManifest({ version: 1, entries: [entry({ title: 'Old' })] });
+    const committed = formatManifest({ version: 1, entries: [entry({ title: 'Old' })] });
     expect(() => verifyManifest(built, committed)).toThrow(/title/);
   });
 
   it('does not throw when the committed manifest matches', () => {
     const built: Manifest = { version: 1, entries: [entry()] };
-    expect(() => verifyManifest(built, serializeManifest(built))).not.toThrow();
+    expect(() => verifyManifest(built, formatManifest(built))).not.toThrow();
   });
 
   it('does not report a links drift for an entry whose links only differ in order', () => {
-    // One entry's built links are in extraction (non-sorted) order; serializeManifest sorts links,
+    // One entry's built links are in extraction (non-sorted) order; formatManifest sorts links,
     // so a naive diff of the non-canonical built side reports a false (links) drift. A second entry
     // carries a genuine title drift, so the slow diff path runs.
     const reordered = entry({
@@ -58,7 +58,7 @@ describe('verifyManifest', () => {
     const builtDrift = entry({ id: 'c', permalink: '/c', title: 'New' });
     const built: Manifest = { version: 1, entries: [reordered, builtDrift] };
     // The committed side is canonical (links sorted) for the reordered entry, with a stale title for c.
-    const committed = serializeManifest({
+    const committed = formatManifest({
       version: 1,
       entries: [reordered, entry({ id: 'c', permalink: '/c', title: 'Old' })],
     });

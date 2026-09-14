@@ -330,6 +330,18 @@
   must: rename any imported type reference from the old name to the new one; a call site passing
   the bag positionally or by inference needs no change.
 
+- **Breaking:** three functions rename per `convention-verb-rules`. `serializeManifest` (`.`) to
+  `formatManifest`, `parse*`'s reserved codec partner. `deriveExcerpt` (`/delivery/data`) to
+  `buildExcerpt` and `diffNewlyPublished` (`/delivery/data`) to `buildNewlyPublished`, both
+  `build*`'s "derives pure data" meaning; `buildNewlyPublished` is the second rename this function
+  carries inside this same unreleased window, so a consumer crosses one rename,
+  `newlyPublishedEntries` to `buildNewlyPublished`, not two. `parseManifest`'s canonical home also
+  moves to `.`, beside `formatManifest`, with a recorded re-export keeping it importable from
+  `/delivery/data`; this half needs no consumer action, since the old import specifier keeps
+  resolving. Every signature and every behavior is unchanged. Consumers must: rename
+  `serializeManifest` to `formatManifest`, `deriveExcerpt` to `buildExcerpt`, and
+  `diffNewlyPublished` to `buildNewlyPublished` at any call site.
+
 - `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
   names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
   alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone
@@ -3494,7 +3506,7 @@ removal, nothing this list needs to carry.
   `parseManifest`, so a consumer can name and validate the manifest it fetches to build
   `newlyPublishedEntries`'s `before`/`after` pair without hand-casting JSON. See [Announce on
   publish](docs/guides/announce-on-publish.md) and [Delivery
-  data](docs/reference/delivery-data.md#diffnewlypublished) (renamed `diffNewlyPublished` by the
+  data](docs/reference/delivery-data.md#buildnewlypublished) (renamed `diffNewlyPublished` by the
   conventions pass, Task 3). Consumers must: nothing; the
   field is additive and optional, and the stamp only ever appears on a publish that happens
   after the upgrade.

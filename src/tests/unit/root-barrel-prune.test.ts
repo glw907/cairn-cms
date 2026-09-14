@@ -4,13 +4,14 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs';
 
-// The 72 names the surface-pruning pass demotes from the root barrel (Task 1), plus the
+// The names the surface-pruning pass demotes from the root barrel (Task 1), plus the
 // `ResolvedReference` reshape (its home becomes `/delivery` only) and `RoutingRule` (Task 5,
 // demoted alongside the routing-union change: `RoutingRule` is the internal normalization target
 // only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
 // `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` (the
 // retires pass, batch 1a: unexported from this barrel; stays exported from
-// `content/standard-schema.ts`).
+// `content/standard-schema.ts`), minus `parseManifest`, whose canonical home is now this barrel
+// beside `formatManifest`, so it moves to the keep list below.
 const DEMOTED = [
   'StandardSchemaV1',
   'initialValues',
@@ -29,7 +30,6 @@ const DEMOTED = [
   'formatCairnToken',
   'extractCairnLinks',
   'escapeLinkText',
-  'parseManifest',
   'emptyManifest',
   'diffManifests',
   'upsertEntry',
@@ -131,7 +131,8 @@ const KEPT = [
   'parseMarkdown',
   'readMenu',
   'readVocabulary',
-  'serializeManifest',
+  'formatManifest',
+  'parseManifest',
   'verifyManifest',
   'verifyReferences',
   'CommitConflictError',

@@ -11,7 +11,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { previewMint, previewRevoke } from '../../lib/sveltekit/preview.js';
 import { findPreviewToken, insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { hashToken } from '../../lib/auth/crypto.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import {
@@ -129,7 +129,7 @@ describe('previewMint', () => {
 
   /** A GithubDouble carrying the entry's pending branch, the draft a mint shares. */
   function ghWithDraft(): GithubDouble {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.createBranch(BRANCH, 'main');
     return gh;
   }
@@ -183,7 +183,7 @@ describe('previewMint', () => {
   });
 
   it('refuses no-draft when the entry carries no pending branch', async () => {
-    new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } }).install();
+    new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } }).install();
     const result = await previewMint(runtime(), {}, mintEvent(), TARGET);
     expect(result).toEqual({ outcome: 'no-draft' });
   });
@@ -328,7 +328,7 @@ describe('previewRevoke', () => {
 
 describe('previewMintAction', () => {
   function ghWithManifest(): GithubDouble {
-    return new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    return new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
   }
 
   it('refuses on the page when the entry has no pending draft', async () => {
@@ -561,7 +561,7 @@ describe('authorization: the view gate is not authorization (the round High)', (
 });
 
 describe('lifecycle cleanup', () => {
-  const publishedManifest = serializeManifest({
+  const publishedManifest = formatManifest({
     version: 1,
     entries: [{ id: ID, concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
   });
@@ -636,7 +636,7 @@ describe('lifecycle cleanup', () => {
   it('publishAction leaves the entry’s preview-token rows intact (the ended page needs them)', async () => {
     await seedToken(ID, 'publish-hash');
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\ndate: 2026-08-06\n---\npending body' },
     });
     gh.install();

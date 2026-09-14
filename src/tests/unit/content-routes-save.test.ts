@@ -3,7 +3,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { CommitConflictError } from '../../lib/github/types.js';
-import { manifestEntryFromFile, serializeManifest } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, formatManifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, REPO, contentEvent, json, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
@@ -51,7 +51,7 @@ describe('saveAction', () => {
       path: 'src/content/pages/about.md',
       raw: '---\ntitle: About\n---\nx',
     });
-    const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
+    const manifest = formatManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
     const gh = new GithubDouble({ main: { 'src/content/.cairn/index.json': manifest } });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
@@ -80,7 +80,7 @@ describe('saveAction', () => {
       path: 'src/content/posts/2026-05-hi.md',
       raw: '---\ntitle: Old\n---\nold body',
     });
-    const manifest = serializeManifest({ version: 1, entries: [existingEntry] });
+    const manifest = formatManifest({ version: 1, entries: [existingEntry] });
     const gh = new GithubDouble({
       main: {
         'src/content/.cairn/index.json': manifest,
@@ -181,7 +181,7 @@ describe('saveAction', () => {
     const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
     const draftRow = manifestEntryFromFile(concept, { path: 'src/content/posts/wip.md', raw: '---\ntitle: WIP\ndraft: true\n---\nx' });
     // Force the draft row's concept/id to a pages target the body links to.
-    const manifest = serializeManifest({ version: 1, entries: [{ ...draftRow, concept: 'pages', id: 'wip', draft: true }] });
+    const manifest = formatManifest({ version: 1, entries: [{ ...draftRow, concept: 'pages', id: 'wip', draft: true }] });
     commitFetch(manifest);
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const { location } = await expectRedirect(() =>
@@ -196,7 +196,7 @@ describe('saveAction', () => {
     // upserted manifest holds this very entry), so the save commits with no drafts= warning.
     const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
     const selfRow = manifestEntryFromFile(concept, { path: 'src/content/posts/2026-05-hi.md', raw: '---\ntitle: Hi\ndraft: true\n---\nx' });
-    const manifest = serializeManifest({ version: 1, entries: [{ ...selfRow, concept: 'posts', id: '2026-05-hi', draft: true }] });
+    const manifest = formatManifest({ version: 1, entries: [{ ...selfRow, concept: 'posts', id: '2026-05-hi', draft: true }] });
     commitFetch(manifest);
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })) });
     const { location } = await expectRedirect(() =>
@@ -209,7 +209,7 @@ describe('saveAction', () => {
   it('commits cleanly when every link resolves to a published target', async () => {
     const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
     const liveRow = manifestEntryFromFile(concept, { path: 'src/content/pages/home.md', raw: '---\ntitle: Home\n---\nx' });
-    const manifest = serializeManifest({ version: 1, entries: [{ ...liveRow, concept: 'pages', id: 'home', draft: false }] });
+    const manifest = formatManifest({ version: 1, entries: [{ ...liveRow, concept: 'pages', id: 'home', draft: false }] });
     const calls = commitFetch(manifest);
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const { location } = await expectRedirect(() =>
@@ -225,7 +225,7 @@ describe('saveAction', () => {
       path: 'src/content/pages/about.md',
       raw: '---\ntitle: About\n---\nx',
     });
-    const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
+    const manifest = formatManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
     commitFetch(manifest);
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     try {

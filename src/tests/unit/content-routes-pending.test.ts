@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
@@ -71,7 +71,7 @@ describe('saveAction on the pending branch', () => {
 
   it('still blocks a link to a target absent from main, before touching any branch', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
     });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });

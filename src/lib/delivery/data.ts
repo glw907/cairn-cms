@@ -55,7 +55,7 @@ export type { SiteResolver, ResolvedReference } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
 export { buildSiteDescriptors } from './site-descriptors.js';
-export { deriveExcerpt } from '../content/excerpt.js';
+export { buildExcerpt } from '../content/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
 export { buildSitemap } from './sitemap.js';
@@ -68,6 +68,8 @@ export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
 export { renderJsonLdScript } from './json-ld.js';
-export { buildSiteManifest, diffNewlyPublished } from './manifest.js';
+export { buildSiteManifest, buildNewlyPublished } from './manifest.js';
+// `parseManifest`'s canonical home is `.`, beside `formatManifest`; a recorded R4 re-export here
+// because `buildNewlyPublished`'s `before`/`after` pair is the typed shape it produces.
 export { parseManifest } from '../content/manifest.js';
 export type { Manifest, ManifestEntry } from '../content/manifest.js';

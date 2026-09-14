@@ -104,6 +104,32 @@ disclosed here beside the dropzone's token and the disagreement count: `editor-f
 `FLASH_MS = 400` does not move with the unfold flash's token, because it is the timer that removes
 the flash class and the CSS transition is what paints the fade.
 
+A second review of the corrected pair escalated three more, and the conductor ruled them. All three
+follow from the one mechanism rather than reopening it.
+
+- **The no-key failure mode is under-coverage, not a red gate.** Resolving the boundary inside
+  `runStatic` means a gate that sets no key narrows the three rules to the key's default rather than
+  widening them. In this tree that default reaches `src/lib/admin-toolkit` alone and never
+  `src/lib/components/cairn-admin.css`, where the shipped declarations and the zen exception live,
+  so the gate would be green over almost none of the admin frame. The CI wiring section now argues
+  it that way, and task 10's failing assertion, a `motion-property` finding from a
+  `src/lib/components` fixture under the gate's config, is the proof against it.
+- **The key's default names one absent root, not two.** `src/routes/admin` is absent from this tree,
+  which has no `src/routes` at all; `src/lib/admin-toolkit` exists and is the second entry of the
+  gate's `SCAN_SCOPE`, covering part of the admin frame. Corrected in both places this document said
+  it.
+- **Task 10's paired run gets a control arm that can produce findings.** Both arms of the old pair,
+  with and without the key, returned nothing. The instrument is a control arm with the gate's
+  `static.adminScope` set to the five `SCAN_SCOPE` roots, which produces the showcase theme and
+  chassis findings, against the shipping arm with the three admin roots, which produces none.
+  `gap-scale`, `token-colors`, and `motion-band` keep the full five-root scope, proved by their
+  finding counts being equal in both arms.
+
+One semantics joins them, stated above with the mechanism: `static.adminScope` follows
+`static.scope`'s existence rule exactly, a config-named root that is missing throwing and a default
+root that is missing being skipped. The plan carries the rest, the gate's exported `ADMIN_SCOPE` and
+three fixture corrections.
+
 ## Revision 2 (2026-09-13)
 
 This section records what revision 2 changed against revision 1. It is history: where an item below
@@ -893,6 +919,15 @@ The two halves are one mechanism. `adminOnly` says which rules the boundary appl
 `static.adminScope` says where the boundary falls in a given tree. A consumer whose admin screens
 sit at the default roots writes neither.
 
+**The key follows `static.scope`'s existence rule exactly**, and takes the parallel
+configured-versus-default flag rather than a second rule. A root the config names that is missing
+throws, the promise a configured scan path holds (`config.ts:180-181` sets the flag,
+`run.ts:40-41` throws on it); a default root that is missing is skipped, so a tree that has no
+`src/routes/admin` is audited over the rest of the default rather than failing the run. Two
+consequences follow. A consumer at the default sees `src/routes/admin` skipped when their tree does
+not have it. And a tree that names the key, the engine's gate among them, owes every root it names:
+the gate's three all exist.
+
 The reason is the charter boundary, and it is a consumer problem before it is an engine one.
 `DEFAULT_STATIC_SCOPE` is `src/routes/admin`, `src/lib/components`, and `src/lib/admin-toolkit`
 (`config.ts:16-20`), and in a SvelteKit site the middle root is where shared **public** components
@@ -1237,22 +1272,31 @@ at `.github/workflows/test.yml:71`. Three additions, and no second config and no
 - `CSS_FILES` gains `src/lib/components/cairn-admin.css`.
 - **`static.adminScope` in the config the gate builds**, naming the gate's own admin roots. The gate
   assembles its config in the script (`check-invisible-craft.mjs`'s `resolveConfig` call), so this is
-  one more key on that object and a code deliverable of task 10, not a file a consumer writes.
+  one more key on that object and a code deliverable of task 10, not a file a consumer writes. The
+  root list is exported as `ADMIN_SCOPE`, beside `SCAN_SCOPE` and `CSS_FILES`, so the gate's own test
+  reads one name.
 
 **Why the admin scope is required rather than nice.** The gate's `SCAN_SCOPE` is
 `src/lib/components`, `src/lib/admin-toolkit`, and three showcase roots,
 `examples/showcase/src/{chassis,routes,theme}` (`check-invisible-craft.mjs:41-47`), and that scope is
 what every rule resolves over until `static.adminScope` narrows the ones declaring `adminOnly`. The
-gate's default for the key is the consumer default, which names two roots this tree does not have, so
-the gate has to set it. Adding the three ids without setting it runs the admin's motion language, at
-error tier, over the showcase's
-public site theme and chassis. That tree is not the admin, it declares no `--cairn-dur-*` token, and
-it carries the exact constructs the rules convict: three literal `0.2s ease-out` durations on the
-theme-flip cross-fade (`examples/showcase/src/theme/theme.css:365-368`) and
-`animation-duration: 0.18s` on the root view-transition pseudo-elements (`:384`). The gate would be
-red the moment the wiring lands, and it would be red for the right reason under the wrong rule: the
-non-goal "No motion on public pages" and the charter boundary in "The bar" both say the language
-governs the admin frame only.
+gate's default for the key is the consumer default, which names one root this tree does not have
+(`src/routes/admin`, since there is no `src/routes` at all) and one that covers only part of the
+admin frame (`src/lib/admin-toolkit`), so the gate has to set it. Adding the three ids without
+setting it leaves them resolving over that default, which reaches `src/lib/admin-toolkit` alone and
+never reaches `src/lib/components/cairn-admin.css`, where the shipped declarations and the zen
+exception live. The failure is silent under-coverage rather than a red gate: the wiring would land,
+the gate would report green, and it would have audited almost none of the admin frame. Task 10's own
+failing assertion is what catches it, a `motion-property` finding from a `src/lib/components` fixture
+under the gate's config.
+
+The public roots the key keeps out do carry the constructs the rules convict. That tree is not the
+admin, it declares no `--cairn-dur-*` token, and it holds three literal `0.2s ease-out` durations on
+the theme-flip cross-fade (`examples/showcase/src/theme/theme.css:365-368`) and
+`animation-duration: 0.18s` on the root view-transition pseudo-elements (`:384`). That is what the
+control arm of task 10's paired run produces, and convicting it under the admin's language is what
+the non-goal "No motion on public pages" and the charter boundary in "The bar" both forbid: the
+language governs the admin frame only.
 
 **The shape of the gate's admin scope.** The boundary itself lives on the rule, as `adminOnly`
 above, so the gate only has to say which of its own roots are admin. It names three:
@@ -1503,13 +1547,16 @@ and their values in the built sheet, and task 1 owns that assertion.
   between the rule tasks and the migration task. Mitigation: task 10 lands after tasks 6a, 6b, and 7,
   and the plan orders them that way explicitly.
 - **The `adminOnly` scope is a rule-type change, a config key, and one line in the gate's config,
-  none of which exists yet.** Without them the three new ids run at error tier over a consumer's
-  public components and over the showcase's public theme, and the engine's gate is red on landing for
-  a reason the charter forbids. The field and the key are task 3's, the second rule declares the
+  none of which exists yet.** Without the first two the three new ids run at error tier over a
+  consumer's public components and over the showcase's public theme. Without the third the engine's
+  gate under-covers silently, resolving the three rules over the key's default, which in this tree
+  reaches `src/lib/admin-toolkit` alone and never `src/lib/components/cairn-admin.css`. The field and
+  the key are task 3's, the second rule declares the
   field in task 4, and the gate's `static.adminScope` is task 10's. Mitigation: task 10's acceptance
-  criterion is that `gap-scale`, `token-colors`, and `motion-band` keep the full five-root scope and
-  the three motion ids report nothing from `examples/showcase/src/{chassis,theme}` or from the
-  showcase's public routes, proved by a paired run with and without the key.
+  criterion is a paired run, a control arm with the gate's `static.adminScope` set to the five
+  `SCAN_SCOPE` roots, which produces the showcase theme and chassis findings, against the shipping
+  arm with the three admin roots, which produces none. `gap-scale`, `token-colors`, and `motion-band`
+  keep the full five-root scope, proved by their finding counts being equal in both arms.
 - **The vendor exemption is a coverage loss on cairn's own markup, not only a false-positive fix.**
   Exempting the four DaisyUI property disagreements means `motion-property` cannot see a snap-list
   transition that arrives through a vendor class, and `CairnAdminShell.svelte:949` carries one today.
@@ -1581,8 +1628,9 @@ re-baselines the two existing suites against the widened predicate. The `no-pref
 Files: `src/lib/audit/rules/static/motion-property.ts`, `motion-hover-gate.ts`, `src/lib/audit/types.ts`
 (the optional `adminOnly` field), `src/lib/audit/config.ts` (the optional `static.adminScope` key),
 `src/lib/audit/run.ts` (resolving the one over the other), the static registry
-`src/lib/audit/rules/static/index.ts`, and the two fixture suites under
-`src/tests/unit/audit/rules/`.
+`src/lib/audit/rules/static/index.ts`, the two fixture suites under
+`src/tests/unit/audit/rules/`, and `src/tests/unit/audit/run.test.ts`, which takes the resolution and
+existence assertions and whose shared temporary root gains a `src/lib/components` fixture.
 This task also adds the optional `adminOnly` field to the static rule type, the `static.adminScope`
 config key it resolves over, and declares the field on both new rules. `motion-property` carries the
 allowlist, the snap list, the three-property cap, the
@@ -1666,8 +1714,9 @@ nothing. **Independent.**
 Files: `scripts/checks/check-invisible-craft.mjs`, `examples/showcase/e2e/admin-visual.spec.ts`, and
 the gate's own test file, `src/tests/unit/audit-gate.test.ts`. `scripts/checks/audit-gate.mjs` and
 `scripts/checks/check-admin-css-classes.mjs` are not touched.
-The gate's own `static.adminScope`, naming its three admin roots, which is the deliverable that makes
-the wiring legal, since the key's default names two roots this tree does not have. Then `RULE_IDS`
+The gate's own `static.adminScope`, naming its three admin roots and exported as `ADMIN_SCOPE`, which
+is the deliverable that makes the wiring cover the admin frame, since the key's default names one
+root this tree does not have and one that covers only part of it. Then `RULE_IDS`
 and `CSS_FILES` with the gate green and the three existing
 ids keeping their full scope, and the six new surfaces across the five-viewport bar. The zen
 layout-count assertions belong to task 7 and the reproduction-manifest entry is cut, so this task

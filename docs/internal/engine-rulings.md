@@ -23,11 +23,13 @@ Entry format: a heading plus labeled lines.
 truncated 54 of this ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought.
 Foundations A repaired 14 (the `/sveltekit` and `/admin-toolkit` audit entries feeding the next two
 remediation slices) by re-authoring the shape from its rank-source discussion and migrating it to
-the `- **Shape:**` line above. The remaining 40 stay truncated and allowlisted in
-`scripts/checks/check-rulings-format-allowlist.json`; each is repaired by the initiative slice that
-executes it (cli and log entries by their owning slices, auth by the conventions pass, the tail by
-whichever slice touches each). No later slice may assume the repair is already done for a slug it
-finds on that allowlist.
+the `- **Shape:**` line above. The remaining 40 stayed truncated and allowlisted in
+`scripts/checks/check-rulings-format-allowlist.json`, each repaired by the initiative slice that
+executed it (cli and log entries by their owning slices, auth by the conventions pass, the tail by
+whichever slice touched each); later slices repaired all but one as they executed, so the
+allowlist holds exactly one slug today
+(`audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm`). No later slice may
+assume the repair is already done for a slug it finds on that allowlist.
 
 One entry needs care when it is repaired: `audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles`
 (`Reopens on:` line, ~line 4021) closes its truncated parenthetical mid-clause and then continues
@@ -122,8 +124,11 @@ open edits, not part of the shape itself.
   absent name that still appears inside a surviving rendered public shape) and fails on any leak that
   is not recorded, the same fail-unless-recorded form the canonical-home rule already enforces; it
   supersedes the retires pass's manual move record as the leak ledger once it lands.
-- **Reopens on:** open until the leak-class `check:surface` rider lands in the internals pass; until
-  then, the retires pass's move record is the manual ledger of the 18 accepted leaks.
+- **Reopens on:** closed. The rider landed as `check-surface-leaks` (this file, below), accepted by
+  the internals pass, Task 2, and wired into `check:surface` through `package.json`'s existing
+  entry (`node scripts/checks/check-surface-leaks.mjs` chained after `check-surface.mjs`, no new
+  top-level gate name). `check-surface-leaks` supersedes the retires pass's manual move record as
+  the leak ledger, the outcome this row's own `Shape:` line already anticipated.
 - **Record:** [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (the RULED subsection
   and its ADDENDUM RULINGS); [retires-move-record](record/2026-08-30-retires-move-record.md).
 

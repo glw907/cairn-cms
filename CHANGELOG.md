@@ -2004,6 +2004,15 @@
   `AdminTable` item open for the passes that ship them. Internal documentation only; no code
   changed. No consumer action.
 
+- `docs/internal/engine-rulings.md` closes out the breaking window this pass renamed: every row
+  whose subject this window renamed carries its polish-C `Note`, verified by grepping the ledger
+  for each renamed identifier and for each factory or route-type row a rename reaches only by
+  slug. `f1-return-position-leak-sanction`'s `Reopens on:` now reads closed, naming
+  `check-surface-leaks` as the rider that supersedes the retires pass's manual leak ledger, and
+  the header's truncated-shape allowlist sentence now names the allowlist's actual one remaining
+  slug instead of the stale count of forty. Internal documentation only; no code changed. No
+  consumer action.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

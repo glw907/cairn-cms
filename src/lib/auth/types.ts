@@ -7,7 +7,7 @@ import type { Capability } from './roles.js';
  * the site's declared role name, open (`string`): custom roles are first-class, so the engine
  * types no fixed vocabulary here. `capability` is resolved from the role wherever the engine
  * materializes an `Editor`; the store itself does not know the vocabulary, so it returns the
- * narrower `EditorRow` (see `../auth/store.js`) and only the guard and the routes that read the
+ * narrower `UnresolvedEditor` (see `../auth/store.js`) and only the guard and the routes that read the
  * vocabulary fill this field.
  */
 export interface Editor {

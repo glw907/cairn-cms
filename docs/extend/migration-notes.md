@@ -55,6 +55,9 @@ The release step sets the version number at the cut and renames this section to 
   `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
   `'draft-exists'`/`'ref-unknown'`/`'history-stale'`; `draftEditor`, `draftLastSavedAt`, and
   `revertAction`'s HTTP statuses are unchanged.
+- **`EditorRow` (`/auth-store`) renames to `UnresolvedEditor`.** Rename any imported type
+  reference; `findEditor` and `listEditors` return the renamed type, and every field and behavior
+  is unchanged.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and

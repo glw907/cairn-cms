@@ -1320,6 +1320,12 @@
   switches its `request` and `confirm` result handling from the `sent`/`ok`/`error` fields to the
   single `outcome` field, including the renamed `'sent'`/`'confirmed'` success values.
 
+- **Breaking:** `EditorRow` (`/auth-store`) renames to `UnresolvedEditor` and its declaration
+  becomes derived, `Omit<Editor, 'capability'>`, so a member added to `Editor` can no longer
+  silently miss the store type. `findEditor` and `listEditors` return the renamed type; every
+  field and every behavior is unchanged. Consumers must: rename any imported `EditorRow` type
+  reference to `UnresolvedEditor`.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

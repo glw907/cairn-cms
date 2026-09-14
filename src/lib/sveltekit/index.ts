@@ -32,6 +32,8 @@ export {
   type PreviewTokenConfig,
   type PreviewData,
 } from './preview.js';
+// createMediaRoute is singular, not createMediaRoutes, because it mounts one kit handler for the
+// single media catch-all route and returns a kit RequestHandler, the interop carve-out's form.
 export { createMediaRoute, type MediaRouteConfig } from './media-route.js';
 export type {
   AdminShellData,

@@ -173,13 +173,13 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `deleteEditor`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<DeleteEditorOutcome>
 - `DeleteEditorOutcome`: { outcome: "removed" } | { outcome: "last-owner" } | { outcome: "not-found" }
 - `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<OwnerGuardOutcome>
-- `EditorRow`: { email: string; displayName: string; role: string }
 - `insertEditor`: (db: D1Database, email: string, displayName: string, role: string, now: number) => Promise<void>
-- `listEditors`: (db: D1Database) => Promise<EditorRow[]>
+- `listEditors`: (db: D1Database) => Promise<UnresolvedEditor[]>
 - `OwnerGuardOutcome`: { outcome: "ok" } | { outcome: "last-owner" } | { outcome: "not-eligible" }
 - `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<OwnerGuardOutcome>
 - `setEditorRole`: (db: D1Database, email: string, role: string, ownerRoles: string[]) => Promise<SetEditorRoleOutcome>
 - `SetEditorRoleOutcome`: { outcome: "ok" } | { outcome: "last-owner" } | { outcome: "not-found" }
+- `UnresolvedEditor`: { email: string; displayName: string; role: string }
 
 ## `/cloudflare`
 

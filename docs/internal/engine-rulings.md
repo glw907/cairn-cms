@@ -341,6 +341,9 @@ open edits, not part of the shape itself.
   exception against its siblings, per `audit-auth-authchannel`'s annotation).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1/Task 8.
+- **Note (polish-C, Task 9):** applied to `createMediaRoute`, a public export with an unmatched
+  singular name against the family's other route factories: the `/sveltekit` barrel now carries
+  one sentence above the export naming why it stays singular, per this ruled shape.
 
 ## convention-identifier-grammar: a public-observable identifier is dot-namespaced by area, never prefix-substituted  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -2677,6 +2680,9 @@ when the remediation pass lands.
 - **Any-site case:** Every media-enabled site mounts /media/[...path]; serving user-uploaded bytes from your own origin without nosniff, inline disposition and a sandbox CSP is an XSS hole.
 - **Note (polish-C, Task 3):** `createMediaRoute(config: MediaRouteConfig): RequestHandler` is now
   the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
+- **Note (polish-C, Task 9):** the `/sveltekit` barrel now carries one sentence, per
+  `convention-internal-sibling-comment`'s shape, recording that the name stays singular because
+  the factory mounts one kit handler and returns a kit `RequestHandler`. Verdict unchanged.
 
 ## audit-sveltekit-authguardoptions: `AuthGuardOptions`  (keep, 2026-08-26, any-site audit)
 
@@ -3502,6 +3508,8 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 18.
 - **Any-site case:** A site rendering its own roster screen writes const rows: EditorRow[] = await listEditors(db). Without the type a consumer cannot declare a kept function's result.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (polish-C, Task 9):** renamed to `UnresolvedEditor`, declared `Omit<Editor, 'capability'>`.
+  Verdict unchanged.
 
 ## audit-auth-seteditorrole: `setEditorRole`  (reshape, 2026-08-26, any-site audit)
 
@@ -3524,6 +3532,8 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 20.
 - **Any-site case:** A site showing 'who can edit this site' in its own admin, or a setup script checking an empty roster. Also the documented prerequisite for telling the owner guards' two false outcomes apart.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (polish-C, Task 9):** the result is now typed `UnresolvedEditor[]`, `EditorRow` renamed to
+  `UnresolvedEditor`. Verdict unchanged.
 
 ## audit-auth-inserteditor: `insertEditor`  (keep, 2026-08-26, any-site audit)
 

@@ -7,6 +7,139 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Polish-C (audit remediation slice 12, the breaking window), fifteen tasks complete on its worktree 2026-09-14
+
+Branch `polish-c`, executed on `.claude/worktrees/polish-c` off post-11b-ii `main`; plan at
+`docs/superpowers/plans/2026-09-08-polish-c-pass.md`; spec at
+`docs/superpowers/specs/2026-09-08-polish-passes-design.md`. This is the initiative's one breaking
+slice, and the last of the twelve.
+
+**What landed.** Thirty renamed or removed public identifiers, every one of them in the window the
+initiative's publish ruling promised would carry a single `Consumers must:` list. Four route
+factories take one config bag with `runtime` a required member and no positional argument
+(`createContentRoutes`, `createCairnAdmin`, `createNavRoutes`, `createMediaRoute`, the last two
+gaining the new `NavRoutesConfig` and `MediaRouteConfig` types). Six parameter and load-data bags
+rename onto the ruled `*Config` and `*Data` grammar (`AuthGuardConfig`, `RendererConfig`,
+`FieldsetConfig`, `DevBackendConfig`, `NavData`, `VocabularyData`). Ten functions move onto a verb
+(`formatManifest`, `buildExcerpt`, `buildNewlyPublished`, `buildCookieName`, `createGithubApp`,
+`createAdminAction`, `mintPreview`, `revokePreview`, `loadPreview`, `loadHealth`), and
+`parseManifest`'s canonical home moves to `.` beside its codec partner with a recorded re-export
+keeping the old specifier resolving. Four discriminated results move onto the `outcome` idiom with
+kebab-case values (`RequestOutcome`, `ChannelRequestOutcome`, `ChannelConfirmOutcome`,
+`RevertOutcome`), the no-roster-leak encoding and the challenge-required-is-a-retry ruling both
+intact. `EditorRow` becomes `UnresolvedEditor`, derived as `Omit<Editor, 'capability'>` so a member
+added to `Editor` cannot silently miss the store type. Eight log events move onto the `refused`
+verb or their true area, and the events header gains a two-verb table (`refused` for a decision the
+engine made on policy, `failed` for a fault it did not choose) plus a clause admitting a dotted
+subject. `OfficeList` retires, leaving `AdminTable` the toolkit's one scroll owner, and the extend
+track's custom-screen example and its live reproduction compose `PageHeader` beside `AdminTable`
+inside the design system's floating-card recipe instead. The ledger carries a polish-C `Note` on
+every row this window renames, `f1-return-position-leak-sanction` closes against the landed
+`check-surface-leaks` rider, and `docs/extend/migration-notes.md`'s `## Unreleased` section is
+reconciled against the whole window with a closing subsection naming the four consumer sites,
+their touched files, and the upgrade order.
+
+**What the gate caught.** Task 4's config-bag rename (`054f9fc2`) introduced four `config.*`
+property paths into `docs/reference/core.md` and `sveltekit.md` that `check-symbols`' extractor
+reads as log-event names, turning `src/tests/unit/check-symbols.test.ts` red; Tasks 4, 5, and 6
+each reported a green gate anyway, and Task 7 repaired it with four allowlist entries in
+`scripts/checks/check-symbols-allowlist.mjs` (`ae51af02`). The plan's own gate string carries both
+`npm test` and `npm run check:symbols`, so the string was not the gap; the three reports were.
+Task 7's rename sweep also reached a RELEASED section, rewriting `previewLoad` inside
+`migration-notes.md`'s `0.96.0` entry, which describes what shipped at that version; the review
+caught it, `a3301094` restored both sentences, and the conductor amended the plan's residual
+taxonomy so a form-action key or component prop sharing a renamed export's name is classified as a
+distinct, immune surface rather than a blocking finding. Three smaller repairs rode their own
+commits: three "an `createAdminAction`" article disagreements left by Task 6 (`dca8b344`), two
+backticked retired event names in a migration-notes bullet that `check:symbols` resolved against
+the live union (`d64f226b`), and two missing or two-step migration-notes bullets Task 14's first
+pass left (`6aae02e8`).
+
+The records were first closed at Task 15 (`8bd41850`), and the pass-end ritual's remaining steps
+caught two more defects on top of it. **`b7694ba0`** is the `code-simplifier` pass over the
+window's own config-bag reshape: `createNavRoutes`' bag argument and its two inner functions'
+`const config = runtime.navMenu` both named `config`, so the inner binding renames to `navMenu`;
+`createContentRoutesContext` took `runtime` as its own parameter while `ContentRoutesConfig` had
+already gained a `runtime` member, so its one caller passed the same value twice; and
+`createAuthGuard` aliased three bag members one line at a time instead of destructuring them
+together. All three are behavior-identical. **`0422b1ff`** is a fix round over the `OfficeList`
+replacement recipe itself: the floating-card composition dropped `overflow-hidden`, so
+`AdminTable`'s square table painted over `card-shell`'s rounded corners in every documented call
+site (`CustomScreen.svelte`, the extend guide, the admin-screens skill, the design system, the
+reference page, and both migration fences), because `OfficeList.svelte`'s own retired
+`overflow-x-auto` had computed both axes to `auto` and clipped as a side effect the replacement
+recipe never named; the two `Consumers must:` fences in `CHANGELOG.md` and `migration-notes.md`
+also omitted `AdminTable`'s required `rowCount` and `header` props, so the primary instruction for
+`aksailingclub-org`'s eighteen-screen migration did not compile. The same commit discloses the
+one silent break the window carries: a held `ChannelRequestResult` or `ChannelConfirmResult` read
+via `if ('error' in result)` still compiles against the new outcome-only shape and now always
+reads `false`, so every refused magic-link request or confirm silently reads as sent or confirmed;
+both fences gained the grep-and-rewrite guidance, citing the showcase's own login route (rewritten
+by this pass) as the pattern's origin. `officelist-retired-for-one-scroll-owner`
+(`docs/internal/engine-rulings.md`) is corrected to state why `overflow-hidden` is needed and to
+claim only what `check:snippets` proves, the fence's import line typechecks, not its markup.
+
+**What a later pass would be wrong to rediscover.**
+- `OfficeList` was retired on the double-scroll-container argument **against a CLOSED reshape
+  row**, as a new proposal rather than a reopen: `audit-admin-officelist` was already executed by
+  the 4b conformance pass with `Reopens on: closed`, so the retire is argued fresh in
+  `officelist-retired-for-one-scroll-owner` (`docs/internal/engine-rulings.md`), which supersedes
+  it. That row quotes the component's own both-stay sentence, "`PageHeader` and this component
+  cover different shapes, a header primitive versus a full list-screen scaffold, and both stay:
+  never a duplicate," and overrules it in its own text. A later reader who finds that sentence in
+  the git history should read the new row before concluding the removal was an oversight.
+- **`npm run check:surface -- --update` does not regenerate the surface.** `package.json`'s
+  `check:surface` chains three commands and ends with `check-surface-leaks.mjs`, so npm appends the
+  flag to the END of the chain, where that script receives it and `check-surface.mjs`, the only
+  reader of the flag, never does. The working form is `npm run package && node scripts/checks/check-surface.mjs --update`.
+  The script's own banner (`scripts/checks/check-surface.mjs:22`) and `docs/internal/README.md:31`
+  still print the pre-rider single-command form; filed to `ROADMAP.md`'s Later tier rather than
+  fixed here, since a non-breaking fix does not join a breaking window.
+- **`check-symbols` resolves a backticked dotted-lowercase token against the LIVE log-event union**,
+  so a doc that names a retired event, or that quotes a config member as `config.something`, goes
+  red even when the prose is correct. Two shapes cost this pass a round each: unbacktick a retired
+  event name in prose, and allowlist a real `config.*` property path with its reason.
+- **A doc sentence describing a RELEASED version is immune to a rename sweep.** The
+  `migration-notes.md` sections below `## Unreleased`, and a `CHANGELOG.md` entry's prose, record
+  what was true at that version; only a link anchor a gate resolves is repaired. This is now
+  written into the plan's residual taxonomy, and it is the one class a whole-tree grep-and-replace
+  will always get wrong.
+- The window is graded whole at the cut, not by its last pass. Polish-C's own eleven entries add
+  no new subsystem and would size as a patch alone; the minor comes from the held passes'
+  `MediaPicker`, `ToolbarDisclosure`, and the identity seam. The derivation, with the free number
+  and the skill's own rule quoted, is at
+  `docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md`.
+- **A renamed discriminated result's old narrowing idiom fails silently, not loudly.** The four
+  outcome renames drop the old `{ ok: true } | { error: ... }` split for one `outcome` field, and
+  `result.ok` or `result.error` fails the build wherever TypeScript sees the literal type. But `if
+  ('error' in result)` is a plain `in` check against an object shape, still compiles clean, and now
+  always evaluates `false` because no member is named `error` anymore, so a held
+  `ChannelRequestResult` or `ChannelConfirmResult` reads every refusal as a success. `check:symbols`
+  and the type checker both stay green; only a grep for the literal `'error' in` pattern finds it.
+  A consumer migrating this window greps for it before trusting the type checker's silence.
+- **A `svelte` fence with a real `<AdminTable>` call typechecks on its import line alone.**
+  `check:snippets` proves a documented fence's imports resolve against the built package; it does
+  not run the markup, so a fence missing a required prop (`rowCount`, `header`) or a required
+  wrapper class (`overflow-hidden`) can sit green in the gate while it fails to compile or paints
+  wrong in a real consumer. `officelist-retired-for-one-scroll-owner`'s own `Verified` line now
+  says exactly this, so a later reader does not read `check:snippets` green as more than it proves.
+
+**Records.** `docs/HISTORY.md` gains this entry. `ROADMAP.md`'s any-site audit remediation entry
+is closed and removed from the live tier, the initiative having shipped all twelve slices; the one
+routed item no pass shipped, the `create-cairn-site` money narrative, was already filed as its own
+`Now`-tier entry and stays there. Every live tier line that named a symbol this window renamed now
+names the new one, one live bullet about `OfficeList`'s own heading level is deleted as no longer
+true (the component it filed against is gone), one historical mention of the falsified
+`csrf_rejected` log row is left verbatim because renaming it would falsify the record, and the
+`check:surface` two-command chain is filed to the Later tier. Both live sections of
+`docs/internal/docs-friction-log.md` still read "None open." and no polish-C task filed a finding
+there. The release readiness the conductor's cut consumes is
+`docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md`: the verified free number
+(`0.97.0`), the derived size (minor, agreeing with `CHANGELOG.md:3`'s existing marker), all 81
+`Consumers must:` lines in the window, and one paragraph per HISTORY entry in it. No version bump,
+no tag, and no publish happened inside this pass; the cut is the conductor's separate step through
+the `cairn-release` skill after the merge.
+
 ## Polish-11b-ii (audit remediation slice 11b-ii, the dev-backend access seam and the signups exemplar, non-breaking), six tasks complete on its worktree 2026-09-13
 
 Branch `polish-11b-ii`, executed on `.claude/worktrees/polish-11b-ii` off post-11b-i `main`; plan

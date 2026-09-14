@@ -89,13 +89,13 @@ describe('media events', () => {
     });
   });
 
-  it('emits media.delete_blocked at warn with foundIn as a count', () => {
+  it('emits media.delete_refused at warn with foundIn as a count', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    log.warn('media.delete_blocked', { editor: 'a@b.test', hash: 'abc123', foundIn: 3 });
+    log.warn('media.delete_refused', { editor: 'a@b.test', hash: 'abc123', foundIn: 3 });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
     expect(record).toMatchObject({
       level: 'warn',
-      event: 'media.delete_blocked',
+      event: 'media.delete_refused',
       editor: 'a@b.test',
       hash: 'abc123',
       foundIn: 3,

@@ -45,17 +45,17 @@ describe('validateAccessComposition: construction throws', () => {
 
 describe('validateAccessComposition: wired at admin construction', () => {
   it('throws building createContentRoutes from a runtime carrying a bad access map', () => {
-    expect(() => createContentRoutes(runtime({ access: { bogus: ['owner'] } }))).toThrow(
+    expect(() => createContentRoutes({ runtime: runtime({ access: { bogus: ['owner'] } }) })).toThrow(
       /access: "bogus" is neither a declared concept/,
     );
   });
 
   it('does not throw building createContentRoutes from a runtime carrying a valid access map', () => {
-    expect(() => createContentRoutes(runtime({ access: { posts: ['owner'], media: ['owner'] } }))).not.toThrow();
+    expect(() => createContentRoutes({ runtime: runtime({ access: { posts: ['owner'], media: ['owner'] } }) })).not.toThrow();
   });
 
   it('skips validation entirely when access is undeclared, the common case', () => {
-    expect(() => createContentRoutes(runtime())).not.toThrow();
+    expect(() => createContentRoutes({ runtime: runtime() })).not.toThrow();
   });
 });
 

@@ -36,11 +36,11 @@ describe('LoginPage', () => {
   });
 
   it('dismisses the confirmation panel for the full engine result shape', async () => {
-    // Pins the dismissed-banner branch ((form?.status === 'sent' || form?.sent) && !dismissed);
+    // Pins the dismissed-banner branch ((form?.outcome === 'sent' || form?.sent) && !dismissed);
     // see src/tests/unit/peer-deps.test.ts for the correctness floor this shape guards.
     const screen = await render(LoginPage, {
       data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
-      form: { sent: true, status: 'sent' },
+      form: { sent: true, outcome: 'sent' },
     });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
     await screen.getByRole('button', { name: /use a different email/i }).click();
@@ -49,12 +49,12 @@ describe('LoginPage', () => {
   });
 
   it('shows the success panel for the engine result shape', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'sent', sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent', sent: true } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
   it('lets a fresh action result supersede a stale expired-link error', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' }, form: { status: 'throttled', sent: false } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' }, form: { outcome: 'throttled', sent: false } });
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
     expect(screen.container.textContent).not.toMatch(/that link expired/i);
   });
@@ -97,7 +97,7 @@ describe('LoginPage', () => {
   });
 
   it('shows a send-error warning and keeps the form available', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'send_error', sent: false } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'send-error', sent: false } });
     await expect.element(screen.getByRole('alert')).toBeInTheDocument();
     await expect.element(screen.getByText(/trouble sending sign-in links/i)).toBeInTheDocument();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
@@ -108,8 +108,8 @@ describe('LoginPage', () => {
     // the action-result panels are pinned here alongside the load-time ones the landing-signal
     // case covers. A partial application is what this replaced.
     for (const form of [
-      { status: 'send_error' as const, sent: false },
-      { status: 'throttled' as const, sent: false },
+      { outcome: 'send-error' as const, sent: false },
+      { outcome: 'throttled' as const, sent: false },
       { error: 'Something went wrong.' },
     ]) {
       const screen = await render(LoginPage, {
@@ -123,7 +123,7 @@ describe('LoginPage', () => {
   });
 
   it('shows a throttled hint and keeps the form available', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'throttled', sent: false } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'throttled', sent: false } });
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });

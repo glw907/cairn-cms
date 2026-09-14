@@ -36,7 +36,7 @@ export type BehaviorTable = Record<string, FieldBehavior>;
  *  cross-field and body-dependent checks. It is validation-only: it returns field-keyed errors to
  *  merge, or nothing, and never transforms the data. Server-only, since it may carry closures.
  */
-export interface FieldsetOptions {
+export interface FieldsetConfig {
   refine?: (data: Record<string, unknown>, body: string) => Record<string, string> | undefined;
   /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
   behavior?: BehaviorTable;
@@ -422,12 +422,12 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  */
 export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
-  options: FieldsetOptions = {},
+  config: FieldsetConfig = {},
 ): Fieldset<R> {
   checkSeoImageFields(record);
   checkTaxonomyMarker(record);
   checkContainerNesting(record);
-  for (const key of Object.keys(options.behavior ?? {})) {
+  for (const key of Object.keys(config.behavior ?? {})) {
     if (!(key in record)) throw new Error(`cairn: behavior names "${key}", which is not a declared field.`);
   }
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
@@ -456,10 +456,10 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
       const outcome = validateField([key], field, frontmatter[key], patterns);
       issues.push(...outcome.issues);
       if ('value' in outcome) data[key] = outcome.value;
-      if (outcome.issues.length === 0 && options.behavior?.[key]?.validate) {
+      if (outcome.issues.length === 0 && config.behavior?.[key]?.validate) {
         let message: string | null = null;
         try {
-          message = options.behavior[key].validate!('value' in outcome ? outcome.value : undefined, frontmatter);
+          message = config.behavior[key].validate!('value' in outcome ? outcome.value : undefined, frontmatter);
         } catch (err) {
           // A developer's cross-field validate() is a bug, not an author fault; log and treat the field
           // as valid rather than breaking the save (E7: server code speaks through the log chokepoint).
@@ -482,7 +482,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
       }
       return { ok: false, errors, issues };
     }
-    const refined = options.refine?.(data, body);
+    const refined = config.refine?.(data, body);
     if (refined && Object.keys(refined).length > 0) {
       return { ok: false, errors: refined, issues: Object.entries(refined).map(([k, m]) => ({ path: [k], message: m })) };
     }
@@ -499,7 +499,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
         : { issues: result.issues ?? Object.entries(result.errors).map(([key, message]) => ({ message, path: [key] })) };
     },
   };
-  return { fields: record, behavior: options.behavior ?? {}, validate, '~standard': standard };
+  return { fields: record, behavior: config.behavior ?? {}, validate, '~standard': standard };
 }
 
 /**

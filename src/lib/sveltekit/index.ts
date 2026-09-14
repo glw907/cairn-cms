@@ -9,7 +9,7 @@ export {
   requireOwner,
   requireEditor,
   requireAccess,
-  type AuthGuardOptions,
+  type AuthGuardConfig,
   type IdentityResolver,
   type ResolvedIdentity,
   type IdentityRefusal,
@@ -18,21 +18,23 @@ export {
   createAuthRoutes,
   NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
-  type RequestResult,
+  type RequestOutcome,
   type AuthRoutes,
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
 export {
-  previewMint,
-  previewRevoke,
-  previewLoad,
+  mintPreview,
+  revokePreview,
+  loadPreview,
   type PreviewMintOutcome,
   type PreviewRevokeOutcome,
   type PreviewTokenConfig,
   type PreviewData,
 } from './preview.js';
-export { createMediaRoute } from './media-route.js';
+// createMediaRoute is singular, not createMediaRoutes, because it mounts one kit handler for the
+// single media catch-all route and returns a kit RequestHandler, the interop carve-out's form.
+export { createMediaRoute, type MediaRouteConfig } from './media-route.js';
 export type {
   AdminShellData,
   ListData,
@@ -40,7 +42,7 @@ export type {
   HelpData,
   WelcomeData,
   SettingsData,
-  VocabularyLoadData,
+  VocabularyData,
   MediaLibraryData,
   ContentRoutesConfig,
   AttentionItem,
@@ -51,8 +53,8 @@ export type {
   TidyEffort,
   MediaLibraryEntry,
 } from './content-routes.js';
-export { createNavRoutes, type NavRoutes } from './nav-routes.js';
-export type { NavLoadData } from './nav-routes.js';
+export { createNavRoutes, type NavRoutes, type NavRoutesConfig } from './nav-routes.js';
+export type { NavData } from './nav-routes.js';
 export type {
   NavIcon,
   ResolvedNavEntry,
@@ -69,7 +71,7 @@ export type {
 } from './admin-nav.js';
 export type { PublishActionEntry } from './publish-actions.js';
 export {
-  adminAction,
+  createAdminAction,
   UnauditedActionError,
   type AdminActionAudit,
   type AdminActionAuditRecord,
@@ -90,7 +92,7 @@ export {
   type SectionActionContext,
 } from './section-action.js';
 export { createCairnAdmin, type CairnAdminConfig, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';
-export { healthLoad, type HealthData } from './health.js';
+export { loadHealth, type HealthData } from './health.js';
 export type {
   CairnEvent,
   CookieJar,
@@ -98,7 +100,7 @@ export type {
   PlatformContext,
   CookieSetOptions,
   HistoryData,
-  RevertFailure,
+  RevertOutcome,
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';
@@ -114,7 +116,7 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // Every remaining type a factory or wrapper's own signature names is re-exported here so a site
 // importing only from this subpath can still name the value it holds, except two documented
 // cross-subpath exceptions that stay on `/delivery` alone: `PublicRoutesConfig`, which
-// `previewLoad`'s second parameter names, and `EntryData`, which `PreviewData` extends.
+// `loadPreview`'s second parameter names, and `EntryData`, which `PreviewData` extends.
 // `CairnRuntime`'s own structural body in turn names most of the rest below it, the same
 // recursive closure `/delivery` and root carry.
 //

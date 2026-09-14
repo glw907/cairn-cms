@@ -6,7 +6,7 @@
 // the warning off the success redirect's query string the way the editor surface does.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -52,7 +52,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true, data: {} }),
       },
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
@@ -86,7 +86,7 @@ function entry(concept: string, id: string, draft: boolean) {
  *  save and reading the thrown redirect's location. Throws if the action did not redirect. */
 async function savedRefs(gh: GithubDouble, author: string): Promise<string[]> {
   gh.install();
-  const routes = createContentRoutes(runtime());
+  const routes = createContentRoutes({ runtime: runtime() });
   try {
     await routes.saveAction(saveEvent(author));
   } catch (e) {

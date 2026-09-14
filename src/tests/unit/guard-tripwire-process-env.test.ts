@@ -36,7 +36,7 @@ function adapterNodeEvent(pathname: string): CairnEvent {
 }
 
 describe('dev-backend tripwire via process.env (adapter-node)', () => {
-  it('refuses with 503 and logs guard.rejected reason=dev_backend_in_prod', async () => {
+  it('refuses with 503 and logs guard.refused reason=dev_backend_in_prod', async () => {
     const saved = process.env.CAIRN_DEV_BACKEND;
     process.env.CAIRN_DEV_BACKEND = '1';
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -57,7 +57,7 @@ describe('dev-backend tripwire via process.env (adapter-node)', () => {
       expect(
         records.some(
           (r) =>
-            r.event === 'guard.rejected' &&
+            r.event === 'guard.refused' &&
             r.reason === 'dev_backend_in_prod' &&
             r.path === '/admin',
         ),

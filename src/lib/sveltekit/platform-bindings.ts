@@ -28,7 +28,7 @@ import type { EmailSender } from '../email.js';
  * A media-enabled site also intersects {@link CairnMediaBindings}, since `MEDIA_BUCKET` exists only
  *  on a site that turns media on. The GitHub App's id and installation id are not runtime bindings:
  *  they name which App the commit signer authenticates as, so the adapter passes them as compile-time
- *  config to `githubApp({ appId, installationId })`, constructed at module scope before
+ *  config to `createGithubApp({ appId, installationId })`, constructed at module scope before
  *  `platform.env` exists. Only the private key is a Worker secret the engine reads at runtime.
  */
 export interface CairnPlatformBindings {

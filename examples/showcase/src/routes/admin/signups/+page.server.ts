@@ -47,7 +47,7 @@ export const load: PageServerLoad = async (event) => {
 // composes the editor, CSRF and audit contract onto every action and resolves the section's own
 // binding, so no action re-implements a gate the engine already owns.
 //
-// It is fail-closed on every call, unlike adminAction's opt-in access option: the site's access
+// It is fail-closed on every call, unlike createAdminAction's opt-in access option: the site's access
 // declaration (src/access.ts) must carry a rule admitting the session for this route, or the
 // action refuses with a 403 it never explains to the browser, and an access map the guard never
 // attached refuses with a 500. ownerOnly stacks on top of that map check for the destructive

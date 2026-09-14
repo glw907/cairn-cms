@@ -12,7 +12,7 @@ a preview must not self-canonicalize onto it or let a crawler or unfurler consol
 token, not the URL, is the credential; it lives only in the route path and never appears on the
 page. The public route also passes `titleTemplate` (the site's `<page> · <siteName>` convention);
 the preview route leaves it unset, so a minted preview's `<title>` stays the entry's bare title
-rather than reading as a published page. `previewLoad` (`/sveltekit`) already strips `canonical`,
+rather than reading as a published page. `loadPreview` (`/sveltekit`) already strips `canonical`,
 `og:url`, and `jsonLd.url` from `data.seo` for exactly this reason, so the strip below is redundant
 for that field, though not for the `.md` twin link, which this component derives itself. It changes
 no other rendering: the fidelity claim (a minted preview and its eventual public page render
@@ -37,7 +37,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
 
   let { data, preview = false, titleTemplate }: Props = $props();
 
-  // Belt and suspenders: previewLoad already strips canonical/og:url/jsonLd.url from data.seo, so
+  // Belt and suspenders: loadPreview already strips canonical/og:url/jsonLd.url from data.seo, so
   // this filter is a no-op against that caller. It stays so this component's own contract does not
   // depend on the specific caller's behavior, and so a site rendering preview data from any other
   // source still gets the strip.

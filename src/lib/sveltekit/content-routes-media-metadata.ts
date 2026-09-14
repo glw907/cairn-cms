@@ -365,7 +365,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // The typed-slug gate, ALWAYS required for replace. A blank stored slug can never be satisfied by
     // the empty default, so it is treated as never-confirmed (the confirm cannot be bypassed).
     if (row.slug === '' || confirmSlug !== row.slug) {
-      log.warn('media.replace_blocked', { editor: editor.email, hash: oldHash, foundIn: plan.affectedCount });
+      log.warn('media.replace_refused', { editor: editor.email, hash: oldHash, foundIn: plan.affectedCount });
       return fail(409, {
         error: `Type ${row.slug} to confirm replacing it in ${plan.affectedCount} ${plan.affectedCount === 1 ? 'entry' : 'entries'}.`,
         hash: oldHash,

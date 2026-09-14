@@ -412,12 +412,12 @@ const author = refs.author as ResolvedReference | undefined;
 
 Small pure functions the builders and the routes share.
 
-### `deriveExcerpt`
+### `buildExcerpt`
 
 Stability tier: Extension API.
 
 ```ts
-function deriveExcerpt(body: string, opts?: { description?: string; maxChars?: number }): string;
+function buildExcerpt(body: string, opts?: { description?: string; maxChars?: number }): string;
 ```
 
 Return a plain-text excerpt: a trimmed frontmatter `description` when present, otherwise the stripped
@@ -472,17 +472,10 @@ Build the per-concept descriptors for a site from its adapter content and its pa
 
 ### `parseManifest`
 
-Stability tier: Extension API.
-
-```ts
-function parseManifest(raw: string): Manifest;
-```
-
-Parse a committed manifest file's raw text. Throws on malformed JSON, a wrong version, or a
-malformed entry, so a caller sees a well-formed graph or a clear error rather than a broken shape
-fed silently into the diff. Use it to validate a manifest your own code fetches, such as the
-`before`/`after` pair [`diffNewlyPublished`](#diffnewlypublished) takes, instead of casting
-the fetched JSON yourself.
+Stability tier: Extension API. Canonical home: [`.`](./core.md#manifest-format-parse-and-verify),
+beside its codec partner `formatManifest`; this subpath re-exports it so a `/delivery/data`
+consumer validates the `before`/`after` pair [`buildNewlyPublished`](#buildnewlypublished) takes
+without a second import specifier.
 
 ```ts
 import { parseManifest, type Manifest } from '@glw907/cairn-cms/delivery/data';
@@ -494,17 +487,17 @@ async function readDeployedManifest(): Promise<Manifest> {
 }
 ```
 
-### `diffNewlyPublished`
+### `buildNewlyPublished`
 
 Stability tier: Extension API.
 
 ```ts
-function diffNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[];
+function buildNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[];
 ```
 
-Diff two manifests down to the entries a deploy just carried across the first-publish transition:
-`after` entries that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before`
-was absent or itself unstamped. An entry that carried its stamp forward from `before`, an entry that
+Build the list of entries a deploy just carried across the first-publish transition: `after`
+entries that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before` was
+absent or itself unstamped. An entry that carried its stamp forward from `before`, an entry that
 was already non-draft but never stamped, and a draft never match, since none of them changes the
 stamp between the two manifests. An entry deleted from `after` never returns. The helper is pure
 and node-safe. It performs no I/O and reads no clock, so a caller supplies both manifests and gets a
@@ -522,12 +515,12 @@ new key's stamped row has no stamped counterpart in `before`. A consumer that re
 entries should expect the rename to read as a new publish here.
 
 ```ts
-import { diffNewlyPublished, type Manifest } from '@glw907/cairn-cms/delivery/data';
+import { buildNewlyPublished, type Manifest } from '@glw907/cairn-cms/delivery/data';
 
 declare const priorManifest: Manifest | null;
 declare const deployedManifest: Manifest;
 
-for (const entry of diffNewlyPublished(priorManifest, deployedManifest)) {
+for (const entry of buildNewlyPublished(priorManifest, deployedManifest)) {
   // Fan out from the consumer's own endpoint; the engine sends nothing.
 }
 ```
@@ -553,8 +546,8 @@ for (const entry of diffNewlyPublished(priorManifest, deployedManifest)) {
 | `SeoMeta` | Extension API | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
 | `ResolvedReference` | Extension API | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |
-| `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `diffNewlyPublished`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
-| `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `diffNewlyPublished`'s `before`/`after` parameters carry this type. |
+| `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `buildNewlyPublished`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
+| `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `buildNewlyPublished`'s `before`/`after` parameters carry this type. |
 
 The remaining rows are the export-rule closure `buildSiteManifest` and `createSiteIndexes`'s
 `CairnAdapter` generic bound names (CHANGELOG `0.94.0`): the content-model member types

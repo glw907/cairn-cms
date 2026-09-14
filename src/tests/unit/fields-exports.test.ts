@@ -4,7 +4,7 @@ import type {
   FieldDescriptor,
   Fieldset,
   InferFieldset,
-  FieldsetOptions,
+  FieldsetConfig,
   NamedField,
   ImageValue,
   StandardInput,
@@ -47,7 +47,7 @@ describe('v2 field vocabulary package exports', () => {
     expectTypeOf(set).toMatchTypeOf<Fieldset>();
     expectTypeOf<InferFieldset<typeof set>>().toEqualTypeOf<{ title: string }>();
     expectTypeOf<FieldDescriptor>().toMatchTypeOf<{ label?: string }>();
-    expectTypeOf<FieldsetOptions>().toMatchTypeOf<{ refine?: unknown }>();
+    expectTypeOf<FieldsetConfig>().toMatchTypeOf<{ refine?: unknown }>();
     expectTypeOf<BehaviorTable>().toEqualTypeOf<Record<string, FieldBehavior>>();
     expectTypeOf<FieldBehavior>().toMatchTypeOf<{ validate?: unknown }>();
   });

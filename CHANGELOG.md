@@ -275,6 +275,46 @@
 
 ### Removed
 
+- `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
+  horizontal scroll container, and nesting it inside `OfficeList`'s card frame duplicated that
+  wrapper (`officelist-retired-for-one-scroll-owner`, `docs/internal/engine-rulings.md`). The
+  shipped admin sheet also drops `gap-0` and `overflow-x-auto`: `OfficeList.svelte` was the tree's
+  only user of each, and neither compiles into the packaged `cairn-admin.css` now that the
+  component is gone. Consumers must: replace an `<OfficeList eyebrow title meta action>...
+  </OfficeList>` composition with `PageHeader` beside `AdminTable` inside a bare `overflow-hidden
+  card-shell card-shadow` div (no `overflow-x-auto` on that div; `AdminTable`'s own wrapper
+  already carries the horizontal scroll, and `overflow-hidden` clips the table's square edges to
+  the card's rounded corners):
+
+  ```svelte
+  <script lang="ts">
+    import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+
+    let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
+  </script>
+
+  <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
+    {#snippet action()}
+      <button type="button" class="btn btn-primary btn-sm">New event</button>
+    {/snippet}
+  </PageHeader>
+  <div class="overflow-hidden card-shell card-shadow">
+    <AdminTable rowCount={data.events.length}>
+      {#snippet header()}
+        <th scope="col">Name</th>
+      {/snippet}
+      {#snippet children()}
+        <!-- rows -->
+      {/snippet}
+    </AdminTable>
+  </div>
+  ```
+
+  A site still writing `gap-0` or `overflow-x-auto` in its own admin markup keeps working (the
+  class is Tailwind's own, not a cairn export); only the packaged sheet's compiled inventory
+  changes, so a call site that relied on the class shipping FROM `cairn-admin.css` (rather than
+  compiling it from its own scanned source) needs to add its own `@source` reach.
+
 - `iconSpan`, `cardShell`, and `headRow` (`/render`) are gone from the engine; the subpath is now
   type-only, exporting `ComponentContext` alone (chassis-A pass, Task 8, closing the three
   `audit-render-*` retire rulings). Each was a call-site inlining or a re-home into the consuming
@@ -301,6 +341,55 @@
   own `src/chassis/render.ts`.
 
 ### Changed
+
+- **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
+  parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.
+  `ContentRoutesConfig` and `CairnAdminConfig` each gain a required `runtime: CairnRuntime` member
+  carrying what the removed positional argument carried; every other member is unchanged. The two
+  internal factories (`createContentRoutesInternal`, `createCairnAdminInternal`, reachable from no
+  package subpath) take the same one-bag shape, so the composition root and the public factory
+  never diverge. Consumers must: change `createContentRoutes(runtime, config)` to
+  `createContentRoutes({ runtime, ...config })`, and `createCairnAdmin(runtime, config)` to
+  `createCairnAdmin({ runtime, ...config })`; a call with no `config` becomes
+  `createContentRoutes({ runtime })` or `createCairnAdmin({ runtime })`.
+
+- **Breaking:** `createNavRoutes` and `createMediaRoute` (`/sveltekit`) each take exactly one
+  parameter, a config bag, and lose the positional `runtime` argument. `NavRoutesConfig` and
+  `MediaRouteConfig` are new exported types, each declaring `runtime: CairnRuntime`. Consumers
+  must: change `createNavRoutes(runtime)` to `createNavRoutes({ runtime })`, and
+  `createMediaRoute(runtime)` to `createMediaRoute({ runtime })`.
+
+- **Breaking:** six factory-level parameter and load-data bags are renamed, across both packages,
+  per `convention-parameter-bags`'s factory-versus-per-call clause: `AuthGuardOptions` to
+  `AuthGuardConfig` (`/sveltekit`), `RendererOptions` to `RendererConfig` (`.`), `FieldsetOptions`
+  to `FieldsetConfig` (`.`), `DevBackendOptions` to `DevBackendConfig`
+  (`@glw907/cairn-cms-dev`), `NavLoadData` to `NavData` (`/sveltekit`), and `VocabularyLoadData` to
+  `VocabularyData` (`/sveltekit`). `createAuthGuard`, `defineFieldset`, and `devBackendHandle` each
+  name their renamed parameter `config`. Every member of every renamed type keeps its name,
+  optionality, and doc; only the type names and the three parameter identifiers change. Consumers
+  must: rename any imported type reference from the old name to the new one; a call site passing
+  the bag positionally or by inference needs no change.
+
+- **Breaking:** three functions rename per `convention-verb-rules`. `serializeManifest` (`.`) to
+  `formatManifest`, `parse*`'s reserved codec partner. `deriveExcerpt` (`/delivery/data`) to
+  `buildExcerpt` and `diffNewlyPublished` (`/delivery/data`) to `buildNewlyPublished`, both
+  `build*`'s "derives pure data" meaning; `buildNewlyPublished` is the second rename this function
+  carries inside this same unreleased window, so a consumer crosses one rename,
+  `newlyPublishedEntries` to `buildNewlyPublished`, not two. `parseManifest`'s canonical home also
+  moves to `.`, beside `formatManifest`, with a recorded re-export keeping it importable from
+  `/delivery/data`; this half needs no consumer action, since the old import specifier keeps
+  resolving. Every signature and every behavior is unchanged. Consumers must: rename
+  `serializeManifest` to `formatManifest`, `deriveExcerpt` to `buildExcerpt`, and
+  `diffNewlyPublished` to `buildNewlyPublished` at any call site.
+
+- **Breaking:** three noun-first factory functions rename per `convention-bare-noun-functions`
+  and `convention-verb-rules`'s "function factories belong to `create*`". `cookieName`
+  (`/auth-crypto`) to `buildCookieName`, `githubApp` (`.`) to `createGithubApp`, and `adminAction`
+  (`/sveltekit`) to `createAdminAction`. Every signature, return type, and thrown error is
+  unchanged; only the three identifiers change. `src/theme/cairn.config.ts` is the site file every
+  consumer meets for `createGithubApp`, since every production site's adapter calls it directly.
+  Consumers must: rename `cookieName` to `buildCookieName`, `githubApp` to `createGithubApp` (in
+  `cairn.config.ts`'s `backend` call), and `adminAction` to `createAdminAction` at any call site.
 
 - `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
   names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
@@ -1236,6 +1325,74 @@
   "posts", matching the concept-neutral vocabulary the rest of the admin uses. No consumer
   action.
 
+- **Breaking:** four preview and health functions rename per `convention-bare-noun-functions`.
+  `previewMint` (`/sveltekit`) to `mintPreview`, `previewRevoke` (`/sveltekit`) to `revokePreview`,
+  `previewLoad` (`/sveltekit`) to `loadPreview`, and `healthLoad` (`/sveltekit`) to `loadHealth`.
+  Every signature, return type, and thrown error is unchanged; only the four identifiers change.
+  `loadHealth` reaches all four production sites, each importing it in its own
+  `src/routes/healthz/+server.ts`; `loadPreview` reaches two of the four, each importing it in its
+  own `src/routes/(site)/preview/[token]/+page.server.ts`. Consumers must: rename `previewMint` to
+  `mintPreview`, `previewRevoke` to `revokePreview`, `previewLoad` to `loadPreview`, and
+  `healthLoad` to `loadHealth` at any call site.
+
+- **Breaking:** four discriminated results move onto the `outcome` idiom, widened this pass to
+  cover the whole public surface (`convention-outcome-idiom`), with every discriminant value
+  restated in kebab case. `RequestResult` (`/sveltekit`) renames to `RequestOutcome`: the
+  discriminant key changes from `status` to `outcome`, and `send_error` becomes `send-error`; the
+  `sent` boolean field is unchanged. `ChannelRequestResult` (`/auth-channel`) renames to
+  `ChannelRequestOutcome` and drops its `{ sent: true } | { error: ... }` split for one shape,
+  `{ outcome: 'sent' | 'invalid' | 'throttled' | 'challenge-required' | 'unavailable' }`; the
+  no-roster-leak encoding is unchanged, an unknown contact still answers `outcome: 'sent'`.
+  `ChannelConfirmResult` (`/auth-channel`) renames to `ChannelConfirmOutcome` and drops its
+  `{ ok: true } | { error: ... }` split the same way, with the success arm now
+  `outcome: 'confirmed'` and every other value unchanged
+  (`'bad-code'`, `'expired'`, `'locked'`, `'throttled'`, `'challenge-required'`,
+  `'no-pending-request'`, `'unavailable'`); the challenge-required-is-a-retry ruling is unchanged.
+  A `result.ok` or `result.error` read fails the build, but `if ('error' in result)` still
+  compiles and now always reads false, silently treating every refusal as a success; grep for
+  `'error' in` against a held `createAuthChannel` result and rewrite each to `result.outcome !==
+  'sent'` / `result.outcome !== 'confirmed'`. The example site's own login route carried the
+  `'error' in result` pattern before this pass rewrote it, so check a copy of that route first.
+  `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: the discriminant key changes from
+  `reason` to `outcome`, and `draft_exists`, `ref_unknown`, and `history_stale` become
+  `draft-exists`, `ref-unknown`, and `history-stale`; the `draftEditor` and `draftLastSavedAt`
+  member fields, and `revertAction`'s 409/404 HTTP statuses, are unchanged. Consumers must:
+  rename any imported type reference from the old name to the new one; a site rendering its own
+  login form switches from `form.status` to `form.outcome` and from `'send_error'` to
+  `'send-error'`; a site rendering its own history screen switches from `form.reason` to
+  `form.outcome` and from `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
+  `'draft-exists'`/`'ref-unknown'`/`'history-stale'`; a site holding `createAuthChannel`'s return
+  switches its `request` and `confirm` result handling from the `sent`/`ok`/`error` fields to the
+  single `outcome` field, including the renamed `'sent'`/`'confirmed'` success values.
+
+- **Breaking:** `EditorRow` (`/auth-store`) renames to `UnresolvedEditor` and its declaration
+  becomes derived, `Omit<Editor, 'capability'>`, so a member added to `Editor` can no longer
+  silently miss the store type. `findEditor` and `listEditors` return the renamed type; every
+  field and every behavior is unchanged. Consumers must: rename any imported `EditorRow` type
+  reference to `UnresolvedEditor`.
+
+- **Breaking:** six log events on the `refused` verb, so a policy-decided refusal reads the same
+  as every other one in the vocabulary. `preview.rejected` renames to `preview.refused`,
+  `guard.rejected` to `guard.refused`, `media.delete_blocked` to `media.delete_refused`,
+  `media.replace_blocked` to `media.replace_refused`, `auth.access.denied` to
+  `auth.access.refused`, and `admin.action.csrf_rejected` to `admin.action.csrf_refused`. Every
+  record's field set is unchanged; only the `event` string changes. No in-tree subscriber
+  switches on any of the six, so nothing inside the engine breaks; a site's own log subscriber
+  that switches on one of the old strings is the only place the rename lands. Consumers must:
+  rename any of the six event strings a site's own log subscriber matches on, old to new, per the
+  list above.
+
+- **Breaking:** two log events move onto their true areas. `taxonomy.field_unmarked` renames to
+  `content.field_unmarked` (`taxonomy` was the union's only use of that area, and the sibling
+  event `content.field_behavior_failed` already named the right one for the same subsystem), and
+  `admin.action.sink_threw` renames to `audit.sink.call_failed`, converging with
+  `audit.sink.write_failed` on one area and one verb (`failed`) with two subjects: `call_failed`
+  for the site's own sink throwing when `ctx.audit` invokes it, `write_failed` for the packaged
+  D1 sink failing to persist. `audit.sink.write_failed` itself is unchanged. Every record's field
+  set is unchanged; only the two `event` strings change. Consumers must: rename
+  `taxonomy.field_unmarked` to `content.field_unmarked` and `admin.action.sink_threw` to
+  `audit.sink.call_failed` in any log filter, alert, or subscriber.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
@@ -1332,6 +1489,13 @@
   fields its `MediaLibraryEntry` projection drops; and the `/sveltekit` barrel's doc comment now
   names its two documented cross-subpath exceptions, `PublicRoutesConfig` and `EntryData`, both
   canonical on `/delivery`. No signature changed and no export moved.
+
+- `docs/extend/add-a-custom-admin-screen.md`'s worked example now composes `PageHeader` beside
+  `AdminTable` inside the floating-card recipe's own `card-shell card-shadow` div, in place of
+  wrapping `AdminTable` in `OfficeList`. `AdminTable` already owns its own horizontal scroll, so
+  the div does not also carry `overflow-x-auto`. The `toolkit/custom-screen` reproduction is
+  rewritten to match, in lockstep with the doc snippet. No export changed; this is a doc and
+  reproduction change only.
 
 - `docs/internal/admin-design-system.md` gains a busy section naming the admin's two busy shapes
   (native `disabled` plus an always-mounted status region for a control mid-wait, `aria-disabled`
@@ -1852,6 +2016,38 @@
   the `formatTimestamp` widening, the `createSectionAction` adoption, and the `OfficeList`/
   `AdminTable` item open for the passes that ship them. Internal documentation only; no code
   changed. No consumer action.
+
+- `docs/internal/engine-rulings.md` closes out the breaking window this pass renamed: every row
+  whose subject this window renamed carries its polish-C `Note`, verified by grepping the ledger
+  for each renamed identifier and for each factory or route-type row a rename reaches only by
+  slug. `f1-return-position-leak-sanction`'s `Reopens on:` now reads closed, naming
+  `check-surface-leaks` as the rider that supersedes the retires pass's manual leak ledger, and
+  the header's truncated-shape allowlist sentence now names the allowlist's actual one remaining
+  slug instead of the stale count of forty. Internal documentation only; no code changed. No
+  consumer action.
+
+- `docs/extend/migration-notes.md`'s `## Unreleased` section is reconciled against the whole
+  window since `0.96.0`: every actionable `Consumers must:` line now carries exactly one bullet,
+  duplicate coverage across passes merged into one bullet each, and the `OfficeList` `subtitle`
+  to `meta` bullet retired, since it taught a rename on a component this same window deletes. The
+  section gains a closing subsection naming the four consumer sites, their touched files, and the
+  upgrade order (`ecxc-ski`, `907-life`, `xcathletes-org`, `aksailingclub-org`). A tree-wide sweep
+  for the thirty identifiers this window renamed found two stale prose mentions outside the
+  changelog, corrected in the same commit: `docs/internal/pre-beta-harvest.md`'s `githubApp()`
+  mentions now read `createGithubApp()`, and `docs/internal/engine-harvest-candidates.md`'s two
+  `adminAction`-shaped-seam mentions now read `createAdminAction`. Internal and extend-track
+  documentation only; no code changed. No consumer action.
+
+- `docs/HISTORY.md` gains the polish-C entry (audit remediation slice 12, the breaking window),
+  and `ROADMAP.md`'s any-site audit remediation entry is closed and removed from the live tier,
+  the initiative having shipped all twelve slices; the live tier lines that named a symbol this
+  window renamed now name the new one, and the `check:surface` script's misrouted `--update` flag
+  is filed to the Later tier with its evidence. The release readiness for the cut this window
+  becomes is recorded at
+  `docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md`: the verified free
+  number, the bump size derived against the release skill's own rule, and every
+  `Consumers must:` line in the window gathered in one place. Internal documentation only; no
+  code changed. No consumer action.
 
 ## 0.96.0
 
@@ -3322,7 +3518,7 @@ removal, nothing this list needs to carry.
   either way; the failure logs a new `admin.action.sink_threw` event instead. The same
   catch also rethrows SvelteKit's own `redirect()`/`error()` untouched, so a sink built on one of
   those control-flow primitives is never swallowed into a log line the site never sees. See
-  [SvelteKit](docs/reference/sveltekit.md#adminaction) and [log
+  [SvelteKit](docs/reference/sveltekit.md#createadminaction) and [log
   events](docs/reference/log-events.md). Consumers must: nothing; a throwing or rejecting sink
   previously failed the action and now does not.
 
@@ -3459,7 +3655,7 @@ removal, nothing this list needs to carry.
   `parseManifest`, so a consumer can name and validate the manifest it fetches to build
   `newlyPublishedEntries`'s `before`/`after` pair without hand-casting JSON. See [Announce on
   publish](docs/guides/announce-on-publish.md) and [Delivery
-  data](docs/reference/delivery-data.md#diffnewlypublished) (renamed `diffNewlyPublished` by the
+  data](docs/reference/delivery-data.md#buildnewlypublished) (renamed `diffNewlyPublished` by the
   conventions pass, Task 3). Consumers must: nothing; the
   field is additive and optional, and the stamp only ever appears on a publish that happens
   after the upgrade.

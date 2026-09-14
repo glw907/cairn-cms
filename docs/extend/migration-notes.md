@@ -13,6 +13,146 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **`cairn-manifest` now exits 2 on an unrecognized command-line flag** instead of silently
+  ignoring it, and all four engine bins (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`,
+  `cairn-manifest`) now answer `--help`. A CI job piping `cairn-manifest`'s output no longer risks
+  a truncated error message. A script that already passes no arguments or only valid flags needs
+  no change. `cairn-audit`'s rendered harness also gains a redirect-trap refusal: a run with every
+  configured page resolving to the login route's own title and landmark now throws and exits 2,
+  naming `CAIRN_AUDIT_COOKIES`, instead of silently reporting a clean run.
+- **Apply migration `0004` before deploying.** A magic link now only signs in the browser that
+  requested it: `cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/`,
+  then `npx wrangler d1 migrations apply <auth-db> --remote`. An un-migrated `AUTH_DB` is a total
+  login outage with no second channel, since every confirm names the new `nonce_hash` column;
+  `npx cairn doctor`'s `auth.store` check now fails when the column is absent, so run it before
+  the deploy.
+- **`createContentRoutes` and `createCairnAdmin` (`/sveltekit`) take one config bag, not two
+  arguments.** Change `createContentRoutes(runtime, config)` to
+  `createContentRoutes({ runtime, ...config })`, and `createCairnAdmin(runtime, config)` to
+  `createCairnAdmin({ runtime, ...config })`; a call with no `config` becomes
+  `createContentRoutes({ runtime })` or `createCairnAdmin({ runtime })`.
+- **`createNavRoutes` and `createMediaRoute` (`/sveltekit`) take one config bag, not a positional
+  runtime.** Change `createNavRoutes(runtime)` to `createNavRoutes({ runtime })`, and
+  `createMediaRoute(runtime)` to `createMediaRoute({ runtime })`.
+- **Six factory-level parameter and load-data bags are renamed, across both packages.** Rename
+  any imported type reference: `AuthGuardOptions` to `AuthGuardConfig` (`/sveltekit`),
+  `RendererOptions` to `RendererConfig` (`.`), `FieldsetOptions` to `FieldsetConfig` (`.`),
+  `DevBackendOptions` to `DevBackendConfig` (`@glw907/cairn-cms-dev`), `NavLoadData` to `NavData`
+  (`/sveltekit`), and `VocabularyLoadData` to `VocabularyData` (`/sveltekit`). A call site passing
+  the bag positionally or by inference needs no change.
+- **Three functions rename per the engine's verb vocabulary.** Rename `serializeManifest` (`.`) to
+  `formatManifest`, `deriveExcerpt` (`/delivery/data`) to `buildExcerpt`, and `diffNewlyPublished`
+  (`/delivery/data`) to `buildNewlyPublished` at any call site; every signature and behavior is
+  unchanged. `parseManifest`'s canonical home also moves to `.`, beside `formatManifest`, but it
+  stays importable from `/delivery/data` too, so this half needs no action.
+- **Three noun-first factory functions rename per the engine's verb vocabulary.** Rename
+  `cookieName` (`/auth-crypto`) to `buildCookieName`, `githubApp` (`.`) to `createGithubApp`, and
+  `adminAction` (`/sveltekit`) to `createAdminAction` at any call site; every signature, return
+  type, and thrown error is unchanged. `src/theme/cairn.config.ts` is the site file every consumer
+  meets for `createGithubApp`, since every production site's adapter calls it directly.
+- **Thirteen more functions rename per the engine's verb vocabulary, name-only, no deprecated
+  alias.** Rename `buildMediaResolver` (`/media`) to `createMediaResolver`; `buildLinkResolver`
+  and `buildFragmentResolver` (`/delivery`, `/delivery/data`) to `createLinkResolver` and
+  `createFragmentResolver`; `extractMenu` and `extractVocabulary` (`.`) to `readMenu` and
+  `readVocabulary`; `siteDescriptors` to `buildSiteDescriptors`, `newlyPublishedEntries` to
+  `buildNewlyPublished` (two renames inside this one window collapse to the final name),
+  `sitemapView` to `buildSitemapView`, and `jsonLdScript` to `renderJsonLdScript` (`/delivery`,
+  `/delivery/data`); `mediaToken` (`/media`) to `formatMediaToken`; `glyph` (`.`) to
+  `renderGlyph`; `fieldset` (`.`) to `defineFieldset`; and `ownerLevelRoles` (`.`) to
+  `resolveOwnerLevelRoles`. `createMediaResolver` also drops its dead `opts?: { preset?: string }`
+  third parameter; a caller passing `{ preset }` there drops it.
+- **`createAuthChannel`'s event and options shapes change.** Replace every `AuthChannelEvent`
+  import with `CairnEvent`, from `@glw907/cairn-cms/auth-channel` or
+  `@glw907/cairn-cms/sveltekit`. Rewrite `ttl: { X }` as `limits: { <group>: { X } }` per the new
+  grouping (for example `ttl: { sessionTtlMs }` becomes `limits: { session: { ttlMs } }`). Add a
+  `{ env }` context parameter to a hand-rolled `lookup` and `verify`, reading the D1 binding off
+  `ctx.env` instead of a captured closure. Copy
+  `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql` into the channel binding's
+  own `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`, then run
+  `npx wrangler d1 migrations apply <channel-db>`; every statement is idempotent, so applying it
+  against an already-provisioned database is a safe no-op. `revokeSessions(db, subject)` is
+  unchanged.
+- **Three more factory bags rename to `*Config`, and the `deps`/`opts` parameter renames to
+  `config`.** Rename `CairnAdminOptions` to `CairnAdminConfig`, `ContentRoutesOptions` to
+  `ContentRoutesConfig`, and `EditorRoutesOptions` to `EditorRoutesConfig` in any import from
+  `@glw907/cairn-cms/sveltekit`. `AuthRoutes`, `EditorRoutes`, `NavRoutes`, and `SectionAction`
+  keep their existing names and shapes; a site annotating `createPublicRoutes`'s return imports
+  the newly declared `PublicRoutes` type from `@glw907/cairn-cms/delivery` instead of deriving it
+  with `ReturnType<typeof createPublicRoutes>`. A test driving `createAuthGuard`'s returned handle
+  with a structural fake event needs an `as unknown as`-style shim, since the factory is now
+  annotated `: Handle`.
+- **Four preview and health functions rename per the engine's verb vocabulary.** Rename
+  `previewMint` (`/sveltekit`) to `mintPreview`, `previewRevoke` (`/sveltekit`) to `revokePreview`,
+  `previewLoad` (`/sveltekit`) to `loadPreview`, and `healthLoad` (`/sveltekit`) to `loadHealth` at
+  any call site; every signature, return type, and thrown error is unchanged. `loadHealth` reaches
+  every production site's own `src/routes/healthz/+server.ts`; `loadPreview` reaches the two of
+  four that mount a preview route, each in its own `src/routes/(site)/preview/[token]/+page.server.ts`.
+- **Four discriminated results move onto the `outcome` idiom, every discriminant value restated in
+  kebab case.** `RequestResult` (`/sveltekit`) renames to `RequestOutcome`: a login form switches
+  from `form.status` to `form.outcome`, and from `'send_error'` to `'send-error'`; `form.sent` is
+  unchanged. `ChannelRequestResult` and `ChannelConfirmResult` (`/auth-channel`) rename to
+  `ChannelRequestOutcome` and `ChannelConfirmOutcome` and drop their `{ sent | ok: true } | {
+  error: ... }` splits for one shape each; a site holding `createAuthChannel`'s return switches its
+  `request` and `confirm` handling to the single `outcome` field, including the renamed success
+  values `'sent'` and `'confirmed'`. A `result.ok` or `result.error` read fails the build, but `if
+  ('error' in result)` still compiles and now always reads false, silently treating every refusal
+  as a success; grep for `'error' in` against a held `createAuthChannel` result and rewrite each
+  to `result.outcome !== 'sent'` / `result.outcome !== 'confirmed'`. The example site's own
+  `src/routes/members/login/+page.server.ts` carried the `'error' in result` pattern before this
+  pass rewrote it, so check a copy of that route first. `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: a
+  history screen switches from `form.reason` to `form.outcome`, and from
+  `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
+  `'draft-exists'`/`'ref-unknown'`/`'history-stale'`; `draftEditor`, `draftLastSavedAt`, and
+  `revertAction`'s HTTP statuses are unchanged.
+- **The rate-limit and owner-guard families move onto the `outcome` idiom.** Replace
+  `checkRateLimit(binding, key)` and `checkRateLimitKeys(binding, keys)` with
+  `resolveRateLimit(binding, keys)` (`/cloudflare`), branching on `result.outcome` (`'allowed'`,
+  `'limited'`, `'no-binding'`, `'failed'`) instead of a boolean; a degrade-to-open reader checks
+  `result.outcome === 'allowed' || result.outcome === 'no-binding' || result.outcome === 'failed'`
+  explicitly. Pass `deleteEditor(db, email, ownerRoles)` and
+  `setEditorRole(db, email, role, ownerRoles)` (`/auth-store`) their site's owner-capability role
+  names (`[]` keeps today's unconditional-write behavior) and read the returned `outcome` instead
+  of relying on a resolved `Promise<void>`. Replace a `removeOwnerIfNotLast`/`demoteOwnerIfNotLast`
+  boolean check with `result.outcome === 'ok'`.
+- **`ContentFormFailure` (`/sveltekit`) flattens to one interface, and the arm types it used to
+  compose retire.** `SaveFailure`, `DeleteRefusal`, `RenameFailure`, `CreateFailure`,
+  `PreviewMintFailure`, `MediaDeleteRefusal`, `MediaUpdateFailure`, `MediaReplaceFailure`,
+  `MediaAltPropagateFailure`, `MediaBulkFailure`, `MediaUploadFailure`, `VocabularySaveFailure`,
+  `SettingsSaveFailure`, and `NavSaveFailure` all retire from `@glw907/cairn-cms/sveltekit`. A
+  site importing one to annotate an action's `form` prop replaces it with `ContentFormFailure`,
+  which already carries every one of those fields optionally; a site annotating an action outside
+  that union (settings, nav, upload, dictionary) reads the return type through inference instead.
+  `UsageEntry` also retires: index its element type off the carrier,
+  `NonNullable<ContentFormFailure['usage']>[number]`, instead of importing it by name.
+  `UploadResult`, `MediaBulkDeleteResult`, `MediaOrphanPurgeResult`, `MediaOrphanScanResult`,
+  `MediaReplacePreviewPlan`, `MediaReplacePreviewEntry`, `MediaAltPreviewPlan`,
+  `MediaAltPreviewEntry`, `TidyResult`, and `DictionaryAddResult` also retire from `/sveltekit`; a
+  site importing one to annotate its own action reads the action's return type through inference
+  instead, since none of these ten media-janitorial and settings/tidy/dictionary actions are
+  reachable outside `createCairnAdmin`'s own composition. See `CHANGELOG.md`'s entries for the
+  full list, grouped by family.
+- **`validateReproFence` (`@glw907/cairn-cms/reproductions/manifest`) gains an
+  `options?: ValidateReproFenceOptions` third parameter, and `ReproFenceValidation` retires.** A
+  caller that relied on the previous baked-in register (an alt prefix, a length ceiling, an
+  unknown-key refusal) now supplies `options` explicitly to keep that behavior; a caller that
+  imported `ReproFenceValidation` to annotate the return value annotates the inline
+  `{ issues: string[] }` shape instead. `DEFAULT_ROLES` retires from the root barrel: a site that
+  imported it to satisfy `defineAccess`'s first parameter now passes `undefined` there directly.
+- **`cairn-doctor` gains a fourth status, `UNCHECKED`, and a third exit code, `3`.** A CI job that
+  gates on the exit code alone still works unmodified (both `1` and `3` are nonzero), but a pnpm
+  or yarn site that previously read a silent SKIP on `config.dependency-floors` now gets a real
+  verdict. A job that wants to distinguish a real failure (`1`) from an unchecked environment gap
+  (`3`) captures the exit code and branches on it; see `docs/reference/doctor.md#status-vocabulary`
+  for the CI wiring example.
+- **Four more names narrow to one canonical home.** Import `AuthBranding` from
+  `@glw907/cairn-cms/sveltekit` instead of the root package; import `MediaEntry` from
+  `@glw907/cairn-cms/media` instead of `/sveltekit`; import `PublishActionEntry` from
+  `@glw907/cairn-cms/sveltekit` instead of `/delivery` or `/delivery/data`. `PublishActionsConfig`
+  retires: replace it with `PublishActionEntry[]` wherever it annotated `editor.publishActions` or
+  a runtime read.
+- **`EditorRow` (`/auth-store`) renames to `UnresolvedEditor`.** Rename any imported type
+  reference; `findEditor` and `listEditors` return the renamed type, and every field and behavior
+  is unchanged.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and
@@ -90,15 +230,22 @@ The release step sets the version number at the cut and renames this section to 
   consolidated entry for the full name list, grouped by subpath, and the row-for-row replacement
   expression for the 18 names that survive only as an unnamed structural member of another
   export's shape, such as `EditData['linkTargets'][number]` in place of `LinkTarget`.
-- **Two log event names change to match the vocabulary's own grammar.** `taxonomy.unmarked_field`
-  becomes `taxonomy.field_unmarked` and `publish.address_collision` becomes
+- **A declared access map narrows only the targets it names, and the composition now warns about
+  the gap.** `validateAccessComposition` gains a non-throwing `config.access_unmapped` warning
+  naming every concept and fixed screen a site's declared map leaves uncovered. Audit your access
+  map for coverage: a map you believed was a whitelist may have left a screen or concept open to
+  every editor-capability session; the warning names exactly which ones on the next server start,
+  and `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map
+  recipe to close the gap.
+- **Two log event names change to match the vocabulary's own grammar.** taxonomy.unmarked_field
+  becomes `content.field_unmarked` and `publish.address_collision` becomes
   `publish.address_collided`. Rename both in any log filter or alert.
-- **`previewMint` replaces `mintPreviewToken`** (`/sveltekit`), taking
+- **`mintPreview` replaces `mintPreviewToken`** (`/sveltekit`), taking
   `(runtime, config, event, { concept, entryId })` and performing the entry-scoped authorization
   and draft check itself, rather than leaving them to the caller. It returns a discriminated
   `PreviewMintOutcome` (`minted`, `unknown-concept`, `invalid-id`, `no-draft`) instead of throwing
   for a bad target. A site calling `mintPreviewToken` from its own workflow route switches to
-  `previewMint` and its new signature and outcome shape.
+  `mintPreview` and its new signature and outcome shape.
 - **`TidyClient` (`/sveltekit`) narrows to an engine-owned contract**: `tidy(request, options)`
   takes `{ model, system, text, effort? }` and returns `{ corrected, refused, tokens: { input,
   output } }`, dropping the transcribed Anthropic wire fields (`max_tokens`, `output_config.effort`,
@@ -125,10 +272,14 @@ The release step sets the version number at the cut and renames this section to 
   `/reproductions/manifest`.** Pass `mediaBase` to `ReproContext` instead of importing
   `fixtureMediaBase`; a site deployed under a SvelteKit `paths.base` composes fixture image URLs
   inside its own namespace by passing that prefix.
-- **`OfficeList`'s `subtitle` prop renames to `meta`**, matching `PageHeader`'s own prop name now
-  that `OfficeList` renders its header band through `PageHeader`. Rename the prop; expect the
-  office header to adopt `PageHeader`'s rhythm (`mb-10`, `gap-0.5`, `type-meta`) in place of
-  `OfficeList`'s former `mb-6`/`gap-0`/`type-body`.
+- **`MarkdownEditor`'s thirteen `register*` props retire in favor of one `registerEditor`
+  callback.** `registerInsert`, `registerInsertLink`, `registerInsertImage`,
+  `registerCaretCoords`, `registerFocusEditor`, `registerImagePlaceholders`,
+  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`,
+  `registerFormat`, `registerReplaceRange`, and `registerSelectRange` retire. Replace any of
+  them passed directly to `MarkdownEditor` with one `registerEditor` callback that reads the
+  matching member off the `EditorApi` it receives (annotatable as `EditorApi | null` from
+  `/components`).
 - **`MarkdownEditor`'s `registerEditor` now also delivers `null` once, from its real `onDestroy`
   teardown, revoking the mount grant.** A host holding one `editor` reference from a direct
   `MarkdownEditor` mount whose `registerEditor` callback assumed it was only ever called with a
@@ -142,6 +293,73 @@ The release step sets the version number at the cut and renames this section to 
   `.ec-icon-secondary` to `.cairn-icon-secondary`, `.ec-glyph` to `.cairn-glyph`, and `.ec-grid`
   to `.cairn-grid` in any hand-authored prose CSS that targets `cardShell`/`headRow`/`iconSpan`/
   `renderGlyph`/`markFirstList` output. See `docs/reference/render.md` for the full emitted list.
+- **Six log events rename onto the `refused` verb.** Rename any log subscriber matching on the
+  old string, preview.rejected to `preview.refused`, guard.rejected to `guard.refused`,
+  media.delete_blocked to `media.delete_refused`, media.replace_blocked to
+  `media.replace_refused`, auth.access.denied to `auth.access.refused`, and
+  admin.action.csrf_rejected to `admin.action.csrf_refused`; every record's field set is
+  unchanged.
+- **One log event moves onto its true area.** Rename admin.action.sink_threw to
+  `audit.sink.call_failed` in any log filter, alert, or subscriber; `audit.sink.write_failed` is
+  unchanged and every record's field set is unchanged.
+- **`OfficeList` (`/admin-toolkit`) is retired.** Replace an `<OfficeList>` composition with
+  `PageHeader` beside `AdminTable` inside a bare `overflow-hidden card-shell card-shadow` div (no
+  `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries the horizontal
+  scroll, and `overflow-hidden` clips the table's square edges to the card's rounded corners):
+
+  ```svelte
+  <script lang="ts">
+    import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+
+    let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
+  </script>
+
+  <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
+    {#snippet action()}
+      <button type="button" class="btn btn-primary btn-sm">New event</button>
+    {/snippet}
+  </PageHeader>
+  <div class="overflow-hidden card-shell card-shadow">
+    <AdminTable rowCount={data.events.length}>
+      {#snippet header()}
+        <th scope="col">Name</th>
+      {/snippet}
+      {#snippet children()}
+        <!-- rows -->
+      {/snippet}
+    </AdminTable>
+  </div>
+  ```
+
+  The packaged admin sheet also drops `gap-0` and `overflow-x-auto`: `OfficeList.svelte` was the
+  engine's only user of each.
+
+### The four sites' upgrade order
+
+Four production sites depend on this window, each on its own version range measured at plan
+authoring: `ecxc-ski` (`^0.95.0`), `907-life` (`^0.84.4`), `xcathletes-org` (`^0.96.0`, plus
+`@glw907/cairn-cms-dev` `^0.96.0`), and `aksailingclub-org` (`^0.96.0`). Upgrade in this order:
+`ecxc-ski`, `907-life`, `xcathletes-org`, `aksailingclub-org`. The first three are four or five
+mechanical call-site edits each; the fourth carries the `OfficeList` sweep across eighteen
+screens and is the only one needing a composition change rather than a rename, so proving the
+rename set on three smaller sites first de-risks the one site with real work.
+
+- **`ecxc-ski`**, four files: `src/chassis/cairn.server.ts` (`createCairnAdmin`),
+  `src/routes/media/[...path]/+server.ts` (`createMediaRoute`),
+  `src/routes/healthz/+server.ts` (`healthLoad`), and `src/theme/cairn.config.ts` (`githubApp`).
+- **`907-life`**, the same four files and the same four calls. It crosses the widest version gap
+  of the four sites, so it reads more of this page than the others.
+- **`xcathletes-org`**, five files: the same four as `ecxc-ski` plus
+  `src/routes/(site)/preview/[token]/+page.server.ts` (`previewLoad`). It is the one site on
+  `@glw907/cairn-cms-dev`, and it calls `devBackendHandle()` bare today with no type annotation,
+  so `DevBackendConfig` reaches it only if it starts annotating.
+- **`aksailingclub-org`**, the heaviest by far: the same four files as `ecxc-ski` plus
+  `src/tests/adapter.test.ts` (`createContentRoutes`),
+  `src/routes/(site)/preview/[token]/+page.server.ts` (`previewLoad`),
+  `src/member-auth/lib/crypto.ts` (`cookieName`), `src/admin-club/lib/announcements.ts` and
+  `src/routes/(site)/events/[id]/+page.server.ts` (`deriveExcerpt`), and **eighteen**
+  `src/routes/admin/club/**/+page.svelte` files importing `OfficeList` plus
+  `src/tests/announce-list-order.test.ts`. It is the only site the `OfficeList` removal reaches.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

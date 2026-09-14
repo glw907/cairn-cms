@@ -261,7 +261,7 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   page,
 }) => {
   // The list reads through the GitHub double's main tree. The seeded post (2026-06-hello) is on
-  // main and carries a body, so deriveExcerpt fills its row summary line. A prior test may have
+  // main and carries a body, so buildExcerpt fills its row summary line. A prior test may have
   // left it on a pending branch (status edited), so this test keeps its assertions partition-
   // agnostic for the seed and self-contained around its own freshly created entry.
   await page.goto('/admin/posts');

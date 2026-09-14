@@ -1,5 +1,5 @@
 // This site's one entry-data augmentation: the reference-edge resolution `(site)/[...path]`'s
-// entryLoad and `(site)/preview/[token]`'s previewLoad both apply on top of the engine's own
+// entryLoad and `(site)/preview/[token]`'s loadPreview both apply on top of the engine's own
 // `EntryData`/`PreviewData` shape, factored here so the two routes cannot drift apart on it.
 import {
   resolveReferences,

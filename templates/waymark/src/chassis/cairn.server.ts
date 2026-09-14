@@ -25,4 +25,4 @@ if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   client = createFakeAnthropic();
 }
 
-export const admin = createCairnAdmin(runtime, { tidy: { client } });
+export const admin = createCairnAdmin({ runtime, tidy: { client } });

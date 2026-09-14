@@ -66,17 +66,25 @@ function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjec
 }
 
 /**
+ * The bag `createMediaRoute` takes, so the factory shares one shape with every other route
+ *  factory and a later member has a home beside `runtime`.
+ */
+export interface MediaRouteConfig {
+  /** The composed runtime; its `resolvedAssets` decides delivery, and a media-off site's handler always 404s. */
+  runtime: CairnRuntime;
+}
+
+/**
  * Build the media delivery `RequestHandler` for a site's composed runtime.
  *
  * The handler reads the runtime's resolved media config itself, matching the convention every
  * other route factory follows, validates the hash and extension before any R2 call, derives the
  * object key from the validated values only (never trusting the URL's fan-out), guards the
  * Cloudflare Images self-loop, and sets the security headers on every served response.
- * @param runtime - the composed runtime; its `resolvedAssets` decides delivery, and a media-off
- * site's handler always 404s.
+ * @param config - the config bag; `config.runtime` is the composed runtime.
  */
-export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
-  const resolved = runtime.resolvedAssets;
+export function createMediaRoute(config: MediaRouteConfig): RequestHandler {
+  const resolved = config.runtime.resolvedAssets;
   return async (event) => {
     // Media off: the route is mounted but serves nothing.
     if (!resolved.enabled) return new Response(null, { status: 404 });

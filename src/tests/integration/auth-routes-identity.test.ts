@@ -8,7 +8,7 @@ import { makeEvent, makeRecordingCookies, countRows, expectRedirect, expectHttpE
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import { createSession } from '../../lib/auth/store.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
@@ -30,7 +30,7 @@ function runtime(): CairnRuntime {
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -61,7 +61,7 @@ function adminEvent(pathname: string, opts: { search?: string; cookies?: ReturnT
 
 describe('the hand-off page (loginLoad under identity mode)', () => {
   it('returns only the identity shape, mints no pending nonce, and issues no CSRF token', async () => {
-    const admin = createCairnAdmin(runtime(), {});
+    const admin = createCairnAdmin({ runtime: runtime() });
     const cookies = makeRecordingCookies();
     const data = await admin.load(adminEvent('/admin/login', { cookies }));
     expect(data).toEqual({ view: 'login', page: { identity: { label: 'Acme SSO' } } });
@@ -71,7 +71,7 @@ describe('the hand-off page (loginLoad under identity mode)', () => {
 
 describe('requestAction under identity mode', () => {
   it('404s before requireDb, before request.formData(), and before any cookie write, minting nothing', async () => {
-    const admin = createCairnAdmin(runtime(), {});
+    const admin = createCairnAdmin({ runtime: runtime() });
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const cookies = makeRecordingCookies();
     // No AUTH_DB and no PUBLIC_ORIGIN in the event's platform.env: a 404 raised after either
@@ -99,7 +99,7 @@ describe('requestAction under identity mode', () => {
 
 describe('confirmLoad under identity mode', () => {
   it('404s and sets no cookie', async () => {
-    const admin = createCairnAdmin(runtime(), {});
+    const admin = createCairnAdmin({ runtime: runtime() });
     const cookies = makeRecordingCookies();
     expect(
       (await expectHttpError(() => admin.load(adminEvent('/admin/auth/confirm', { search: '?token=x', cookies })))).status,
@@ -110,7 +110,7 @@ describe('confirmLoad under identity mode', () => {
 
 describe('confirmAction under identity mode', () => {
   it('404s', async () => {
-    const admin = createCairnAdmin(runtime(), {});
+    const admin = createCairnAdmin({ runtime: runtime() });
     const cookies = makeRecordingCookies();
     expect(
       (
@@ -124,7 +124,7 @@ describe('confirmAction under identity mode', () => {
 
 describe('logoutAction under identity mode', () => {
   it('redirects to logoutUrl and still deletes every cookie', async () => {
-    const admin = createCairnAdmin(runtime(), {});
+    const admin = createCairnAdmin({ runtime: runtime() });
     const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });
     const result = await expectRedirect(() => admin.actions.logout(adminEvent('/admin', { cookies })));
     expect(result.location).toBe('/goodbye');
@@ -136,7 +136,7 @@ describe('logoutAction under identity mode', () => {
 
   it('skips the session delete, emitting no auth.session.destroyed record even with a live row', async () => {
     await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
-    const admin = createCairnAdmin(runtime(), {});
+    const admin = createCairnAdmin({ runtime: runtime() });
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });
     await expectRedirect(() => admin.actions.logout(adminEvent('/admin', { cookies })));
@@ -159,7 +159,7 @@ describe('the five handlers, unchanged without locals.cairnIdentity', () => {
     const requestResult = await routes.requestAction(
       makeEvent({ url: 'https://test.dev/admin/login', form: { email: 'nobody@test.dev' }, cookies: requestCookies }),
     );
-    expect(requestResult.status).toBe('sent');
+    expect(requestResult.outcome).toBe('sent');
 
     const confirmCookies = makeRecordingCookies();
     const confirmData = routes.confirmLoad(makeEvent({ url: 'https://test.dev/admin/auth/confirm?token=x', cookies: confirmCookies }));

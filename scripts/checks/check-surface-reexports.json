@@ -198,13 +198,13 @@
       "name": "Manifest",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `buildSiteManifest`, `newlyPublishedEntries`, `parseManifest` name it on this subpath."
+      "reason": "R4 closure: `buildSiteManifest`, `buildNewlyPublished`, `parseManifest` name it on this subpath."
     },
     {
       "name": "ManifestEntry",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `newlyPublishedEntries`, `Manifest` name it on this subpath."
+      "reason": "R4 closure: `buildNewlyPublished`, `Manifest` name it on this subpath."
     },
     {
       "name": "MultiselectField",
@@ -229,6 +229,12 @@
       "subpath": "/delivery/data",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "parseManifest",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "A re-export from the stated canonical home, not a second home: `parseManifest`'s home moves to `.` beside `formatManifest`, its codec partner, and stays importable here so `buildNewlyPublished`'s `before`/`after` pair has a validator on the same subpath that consumes it."
     },
     {
       "name": "ReferenceEdge",
@@ -330,7 +336,7 @@
       "name": "AccessMap",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `AuthGuardOptions`, `CairnEvent` name it on this subpath."
+      "reason": "R4 closure: `AuthGuardConfig`, `CairnEvent` name it on this subpath."
     },
     {
       "name": "ArrayField",
@@ -384,7 +390,7 @@
       "name": "CairnRuntime",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `createContentRoutes`, `previewLoad`, `createMediaRoute` name it on this subpath."
+      "reason": "R4 closure: `createContentRoutes`, `loadPreview`, `createMediaRoute` name it on this subpath."
     },
     {
       "name": "Capability",
@@ -564,7 +570,7 @@
       "name": "NavNode",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `NavLoadData` names it on this subpath."
+      "reason": "R4 closure: `NavData` names it on this subpath."
     },
     {
       "name": "NumberField",
@@ -612,7 +618,7 @@
       "name": "RolesDeclaration",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `AuthGuardOptions`, `EditorRoutesOptions`, `CairnRuntime` name it on this subpath."
+      "reason": "R4 closure: `AuthGuardConfig`, `EditorRoutesOptions`, `CairnRuntime` name it on this subpath."
     },
     {
       "name": "RoutingRule",
@@ -690,7 +696,7 @@
       "name": "VocabularyEntry",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `VocabularyLoadData`, `CairnRuntime` name it on this subpath."
+      "reason": "R4 closure: `VocabularyData`, `CairnRuntime` name it on this subpath."
     }
   ]
 }

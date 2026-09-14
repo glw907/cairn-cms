@@ -1,7 +1,7 @@
 // cairn-cms: the guarded form-action factory a site-built admin section otherwise hand-rolls,
 // because SvelteKit dispatches a matched action directly and never re-runs an ancestor layout's
 // `load`, so a section's own POST cannot lean on its page's authorization check.
-// `createSectionAction` composes onto `adminAction` (editor identity, CSRF, the single form
+// `createSectionAction` composes onto `createAdminAction` (editor identity, CSRF, the single form
 // read, the audit contract) and adds only what the engine cannot know: the site's DB-binding
 // resolver and an optional rate limit. It deliberately does no schema validation and no domain
 // work; those stay the handler's job.
@@ -15,13 +15,13 @@
 // `key()`/`limit()` call, never blocks, except SvelteKit's own `redirect()`/`error()`, which
 // propagate untouched rather than degrading) and its `fail(429)` branch emits no `ctx.audit` (back
 // pressure is not a domain-state change). Every other refusal audits through `ctx.audit`
-// (adminAction's own contract). Every user-facing message stays deliberately generic (every 403
+// (createAdminAction's own contract). Every user-facing message stays deliberately generic (every 403
 // shares one string, both 500s share another) so a session learns no deployment or gating detail
 // from a refusal; the branch identity lives in the audit `detail` and the structured log. The
 // local `deny` and `misconfigured` helpers below are what make that uniformity structural, rather
 // than a convention five separate branches each have to keep.
 import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
-import { adminAction, authorizeAdminTarget, ADMIN_DENIAL_DETAIL, DENIED_MESSAGE } from './admin-action.js';
+import { createAdminAction, authorizeAdminTarget, ADMIN_DENIAL_DETAIL, DENIED_MESSAGE } from './admin-action.js';
 import { targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
 import { resolveRateLimit } from '../cloudflare/rate-limit.js';
@@ -85,7 +85,7 @@ export interface SectionActionAudit {
   detail?: string;
 }
 
-/** What a wrapped handler receives: adminAction's context, its own defaulting `audit`, plus the resolved binding. */
+/** What a wrapped handler receives: createAdminAction's context, its own defaulting `audit`, plus the resolved binding. */
 export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
   /** Emit one audit record; `action`/`entity` default from the call site's `SectionActionOptions`. */
   audit: (record: SectionActionAudit) => void;
@@ -112,7 +112,7 @@ export type SectionAction<Env, Db> = <T>(
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
  * site and produces a SvelteKit action, checked in order, fail-closed throughout:
  *
- * 1. `adminAction` composes underneath: editor resolution, CSRF, the single form read, the audit
+ * 1. `createAdminAction` composes underneath: editor resolution, CSRF, the single form read, the audit
  *    contract. A missing-editor session redirects to `/admin/login`; a CSRF mismatch throws
  *    SvelteKit's own `error(403, ...)`. Both propagate untouched, and both need no site
  *    `handleError` mapping: they are SvelteKit's own framework-native refusal channels.
@@ -122,7 +122,7 @@ export type SectionAction<Env, Db> = <T>(
  *    `[[ratelimits]]` block or a transient binding error is observable, not a silent bypass or a
  *    500 the hand-rolled code never produced. A `key()`/`limit()` call that throws SvelteKit's own
  *    `redirect()`/`error()` is the one exception: those propagate untouched rather than degrading,
- *    the same rethrow `adminAction`'s own audit-sink guard applies. A present binding over its
+ *    the same rethrow `createAdminAction`'s own audit-sink guard applies. A present binding over its
  *    limit logs `admin.action.rate_limited` and returns `fail(429)`. No `ctx.audit` on this
  *    branch: a limiter denial is back-pressure, not a domain-state change.
  * 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
@@ -133,7 +133,7 @@ export type SectionAction<Env, Db> = <T>(
  * 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
  *    `requireAccess` exactly, owner included: a POST must never be admitted where the load fails
  *    closed. Steps 4 and 5 run through `authorizeAdminTarget` (`./admin-action.js`), the one
- *    sequence `adminAction`'s opt-in `access` option also runs; only the refusal channel differs.
+ *    sequence `createAdminAction`'s opt-in `access` option also runs; only the refusal channel differs.
  * 5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
  *    `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
  * 6. `resolveDb` returning null or undefined audits `'rejected: database not bound'`, logs
@@ -163,7 +163,7 @@ export type SectionAction<Env, Db> = <T>(
  * };
  * ```
  *
- * Posture: fail-closed on every call, unconditionally, unlike `adminAction`'s own opt-in `access`
+ * Posture: fail-closed on every call, unconditionally, unlike `createAdminAction`'s own opt-in `access`
  * option: a target the map has no rule for refuses through {@link authorizeAdminTarget}, never the
  * permissive reading `canReach` gives an engine screen's own unmapped route.
  */
@@ -176,8 +176,8 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
     }) => Promise<T>,
     opts: SectionActionOptions,
   ): (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>> {
-    const guarded = adminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
-      // adminAction's own declared event type is pinned to CairnEnv; it never reads
+    const guarded = createAdminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
+      // createAdminAction's own declared event type is pinned to CairnEnv; it never reads
       // event.platform, so relabeling to this factory's own Env here is a type-level
       // correction, never a runtime behavior change (the underlying object is exactly what
       // this wrapper's caller passed in). A direct `as` assertion suffices, with no `unknown`
@@ -215,7 +215,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       /** One refused-authorization exit: the audit carries which gate refused, the response never does. */
       function deny(detail: string): ActionFailure<{ error: string }> {
         ctx.audit({ action: opts.action, entity: opts.entity, detail });
-        log.warn('auth.access.denied', { email: ctx.editor.email, role: ctx.editor.role, target });
+        log.warn('auth.access.refused', { email: ctx.editor.email, role: ctx.editor.role, target });
         return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
       }
 
@@ -235,7 +235,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
           // own limit() call: SvelteKit's own redirect()/error(), thrown from key(), are plain
           // classes, not Error instances, and a site relying on either as control flow (a
           // hand-rolled auth check inside key(), say) must not be swallowed into a degrade-to-open
-          // pass, mirroring adminAction's own audit-sink guard (./admin-action.js) exactly:
+          // pass, mirroring createAdminAction's own audit-sink guard (./admin-action.js) exactly:
           // rethrow both untouched before logging. resolveRateLimit captures a throwing limit()
           // into its own 'failed' arm, so this catch only ever fires for a throwing key(); the
           // same rethrow for a throwing limit() rides that arm below.
@@ -290,9 +290,9 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         return misconfigured('rejected: access map not attached', 'access_map_not_attached');
       }
 
-      // All three checks, in order, through the shared sequence adminAction's opt-in access
+      // All three checks, in order, through the shared sequence createAdminAction's opt-in access
       // option also runs (authorizeAdminTarget, ./admin-action.js). This wrapper keeps its own
-      // refusal channel: each refusing outcome audits and returns fail(403), where adminAction
+      // refusal channel: each refusing outcome audits and returns fail(403), where createAdminAction
       // audits and throws.
       const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly });
       if (authorization.outcome !== 'allowed') return deny(ADMIN_DENIAL_DETAIL[authorization.outcome]);
@@ -310,7 +310,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       return handler({ event: siteEvent, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
     });
 
-    // The same relabeling as the `siteEvent` cast above, applied on the way out: adminAction
+    // The same relabeling as the `siteEvent` cast above, applied on the way out: createAdminAction
     // hands back an action typed against its own CairnEnv-pinned event, while this wrapper's
     // contract is the site's Env. Type-level only; see that cast's comment for why a direct
     // assertion, with no `unknown` bridge, is now enough.

@@ -5,7 +5,7 @@ screens, reach for instead of a bespoke parallel. Two tiers share this one chart
 primitive (`FieldLabel`) renders one labeled control's wrapping label in the admin's label
 rhythm; it merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`), since two
 subpaths stating the same charter is one subpath. The **screen-scaffold** primitives
-(`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`, `ToolbarDisclosure`, `Pagination`,
+(`PageHeader`, `AdminTable`, `ListToolbar`, `ToolbarDisclosure`, `Pagination`,
 `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters compose a whole
 screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
 every contract here is general-purpose across sites. A component that renders one of cairn's own
@@ -192,7 +192,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, OfficeList, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -614,9 +614,12 @@ let { eyebrow, title, meta, action }: {
 };
 ```
 
-The canonical admin page-header recipe, the `OfficeList` shape generalized: an optional eyebrow,
-the page's one display-face `h1`, an optional muted meta line, and an optional single
-right-aligned action. `eyebrow` names a grouping (a custom nav section, "Media") and is omitted
+The canonical admin page-header recipe: an optional eyebrow, the page's one display-face `h1`,
+an optional muted meta line, and an optional single right-aligned action. A custom `/admin/`
+screen composes it beside `AdminTable` inside the admin design system's floating-card recipe
+(`overflow-hidden card-shell card-shadow`), with `AdminTable`'s own wrapper the one horizontal
+scroll container and `overflow-hidden` clipping the table's square edges to the card's rounded
+corners. `eyebrow` names a grouping (a custom nav section, "Media") and is omitted
 entirely when a screen has none worth naming. `meta` is the toolkit's one home for a page-level
 count outside a toolbar: `ListToolbar`'s own `computeCountLine` covers a screen with a search or
 filter row, and this line covers a screen with neither (a stats-prose summary, a scope note).
@@ -634,53 +637,6 @@ page-heading recipes from `docs/internal/admin-design-system.md`.
     <button type="button" class="btn btn-sm btn-primary" onclick={openUpload}>Upload</button>
   {/snippet}
 </PageHeader>
-```
-
-### `OfficeList`
-
-Stability tier: Extension API.
-
-```ts
-let { eyebrow, title, meta, action, children }: {
-  eyebrow?: string;
-  title: string;
-  meta?: string;
-  action?: Snippet;
-  children: Snippet;
-};
-```
-
-The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
-out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
-screen, a Club-style events or members list say, wraps its own `<table>` in this to reuse the
-shared header and card frame instead of rebuilding it. The header band composes the preceding
-`PageHeader`, so `eyebrow`, `title`, `meta`, and `action` carry its identical contract and rhythm.
-`children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
-shell that sits directly under `PageHeader`'s own offset.
-
-`OfficeList` moved here from `/components` in CHANGELOG `0.94.0`. `PageHeader`, this component's
-own later generalization documented preceding it, already lived on the toolkit, and a
-header-plus-card screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay. They
-cover different shapes, a header primitive versus a full list-screen scaffold, never a duplicate.
-A new build reaches for `PageHeader` first. `OfficeList` stays correct where it already ships.
-
-`OfficeList`'s own header markup now renders through `PageHeader`. The `subtitle` prop renamed to
-`meta` with no forwarding alias, and the merged header band adopted `PageHeader`'s rhythm as the
-toolkit's one office-header rhythm.
-
-```svelte
-<script lang="ts">
-  import { OfficeList } from '@glw907/cairn-cms/admin-toolkit';
-</script>
-
-<OfficeList eyebrow="Club" title="Events" meta="12 upcoming">
-  {#snippet action()}
-    <button type="button" class="btn btn-primary btn-sm">New event</button>
-  {/snippet}
-  <table class="table">
-    <!-- rows -->
-  </table>
-</OfficeList>
 ```
 
 ### `EmptyState`

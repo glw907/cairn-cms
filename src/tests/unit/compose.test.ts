@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter, PreviewConfig } from '../../lib/content/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
@@ -9,7 +9,7 @@ import { testSiteConfig } from './_content-fixture.js';
 function adapter(): CairnAdapter {
   return {
     content: { pages: { dir: 'src/content/pages', routing: 'page', fields: defineFieldset({}) } },
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     email: { from: 'cms@test' },
     rendering: { render: ({ body }) => Promise.resolve(body) },
   };

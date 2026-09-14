@@ -26,7 +26,7 @@ export default defineConfig({
     projects: [
       {
         resolve: {
-          // previewLoad (src/lib/sveltekit/preview.ts) imports $app/environment for its build-time
+          // loadPreview (src/lib/sveltekit/preview.ts) imports $app/environment for its build-time
           // guard, the first $app import outside src/lib/components. The real module exists only
           // inside a kit app; this alias resolves it to a stub so the unit project can import
           // preview.ts at all.
@@ -93,7 +93,7 @@ export default defineConfig({
           }),
         ],
         resolve: {
-          // Matches the unit project's own alias: previewLoad's $app/environment import needs a
+          // Matches the unit project's own alias: loadPreview's $app/environment import needs a
           // resolvable stub outside a real kit app.
           alias: {
             '$app/environment': path.resolve('./src/tests/_app-environment.ts'),
@@ -119,7 +119,7 @@ export default defineConfig({
             // envelope; the real module exists only inside a kit app, so the component project
             // resolves it to a stub that runs the same JSON-then-devalue parse.
             '$app/forms': path.resolve('./src/tests/component/_app-forms.ts'),
-            // content-routes-preview.ts value-imports previewMint from preview.ts, so any
+            // content-routes-preview.ts value-imports mintPreview from preview.ts, so any
             // component test that wires createCairnAdmin/createContentRoutes (most of them) pulls
             // preview.ts's own $app/environment import into this project's browser graph too, not
             // just the unit and integration projects.

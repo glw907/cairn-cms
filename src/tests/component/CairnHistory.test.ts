@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import CairnHistory from '../../lib/components/CairnHistory.svelte';
-import type { HistoryData, HistoryEntry, RevertFailure } from '../../lib/sveltekit/types.js';
+import type { HistoryData, HistoryEntry, RevertOutcome } from '../../lib/sveltekit/types.js';
 
 /** A distinct, full 40-character sha for row `n`, so a test can tell rows apart by ref. */
 function sha(n: number): string {
@@ -155,9 +155,9 @@ describe('CairnHistory', () => {
   });
 
   describe('a refused revert renders in place', () => {
-    it('names the blocking draft\'s author and last-save date for draft_exists', async () => {
-      const form: RevertFailure = {
-        reason: 'draft_exists',
+    it('names the blocking draft\'s author and last-save date for draft-exists', async () => {
+      const form: RevertOutcome = {
+        outcome: 'draft-exists',
         draftEditor: 'Blocking Editor',
         draftLastSavedAt: '2026-02-01T12:00:00Z',
       };
@@ -169,15 +169,15 @@ describe('CairnHistory', () => {
       expect(banner?.getAttribute('role')).toBe('alert');
     });
 
-    it('says the history changed for history_stale', async () => {
-      const form: RevertFailure = { reason: 'history_stale' };
+    it('says the history changed for history-stale', async () => {
+      const form: RevertOutcome = { outcome: 'history-stale' };
       const screen = await render(CairnHistory, { data: data({ entries: [entry(1)] }), form });
       const banner = screen.container.querySelector('.alert-error');
       expect(banner?.textContent ?? '').toMatch(/history changed/i);
     });
 
-    it('says the version is no longer listed for ref_unknown', async () => {
-      const form: RevertFailure = { reason: 'ref_unknown' };
+    it('says the version is no longer listed for ref-unknown', async () => {
+      const form: RevertOutcome = { outcome: 'ref-unknown' };
       const screen = await render(CairnHistory, { data: data({ entries: [entry(1)] }), form });
       const banner = screen.container.querySelector('.alert-error');
       expect(banner?.textContent ?? '').toMatch(/no longer in the recent list/i);

@@ -17,12 +17,12 @@
 // carries no editor at all.
 //
 // `cairnBackend` is the per-request content-store channel: the dev-backend handle sets it so the
-// engine resolves it ahead of the real `githubApp` provider
+// engine resolves it ahead of the real `createGithubApp` provider
 // (`locals.cairnBackend ?? runtime.backend.connect`). Typing it here makes that seam a checked
 // contract, so a mis-keyed write cannot silently fall through to the production provider. A
 // production request never sets it.
 //
-// `cairnAuditSink` is the site-supplied persistence seam `adminAction` forwards audit records
+// `cairnAuditSink` is the site-supplied persistence seam `createAdminAction` forwards audit records
 // through. A site assigns it in its own hooks handle; typing it here means that assignment
 // typechecks without the site hand-writing a `declare global` block for an engine-read field.
 //

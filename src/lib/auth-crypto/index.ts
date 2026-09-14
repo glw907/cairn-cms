@@ -8,4 +8,4 @@
 // semantics, the store schema, and the two-stores-never-blur rule stay site-owned. `generateSessionId`
 // and `generateCsrfToken` are demoted: both bodies are byte-identical to `generateToken` under a
 // second name; a site wanting a reading name at the call site writes a one-line local alias.
-export { generateToken, hashToken, tokensMatch, cookieName } from '../auth/crypto.js';
+export { generateToken, hashToken, tokensMatch, buildCookieName } from '../auth/crypto.js';

@@ -16,7 +16,7 @@ export {
   demoteOwnerIfNotLast,
 } from '../auth/store.js';
 export type {
-  EditorRow,
+  UnresolvedEditor,
   DeleteEditorOutcome,
   SetEditorRoleOutcome,
   OwnerGuardOutcome,

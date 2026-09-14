@@ -46,7 +46,7 @@ optional.
 
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
-import { defineAdapter, defineConcept, defineFieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineFieldset, fields, createGithubApp, createRenderer } from '@glw907/cairn-cms';
 import { registry, icons } from './components.js';
 
 const { renderMarkdown } = createRenderer(registry);
@@ -65,7 +65,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   rendering: {
     render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
@@ -75,12 +75,12 @@ export const cairn = defineAdapter({
 });
 ```
 
-#### `githubApp`
+#### `createGithubApp`
 
 Stability tier: Extension API.
 
 ```ts
-declare function githubApp(config: {
+declare function createGithubApp(config: {
   owner: string;
   repo: string;
   branch: string;
@@ -485,7 +485,7 @@ Stability tier: Extension API.
 ```ts
 declare function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
-  options?: FieldsetOptions,
+  config?: FieldsetConfig,
 ): Fieldset<R>;
 ```
 
@@ -497,9 +497,9 @@ constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
 `pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `defineFieldset()`
 call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric
 `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
-`options.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
+`config.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
 
-[`FieldsetOptions.refine`](#field-types) is deliberately synchronous: it returns
+[`FieldsetConfig.refine`](#field-types) is deliberately synchronous: it returns
 `Record<string, string> | undefined` directly, never a `Promise`, because it runs inline in the
 save action's own request path, on every save. A site needing async validation (a uniqueness check
 against a database, an external lookup) pre-fetches whatever data the check needs and reads it
@@ -522,7 +522,7 @@ Stability tier: Extension API.
   [`content.field_behavior_failed`](log-events.md) record, never the validated data.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
   declared `required: true` is a required key.
-- `FieldsetOptions` carries the `refine` cross-field check and the `behavior` table.
+- `FieldsetConfig` carries the `refine` cross-field check and the `behavior` table.
 
 ### Render
 
@@ -536,7 +536,7 @@ Stability tier: Extension API.
 ```ts
 declare function createRenderer(
   registry?: ComponentRegistry,
-  options?: RendererOptions,
+  options?: RendererConfig,
 ): {
   remarkPlugins: PluggableList;
   rehypePlugins: PluggableList;
@@ -549,17 +549,17 @@ declare function createRenderer(
 
 Compose a site's render pipeline from its component registry: directive syntax, then stamped
 markers, then registry-built hast. It returns `renderMarkdown` plus the fully composed remark and
-rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
+rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererConfig`
 carries the sanitize and anchor controls, the table-scroll default, and a
 `remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
 
-[`RendererOptions.sanitizeSchema`](#createrenderer) is deliberately synchronous too: `(defaults:
+[`RendererConfig.sanitizeSchema`](#createrenderer) is deliberately synchronous too: `(defaults:
 Schema) => Schema`, called inline while the pipeline composes its sanitize floor for every render
 call, with no seam to await external data before extending the allowlist.
 
 `renderDocument` takes the same options as `renderMarkdown` and additionally returns `headings`: a
 `DocHeading[]` collected from the final rehype tree, after `rehypeSlug` stamps ids and after any
-`RendererOptions.rehypePlugins` a site supplied have run, so a site rewrite of a heading's id is
+`RendererConfig.rehypePlugins` a site supplied have run, so a site rewrite of a heading's id is
 the id collected. Headings come back in document order, one entry per h1-h6, with `text` flattened
 to plain content (inline code, emphasis, and links reduce to their text). A page that needs a
 table of contents or a heading anchor list calls `renderDocument` instead of `renderMarkdown`.
@@ -583,12 +583,12 @@ const { renderMarkdown } = createRenderer(registry);
 // render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
 ```
 
-`RendererOptions.tableScroll` (default `true`) wraps every rendered table in a labeled,
+`RendererConfig.tableScroll` (default `true`) wraps every rendered table in a labeled,
 keyboard-reachable `role="region"` div, so a narrow viewport scrolls the wrapper instead of
 squeezing the table's columns while the table itself keeps its role in the accessibility tree. Set
 it to `false` for a site that supplies its own table wrapping.
 
-`RendererOptions.remarkPlugins` and `RendererOptions.rehypePlugins` add a site's own [unified](https://unifiedjs.com)
+`RendererConfig.remarkPlugins` and `RendererConfig.rehypePlugins` add a site's own [unified](https://unifiedjs.com)
 plugins to the pipeline. A remark plugin runs after cairn's own markdown-stage steps (directive
 stamping, `cairn:` link resolution, figures, `media:` resolution) and before the conversion to
 hast. A rehype plugin runs after cairn's own hast-stage steps (dispatch, the sanitize floor, heading
@@ -737,7 +737,7 @@ import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const admin = createCairnAdmin(runtime);
+export const admin = createCairnAdmin({ runtime });
 ```
 
 #### `parseSiteConfig`
@@ -803,8 +803,8 @@ const vocabulary = readVocabulary(siteConfig);
 
 The manifest is the committed, build-verified link graph. The content index that projects raw
 markdown into the query surfaces lives at [`/delivery`](./delivery.md). The write and diff side of
-the manifest is the engine's own save path, so only its serialize and verify operations stay public,
-for a build script or a custom regenerate tool to call.
+the manifest is the engine's own save path, so only its format, parse, and verify operations stay
+public, for a build script or a custom regenerate tool to call.
 
 Each manifest entry also records which fragment ids its body includes, an inclusion edge alongside
 the outbound link and reference edges the same entry already carries. The delete guard reads it to
@@ -822,21 +822,27 @@ the manifest rather than to the corpus, regenerating with
 [`cairn-manifest`](./cli-cairn-manifest.md) merges the committed stamps back into the rebuilt file,
 and `verifyManifest` accepts a committed stamp the corpus can't produce.
 
-#### Manifest serialize and verify
+#### Manifest format, parse, and verify
 
 Stability tier: Extension API.
 
 ```ts
-declare function serializeManifest(manifest: Manifest): string;
+declare function formatManifest(manifest: Manifest): string;
+declare function parseManifest(raw: string): Manifest;
 declare function verifyManifest(built: Manifest, committedRaw: string): void;
 declare function verifyReferences(manifest: Manifest): void;
 ```
 
-`serializeManifest` writes the canonical, sorted, deduped form that diffs cleanly. The `cairnManifest`
-Vite plugin uses it in write mode. `verifyManifest` throws when the committed manifest drifts from the
-corpus, so a raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter
-reference edge points at a missing target, naming the source entry, the field, and the missing target.
-References have no prerender backstop, so this build gate is their only integrity authority.
+`formatManifest` writes the canonical, sorted, deduped form that diffs cleanly. The `cairnManifest`
+Vite plugin uses it in write mode. `parseManifest` is its codec partner: it parses a committed
+manifest's raw text, throwing on malformed JSON, a wrong version, or a malformed entry, so a caller
+gets a well-formed graph or a clear error rather than a broken shape fed silently into further use.
+Use it to validate a manifest your own code fetches, such as when building the `before`/`after` pair
+[`buildNewlyPublished`](./delivery-data.md#buildnewlypublished) takes, instead of casting the fetched
+JSON yourself. `verifyManifest` throws when the committed manifest drifts from the corpus, so a
+raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter reference edge
+points at a missing target, naming the source entry, the field, and the missing target. References
+have no prerender backstop, so this build gate is their only integrity authority.
 
 ```ts
 import { verifyManifest, type Manifest } from '@glw907/cairn-cms';
@@ -845,6 +851,16 @@ declare const built: Manifest;
 declare const committedRaw: string;
 
 verifyManifest(built, committedRaw); // throws on drift
+```
+
+```ts
+import { parseManifest, type Manifest } from '@glw907/cairn-cms';
+
+declare function fetchManifestFile(): Promise<string>;
+
+async function readDeployedManifest(): Promise<Manifest> {
+  return parseManifest(await fetchManifestFile());
+}
 ```
 
 ### Auth and GitHub App
@@ -1041,7 +1057,7 @@ function signatures above reference these.
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
-| `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
+| `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `createGithubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
 | `FileChange` | Extension API | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `BackendCommit` | Extension API | `interface BackendCommit { ref: string; author: { name: string; email: string }; date: string }` | One entry in `Backend.listCommits`'s answer, newest first: the commit's full sha (`ref`), the git commit-author trailer (`author`, never the matched GitHub account, which is null for a magic-link editor), and `date` (ISO 8601, when the commit landed on the read ref). A file's log can hold commits made outside cairn, so `author` renders whoever git recorded, not necessarily a cairn editor. |
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
@@ -1064,7 +1080,7 @@ function signatures above reference these.
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |
-| `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
+| `RendererConfig` | Extension API | `interface RendererConfig` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
 | `Renderer` | Extension API | `type Renderer` | What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`, shown expanded in [`createRenderer`](#createrenderer). |
 | `DocHeading` | Extension API | `interface DocHeading` | One heading `renderDocument` collected from a rendered page: `id`, flattened `text`, and `depth` (1-6), in document order. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |

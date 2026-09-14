@@ -89,12 +89,13 @@ import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const admin = createCairnAdmin(runtime);
+export const admin = createCairnAdmin({ runtime });
 ```
 
-`createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
-so most sites pass no deps at all. A site that does override something passes the grouped
-`CairnAdminConfig` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
+`createCairnAdmin` takes one `CairnAdminConfig` bag with a required `runtime` member; it defaults
+the magic-link branding from the runtime's `siteName` and `sender`, so most sites pass no other
+member. A site that does override something adds to the same bag:
+`{ runtime, auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
 reads markdown through a fake GitHub backend in development, which rides `event.locals.cairnBackend`
 from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
 mints installation tokens on demand, so it passes no backend dep. See
@@ -223,7 +224,7 @@ export const handle = sequence(theme, createAuthGuard());
 The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.
 
 The guard gates who reaches the subtree, not what a custom form action inside it may do. An
-[`adminAction`](./sveltekit.md#adminaction)-wrapped action authorizes against the site's access
+[`createAdminAction`](./sveltekit.md#createadminaction)-wrapped action authorizes against the site's access
 map only when it sets the `access` option. Omitted, the wrapper only authenticates and verifies
 the CSRF token, its behavior for every action written before the option existed.
 [`createSectionAction`](./sveltekit.md#createsectionaction) runs that same sequence always.
@@ -267,16 +268,16 @@ import the engine's admin components onto a host page.
 
 The auth guard gates every `/admin/*` path. A deploy health check has to be reachable without a
 session, so it cannot live under `/admin`. Mount it at the site root and call the engine's
-`healthLoad(event, runtime)` (event first):
+`loadHealth(event, runtime)` (event first):
 
 ```ts
 // src/routes/healthz/+server.ts
 import { json } from '@sveltejs/kit';
-import { healthLoad } from '@glw907/cairn-cms/sveltekit';
+import { loadHealth } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$lib/cairn.server.js';
 
 export const prerender = false;  // see below
-export const GET = async (event) => json(await healthLoad(event, runtime));
+export const GET = async (event) => json(await loadHealth(event, runtime));
 ```
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it

@@ -12,10 +12,10 @@ import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admi
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
-import { createAuthRoutes, type RequestResult } from '../../lib/sveltekit/auth-routes.js';
+import { createAuthRoutes, type RequestOutcome } from '../../lib/sveltekit/auth-routes.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
-import { healthLoad, type HealthData } from '../../lib/sveltekit/health.js';
-import { adminAction } from '../../lib/sveltekit/admin-action.js';
+import { loadHealth, type HealthData } from '../../lib/sveltekit/health.js';
+import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
@@ -35,8 +35,8 @@ describe('env-genericity compile fixtures', () => {
     expect(typeof createNavRoutes).toBe('function');
     expect(typeof createAuthRoutes).toBe('function');
     expect(typeof createEditorRoutes).toBe('function');
-    expect(typeof healthLoad).toBe('function');
-    expect(typeof adminAction).toBe('function');
+    expect(typeof loadHealth).toBe('function');
+    expect(typeof createAdminAction).toBe('function');
     expect(typeof createMediaRoute).toBe('function');
   });
 });
@@ -91,7 +91,7 @@ void typeOnlyBareWranglerEnvAssignsClean;
  * to SvelteKit's own generated `Actions`, whose `Action` return is `MaybePromise<Record<string,
  * any> | void>` (kit's own `OutputData` default), rather than the looser `unknown` that accepts
  * any return, checked or not. `any`, not `unknown`, matches kit exactly: an interface return type
- * with no explicit index signature (`HelpData`, `NavLoadData`, an `ActionFailure`) is not
+ * with no explicit index signature (`HelpData`, `NavData`, an `ActionFailure`) is not
  * structurally assignable to `Record<string, unknown>`, the same reason kit's own default reaches
  * for `any` here.
  */
@@ -101,20 +101,20 @@ type SiteActionReturn = Record<string, any> | void | Promise<Record<string, any>
 // `export const actions = admin.actions;`, structurally the same assignment that produced the
 // original AdminActionEvent bug this sweep follows up on.
 function typeOnlyCairnAdminAssignability(): void {
-  const admin = createCairnAdmin({} as CairnRuntime);
+  const admin = createCairnAdmin({ runtime: {} as CairnRuntime });
   admin.load satisfies (event: SiteServerLoadEvent) => Promise<AdminData>;
   admin.shellLoad satisfies (event: SiteServerLoadEvent) => Promise<{ shell: AdminShellData }>;
   admin.actions satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyCairnAdminAssignability;
 
-// adminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
+// createAdminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
 // 2, pre-beta C1 review pass). Its returned function is typed `(event: AdminActionEvent<CairnEnv>)
 // => Promise<T>` via the default type parameter; this proves that assigns clean into a route's
 // generated `Actions`, on the same `CairnPlatformBindings` grounds as every pin above, never
 // because it "does not read event.platform" (see the corrected doc comment at admin-action.ts).
 function typeOnlyAdminActionAssignability(): void {
-  const action = adminAction(async () => ({ ok: true }) as Record<string, unknown>);
+  const action = createAdminAction(async () => ({ ok: true }) as Record<string, unknown>);
   action satisfies (event: SiteRequestEvent) => SiteActionReturn;
 }
 void typeOnlyAdminActionAssignability;
@@ -148,7 +148,7 @@ void typeOnlyAuthGuardAssignability;
 // where the composer registers them; do not re-add them here, since the public factory's declared
 // `ContentRoutes` no longer carries them and naming one would simply fail to compile.
 function typeOnlyContentRoutesAssignability(): void {
-  const routes = createContentRoutes({} as CairnRuntime);
+  const routes = createContentRoutes({ runtime: {} as CairnRuntime });
   routes satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyContentRoutesAssignability;
@@ -160,7 +160,7 @@ void typeOnlyContentRoutesAssignability;
 // Record<string, X> cast the Pick-derived ContentRoutes tolerates above does not apply here,
 // mirroring AuthRoutes' and EditorRoutes' own per-member checks below.
 function typeOnlyNavRoutesAssignability(): void {
-  const nav = createNavRoutes({} as CairnRuntime);
+  const nav = createNavRoutes({ runtime: {} as CairnRuntime });
   nav.navLoad satisfies (event: SiteRequestEvent) => unknown;
   nav.navSaveAction satisfies (event: SiteRequestEvent) => unknown;
 }
@@ -170,7 +170,7 @@ void typeOnlyNavRoutesAssignability;
 // /admin/auth/* route shims assign from their own SiteRequestEvent.
 function typeOnlyAuthRoutesAssignability(): void {
   const auth = createAuthRoutes({ branding: { siteName: 'Site', from: 'noreply@example.com' } });
-  auth.requestAction satisfies (event: SiteRequestEvent) => Promise<RequestResult>;
+  auth.requestAction satisfies (event: SiteRequestEvent) => Promise<RequestOutcome>;
   auth.loginLoad satisfies (event: SiteRequestEvent) => unknown;
   auth.confirmLoad satisfies (event: SiteRequestEvent) => unknown;
   auth.confirmAction satisfies (event: SiteRequestEvent) => Promise<never>;
@@ -188,10 +188,10 @@ function typeOnlyEditorRoutesAssignability(): void {
 }
 void typeOnlyEditorRoutesAssignability;
 
-// healthLoad: takes CairnEvent (C2 breaking-window, R4), checked against the same
+// loadHealth: takes CairnEvent (C2 breaking-window, R4), checked against the same
 // SiteServerLoadEvent a site's `/admin/healthz` route load calls it with.
 function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): void {
-  healthLoad(siteEvent, runtime) satisfies Promise<HealthData>;
+  loadHealth(siteEvent, runtime) satisfies Promise<HealthData>;
 }
 void typeOnlyHealthLoadAssignability;
 
@@ -202,7 +202,7 @@ void typeOnlyHealthLoadAssignability;
 type SiteRequestHandler = (event: SiteRequestEvent) => Promise<Response> | Response;
 
 function typeOnlyMediaRouteAssignability(runtime: CairnRuntime): void {
-  const handler = createMediaRoute(runtime);
+  const handler = createMediaRoute({ runtime });
   handler satisfies SiteRequestHandler;
 }
 void typeOnlyMediaRouteAssignability;

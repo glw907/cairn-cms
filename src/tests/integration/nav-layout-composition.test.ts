@@ -10,7 +10,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -65,7 +65,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -98,7 +98,8 @@ describe('navLayout composition: capability, declarative roles, and navFilter ov
 
   it('composes every gate in order for an owner, a club-admin, a plain editor, and a none session', async () => {
     const rt = runtime();
-    const routes = createContentRoutes(rt, {
+    const routes = createContentRoutes({
+      runtime: rt,
       // The site's own dynamic filter runs last, over the already-gated items, dropping the
       // ungated Marker section for every session alike.
       navFilter: (items) => items.filter((item) => item.label !== 'Marker'),
@@ -168,7 +169,7 @@ function accessRuntime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -199,7 +200,7 @@ describe('navLayout composition: the sidebar derives from the runtime.access aut
   afterEach(() => vi.restoreAllMocks());
 
   it('hides the mapped-away concept door and site entry for a publisher, keeps them for webmaster and owner', async () => {
-    const routes = createContentRoutes(accessRuntime());
+    const routes = createContentRoutes({ runtime: accessRuntime() });
 
     const publisher = await routes.shellLoad(accessEvent('publisher', 'editor'));
     if (publisher.shell.public) throw new Error('expected authed shell');
@@ -234,7 +235,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
       { href: '/admin/posts', count: 3 },
       { href: '/admin/pages', count: 5, label: 'pending reviews' },
     ]);
-    const routes = createContentRoutes(accessRuntime(), { attention });
+    const routes = createContentRoutes({ runtime: accessRuntime(), attention });
 
     const publisher = await routes.shellLoad(accessEvent('publisher', 'editor'));
     if (publisher.shell.public) throw new Error('expected authed shell');
@@ -260,7 +261,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
       { href: '/admin/posts', count: -1 },
       { href: '/admin/nowhere', count: 4 },
     ]);
-    const routes = createContentRoutes(accessRuntime(), { attention });
+    const routes = createContentRoutes({ runtime: accessRuntime(), attention });
 
     const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
@@ -274,7 +275,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
       { href: '/admin/posts', count: 3, label: 'first' },
       { href: '/admin/posts', count: 9, label: 'second' },
     ]);
-    const routes = createContentRoutes(accessRuntime(), { attention });
+    const routes = createContentRoutes({ runtime: accessRuntime(), attention });
 
     const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
@@ -286,7 +287,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
       { href: '/admin/posts', count: 3, label: '' },
       { href: '/admin/pages', count: 2, label: '   ' },
     ]);
-    const routes = createContentRoutes(accessRuntime(), { attention });
+    const routes = createContentRoutes({ runtime: accessRuntime(), attention });
 
     const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');
@@ -297,7 +298,7 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
   });
 
   it('serializes an empty record when no attention dep is configured', async () => {
-    const routes = createContentRoutes(accessRuntime());
+    const routes = createContentRoutes({ runtime: accessRuntime() });
 
     const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
     if (webmaster.shell.public) throw new Error('expected authed shell');

@@ -73,7 +73,7 @@ function historyEvent(id: string, backend: Backend) {
 describe('historyLoad', () => {
   it('reads the entry file at the same path editLoad derives, on the default branch', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [commitAt(0)] });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(backend.calls[0]).toEqual({ path: ENTRY_PATH, ref: 'main', limit: 25 });
   });
@@ -81,7 +81,7 @@ describe('historyLoad', () => {
   it('returns exactly the bound with no truncation when the log holds exactly 25 publishes', async () => {
     const commits = Array.from({ length: 25 }, (_, i) => commitAt(i));
     const backend = fakeHistoryBackend({ mainCommits: commits });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries).toHaveLength(25);
     expect(data.entries[0].ref).toBe('sha-0');
@@ -92,7 +92,7 @@ describe('historyLoad', () => {
   it('sets truncated on the limit+1 probe row, and never renders that row', async () => {
     const commits = Array.from({ length: 26 }, (_, i) => commitAt(i));
     const backend = fakeHistoryBackend({ mainCommits: commits });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries).toHaveLength(25);
     expect(data.truncated).toBe(true);
@@ -106,14 +106,14 @@ describe('historyLoad', () => {
       commitAt(2, { author: { name: '', email: '' } }),
     ];
     const backend = fakeHistoryBackend({ mainCommits: commits });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries.map((e) => e.editor)).toEqual(['Jamie Rivera', 'no-name@t', 'unknown']);
   });
 
   it('leaves draft null when the entry has no pending branch', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [commitAt(0)] });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.draft).toBeNull();
   });
@@ -126,14 +126,14 @@ describe('historyLoad', () => {
         [PENDING_BRANCH]: [{ ref: 'sha-draft', author: { name: 'Ed Editor', email: 'ed@t' }, date: '2026-06-01T00:00:00Z' }],
       },
     });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.draft).toEqual({ editor: 'Ed Editor', lastSavedAt: '2026-06-01T00:00:00Z' });
   });
 
   it('404s a deleted entry even though its commit log survives in git', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [commitAt(0), commitAt(1)], mainFile: null });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(routes.historyLoad(historyEvent('2026-05-hello', backend))).rejects.toMatchObject({
       status: 404,
     });
@@ -144,7 +144,7 @@ describe('historyLoad', () => {
       mainCommits: [commitAt(0)],
       branchHeads: { main: 'sha-main-head' },
     });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.head).toBe('sha-main-head');
   });
@@ -158,7 +158,7 @@ describe('historyLoad', () => {
         [PENDING_BRANCH]: [{ ref: 'sha-draft', author: { name: 'Ed Editor', email: 'ed@t' }, date: '2026-06-01T00:00:00Z' }],
       },
     });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.historyLoad(historyEvent('2026-05-hello', backend));
     expect(data.entries).toEqual([]);
     expect(data.truncated).toBe(false);
@@ -201,7 +201,7 @@ describe('historyLoad access-map denial', () => {
 
   it('403s an editor mapped away from the concept, the same refusal editLoad gives', async () => {
     const backend = fakeHistoryBackend({ mainCommits: [] });
-    const routes = createContentRoutes(accessRuntime());
+    const routes = createContentRoutes({ runtime: accessRuntime() });
     const historyStatus = await statusOf(routes.historyLoad(pagesEvent('2026-05-hi', backend)));
     const editStatus = await statusOf(routes.editLoad(pagesEvent('2026-05-hi', backend)));
     expect(historyStatus).toBe(403);

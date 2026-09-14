@@ -12,7 +12,7 @@ import {
   SEND_COOLDOWN_MS,
   sessionCookieName,
   csrfCookieName,
-  cookieName,
+  buildCookieName,
 } from '../auth/crypto.js';
 import {
   findEditor,
@@ -45,14 +45,15 @@ export interface AuthRoutesConfig {
 }
 
 /**
- * The request-action result. `status` is the discriminant; `sent` is kept for a site rendering its
- * own form against `form.sent`, so the field is additive. The neutral and send-ok paths return the
- * identical `{ status: 'sent', sent: true }`, so the common case never leaks allowlist membership.
+ * The request-action result. `outcome` is the discriminant; `sent` is kept for a site rendering
+ * its own form against `form.sent`, so the field is additive. The neutral and send-ok paths return
+ * the identical `{ outcome: 'sent', sent: true }`, so the common case never leaks allowlist
+ * membership.
  */
-export type RequestResult =
-  | { status: 'sent'; sent: true }
-  | { status: 'send_error'; sent: false }
-  | { status: 'throttled'; sent: false };
+export type RequestOutcome =
+  | { outcome: 'sent'; sent: true }
+  | { outcome: 'send-error'; sent: false }
+  | { outcome: 'throttled'; sent: false };
 
 /**
  * The magic-link login page's data: the site name, a resolved `?error` code, and the CSRF
@@ -128,7 +129,7 @@ const PENDING_COOKIE_TTL_MULTIPLE = 6;
  */
 function mintOrReusePendingNonce(event: CairnEvent): string {
   const secure = csrfSecure({ url: event.url, platform: event.platform });
-  const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+  const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
   const nonce = event.cookies.get(pendingCookie) ?? generateToken();
   event.cookies.set(pendingCookie, nonce, {
     path: '/',
@@ -171,7 +172,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * before any cookie write: the organization's own gate is the only sign-in surface, and this
    * action mints nothing.
    */
-  async function requestAction(event: CairnEvent): Promise<RequestResult> {
+  async function requestAction(event: CairnEvent): Promise<RequestOutcome> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
     const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
@@ -206,7 +207,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks
     // membership. Response timing still differs (the editor path awaits the send), the side-channel
     // the design accepts as strictly weaker than the explicit throttled signal below.
-    if (!editor) return { status: 'sent', sent: true };
+    if (!editor) return { outcome: 'sent', sent: true };
 
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
@@ -232,7 +233,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       // never the nonce or its hash, which are the credential this whole binding turns on.
       const rebind = await rebindToken(db, email, await hashToken(nonce), now);
       if (rebind.outcome === 'rebound') log.info('auth.token.rebound', { email });
-      return { status: 'throttled', sent: false };
+      return { outcome: 'throttled', sent: false };
     }
 
     const token = generateToken();
@@ -253,9 +254,9 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       log.error('auth.link.send_failed', { email, error: scrubSendError(err), code: errorCode(err), conditionId: failure.conditionId });
       // A plain 200 with a status field, not fail(): the result stays one uniform union for the
       // page, and the failure is already observable through the error-level log record.
-      return { status: 'send_error', sent: false };
+      return { outcome: 'send-error', sent: false };
     }
-    return { status: 'sent', sent: true };
+    return { outcome: 'sent', sent: true };
   }
 
   /**
@@ -338,7 +339,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // One variable for the whole handler: this same `secure` names the pending cookie read and
     // deleted here, the session cookie set below, and the CSRF cookie rotated after it.
     const secure = csrfSecure({ url: event.url, platform: event.platform });
-    const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+    const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
     const nonce = event.cookies.get(pendingCookie);
 
     const now = Date.now();
@@ -455,7 +456,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // The pending-login nonce is a cairn-owned credential too, so a sign-out clears it. One
     // name form only, this request's own: a stranded nonce under the other form names a token
     // row that its ten-minute TTL has already swept, so nothing can confirm against it.
-    event.cookies.delete(cookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
+    event.cookies.delete(buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
     if (!event.locals.cairnIdentity && id) {
       try {
         // The record fires only when a row was actually destroyed and was still live, and names
@@ -479,7 +480,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 /** What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. */
 export interface AuthRoutes {
   loginLoad: (event: CairnEvent) => LoginData;
-  requestAction: (event: CairnEvent) => Promise<RequestResult>;
+  requestAction: (event: CairnEvent) => Promise<RequestOutcome>;
   confirmLoad: (event: CairnEvent) => ConfirmData;
   confirmAction: (event: CairnEvent) => Promise<never>;
   logoutAction: (event: CairnEvent) => Promise<never>;

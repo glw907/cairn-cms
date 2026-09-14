@@ -154,7 +154,7 @@ describe('extractEventOrConditionCandidates', () => {
 
 // Named regression: an earlier version of extractEventOrConditionCandidates required three or
 // more dotted segments, which silently turned the class off for 40 of the 74 real log events,
-// including every commit.*, entry.*, media.*, publish.*, and tidy.* name and guard.rejected.
+// including every commit.*, entry.*, media.*, publish.*, and tidy.* name and guard.refused.
 describe('the two-segment log event regression', () => {
   it('resolves a real two-segment event', () => {
     const segments = codeVoiceSegments('the `commit.succeeded` event');
@@ -194,7 +194,7 @@ describe('the registry parsers', () => {
     const events = logEventNames();
     expect(events.size).toBeGreaterThan(0);
     expect(events.has('commit.succeeded')).toBe(true);
-    expect(events.has('guard.rejected')).toBe(true);
+    expect(events.has('guard.refused')).toBe(true);
   });
 
   it('conditionIds returns a non-empty set containing a known condition', () => {

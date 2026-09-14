@@ -992,17 +992,25 @@ describe('nav/worked-navlayout', () => {
 });
 
 describe('toolkit/custom-screen', () => {
-  it("renders the doc snippet's composed screen: one heading, the office list, and each event's status chip", async () => {
+  it("renders the doc snippet's composed screen: one heading, the card-shell table, and each event's status chip", async () => {
     const screen = await mountPosed(getStory('toolkit/custom-screen'));
 
-    // OfficeList alone supplies the page's one h1 (via its own composed PageHeader, Task 9); the
-    // doc snippet does not additionally compose a standalone PageHeader, so there is exactly one
-    // heading here (WCAG 1.3.1: a page names one title).
+    // The doc snippet composes exactly one PageHeader, so there is exactly one heading here
+    // (WCAG 1.3.1: a page names one title).
     const headings = screen.container.querySelectorAll('h1');
     expect(headings).toHaveLength(1);
     await expect.element(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();
     expect(screen.container.textContent).toContain('Club');
     expect(screen.container.textContent).toContain('3 upcoming');
+
+    // The table sits inside the floating-card recipe's own div, written at the call site rather
+    // than by a wrapping component; AdminTable owns the overflow scroll, so the card itself does
+    // not also carry it.
+    const card = screen.container.querySelector('.card-shell');
+    expect(card).not.toBeNull();
+    expect(card?.classList.contains('card-shadow')).toBe(true);
+    expect(card?.classList.contains('overflow-x-auto')).toBe(false);
+    expect(card?.classList.contains('overflow-hidden')).toBe(true);
 
     // The column headers, transcribed with `scope="col"` (WCAG 1.3.1: an association a data
     // table needs to be programmatically determinable).

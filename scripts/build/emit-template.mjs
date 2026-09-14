@@ -125,7 +125,7 @@ export function isAlwaysSkippedPath(rel) {
  * directory convention `.cairn-template.json`'s own excluded paths already rely on (every concept
  * descriptor names its content directory `src/content/<concept id>`). The committed manifest is
  * already canonical (entries sorted by concept then id, a fixed per-entry key order,
- * `serializeManifest`'s output), and removing entries never disturbs that order or a surviving
+ * `formatManifest`'s output), and removing entries never disturbs that order or a surviving
  * entry's own shape, so the filtered result is byte-identical to a fresh regeneration: a kept
  * entry's content file did not change, so neither does its manifest projection. This runs on the
  * copied tree alone; it needs no installed dependencies and no subprocess. A `from` with no

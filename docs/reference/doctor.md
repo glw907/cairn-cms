@@ -193,7 +193,7 @@ followed, and the response classifies first:
 The probe is side-effect free by construction. It submits a random non-editor address at the
 reserved `example.invalid` domain, and the engine's non-leak design answers a non-editor exactly
 like a successful send while sending no email and minting no token, so nothing lands in any inbox
-and nothing changes on the site. A `send_error` answer fails the check, which catches a deployed
+and nothing changes on the site. A `send-error` answer fails the check, which catches a deployed
 site whose send path is broken without spending a real delivery.
 
 A second arm, run independently of the first, closes the exposure a gated primary hostname alone

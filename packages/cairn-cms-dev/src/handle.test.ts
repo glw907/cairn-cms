@@ -56,7 +56,7 @@ test('the handle wires the dev backend and AUTH_DB onto /preview/[token], but ne
 
   await handle({ event, resolve: async () => new Response('ok') });
 
-  // previewLoad reads the same cairnBackend and AUTH_DB an admin request does, so a token
+  // loadPreview reads the same cairnBackend and AUTH_DB an admin request does, so a token
   // previewMintAction wrote resolves; it never reads cairnEditor, so the bypass must stay off.
   expect(event.locals.cairnBackend).toBeTruthy();
   expect(event.platform.env.AUTH_DB).toBeTruthy();

@@ -151,7 +151,7 @@ that wants headings calls `renderDocument` directly rather than through the adap
 
 ## Extend the pipeline itself
 
-`RendererOptions` (`createRenderer`'s second argument) opens a few seams beyond components:
+`RendererConfig` (`createRenderer`'s second argument) opens a few seams beyond components:
 `sanitizeSchema` extends the sanitize allowlist, `tableScroll` controls the default scrollable
 table wrapper, and `remarkPlugins`/`rehypePlugins` add your own [unified](https://unifiedjs.com)
 plugins, composed after cairn's own pipeline steps and before stringification. [Render

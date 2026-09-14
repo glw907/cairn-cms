@@ -7,7 +7,7 @@
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
@@ -33,7 +33,7 @@ function runtime(): CairnRuntime {
     siteName: 'Test Site',
     sender: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: MEDIA_PATH,
@@ -117,7 +117,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('commits a new media.json row to main on upload', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 
@@ -135,7 +135,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }));
 
@@ -167,7 +167,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     // Pre-put the bytes too, so ingestAndStore's dedup reuses rather than puts (irrelevant to the
     // commit assertion, but keeps the scenario realistic).
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const before = gh.read('main', MEDIA_PATH);
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG_2, filename: 'dupe.png' }))) as ActionResult;
@@ -182,7 +182,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('refuses without a session, and commits nothing', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
 
@@ -194,7 +194,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('refuses with a bad CSRF, and commits nothing', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, csrf: 'wrong-token' }))) as ActionResult;
 
@@ -211,7 +211,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     const spiedBackend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
     const commitSpy = vi.spyOn(spiedBackend, 'commit');
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const head = gh.headSha('main');
 
     await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png', backend: spiedBackend }));
@@ -265,7 +265,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
         return doubleFetch(input, init);
       }),
     );
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 

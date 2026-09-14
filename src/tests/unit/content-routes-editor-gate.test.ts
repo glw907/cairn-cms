@@ -24,35 +24,35 @@ function noneEvent(params: Record<string, string> = {}) {
 
 describe('the none contract: engine content surfaces refuse a none-capability session with 403', () => {
   it('listLoad refuses with 403', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(routes.listLoad(noneEvent({ concept: 'posts' }))).rejects.toMatchObject({
       status: 403,
     });
   });
 
   it('saveAction refuses with 403', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(
       routes.saveAction(noneEvent({ concept: 'posts', id: '2026-05-01-hello' })),
     ).rejects.toMatchObject({ status: 403 });
   });
 
   it('editLoad refuses with 403', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(
       routes.editLoad(noneEvent({ concept: 'posts', id: '2026-05-01-hello' })),
     ).rejects.toMatchObject({ status: 403 });
   });
 
   it('createAction refuses with 403', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(routes.createAction(noneEvent({ concept: 'posts' }))).rejects.toMatchObject({
       status: 403,
     });
   });
 
   it('publishAllAction refuses with 403', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(routes.publishAllAction(noneEvent())).rejects.toMatchObject({ status: 403 });
   });
 });

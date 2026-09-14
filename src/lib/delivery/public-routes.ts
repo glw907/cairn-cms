@@ -115,7 +115,7 @@ function deriveHeroImage(
 
 /**
  * Substitutes for {@link composeEntryData}'s three resolvers, each defaulting to the build's own
- *  (throwing) pair drawn from `config.site`, or `config.resolveMedia` for the hero. `previewLoad`
+ *  (throwing) pair drawn from `config.site`, or `config.resolveMedia` for the hero. `loadPreview`
  *  is the first caller to pass these: the marking link and fragment resolvers built from
  *  a pending branch's manifest, and a request-time media resolver built from that branch's
  *  `media.json`. The hero derivation consumes `resolveMedia` from here too, not only the body render.
@@ -132,7 +132,7 @@ export interface EntryDataOverrides {
 /**
  * Compose one entry's public data shape: the rendered html, its SEO, its adjacent-entry pair, and
  *  its hero projection. `createPublicRoutes`'s `entryLoad` is lookup-then-compose over this
- *  function with no overrides, so its output is unchanged; `previewLoad` is the first
+ *  function with no overrides, so its output is unchanged; `loadPreview` is the first
  *  caller to pass `overrides`, substituting the marking resolvers and a request-time media
  *  resolver in place of the build's throwing pair and the site's committed `media.json`.
  */
@@ -155,7 +155,7 @@ export async function composeEntryData(
   const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
   // Stamp the containing entry onto the engine's own fragment resolver, the marker
   // remarkResolveIncludes reads to name the entry in an include.missing record. A caller that
-  // substitutes its own resolver (previewLoad) stamps it where it builds it, so nothing here
+  // substitutes its own resolver (loadPreview) stamps it where it builds it, so nothing here
   // mutates a function it did not create.
   let resolveFragment = overrides?.resolveFragment;
   if (!resolveFragment) {

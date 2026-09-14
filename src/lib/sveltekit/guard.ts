@@ -31,7 +31,7 @@ function isAdminPath(pathname: string): boolean {
 }
 
 /** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
-export interface AuthGuardOptions {
+export interface AuthGuardConfig {
   /**
    * The site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every
    *  session against the implicit owner/editor pair, so a zero-config site sees no behavior change.
@@ -161,11 +161,9 @@ function isSafeLogoutUrl(logoutUrl: string): boolean {
  * contract-first-returns rule on its own, since the host ecosystem's convention wins over
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
-export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
-  const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
-  const access = opts.access;
-  const includeSubDomains = opts.includeSubDomains;
-  const identity = opts.identity;
+export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
+  const { access, includeSubDomains, identity } = config;
+  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
   // Validated once, at construction, not per request: an invalid logoutUrl is a site
   // misconfiguration, and failing fast here beats admitting an open redirect at request time.
   // The published snapshot below is what every admin path reads; identity.logoutUrl is never
@@ -196,7 +194,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     const processFlag =
       typeof process !== 'undefined' ? process.env?.[CAIRN_DEV_BACKEND_FLAG] : undefined;
     if (isDevBackendFlagSet(platformFlag) || isDevBackendFlagSet(processFlag)) {
-      log.error('guard.rejected', { reason: 'dev_backend_in_prod', path: pathname });
+      log.error('guard.refused', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
     }
 
@@ -204,7 +202,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // they set checkOrigin: false to hand cairn the admin CSRF authority.
     if (!isAdminPath(pathname)) {
       if (isUnsafeFormRequest(event.request) && !originMatches(event)) {
-        log.warn('guard.rejected', { reason: 'origin', path: pathname });
+        log.warn('guard.refused', { reason: 'origin', path: pathname });
         return renderConditionResponse('auth.csrf-origin-mismatch');
       }
       return resolve(event);
@@ -217,7 +215,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // whether to show the help page, never whether to grant access. The session gate below runs
     // regardless; do not repurpose this into an auth check.
     if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
-      log.warn('guard.rejected', { reason: 'https', path: pathname });
+      log.warn('guard.refused', { reason: 'https', path: pathname });
       return renderConditionResponse('edge.https-not-forced', { url: event.url });
     }
 
@@ -227,7 +225,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     // public ones included, instead of rendering a login form that can never succeed.
     const env = event.platform?.env ?? {};
     if (!env.AUTH_DB) {
-      log.error('guard.rejected', {
+      log.error('guard.refused', {
         reason: 'bindings',
         conditionId: REASON_CONDITION.bindings,
         path: pathname,
@@ -273,7 +271,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
         const hasSession =
           event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform }))) !==
           undefined;
-        log.warn('guard.rejected', {
+        log.warn('guard.refused', {
           reason: 'csrf',
           path: pathname,
           detail: verdict.detail,
@@ -288,7 +286,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       // Every identity refusal serves the same branded page under the same log event; only the
       // level, the detail word, and (on a thrown resolve) the error text differ.
       function refuseIdentity(level: 'warn' | 'error', detail: string, errorMessage?: string): Response {
-        log[level]('guard.rejected', {
+        log[level]('guard.refused', {
           reason: 'identity',
           path: pathname,
           conditionId: REASON_CONDITION.identity,
@@ -431,7 +429,7 @@ export function requireEditor(event: CairnEvent): Editor {
  * role for `target` (a concept id or one of the fixed engine screens `validateAccessComposition`
  * enforces). A target absent from the map, or no map at all, always admits (`canReach`'s
  * zero-config floor), so a site that declares nothing sees no behavior change. Every denial emits
- * `auth.access.denied` with the editor's email, role, and `target`, the same shape `requireAccess`
+ * `auth.access.refused` with the editor's email, role, and `target`, the same shape `requireAccess`
  * emits. Unlike `requireAccess`, an unmapped target is never a fail-closed misconfiguration here:
  * an engine screen's own route is always a legitimate destination, mapped or not.
  *
@@ -441,7 +439,7 @@ export function requireEditor(event: CairnEvent): Editor {
  */
 export function requireEngineAccess(access: AccessMap | undefined, editor: Editor, target: string): void {
   if (canReach(access, editor, target)) return;
-  log.warn('auth.access.denied', { email: editor.email, role: editor.role, target });
+  log.warn('auth.access.refused', { email: editor.email, role: editor.role, target });
   throw error(403, 'Access denied');
 }
 
@@ -456,7 +454,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * keyed by URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a
  * map keyed by its prefix still matches; a declared `target` is used exactly as given, never
  * normalized. So the common call is still `const editor = requireAccess(event);`. Every denial,
- * mapped or unmatched, emits `auth.access.denied` with the editor's email, role, and the resolved
+ * mapped or unmatched, emits `auth.access.refused` with the editor's email, role, and the resolved
  * (normalized) target.
  *
  * The unmatched case (the map has no rule at all for `target`) 403s every session, owner
@@ -478,7 +476,7 @@ export function requireAccess(event: CairnEvent, target?: string): Editor {
   const resolvedTarget = target ?? targetFromRouteId(event.route.id);
   const access = event.locals.cairnAccess;
   if (!hasAccessRule(access, resolvedTarget) || !canReach(access, editor, resolvedTarget)) {
-    log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: resolvedTarget });
+    log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: resolvedTarget });
     throw error(403, 'Access denied');
   }
   return editor;

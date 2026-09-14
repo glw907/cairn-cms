@@ -23,11 +23,13 @@ Entry format: a heading plus labeled lines.
 truncated 54 of this ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought.
 Foundations A repaired 14 (the `/sveltekit` and `/admin-toolkit` audit entries feeding the next two
 remediation slices) by re-authoring the shape from its rank-source discussion and migrating it to
-the `- **Shape:**` line above. The remaining 40 stay truncated and allowlisted in
-`scripts/checks/check-rulings-format-allowlist.json`; each is repaired by the initiative slice that
-executes it (cli and log entries by their owning slices, auth by the conventions pass, the tail by
-whichever slice touches each). No later slice may assume the repair is already done for a slug it
-finds on that allowlist.
+the `- **Shape:**` line above. The remaining 40 stayed truncated and allowlisted in
+`scripts/checks/check-rulings-format-allowlist.json`, each repaired by the initiative slice that
+executed it (cli and log entries by their owning slices, auth by the conventions pass, the tail by
+whichever slice touched each); later slices repaired all but one as they executed, so the
+allowlist holds exactly one slug today
+(`audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm`). No later slice may
+assume the repair is already done for a slug it finds on that allowlist.
 
 One entry needs care when it is repaired: `audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles`
 (`Reopens on:` line, ~line 4021) closes its truncated parenthetical mid-clause and then continues
@@ -122,8 +124,11 @@ open edits, not part of the shape itself.
   absent name that still appears inside a surviving rendered public shape) and fails on any leak that
   is not recorded, the same fail-unless-recorded form the canonical-home rule already enforces; it
   supersedes the retires pass's manual move record as the leak ledger once it lands.
-- **Reopens on:** open until the leak-class `check:surface` rider lands in the internals pass; until
-  then, the retires pass's move record is the manual ledger of the 18 accepted leaks.
+- **Reopens on:** closed. The rider landed as `check-surface-leaks` (this file, below), accepted by
+  the internals pass, Task 2, and wired into `check:surface` through `package.json`'s existing
+  entry (`node scripts/checks/check-surface-leaks.mjs` chained after `check-surface.mjs`, no new
+  top-level gate name). `check-surface-leaks` supersedes the retires pass's manual move record as
+  the leak ledger, the outcome this row's own `Shape:` line already anticipated.
 - **Record:** [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (the RULED subsection
   and its ADDENDUM RULINGS); [retires-move-record](record/2026-08-30-retires-move-record.md).
 
@@ -138,6 +143,31 @@ open edits, not part of the shape itself.
   `EditorRoutesConfig`, `PublicRoutesConfig`).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 1, and Task 1/Task 2.
+- **Amendment (2026-09-08, polish-C Task 2):** the bag carries an arity clause the ratified text
+  above does not state: `runtime` is a required member of the bag where the factory needs one, and
+  positional runtimes go, so `createContentRoutes` and `createCairnAdmin` each take exactly one
+  parameter with no default. This closes the "R1 applied as written" text on `runtime`'s place in
+  the bag rather than beside it. The source of this clause is
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  dated 2026-09-08, decision 11, rather than a sitting quotation this pass records as Geoff's own
+  words: "One shape for every route factory: a single config bag, with `runtime` a required member
+  of the bag where the factory needs one. Positional runtimes go." One amendment covers all four
+  factories the decision reaches (`createContentRoutes`, `createContentRoutesInternal`,
+  `createCairnAdmin`, `createCairnAdminInternal`); `createNavRoutes` and `createMediaRoute` execute
+  the same clause in Task 3 without a second amendment.
+- **Amendment (2026-09-08, polish-C Task 4):** the row's populated text scoped itself to four
+  `*Config` rows and did not reach a bag a single call takes rather than a factory's own
+  construction-time bag. This amendment states the split explicitly: a bag a factory takes at
+  construction is `*Config`, with `config` its primary parameter identifier; a bag a single call
+  takes is `*Options`. `createSectionAction` already drew the line the engine now states as a
+  rule: `SectionActionConfig` is the factory-level bag `createSectionAction` itself takes,
+  `SectionActionOptions` is the per-call bag its returned wrapper takes on each invocation. Under
+  this clause, `AuthGuardOptions`, `RendererOptions`, and `FieldsetOptions` rename to
+  `AuthGuardConfig`, `RendererConfig`, and `FieldsetConfig`; `CairnManifestOptions` is exempt under
+  `convention-interop-carve-out`, since it types an interop surface external tooling already
+  expects an `Options` bag on, and stays named as it is. Source:
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  dated 2026-09-08.
 
 ## convention-interop-carve-out: a host ecosystem's convention wins over cairn's grammar on an interop surface  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -181,6 +211,10 @@ open edits, not part of the shape itself.
   `diffNewlyPublished`, `buildSitemapView`, `formatMediaToken`/`parseMediaToken`).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 3, and Task 1/Task 3.
+- **Note (polish-C, Task 5):** the three residuals this ruled vocabulary already covered executed:
+  `serializeManifest` to `formatManifest` (`parse*`'s codec partner), `deriveExcerpt` to
+  `buildExcerpt`, and `diffNewlyPublished` to `buildNewlyPublished` (both `build*`'s "derives pure
+  data"). Per `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
 
 ## convention-bare-noun-functions: an exported function's name begins with a verb, an exported value's does not  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -192,6 +226,13 @@ open edits, not part of the shape itself.
   Task 3 executes (`renderGlyph`, `defineFieldset`, `resolveOwnerLevelRoles`, `renderJsonLdScript`).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 4, and Task 1/Task 3.
+- **Progress note (polish-C, Tasks 6 and 7):** the ruling's population is now executed across the
+  public surface, seven names: `cookieName` to `buildCookieName`, `githubApp` to `createGithubApp`,
+  and `adminAction` to `createAdminAction` (Task 6); `previewMint` to `mintPreview`,
+  `previewRevoke` to `revokePreview`, `previewLoad` to `loadPreview`, and `healthLoad` to
+  `loadHealth` (Task 7). Two exemptions argued rather than assumed: the doctor's `githubApp`
+  `DoctorCheck` value, which stays bare because it is an exported value rather than a function; and
+  `cairnManifest`, a host-ecosystem plugin factory, out of the ruling's scope by its own text.
 
 ## convention-outcome-idiom: a more-than-two-outcome operation returns a discriminated result on one `outcome` grammar  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -210,6 +251,22 @@ open edits, not part of the shape itself.
   and Task 7 extends (`authorizeAdminTarget`'s `outcome`-grammar return).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 7.
+- **Widening clause (polish-C, Task 8, 2026-09-08):** this row's own scoping phrase, "every
+  discriminated result this pass introduces", is superseded by decision 6 of
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  Geoff's own words: *"no grandfathered exceptions on a surface heading for a 1.0 promise, in the
+  one window where every rename is free."* The `outcome`-discriminant grammar now governs the
+  WHOLE public surface, not only what a later pass introduces, and polish-C's Task 8 reads four
+  existing types into scope under it: `RequestOutcome` (`/sveltekit`, formerly `RequestResult`),
+  `ChannelRequestOutcome` and `ChannelConfirmOutcome` (`/auth-channel`, formerly
+  `ChannelRequestResult` and `ChannelConfirmResult`), and `RevertOutcome` (`/sveltekit`, formerly
+  `RevertFailure`; see `convention-failure-suffix`'s own dated supersession for the name). No
+  ledger row rules discriminant VALUE casing before this clause; the kebab-case string a reader
+  sees on every existing `*Outcome` type (`PreviewMintOutcome`, `PreviewRevokeOutcome`, and the
+  rest) is this pass's own uniformity, not a prior ruling, so this clause states it as the rule
+  going forward: an `outcome` value is a kebab-case string literal (`'send-error'`, not
+  `'send_error'` or `'sendError'`). The snake_case rule at `src/lib/log/events.ts:5-7`, which
+  governs a log record's `reason` and `scope` fields, is a different surface and stays untouched.
 
 ## convention-failure-suffix: `Failure` is the family suffix; `Refusal` and `Skip` retire as TYPE-NAME suffixes  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -231,6 +288,18 @@ open edits, not part of the shape itself.
 - **Progress note (polish-11a, Task 6):** `BulkDeleteSkip` renamed to `BulkDeleteSkippedAsset`,
   the last member of the F1 rename set; it declares in `media/bulk-delete-plan.ts`. Every rename
   this ruling names is now executed. Verdict unchanged.
+- **Dated supersession (polish-C, Task 8, 2026-09-08):** citing
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  line 7, which names the `*Outcome` target for the one type this row's own family-suffix rule
+  would otherwise have kept on `*Failure`. `RevertFailure` (`/sveltekit`) is that type: every arm
+  is a refusal and it is only ever the payload of `ActionFailure<RevertFailure>`, the row's own
+  case rather than an edge of it. Surviving scope: `*Failure` remains the family suffix for a
+  payload whose arms are all refusals; `RevertOutcome` is the one ruled exception, on the ground
+  that `convention-outcome-idiom` governs the discriminated SHAPE and the four types this pass
+  reads onto that grammar (`RequestOutcome`, `ChannelRequestOutcome`, `ChannelConfirmOutcome`,
+  `RevertOutcome`) should look alike. `RevertFailure` is renamed to `RevertOutcome`, re-keyed from
+  `reason` to `outcome`, and declares in `src/lib/sveltekit/types.ts`. No other type this row
+  names is affected.
 
 ## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -277,6 +346,9 @@ open edits, not part of the shape itself.
   exception against its siblings, per `audit-auth-authchannel`'s annotation).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1/Task 8.
+- **Note (polish-C, Task 9):** applied to `createMediaRoute`, a public export with an unmatched
+  singular name against the family's other route factories: the `/sveltekit` barrel now carries
+  one sentence above the export naming why it stays singular, per this ruled shape.
 
 ## convention-identifier-grammar: a public-observable identifier is dot-namespaced by area, never prefix-substituted  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -303,6 +375,11 @@ open edits, not part of the shape itself.
   vocabulary already carries defect nouns, `chip-ground-collision` among them, and C16 counsels
   restraint beyond the namespace fix), and the `allowlist-` sub-prefix stays (`rendered` is the
   area; the clause namespaces by area, not by sub-mechanism).
+- **Note (polish-C, Task 11):** the events header (`src/lib/log/events.ts`) widens its own
+  grammar clause on the same reasoning as the amendment above: the subject segment of
+  `area[.subject].verb_phrase` may itself be dotted, so `auth.channel.session.created` conforms
+  as written rather than standing as the grammar's one four-segment outlier. The clause is
+  widened, not the name flattened, matching this ruling's own declined-tidy precedent.
 
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 
@@ -911,6 +988,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 43.
 - **Any-site case:** fieldset's options parameter, carrying refine. A site writing a shared refine-builder types the options object, and core.md:507 states the constraint it must design around: refine is deliberately synchronous.
+- **Note (polish-C, Task 4):** renamed to `FieldsetConfig`, per `convention-parameter-bags`'s
+  factory-versus-per-call clause. Verdict unchanged.
 
 ## audit-adapter-validationissue: `ValidationIssue`  (keep, 2026-08-26, any-site audit)
 
@@ -1038,6 +1117,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 60.
 - **Any-site case:** Any site using the cairnManifest Vite plugin resolves it from the root barrel at build time. Demoting it breaks the build of every consumer that has never heard of the function.
+- **Note (polish-C, Task 5):** renamed to `formatManifest`, `parse*`'s codec partner under
+  `convention-verb-rules`. Verdict unchanged.
 
 ## audit-adapter-verifyreferences: `verifyReferences`  (keep, 2026-08-26, any-site audit)
 
@@ -1225,6 +1306,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 85.
 - **Any-site case:** The required backend member of every adapter, with a security-shaped contract: the private key 'stays the Worker secret ... read at request time and never from the adapter source'.
+- **Note (polish-C, Task 6):** renamed to `createGithubApp`, per `convention-bare-noun-functions`
+  and `convention-verb-rules`'s "function factories belong to `create*`". Verdict unchanged.
 
 ## audit-adapter-emailrecipient: `EmailRecipient`  (keep, 2026-08-26, any-site audit)
 
@@ -1395,6 +1478,8 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 106.
 - **Any-site case:** The archetype of an absorbed divergence: before the plugin seam a site re-parsed cairn's HTML into a second unified pipeline; after it, the site's plugin composes over the same hast tree.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Note (polish-C, Task 4):** renamed to `RendererConfig`, per `convention-parameter-bags`'s
+  factory-versus-per-call clause. Verdict unchanged.
 
 ## audit-adapter-siterender: `SiteRender`  (keep, 2026-08-26, any-site audit)
 
@@ -1795,6 +1880,10 @@ when the remediation pass lands.
 - **Shape:** Rename draftStartedAt and HistoryData's startedAt to lastSavedAt, dropping the compensating doc-comment prose. The comment admits both are wrong and keeps them 'for API stability', but churn is free until beta, so the stability plea does not license the wrong name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 32.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-C, Task 8):** `RevertFailure` renames to `RevertOutcome`, re-keyed from `reason`
+  to `outcome` with kebab-case values `'draft-exists'`, `'history-stale'`, `'ref-unknown'`, per
+  `convention-outcome-idiom`'s widening clause and `convention-failure-suffix`'s dated
+  supersession. Verdict unchanged.
 
 ## audit-sveltekit-tidyclient: `TidyClient`  (reshape, 2026-08-26, any-site audit)
 
@@ -2004,6 +2093,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 55.
 - **Any-site case:** A site that puts tag management on its own route, beside its own taxonomy tooling, mounts the vocabulary screen and types data with this.
+- **Note (polish-C, Task 4):** renamed to `VocabularyData`, dropping `Load` to join the load-data
+  types that already omit it. Verdict unchanged.
 
 ## audit-sveltekit-settingsdata: `SettingsData`  (keep, 2026-08-26, any-site audit)
 
@@ -2018,6 +2109,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 57.
 - **Any-site case:** A site whose public menu is edited beside its other site settings mounts the drag-to-reorder nav editor on its own route and types data.
+- **Note (polish-C, Task 4):** renamed to `NavData`, dropping `Load` to join the load-data types
+  that already omit it. Verdict unchanged.
 
 ## audit-sveltekit-historydata: `HistoryData`  (keep, 2026-08-26, any-site audit)
 
@@ -2067,6 +2160,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 64.
 - **Any-site case:** A PKCS#1-to-PKCS#8 key mistake is invisible until the first publish fails. Every cairn site signs App JWTs, so every site wants a route proving the key decodes.
+- **Note (polish-C, Task 7):** renamed to `loadHealth`, per `convention-bare-noun-functions`.
+  Verdict unchanged.
 
 ## audit-sveltekit-requestresult: `RequestResult`  (keep, 2026-08-26, any-site audit)
 
@@ -2074,6 +2169,10 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 65.
 - **Any-site case:** A site rendering its own login form branches on form.status to show check-your-email, try-again, or wait-a-moment.
+- **Note (polish-C, Task 8):** `RequestResult` renames to `RequestOutcome`, re-keyed from `status`
+  to `outcome` (`'sent'`, `'send-error'`, `'throttled'`); the kept `sent` boolean field is
+  unaffected. The any-site case above now reads: a site rendering its own login form branches on
+  `form.outcome` to show check-your-email, try-again, or wait-a-moment. Verdict unchanged.
 
 ## audit-sveltekit-authroutes: `AuthRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -2144,6 +2243,8 @@ when the remediation pass lands.
   verdict: `ReturnType<typeof createNavRoutes>` retires under `convention-contract-first-returns`,
   and `NavRoutes` is now a hand-declared interface `createNavRoutes` names in its own signature.
   The name and its members are unchanged.
+- **Note (polish-C, Task 3):** `createNavRoutes(config: NavRoutesConfig): NavRoutes` is now the
+  whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-createnavroutes: `createNavRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -2151,6 +2252,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 73.
 - **Any-site case:** A site editing its public menu beside its own settings mounts navLoad and navSaveAction itself, reusing the engine's config read and commit rather than re-implementing them.
+- **Note (polish-C, Task 3):** `createNavRoutes(config: NavRoutesConfig): NavRoutes` is now the
+  whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-contentroutes: `ContentRoutes`  (reshape, 2026-08-26, any-site audit)
 
@@ -2170,6 +2273,9 @@ when the remediation pass lands.
   (`convention-parameter-bags`); the `deps` parameter renames to `config` on every factory that
   takes this bag (`createContentRoutesInternal`, `createContentRoutes`,
   `createContentRoutesContext`). The shape and behavior are unchanged.
+- **Note (polish-C, Task 2):** `ContentRoutesConfig` gains a required `runtime: CairnRuntime`
+  member; `createContentRoutes(config: ContentRoutesConfig): ContentRoutes` is now the whole
+  signature. Verdict unchanged.
 
 ## audit-sveltekit-createcontentroutes: `createContentRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -2177,6 +2283,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 76.
 - **Any-site case:** A site hand-mounting /admin route-by-route, because its admin URLs must match an existing information architecture, wires editLoad, saveAction and publishAction onto its own files.
+- **Note (polish-C, Task 2):** `createContentRoutes(config: ContentRoutesConfig): ContentRoutes` is
+  now the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-admindata: `AdminData`  (keep, 2026-08-26, any-site audit)
 
@@ -2217,6 +2325,9 @@ when the remediation pass lands.
 - **Annotation (conventions pass, Task 2):** renamed `CairnAdminOptions` → `CairnAdminConfig`
   (`convention-parameter-bags`); the `deps` parameter renames to `config` on `createCairnAdmin`
   the same way. The shape and behavior are unchanged.
+- **Note (polish-C, Task 2):** `CairnAdminConfig` gains a required `runtime: CairnRuntime` member;
+  `createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes` is now the whole signature.
+  Verdict unchanged.
 
 ## audit-sveltekit-attentionitem: `AttentionItem`  (keep, 2026-08-26, any-site audit)
 
@@ -2368,6 +2479,9 @@ when the remediation pass lands.
 - **Shape:** Its header admits it 'performs no authorization or draft-existence check of its own, so a caller that reaches it directly owns both'. Either perform the entry-scoped check the admin action performs, or make the caller's obligation part of the name and the signature rather than a header comment.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 97.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-C, Task 7):** `mintPreviewToken` no longer exists in `src/lib`; the operation it
+  named is `mintPreview` after this pass, renamed from `previewMint` per
+  `convention-bare-noun-functions`. This row's reshape verdict refers to the same operation.
 
 ## audit-sveltekit-previewload: `previewLoad`  (keep, 2026-08-26, any-site audit)
 
@@ -2375,6 +2489,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 98.
 - **Any-site case:** Any site letting a non-editor see an unpublished draft — a client, a board member, a copy editor without an account. Resolving the draft off its pending branch is not reproducible site-side.
+- **Note (polish-C, Task 7):** renamed to `loadPreview`, per `convention-bare-noun-functions`.
+  Verdict unchanged.
 
 ## audit-sveltekit-slotdef: `SlotDef`  (keep, 2026-08-26, any-site audit)
 
@@ -2457,6 +2573,8 @@ when the remediation pass lands.
 - **Shape:** A bag named Options whose only member is an injected build flag advertises configuration that does not exist. Fold the flag into the function's own testing surface, or name it for what it is rather than as the wrapper's options.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 108; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Note (polish-C, Task 6):** the row now names `createAdminAction`. This rename changes the
+  function's name and not its signature, so the retire stays open and the blocker is unchanged.
 
 ## audit-sveltekit-unauditedactionerror: `UnauditedActionError`  (keep, 2026-08-26, any-site audit)
 
@@ -2561,6 +2679,8 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 121.
 - **Any-site case:** A custom admin screen with a form but no database binding: it resolves the signed-in editor as typed ctx.editor and makes an unaudited mutation a build failure rather than a discipline.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-C, Task 6):** renamed to `createAdminAction`, per `convention-bare-noun-functions`
+  and the `createSectionAction` sibling. Verdict unchanged.
 
 ## audit-sveltekit-createmediaroute: `createMediaRoute`  (keep, 2026-08-26, any-site audit)
 
@@ -2568,6 +2688,11 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 122.
 - **Any-site case:** Every media-enabled site mounts /media/[...path]; serving user-uploaded bytes from your own origin without nosniff, inline disposition and a sandbox CSP is an XSS hole.
+- **Note (polish-C, Task 3):** `createMediaRoute(config: MediaRouteConfig): RequestHandler` is now
+  the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
+- **Note (polish-C, Task 9):** the `/sveltekit` barrel now carries one sentence, per
+  `convention-internal-sibling-comment`'s shape, recording that the name stays singular because
+  the factory mounts one kit handler and returns a kit `RequestHandler`. Verdict unchanged.
 
 ## audit-sveltekit-authguardoptions: `AuthGuardOptions`  (keep, 2026-08-26, any-site audit)
 
@@ -2575,6 +2700,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 123.
 - **Any-site case:** Any site declaring roles or an access map writes this object in hooks.server.ts; each member is a decision only the site can make.
+- **Note (polish-C, Task 4):** renamed to `AuthGuardConfig`, per `convention-parameter-bags`'s
+  factory-versus-per-call clause. Verdict unchanged.
 
 ## audit-sveltekit-requireowner: `requireOwner`  (keep, 2026-08-26, any-site audit)
 
@@ -2610,6 +2737,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 128.
 - **Any-site case:** The recommended path for every site: two route pairs mount the whole /admin surface, so the site restates no route table and wires no action names by hand.
+- **Note (polish-C, Task 2):** `createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes` is
+  now the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-createauthguard: `createAuthGuard`  (keep, 2026-08-26, any-site audit)
 
@@ -2743,6 +2872,8 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the 4b conformance pass, Task 9. `PageHeader`'s own `self-start` action wrap ported in first (the two fixes were asymmetric; a naive collapse would have regressed it), then `OfficeList` collapsed to a thin card-frame that composes `PageHeader` for its header band. `OfficeList`'s `subtitle` prop renamed to `meta` (no forwarding alias), and the merged band adopted `PageHeader`'s rhythm (`mb-10`, `gap-0.5`, `text-wrap: balance`) as the toolkit's one office-header rhythm, per the design system's F3 proximity-grouping scale; `OfficeList`'s card keeps its own tighter proximity by sitting directly under that offset. The `WATCH` comment and the parked ROADMAP spacing-convergence entry (`ROADMAP.md:1427-1434` before this pass) both close: this ruling, ratified 2026-08-26, postdates and supersedes the entry's 2026-07-20 parking, which had held the convergence for "a later major" before the any-site audit re-examined and settled it.
 - **Shape:** Collapse to a card-frame wrapper that composes PageHeader for its header band, retiring the second eyebrow/title/subtitle/action implementation and closing the WATCH comment's parked ROADMAP spacing-convergence entry between OfficeList and PageHeader.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 17.
+- **Note (polish-C, Task 12):** superseded by `officelist-retired-for-one-scroll-owner` (this
+  file), which overrules this row's own "both stay" position and retires `OfficeList` outright.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formattimestamp: `formatTimestamp`  (reshape, 2026-08-26, any-site audit)
@@ -2987,6 +3118,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 49.
 - **Any-site case:** It owns table chrome and never a row shape: no rows:T[] prop, the caller's markup stays its own. Plus the nowrap floor and overflow-x fallback a consumer otherwise rediscovers by shipping a wrapped table.
+- **Note (polish-C, Task 12):** `officelist-retired-for-one-scroll-owner` (this file) settles this
+  component's wrapper as the toolkit's one horizontal scroll container; a composing screen never
+  nests a second `overflow-x-auto` around it. Verdict unchanged.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-statuschip: `StatusChip`  (reshape, 2026-08-26, any-site audit)
@@ -3012,6 +3146,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 52.
 - **Any-site case:** A consumer adding a screen to CairnAdminShell needs its header band to match the engine's or the screen reads as foreign; it also carries the placement rule that search never lives in this band.
+- **Note (polish-C, Task 12):** `officelist-retired-for-one-scroll-owner` (this file) settles this
+  as the one page-header primitive: a custom list screen composes it beside `AdminTable` directly,
+  never through a retired second implementation. Verdict unchanged.
 
 ## audit-admin-cairnmedialibrary: `CairnMediaLibrary`  (keep, 2026-08-26, any-site audit)
 
@@ -3156,6 +3293,13 @@ when the remediation pass lands.
   Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 8.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Supersession (polish-C, Task 8, 2026-09-08):** citing
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md).
+  This row's `Reopens on:` closure text reads "the type keeps with the factory, unchanged". What
+  changed: the name (`ChannelRequestOutcome`) and the discriminant key (`outcome`, replacing the
+  bare `sent`/`error` split). What did not: the type still declares in `factory.ts`, and the
+  no-roster-leak encoding this row credits it with survives verbatim, `outcome: 'sent'` even for
+  an unknown contact.
 
 ## audit-auth-channelconfirmresult: `ChannelConfirmResult`  (reshape, 2026-08-26, any-site audit)
 
@@ -3170,6 +3314,13 @@ when the remediation pass lands.
   factory itself. Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 9.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Supersession (polish-C, Task 8, 2026-09-08):** citing
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md).
+  This row's `Reopens on:` closure text reads "the type keeps with the factory, unchanged". What
+  changed: the name (`ChannelConfirmOutcome`) and the discriminant key (`outcome`, replacing the
+  `ok: true` / `error: ...` split, with the success arm now `outcome: 'confirmed'`). What did not:
+  the type still declares in `factory.ts`, and the challenge-required-is-a-retry-invitation ruling
+  survives verbatim, `outcome: 'challenge-required'` on an escalated attempt, never a hard failure.
 
 ## audit-auth-authchannelevent: `AuthChannelEvent`  (reshape, 2026-08-26, any-site audit)
 
@@ -3357,6 +3508,8 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 16.
 - **Any-site case:** A site setting a member session cookie on a deployment that is https in production and plain http under wrangler dev: hard-coded __Host- breaks local dev, omitting it drops origin binding in production.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (polish-C, Task 6):** renamed to `buildCookieName`, per `convention-bare-noun-functions`
+  and `convention-verb-rules`. Verdict unchanged.
 
 ## audit-auth-tokensmatch: `tokensMatch`  (keep, 2026-08-26, any-site audit)
 
@@ -3373,6 +3526,8 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 18.
 - **Any-site case:** A site rendering its own roster screen writes const rows: EditorRow[] = await listEditors(db). Without the type a consumer cannot declare a kept function's result.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (polish-C, Task 9):** renamed to `UnresolvedEditor`, declared `Omit<Editor, 'capability'>`.
+  Verdict unchanged.
 
 ## audit-auth-seteditorrole: `setEditorRole`  (reshape, 2026-08-26, any-site audit)
 
@@ -3395,6 +3550,8 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 20.
 - **Any-site case:** A site showing 'who can edit this site' in its own admin, or a setup script checking an empty roster. Also the documented prerequisite for telling the owner guards' two false outcomes apart.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (polish-C, Task 9):** the result is now typed `UnresolvedEditor[]`, `EditorRow` renamed to
+  `UnresolvedEditor`. Verdict unchanged.
 
 ## audit-auth-inserteditor: `insertEditor`  (keep, 2026-08-26, any-site audit)
 
@@ -3713,6 +3870,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 15.
 - **Any-site case:** Validating a fetched manifest before newlyPublishedEntries: version guard plus entry-shape checks over an engine-owned schema. Friction: the one live consumer cast instead (sweep.ts:144).
+- **Note (polish-C, Task 5):** stays `parseManifest`, its canonical home moves to `.` beside its
+  codec partner `formatManifest`, with a recorded re-export keeping it importable from
+  `/delivery/data`. Verdict unchanged.
 
 ## audit-delivery-deriveexcerpt: `deriveExcerpt`  (keep, 2026-08-26, any-site audit)
 
@@ -3720,6 +3880,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 16.
 - **Any-site case:** Excerpting text outside the corpus (a search hit, a custom card) so it matches ContentSummary.excerpt on the same page. The description-first, word-boundary, 200-char rule is engine policy.
+- **Note (polish-C, Task 5):** renamed to `buildExcerpt`, `build*`'s "derives pure data" meaning
+  under `convention-verb-rules`. Verdict unchanged.
 
 ## audit-delivery-seoinput: `SeoInput`  (keep, 2026-08-26, any-site audit)
 
@@ -3811,6 +3973,12 @@ when the remediation pass lands.
 - **Annotation (conventions pass, Task 3):** renamed `newlyPublishedEntries` → `diffNewlyPublished`
   (`convention-bare-noun-functions`: an exported function's name begins with a verb; `diff*` states
   it compares a before/after manifest pair). Names only; the signature and behavior are unchanged.
+- **Note (polish-C, Task 5):** renamed `diffNewlyPublished` → `buildNewlyPublished`
+  (`convention-verb-rules`: `build*` derives pure data from its inputs). This is the second rename
+  of one function inside one unpublished window: both this rename and the conventions-pass
+  annotation above sit under the same `## Unreleased` heading, so a consumer upgrading across the
+  release crosses one rename, `newlyPublishedEntries` to `buildNewlyPublished`, not two. Verdict
+  unchanged.
 
 ## audit-delivery-buildfragmentresolver: `buildFragmentResolver`  (keep, 2026-08-26, any-site audit)
 
@@ -4205,6 +4373,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 3.
 - **Any-site case:** A member reports "the code worked but I'm not logged in": this record's presence or absence after auth.channel.confirmed isolates the fault to the session row write.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** string unchanged. `convention-identifier-grammar`'s header clause
+  widens to admit a dotted subject, naming this event as its live case, so the four-segment name
+  now conforms as written rather than standing as the grammar's one outlier. Verdict unchanged.
 
 ## audit-log-auth-session-created: `auth.session.created`  (keep, 2026-08-26, any-site audit)
 
@@ -4376,6 +4547,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 26.
 - **Any-site case:** "Replace does nothing for me" answered without a repro: the record says the typed-slug confirm gate fired, not that references are the problem.
+- **Note (polish-C, Task 10):** renamed to `media.replace_refused`. Verdict unchanged.
 
 ## audit-log-media-delete-blocked: `media.delete_blocked`  (keep, 2026-08-26, any-site audit)
 
@@ -4383,6 +4555,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 27.
 - **Any-site case:** The most common media support question a content site fields. `foundIn` (the count of referencing entries) is the actionable field: the editor must clear that many references first.
+- **Note (polish-C, Task 10):** renamed to `media.delete_refused`. Verdict unchanged.
 
 ## audit-log-commit-succeeded: `commit.succeeded`  (reshape, 2026-08-26, any-site audit)
 
@@ -4407,6 +4580,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Rename to the grammar `events.ts` ratifies in its own header: `taxonomy.unmarked_field` becomes `taxonomy.field_unmarked`, a state adjective naming a detected condition. The verify record found a second bare noun phrase, `publish.address_collision`, which becomes `publish.address_collided`; any rename lands both.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 30.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** superseded. `taxonomy.field_unmarked` renames to
+  `content.field_unmarked`: `taxonomy` was the union's only use of that area, and the sibling
+  event `content.field_behavior_failed` already names the right one for the same subsystem. An
+  event name is public-observable contract, so both this rename and the earlier one that produced
+  `taxonomy.field_unmarked` ride the one unpublished breaking window with a `Consumers must:` line
+  naming each, above the `0.96.0` boundary under `## Unreleased`; a consumer upgrading across the
+  window crosses one rename, not two. Per
+  `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
 
 ## audit-log-media-orphans-purged: `media.orphans_purged`  (keep, 2026-08-26, any-site audit)
 
@@ -4530,6 +4711,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 46.
 - **Any-site case:** An anonymous developer mounts a custom admin route outside the guard's coverage. The doc is honest that it is "expected to be rare on a route the guard actually covers" and names what earns it: "it's the only gate a custom admin route reaches if it's ever mounted outside the guard's coverage."
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 10):** renamed to `admin.action.csrf_refused`. Verdict unchanged.
 
 ## audit-log-media-resolve-missing: `media.resolve_missing`  (keep, 2026-08-26, any-site audit)
 
@@ -4601,6 +4783,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 55.
 - **Any-site case:** A developer's own audit sink silently loses records while every action still succeeds (the wrapper is fail-open). Its redaction reasoning is the vocabulary's best precedent: it omits record.detail "not because detail is sensitive but to avoid duplication: admin.action.audited already logged the full untruncated record ... one line earlier."
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** renamed to `audit.sink.call_failed`. The area moves off `admin`
+  onto `audit.sink`, converging with `audit.sink.write_failed` on one area and one verb
+  (`failed`) with two subjects: this event names the site's own sink throwing when `ctx.audit`
+  invokes it, and `audit.sink.write_failed` names the packaged D1 sink failing to persist. Verdict
+  unchanged.
 
 ## audit-log-admin-action-unaudited: `admin.action.unaudited`  (keep, 2026-08-26, any-site audit)
 
@@ -4654,6 +4841,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 62.
 - **Any-site case:** The most common admin support question — "why can't this role reach that screen" — answered with the role and the target in one line, and distinguishable from auth.role.unknown (no rule versus no valid role). Four emit sites share one shape (email, role, target) across requireAccess, the engine's own gated screens, and createSectionAction's 403 branch; the uniform `target` is the right generic form, since a screen id, a site route target, and 'media' all read the same way to a query.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 10):** renamed to `auth.access.refused`. Verdict unchanged.
 
 ## audit-log-publish-address-collision: `publish.address_collided`  (keep, 2026-08-26, any-site audit)
 
@@ -4685,6 +4873,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 66.
 - **Any-site case:** A site's audit table quietly missing rows while every action succeeds. The doc states the keep burden itself: "The audited action already completed (the sink is fail-open), so this is the only surviving record of the persisted row." Four reasons separate a data problem from a binding problem, it persists the whole truncated record with a placeholder for whichever field's coercion failed, and it guarantees at most one record. It is also the one event whose `actor` is documented as not necessarily an editor, a correct generic accommodation for site code calling createD1AuditSink with its own domain events.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** string unchanged. `admin.action.sink_threw` renames to
+  `audit.sink.call_failed` and converges with this event on one area, `audit.sink`, and one verb,
+  `failed`, with two subjects, this event's `write_failed` naming the packaged D1 sink's own
+  persist failure. Verdict unchanged.
 
 ## audit-log-admin-action-misconfigured: `admin.action.misconfigured`  (keep, 2026-08-26, any-site audit)
 
@@ -4736,6 +4928,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 73.
 - **Any-site case:** The entire admin is unreachable on a new deploy, and the reason — a missing AUTH_DB binding versus an origin mismatch behind a proxy versus plain HTTP versus CAIRN_DEV_BACKEND left set in production — lives only here. Eight emit sites, five reasons, and a level split that is itself the triage (error for the two operator faults, warn for the three request refusals). The reasoning is stated at guard.ts:118-121: "That is an operator fault, not a sign-in problem, so name the condition on every admin path, the public ones included, instead of rendering a login form that can never succeed." Carries conditionId on bindings. Listed in docs/admin/troubleshooting.md.
+- **Note (polish-C, Task 10):** renamed to `guard.refused`. Verdict unchanged.
 
 ## audit-log-preview-rejected: `preview.rejected`  (keep, 2026-08-26, any-site audit)
 
@@ -4743,6 +4936,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 74.
 - **Any-site case:** An editor shares a preview link with a client, the client sees a 404, and the site owner must choose between "apply migration 0003", "bind AUTH_DB", "the link expired", and "the draft was reverted into an invalid state" — four different days of work, selected by one `reason` field. The doc makes the argument in one sentence: "Every outward response is an identical 404, except bindings_missing, which answers 503; this log is the only place the distinction survives." Seven reasons in a documented check order span an unbound binding, an un-migrated table, an unknown hash, an expiry, a stale row, a draft that no longer validates, and a vanished branch — seven different operator actions behind one deliberately indistinguishable response, since distinguishing them on the wire would leak preview-token validity to a prober. The conditional field policy is equally disciplined: concept/id only on the three reasons where an entry is identified, `binding` only on bindings_missing, and never the token.
+- **Note (polish-C, Task 10):** renamed to `preview.refused`. Verdict unchanged.
 
 ## audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c: `check:dogfood tripwire proposed into cairn-audit (coherence C13 / R-8)`  (retire, 2026-08-26, any-site audit)
 
@@ -5609,3 +5803,35 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** the widened `ISO_WITH_ZONE` and the normalization step, both asserted by test
   against each new form's canonical-spelling equivalent, and the zone-less pass-through case
   asserted unchanged.
+
+## officelist-retired-for-one-scroll-owner: `OfficeList`  (retire, 2026-09-14, polish-C)
+
+- **Verdict:** retire. `OfficeList.svelte:8-9` states "`PageHeader` and this component cover
+  different shapes, a header primitive versus a full list-screen scaffold, and both stay: never a
+  duplicate," and `docs/reference/admin-toolkit.md` states "`PageHeader` and `OfficeList` both
+  stay. They cover different shapes, a header primitive versus a full list-screen scaffold, never
+  a duplicate." Both sentences are overruled. `OfficeList`'s own card frame
+  (`overflow-x-auto card-shadow` on `OfficeList.svelte:47`) and `AdminTable`'s own wrapper
+  (`overflow-x: auto` at `AdminTable.svelte:78`) are two scroll containers over one table the
+  moment a caller nests an `AdminTable` inside `OfficeList`'s card, which the ratified
+  `read-from-the-source-rule` (this file, above) makes a shape defect until argued otherwise: a
+  fact with one true source, "the wrapper that owns horizontal scroll," had grown two. The
+  replacement is not a gap; it is a named recipe already in the admin's own design system, the
+  floating-card composition (`card-shell card-shadow`, `docs/internal/admin-design-system.md`,
+  "Component recipes") that a custom `/admin/` screen now composes directly: `PageHeader` for the
+  header band, then an `overflow-hidden card-shell card-shadow` div with no `overflow-x-auto` of
+  its own around `AdminTable`, whose own wrapper is the one scroll owner; `overflow-hidden`
+  carries the corner clip `OfficeList.svelte:47`'s `overflow-x-auto card-shadow` used to compute
+  (`overflow-x: auto` against a default `overflow-y: visible` resolves both axes to `auto`, which
+  also clips), so the replacement needs its own explicit clip to keep it.
+- **Reopens on:** a shape genuinely needing a second, independently-scrolling region inside a
+  screen's own card, distinct from `AdminTable`'s own table wrapper.
+- **Shape:** delete `OfficeList.svelte` and its export from `/admin-toolkit`; a screen composes
+  `PageHeader` beside `AdminTable` inside `card-shell card-shadow` instead of a component that
+  wraps both.
+- **Record:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md` (2026-09-08), decision 8
+  ("`OfficeList` retires... `AdminTable` is the sole scroll owner").
+- **Verified:** `src/lib/admin-toolkit/index.ts` no longer exports `OfficeList`;
+  `docs/extend/migration-notes.md` carries the replacement composition as a `svelte` fence with
+  no `overflow-x-auto` and an `overflow-hidden` clip on the outer card wrapper, and with
+  `AdminTable`'s required `rowCount` and `header` props supplied.

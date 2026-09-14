@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, formatManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -63,7 +63,7 @@ describe('manifestEntryFromFile', () => {
     const noMedia = manifestEntryFromFile(posts, file);
     expect(noMedia.mediaRefs).toBeUndefined();
     // The serialized row of an image-free entry carries no mediaRefs key.
-    expect(serializeManifest({ version: 1, entries: [noMedia] })).not.toContain('mediaRefs');
+    expect(formatManifest({ version: 1, entries: [noMedia] })).not.toContain('mediaRefs');
   });
   it('records reference edges from a reference-bearing entry, omitting the key when none', () => {
     const refPosts: ConceptDescriptor = {
@@ -85,7 +85,7 @@ describe('manifestEntryFromFile', () => {
 
     const noRefs = manifestEntryFromFile(posts, file);
     expect(noRefs.references).toBeUndefined();
-    expect(serializeManifest({ version: 1, entries: [noRefs] })).not.toContain('references');
+    expect(formatManifest({ version: 1, entries: [noRefs] })).not.toContain('references');
   });
   it('records the fragment ids an entry includes, omitting the key when none', () => {
     const withIncludes = manifestEntryFromFile(posts, {
@@ -96,7 +96,7 @@ describe('manifestEntryFromFile', () => {
 
     const noIncludes = manifestEntryFromFile(posts, file);
     expect(noIncludes.includes).toBeUndefined();
-    expect(serializeManifest({ version: 1, entries: [noIncludes] })).not.toContain('includes');
+    expect(formatManifest({ version: 1, entries: [noIncludes] })).not.toContain('includes');
   });
   it('projects tags from the marked taxonomy field, coercing a lone scalar', () => {
     const taxPosts: ConceptDescriptor = {
@@ -129,7 +129,7 @@ describe('manifestEntryFromFile', () => {
     expect('tags' in emptyTax).toBe(false);
 
     // The serialized row of a tag-free entry carries no tags key.
-    expect(serializeManifest({ version: 1, entries: [noTax] })).not.toContain('tags');
+    expect(formatManifest({ version: 1, entries: [noTax] })).not.toContain('tags');
   });
   it('derives a summary from the description, else the body', () => {
     // A non-dated descriptor, so the slug permalink resolves from the file stem alone.
@@ -160,7 +160,7 @@ describe('manifestEntryFromFile', () => {
   });
 });
 
-describe('serializeManifest / parseManifest', () => {
+describe('formatManifest / parseManifest', () => {
   it('serializes canonically: entries and links sorted, pretty, trailing newline', () => {
     const manifest = {
       version: 1 as const,
@@ -169,7 +169,7 @@ describe('serializeManifest / parseManifest', () => {
         { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] },
       ],
     };
-    const out = serializeManifest(manifest);
+    const out = formatManifest(manifest);
     expect(out.endsWith('\n')).toBe(true);
     const reparsed = parseManifest(out);
     // pages/a sorts before posts/b; the date-less entry omits the date key.
@@ -178,13 +178,13 @@ describe('serializeManifest / parseManifest', () => {
     // the second entry's links are sorted by concept then id.
     expect(reparsed.entries[1].links).toEqual([{ concept: 'pages', id: 'a' }, { concept: 'pages', id: 'z' }]);
     // serialize is idempotent on a parsed manifest.
-    expect(serializeManifest(reparsed)).toBe(out);
+    expect(formatManifest(reparsed)).toBe(out);
   });
   it('emptyManifest round-trips', () => {
-    expect(parseManifest(serializeManifest(emptyManifest()))).toEqual({ version: 1, entries: [] });
+    expect(parseManifest(formatManifest(emptyManifest()))).toEqual({ version: 1, entries: [] });
   });
   it('emits a sorted references block only when non-empty', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [
         { field: 'related', concept: 'posts', id: 'z-post' },
         { field: 'author', concept: 'pages', id: 'jane' },
@@ -200,44 +200,44 @@ describe('serializeManifest / parseManifest', () => {
       { field: 'related', concept: 'posts', id: 'z-post' },
     ]);
 
-    const empty = serializeManifest({ version: 1, entries: [
+    const empty = formatManifest({ version: 1, entries: [
       { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], references: [] },
     ] });
     expect(empty).not.toContain('references');
   });
   it('emits a sorted tags block only when non-empty', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['web-design', 'svelte'] },
     ] });
     expect(out).toContain('tags');
     const parsed = parseManifest(out);
     expect(parsed.entries[0].tags).toEqual(['svelte', 'web-design']);
 
-    const empty = serializeManifest({ version: 1, entries: [
+    const empty = formatManifest({ version: 1, entries: [
       { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], tags: [] },
     ] });
     expect(empty).not.toContain('tags');
   });
   it('emits a sorted includes block only when non-empty', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['zebra', 'apple'] },
     ] });
     expect(out).toContain('includes');
     const parsed = parseManifest(out);
     expect(parsed.entries[0].includes).toEqual(['apple', 'zebra']);
 
-    const empty = serializeManifest({ version: 1, entries: [
+    const empty = formatManifest({ version: 1, entries: [
       { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], includes: [] },
     ] });
     expect(empty).not.toContain('includes');
   });
   it('omits an empty summary (no churn) and round-trips a present one', () => {
-    const present = parseManifest(serializeManifest({ version: 1, entries: [
+    const present = parseManifest(formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
     ] }));
     expect(present.entries[0].summary).toBe('Blurb.');
 
-    const emptyRaw = serializeManifest({ version: 1, entries: [
+    const emptyRaw = formatManifest({ version: 1, entries: [
       { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], summary: '' },
     ] });
     expect(emptyRaw).not.toContain('summary');
@@ -292,7 +292,7 @@ describe('parseManifest hardening', () => {
     expect(old.entries[0].mediaRefs).toBeUndefined();
   });
   it('round-trips a present mediaRefs and serializes it sorted', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['bbbb111122223333', 'aaaa111122223333'] },
     ] });
     expect(out).toContain('mediaRefs');
@@ -310,7 +310,7 @@ describe('parseManifest hardening', () => {
     expect(old.entries[0].references).toBeUndefined();
   });
   it('round-trips a present references and validates each edge shape', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
     ] });
     expect(out).toContain('references');
@@ -332,7 +332,7 @@ describe('parseManifest hardening', () => {
     expect(old.entries[0].tags).toBeUndefined();
   });
   it('round-trips a present tags and serializes it sorted', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['web-design', 'svelte'] },
     ] });
     expect(out).toContain('tags');
@@ -354,7 +354,7 @@ describe('parseManifest hardening', () => {
     expect(old.entries[0].includes).toBeUndefined();
   });
   it('round-trips a present includes and serializes it sorted', () => {
-    const out = serializeManifest({ version: 1, entries: [
+    const out = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['callout', 'address'] },
     ] });
     expect(out).toContain('includes');
@@ -377,18 +377,18 @@ const entryB: ManifestEntry = { id: 'b', concept: 'posts', title: 'B', date: '20
 describe('verifyManifest', () => {
   it('passes when the committed file matches the built manifest', () => {
     const built = { version: 1 as const, entries: [entryA, entryB] };
-    expect(() => verifyManifest(built, serializeManifest(built))).not.toThrow();
+    expect(() => verifyManifest(built, formatManifest(built))).not.toThrow();
   });
   it('throws an actionable error on drift', () => {
     const built = { version: 1 as const, entries: [entryA, entryB] };
-    const stale = serializeManifest({ version: 1, entries: [entryA] });
+    const stale = formatManifest({ version: 1, entries: [entryA] });
     expect(() => verifyManifest(built, stale)).toThrow(/stale|regenerate/i);
   });
   it('fails a committed manifest that lacks a now-built summary', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
     ] };
-    const staleCommitted = serializeManifest({ version: 1, entries: [
+    const staleCommitted = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, staleCommitted)).toThrow(/stale/);
@@ -400,7 +400,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['00112233445566aa'] },
     ] };
-    const committedNoMediaRefs = serializeManifest({ version: 1, entries: [
+    const committedNoMediaRefs = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoMediaRefs)).not.toThrow();
@@ -410,7 +410,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], mediaRefs: ['00112233445566aa'] },
     ] };
-    const committedNoMediaRefs = serializeManifest({ version: 1, entries: [
+    const committedNoMediaRefs = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoMediaRefs)).toThrow(/stale/);
@@ -420,7 +420,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['00112233445566aa'] },
     ] };
-    const committedWithStaleRefs = serializeManifest({ version: 1, entries: [
+    const committedWithStaleRefs = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['ffffffffffffffff'] },
     ] });
     expect(() => verifyManifest(built, committedWithStaleRefs)).toThrow(/stale/);
@@ -432,7 +432,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
     ] };
-    const committedNoReferences = serializeManifest({ version: 1, entries: [
+    const committedNoReferences = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoReferences)).not.toThrow();
@@ -443,7 +443,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
     ] };
-    const committedNoReferences = serializeManifest({ version: 1, entries: [
+    const committedNoReferences = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoReferences)).toThrow(/stale/);
@@ -453,7 +453,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
     ] };
-    const committedWithStaleReferences = serializeManifest({ version: 1, entries: [
+    const committedWithStaleReferences = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'joan' }] },
     ] });
     expect(() => verifyManifest(built, committedWithStaleReferences)).toThrow(/stale/);
@@ -464,7 +464,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['svelte'] },
     ] };
-    const committedNoTags = serializeManifest({ version: 1, entries: [
+    const committedNoTags = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoTags)).not.toThrow();
@@ -473,7 +473,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], tags: ['svelte'] },
     ] };
-    const committedNoTags = serializeManifest({ version: 1, entries: [
+    const committedNoTags = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoTags)).toThrow(/stale/);
@@ -482,7 +482,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['svelte'] },
     ] };
-    const committedWithStaleTags = serializeManifest({ version: 1, entries: [
+    const committedWithStaleTags = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['react'] },
     ] });
     expect(() => verifyManifest(built, committedWithStaleTags)).toThrow(/stale/);
@@ -494,7 +494,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['callout'] },
     ] };
-    const committedNoIncludes = serializeManifest({ version: 1, entries: [
+    const committedNoIncludes = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoIncludes)).not.toThrow();
@@ -503,7 +503,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], includes: ['callout'] },
     ] };
-    const committedNoIncludes = serializeManifest({ version: 1, entries: [
+    const committedNoIncludes = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, committedNoIncludes)).toThrow(/stale/);
@@ -512,7 +512,7 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['callout'] },
     ] };
-    const committedWithStaleIncludes = serializeManifest({ version: 1, entries: [
+    const committedWithStaleIncludes = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['other'] },
     ] });
     expect(() => verifyManifest(built, committedWithStaleIncludes)).toThrow(/stale/);

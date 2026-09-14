@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
@@ -40,7 +40,7 @@ describe('saveAction on the pending branch', () => {
   it('creates the pending branch from main on first save and commits only the entry file there', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     const location = await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'hello' })));
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
@@ -59,7 +59,7 @@ describe('saveAction on the pending branch', () => {
   it('reuses the existing branch on a second save', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'first' })));
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'second' })));
@@ -71,10 +71,10 @@ describe('saveAction on the pending branch', () => {
 
   it('still blocks a link to a target absent from main, before touching any branch', async () => {
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
@@ -94,7 +94,7 @@ describe('createAction with a pending branch', () => {
     const gh = new GithubDouble({ main: {} });
     gh.createBranch('cairn/posts/2026-05-01-hello', 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     const result = (await routes.createAction(
       createEvent({ slug: 'hello', date: '2026-05-01' }),

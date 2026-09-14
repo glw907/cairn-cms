@@ -82,8 +82,8 @@ function typeOnlyNarrowActionsMount(routes: ContentRoutes): void {
     delete: routes.deleteAction,
     rename: routes.renameAction,
     revert: routes.revertAction,
-    previewMint: routes.previewMintAction,
-    previewRevoke: routes.previewRevokeAction,
+    mintPreview: routes.previewMintAction,
+    revokePreview: routes.previewRevokeAction,
     upload: routes.uploadAction,
     settingsSave: routes.settingsSaveAction,
     vocabularySave: routes.vocabularySaveAction,
@@ -98,7 +98,7 @@ void typeOnlyNarrowActionsMount;
 // `[concept]/+page.server.ts` block): a concept list view mounted by hand off the public factory,
 // with `listDeleteAction` under the `delete` name that page teaches.
 function typeOnlyReferenceExampleMounts(): void {
-  const routes = createContentRoutes({} as CairnRuntime);
+  const routes = createContentRoutes({ runtime: {} as CairnRuntime });
   routes.listLoad satisfies ServerLoad;
   const actions: Actions = {
     create: routes.createAction,

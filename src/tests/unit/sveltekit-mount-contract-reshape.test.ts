@@ -43,7 +43,7 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     expect(mediaNames.has('ResolvedAssetConfig')).toBe(true);
   });
 
-  it('createMediaRoute takes the runtime, not a bare ResolvedAssetConfig', () => {
+  it('createMediaRoute takes a MediaRouteConfig bag, not a bare ResolvedAssetConfig', () => {
     const { checker, symbols } = moduleExports(SVELTEKIT_DTS);
     const symbol = symbols.find((s) => s.name === 'createMediaRoute');
     expect(symbol, 'createMediaRoute must be exported').toBeDefined();
@@ -52,7 +52,7 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     const sig = type.getCallSignatures()[0];
     expect(sig, 'createMediaRoute must be callable').toBeDefined();
     const paramType = checker.typeToString(checker.getTypeOfSymbol(sig!.parameters[0]!));
-    expect(paramType).toBe('CairnRuntime');
+    expect(paramType).toBe('MediaRouteConfig');
   });
 
   it('CairnAdminConfig regroups into auth and tidy bags, with no flat branding/send/anthropic/tidyTimeoutMs', () => {
@@ -61,8 +61,9 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     // per-request custom-navLayout filter seam; attention forwards ContentRoutesConfig['attention']
     // the same way, added for the per-session pending-work seam (admin access-and-attention pass);
     // preview forwards ContentRoutesConfig['preview'], the mint action's link-lifetime config
-    // (spec part 3, "Public preview for a non-editor").
-    expect(names).toEqual(['auth', 'tidy', 'navFilter', 'attention', 'preview']);
+    // (spec part 3, "Public preview for a non-editor"); runtime is the composed runtime the admin
+    // bundle closes over.
+    expect(names).toEqual(['runtime', 'auth', 'tidy', 'navFilter', 'attention', 'preview']);
   });
 
   it('CairnPlatformBindings names every always-on engine binding as required, ANTHROPIC_API_KEY optional', () => {

@@ -428,7 +428,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
     vi.restoreAllMocks();
   });
 
-  it('logs guard.rejected at error level with reason=bindings and the condition id', async () => {
+  it('logs guard.refused at error level with reason=bindings and the condition id', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     await handle({ event: unboundEvent('/admin'), resolve: async () => OK });
     const records = errorSpy.mock.calls.map(
@@ -437,7 +437,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
     expect(
       records.some(
         (r) =>
-          r.event === 'guard.rejected' &&
+          r.event === 'guard.refused' &&
           r.reason === 'bindings' &&
           r.conditionId === 'config.bindings-missing' &&
           r.path === '/admin',
@@ -484,7 +484,7 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
     };
   }
 
-  it('refuses with 503, never resolves, and logs guard.rejected reason=dev_backend_in_prod', async () => {
+  it('refuses with 503, never resolves, and logs guard.refused reason=dev_backend_in_prod', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
     const res = await handle({
@@ -501,7 +501,7 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
     );
     expect(
       records.some(
-        (r) => r.event === 'guard.rejected' && r.reason === 'dev_backend_in_prod' && r.path === '/admin',
+        (r) => r.event === 'guard.refused' && r.reason === 'dev_backend_in_prod' && r.path === '/admin',
       ),
     ).toBe(true);
     vi.restoreAllMocks();
@@ -516,17 +516,17 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
 });
 
 describe('guard rejection logging', () => {
-  it('logs guard.rejected reason=origin for a non-admin cross-origin form POST', async () => {
+  it('logs guard.refused reason=origin for a non-admin cross-origin form POST', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
-    expect(events).toContain('guard.rejected');
+    expect(events).toContain('guard.refused');
     expect(reasons).toContain('origin');
     vi.restoreAllMocks();
   });
 
-  it('logs guard.rejected reason=https for a deployed admin request over http', async () => {
+  it('logs guard.refused reason=https for a deployed admin request over http', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await handle({ event: httpEvent('/admin'), resolve: async () => OK });
     const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
@@ -534,7 +534,7 @@ describe('guard rejection logging', () => {
     vi.restoreAllMocks();
   });
 
-  it('logs guard.rejected reason=csrf for an admin form POST with no valid token', async () => {
+  it('logs guard.refused reason=csrf for an admin form POST with no valid token', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await handle({ event: formEvent('/admin/login'), resolve: async () => OK });
     const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
@@ -543,7 +543,7 @@ describe('guard rejection logging', () => {
   });
 });
 
-describe('guard.rejected CSRF discriminator (Task 3): detail, witness, hasSession', () => {
+describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession', () => {
   type CsrfRecord = { reason?: string; detail?: string; witness?: string; hasSession?: boolean };
 
   it('reads no-cookie/witness=field/hasSession=false with no cookie, no header, and no session', async () => {

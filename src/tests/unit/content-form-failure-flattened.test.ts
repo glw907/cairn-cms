@@ -83,10 +83,10 @@ function typeOnlyCoreActionContracts(routes: ContentRoutes): void {
   const del: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>> = routes.deleteAction;
   const listDelete: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>> = routes.listDeleteAction;
   const rename: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>> = routes.renameAction;
-  const previewMint: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> =
+  const mintPreview: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> =
     routes.previewMintAction;
-  const previewRevoke: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { count: number }> = routes.previewRevokeAction;
-  void [create, save, publish, del, listDelete, rename, previewMint, previewRevoke];
+  const revokePreview: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { count: number }> = routes.previewRevokeAction;
+  void [create, save, publish, del, listDelete, rename, mintPreview, revokePreview];
 }
 void typeOnlyCoreActionContracts;
 

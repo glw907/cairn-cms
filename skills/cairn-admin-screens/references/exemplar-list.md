@@ -16,27 +16,25 @@ cairn-native call instead of a literal transcription.
 
 One office-style header, one toolbar band (search, facets, count line), one table (zebra
 rows that expand in place), one pagination footer. Five components, no bespoke layout:
-`OfficeList`, `ListToolbar`, `AdminTable` + `ExpandableRow`, `StatusChip`, `Pagination`.
+`PageHeader`, `ListToolbar`, `AdminTable` + `ExpandableRow`, `StatusChip`, `Pagination`.
 
 ## The header: one filled action
 
 ```svelte
-<OfficeList eyebrow="Club" title="Members">
+<PageHeader eyebrow="Club" title="Members">
   {#snippet action()}
     <button type="button" class="btn btn-primary btn-sm" onclick={openAddHouseholdDialog}>Add household</button>
   {/snippet}
-  ...
-</OfficeList>
+</PageHeader>
 ```
 
-- `OfficeList` is the shape `PageHeader` later generalized into `admin-toolkit`; either
-  satisfies `screen-anatomy`'s mechanical check (one `<h1>`, a header landmark, a
-  `.card-shell` region). A new build reaches for `PageHeader` first; `OfficeList` stays
-  correct where it already ships.
+- `PageHeader` satisfies `screen-anatomy`'s mechanical check (one `<h1>`, a header landmark)
+  on its own; the table below carries the `.card-shell` region the rule also looks for,
+  composed beside this header rather than wrapped inside it (see "The table" below).
 - The eyebrow ("Club") names the custom nav section this screen lives under. `title`
   ("Members") is the page's one display-face `h1`. Neither takes a meta line here: the
   toolbar's own count line, not a header meta line, states the list's scope (see below), so
-  `OfficeList`'s `meta` prop stays unused rather than duplicating that line.
+  `PageHeader`'s `meta` prop stays unused rather than duplicating that line.
 - The header's `action` slot carries the screen's one accent-filled control,
   `btn btn-primary btn-sm`. This is the primary-action-in-the-header-slot half of
   `screen-anatomy` that no mechanical rule can enforce (it can't know whether a screen has
@@ -86,7 +84,7 @@ Five filters feed `filters`, four `'select'`-display and one `'menu'`-display:
   form by default rather than adding it after someone notices the grammar defect.
 - The count line always renders, even at zero applied filters, and always states the list's
   own scope (`computeCountLine`, an internal mechanism `ListToolbar` computes and renders
-  itself, not an importable export). This is why `OfficeList` above carries no `meta`: a
+  itself, not an importable export). This is why `PageHeader` above carries no `meta`: a
   second line stating a count would either duplicate or race the toolbar's own count line
   for whichever total is true.
 - `searchLabel` is the search box's accessible name, not visible chrome; it names what the
@@ -96,19 +94,29 @@ Five filters feed `filters`, four `'select'`-display and one `'menu'`-display:
 ## The table: the row register
 
 ```svelte
-<AdminTable density="sm" zebra rowCount={paged.length} emptyColspan={5}>
-  {#snippet header()}
-    <th class={HEADER_CELL}>Household</th>
-    <th class={HEADER_CELL}>Members</th>
+<div class="overflow-hidden card-shell card-shadow">
+  <AdminTable density="sm" zebra rowCount={paged.length} emptyColspan={5}>
+    {#snippet header()}
+      <th class={HEADER_CELL}>Household</th>
+      <th class={HEADER_CELL}>Members</th>
+      ...
+    {/snippet}
     ...
-  {/snippet}
+  </AdminTable>
+</div>
 ```
+
+The `card-shell card-shadow` wrapper carries no `overflow-x-auto` of its own: `AdminTable`'s
+own wrapper (`AdminTable.svelte:78`) is the one horizontal scroll container in this
+composition, so the outer card never nests a second scroll boundary over the same table. It
+does carry `overflow-hidden`, since `card-shell` rounds its border but does not clip, and the
+table's square edges would otherwise paint over the card's rounded corners.
 
 `HEADER_CELL` is `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`, one
 token this site declared for every column header. That value, 0.6875rem, is exactly
 `--cairn-type-label`: a cairn-native table writes the role utility instead of the literal,
 `type-label font-semibold uppercase tracking-[0.08em] text-muted`, the same Eyebrow recipe
-`OfficeList`'s own eyebrow line uses, because a column header and a section eyebrow are the
+`PageHeader`'s own eyebrow line uses, because a column header and a section eyebrow are the
 same register.
 
 The row's own cells carry a scoped type scale:

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { createLinkResolver } from '../../lib/delivery/site-resolver.js';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
@@ -13,7 +13,7 @@ const adapter = defineAdapter({
     posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
   },
-  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
   rendering: { render: ({ body }) => Promise.resolve(body) },
 });
@@ -31,7 +31,7 @@ const requiredTitleAdapter = defineAdapter({
     posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
   },
-  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
   rendering: { render: ({ body }) => Promise.resolve(body) },
 });
@@ -84,7 +84,7 @@ describe('createLinkResolver', () => {
         pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
         fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
       },
-      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+      backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       email: { from: 'a@b.c' },
       rendering: { render: ({ body }) => Promise.resolve(body) },
     });

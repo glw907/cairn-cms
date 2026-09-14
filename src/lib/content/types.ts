@@ -241,7 +241,7 @@ export interface CairnAdapter {
    *  split the engine's own internal nav-layout validation uses.
    */
   access?: AccessMap;
-  /** The commit backend provider, from `githubApp({ ... })` (the GitHub App today). */
+  /** The commit backend provider, from `createGithubApp({ ... })` (the GitHub App today). */
   backend: BackendProvider;
   /** The magic-link sender. */
   email: SenderConfig;

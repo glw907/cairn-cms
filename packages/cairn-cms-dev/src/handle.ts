@@ -23,7 +23,7 @@ import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
 
 /** Options for the dev-backend handle. */
-export interface DevBackendOptions {
+export interface DevBackendConfig {
   /**
    * The Part B seam for seeding the consumer's own committed starter content into the in-memory
    * repo, so the template ships realistic posts instead of the showcase's hard-coded seed. Part A
@@ -59,12 +59,12 @@ export interface DevBackendOptions {
  * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
  * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
  * untouched.
- * @param options - {@link DevBackendOptions}; `access` is the site's own declaration, attached to
+ * @param config - {@link DevBackendConfig}; `access` is the site's own declaration, attached to
  * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
  * hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
-export function devBackendHandle(options?: DevBackendOptions): Handle {
+export function devBackendHandle(config?: DevBackendConfig): Handle {
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
   seedMediaLibrary();
 
@@ -103,7 +103,7 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
     // /preview/[token] is the one non-admin route the engine reaches AUTH_DB and cairnBackend
-    // from (previewLoad, spec part 3): it needs the SAME fakeAuthDb instance previewMintAction
+    // from (loadPreview, spec part 3): it needs the SAME fakeAuthDb instance previewMintAction
     // wrote its row into (both admin and preview must share this one process-lifetime store, or
     // a minted token would never resolve) and the same in-memory repo, but never the owner
     // session bypass below, which is admin-only.
@@ -118,7 +118,7 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
       // ones. The template's App.Platform also declares context and caches, which the dev routes
       // never touch, so this partial value casts through unknown; the engine reads the env
-      // structurally at runtime. AUTH_DB serves /admin and /preview (previewLoad's own binding
+      // structurally at runtime. AUTH_DB serves /admin and /preview (loadPreview's own binding
       // read); MEDIA_BUCKET serves the upload action under /admin and the delivery route under
       // /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
       // building a client when it is absent, so the value is set even though the fake client
@@ -156,13 +156,13 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
         role: 'owner',
         capability: 'owner',
       };
-      if (options?.access !== undefined) {
+      if (config?.access !== undefined) {
         // Mirrors the guard, which sets locals.cairnAccess immediately after minting
         // locals.cairnEditor on a guarded admin path, so a site's own route gates and section
         // actions read the same declaration under either hook branch. The guard defaults an absent
-        // declaration to {}; this attaches only a supplied one, for the reason DevBackendOptions
+        // declaration to {}; this attaches only a supplied one, for the reason DevBackendConfig
         // records.
-        event.locals.cairnAccess = options.access;
+        event.locals.cairnAccess = config.access;
       }
     }
     return resolve(event);

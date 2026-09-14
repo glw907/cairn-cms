@@ -102,7 +102,7 @@ one of those concepts also needs `media` reachable, or its picker breaks.
 ## `ownerOnly` stacks on the map, not the nav
 
 [`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
-[`adminAction`](../reference/sveltekit.md#adminaction) both accept an `ownerOnly` option, unrelated
+[`createAdminAction`](../reference/sveltekit.md#createadminaction) both accept an `ownerOnly` option, unrelated
 to the `ownerOnly` a [`navLayout`](./organize-your-admin-nav.md) entry carries. The nav one is
 cosmetic: it hides a sidebar link from a non-owner session and gates nothing on its own. This one
 is a real authorization check: it requires owner capability *in addition to* the access map's own

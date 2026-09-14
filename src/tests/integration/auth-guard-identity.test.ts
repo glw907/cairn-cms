@@ -159,7 +159,7 @@ describe('guard identity branch: refusals', () => {
     ['invalid', 'warn'],
     ['a-sites-own-word', 'warn'],
   ] as const) {
-    it(`renders the unresolved condition and logs guard.rejected at ${level} for reason=${reason}`, async () => {
+    it(`renders the unresolved condition and logs guard.refused at ${level} for reason=${reason}`, async () => {
       const spy = vi.spyOn(console, level).mockImplementation(() => {});
       const guard = guardWith(async () => refused(reason));
       const ev = event('/admin');
@@ -174,7 +174,7 @@ describe('guard identity branch: refusals', () => {
       expect(
         records.some(
           (r) =>
-            r.event === 'guard.rejected' &&
+            r.event === 'guard.refused' &&
             r.reason === 'identity' &&
             r.detail === reason &&
             r.conditionId === 'auth.identity-unresolved',
@@ -190,7 +190,7 @@ describe('guard identity branch: refusals', () => {
     const ev = event('/admin');
     await guard({ event: ev, resolve: async () => OK });
     const records = errorSpy.mock.calls.map((c) => c[0] as { event?: string; detail?: string });
-    expect(records.some((r) => r.event === 'guard.rejected' && r.detail === 'keys')).toBe(true);
+    expect(records.some((r) => r.event === 'guard.refused' && r.detail === 'keys')).toBe(true);
     vi.restoreAllMocks();
   });
 
@@ -206,7 +206,7 @@ describe('guard identity branch: refusals', () => {
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; reason?: string; detail?: string; error?: string },
     );
-    const match = records.find((r) => r.event === 'guard.rejected' && r.reason === 'identity');
+    const match = records.find((r) => r.event === 'guard.refused' && r.reason === 'identity');
     expect(match?.detail).toBe('error');
     expect(match?.error).toContain('gate unreachable');
     vi.restoreAllMocks();

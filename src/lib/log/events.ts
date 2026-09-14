@@ -3,8 +3,17 @@
 // breaking change. See docs/reference/log-events.md, kept in step with this union.
 //
 // The grammar: `area[.subject].verb_phrase`. A past-tense verb phrase names an occurrence; a
-// state adjective names a detected condition. Every `reason`/`scope` value a record carries is
-// snake_case.
+// state adjective names a detected condition. The subject segment may itself be dotted, so a
+// four-segment name is grammar-conforming as long as it still reads area, subject, verb phrase:
+// `auth.channel.session.created` conforms as written, area `auth`, subject `channel.session`,
+// verb phrase `created`, rather than standing as a four-segment outlier. Every `reason`/`scope`
+// value a record carries is snake_case.
+//
+// Two verbs cover every refusal-shaped event. `refused` names a decision the engine made on
+// policy: the request or the state violates a rule the engine chose to enforce, and a different
+// input would have succeeded. `failed` names a fault the engine did not choose: an upstream call
+// errored, a resource was unavailable, or a runtime precondition broke regardless of what the
+// request asked for.
 export type CairnLogEvent =
   | 'auth.link.requested'
   | 'auth.link.refused'
@@ -21,17 +30,17 @@ export type CairnLogEvent =
   | 'config.invalid'
   | 'config.access_unmapped'
   | 'content.field_behavior_failed'
-  | 'taxonomy.field_unmarked'
+  | 'content.field_unmarked'
   | 'entry.published'
   | 'entry.discarded'
   | 'preview.token.minted'
   | 'preview.token.revoked'
   | 'preview.cleanup_failed'
-  | 'preview.rejected'
+  | 'preview.refused'
   | 'publish.failed'
   | 'publish.address_collided'
   | 'github.unreachable'
-  | 'guard.rejected'
+  | 'guard.refused'
   | 'media.uploaded'
   | 'media.upload_failed'
   | 'media.delivery_failed'
@@ -41,11 +50,11 @@ export type CairnLogEvent =
   | 'include.missing'
   | 'include.read_failed'
   | 'media.deleted'
-  | 'media.delete_blocked'
+  | 'media.delete_refused'
   | 'media.bulk_deleted'
   | 'media.orphans_purged'
   | 'media.replaced'
-  | 'media.replace_blocked'
+  | 'media.replace_refused'
   | 'media.alt_propagated'
   | 'editor.added'
   | 'editor.removed'
@@ -53,7 +62,7 @@ export type CairnLogEvent =
   | 'editor.bootstrapped'
   | 'auth.role.unknown'
   | 'auth.identity.unknown'
-  | 'auth.access.denied'
+  | 'auth.access.refused'
   | 'dictionary.added'
   | 'dictionary.add_conflict'
   | 'tidy.succeeded'
@@ -63,13 +72,13 @@ export type CairnLogEvent =
   | 'admin.action.audited'
   | 'admin.action.unaudited'
   | 'admin.action.session_absent'
-  | 'admin.action.csrf_rejected'
+  | 'admin.action.csrf_refused'
   | 'admin.action.failed'
   | 'admin.action.rate_limit_absent'
   | 'admin.action.rate_limit_failed'
   | 'admin.action.rate_limited'
   | 'admin.action.misconfigured'
-  | 'admin.action.sink_threw'
+  | 'audit.sink.call_failed'
   | 'turnstile.verify_failed'
   | 'audit.sink.write_failed'
   // The auth-channel factory (createAuthChannel), twelve events, plus

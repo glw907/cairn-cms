@@ -3,7 +3,7 @@
 // createContentRoutesInternal call and passed to every sibling factory; the public
 // createContentRoutes is only a thin wrapper around it.
 import { asString } from '../content/identity.js';
-import { deriveExcerpt } from '../content/excerpt.js';
+import { buildExcerpt } from '../content/excerpt.js';
 import { filenameFromId } from '../content/ids.js';
 import { PENDING_PREFIX, pendingBranch } from '../content/pending.js';
 import { parseMarkdown, dateInputValue } from '../content/frontmatter.js';
@@ -87,7 +87,7 @@ export function createListActions(ctx: ContentRoutesContext) {
       const date = dateInputValue(frontmatter.date) || null;
       // Normalize an empty excerpt to null, so a pending row matches EntrySummary's `string | null`
       // contract (the published builder already coalesces with `?? null`).
-      const summary = deriveExcerpt(body, { description: asString(frontmatter.description) }) || null;
+      const summary = buildExcerpt(body, { description: asString(frontmatter.description) }) || null;
       return { id: file.id, title, date, draft: frontmatter.draft === true, status, summary };
     } catch {
       return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };

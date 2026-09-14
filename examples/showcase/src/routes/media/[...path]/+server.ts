@@ -5,4 +5,4 @@
 import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$chassis/cairn.server.js';
 
-export const GET = createMediaRoute(runtime);
+export const GET = createMediaRoute({ runtime });

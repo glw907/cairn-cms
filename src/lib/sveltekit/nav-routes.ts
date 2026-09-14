@@ -14,7 +14,7 @@ import type { CairnEvent } from './types.js';
 /**
  * One page option for the URL picker datalist. Module-internal (its export was retired, a
  * sanctioned NavIcon-class leak); a consumer reads it structurally as
- * `NavLoadData['pages'][number]`.
+ * `NavData['pages'][number]`.
  */
 interface NavPageOption {
   label: string;
@@ -22,7 +22,7 @@ interface NavPageOption {
 }
 
 /** The nav editor's load data: the menu meta, the current tree, page options, and flags. */
-export interface NavLoadData {
+export interface NavData {
   menu: { name: string; label: string; maxDepth: number };
   tree: NavNode[];
   pages: NavPageOption[];
@@ -38,8 +38,18 @@ interface NavSaveFailure {
   error: string;
 }
 
-/** Build the nav editor's load and save functions, closed over the composed runtime. */
-export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
+/**
+ * The bag `createNavRoutes` takes, so the factory shares one shape with every other route
+ *  factory and a later member has a home beside `runtime`.
+ */
+export interface NavRoutesConfig {
+  /** The composed runtime the nav routes close over: the site's menu, roles, and backend. */
+  runtime: CairnRuntime;
+}
+
+/** Build the nav editor's load and save functions, closed over `config.runtime`. */
+export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
+  const { runtime } = config;
   /**
    * Resolve the live content backend for one request: the dev double's `event.locals.cairnBackend`,
    *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.cairnBackend`
@@ -66,27 +76,27 @@ export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
   }
 
   /** Load the nav editor. A missing or unparsable config degrades to an empty tree so it still opens. */
-  async function navLoad(event: CairnEvent): Promise<NavLoadData> {
+  async function navLoad(event: CairnEvent): Promise<NavData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
-    const config = runtime.navMenu;
-    if (!config) throw error(404, 'No navigation menu configured');
-    const maxDepth = config.maxDepth ?? 2;
-    const menu = { name: config.menuName, label: config.label, maxDepth };
+    const navMenu = runtime.navMenu;
+    if (!navMenu) throw error(404, 'No navigation menu configured');
+    const maxDepth = navMenu.maxDepth ?? 2;
+    const menu = { name: navMenu.menuName, label: navMenu.label, maxDepth };
 
     const backend = resolveBackend(event);
 
     let tree: NavNode[] = [];
     let raw: string | null = null;
     try {
-      raw = await backend.readFile(config.configPath, backend.defaultBranch);
+      raw = await backend.readFile(navMenu.configPath, backend.defaultBranch);
     } catch {
       // An unreadable config degrades to an empty tree; the first save writes a clean menu.
       raw = null;
     }
     if (raw !== null) {
       try {
-        tree = readMenu(parseSiteConfig(raw), config.menuName, maxDepth);
+        tree = readMenu(parseSiteConfig(raw), navMenu.menuName, maxDepth);
       } catch (err) {
         // A malformed config keeps the same degrade (the nav page failing closed would be worse
         // for the editor), but the swallow names the operator fault in the log.
@@ -111,9 +121,9 @@ export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
   async function navSaveAction(event: CairnEvent): Promise<ActionFailure<NavSaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
-    const config = runtime.navMenu;
-    if (!config) throw error(404, 'No navigation menu configured');
-    const maxDepth = config.maxDepth ?? 2;
+    const navMenu = runtime.navMenu;
+    if (!navMenu) throw error(404, 'No navigation menu configured');
+    const maxDepth = navMenu.maxDepth ?? 2;
 
     const form = await event.request.formData();
     let tree: NavNode[];
@@ -137,16 +147,16 @@ export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
     // a concurrent commit to the config moves the head off this value and the commit throws a
     // conflict, surfacing the reload-and-reapply prompt below rather than a silent last-writer-wins.
     const head = await backend.branchHead(backend.defaultBranch);
-    const raw = await backend.readFile(config.configPath, backend.defaultBranch);
+    const raw = await backend.readFile(navMenu.configPath, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
 
     const commitFields = { scope: 'nav' as const, id: 'site-config', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
-        [{ path: config.configPath, content: setMenu(raw, config.menuName, tree) }],
+        [{ path: navMenu.configPath, content: setMenu(raw, navMenu.menuName, tree) }],
         { name: editor.displayName, email: editor.email },
-        `Update ${config.label.toLowerCase()}`,
+        `Update ${navMenu.label.toLowerCase()}`,
         head ?? undefined,
       );
       log.info('commit.succeeded', commitFields);
@@ -164,6 +174,6 @@ export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
 
 /** What `createNavRoutes` returns: the nav editor's load and save functions. */
 export interface NavRoutes {
-  navLoad: (event: CairnEvent) => Promise<NavLoadData>;
+  navLoad: (event: CairnEvent) => Promise<NavData>;
   navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;
 }

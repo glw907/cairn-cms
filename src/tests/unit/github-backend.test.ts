@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { githubApp, makeGithubBackend } from '../../lib/github/backend.js';
+import { createGithubApp, makeGithubBackend } from '../../lib/github/backend.js';
 import { CairnError } from '../../lib/diagnostics/index.js';
 import { BranchExistsError } from '../../lib/github/types.js';
 import { GithubDouble } from './_github-double.js';
@@ -16,9 +16,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('githubApp provider', () => {
+describe('createGithubApp provider', () => {
   it('exposes the github-app kind, branch, and identity fields', () => {
-    const provider = githubApp(CONFIG);
+    const provider = createGithubApp(CONFIG);
     expect(provider.kind).toBe('github-app');
     expect(provider.branch).toBe('main');
     expect(provider.owner).toBe('glw907');
@@ -28,7 +28,7 @@ describe('githubApp provider', () => {
   });
 
   it('connect(env) yields a Backend whose defaultBranch is the configured branch', () => {
-    const provider = githubApp(CONFIG);
+    const provider = createGithubApp(CONFIG);
     const backend = provider.connect({ GITHUB_APP_PRIVATE_KEY_B64: 'a2V5' });
     expect(backend.defaultBranch).toBe('main');
   });
@@ -36,7 +36,7 @@ describe('githubApp provider', () => {
   it('throws the appCredentials CairnError on first token use when the key secret is unset', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const backend = githubApp(CONFIG).connect({});
+    const backend = createGithubApp(CONFIG).connect({});
     let thrown: unknown;
     try {
       await backend.branchHead('main');

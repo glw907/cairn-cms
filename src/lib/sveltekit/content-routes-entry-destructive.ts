@@ -17,7 +17,7 @@ import type { FileChange } from '../github/repo.js';
 import { pendingBranch } from '../content/pending.js';
 import {
   manifestEntryFromFile,
-  serializeManifest,
+  formatManifest,
   upsertEntry,
   removeEntry,
   inboundLinks,
@@ -168,7 +168,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       throw redirect(303, `/admin/${concept.id}`);
     }
 
-    const nextManifest = serializeManifest(removeEntry(manifest, concept.id, id));
+    const nextManifest = formatManifest(removeEntry(manifest, concept.id, id));
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
       await backend.commit(
@@ -385,7 +385,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       next = upsertEntry(next, manifestEntryFromFile(linkerConcept, { path: linkerPath, raw: linkerRaw }));
     }
 
-    changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
+    changes.push({ path: runtime.manifestPath, content: formatManifest(next) });
 
     const commitFields = { concept: concept.id, id: newId, editor: editor.email };
     try {

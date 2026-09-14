@@ -67,7 +67,7 @@ jobs:
           echo "OK: no dev-backend artifact in the deployable Worker"
       - name: Assert the Worker bundle stays under the v1 corpus-in-bundle budget
         # The preview pass's globbed PublicRoutesConfig (the whole site's content corpus) now rides
-        # into the deployable Worker for real (previewLoad, /preview/[token], is the first
+        # into the deployable Worker for real (loadPreview, /preview/[token], is the first
         # runtime-routable route to import the public delivery composition), the accepted v1 cost the
         # plan's global constraints named. This reads the SAME /tmp/dev-fold-default artifact the
         # step above already produced (`wrangler deploy --dry-run`), not a second measurement, and

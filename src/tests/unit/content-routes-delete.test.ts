@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
+import { parseManifest, formatManifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, json, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 
@@ -53,7 +53,7 @@ describe('deleteAction', () => {
       ],
     });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     const result = (await routes.deleteAction(deleteEvent('2026-05-hi'))) as unknown as {
       status: number; data: { error: string; inboundLinks: { id: string }[]; id: string };
     };
@@ -73,7 +73,7 @@ describe('deleteAction', () => {
       entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
     });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi')));
     expect(location).toBe('/admin/posts');
     const treeReq = calls.find((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))!;
@@ -92,7 +92,7 @@ describe('deleteAction', () => {
       entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
     });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     try {
       await routes.deleteAction(deleteEvent('2026-05-hi'));
     } catch {
@@ -110,7 +110,7 @@ describe('deleteAction with a pending branch', () => {
   const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
   it('cascades: the branch goes and the main commit removes the file and the manifest row', async () => {
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
     });
@@ -119,7 +119,7 @@ describe('deleteAction with a pending branch', () => {
     });
     gh.createBranch('cairn/posts/2026-05-hi', 'main');
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi')));
     expect(location).toBe('/admin/posts');
     expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(false);
@@ -130,7 +130,7 @@ describe('deleteAction with a pending branch', () => {
 
   it('keeps the pending branch when the main removal conflicts, so the edits survive', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const manifest = serializeManifest({
+    const manifest = formatManifest({
       version: 1,
       entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
     });
@@ -149,7 +149,7 @@ describe('deleteAction with a pending branch', () => {
       }
       return double(input, init);
     });
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     const result = (await routes.deleteAction(deleteEvent('2026-05-hi'))) as unknown as {
       status: number;
       data: { error: string; inboundLinks: unknown[]; id: string };
@@ -163,13 +163,13 @@ describe('deleteAction with a pending branch', () => {
   });
 
   it('deletes a never-published entry by removing only its branch, with no main commit', async () => {
-    const empty = serializeManifest({ version: 1, entries: [] });
+    const empty = formatManifest({ version: 1, entries: [] });
     const gh = new GithubDouble({
       main: { [MANIFEST_PATH]: empty },
       'cairn/posts/2026-05-hi': { [MANIFEST_PATH]: empty, [ENTRY_PATH]: '---\ntitle: Hi\n---\npending only' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi')));
     expect(location).toBe('/admin/posts');
     expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(false);

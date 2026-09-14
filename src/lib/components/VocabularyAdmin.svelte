@@ -35,13 +35,13 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   import TagIcon from '@lucide/svelte/icons/tag';
   import PlusIcon from '@lucide/svelte/icons/plus';
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
-  import type { VocabularyLoadData, ContentFormFailure } from '../sveltekit/content-routes.js';
+  import type { VocabularyData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { VocabularyEntry } from '../index.js';
   import { PageHeader } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The committed vocabulary, the per-value cross-branch usage count, and the unlisted seed set. */
-    data: VocabularyLoadData;
+    data: VocabularyData;
     /** The last save's result: a refused `fail()` envelope carrying the reload-and-reapply
      *  message, a rejected posted list, or the in-use delete refusal. */
     form?: ContentFormFailure | null;

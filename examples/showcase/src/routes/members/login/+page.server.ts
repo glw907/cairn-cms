@@ -29,16 +29,16 @@ export const actions: Actions = {
     const form = await event.request.clone().formData();
     const contact = String(form.get('contact') ?? '');
     const result = await memberChannel.actions.request(event);
-    if ('error' in result) {
-      return fail(400, { contact, requestError: result.error });
+    if (result.outcome !== 'sent') {
+      return fail(400, { contact, requestError: result.outcome });
     }
     return { contact, requested: true };
   },
   /** Consume the posted `code` against the pending nonce cookie and mint a session on success. */
   confirm: async (event) => {
     const result = await memberChannel.actions.confirm(event);
-    if ('error' in result) {
-      return fail(400, { confirmError: result.error });
+    if (result.outcome !== 'confirmed') {
+      return fail(400, { confirmError: result.outcome });
     }
     redirect(303, '/members');
   },

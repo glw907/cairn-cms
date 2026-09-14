@@ -41,7 +41,7 @@ const KEPT = [
   'requireOwner',
   'createAuthRoutes',
   'AuthRoutesConfig',
-  'RequestResult',
+  'RequestOutcome',
   'createEditorRoutes',
   'createContentRoutes',
   'createMediaRoute',
@@ -53,13 +53,13 @@ const KEPT = [
   'ContentRoutesConfig',
   'ContentFormFailure',
   'createNavRoutes',
-  'NavLoadData',
+  'NavData',
   'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',
   'CairnAdminConfig',
   'AdminData',
-  'healthLoad',
+  'loadHealth',
   'HealthData',
   'CairnEvent',
   'CookieJar',
@@ -123,7 +123,7 @@ describe('sveltekit barrel prune', () => {
     // navFilter is the per-request custom-navLayout filter seam, added alongside `tidy`; attention
     // is the per-session pending-work seam (admin access-and-attention pass), added alongside it;
     // preview is the mint action's link-lifetime config (spec part 3, "Public preview for a
-    // non-editor").
-    expect(memberNames).toEqual(['tidy', 'navFilter', 'attention', 'preview']);
+    // non-editor"); runtime is the composed runtime the bag's own factory closes over.
+    expect(memberNames).toEqual(['runtime', 'tidy', 'navFilter', 'attention', 'preview']);
   });
 });

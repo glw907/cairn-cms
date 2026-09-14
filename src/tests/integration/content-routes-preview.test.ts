@@ -1,17 +1,17 @@
 // cairn-cms: Task 2a (preview pass, spec part 3, "Public preview for a non-editor"):
-// previewMint, the previewMint/previewRevoke actions, and the lifecycle cleanup wired into
+// mintPreview, the mintPreview/revokePreview actions, and the lifecycle cleanup wired into
 // rename/discard/delete/list-delete. Publish deliberately leaves rows intact (the ended page needs
 // them). Driven against the real GithubDouble the way content-routes-revert.test.ts and
 // content-routes-publish.test.ts are, plus the real D1 AUTH_DB the workerd integration project
-// provides, since previewMint and the actions under test write real rows.
+// provides, since mintPreview and the actions under test write real rows.
 import { env } from 'cloudflare:test';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { previewMint, previewRevoke } from '../../lib/sveltekit/preview.js';
+import { mintPreview, revokePreview } from '../../lib/sveltekit/preview.js';
 import { findPreviewToken, insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { hashToken } from '../../lib/auth/crypto.js';
-import { serializeManifest } from '../../lib/content/manifest.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import {
@@ -96,7 +96,7 @@ async function records(run: () => Promise<unknown>): Promise<Record<string, unkn
   return captured;
 }
 
-describe('previewMint', () => {
+describe('mintPreview', () => {
   const TARGET = { concept: 'posts', entryId: ID };
   const ROLES = defineRoles({ owner: 'owner', 'other-editor': 'editor', publisher: 'editor' });
   const DENY_POSTS = defineAccess(ROLES, { posts: ['publisher'] });
@@ -107,9 +107,9 @@ describe('previewMint', () => {
     return { ...backend, branchHead: async (branch: string) => (reads.push(branch), head) };
   }
 
-  /** An event for a direct previewMint call. Deliberately OFF `/admin/[concept]/[id]` and carrying
+  /** An event for a direct mintPreview call. Deliberately OFF `/admin/[concept]/[id]` and carrying
    *  no route params at all: a target read from params rather than from the argument fails here,
-   *  which is what keeps previewMint usable from a site's own workflow route. */
+   *  which is what keeps mintPreview usable from a site's own workflow route. */
   function mintEvent(
     opts: { role?: string; capability?: 'owner' | 'editor' | 'none'; email?: string; eventBackend?: Backend } = {},
   ) {
@@ -129,7 +129,7 @@ describe('previewMint', () => {
 
   /** A GithubDouble carrying the entry's pending branch, the draft a mint shares. */
   function ghWithDraft(): GithubDouble {
-    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
     gh.createBranch(BRANCH, 'main');
     return gh;
   }
@@ -137,7 +137,7 @@ describe('previewMint', () => {
   it('mints for an authorized editor with a pending draft, defaulting to a seven-day TTL', async () => {
     ghWithDraft().install();
     const before = Date.now();
-    const result = await previewMint(runtime(), {}, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), {}, mintEvent(), TARGET);
     expect(result.outcome).toBe('minted');
     if (result.outcome !== 'minted') return;
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -154,7 +154,7 @@ describe('previewMint', () => {
   it('honors a configured ttlMs', async () => {
     ghWithDraft().install();
     const before = Date.now();
-    const result = await previewMint(runtime(), { ttlMs: 60_000 }, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), { ttlMs: 60_000 }, mintEvent(), TARGET);
     if (result.outcome !== 'minted') throw new Error(`expected a mint, got ${result.outcome}`);
     expect(result.expiresAt).toBeGreaterThanOrEqual(before + 60_000);
     expect(result.expiresAt).toBeLessThan(before + 60_000 + 5_000);
@@ -168,32 +168,32 @@ describe('previewMint', () => {
     ['over thirty days', 31 * 24 * 60 * 60 * 1000],
   ])('rejects a %s ttlMs with a PreviewTokenConfig-prefixed error', async (_label, ttlMs) => {
     ghWithDraft().install();
-    await expect(previewMint(runtime(), { ttlMs }, mintEvent(), TARGET)).rejects.toThrow(
+    await expect(mintPreview(runtime(), { ttlMs }, mintEvent(), TARGET)).rejects.toThrow(
       /^PreviewTokenConfig:/,
     );
   });
 
   it('stores the resolved session editor as the attribution, so the removal cascade always matches', async () => {
     ghWithDraft().install();
-    const first = await previewMint(runtime(), {}, mintEvent({ email: 'alice@t' }), TARGET);
-    const second = await previewMint(runtime(), {}, mintEvent({ email: 'bob@t' }), TARGET);
+    const first = await mintPreview(runtime(), {}, mintEvent({ email: 'alice@t' }), TARGET);
+    const second = await mintPreview(runtime(), {}, mintEvent({ email: 'bob@t' }), TARGET);
     if (first.outcome !== 'minted' || second.outcome !== 'minted') throw new Error('expected two mints');
     expect((await findPreviewToken(db, await hashToken(first.token)))?.editor).toBe('alice@t');
     expect((await findPreviewToken(db, await hashToken(second.token)))?.editor).toBe('bob@t');
   });
 
   it('refuses no-draft when the entry carries no pending branch', async () => {
-    new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } }).install();
-    const result = await previewMint(runtime(), {}, mintEvent(), TARGET);
+    new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } }).install();
+    const result = await mintPreview(runtime(), {}, mintEvent(), TARGET);
     expect(result).toEqual({ outcome: 'no-draft' });
   });
 
   it('refuses an undeclared concept, and a malformed entry id, without minting', async () => {
     ghWithDraft().install();
-    expect(await previewMint(runtime(), {}, mintEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
+    expect(await mintPreview(runtime(), {}, mintEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
       outcome: 'unknown-concept',
     });
-    expect(await previewMint(runtime(), {}, mintEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
+    expect(await mintPreview(runtime(), {}, mintEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
       outcome: 'invalid-id',
     });
   });
@@ -201,7 +201,7 @@ describe('previewMint', () => {
   it('refuses a none-capability session the same way the engine’s own actions do', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
-      previewMint(runtime(), {}, mintEvent({ role: 'reader', capability: 'none' }), TARGET),
+      mintPreview(runtime(), {}, mintEvent({ role: 'reader', capability: 'none' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -209,7 +209,7 @@ describe('previewMint', () => {
   it('refuses an editor the access map denies', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
-      previewMint(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), TARGET),
+      mintPreview(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -225,7 +225,7 @@ describe('previewMint', () => {
     ] as const) {
       refusals.push(
         await expectHttpError(() =>
-          previewMint(
+          mintPreview(
             denied,
             {},
             mintEvent({ role: 'other-editor', eventBackend: recordingBackend(reads, head) }),
@@ -241,12 +241,12 @@ describe('previewMint', () => {
   });
 });
 
-describe('previewRevoke', () => {
+describe('revokePreview', () => {
   const TARGET = { concept: 'posts', entryId: ID };
   const ROLES = defineRoles({ owner: 'owner', 'other-editor': 'editor', publisher: 'editor' });
   const DENY_POSTS = defineAccess(ROLES, { posts: ['publisher'] });
 
-  /** An event for a direct previewRevoke call, mirroring previewMint's own mintEvent: off
+  /** An event for a direct revokePreview call, mirroring mintPreview's own mintEvent: off
    *  `/admin/[concept]/[id]` and carrying no route params at all, so the target read from the
    *  argument rather than the route is what a site's own workflow route relies on. `db` defaults
    *  to the real harness AUTH_DB and is overridable to prove the authorization-before-delete
@@ -271,36 +271,36 @@ describe('previewRevoke', () => {
   it('revokes for an authorized editor, deleting every row for the entry and reporting the count', async () => {
     await seedToken(ID, 'hash-x1', 'ed@t');
     await seedToken(ID, 'hash-x2', 'other@t');
-    const result = await previewRevoke(runtime(), revokeEvent(), TARGET);
+    const result = await revokePreview(runtime(), revokeEvent(), TARGET);
     expect(result).toEqual({ outcome: 'revoked', count: 2 });
     expect(await findPreviewToken(db, 'hash-x1')).toBeNull();
     expect(await findPreviewToken(db, 'hash-x2')).toBeNull();
   });
 
   it('is idempotent: revoking with nothing minted succeeds with a count of zero', async () => {
-    const result = await previewRevoke(runtime(), revokeEvent(), TARGET);
+    const result = await revokePreview(runtime(), revokeEvent(), TARGET);
     expect(result).toEqual({ outcome: 'revoked', count: 0 });
   });
 
   it('refuses an undeclared concept, and a malformed entry id, without revoking', async () => {
-    expect(await previewRevoke(runtime(), revokeEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
+    expect(await revokePreview(runtime(), revokeEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
       outcome: 'unknown-concept',
     });
-    expect(await previewRevoke(runtime(), revokeEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
+    expect(await revokePreview(runtime(), revokeEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
       outcome: 'invalid-id',
     });
   });
 
   it('refuses a none-capability session the same way the engine’s own actions do', async () => {
     const refusal = await expectHttpError(() =>
-      previewRevoke(runtime(), revokeEvent({ role: 'reader', capability: 'none' }), TARGET),
+      revokePreview(runtime(), revokeEvent({ role: 'reader', capability: 'none' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
 
   it('refuses an editor the access map denies', async () => {
     const refusal = await expectHttpError(() =>
-      previewRevoke(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), TARGET),
+      revokePreview(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -309,7 +309,7 @@ describe('previewRevoke', () => {
     // A throwing AUTH_DB would surface as an uncaught Error, not an HttpError, if the delete ever
     // ran: the 403 alone proves requireEditor/requireEngineAccess short-circuited first.
     const refusal = await expectHttpError(() =>
-      previewRevoke(
+      revokePreview(
         runtime({ access: DENY_POSTS }),
         revokeEvent({ role: 'other-editor', db: throwingDb('boom') }),
         TARGET,
@@ -320,7 +320,7 @@ describe('previewRevoke', () => {
 
   it('logs preview.token.revoked from inside the function, with the right fields', async () => {
     await seedToken(ID, 'hash-x3');
-    const captured = await records(() => previewRevoke(runtime(), revokeEvent(), TARGET));
+    const captured = await records(() => revokePreview(runtime(), revokeEvent(), TARGET));
     const record = captured.find((r) => r.event === 'preview.token.revoked');
     expect(record).toMatchObject({ concept: 'posts', id: ID, editor: 'editor@t', count: 1 });
   });
@@ -328,12 +328,12 @@ describe('previewRevoke', () => {
 
 describe('previewMintAction', () => {
   function ghWithManifest(): GithubDouble {
-    return new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    return new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } });
   }
 
   it('refuses on the page when the entry has no pending draft', async () => {
     ghWithManifest().install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
       status: number;
       data: ContentFormFailure;
@@ -349,7 +349,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
       url: string;
       expiresAt: number;
@@ -370,7 +370,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const first = (await routes.previewMintAction(actionEvent(ID))) as unknown as { url: string };
     const second = (await routes.previewMintAction(actionEvent(ID))) as unknown as { url: string };
     expect(first.url).not.toBe(second.url);
@@ -384,7 +384,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const headers: Record<string, string>[] = [];
     const event = { ...actionEvent(ID), setHeaders: (h: Record<string, string>) => headers.push(h) };
     await routes.previewMintAction(event);
@@ -395,7 +395,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     let url = '';
     const captured = await records(async () => {
       const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
@@ -415,7 +415,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await db.exec('DROP TABLE preview_tokens');
     try {
       const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
@@ -438,7 +438,7 @@ describe('previewRevokeAction', () => {
   it('deletes every row for the entry and reports the count', async () => {
     await seedToken(ID, 'hash-a1', 'ed@t');
     await seedToken(ID, 'hash-a2', 'other@t');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewRevokeAction(actionEvent(ID))) as unknown as { count: number };
     expect(result.count).toBe(2);
     expect(await findPreviewToken(db, 'hash-a1')).toBeNull();
@@ -446,21 +446,21 @@ describe('previewRevokeAction', () => {
   });
 
   it('is idempotent: revoking with nothing minted succeeds with a count of zero', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewRevokeAction(actionEvent(ID))) as unknown as { count: number };
     expect(result.count).toBe(0);
   });
 
   it('logs preview.token.revoked with the count', async () => {
     await seedToken(ID, 'hash-r1');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const captured = await records(() => routes.previewRevokeAction(actionEvent(ID)));
     const record = captured.find((r) => r.event === 'preview.token.revoked');
     expect(record).toMatchObject({ concept: 'posts', id: ID, editor: 'ed@t', count: 1 });
   });
 
   it('answers the same actionable failure as mint when the table is missing (ships to every upgraded site)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await db.exec('DROP TABLE preview_tokens');
     try {
       const result = (await routes.previewRevokeAction(actionEvent(ID))) as unknown as {
@@ -487,7 +487,7 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
 
   it('a missing-table error is silent: no preview.cleanup_failed record, and the action still succeeds', async () => {
     ghWithBranch().install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = {
       ...actionEvent(ID),
       platform: { env: { AUTH_DB: throwingDb('no such table: preview_tokens'), PUBLIC_ORIGIN: ORIGIN } },
@@ -503,7 +503,7 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
 
   it('a non-benign D1 error logs preview.cleanup_failed, and the action still succeeds', async () => {
     ghWithBranch().install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = {
       ...actionEvent(ID),
       platform: { env: { AUTH_DB: throwingDb('D1_ERROR: disk I/O error'), PUBLIC_ORIGIN: ORIGIN } },
@@ -544,13 +544,13 @@ describe('authorization: the view gate is not authorization (the round High)', (
   }
 
   it('refuses a none-capability session the same way saveAction does', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect((await expectHttpError(() => routes.previewMintAction(eventAs('reader', 'none')))).status).toBe(403);
     expect((await expectHttpError(() => routes.previewRevokeAction(eventAs('reader', 'none')))).status).toBe(403);
   });
 
   it('refuses an editor the access map denies', async () => {
-    const routes = createContentRoutes(runtime({ access: DENY_POSTS }));
+    const routes = createContentRoutes({ runtime: runtime({ access: DENY_POSTS }) });
     expect(
       (await expectHttpError(() => routes.previewMintAction(eventAs('other-editor', 'editor')))).status,
     ).toBe(403);
@@ -561,7 +561,7 @@ describe('authorization: the view gate is not authorization (the round High)', (
 });
 
 describe('lifecycle cleanup', () => {
-  const publishedManifest = serializeManifest({
+  const publishedManifest = formatManifest({
     version: 1,
     entries: [{ id: ID, concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
   });
@@ -570,7 +570,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'discard-hash');
     const gh = new GithubDouble({ main: {}, [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() => routes.discardAction(actionEvent(ID)));
     expect(await findPreviewToken(db, 'discard-hash')).toBeNull();
     // The redirect target is the concept list (the entry is gone entirely), which is what makes
@@ -582,14 +582,14 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'discard-live-hash');
     // The entry's file already exists on main: discarding its pending edit removes only the draft,
     // never the published copy, so an outstanding preview link should still resolve, landing on
-    // previewLoad's own branch-gone-but-main-exists "ended" page rather than a bare 404 that would
+    // loadPreview's own branch-gone-but-main-exists "ended" page rather than a bare 404 that would
     // read as the link never having existed.
     const gh = new GithubDouble({
       main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' },
       [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nan edit' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() => routes.discardAction(actionEvent(ID)));
     expect(await findPreviewToken(db, 'discard-live-hash')).not.toBeNull();
   });
@@ -598,7 +598,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'delete-hash');
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: publishedManifest } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() => routes.deleteAction(actionEvent(ID)));
     expect(await findPreviewToken(db, 'delete-hash')).toBeNull();
   });
@@ -607,7 +607,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'list-delete-hash');
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: publishedManifest } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = contentEvent({
       url: 'https://t.example/admin/posts',
       params: { concept: 'posts' },
@@ -622,7 +622,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'rename-hash');
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: publishedManifest } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = contentEvent({
       url: `https://t.example/admin/posts/${ID}`,
       params: { concept: 'posts', id: ID },
@@ -636,11 +636,11 @@ describe('lifecycle cleanup', () => {
   it('publishAction leaves the entry’s preview-token rows intact (the ended page needs them)', async () => {
     await seedToken(ID, 'publish-hash');
     const gh = new GithubDouble({
-      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
       [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\ndate: 2026-08-06\n---\npending body' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() =>
       routes.publishAction(actionEvent(ID, { title: 'Hi', body: 'pending body' })),
     );

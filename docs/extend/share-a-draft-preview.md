@@ -23,7 +23,7 @@ unupgraded site instead of half-working.
 
 ## Mount the preview route
 
-`previewLoad` renders a minted link through the same composition your entry pages already use, so
+`loadPreview` renders a minted link through the same composition your entry pages already use, so
 a preview and its eventual public page structurally can't drift apart. It needs your runtime and
 the same `PublicRoutesConfig` shape [Wire the delivery surface](./wire-the-delivery-surface.md#the-entry-catch-all)
 passes to `createPublicRoutes` for the entry catch-all. Build both from the same `siteName`,
@@ -34,7 +34,7 @@ pages**, so it inherits the same layout, stylesheets, and chrome:
 ```ts
 // src/routes/(site)/preview/[token]/+page.server.ts
 import type { PageServerLoad } from './$types';
-import { previewLoad } from '@glw907/cairn-cms/sveltekit';
+import { loadPreview } from '@glw907/cairn-cms/sveltekit';
 import { runtime, cairn, siteConfig } from '$theme/cairn.config.js';
 import { site, ORIGIN } from '$lib/content.js';
 
@@ -50,7 +50,7 @@ const routesConfig = {
 // static asset every build ships.
 export const prerender = false;
 
-export const load: PageServerLoad = (event) => previewLoad(runtime, routesConfig, event);
+export const load: PageServerLoad = (event) => loadPreview(runtime, routesConfig, event);
 ```
 
 ```svelte
@@ -115,7 +115,7 @@ so there's no specificity fight to win.
 
 ## What the link is good for
 
-The token alone is the credential. `previewLoad` reads no cookie and touches neither
+The token alone is the credential. `loadPreview` reads no cookie and touches neither
 `locals.cairnEditor` nor `locals.cairnAccess`, so anyone holding the link can view the draft with
 no sign-in of their own. It sets `cache-control: private, no-store`, `x-robots-tag: noindex,
 nofollow`, and a locked-down `referrer-policy`/`x-frame-options` pair on every response, refusal
@@ -141,7 +141,7 @@ zero.
 
 Renaming, deleting, or discarding a never-published entry each clear its outstanding preview rows
 as part of their own cascade, closing an id-reuse gap where a stale link could otherwise resolve
-to a different entry later. Publishing deliberately leaves the rows in place, since `previewLoad`
+to a different entry later. Publishing deliberately leaves the rows in place, since `loadPreview`
 needs them to answer a now-stale link with "this preview has ended" instead of a bare 404.
 
 ## What a layout can leak into a preview payload

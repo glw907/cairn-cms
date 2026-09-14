@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { ComponentProps } from 'svelte';
 import type { AwaitedActions } from '@sveltejs/kit';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { render } from 'vitest-browser-svelte';
 import CairnAdmin from '../../lib/components/CairnAdmin.svelte';
 import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admin.js';
@@ -236,7 +236,7 @@ describe('form-action contract', () => {
         { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
         { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
       ],
-      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+      backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       sender: { from: 'cms@test' },
       render: ({ body }) => Promise.resolve(body),
       manifestPath: 'src/content/.cairn/index.json',
@@ -259,7 +259,7 @@ describe('form-action contract', () => {
     return [...names];
   }
 
-  const dispatcherActions = new Set(Object.keys(createCairnAdmin(runtime()).actions));
+  const dispatcherActions = new Set(Object.keys(createCairnAdmin({ runtime: runtime() }).actions));
 
   const views: Array<[AdminData['view'], AdminData]> = [
     ['login', loginData()],
@@ -292,7 +292,7 @@ describe('form-action contract', () => {
     // whose success payload shares a field name with another action's failure payload (the
     // TidyResult.usage/MediaDeleteFailure.usage collision this test was written against) fails this
     // to compile, before it ever reaches a consumer site's own svelte-check.
-    const actions = createCairnAdmin(runtime()).actions;
+    const actions = createCairnAdmin({ runtime: runtime() }).actions;
     type ActionOutcome = AwaitedActions<typeof actions>;
     const outcome = {} as ActionOutcome;
     const form: ComponentProps<typeof CairnAdmin>['form'] = outcome;

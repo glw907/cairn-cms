@@ -7,7 +7,7 @@ describe('sveltekit barrel', () => {
     expect(typeof sveltekit.createAuthRoutes).toBe('function');
     expect(typeof sveltekit.createEditorRoutes).toBe('function');
     expect(typeof sveltekit.createContentRoutes).toBe('function');
-    expect(typeof sveltekit.healthLoad).toBe('function');
+    expect(typeof sveltekit.loadHealth).toBe('function');
     expect(typeof sveltekit.requireSession).toBe('function');
     expect(typeof sveltekit.requireOwner).toBe('function');
   });

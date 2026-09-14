@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { RequestHandler } from '@sveltejs/kit';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -27,7 +27,7 @@ function runtime(resolvedAssets: ResolvedAssetConfig): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -67,7 +67,7 @@ describe('media delivery route (Task 4)', () => {
     await bucket.put(KEY, BYTES, {
       httpMetadata: { contentType: 'image/png', cacheControl: 'no-store' },
     });
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, SLUG_PATH);
 
     expect(res.status).toBe(200);
@@ -86,7 +86,7 @@ describe('media delivery route (Task 4)', () => {
     // An object put outside the upload pipeline (a manual put, a future import) carries no content
     // type, so writeHttpMetadata sets none. The route pairs nosniff with a safe explicit default.
     await bucket.put(KEY, BYTES);
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, SLUG_PATH);
 
     expect(res.status).toBe(200);
@@ -100,7 +100,7 @@ describe('media delivery route (Task 4)', () => {
 
   it('returns 304 with no body when If-None-Match matches the stored etag', async () => {
     await bucket.put(KEY, BYTES, { httpMetadata: { contentType: 'image/png' } });
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const first = await invoke(handler, SLUG_PATH);
     const etag = first.headers.get('ETag');
     expect(etag).toBeTruthy();
@@ -114,7 +114,7 @@ describe('media delivery route (Task 4)', () => {
 
   it('returns 206 with a Content-Range for a Range request', async () => {
     await bucket.put(KEY, BYTES, { httpMetadata: { contentType: 'image/png' } });
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, SLUG_PATH, { headers: { Range: 'bytes=2-5' } });
 
     expect(res.status).toBe(206);
@@ -125,7 +125,7 @@ describe('media delivery route (Task 4)', () => {
 
   it('serves a full 200 for a Via: image-resizing subrequest even with conditional headers', async () => {
     await bucket.put(KEY, BYTES, { httpMetadata: { contentType: 'image/png' } });
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const first = await invoke(handler, SLUG_PATH);
     const etag = first.headers.get('ETag') as string;
 
@@ -138,38 +138,38 @@ describe('media delivery route (Task 4)', () => {
   });
 
   it('404s a path-traversal slug with no R2 read', async () => {
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, `..%2F${SLUG_PATH}`, undefined, throwingEnv());
     expect(res.status).toBe(404);
   });
 
   it('404s a bare `..` segment with no R2 read', async () => {
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, `../${SLUG_PATH}`, undefined, throwingEnv());
     expect(res.status).toBe(404);
   });
 
   it('404s an over-long, non-hex hash with no R2 read', async () => {
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     // 17 chars and a non-hex `g`: fails HASH_RE before any read.
     const res = await invoke(handler, `photo.a1b2c3d4e5f6071g8.${EXT}`, undefined, throwingEnv());
     expect(res.status).toBe(404);
   });
 
   it('404s a bad extension with no R2 read', async () => {
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, `photo.${HASH}.svg`, undefined, throwingEnv());
     expect(res.status).toBe(404);
   });
 
   it('returns 503 (not a thrown 500) when the bucket binding is missing', async () => {
-    const handler = createMediaRoute(runtime(resolvedOn));
+    const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const res = await invoke(handler, SLUG_PATH, undefined, {});
     expect(res.status).toBe(503);
   });
 
   it('404s when media is off', async () => {
-    const handler = createMediaRoute(runtime({ enabled: false }));
+    const handler = createMediaRoute({ runtime: runtime({ enabled: false }) });
     const res = await invoke(handler, SLUG_PATH);
     expect(res.status).toBe(404);
   });

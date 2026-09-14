@@ -4,7 +4,7 @@ import type { Handle } from '@sveltejs/kit';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
 import { access } from './access.js';
 
-// adminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
+// createAdminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
 // throw SvelteKit's own redirect()/error(), which SvelteKit renders correctly with no site
 // mapping. SvelteKit's default handleError (a console.error of every server error) covers
 // everything else, so this file declares no handleError hook of its own.

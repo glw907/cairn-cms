@@ -13,7 +13,7 @@ import type { Plugin, PluginOption } from 'vite';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { resolveViteRoot } from './resolve-root.js';
-import { parseManifest, serializeManifest } from '../content/manifest.js';
+import { parseManifest, formatManifest } from '../content/manifest.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AiPosture } from '../content/types.js';
 
@@ -66,11 +66,11 @@ function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): st
   // not exist (it lives only in this evaluated string).
   const resultExpr =
     mode === 'write'
-      ? 'serializeManifest(built)'
+      ? 'formatManifest(built)'
       : '(verifyManifest(built, committed), verifyReferences(built), "ok")';
   return `
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
-import { serializeManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
+import { formatManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
 import { cairn, siteConfig } from ${JSON.stringify(opts.configModule)};
 ${committedImport}
 const globs = {
@@ -242,7 +242,7 @@ export function carryPublishStamps(builtSerialized: string, committedRaw: string
   }
   if (stamps.size === 0) return builtSerialized;
   const built = parseManifest(builtSerialized);
-  return serializeManifest({
+  return formatManifest({
     version: 1,
     entries: built.entries.map((e) => {
       const publishedAt = stamps.get(`${e.concept}/${e.id}`);

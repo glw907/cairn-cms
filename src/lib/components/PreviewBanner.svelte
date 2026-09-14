@@ -1,7 +1,7 @@
 <!--
 @component
 A design-agnostic status notice for a shared preview link, driven only by the `preview` field
-`previewLoad` (`/sveltekit`) adds to its data. It renders one of two states and nothing else: no
+`loadPreview` (`/sveltekit`) adds to its data. It renders one of two states and nothing else: no
 fetch, no internal state, no interactivity. A site may ignore this component entirely and render
 its own banner from the same metadata; this is only the default treatment a getting-started site
 mounts.
@@ -47,7 +47,7 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
   }
 
   interface Props {
-    /** The preview metadata `previewLoad` returns alongside the page's own entry data. */
+    /** The preview metadata `loadPreview` returns alongside the page's own entry data. */
     preview: PreviewData['preview'];
     /**
      * Format `preview.expiresAt` for display. Defaults to a fixed `YYYY-MM-DD HH:MM UTC` string,

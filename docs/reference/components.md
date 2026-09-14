@@ -382,13 +382,13 @@ Stability tier: Unstable API.
 ```ts
 let { data, form }: {
   data: { siteName: string; error: string | null; csrf: string } | { identity: { label: string } };
-  form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
+  form: { sent?: boolean; outcome?: 'sent' | 'send-error' | 'throttled' } | null;
 };
 ```
 
 The magic-link request screen. `data` carries the site name, an optional error, and the `csrf`
-double-submit token the page renders into its form. A `sent` status (or the legacy `form.sent`
-boolean) flips the page to the check-your-email state; `send_error` renders a warning that links
+double-submit token the page renders into its form. A `sent` outcome (or the legacy `form.sent`
+boolean) flips the page to the check-your-email state; `send-error` renders a warning that links
 cannot be sent right now, and `throttled` renders a check-your-inbox hint, both above the form so
 the editor can retry. The request form posts the named `?/request` action; on the per-route
 mounting, register `requestAction` under that name in the unauthed
@@ -472,10 +472,10 @@ under the same names.
 Stability tier: Unstable API.
 
 ```ts
-let { data, form }: { data: NavLoadData; form?: ContentFormFailure | null };
+let { data, form }: { data: NavData; form?: ContentFormFailure | null };
 ```
 
-The drag-to-reorder navigation editor. `data` is the `NavLoadData` from the nav load (the menu
+The drag-to-reorder navigation editor. `data` is the `NavData` from the nav load (the menu
 metadata, the current tree, the page options, and the feature flags). Saving posts the named
 `?/save` action, which commits the rebuilt nav to the site config; `form` carries a refused save's
 `ContentFormFailure`, so a stale-edit reload or a rejected tree reapplies its message. On the
@@ -554,7 +554,7 @@ an explicit empty string suppresses the hand-off, the self-serve state. It mount
 Stability tier: Unstable API.
 
 ```ts
-let { data, form }: { data: VocabularyLoadData; form?: ContentFormFailure | null };
+let { data, form }: { data: VocabularyData; form?: ContentFormFailure | null };
 ```
 
 The tag-vocabulary admin screen ("Tags"). `data` is the committed vocabulary, the per-value
@@ -569,9 +569,9 @@ mutation. It mounts inside `CairnAdminShell` on `PageHeader` for its header band
 ```svelte
 <script lang="ts">
   import { VocabularyAdmin } from '@glw907/cairn-cms/components';
-  import type { VocabularyLoadData } from '@glw907/cairn-cms/sveltekit';
+  import type { VocabularyData } from '@glw907/cairn-cms/sveltekit';
 
-  let { data }: { data: VocabularyLoadData } = $props();
+  let { data }: { data: VocabularyData } = $props();
 </script>
 
 <VocabularyAdmin {data} />
@@ -820,7 +820,7 @@ guarantee a test independently proves; the component carries it on its own.
 
 `PreviewBanner` is the one exception to this barrel's admin-only membership rule: a design-agnostic
 component for a page a site's own visitors reach, not the admin. See [Public
-preview](./sveltekit.md#public-preview) for the `previewLoad` seam it pairs with, and [Share a
+preview](./sveltekit.md#public-preview) for the `loadPreview` seam it pairs with, and [Share a
 draft preview](../extend/share-a-draft-preview.md) for the full walkthrough.
 
 ### `PreviewBanner`
@@ -832,7 +832,7 @@ let { preview, formatExpiry }: { preview: PreviewData['preview']; formatExpiry?:
 ```
 
 A status notice for a shared preview link, driven only by the `preview` field
-[`previewLoad`](./sveltekit.md#previewload) adds to its data. It renders one of two states and
+[`loadPreview`](./sveltekit.md#loadpreview) adds to its data. It renders one of two states and
 nothing else: no fetch, no internal state, no interactivity. `state: 'draft'` names the expiry so
 the holder knows the link ages out; `state: 'published'` reports only that the preview has ended,
 since a discarded edit and a published entry both reach this state and the copy must never claim

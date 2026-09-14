@@ -79,19 +79,19 @@ export { defineFieldset } from './content/fieldset.js';
 export type {
   Fieldset,
   InferFieldset,
-  FieldsetOptions,
-  // `FieldsetOptions.behavior` and `Fieldset.behavior` name these.
+  FieldsetConfig,
+  // `FieldsetConfig.behavior` and `Fieldset.behavior` name these.
   BehaviorTable,
   FieldBehavior,
 } from './content/fieldset.js';
 // `ConceptConfig.datePrefix` names this granularity type.
 export type { DatePrefix } from './content/ids.js';
 // The committed content manifest (content-graph design). The corpus builder and the
-// request-time resolver ship from the delivery entry; only the manifest's serialize and verify
-// operations stay public, for a build script or a custom regenerate tool. `CairnRef` and
+// request-time resolver ship from the delivery entry; only the manifest's format, parse, and
+// verify operations stay public, for a build script or a custom regenerate tool. `CairnRef` and
 // `LinkResolve` name `createRenderer`'s link-resolution signature.
 export type { CairnRef, LinkResolve } from './content/links.js';
-export { serializeManifest, verifyManifest, verifyReferences } from './content/manifest.js';
+export { formatManifest, parseManifest, verifyManifest, verifyReferences } from './content/manifest.js';
 // `Manifest.entries` names `ManifestEntry`.
 export type { Manifest, ManifestEntry } from './content/manifest.js';
 // Render engine: generic directive pipeline; sites own the component registry.
@@ -107,7 +107,7 @@ export type { IconSet } from './render/glyph.js';
 export { createRenderer } from './render/pipeline.js';
 // `createRenderer`'s returned `renderMarkdown`/`renderDocument` name `ResolveOptions` in their own
 // `opts` parameter.
-export type { RendererOptions, Renderer, DocHeading, ResolveOptions } from './render/pipeline.js';
+export type { RendererConfig, Renderer, DocHeading, ResolveOptions } from './render/pipeline.js';
 // The `::include` fragment resolver type: `renderMarkdown`'s `resolveFragment` option and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';
@@ -124,7 +124,7 @@ export type { ReferenceEdge } from './content/references.js';
 export type { RepoFile, CommitAuthor } from './github/types.js';
 export { CommitConflictError, BranchExistsError } from './github/types.js';
 // The Backend seam: the store interface and its default GitHub provider.
-export { githubApp } from './github/backend.js';
+export { createGithubApp } from './github/backend.js';
 export type { Backend, BackendProvider, GithubAppProvider, BackendCommit } from './github/backend.js';
 export type { FileChange } from './github/repo.js';
 

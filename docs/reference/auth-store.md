@@ -84,7 +84,7 @@ resolved.
 Stability tier: Extension API.
 
 ```ts
-declare function listEditors(db: D1Database): Promise<EditorRow[]>;
+declare function listEditors(db: D1Database): Promise<UnresolvedEditor[]>;
 ```
 
 The full allowlist, sorted by email.
@@ -213,7 +213,7 @@ Stability tier: Extension API.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `EditorRow` | Extension API | `type EditorRow = { email: string; displayName: string; role: string }` | An allowlist row as the store reads it: email, displayName, and the bare role name. The store has no access to a site's declared vocabulary, so it never resolves `capability`; a caller that needs a full [`Editor`](./core.md#editor) resolves capability itself and spreads it onto this shape. |
+| `UnresolvedEditor` | Extension API | `type UnresolvedEditor = Omit<Editor, 'capability'>` | An allowlist row as the store reads it, `Editor` minus `capability`. The store has no access to a site's declared vocabulary, so it never resolves that field; a caller that needs a full [`Editor`](./core.md#editor) resolves capability itself and spreads it onto this shape. |
 | `DeleteEditorOutcome` | Extension API | `type DeleteEditorOutcome = { outcome: 'removed' } \| { outcome: 'last-owner' } \| { outcome: 'not-found' }` | What [`deleteEditor`](#deleteeditor) returns; see its own description for each arm. |
 | `SetEditorRoleOutcome` | Extension API | `type SetEditorRoleOutcome = { outcome: 'ok' } \| { outcome: 'last-owner' } \| { outcome: 'not-found' }` | What [`setEditorRole`](#seteditorrole) returns; see its own description for each arm. |
 | `OwnerGuardOutcome` | Extension API | `type OwnerGuardOutcome = { outcome: 'ok' } \| { outcome: 'last-owner' } \| { outcome: 'not-eligible' }` | What [`removeOwnerIfNotLast`](#removeownerifnotlast) and [`demoteOwnerIfNotLast`](#demoteownerifnotlast) return; see either function's own description for each arm. |

@@ -10,7 +10,7 @@ import { escapeHtml } from '../escape.js';
 import { renderStaticAdminPage } from './static-admin-page.js';
 import { condition, type CairnCondition } from '../diagnostics/index.js';
 
-/** The guard.rejected reasons, each mapped to its registered condition id. */
+/** The guard.refused reasons, each mapped to its registered condition id. */
 export const REASON_CONDITION = {
   https: 'edge.https-not-forced',
   csrf: 'auth.csrf-token-invalid',
@@ -21,7 +21,7 @@ export const REASON_CONDITION = {
 
 /**
  * The unrostered-identity condition id, spelled once here so the guard's second identity-branch
- * switch case and this renderer never drift onto different strings. It carries no `guard.rejected`
+ * switch case and this renderer never drift onto different strings. It carries no `guard.refused`
  * reason: an unrostered but resolved identity refuses through its own path, not the reason table
  * above.
  */

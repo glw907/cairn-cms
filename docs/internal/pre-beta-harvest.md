@@ -278,10 +278,10 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   agent-memory note claimed `GithubAppProvider.owner`/`.repo`/`.branch` are not reachable off
   `CairnAdapter.backend` in site code because it is typed as the generic `BackendProvider` and
   `isGithubApp` is not barrel-exported, so the port re-exported a literal `REPO` constant next
-  to `githubApp({...})` as a workaround. Verified false for the actual friction site
+  to `createGithubApp({...})` as a workaround. Verified false for the actual friction site
   (`svelte-check`, 0/0, both via a raw `tsc --noEmit` probe and the theme's own `npm run
   check`): `defineAdapter<const A extends CairnAdapter>(adapter: A): A`'s const-generic capture
-  preserves `githubApp()`'s concrete `GithubAppProvider` return type, so `cairn.backend.owner`
+  preserves `createGithubApp()`'s concrete `GithubAppProvider` return type, so `cairn.backend.owner`
   reads with no cast from the same module that calls `defineAdapter`, or from any module that
   imports that export. `isGithubApp` would only be needed to narrow a field genuinely widened
   to `BackendProvider` (for example `CairnRuntime.backend`, which `composeRuntime` returns and
@@ -395,13 +395,13 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
 
 ## Engine
 
-- **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererOptions` gained
+- **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererConfig` gained
   `remarkPlugins`/`rehypePlugins`, additive lists appended after cairn's own markdown- and
   hast-stage steps. Additive, not breaking; 907.life's hand-rolled second unified pipeline
   migrated onto it (`67b8f0d`). ecxc-ski's migration is CANDIDATE, not moot: its `main` is no
   longer reverted (the chrome repair and the chassis restructure both landed there, `8b68aed`,
   on `^0.80.0`), but it still carries its own local table-scroll wiring rather than this seam.
-- **Table-scroll as a built-in default** — LANDED (`71c131d`). `RendererOptions.tableScroll`
+- **Table-scroll as a built-in default** — LANDED (`71c131d`). `RendererConfig.tableScroll`
   (default `true`) wraps every rendered table by default, opt-out via `tableScroll: false`.
   907.life deleted its local wiring (`b56a241`); ecxc-ski's migration is CANDIDATE (see above).
 - **Sitemap extra-routes** — LANDED (`278035e`). `sitemapView` gained an `extraRoutes` argument and a new

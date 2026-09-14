@@ -42,13 +42,13 @@ function loginResponse(over: { body?: string; status?: number; cookie?: string |
 }
 
 /** SvelteKit's serialized form-action JSON for a no-Accept POST; data is a devalue string. */
-function actionJson(status: 'sent' | 'send_error' | 'throttled'): Response {
-  const sent = status === 'sent';
+function actionJson(outcome: 'sent' | 'send-error' | 'throttled'): Response {
+  const sent = outcome === 'sent';
   return new Response(
     JSON.stringify({
       type: 'success',
       status: 200,
-      data: `[{"status":1,"sent":2},"${status}",${sent}]`,
+      data: `[{"outcome":1,"sent":2},"${outcome}",${sent}]`,
     }),
     { status: 200 }
   );
@@ -202,11 +202,11 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('failure');
   });
 
-  it('fails with a send-path detail on a send_error payload', async () => {
-    const { fetch } = probeFetch(loginResponse(), actionJson('send_error'));
+  it('fails with a send-path detail on a send-error payload', async () => {
+    const { fetch } = probeFetch(loginResponse(), actionJson('send-error'));
     const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
     expect(result.status).toBe('fail');
-    expect(result.detail).toContain('send_error');
+    expect(result.detail).toContain('send-error');
   });
 
   it('passes a throttled payload, noting the cooldown in the detail', async () => {

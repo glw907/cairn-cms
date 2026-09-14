@@ -55,7 +55,7 @@
 //    programmatically determinable, it draws no line about typographic weight, and an earlier draft
 //    of this header cited it as though it did. The axis is cairn's own.
 //  - `<header>` and `[role="banner"]`, ONLY when it contains the heading it introduces. The
-//    page-header recipe (`PageHeader.svelte`, and `OfficeList.svelte`'s own pre-toolkit twin of it)
+//    page-header recipe (`PageHeader.svelte`)
 //    wraps an optional eyebrow, the page's one `h1`, and an optional meta line in one `<header>`,
 //    which generalizes the heading-text exclusion below to the heading's whole title band. The
 //    heading condition is what keeps that from becoming an unbounded exemption: `<header>` is legal

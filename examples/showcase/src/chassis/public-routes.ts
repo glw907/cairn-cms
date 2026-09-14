@@ -1,7 +1,7 @@
 // This site's one PublicRoutesConfig literal, carrying site/render/origin plus the SEO
 // (siteName, description, defaultImage, feeds) and media (resolveMedia, assetsEnabled) fields.
 // `(site)/[...path]/+page.server.ts` (the build's prerendered entry route, via createPublicRoutes),
-// `(site)/preview/[token]/+page.server.ts` (the runtime preview route, via previewLoad), and
+// `(site)/preview/[token]/+page.server.ts` (the runtime preview route, via loadPreview), and
 // `(site)/[...path=md]/+server.ts` (the raw-markdown route, via createPublicRoutes) all import
 // this ONE binding, so the three routes can never drift their rendering config apart by editing
 // one copy and forgetting the others.

@@ -25,10 +25,10 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
     data:
       | { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' }
       | { identity: { label: string }; theme?: 'cairn-admin' | 'cairn-admin-dark' };
-    /** The action result. `sent` is true once a request was accepted; `status` discriminates the
+    /** The action result. `sent` is true once a request was accepted; `outcome` discriminates the
      * neutral, send-error, and throttled outcomes. `error` carries an unexpected action failure
      * (viewAction's generic fail(500)), which has neither field. */
-    form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled'; error?: string } | null;
+    form: { sent?: boolean; outcome?: 'sent' | 'send-error' | 'throttled'; error?: string } | null;
   }
 
   let { data, form }: Props = $props();
@@ -53,7 +53,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   // A fresh action result supersedes the GET-time error, so a resubmit into a throttle, a send
   // failure, or an unexpected failure never shows the stale link alert alongside the new state.
   // Identity mode carries no `error` field at all, so it reads as no link error.
-  const linkError = $derived(magicLink && !form?.status && !form?.error ? magicLink.error : null);
+  const linkError = $derived(magicLink && !form?.outcome && !form?.error ? magicLink.error : null);
   // The page title is the one landing signal a JS-free arrival gets before reading anything: the
   // redirect that lands here carries its reason only in a query string, and a screen reader
   // announces the title first. Each refusal names itself, the way ConfirmPage swaps its h1.
@@ -104,7 +104,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       <p data-cairn-identity class="mt-2 text-center type-body">
         This site signs in through {data.identity.label}. <a href="/admin" class="link link-primary">Go to /admin</a>.
       </p>
-    {:else if (form?.status === 'sent' || form?.sent) && !dismissed}
+    {:else if (form?.outcome === 'sent' || form?.sent) && !dismissed}
       <!-- No role="status" here: the block mounts fresh on this branch switch, so a live region
            on it would never observe its own first content (WCAG 4.1.3). The "Check your email"
            heading is what carries the announcement, the same way a fresh page's title does. -->
@@ -142,11 +142,11 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
            technology reaching this page can move to whichever message it carries rather than
            reading down to it. The page is JS-free, so nothing focuses one on load; the title
            above is what announces the state a redirect landed in. -->
-      {#if form?.status === 'send_error'}
+      {#if form?.outcome === 'send-error'}
         <div role="alert" tabindex="-1" class="alert alert-warning mb-3 type-body">
           We’re having trouble sending sign-in links right now. Please contact the site owner.
         </div>
-      {:else if form?.status === 'throttled'}
+      {:else if form?.outcome === 'throttled'}
         <div role="status" tabindex="-1" class="alert mb-3 type-body">
           You requested a link recently. Check your inbox, or wait a minute and try again.
         </div>

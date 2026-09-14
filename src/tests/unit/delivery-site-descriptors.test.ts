@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
@@ -11,7 +11,7 @@ const adapter = {
     posts: { dir: 'src/content/posts', fields: defineFieldset({}) },
     pages: { dir: 'src/content/pages', fields: defineFieldset({}) },
   },
-  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.test' },
   rendering: { render: ({ body }: { body: string }) => Promise.resolve(body) },
 } as unknown as CairnAdapter;

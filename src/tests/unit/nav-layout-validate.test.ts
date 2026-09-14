@@ -176,17 +176,17 @@ describe('validateNavLayout: a valid tree', () => {
 describe('validateNavLayout: wired at admin construction', () => {
   it('throws building createContentRoutes from a runtime carrying a bad navLayout', () => {
     expect(() =>
-      createContentRoutes(runtime({ navLayout: [{ screen: 'bogus' }] })),
+      createContentRoutes({ runtime: runtime({ navLayout: [{ screen: 'bogus' }] }) }),
     ).toThrow(/navLayout: unknown screen "bogus"/);
   });
 
   it('does not throw building createContentRoutes from a runtime carrying a valid navLayout', () => {
     expect(() =>
-      createContentRoutes(runtime({ navLayout: [{ screen: 'posts' }, { screen: 'settings' }] })),
+      createContentRoutes({ runtime: runtime({ navLayout: [{ screen: 'posts' }, { screen: 'settings' }] }) }),
     ).not.toThrow();
   });
 
   it('skips validation entirely when navLayout is undeclared, the common case', () => {
-    expect(() => createContentRoutes(runtime())).not.toThrow();
+    expect(() => createContentRoutes({ runtime: runtime() })).not.toThrow();
   });
 });

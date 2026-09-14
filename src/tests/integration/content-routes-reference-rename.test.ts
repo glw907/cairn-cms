@@ -7,7 +7,7 @@
 // and a `related` array(reference), so a linker on main or a branch declares real reference edges.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, verifyReferences, manifestEntryFromFile } from '../../lib/content/manifest.js';
@@ -54,7 +54,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [posts, pages],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
@@ -94,7 +94,7 @@ function entry(
 /** Rename the target and either return the thrown redirect location or the fail() result. */
 async function rename(gh: GithubDouble, id: string, slug: string): Promise<{ location?: string; status?: number; error?: string }> {
   gh.install();
-  const routes = createContentRoutes(runtime());
+  const routes = createContentRoutes({ runtime: runtime() });
   try {
     const result = (await routes.renameAction(renameEvent(id, slug))) as unknown as {
       status: number; data: { error: string };

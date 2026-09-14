@@ -212,10 +212,10 @@ async function classifyLoginResponse(
   // branch: with no platform, csrfSecure's own PUBLIC_ORIGIN consultation never fires, so an
   // https origin still resolves Secure outright and every non-https origin (local or not) still
   // resolves not-Secure, exactly as the bare protocol check did.
-  const cookieName = csrfCookieName(csrfSecure({ url: origin, platform: undefined }));
-  const cookieValue = setCookieValue(res.headers.getSetCookie(), cookieName);
+  const expectedCookieName = csrfCookieName(csrfSecure({ url: origin, platform: undefined }));
+  const cookieValue = setCookieValue(res.headers.getSetCookie(), expectedCookieName);
   if (cookieValue === undefined) {
-    return { result: fail(`GET /admin/login set no ${cookieName} cookie`), sawGate: false };
+    return { result: fail(`GET /admin/login set no ${expectedCookieName} cookie`), sawGate: false };
   }
   const field = csrfFieldValue(html);
   if (field === undefined) {
@@ -225,7 +225,7 @@ async function classifyLoginResponse(
     };
   }
   return {
-    result: await postRequestAction(ctx, origin, `${cookieName}=${cookieValue}`, field),
+    result: await postRequestAction(ctx, origin, `${expectedCookieName}=${cookieValue}`, field),
     sawGate: false,
   };
 }
@@ -452,9 +452,9 @@ async function postRequestAction(
     return fail(`POST ?/request answered type ${String(envelope.type)}, expected success`);
   }
   const data = typeof envelope.data === 'string' ? envelope.data : '';
-  if (data.includes('"send_error"')) {
+  if (data.includes('"send-error"')) {
     return fail(
-      'the request action answered send_error; the magic-link send path is failing (see the email checks and the auth.link.send_failed log records)'
+      'the request action answered send-error; the magic-link send path is failing (see the email checks and the auth.link.send_failed log records)'
     );
   }
   // Every payload carries the "sent" field name, so the distinct status spellings go first.

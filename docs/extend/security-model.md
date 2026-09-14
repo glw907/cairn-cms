@@ -58,7 +58,7 @@ constants an adapter cannot loosen on this path. There is no password anywhere i
 no third-party identity provider; a sign-in proves only membership in the `editor` table.
 
 The request path is deliberately non-enumerating: an address that isn't on the roster gets the
-same `{ status: 'sent' }` response a real editor's address gets, so a stranger probing addresses
+same `{ outcome: 'sent' }` response a real editor's address gets, so a stranger probing addresses
 can't tell allowlist membership from the response alone. The one deliberate exception is the
 cooldown above: a *repeat* request inside the one-minute window returns a distinct `throttled`
 status, which does reveal that the address is on the roster. That's an accepted trade, made so a
@@ -231,7 +231,7 @@ magic-link session cookie left over from before a site switched to `identity` ne
 a request either way.
 
 **`hasSession` on a CSRF rejection is structurally always `false` under `identity`.** The
-[`guard.rejected`](../reference/log-events.md) record for a CSRF refusal carries `hasSession`, a
+[`guard.refused`](../reference/log-events.md) record for a CSRF refusal carries `hasSession`, a
 read of whether the session cookie was present on the request. Under `identity` the guard never
 sets that cookie, so the field reads `false` on every identity-mode CSRF rejection; it is not
 repurposed to mean "an identity resolved," since resolving identity would mean running
@@ -323,7 +323,7 @@ every request passes through it in this fixed order.
    read. A site configuring `identity` replaces this step with the gate's own resolution instead;
    see [Identity from a gate](#identity-from-a-gate).
 
-Every step that refuses a request logs a named [`guard.rejected`](../reference/log-events.md)
+Every step that refuses a request logs a named [`guard.refused`](../reference/log-events.md)
 reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`. On the built-in magic-link
 path, step 6 is the one exception: a missing or invalid session redirects to `/admin/login`
 without logging. Under `identity`, step 6's refusals are logged; see [Identity from a
@@ -453,7 +453,7 @@ This section states the `ownerOnly` rule in full. Every other page links here ra
 it.
 
 A [`createSectionAction`](../reference/sveltekit.md#createsectionaction) or
-[`adminAction`](../reference/sveltekit.md#adminaction) call's own `ownerOnly` option requires owner
+[`createAdminAction`](../reference/sveltekit.md#createadminaction) call's own `ownerOnly` option requires owner
 capability in addition to the map's own rule, never instead of it. It only ever narrows, from "the
 roles this rule admits" to "owner alone," and never turns a denial into an admission:
 
@@ -472,7 +472,7 @@ worked example.
 The permissive reading above is `canReach`'s own default; it is not the only posture the engine
 runs on one map. `authorizeAdminTarget`, the shared sequence both
 [`createSectionAction`](../reference/sveltekit.md#createsectionaction) and
-[`adminAction`](../reference/sveltekit.md#adminaction)'s opt-in `access` option run, is fail-closed
+[`createAdminAction`](../reference/sveltekit.md#createadminaction)'s opt-in `access` option run, is fail-closed
 at every one of its three gates, checked in this order:
 
 1. No rule at all for the target refuses.
@@ -484,10 +484,10 @@ A target the map has no opinion on is refused here, the opposite of `canReach`'s
 own unmapped-target reading, because this sequence's contract is "the site opted this action into
 the map," the same "opted in and found nothing" refusal `requireAccess` already carries for a
 site's own routes. `createSectionAction` runs it on every call and refuses with `fail(403)`.
-`adminAction` runs it only when the call sets the `access` option, and refuses by throwing
+`createAdminAction` runs it only when the call sets the `access` option, and refuses by throwing
 `error(403, ...)`; with the option omitted it authorizes nothing, which is what every action
 written before the option existed relies on. Either way the refusal is audited through
-`cairnAuditSink` and logged as `auth.access.denied`, and the response names no gate.
+`cairnAuditSink` and logged as `auth.access.refused`, and the response names no gate.
 
 ## Response hardening
 

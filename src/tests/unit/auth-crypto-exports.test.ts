@@ -9,7 +9,7 @@ const DEMOTED = ['generateCsrfToken', 'generateSessionId'];
 describe('auth-crypto exports', () => {
   it('exposes exactly the four crypto primitives', () => {
     const names = Object.keys(authCrypto).sort();
-    expect(names).toEqual(['cookieName', 'generateToken', 'hashToken', 'tokensMatch']);
+    expect(names).toEqual(['buildCookieName', 'generateToken', 'hashToken', 'tokensMatch']);
   });
 
   it('omits the demoted generator aliases', () => {
@@ -26,7 +26,7 @@ describe('auth-crypto exports', () => {
     expect(await authCrypto.hashToken('anything')).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('cookieName applies the __Host- prefix when secure', () => {
-    expect(authCrypto.cookieName('x', true)).toBe('__Host-x');
+  it('buildCookieName applies the __Host- prefix when secure', () => {
+    expect(authCrypto.buildCookieName('x', true)).toBe('__Host-x');
   });
 });

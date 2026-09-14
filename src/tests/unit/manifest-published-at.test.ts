@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseManifest,
-  serializeManifest,
+  formatManifest,
   stampFirstPublish,
   upsertEntry,
   verifyManifest,
@@ -26,9 +26,9 @@ function manifest(...entries: ManifestEntry[]): Manifest {
   return { version: 1, entries };
 }
 
-describe('serializeManifest with publishedAt', () => {
+describe('formatManifest with publishedAt', () => {
   it('writes the stamp right after draft, so the fixed key order stays stable', () => {
-    const raw = serializeManifest(manifest(entry({ publishedAt: NOW })));
+    const raw = formatManifest(manifest(entry({ publishedAt: NOW })));
     expect(JSON.parse(raw).entries[0]).toEqual({
       id: 'hi',
       concept: 'posts',
@@ -50,19 +50,19 @@ describe('serializeManifest with publishedAt', () => {
   });
 
   it('round-trips the stamp through parse', () => {
-    const parsed = parseManifest(serializeManifest(manifest(entry({ publishedAt: NOW }))));
+    const parsed = parseManifest(formatManifest(manifest(entry({ publishedAt: NOW }))));
     expect(parsed.entries[0].publishedAt).toBe(NOW);
   });
 
   it('leaves an unstamped entry byte-identical to a manifest committed before the field', () => {
     const before = '{\n  "version": 1,\n  "entries": [\n    {\n      "id": "hi",\n      "concept": "posts",\n      "title": "Hi",\n      "permalink": "/posts/hi",\n      "draft": false,\n      "links": []\n    }\n  ]\n}\n';
-    expect(serializeManifest(manifest(entry()))).toBe(before);
+    expect(formatManifest(manifest(entry()))).toBe(before);
   });
 });
 
 describe('parseManifest with publishedAt', () => {
   it('accepts an entry without the key', () => {
-    const parsed = parseManifest(serializeManifest(manifest(entry())));
+    const parsed = parseManifest(formatManifest(manifest(entry())));
     expect(parsed.entries[0].publishedAt).toBeUndefined();
   });
 
@@ -74,17 +74,17 @@ describe('parseManifest with publishedAt', () => {
 
 describe('verifyManifest with publishedAt', () => {
   it('does not throw when the committed manifest carries a stamp the corpus-built one cannot', () => {
-    const committed = serializeManifest(manifest(entry({ publishedAt: NOW })));
+    const committed = formatManifest(manifest(entry({ publishedAt: NOW })));
     expect(() => verifyManifest(manifest(entry()), committed)).not.toThrow();
   });
 
   it('still reports drift in another field of a stamped entry', () => {
-    const committed = serializeManifest(manifest(entry({ publishedAt: NOW })));
+    const committed = formatManifest(manifest(entry({ publishedAt: NOW })));
     expect(() => verifyManifest(manifest(entry({ title: 'Renamed' })), committed)).toThrow(/title/);
   });
 
   it('reports drift when the built manifest carries a stamp the committed one lacks', () => {
-    const committed = serializeManifest(manifest(entry()));
+    const committed = formatManifest(manifest(entry()));
     expect(() => verifyManifest(manifest(entry({ publishedAt: NOW })), committed)).toThrow(/publishedAt/);
   });
 });

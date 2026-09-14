@@ -46,12 +46,12 @@ publishes.
   [sveltekit](./sveltekit.md) exports) read it so a custom route rarely needs the raw field.
 
 - **`cairnBackend`** is the per-request content-store channel. The dev-backend handle
-  (`@glw907/cairn-cms-dev`) sets it so the engine resolves it ahead of the real `githubApp`
+  (`@glw907/cairn-cms-dev`) sets it so the engine resolves it ahead of the real `createGithubApp`
   provider (`locals.cairnBackend ?? runtime.backend.connect(env)`); a production request never
   sets it, and the real provider connects instead.
 
 - **`cairnAuditSink`** is the site-supplied persistence seam
-  [`adminAction`](./sveltekit.md#adminaction) forwards every audit record through, and a site's own
+  [`createAdminAction`](./sveltekit.md#createadminaction) forwards every audit record through, and a site's own
   domain code may also call it directly with its own events. A site that wants its own audit trail
   assigns it in a hooks handle; a site that never assigns it still logs `admin.action.audited` on
   every `ctx.audit` emit. [`createD1AuditSink`](./sveltekit.md#created1auditsink) is the packaged
@@ -60,10 +60,10 @@ publishes.
 - **`cairnAccess`** is the site's declared access map, attached by `createAuthGuard` alongside
   `cairnEditor`. It's internal, never serialized to a page payload, and exists so
   `requireAccess`, [`createSectionAction`](./sveltekit.md#createsectionaction), and an
-  [`adminAction`](./sveltekit.md#adminaction) that opts into the `access` option need no extra
+  [`createAdminAction`](./sveltekit.md#createadminaction) that opts into the `access` option need no extra
   argument to reach it at the call site. A zero-config site's guard attaches an empty map, which
   admits nothing, so an opted-in action refuses until the site declares a rule for its target;
-  `adminAction` with no `access` option never reads the field.
+  `createAdminAction` with no `access` option never reads the field.
 
 - **`cairnIdentity`** is the site's identity-gate snapshot, set by
   [`createAuthGuard`](./sveltekit.md#createauthguard)'s `identity` option on every `/admin/**`

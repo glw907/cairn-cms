@@ -105,7 +105,7 @@ describe('requireAccess', () => {
     expect(requireAccess(fixture)).toBe(publisher);
   });
 
-  it('403s and emits auth.access.denied when the map denies the route-id target', () => {
+  it('403s and emits auth.access.refused when the map denies the route-id target', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fixture = event({ cairnEditor: webmaster, cairnAccess: access }, new URL('https://x.test/admin/money'));
     expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
@@ -115,7 +115,7 @@ describe('requireAccess', () => {
     expect(
       records.some(
         (r) =>
-          r.event === 'auth.access.denied' &&
+          r.event === 'auth.access.refused' &&
           r.email === 'w@x.test' &&
           r.role === 'webmaster' &&
           r.target === '/admin/money',
@@ -135,7 +135,7 @@ describe('requireAccess', () => {
       requireAccess(event({ cairnEditor: owner, cairnAccess: access }, unmatchedUrl)),
     ).toThrowError(expect.objectContaining({ status: 403 }));
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
-    expect(events.filter((e) => e === 'auth.access.denied')).toHaveLength(2);
+    expect(events.filter((e) => e === 'auth.access.refused')).toHaveLength(2);
     vi.restoreAllMocks();
   });
 

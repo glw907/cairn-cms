@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 import { testSiteConfig } from './_content-fixture.js';
 
 const base: CairnAdapter = {
   content: {},
-  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '1' }),
+  backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '1' }),
   email: { from: 'cms@example.com' },
   rendering: { render: ({ body }) => Promise.resolve(body) },
 };

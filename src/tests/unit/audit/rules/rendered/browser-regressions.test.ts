@@ -508,8 +508,8 @@ describe('viewport-overflow against a real browser', () => {
   });
 
   // getBoundingClientRect reports unclipped geometry, so every child of a deliberate
-  // overflow-x: auto wrapper was flagged. Both instances are cairn's own idioms (AdminTable and
-  // OfficeList's table wrapper, EditorToolbar's small-screen rail), and allowlisting the false
+  // overflow-x: auto wrapper was flagged. Both instances are cairn's own idioms (AdminTable's
+  // table wrapper, EditorToolbar's small-screen rail), and allowlisting the false
   // positive would have silenced the real defect that shares its selector signature.
   it('does not flag a table inside its own horizontal scroll container', async () => {
     const findings = await findingsFor(

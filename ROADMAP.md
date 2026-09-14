@@ -140,7 +140,7 @@ Readiness checklist:
   2026-08-01): entry history, revert, and public preview for a non-editor, all three ratified as
   landing BEFORE the public beta, and all three implemented (the design sitting's
   `createPreviewRoute(runtime): RequestHandler` reservation is superseded by the shipped
-  `previewLoad`, a site-mounted `Load` under R1's grammar; see
+  `loadPreview`, a site-mounted `Load` under R1's grammar; see
   `docs/superpowers/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), holding
   unpublished for release one. Release intent (Geoff, 2026-08-01): the three bundle into one
   release, the next cut after the ASC-seams window publishes, however many passes they take to
@@ -197,7 +197,7 @@ release-one boundary; the passes are invariant.
   cut so the migrations can happen, so what release one adds on top is the core features.
 - **Phase P, polish and docs (non-breaking; internal order flexible):** P1 mechanical hardening
   (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep, and a
-  small showcase route exercising `adminAction` and its converged refusal paths end to end, since
+  small showcase route exercising `createAdminAction` and its converged refusal paths end to end, since
   the showcase exercises neither today and a kit-version drift in action-thrown redirect/error
   rendering would go uncaught); P2
   the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
@@ -280,61 +280,6 @@ The original decision framing, for the record:
   decision, not a default; check name availability first.
 
 ## Now
-
-- **The any-site audit remediation (filed 2026-08-26; sequenced before beta, one `Consumers
-  must:` window).** The retroactive audit ruled on all 535 public items
-  (`docs/internal/record/2026-08-26-any-site-audit.md`; per-item entries in
-  `docs/internal/engine-rulings.md`): 384 keep, 57 reshape, 94 retire. Executing the non-keeps
-  is one initiative, run as its own engine pass series while churn is free, with every break
-  batched into a single `Consumers must:` list. The itemization lives in the audit record and
-  the ledger, not restated here; the headline structure:
-  - **The 94 retires**, dominated by the route-factories R4-closure over-application (53) and
-    the undogfooded admin-toolkit field tier (`SelectInput`, `SelectInputOption`, `TextInput`,
-    with `FieldLabel` kept as the tier's one engine-owned member).
-  - **The 57 reshapes**, led by auth-family (12, including `createSectionAction`'s
-    authorization asymmetry: its checks and audited `fail(403)` exist only on the D1-required
-    path while `adminAction`, where the docs route DB-less sites, has none) and the CLI
-    surface (14, including the `create-cairn-site` money narrative already filed above).
-  - **The seven structural coherence families** (canonical export home, ratified and executed
-    for the surviving keeps as slice 2a, foundations A, done, awaiting merge; one parameter-bag
-    convention; one factory-return mechanism; verb rules beyond the factory verbs; no bare-noun
-    functions; one "what happened" idiom; narrowing `ContentRoutes` and re-deriving the R4
-    closure, foundations B next, which also re-tests adapter's ~22 C2_READDED keeps and the
-    three closure leaks).
-  - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
-    do), which reopens and then retires `DEFAULT_ROLES`.
-  - **internals-C's coherence work landed 2026-09-04**: the coherence thirteen (the
-    `check:idioms` gate, the comment-register purge, the `ec-*` → `cairn-*` rename, the
-    `as never` retirement, the least-churn formatter default), the exhaustiveness idiom
-    (`FieldDescriptor`'s dispatch sites), and the newcomer walk's `src/lib` internals map,
-    all behind unchanged public surfaces except the `ec-*` rename's own `Consumers must:`
-    line. Both remaining tracked monoliths this bullet once carried forward,
-    `content-routes-media.ts` at 1,447 lines and `content-routes-entry.ts` at 1,630 lines,
-    split into per-cluster modules under polish-11a (2026-09-12), and that pass's
-    `edit-page-state-reset-coverage.test.ts` fix closed the generic-comma gap
-    (`let x: Record<string, boolean> = $state({})`) the same window.
-  - **The chassis improvement round**: three plans,
-    `docs/superpowers/plans/2026-09-04-chassis-a-pass.md`,
-    `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md`, and
-    `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`, with harvests at
-    `docs/internal/record/2026-09-04-chassis-inputs/chassis-b1-harvest.md` and
-    `chassis-b2-harvest.md`.
-  - **The polish slice**: its plan is `docs/superpowers/specs/2026-09-08-polish-passes-design.md`,
-    which routes the full inventory (this initiative's routed items, the friction log, and its
-    own planning sweeps) into a named pass series; that spec and its plans are the source of
-    truth for what polish executes, not a re-derived list here. The items below are the routed
-    inputs that fed it. **Polish-11b-i closed two of them (2026-09-13):** the `ShareLinkPanel`
-    busy-button idiom ruling against `EditPage`'s own rule (the design system now rules the busy
-    idiom, `ShareLinkPanel` converged onto it) and the command palette's own live region (the
-    palette is now a real ARIA combobox with two always-mounted live regions). **Polish-11b-ii
-    closed two more (2026-09-13):** the `formatTimestamp` (`/admin-toolkit`) widening, and the
-    `createSectionAction` adoption in `admin/signups/+page.server.ts` with its dev-package seam,
-    the item Chassis-A's close routed here, deferred past both chassis passes because adopting the
-    helper changes its auth and audit path. The `OfficeList`/`AdminTable` double scroll-container
-    ownership question is still open, ruling-first: raise the `OfficeList` outright-retire
-    question before touching the scroll containers, since `audit-admin-officelist` is a CLOSED
-    reshape row (`engine-rulings.md:2660-2666`, executed by 4b, `Reopens on: closed`), so an
-    outright retire there is a new proposal against a closed row, not a reopen.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -662,14 +607,15 @@ The original decision framing, for the record:
     rendering, so a static rule built on it reaches ASC's `/join` icon-card defect class the same way
     the dropped rendered `cairn-audit` rule would have, with no browser. ASC already fixed its own
     instance by hand, so this closes future recurrence rather than a live defect.
-  - **Three more `/admin-toolkit` components carry layout in Tailwind classes with no scoped
+  - **Two more `/admin-toolkit` components carry layout in Tailwind classes with no scoped
     `<style>`, so they silently collapse outside `[data-theme='cairn-admin']`,** exactly as
     `FieldRow` did before this pass fixed it. The compiled admin sheet scopes every rule under the
     theme root, and a cairn-only `@utility` (`gap-label`, `gap-control`, the `type-*` roles) is not
     even defined in a consumer's own Tailwind build, so an extending developer composing these in
-    a custom route outside the shell gets `display: block` and no gap. The three:
+    a custom route outside the shell gets `display: block` and no gap. The two:
     `FieldLabel`'s stacked register (`flex flex-col gap-label`, on the `$derived` class string at
-    line 52), `EmptyState.svelte:57`, and `OfficeList.svelte:37-38`. This is a live defect on
+    line 52) and `EmptyState.svelte:57`. A third site went away with `OfficeList`'s retirement,
+    which deleted the component. This is a live defect on
     shipped consumer surface, not a documented gap. The convention to follow is a bespoke
     `toolkit-*` class in a scoped `<style>` carrying the measured literal as a `var()` fallback,
     and `ListToolbar.svelte:510` (`.toolkit-toolbar-band`) is the only real precedent in the
@@ -1153,20 +1099,19 @@ the named human gates only):**
   ruled exception would rest on. Size: small. Trigger: the next pass touching toolbar facet chrome,
   or a contrast audit that flags this element.
 
-- **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
-  primitives a site composes directly, and the first is the one an extender meets first. (1)
-  `OfficeList` hardcodes `<h1>` for what is a section heading (`OfficeList.svelte:46`), so it cannot
-  be composed under a page title without emitting a second `<h1>`; no engine screen mounts it, so the
-  published snippet was the only place the collision appeared, and that snippet now uses `OfficeList`
-  alone. `EmptyState`'s `headingLevel` prop (additive, original default unchanged) is the established
-  shape for fixing this properly. (2) `AdminTable` wraps its table in `overflow-x: auto` with no
-  `tabindex="0"`, no role, and no accessible name, and forces `white-space: nowrap` on every cell, so
+- **Two admin-toolkit accessibility gaps the reproduction seam surfaced.** Both sit in
+  primitives a site composes directly. (1) `AdminTable` wraps its table in `overflow-x: auto` with
+  no `tabindex="0"`, no role, and no accessible name, and forces `white-space: nowrap` on every
+  cell, so
   horizontal overflow at narrow widths is guaranteed and a keyboard-only user cannot scroll to reach
-  it (axe-core `scrollable-region-focusable`). Nesting it inside `OfficeList`'s own `overflow-x-auto`
-  stacks two such regions. Refinement (2026-08-29, toolkit-seams fix round; promoted from the
+  it (axe-core `scrollable-region-focusable`). Refinement (2026-08-29, toolkit-seams fix round;
+  promoted from the
   friction log at the 4b close): Chrome 127+ and Firefox make an overflowing container natively
   focusable, so the gap is partially mitigated on those engines already; it still reaches Safari
-  and older Chromium. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
+  and older Chromium. The stacked-region half of this gap is gone: `AdminTable` is now the
+  toolkit's one scroll owner, so nothing nests it inside a second overflow wrapper. A third gap
+  this entry once carried, a hardcoded `<h1>` on a component composed under a page title, went
+  away with that component. (2) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
   color from the chip's ancestor and can drop under the 3:1 border-contrast floor inside a muted-text
   ancestor, telling the reader to verify each new call site; the documented example ships a new call
   site (a chip inside a table cell) with no measurement recorded.
@@ -1642,7 +1587,8 @@ the named human gates only):**
   and `CairnMediaLibrary` additionally converge their search, filter, count, table, and pager
   markup onto `ListToolbar`/`AdminTable`/`Pagination`/`StatusChip`. `OfficeList` kept its own
   contract unchanged in this wave (it later converged onto `PageHeader`'s rhythm in the 4b
-  conformance pass, 2026-09-01). Whether the toolkit belongs on the `1.0`
+  conformance pass, 2026-09-01, and was retired outright in the polish-C slice, 2026-09-14).
+  Whether the toolkit belongs on the `1.0`
   readiness checklist as a versioned seam (the extending-developer story is stronger with it) is
   still an open call. The next wave holds:
   - **ASC's own import swap.** aksailingclub-org's admin still imports its first-party
@@ -1951,7 +1897,7 @@ the named human gates only):**
 
 - **`/healthz` needs a check that reaches the repository, not only the signing key.** Surfaced
   2026-08-05 by the `cairn-pub` `0.94.0-rc.1` migration (see [that
-  report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)). `healthLoad` runs
+  report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)). `loadHealth` runs
   `signingSelfTest` against the App id and the key secret and stops there, which is a deliberate,
   documented scope: it catches a broken PKCS#1-to-PKCS#8 conversion, and that is the failure it was
   built for. The gap is that the endpoint is named `healthz`, its top-level field is `ok`, and a
@@ -1980,8 +1926,8 @@ the named human gates only):**
   that escapes is a page whose framework answers 200 and renders an error boundary, which is
   exactly what SvelteKit did here.
 
-- **A narrowed, manifest-backed resolver for `previewLoad` (filed 2026-08-06, preview pass).** The
-  shipped v1 hands `previewLoad` the site's own `PublicRoutesConfig`, globbed build-time corpus
+- **A narrowed, manifest-backed resolver for `loadPreview` (filed 2026-08-06, preview pass).** The
+  shipped v1 hands `loadPreview` the site's own `PublicRoutesConfig`, globbed build-time corpus
   included, so the never-prerendered preview route pulls that whole corpus into the deployed
   Worker bundle (roughly 1-2 MB at club scale against Cloudflare's 10 MB paid ceiling), a
   deliberate, stated v1 cost (Geoff, 2026-08-06). This would replace the bundled corpus with a
@@ -1991,14 +1937,14 @@ the named human gates only):**
   should surface it.
 
 - **A `cairn-doctor` check that the preview route is not prerenderable (filed 2026-08-06, preview
-  pass).** `previewLoad` itself throws a build-time error when a site lets `/preview/[token]`
+  pass).** `loadPreview` itself throws a build-time error when a site lets `/preview/[token]`
   prerender, but that only fires on a build the developer actually runs locally or in CI; a
   doctor check would catch the same misconfiguration as a deploy-time preflight, the same
   proactive shape as the doctor's other route-shape checks, rather than relying solely on the
   in-engine backstop.
 
-- **An engine-level rate-limit seam for `previewLoad` (filed 2026-08-06, preview pass).**
-  `previewLoad` currently calls no rate limit of its own; the guide's WAF-rule recommendation on
+- **An engine-level rate-limit seam for `loadPreview` (filed 2026-08-06, preview pass).**
+  `loadPreview` currently calls no rate limit of its own; the guide's WAF-rule recommendation on
   `/preview/*` is the whole story until this lands. A seam accepting the existing
   [`RateLimitLike`](docs/reference/sveltekit.md#ratelimitlike) (the same structural interface
   `createSectionAction` already takes, degrade-to-open on an absent binding) would let a site wire
@@ -2164,6 +2110,24 @@ the named human gates only):**
 
 ## Later
 
+- **`npm run check:surface -- --update` sends the flag to the wrong command, and two places still
+  print the pre-rider form (polish-C, 2026-09-14).** `package.json:40`'s `check:surface` script
+  chains three commands, ending `node scripts/checks/check-surface.mjs && node
+  scripts/checks/check-surface-leaks.mjs`, and npm appends a `--` argument to the END of the chain.
+  So `--update` reaches `check-surface-leaks.mjs`, which ignores it, and never reaches
+  `check-surface.mjs`, the only reader of the flag. The command exits 0 and regenerates nothing,
+  which reads as "the surface already matched" and costs a gate cycle every time a pass
+  rediscovers it. The invocation was correct before the leak-class rider was chained on, and two
+  places still print that pre-rider form: the script's own `BANNER`
+  (`scripts/checks/check-surface.mjs:22`), which it also writes into the generated
+  `docs/internal/api-surface.md`, and `docs/internal/README.md:31`. A reader who follows either
+  gets the broken invocation. Candidate fix: split the chain into `check:surface`
+  and a `check:surface:update` that runs `npm run package && node scripts/checks/check-surface.mjs --update`,
+  then correct both banners. Filed rather than fixed because a non-breaking fix does not join a
+  breaking window (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, the polish-C shape).
+  **Trigger:** the next pass that changes the public surface, which is the next pass that has to
+  run the regeneration.
+
 - **Carbon for AI's label-plus-explainability pattern on the Tidy surface (filed 2026-09-13
   from the Carbon AI-tooling survey, `docs/internal/record/2026-09-13-carbon-ai-tooling.md`).**
   cairn's in-buffer Tidy copy-edit and the `CairnTidySettings` screen show AI-touched content
@@ -2297,7 +2261,7 @@ the named human gates only):**
   builds and dispatches its own `prepare().bind().run()` internally with no way for a caller to
   get the bound `D1PreparedStatement` for its own batch. The sink is fire-and-forget by
   contract, returning before the insert settles, which is exactly what makes it safe to call
-  from `adminAction` and fail-open, and it is also what puts it out of reach of a transaction.
+  from `createAdminAction` and fail-open, and it is also what puts it out of reach of a transaction.
   On `aksailingclub-org`, the first site to adopt it, four operations (the season rollover, the
   signup statements, two enrollment writes) correctly kept their own insert, because a batch is
   the only way to make the audit row and the write it describes succeed or fail together.

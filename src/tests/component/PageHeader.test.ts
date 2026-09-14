@@ -3,10 +3,9 @@ import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import PageHeader from '../../lib/admin-toolkit/PageHeader.svelte';
-// The mobile action width test below measures against the compiled sheet, the same reasoning
-// OfficeList's own suite states: the bare component render carries no stylesheet at all, so an
-// unstyled stretched action would silently pass a DOM-structure-only test without proving the
-// self-start fix (ported from OfficeList, Task 9 of the 2026-09-01 conformance pass).
+// The mobile action width test below measures against the compiled sheet: the bare component
+// render carries no stylesheet at all, so an unstyled stretched action would silently pass a
+// DOM-structure-only test without proving the self-start fix.
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 /** A snippet with no render-time params, e.g. a fixed action button. */
@@ -39,9 +38,8 @@ describe('PageHeader', () => {
     expect(withMeta.container.querySelector('header p')?.textContent).toBe('128 images · 4 need alt text');
   });
 
-  it('zeroes the h1/p UA margins and sets the meta role, matching OfficeList', async () => {
-    // Ruling 1 (Pass 2 Task 12): PageHeader ports OfficeList's own UA-margin fix, so the
-    // eyebrow-title-meta stack renders the ruled 4px gap rather than a leaked ~58px one.
+  it('zeroes the h1/p UA margins and sets the meta role', async () => {
+    // The eyebrow-title-meta stack renders a deliberate 4px gap rather than a leaked ~58px one.
     // Ruling 2: the meta line joins the meta type role (13px), not the body role (14px).
     const withMeta = await render(PageHeader, { title: 'Media library', meta: '128 images' });
     const h1 = withMeta.container.querySelector('h1')!;
@@ -65,8 +63,8 @@ describe('PageHeader', () => {
   });
 
   it('wraps the action in a self-start container, so it never stretches full-width in the row', async () => {
-    // Ported from OfficeList (Task 9): the flex row default (stretch) pulls the action full-width
-    // below `sm` unless it is pinned to its intrinsic content width.
+    // The flex row default (stretch) pulls the action full-width below `sm` unless it is pinned
+    // to its intrinsic content width.
     const withAction = await render(PageHeader, {
       title: 'Posts',
       action: staticSnippet('<button type="button">New post</button>'),
@@ -107,9 +105,8 @@ describe('PageHeader', () => {
       expect(wrapper.getBoundingClientRect().width).toBeLessThan(header.getBoundingClientRect().width);
     });
 
-    // Ported from OfficeList (Task 9 of the 2026-09-01 conformance pass): the header stack now has
-    // one implementation, this component, so the measured proof of the UA-margin fix moves here
-    // rather than disappearing with OfficeList's own duplicate header markup.
+    // This component is the header stack's one implementation, so the measured proof of the
+    // UA-margin fix lives here.
     //
     // Flex does not collapse child margins, so a stray UA h1/p margin used to blow the rendered gap
     // out to ~32px against the container's own gap-0.5 (2px) intent. The acceptance band is 0-6px at

@@ -15,7 +15,7 @@ import type {
   MediaReplacePreviewPlan,
   MediaReplaceFailure,
 } from '../../lib/sveltekit/content-routes-media-metadata.js';
-import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
+import { formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, parseMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { formatMediaToken } from '../../lib/media/reference.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -85,7 +85,7 @@ function mediaManifest(...entries: MediaEntry[]): string {
 
 /** A content manifest with the given entries (each carries its mediaRefs, title, and permalink). */
 function contentManifest(entries: ManifestEntry[]): string {
-  return serializeManifest({ version: 1, entries });
+  return formatManifest({ version: 1, entries });
 }
 
 function postEntry(id: string, title: string, mediaRefs: string[]): ManifestEntry {
@@ -166,7 +166,7 @@ describe('mediaReplacePreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = (await routes.mediaReplacePreviewAction(
       previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }),
     )) as MediaReplacePreviewPlan;
@@ -196,7 +196,7 @@ describe('mediaReplacePreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplacePreviewAction(
       previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }, { csrf: 'wrong' }),
     );
@@ -214,7 +214,7 @@ describe('mediaReplacePreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const event = previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }) as unknown as {
       cookies: unknown;
     };
@@ -231,7 +231,7 @@ describe('mediaReplacePreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplacePreviewAction(
       previewEvent({ oldHash: 'not-a-hash', newHash: NEW_HASH, slug: 'x' }),
     );
@@ -251,7 +251,7 @@ describe('mediaReplacePreview', () => {
       env: {},
       cookies: cookieJar(CSRF),
     });
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplacePreviewAction(event);
     expect(result).toMatchObject({ status: 400 });
   });
@@ -275,7 +275,7 @@ describe('mediaReplacePreview', () => {
       if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
       return inner(input, init);
     }));
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplacePreviewAction(
       previewEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, slug: 'old-photo' }),
     );
@@ -307,7 +307,7 @@ describe('mediaReplaceApply', () => {
     gh.install();
     const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const record = mediaEntry(NEW_HASH, 'new-photo');
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     await expect(
       routes.mediaReplaceAction(
         applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [record] }),
@@ -332,7 +332,7 @@ describe('mediaReplaceApply', () => {
     const gh = freshRepo();
     gh.install();
     const record = mediaEntry(NEW_HASH, 'new-photo');
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'wrong', media: [record] }),
     );
@@ -350,7 +350,7 @@ describe('mediaReplaceApply', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = freshRepo();
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: '', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
@@ -369,7 +369,7 @@ describe('mediaReplaceApply', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'wrong', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
@@ -397,7 +397,7 @@ describe('mediaReplaceApply', () => {
       if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
       return inner(input, init);
     }));
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
@@ -417,7 +417,7 @@ describe('mediaReplaceApply', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     const result = await routes.mediaReplaceAction(
       // OTHER_HASH is not in media.json: the asset is not committed.
       applyEvent({ oldHash: OTHER_HASH, newHash: NEW_HASH, confirmSlug: 'x', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
@@ -431,7 +431,7 @@ describe('mediaReplaceApply', () => {
   it('returns fail(400) when the posted replacement record is missing', async () => {
     const gh = freshRepo();
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     // The media field carries a record for a DIFFERENT hash, so no row matches newHash.
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(OTHER_HASH, 'other')] }),
@@ -445,7 +445,7 @@ describe('mediaReplaceApply', () => {
   it('throws error(400) on a malformed hash', async () => {
     const gh = freshRepo();
     gh.install();
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
     await expect(
       routes.mediaReplaceAction(
         applyEvent({ oldHash: 'bad', newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
@@ -457,7 +457,7 @@ describe('mediaReplaceApply', () => {
   it('returns fail(503) when media is disabled, committing nothing', async () => {
     const gh = freshRepo();
     gh.install();
-    const routes = createContentRoutesInternal(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }));
+    const routes = createContentRoutesInternal({ runtime: runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }) });
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );
@@ -473,7 +473,7 @@ describe('mediaReplaceApply', () => {
     gh.install();
     const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const record = mediaEntry(NEW_HASH, 'new-photo');
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     // Compute a preview to mirror the real flow (the client previews, then applies).
     await routes.mediaReplacePreviewAction(

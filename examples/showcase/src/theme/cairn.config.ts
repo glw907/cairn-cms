@@ -11,7 +11,7 @@ import {
   fields,
   defineAdapter,
   defineConcept,
-  githubApp,
+  createGithubApp,
 } from '@glw907/cairn-cms';
 import {
   normalizeAssets,
@@ -146,7 +146,7 @@ export const cairn = defineAdapter({
   },
   // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)
   // prettier-ignore
-  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   // A verified sender literal, not derived from ORIGIN or any other URL host: Cloudflare Email
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
@@ -163,7 +163,7 @@ export const cairn = defineAdapter({
   rendering: {
     // Render through the engine so registered components (the callout) produce their markup; the
     // engine's own pipeline already wraps every table in a scrollable, labeled region by default
-    // (RendererOptions.tableScroll). The default media resolver backs the public build; the
+    // (RendererConfig.tableScroll). The default media resolver backs the public build; the
     // preview path injects its own resolveMedia. resolveFragment forwards the same way: the build
     // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
     // one (EditPage), and this site's render never needs to vary fragment resolution itself.

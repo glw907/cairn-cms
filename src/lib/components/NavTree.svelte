@@ -15,14 +15,14 @@ title the menu's own declared label; the sortable-list card below stays untouche
   import { SortableList, sortItems } from '@rodrigodagostino/svelte-sortable-list';
   import type { SortableList as SortableListNS } from '@rodrigodagostino/svelte-sortable-list';
   import '@rodrigodagostino/svelte-sortable-list/styles.css';
-  import type { NavLoadData } from '../sveltekit/nav-routes.js';
+  import type { NavData } from '../sveltekit/nav-routes.js';
   import type { NavNode } from '../nav/site-config.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
   import { PageHeader } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The nav load's data: the menu meta, the current tree, page options, and flags. */
-    data: NavLoadData;
+    data: NavData;
     /** The last save's result: a refused `fail()` envelope carrying the reload-and-reapply
      *  message or a rejected tree. */
     form?: ContentFormFailure | null;

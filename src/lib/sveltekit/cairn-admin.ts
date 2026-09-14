@@ -15,12 +15,12 @@ import {
   type EditData,
   type MediaLibraryData,
   type SettingsData,
-  type VocabularyLoadData,
+  type VocabularyData,
   type HelpData,
   type WelcomeData,
 } from './content-routes.js';
 import { createEditorRoutes, type EditorsData } from './editors-routes.js';
-import { createNavRoutes, type NavLoadData } from './nav-routes.js';
+import { createNavRoutes, type NavData } from './nav-routes.js';
 import type { AuthRoutesConfig } from './auth-routes.js';
 import type { AuthBranding } from '../email.js';
 import type { CairnRuntime } from '../content/types.js';
@@ -32,6 +32,8 @@ import type { CairnEvent, HistoryData } from './types.js';
  *  is not a dep here.
  */
 export interface CairnAdminConfig {
+  /** The composed runtime the admin bundle closes over: concepts, roles, the backend, and every other site-declared seam. */
+  runtime: CairnRuntime;
   /**
    * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here since
    *  `branding` defaults from the runtime. See `AuthRoutesConfig`.
@@ -55,7 +57,7 @@ export interface CairnAdminConfig {
    */
   attention?: ContentRoutesConfig['attention'];
   /**
-   * Forwarded to the content routes verbatim: the preview-link lifetime `previewMint` mints
+   * Forwarded to the content routes verbatim: the preview-link lifetime `mintPreview` mints
    *  against. See `ContentRoutesConfig['preview']`.
    */
   preview?: ContentRoutesConfig['preview'];
@@ -73,10 +75,10 @@ export type AdminData =
   | { view: 'edit'; page: EditData }
   | { view: 'history'; page: HistoryData }
   | { view: 'editors'; page: EditorsData }
-  | { view: 'nav'; page: NavLoadData }
+  | { view: 'nav'; page: NavData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
-  | { view: 'vocabulary'; page: VocabularyLoadData }
+  | { view: 'vocabulary'; page: VocabularyData }
   | { view: 'help'; page: HelpData }
   | { view: 'welcome'; page: WelcomeData };
 
@@ -85,9 +87,9 @@ export type AdminData =
  * catch-all `/admin/[...path]` route: one `load` that dispatches on the parsed path to the
  * matching view's own data, the full `actions` record (every named admin action, each parsing
  * and validating its own view before delegating), and a separate `shellLoad` for
- * `/admin/+layout.server.ts`'s shared chrome. `config` overrides only the seams a site actually
- * needs (auth send/bootstrap, tidy, `navFilter`, `attention`); everything else derives from
- * `runtime`.
+ * `/admin/+layout.server.ts`'s shared chrome. `config.runtime` is the composed runtime the bundle
+ * closes over; `config`'s other members override only the seams a site actually needs (auth
+ * send/bootstrap, tidy, `navFilter`, `attention`), and everything else derives from `runtime`.
  *
  * This is the WIDE shape, mirroring the foundations-B `createContentRoutesInternal` precedent:
  *  reachable from no package subpath, so its `actions` record is free to carry every one of the
@@ -96,7 +98,8 @@ export type AdminData =
  *  callers (this module's own single caller, `createCairnAdmin`, and a test proving the wide
  *  shape directly) import it by relative path; no barrel re-exports it.
  */
-export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdminConfig = {}) {
+export function createCairnAdminInternal(config: CairnAdminConfig) {
+  const { runtime } = config;
   // The runtime already composes the site name and the sender identity, so the magic-link
   // branding needs no second copy of either unless a site overrides it.
   const branding: AuthBranding = config.auth?.branding ?? {
@@ -105,7 +108,8 @@ export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdm
     replyTo: runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: config.auth?.send, bootstrapOwner: config.auth?.bootstrapOwner });
-  const content = createContentRoutesInternal(runtime, {
+  const content = createContentRoutesInternal({
+    runtime,
     tidy: config.tidy,
     navFilter: config.navFilter,
     attention: config.attention,
@@ -113,7 +117,7 @@ export function createCairnAdminInternal(runtime: CairnRuntime, config: CairnAdm
   });
   const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
-  const nav = runtime.navMenu ? createNavRoutes(runtime) : null;
+  const nav = runtime.navMenu ? createNavRoutes({ runtime }) : null;
 
   /**
    * Build the event a wrapped content load reads. The catch-all route carries only a rest
@@ -409,6 +413,6 @@ export interface CairnAdminRoutes {
  *  narrow, declared {@link CairnAdminRoutes} view over {@link createCairnAdminInternal}'s wide
  *  return.
  */
-export function createCairnAdmin(runtime: CairnRuntime, config: CairnAdminConfig = {}): CairnAdminRoutes {
-  return createCairnAdminInternal(runtime, config);
+export function createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes {
+  return createCairnAdminInternal(config);
 }

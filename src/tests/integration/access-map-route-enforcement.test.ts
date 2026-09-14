@@ -10,7 +10,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { testEvent } from '../helpers/test-event.js';
@@ -59,7 +59,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Access Site',
     concepts: [concept('posts'), concept('pages')],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -105,7 +105,7 @@ describe('access map: engine route enforcement', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('403s a non-listed role on a restricted concept, on list load and save action', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect(await statusOf(routes.listLoad(event('publisher', 'editor', { concept: 'pages' })))).toBe(403);
     expect(
       await statusOf(
@@ -115,25 +115,25 @@ describe('access map: engine route enforcement', () => {
   });
 
   it('admits the mapped role and owner on the restricted concept', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect(await statusOf(routes.listLoad(event('webmaster', 'editor', { concept: 'pages' })))).not.toBe(403);
     expect(await statusOf(routes.listLoad(event('owner', 'owner', { concept: 'pages' })))).not.toBe(403);
   });
 
   it('keeps today\'s any-editor-capability behavior for an unrestricted concept', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect(await statusOf(routes.listLoad(event('publisher', 'editor', { concept: 'posts' })))).not.toBe(403);
   });
 
   it('403s a non-listed role on each mapped fixed screen', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect(await statusOf(routes.mediaLibraryLoad(event('publisher', 'editor')))).toBe(403);
     expect(await statusOf(routes.vocabularyLoad(event('publisher', 'editor')))).toBe(403);
     expect(await statusOf(routes.settingsLoad(event('publisher', 'editor')))).toBe(403);
   });
 
   it('owner passes every mapped fixed screen', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect(await statusOf(routes.mediaLibraryLoad(event('owner', 'owner')))).not.toBe(403);
     expect(await statusOf(routes.vocabularyLoad(event('owner', 'owner')))).not.toBe(403);
     expect(await statusOf(routes.settingsLoad(event('owner', 'owner')))).not.toBe(403);

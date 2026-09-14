@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import { testEvent } from '../helpers/test-event.js';
@@ -16,7 +16,7 @@ function runtime(): CairnRuntime {
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -60,7 +60,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('createCairnAdmin shellLoad', () => {
   it('returns the lean shell payload for an authed admin path, with pending streamed', async () => {
     new GithubDouble({ main: {} }).install();
-    const { shellLoad } = createCairnAdmin(runtime(), deps);
+    const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });
     const { shell } = await shellLoad(eventFor('/admin/posts'));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.user.email).toBe('e@t');
@@ -71,7 +71,7 @@ describe('createCairnAdmin shellLoad', () => {
 
   it('returns a public payload for /admin/login and never calls listBranches', async () => {
     const spy = vi.spyOn(backend, 'listBranches');
-    const { shellLoad } = createCairnAdmin(runtime(), deps);
+    const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });
     const { shell } = await shellLoad(eventFor('/admin/login', { editor: null }));
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
@@ -86,7 +86,8 @@ describe('createCairnAdmin shellLoad', () => {
       { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
       { label: 'Club', children: [{ label: 'Members', icon: 'users', href: '/admin/club/members' }] },
     ];
-    const { shellLoad } = createCairnAdmin(rt, {
+    const { shellLoad } = createCairnAdmin({
+      runtime: rt,
       navFilter: (items) => items.filter((item) => item.label !== 'Club'),
     });
     const { shell } = await shellLoad(eventFor('/admin/posts'));

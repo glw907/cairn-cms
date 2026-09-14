@@ -1,6 +1,6 @@
 // cairn-cms: the Backend seam. A Backend is read, commit, and branch operations over files,
 // never a query(): that line is the constraint that keeps a store swappable and a database out.
-// The adapter holds a BackendProvider from githubApp(...); the engine resolves one live Backend
+// The adapter holds a BackendProvider from createGithubApp(...); the engine resolves one live Backend
 // per request via connect(env), with the GitHub App installation token minted and cached behind
 // the seam. makeGithubBackend takes an injectable token getter so a test wires a literal token and
 // the in-memory fetch double intercepts the same GitHub URLs the production getter would reach.
@@ -84,7 +84,7 @@ export interface BackendProvider {
   connect(env: CairnEnv): Backend;
 }
 
-/** What githubApp() returns: the generic provider plus the GitHub App's non-secret identity facts. */
+/** What createGithubApp() returns: the generic provider plus the GitHub App's non-secret identity facts. */
 export interface GithubAppProvider extends BackendProvider {
   readonly kind: 'github-app';
   readonly owner: string;
@@ -159,7 +159,7 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
  * it) whose connect(env) mints and caches the installation token from the Worker's private-key
  * secret. The missing-secret CairnError stays on first token use, inside connect.
  */
-export function githubApp(config: {
+export function createGithubApp(config: {
   owner: string;
   repo: string;
   branch: string;

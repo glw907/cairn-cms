@@ -19,7 +19,7 @@ describe('condition registry', () => {
   it('resolves each guard condition by id', () => {
     expect(condition('edge.https-not-forced').severity).toBe('blocker');
     expect(condition('auth.csrf-token-invalid').title).toMatch(/csrf/i);
-    expect(condition('auth.csrf-origin-mismatch').logEvent).toBe('guard.rejected');
+    expect(condition('auth.csrf-origin-mismatch').logEvent).toBe('guard.refused');
   });
 
   it('resolves the two email conditions', () => {

@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
-import { generateToken, hashToken, sessionCookieName, csrfCookieName, cookieName } from '../../lib/auth/crypto.js';
+import { generateToken, hashToken, sessionCookieName, csrfCookieName, buildCookieName } from '../../lib/auth/crypto.js';
 import { issueToken, createSession } from '../../lib/auth/store.js';
 import { testEvent } from '../helpers/test-event.js';
 
@@ -19,7 +19,7 @@ const PENDING_NONCE = 'a-pending-login-nonce';
 
 /** The pending-login cookie's name for a request whose cookies resolve `secure`. */
 function pendingCookieName(secure: boolean): string {
-  return cookieName('cairn_login_pending', secure);
+  return buildCookieName('cairn_login_pending', secure);
 }
 
 /** The cookie seed a browser that requested the link would carry into a confirm. */

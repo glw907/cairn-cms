@@ -193,8 +193,8 @@ The release step sets the version number at the cut and renames this section to 
   `media.replace_refused`, auth.access.denied to `auth.access.refused`, and
   admin.action.csrf_rejected to `admin.action.csrf_refused`; every record's field set is
   unchanged.
-- **Two log events move onto their true areas.** Rename `taxonomy.field_unmarked` to
-  `content.field_unmarked` and `admin.action.sink_threw` to `audit.sink.call_failed` in any log
+- **Two log events move onto their true areas.** Rename taxonomy.field_unmarked to
+  `content.field_unmarked` and admin.action.sink_threw to `audit.sink.call_failed` in any log
   filter, alert, or subscriber; `audit.sink.write_failed` is unchanged and every record's field
   set is unchanged.
 

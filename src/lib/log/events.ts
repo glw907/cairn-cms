@@ -5,9 +5,9 @@
 // The grammar: `area[.subject].verb_phrase`. A past-tense verb phrase names an occurrence; a
 // state adjective names a detected condition. The subject segment may itself be dotted, so a
 // four-segment name is grammar-conforming as long as it still reads area, subject, verb phrase:
-// `auth.channel.session.created` namespaces by area (`auth.channel`) and subject
-// (`session`), not by a flattened third segment. Every `reason`/`scope` value a record carries
-// is snake_case.
+// `auth.channel.session.created` conforms as written, area `auth`, subject `channel.session`,
+// verb phrase `created`, rather than standing as a four-segment outlier. Every `reason`/`scope`
+// value a record carries is snake_case.
 //
 // Two verbs cover every refusal-shaped event. `refused` names a decision the engine made on
 // policy: the request or the state violates a rule the engine chose to enforce, and a different

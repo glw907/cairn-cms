@@ -4573,7 +4573,8 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   event name is public-observable contract, so both this rename and the earlier one that produced
   `taxonomy.field_unmarked` ride the one unpublished breaking window with a `Consumers must:` line
   naming each, above the `0.96.0` boundary under `## Unreleased`; a consumer upgrading across the
-  window crosses one rename, not two.
+  window crosses one rename, not two. Per
+  `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
 
 ## audit-log-media-orphans-purged: `media.orphans_purged`  (keep, 2026-08-26, any-site audit)
 

@@ -60,7 +60,7 @@ export type { DictionaryAddFailure } from './content-routes-dictionary.js';
  *  object. Reachable from no package subpath, so its shape is free to grow with the admin.
  */
 export function createContentRoutesInternal(config: ContentRoutesConfig) {
-  const ctx = createContentRoutesContext(config.runtime, config);
+  const ctx = createContentRoutesContext(config);
   const shell = createShellActions(ctx);
   const list = createListActions(ctx);
   const entryRead = createEntryReadActions(ctx);

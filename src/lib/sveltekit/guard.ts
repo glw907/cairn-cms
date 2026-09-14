@@ -162,10 +162,8 @@ function isSafeLogoutUrl(logoutUrl: string): boolean {
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
 export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
+  const { access, includeSubDomains, identity } = config;
   const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
-  const access = config.access;
-  const includeSubDomains = config.includeSubDomains;
-  const identity = config.identity;
   // Validated once, at construction, not per request: an invalid logoutUrl is a site
   // misconfiguration, and failing fast here beats admitting an open redirect at request time.
   // The published snapshot below is what every admin path reads; identity.logoutUrl is never

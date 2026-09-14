@@ -891,7 +891,9 @@ the named human gates only):**
   drops its `method="dialog"` backdrop form so a stray click no longer dismisses a destructive
   confirm (Carbon forbids outside-click dismissal on a danger modal; cairn's safe-delete recipe
   already agrees); `AdminTable` takes an optional accessible-name prop and every engine screen
-  passes one. Two are borrow-1 work because they reshape a pattern: the native `title`
+  passes one; and, from the daisyUI Blueprint audit (record
+  `docs/internal/record/2026-09-13-blueprint-audit.md`), `EditPage`'s flash strip drops
+  `transition-all` for the two properties it animates. Two are borrow-1 work because they reshape a pattern: the native `title`
   tooltips (never shown on keyboard focus or touch, not dismissable, WCAG 1.4.13) give way to
   one accessible tooltip primitive, which also retires the `cairn-btn-guarded` workaround; and
   the batch-action pattern built fully inside `CairnMediaLibrary` graduates onto `AdminTable`

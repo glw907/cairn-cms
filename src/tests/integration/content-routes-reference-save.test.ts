@@ -86,7 +86,7 @@ function entry(concept: string, id: string, draft: boolean) {
  *  save and reading the thrown redirect's location. Throws if the action did not redirect. */
 async function savedRefs(gh: GithubDouble, author: string): Promise<string[]> {
   gh.install();
-  const routes = createContentRoutes(runtime());
+  const routes = createContentRoutes({ runtime: runtime() });
   try {
     await routes.saveAction(saveEvent(author));
   } catch (e) {

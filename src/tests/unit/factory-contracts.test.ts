@@ -31,7 +31,7 @@ describe('factory-contracts: contract-first declared returns (conventions pass, 
 // internal wide shape (never `ReturnType<typeof createCairnAdmin>`), mutually assignable against
 // the factory's own actual call-site result.
 function typeOnlyCairnAdminContract(runtime: CairnRuntime): void {
-  const admin: CairnAdminRoutes = createCairnAdmin(runtime);
+  const admin: CairnAdminRoutes = createCairnAdmin({ runtime });
   const roundTrip: ReturnType<typeof createCairnAdmin> = admin;
   void roundTrip;
 
@@ -69,7 +69,7 @@ void typeOnlyCairnAdminContract;
 // of the ten actions withdrawn above is still reachable here, proving the narrowing above is
 // type-level only, never a runtime boundary.
 function typeOnlyCairnAdminInternalContract(runtime: CairnRuntime): void {
-  const admin = createCairnAdminInternal(runtime);
+  const admin = createCairnAdminInternal({ runtime });
   void admin.actions.mediaDelete;
   void admin.actions.mediaUpdate;
   void admin.actions.mediaLibraryUpload;

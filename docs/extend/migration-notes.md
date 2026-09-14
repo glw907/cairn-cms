@@ -13,6 +13,11 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **`createContentRoutes` and `createCairnAdmin` (`/sveltekit`) take one config bag, not two
+  arguments.** Change `createContentRoutes(runtime, config)` to
+  `createContentRoutes({ runtime, ...config })`, and `createCairnAdmin(runtime, config)` to
+  `createCairnAdmin({ runtime, ...config })`; a call with no `config` becomes
+  `createContentRoutes({ runtime })` or `createCairnAdmin({ runtime })`.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and

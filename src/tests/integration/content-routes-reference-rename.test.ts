@@ -94,7 +94,7 @@ function entry(
 /** Rename the target and either return the thrown redirect location or the fail() result. */
 async function rename(gh: GithubDouble, id: string, slug: string): Promise<{ location?: string; status?: number; error?: string }> {
   gh.install();
-  const routes = createContentRoutes(runtime());
+  const routes = createContentRoutes({ runtime: runtime() });
   try {
     const result = (await routes.renameAction(renameEvent(id, slug))) as unknown as {
       status: number; data: { error: string };

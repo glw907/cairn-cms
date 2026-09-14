@@ -61,7 +61,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
   it('is null when the site declares no fragments concept', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(baseRuntime({ concepts: [postsConcept()] }));
+    const routes = createContentRoutes({ runtime: baseRuntime({ concepts: [postsConcept()] }) });
     await redirectedTo(
       routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
@@ -75,7 +75,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
   it("is null on a fragment's own edit screen, even with fragments published", async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -97,7 +97,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
   it('is empty when fragments are declared but none are published', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' })),
     );
@@ -108,7 +108,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
   it('populates fragmentTargets from the default branch only, ignoring a pending fragment edit', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -128,7 +128,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
   it('degrades a fragment target out when its file is absent rather than failing the whole load', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -150,7 +150,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
   it('logs include.read_failed when a fragment read throws, and still serves the load', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -186,7 +186,7 @@ describe('editLoad: linkTargets excludes non-routable concepts (Task 6)', () => 
   it('excludes the fragments-concept rows while a routable concept stays', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -204,7 +204,7 @@ describe('editLoad: routable (Task 6)', () => {
   it('reads true for a routable concept and false for the fragments concept', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -223,7 +223,7 @@ describe('editLoad: usage visibility for a fragments-concept entry (Task 6)', ()
   it('feeds inboundIncludes through EditData.inboundLinks', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),
     );
@@ -242,7 +242,7 @@ describe('saveToBranch: the nested-include bounce (Task 6)', () => {
   it("refuses a fragments-concept save whose body contains an include, with the fixed copy", async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.saveAction(
       saveEvent('fragments', 'nested', { title: 'Nested', body: '::include{fragment="other"}' }),
     )) as unknown as { status: number; data: { error: string; body: string } };
@@ -257,7 +257,7 @@ describe('saveToBranch: the nested-include bounce (Task 6)', () => {
   it('saves a Posts body with an include directive normally (not bounced)', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi.' })),
     );

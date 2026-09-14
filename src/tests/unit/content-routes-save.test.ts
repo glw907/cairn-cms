@@ -54,7 +54,7 @@ describe('saveAction', () => {
     const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
     const gh = new GithubDouble({ main: { 'src/content/.cairn/index.json': manifest } });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' })),
     );
@@ -88,7 +88,7 @@ describe('saveAction', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'New' } })) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' })),
     );
@@ -102,7 +102,7 @@ describe('saveAction', () => {
   it('bounces invalid frontmatter back to the form and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: false, errors: { title: 'Title is required' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: false, errors: { title: 'Title is required' } })) });
     const result = (await routes.saveAction(
       saveEvent('2026-05-x', { title: '', body: 'b' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
@@ -120,7 +120,7 @@ describe('saveAction', () => {
   it('rejects an invalid id before any commit', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
     await expect(routes.saveAction(saveEvent('Bad Id!', { title: 'x', body: 'b' }))).rejects.toMatchObject({ status: 400 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -139,7 +139,7 @@ describe('saveAction', () => {
       return new Response('unexpected', { status: 500 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
@@ -153,7 +153,7 @@ describe('saveAction', () => {
 
   it('blocks a save that links to an absent target, with no commit', async () => {
     const calls = commitFetch(null); // empty manifest: nothing to resolve against
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
@@ -167,7 +167,7 @@ describe('saveAction', () => {
   it('accepts a mintToken that returns a bare string', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const syncBackend = makeGithubBackend(REPO, () => 'sync-token');
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }, syncBackend)),
@@ -183,7 +183,7 @@ describe('saveAction', () => {
     // Force the draft row's concept/id to a pages target the body links to.
     const manifest = serializeManifest({ version: 1, entries: [{ ...draftRow, concept: 'pages', id: 'wip', draft: true }] });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' })),
     );
@@ -198,7 +198,7 @@ describe('saveAction', () => {
     const selfRow = manifestEntryFromFile(concept, { path: 'src/content/posts/2026-05-hi.md', raw: '---\ntitle: Hi\ndraft: true\n---\nx' });
     const manifest = serializeManifest({ version: 1, entries: [{ ...selfRow, concept: 'posts', id: '2026-05-hi', draft: true }] });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' })),
     );
@@ -211,7 +211,7 @@ describe('saveAction', () => {
     const liveRow = manifestEntryFromFile(concept, { path: 'src/content/pages/home.md', raw: '---\ntitle: Home\n---\nx' });
     const manifest = serializeManifest({ version: 1, entries: [{ ...liveRow, concept: 'pages', id: 'home', draft: false }] });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' })),
     );
@@ -227,7 +227,7 @@ describe('saveAction', () => {
     });
     const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }));
     } catch {
@@ -252,7 +252,7 @@ describe('saveAction', () => {
       return new Response('unexpected', { status: 500 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }));
     const reasons = warnSpy.mock.calls.map((c) => (c[0] as { event?: string; reason?: string }));
     expect(reasons.some((r) => r.event === 'commit.failed' && r.reason === 'conflict')).toBe(true);
@@ -260,7 +260,7 @@ describe('saveAction', () => {
   });
 
   it('matches a conflict by name even if the class identity differs', async () => {
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: { title: 'Hi' } })) });
     // Manifest read returns 404 (empty), then the ref update throws a look-alike error carrying
     // the class name, to exercise the name-based branch.
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
@@ -304,7 +304,7 @@ describe('saveAction taxonomy enforcement', () => {
   it('commits a posted tag that is in the vocabulary', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
+    const routes = createContentRoutes({ runtime: taxonomyRuntime([{ value: 'a', label: 'A' }]) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' })),
     );
@@ -317,7 +317,7 @@ describe('saveAction taxonomy enforcement', () => {
   it('rejects a brand-new tag not in the vocabulary and never commits', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
+    const routes = createContentRoutes({ runtime: taxonomyRuntime([{ value: 'a', label: 'A' }]) });
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }),
     )) as unknown as { status: number; data: { error: string; body: string } };
@@ -336,7 +336,7 @@ describe('saveAction taxonomy enforcement', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
+    const routes = createContentRoutes({ runtime: taxonomyRuntime([{ value: 'a', label: 'A' }]) });
     const form = new URLSearchParams();
     form.append('title', 'Hi');
     form.append('topics', 'a');
@@ -353,7 +353,7 @@ describe('saveAction taxonomy enforcement', () => {
   it('commits a free-form tag with no vocabulary (the opt-in fallback)', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([]));
+    const routes = createContentRoutes({ runtime: taxonomyRuntime([]) });
     const { location } = await expectRedirect(() =>
       routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' })),
     );
@@ -383,7 +383,7 @@ describe('saveAction belt-and-braces date guard', () => {
   it('bounces with an error, never throwing, when the date-token permalink has no usable date', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(datedRuntime());
+    const routes = createContentRoutes({ runtime: datedRuntime() });
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }),
     )) as unknown as { status: number; data: { error: string; body: string } };

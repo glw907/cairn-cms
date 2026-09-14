@@ -61,8 +61,9 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     // per-request custom-navLayout filter seam; attention forwards ContentRoutesConfig['attention']
     // the same way, added for the per-session pending-work seam (admin access-and-attention pass);
     // preview forwards ContentRoutesConfig['preview'], the mint action's link-lifetime config
-    // (spec part 3, "Public preview for a non-editor").
-    expect(names).toEqual(['auth', 'tidy', 'navFilter', 'attention', 'preview']);
+    // (spec part 3, "Public preview for a non-editor"); runtime is the composed runtime the admin
+    // bundle closes over.
+    expect(names).toEqual(['runtime', 'auth', 'tidy', 'navFilter', 'attention', 'preview']);
   });
 
   it('CairnPlatformBindings names every always-on engine binding as required, ANTHROPIC_API_KEY optional', () => {

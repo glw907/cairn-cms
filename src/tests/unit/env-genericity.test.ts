@@ -101,7 +101,7 @@ type SiteActionReturn = Record<string, any> | void | Promise<Record<string, any>
 // `export const actions = admin.actions;`, structurally the same assignment that produced the
 // original AdminActionEvent bug this sweep follows up on.
 function typeOnlyCairnAdminAssignability(): void {
-  const admin = createCairnAdmin({} as CairnRuntime);
+  const admin = createCairnAdmin({ runtime: {} as CairnRuntime });
   admin.load satisfies (event: SiteServerLoadEvent) => Promise<AdminData>;
   admin.shellLoad satisfies (event: SiteServerLoadEvent) => Promise<{ shell: AdminShellData }>;
   admin.actions satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
@@ -148,7 +148,7 @@ void typeOnlyAuthGuardAssignability;
 // where the composer registers them; do not re-add them here, since the public factory's declared
 // `ContentRoutes` no longer carries them and naming one would simply fail to compile.
 function typeOnlyContentRoutesAssignability(): void {
-  const routes = createContentRoutes({} as CairnRuntime);
+  const routes = createContentRoutes({ runtime: {} as CairnRuntime });
   routes satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyContentRoutesAssignability;

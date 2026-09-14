@@ -85,7 +85,7 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
   it('rewrites a consuming entry body, re-upserts its manifest includes row, and moves the fragment', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     // Publish the fragment itself, then a post whose body includes it. manifestEntryFromFile's real
     // extractIncludes computes the includes row from this body; nothing here hand-writes the manifest.
@@ -129,7 +129,7 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
   it('keeps today\'s 409 when the rename collides with an existing fragment id', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' })),

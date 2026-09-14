@@ -333,7 +333,7 @@ describe('previewMintAction', () => {
 
   it('refuses on the page when the entry has no pending draft', async () => {
     ghWithManifest().install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
       status: number;
       data: ContentFormFailure;
@@ -349,7 +349,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
       url: string;
       expiresAt: number;
@@ -370,7 +370,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const first = (await routes.previewMintAction(actionEvent(ID))) as unknown as { url: string };
     const second = (await routes.previewMintAction(actionEvent(ID))) as unknown as { url: string };
     expect(first.url).not.toBe(second.url);
@@ -384,7 +384,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const headers: Record<string, string>[] = [];
     const event = { ...actionEvent(ID), setHeaders: (h: Record<string, string>) => headers.push(h) };
     await routes.previewMintAction(event);
@@ -395,7 +395,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     let url = '';
     const captured = await records(async () => {
       const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
@@ -415,7 +415,7 @@ describe('previewMintAction', () => {
     const gh = ghWithManifest();
     gh.createBranch(BRANCH, 'main');
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await db.exec('DROP TABLE preview_tokens');
     try {
       const result = (await routes.previewMintAction(actionEvent(ID))) as unknown as {
@@ -438,7 +438,7 @@ describe('previewRevokeAction', () => {
   it('deletes every row for the entry and reports the count', async () => {
     await seedToken(ID, 'hash-a1', 'ed@t');
     await seedToken(ID, 'hash-a2', 'other@t');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewRevokeAction(actionEvent(ID))) as unknown as { count: number };
     expect(result.count).toBe(2);
     expect(await findPreviewToken(db, 'hash-a1')).toBeNull();
@@ -446,21 +446,21 @@ describe('previewRevokeAction', () => {
   });
 
   it('is idempotent: revoking with nothing minted succeeds with a count of zero', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.previewRevokeAction(actionEvent(ID))) as unknown as { count: number };
     expect(result.count).toBe(0);
   });
 
   it('logs preview.token.revoked with the count', async () => {
     await seedToken(ID, 'hash-r1');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const captured = await records(() => routes.previewRevokeAction(actionEvent(ID)));
     const record = captured.find((r) => r.event === 'preview.token.revoked');
     expect(record).toMatchObject({ concept: 'posts', id: ID, editor: 'ed@t', count: 1 });
   });
 
   it('answers the same actionable failure as mint when the table is missing (ships to every upgraded site)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await db.exec('DROP TABLE preview_tokens');
     try {
       const result = (await routes.previewRevokeAction(actionEvent(ID))) as unknown as {
@@ -487,7 +487,7 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
 
   it('a missing-table error is silent: no preview.cleanup_failed record, and the action still succeeds', async () => {
     ghWithBranch().install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = {
       ...actionEvent(ID),
       platform: { env: { AUTH_DB: throwingDb('no such table: preview_tokens'), PUBLIC_ORIGIN: ORIGIN } },
@@ -503,7 +503,7 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
 
   it('a non-benign D1 error logs preview.cleanup_failed, and the action still succeeds', async () => {
     ghWithBranch().install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = {
       ...actionEvent(ID),
       platform: { env: { AUTH_DB: throwingDb('D1_ERROR: disk I/O error'), PUBLIC_ORIGIN: ORIGIN } },
@@ -544,13 +544,13 @@ describe('authorization: the view gate is not authorization (the round High)', (
   }
 
   it('refuses a none-capability session the same way saveAction does', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect((await expectHttpError(() => routes.previewMintAction(eventAs('reader', 'none')))).status).toBe(403);
     expect((await expectHttpError(() => routes.previewRevokeAction(eventAs('reader', 'none')))).status).toBe(403);
   });
 
   it('refuses an editor the access map denies', async () => {
-    const routes = createContentRoutes(runtime({ access: DENY_POSTS }));
+    const routes = createContentRoutes({ runtime: runtime({ access: DENY_POSTS }) });
     expect(
       (await expectHttpError(() => routes.previewMintAction(eventAs('other-editor', 'editor')))).status,
     ).toBe(403);
@@ -570,7 +570,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'discard-hash');
     const gh = new GithubDouble({ main: {}, [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() => routes.discardAction(actionEvent(ID)));
     expect(await findPreviewToken(db, 'discard-hash')).toBeNull();
     // The redirect target is the concept list (the entry is gone entirely), which is what makes
@@ -589,7 +589,7 @@ describe('lifecycle cleanup', () => {
       [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nan edit' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() => routes.discardAction(actionEvent(ID)));
     expect(await findPreviewToken(db, 'discard-live-hash')).not.toBeNull();
   });
@@ -598,7 +598,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'delete-hash');
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: publishedManifest } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() => routes.deleteAction(actionEvent(ID)));
     expect(await findPreviewToken(db, 'delete-hash')).toBeNull();
   });
@@ -607,7 +607,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'list-delete-hash');
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: publishedManifest } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = contentEvent({
       url: 'https://t.example/admin/posts',
       params: { concept: 'posts' },
@@ -622,7 +622,7 @@ describe('lifecycle cleanup', () => {
     await seedToken(ID, 'rename-hash');
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: publishedManifest } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = contentEvent({
       url: `https://t.example/admin/posts/${ID}`,
       params: { concept: 'posts', id: ID },
@@ -640,7 +640,7 @@ describe('lifecycle cleanup', () => {
       [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\ndate: 2026-08-06\n---\npending body' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expectRedirect(() =>
       routes.publishAction(actionEvent(ID, { title: 'Hi', body: 'pending body' })),
     );

@@ -130,7 +130,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_B], bucket, timeline))) as MediaBulkDeleteResult;
 
@@ -159,7 +159,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_B], bucket, timeline));
 
@@ -179,7 +179,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_USED], bucket, timeline))) as MediaBulkDeleteResult;
 
@@ -209,7 +209,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_UNCOMMITTED], bucket, timeline))) as MediaBulkDeleteResult;
 
@@ -229,7 +229,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_USED], bucket, timeline))) as MediaBulkDeleteResult;
 
@@ -251,7 +251,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, 'NOT-A-HASH'], bucket, timeline))) as MediaBulkDeleteResult;
 
@@ -277,7 +277,7 @@ describe('mediaBulkDelete fails closed', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const event = bulkEvent([HASH_A, HASH_B], bucket, timeline);
     const wrapped = globalThis.fetch;

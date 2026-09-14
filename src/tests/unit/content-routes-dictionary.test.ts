@@ -59,7 +59,7 @@ describe('dictionaryAdd transport gates', () => {
   it('refuses a missing CSRF header (fail 403) before any GitHub call', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = await routes.dictionaryAddAction(addEvent({ word: 'cairn' }, { csrf: 'wrong' }));
     expect(result).toMatchObject({ status: 403 });
     expect((result as unknown as { data: DictionaryAddFailure }).data.error).toBe('csrf');
@@ -69,7 +69,7 @@ describe('dictionaryAdd transport gates', () => {
   it('refuses a body that carries no valid word (fail 400), committing nothing', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = await routes.dictionaryAddAction(addEvent({ word: 'two words' }));
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
@@ -78,7 +78,7 @@ describe('dictionaryAdd transport gates', () => {
   it('rejects a word with a newline (a one-line injection), committing nothing', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = await routes.dictionaryAddAction(addEvent({ word: 'good\nevil' }));
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
@@ -87,7 +87,7 @@ describe('dictionaryAdd transport gates', () => {
   it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = addEvent({ word: 'cairn' }) as unknown as { cookies: unknown };
     event.cookies = undefined;
     await expect(routes.dictionaryAddAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
@@ -100,7 +100,7 @@ describe('dictionaryAdd read-modify-write', () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha', 'gamma']) } });
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
@@ -112,7 +112,7 @@ describe('dictionaryAdd read-modify-write', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['cairn']);
     expect(commitCount(gh)).toBe(1);
@@ -123,7 +123,7 @@ describe('dictionaryAdd read-modify-write', () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['Cairn', 'alpha']) } });
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // Case-insensitive: "cairn" collapses onto the existing "Cairn".
     const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'Cairn']);
@@ -134,7 +134,7 @@ describe('dictionaryAdd read-modify-write', () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha']) } });
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }))) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
@@ -144,7 +144,7 @@ describe('dictionaryAdd read-modify-write', () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha']) } });
     gh.install();
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }));
     const added = infoSpy.mock.calls
       .map((c) => c[0] as Record<string, unknown>)
@@ -207,7 +207,7 @@ describe('dictionaryAdd SHA-guarded retry', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }))) as unknown as DictionaryAddResult;
     // The retry's re-merge keeps the concurrent "newword" and adds "beta": order-independent convergence.
     expect(result.words).toEqual(['alpha', 'beta', 'newword']);
@@ -241,7 +241,7 @@ describe('dictionaryAdd second-conflict give-up', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }));
     expect(result).toMatchObject({ status: 409 });
     const conflicts = warnSpy.mock.calls
@@ -259,7 +259,7 @@ describe('dictionaryAdd routing gate (composer)', () => {
     // content function's behavior; the import above proves the result/failure types are exported.
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     expect(typeof routes.dictionaryAddAction).toBe('function');
   });
 });

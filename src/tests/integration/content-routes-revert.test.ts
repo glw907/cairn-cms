@@ -139,7 +139,7 @@ describe('revertAction', () => {
   it('reverts to an earlier publish, and the existing publish path publishes the reverted content and deletes the branch', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
 
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
@@ -170,7 +170,7 @@ describe('revertAction', () => {
   it('refuses with a populated RevertFailure when the fast pre-check finds an existing draft', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
 
@@ -190,7 +190,7 @@ describe('revertAction', () => {
   it('refuses with a populated RevertFailure when createBranch collides under a race the pre-check missed', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
 
@@ -210,7 +210,7 @@ describe('revertAction', () => {
   it('does not falsely conflict when a publish lands between the staleness check and createBranch', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
 
@@ -230,7 +230,7 @@ describe('revertAction', () => {
   it('best-effort deletes the branch it just created when the revert commit fails for a reason other than conflict', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
 
@@ -247,7 +247,7 @@ describe('revertAction', () => {
   it('answers history_stale when main has moved since the history page rendered', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
     const staleHead = history.head!;
@@ -265,7 +265,7 @@ describe('revertAction', () => {
   it('answers ref_unknown for a sha absent from the fresh history read', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
 
@@ -279,7 +279,7 @@ describe('revertAction', () => {
   it('refuses ref_unknown in place when the listed sha is a delete commit whose content no longer reads', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
 
     // Delete removes the entry from main, but its own commit still touched the path, so a
@@ -304,7 +304,7 @@ describe('revertAction', () => {
   it('refuses an invalid entry id the same way every other entry action does', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectHttpError(() =>
       routes.revertAction(
         contentEvent({
@@ -320,7 +320,7 @@ describe('revertAction', () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     const history = await routes.historyLoad(historyEvent(ID));
     const ref = history.entries[0].ref;
@@ -348,13 +348,13 @@ describe('revertAction', () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const v1Fields: NamedField[] = [TITLE_FIELD, { type: 'text', name: 'subtitle', label: 'Subtitle' }];
-    const routesV1 = createContentRoutes(echoRuntime({ fields: v1Fields }));
+    const routesV1 = createContentRoutes({ runtime: echoRuntime({ fields: v1Fields }) });
     await expectRedirect(() =>
       routesV1.publishAction(actionEvent(ID, { title: 'V1', subtitle: 'Old subtitle', body: 'version one' })),
     );
 
     // The schema evolves: `subtitle` is retired.
-    const routesV2 = createContentRoutes(echoRuntime({ fields: [TITLE_FIELD] }));
+    const routesV2 = createContentRoutes({ runtime: echoRuntime({ fields: [TITLE_FIELD] }) });
     const history = await routesV2.historyLoad(historyEvent(ID));
     const ref = history.entries[0].ref;
 
@@ -373,9 +373,9 @@ describe('revertAction', () => {
     gh.install();
     const taxField: NamedField = { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true, creatable: true };
     const fields = [TITLE_FIELD, taxField];
-    const routesV1 = createContentRoutes(
-      echoRuntime({ fields, vocabulary: [{ value: 'alpha', label: 'Alpha' }, { value: 'legacy', label: 'Legacy' }] }),
-    );
+    const routesV1 = createContentRoutes({
+      runtime: echoRuntime({ fields, vocabulary: [{ value: 'alpha', label: 'Alpha' }, { value: 'legacy', label: 'Legacy' }] }),
+    });
     const form = new URLSearchParams();
     form.append('title', 'V1');
     form.append('topics', 'alpha');
@@ -388,7 +388,7 @@ describe('revertAction', () => {
     );
 
     // The vocabulary narrows: `legacy` is retired, leaving only `alpha`.
-    const routesV2 = createContentRoutes(echoRuntime({ fields, vocabulary: [{ value: 'alpha', label: 'Alpha' }] }));
+    const routesV2 = createContentRoutes({ runtime: echoRuntime({ fields, vocabulary: [{ value: 'alpha', label: 'Alpha' }] }) });
     const history = await routesV2.historyLoad(historyEvent(ID));
     const ref = history.entries[0].ref;
 
@@ -406,7 +406,7 @@ describe('revertAction', () => {
   it('carries no advisory for description, a builtin frontmatter key the schema never declares', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     const form = new URLSearchParams();
     form.append('title', 'V1');
     form.append('description', 'A hand-written excerpt');
@@ -430,7 +430,7 @@ describe('revertAction', () => {
   it('carries no advisory query param on a plain revert with no schema drift', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(echoRuntime());
+    const routes = createContentRoutes({ runtime: echoRuntime() });
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' })));
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
     const history = await routes.historyLoad(historyEvent(ID));

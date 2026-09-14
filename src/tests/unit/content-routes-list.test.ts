@@ -70,7 +70,7 @@ describe('shellLoad', () => {
   });
 
   it('carries the editor email and resolves the theme from the cookie', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner', capability: 'owner' },
@@ -81,7 +81,7 @@ describe('shellLoad', () => {
   });
 
   it('defaults the theme to light when no cookie is set', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
@@ -91,7 +91,7 @@ describe('shellLoad', () => {
   });
 
   it('ignores an unknown cookie value and falls back to light', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
@@ -101,7 +101,7 @@ describe('shellLoad', () => {
   });
 
   it('reads the collapsed nav groups from the cookie, url-decoded', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
@@ -111,7 +111,7 @@ describe('shellLoad', () => {
   });
 
   it('defaults collapsedNav to null when no cookie is set', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
@@ -124,7 +124,7 @@ describe('shellLoad', () => {
     // A visitor who reopens every declared-collapsed section writes the cookie to the empty
     // string; that is a present cookie whose set happens to be empty, not an absent cookie, so
     // it must decode to [] and not be confused with the no-cookie null case.
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
@@ -147,7 +147,7 @@ describe('listLoad', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.conceptId).toBe('posts');
     expect(data.dated).toBe(true);
@@ -171,7 +171,7 @@ describe('listLoad', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     const indexed = data.entries.find((e) => e.id === '2026-05-hello');
     const bare = data.entries.find((e) => e.id === '2026-04-older');
@@ -199,7 +199,7 @@ describe('listLoad', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     const edited = data.entries.find((e) => e.id === '2026-05-hello');
     const fresh = data.entries.find((e) => e.id === '2026-06-fresh');
@@ -212,7 +212,7 @@ describe('listLoad', () => {
   it('trusts a manifest that parses but is empty, without crawling the tree', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([]);
     expect(data.error).toBeNull();
@@ -221,7 +221,7 @@ describe('listLoad', () => {
 
   it('degrades to an inline error when the listing fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('boom', { status: 500 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([]);
     expect(data.error).toMatch(/could not load/i);
@@ -230,14 +230,14 @@ describe('listLoad', () => {
   it('degrades to the same inline error when the manifest is malformed', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: 'not json' } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([]);
     expect(data.error).toMatch(/could not load/i);
   });
 
   it('degrades to its load error when the token mint fails', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const failingBackend = makeGithubBackend(REPO, async () => { throw new Error('no key'); });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '', failingBackend));
     expect(data.entries).toEqual([]);
@@ -249,7 +249,7 @@ describe('listLoad', () => {
   it('resolves a known publish-all ?error= code to its engine copy', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=nothing_to_publish'));
     expect(data.formError).toBe('Nothing to publish. Every entry is already live.');
   });
@@ -257,7 +257,7 @@ describe('listLoad', () => {
   it('drops a crafted ?error= carrying free text or an unrecognized code, rather than relaying it', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug'));
     expect(data.formError).toBeNull();
   });
@@ -265,7 +265,7 @@ describe('listLoad', () => {
   it('surfaces the publish-all count from the query and defaults it to null', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const flashed = await routes.listLoad(listEvent({ concept: 'posts' }, '?publishedAll=3'));
     expect(flashed.publishedAll).toBe(3);
     const plain = await routes.listLoad(listEvent({ concept: 'posts' }));
@@ -287,7 +287,7 @@ describe('listLoad with pending branches', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     // The edited row carries the branch's title and draft flag, not the manifest's.
     expect(data.entries).toEqual([
@@ -307,7 +307,7 @@ describe('listLoad with pending branches', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     // Ordering parity with the old crawl: new rows append after the published set even when
     // their ids would sort first.
@@ -323,7 +323,7 @@ describe('listLoad with pending branches', () => {
       'cairn/posts/a%2fb': {}, // percent-escaped id fails the slug rule, so it never reaches a read
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published', summary: null },
@@ -337,7 +337,7 @@ describe('listLoad with pending branches', () => {
       'cairn/posts/2026-06-ghost': {},
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-06-ghost', title: '2026-06-ghost', date: null, draft: false, status: 'new', summary: null },
@@ -354,7 +354,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published', summary: 'x' },
@@ -375,7 +375,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited', summary: 'x' },
@@ -391,7 +391,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.listLoad(listEvent({ concept: 'posts' }));
     expect(data.entries).toEqual([
       { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
@@ -409,7 +409,7 @@ describe('createAction', () => {
 
   it('redirects to the editor for a fresh slug', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const { status, location } = await expectRedirect(() =>
       routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' })),
     );
@@ -418,7 +418,7 @@ describe('createAction', () => {
   });
 
   it('bounces back with an error for an invalid slug', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.createAction(
       createEvent({ title: 'X', slug: 'Bad Slug!' }),
     )) as unknown as { status: number; data: { error: string } };
@@ -428,7 +428,7 @@ describe('createAction', () => {
 
   it('refuses to clobber an existing file', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('exists', { status: 200 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.createAction(
       createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }),
     )) as unknown as { status: number; data: { error: string } };
@@ -468,7 +468,7 @@ describe('createAction', () => {
 
   it('composes a day-granular dated id from the date and slug', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const { status, location } = await expectRedirect(() =>
       routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' })),
     );
@@ -478,13 +478,13 @@ describe('createAction', () => {
 
   it('truncates the dated id to the concept granularity (month)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(monthRuntime());
+    const routes = createContentRoutes({ runtime: monthRuntime() });
     const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' })));
     expect(location).toBe('/admin/posts/2026-05-welcome?new=1&date=2026-05-20');
   });
 
   it('bounces when a dated concept gets no date', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.createAction(createEvent({ slug: 'welcome' }))) as unknown as {
       status: number;
       data: { error: string };
@@ -497,7 +497,7 @@ describe('createAction', () => {
   });
 
   it('bounces when a dated slug carries its own date-like prefix', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.createAction(
       createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }),
     )) as unknown as { status: number; data: { error: string } };
@@ -507,14 +507,14 @@ describe('createAction', () => {
 
   it('uses the slug verbatim as the id for a non-dated concept', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(pagesRuntime());
+    const routes = createContentRoutes({ runtime: pagesRuntime() });
     const { location } = await expectRedirect(() => routes.createAction(pagesEvent({ slug: 'about' })));
     expect(location).toBe('/admin/pages/about?new=1');
   });
 
   it('omits the title param when the dialog carried none', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const { location } = await expectRedirect(() =>
       routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' })),
     );
@@ -523,7 +523,7 @@ describe('createAction', () => {
 
   it('omits the title param for a whitespace-only title', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const { location } = await expectRedirect(() =>
       routes.createAction(createEvent({ title: '   ', slug: 'welcome', date: '2026-05-20' })),
     );
@@ -532,7 +532,7 @@ describe('createAction', () => {
 
   it('percent-encodes an explicit-address title that diverges from the slug, curly apostrophe included', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const { location } = await expectRedirect(() =>
       routes.createAction(createEvent({ title: 'Geoff’s Trip', slug: 'trip-report', date: '2026-05-20' })),
     );
@@ -574,7 +574,7 @@ describe('listDeleteAction', () => {
       entries: [{ id: '2026-05-01-hello', concept: 'posts', title: 'Hello', permalink: '/p/hello', draft: false, links: [] }],
     });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
     const { status, location } = await expectRedirect(() => routes.listDeleteAction(event));
     expect(status).toBe(303);
@@ -590,7 +590,7 @@ describe('listDeleteAction', () => {
       ],
     });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
     const result = (await routes.listDeleteAction(event)) as unknown as {
       status: number; data: { error: string; inboundLinks: unknown[]; id: string };
@@ -606,7 +606,7 @@ describe('listDeleteAction', () => {
   });
 
   it('rejects an invalid id from the form with a 400', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = deleteFormEvent({ id: '../escape' });
     await expect(routes.listDeleteAction(event)).rejects.toMatchObject({ status: 400 });
   });

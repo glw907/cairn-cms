@@ -89,12 +89,13 @@ import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const admin = createCairnAdmin(runtime);
+export const admin = createCairnAdmin({ runtime });
 ```
 
-`createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
-so most sites pass no deps at all. A site that does override something passes the grouped
-`CairnAdminConfig` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
+`createCairnAdmin` takes one `CairnAdminConfig` bag with a required `runtime` member; it defaults
+the magic-link branding from the runtime's `siteName` and `sender`, so most sites pass no other
+member. A site that does override something adds to the same bag:
+`{ runtime, auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
 reads markdown through a fake GitHub backend in development, which rides `event.locals.cairnBackend`
 from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
 mints installation tokens on demand, so it passes no backend dep. See

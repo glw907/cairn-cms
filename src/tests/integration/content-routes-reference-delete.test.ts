@@ -92,7 +92,7 @@ function entry(
 
 /** Delete the target and either return the thrown redirect location or the fail() result. */
 async function del(id: string): Promise<{ location?: string; status?: number; data?: { error: string; inboundLinks?: { id: string }[] } }> {
-  const routes = createContentRoutes(runtime());
+  const routes = createContentRoutes({ runtime: runtime() });
   try {
     const result = (await routes.deleteAction(deleteEvent(id))) as unknown as {
       status: number; data: { error: string; inboundLinks?: { id: string }[] };

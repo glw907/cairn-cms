@@ -60,7 +60,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('createCairnAdmin shellLoad', () => {
   it('returns the lean shell payload for an authed admin path, with pending streamed', async () => {
     new GithubDouble({ main: {} }).install();
-    const { shellLoad } = createCairnAdmin(runtime(), deps);
+    const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });
     const { shell } = await shellLoad(eventFor('/admin/posts'));
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.user.email).toBe('e@t');
@@ -71,7 +71,7 @@ describe('createCairnAdmin shellLoad', () => {
 
   it('returns a public payload for /admin/login and never calls listBranches', async () => {
     const spy = vi.spyOn(backend, 'listBranches');
-    const { shellLoad } = createCairnAdmin(runtime(), deps);
+    const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });
     const { shell } = await shellLoad(eventFor('/admin/login', { editor: null }));
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
@@ -86,7 +86,8 @@ describe('createCairnAdmin shellLoad', () => {
       { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
       { label: 'Club', children: [{ label: 'Members', icon: 'users', href: '/admin/club/members' }] },
     ];
-    const { shellLoad } = createCairnAdmin(rt, {
+    const { shellLoad } = createCairnAdmin({
+      runtime: rt,
       navFilter: (items) => items.filter((item) => item.label !== 'Club'),
     });
     const { shell } = await shellLoad(eventFor('/admin/posts'));

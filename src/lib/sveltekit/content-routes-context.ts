@@ -188,6 +188,8 @@ export function tidyClientErrorStatus(err: unknown): number | undefined {
 }
 
 export interface ContentRoutesConfig {
+  /** The composed runtime the routes close over: concepts, roles, the backend, and every other site-declared seam. */
+  runtime: CairnRuntime;
   /** The tidy action's injectable dependencies, grouped since both members shape one call. */
   tidy?: {
     /**
@@ -327,7 +329,7 @@ export interface ContentRoutesContext {
  *  over `runtime`. Every per-domain sibling factory takes the returned object as its one
  *  argument.
  */
-export function createContentRoutesContext(runtime: CairnRuntime, config: ContentRoutesConfig = {}): ContentRoutesContext {
+export function createContentRoutesContext(runtime: CairnRuntime, config: ContentRoutesConfig): ContentRoutesContext {
   // Validate a declared navLayout the fail-loud-at-startup way, so a bad screen reference or an
   // unresolvable role throws here rather than at request time. Undeclared (the common case) skips
   // validation entirely; the resolver synthesizes the default arrangement for that case.

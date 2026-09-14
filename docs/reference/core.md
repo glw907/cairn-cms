@@ -737,7 +737,7 @@ import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const admin = createCairnAdmin(runtime);
+export const admin = createCairnAdmin({ runtime });
 ```
 
 #### `parseSiteConfig`

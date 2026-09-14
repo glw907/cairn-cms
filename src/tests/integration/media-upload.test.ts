@@ -115,7 +115,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('stores a valid PNG under the content-addressed key, returns the media: reference, and commits nothing', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, filename: 'photo.png' }))) as ActionResult;
 
     const full = await hashBytes(PNG);
@@ -129,7 +129,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('a second identical upload reuses the stored object and does not put again', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // Count puts by wrapping the bucket binding the action receives.
     let puts = 0;
     const counting = new Proxy(bucket, {
@@ -156,7 +156,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('refuses a short-hash collision: a stored object whose full sha256 differs gives fail(409)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const hash = shortHash(await hashBytes(PNG));
     // Pre-put an object at the PNG's content-addressed key carrying a different full sha256, the way
     // a genuine 16-hex short-hash collision between two distinct files would look on the dedup probe.
@@ -169,8 +169,8 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('rejects an oversize Content-Length with fail(413) before reading the body', async () => {
-    const routes = createContentRoutes(
-      runtime({
+    const routes = createContentRoutes({
+      runtime: runtime({
         resolvedAssets: {
           enabled: true,
           bucketBinding: 'MEDIA_BUCKET',
@@ -181,7 +181,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
           transformations: false,
         },
       }),
-    );
+    });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: PNG, contentLength: String(11) }),
     )) as ActionResult;
@@ -190,42 +190,42 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('rejects a missing Content-Length with fail(411)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, contentLength: null }))) as ActionResult;
     expect(res.status).toBe(411);
     expect(res.data?.error).toBe('length_required');
   });
 
   it('rejects a missing X-Cairn-CSRF with fail(403)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, csrf: undefined }))) as ActionResult;
     expect(res.status).toBe(403);
     expect(res.data?.error).toBe('csrf');
   });
 
   it('rejects a wrong X-Cairn-CSRF with fail(403)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, csrf: 'wrong-token' }))) as ActionResult;
     expect(res.status).toBe(403);
     expect(res.data?.error).toBe('csrf');
   });
 
   it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const event = uploadEvent({ bytes: PNG }) as unknown as { cookies: unknown };
     event.cookies = undefined;
     await expect(routes.uploadAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
   });
 
   it('returns fail(401) JSON, not a 303, when locals.cairnEditor is absent', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
     expect(res.status).toBe(401);
     expect(res.data?.error).toBe('session_expired');
   });
 
   it('rejects an SVG payload with fail(415) even when allowedTypes includes image/svg+xml', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: SVG, contentType: 'image/svg+xml', filename: 'logo.svg' }),
     )) as ActionResult;
@@ -234,7 +234,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('rejects a leading-< payload with fail(415)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: LT_PAYLOAD, contentType: 'image/png', filename: 'x.png' }),
     )) as ActionResult;
@@ -243,7 +243,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('stores JPEG bytes under the jpg ext even when the client declares image/webp (sniff wins)', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: JPEG, contentType: 'image/webp', filename: 'shot.heic' }),
     )) as ActionResult;
@@ -254,7 +254,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('caps a 200-char X-Cairn-Alt to the documented maximum', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const longAlt = 'x'.repeat(200);
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: PNG, filename: 'photo.png', alt: longAlt }),
@@ -263,7 +263,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('replaces a path-traversal X-Cairn-Filename with the slugifyFilename output', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: PNG, filename: '../../evil.png' }),
     )) as ActionResult & { record?: { slug: string; originalFilename: string } };
@@ -274,7 +274,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('emits media.upload_failed with the reason on a rejected upload', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const warn = vi.spyOn(log, 'warn');
     await routes.uploadAction(uploadEvent({ bytes: SVG, contentType: 'image/svg+xml' }));
     expect(warn).toHaveBeenCalledWith(
@@ -284,7 +284,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('emits media.uploaded with the editor, hash, bytes, and reused on success', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const info = vi.spyOn(log, 'info');
     await routes.uploadAction(uploadEvent({ bytes: PNG, filename: 'photo.png' }));
     const hash = shortHash(await hashBytes(PNG));
@@ -295,7 +295,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('clamps an out-of-range X-Cairn-Width to null', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: PNG, filename: 'photo.png', width: '999999', height: '600' }),
     )) as ActionResult & { record?: { width: number | null; height: number | null } };

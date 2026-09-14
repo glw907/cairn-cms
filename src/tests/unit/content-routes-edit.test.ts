@@ -92,7 +92,7 @@ afterEach(() => {
 describe('editLoad', () => {
   it('loads an existing file with parsed, form-ready frontmatter and body', async () => {
     editFetch('---\ntitle: Hello\ndate: 2026-05-01\n---\nThe body.');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data).toMatchObject({
       conceptId: 'posts', id: '2026-05-hello', label: 'Posts', title: 'Hello',
@@ -107,7 +107,7 @@ describe('editLoad', () => {
 
   it('defaults the spellcheck dictionary to US English when the runtime omits it', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.spellcheckDictionary).toBe('dictionary-en-us.txt');
   });
@@ -116,7 +116,7 @@ describe('editLoad', () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     // composeRuntime resolves this from the site config's dialect; the load hands it straight through.
     const withDialect = { ...runtime(), spellcheckDictionary: 'dictionary-en-gb.txt' };
-    const routes = createContentRoutes(withDialect);
+    const routes = createContentRoutes({ runtime: withDialect });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.spellcheckDictionary).toBe('dictionary-en-gb.txt');
   });
@@ -135,7 +135,7 @@ describe('editLoad', () => {
         'The body.',
       ),
     );
-    const routes = createContentRoutes(withImage);
+    const routes = createContentRoutes({ runtime: withImage });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.frontmatter.image).toEqual({
       src: 'media:a.0123456789abcdef',
@@ -155,7 +155,7 @@ describe('editLoad', () => {
 
   it('returns a blank document for ?new=1 when the file is missing', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1'));
     expect(data.isNew).toBe(true);
     expect(data.body).toBe('');
@@ -166,7 +166,7 @@ describe('editLoad', () => {
 
   it('seeds the title from a create-dialog title param on a blank new doc', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&title=Hello%20World'));
     expect(data.isNew).toBe(true);
     expect(data.title).toBe('Hello World');
@@ -177,7 +177,7 @@ describe('editLoad', () => {
     // Not new-blank: the file already exists, so the seeded param (were one present) must never
     // override a real read; editLoad only seeds when the doc is genuinely new.
     editFetch('---\ntitle: Real Title\n---\nThe body.');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello', '?title=Ignored'));
     expect(data.title).toBe('Real Title');
     expect(data.frontmatter.title).toBe('Real Title');
@@ -185,14 +185,14 @@ describe('editLoad', () => {
 
   it('ignores a whitespace-only title param on a new doc, falling back to the id', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&title=%20%20'));
     expect(data.title).toBe('2026-05-fresh');
   });
 
   it('seeds the date from a create-dialog date param on a blank new doc', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&date=2026-05-20'));
     expect(data.isNew).toBe(true);
     expect(data.frontmatter.date).toBe('2026-05-20');
@@ -200,38 +200,38 @@ describe('editLoad', () => {
 
   it('ignores a malformed date param on a new doc', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&date=not-a-date'));
     expect(data.frontmatter.date).toBe('');
   });
 
   it('lets a real parsed frontmatter date win over the seeded date param', async () => {
     editFetch('---\ntitle: Real\ndate: 2026-01-01\n---\nThe body.');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello', '?date=2026-09-09'));
     expect(data.frontmatter.date).toBe('2026-01-01');
   });
 
   it('404s an unknown existing file that is not new', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(routes.editLoad(editEvent('missing'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('rejects an invalid id with a 400', async () => {
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await expect(routes.editLoad(editEvent('Bad Id!'))).rejects.toMatchObject({ status: 400 });
   });
 
   it('ships the runtime preview knob, and null when the adapter sets none', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const bare = createContentRoutes(runtime());
+    const bare = createContentRoutes({ runtime: runtime() });
     const without = await bare.editLoad(editEvent('2026-05-hello'));
     expect(without.preview).toBeNull();
 
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const preview = { stylesheets: ['/assets/site.css'], bodyClass: 'site', containerClass: 'prose' };
-    const styled = createContentRoutes({ ...runtime(), preview });
+    const styled = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await styled.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual(preview);
   });
@@ -244,7 +244,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview });
+    const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
@@ -256,7 +256,7 @@ describe('editLoad', () => {
 
   it('resolves no publish-actions when the site declares none (absent-config no-op)', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.publishActions).toEqual([]);
   });
@@ -264,7 +264,7 @@ describe('editLoad', () => {
   it('resolves a configured publish-action, templated with the concept and id', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const publishActions = [{ label: 'Share', href: '/admin/{concept}/{id}/share' }];
-    const routes = createContentRoutes({ ...runtime(), publishActions });
+    const routes = createContentRoutes({ runtime: { ...runtime(), publishActions } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.publishActions).toEqual([{ label: 'Share', href: '/admin/posts/2026-05-hello/share' }]);
   });
@@ -274,14 +274,14 @@ describe('editLoad', () => {
     const withPages = runtime();
     withPages.concepts.push(postsConcept({ id: 'pages', label: 'Pages' }));
     const publishActions = [{ label: 'Announce', href: '/admin/club/announce?post={id}', concepts: ['pages'] }];
-    const routes = createContentRoutes({ ...withPages, publishActions });
+    const routes = createContentRoutes({ runtime: { ...withPages, publishActions } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.publishActions).toEqual([]);
   });
 
   it('throws at construction on a publish-action with a blank href, rather than at render', () => {
     const publishActions = [{ label: 'Broken', href: '' }];
-    expect(() => createContentRoutes({ ...runtime(), publishActions })).toThrow(/href/);
+    expect(() => createContentRoutes({ runtime: { ...runtime(), publishActions } })).toThrow(/href/);
   });
 
   it('leaves a concept without a byConcept entry on the top-level preview values', async () => {
@@ -292,7 +292,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { pages: { bodyClass: 'page-body' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview });
+    const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
@@ -309,7 +309,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { posts: { containerClass: 'post-module' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview });
+    const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
@@ -326,7 +326,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { posts: { bodyClass: undefined, containerClass: 'post-module' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview });
+    const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.preview?.bodyClass).toBe('static-page');
     expect(data.preview?.containerClass).toBe('post-module');
@@ -338,7 +338,7 @@ describe('editLoad', () => {
       entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
     });
     editFetch('---\ntitle: Hello\n---\nThe body.', manifest);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const withManifest = await routes.editLoad(editEvent('2026-05-hello'));
     expect(withManifest.linkTargets).toContainEqual({
       concept: 'pages', id: 'about', permalink: '/about', title: 'About', date: undefined, draft: false,
@@ -359,7 +359,7 @@ describe('editLoad', () => {
       ],
     });
     editFetch('---\ntitle: Hello\n---\nx', manifest);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.inboundLinks).toEqual([{ concept: 'posts', id: '2026-05-b', title: 'Post B', permalink: '/posts/b' }]);
   });
@@ -367,14 +367,14 @@ describe('editLoad', () => {
   it('ships the current slug for the rename dialog', async () => {
     // The posts concept uses a day prefix, so 2026-05-01-hello strips to the slug hello.
     editFetch('---\ntitle: Hello\n---\nx');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-01-hello'));
     expect(data.slug).toBe('hello');
   });
 
   it('reads the saved flag from the query; a crafted ?error= renders nothing at all', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('hi', '?saved=1&error=Nope'));
     expect(data.saved).toBe(true);
     expect(data).not.toHaveProperty('error');
@@ -382,14 +382,14 @@ describe('editLoad', () => {
 
   it('reads the renamed flag from the query', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('hi', '?renamed=1'));
     expect(data.renamed).toBe(true);
   });
 
   it('reads the published and discarded flashes from the query', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const published = await routes.editLoad(editEvent('hi', '?published=1'));
     expect(published.publishedFlash).toBe(true);
     expect(published.discardedFlash).toBe(false);
@@ -412,7 +412,7 @@ describe('editLoad with a pending branch', () => {
       'cairn/posts/2026-05-hello': { [ENTRY_PATH]: '---\ntitle: Edited\n---\nBranch body.' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.pending).toBe(true);
     expect(data.published).toBe(true);
@@ -428,7 +428,7 @@ describe('editLoad with a pending branch', () => {
       'cairn/posts/2026-05-fresh': { 'src/content/posts/2026-05-fresh.md': '---\ntitle: Fresh\n---\nNew body.' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-05-fresh'));
     expect(data.pending).toBe(true);
     expect(data.published).toBe(false);
@@ -447,7 +447,7 @@ describe('editLoad with a pending branch', () => {
       { type: 'date', name: 'date', label: 'Date', default: 'today' },
     ];
     editFetch(null);
-    const routes = createContentRoutes(withDefault);
+    const routes = createContentRoutes({ runtime: withDefault });
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1'));
     const today = new Date().toISOString().slice(0, 10);
     expect(data.frontmatter.date).toBe(today);
@@ -500,7 +500,7 @@ describe('editLoad address-collision advisory', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(pagesRuntime());
+    const routes = createContentRoutes({ runtime: pagesRuntime() });
     const data = await routes.editLoad(pagesEvent('about'));
     expect(data.advisories).toHaveLength(1);
     const notice = data.advisories[0];
@@ -523,7 +523,7 @@ describe('editLoad address-collision advisory', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(pagesRuntime());
+    const routes = createContentRoutes({ runtime: pagesRuntime() });
     const data = await routes.editLoad(pagesEvent('contact'));
     expect(data.advisories).toEqual([]);
   });
@@ -549,7 +549,7 @@ describe('editLoad address-collision advisory', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('2026-01-15-hello'));
     expect(data.advisories).toEqual([]);
   });
@@ -570,7 +570,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
+    const routes = createContentRoutes({ runtime: mediaRuntime(MEDIA_ON) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
 
     // The default-branch media.json was read.
@@ -591,7 +591,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
+    const routes = createContentRoutes({ runtime: mediaRuntime(MEDIA_ON) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
 
     // One read serves both projections.
@@ -621,7 +621,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
+    const routes = createContentRoutes({ runtime: mediaRuntime(MEDIA_ON) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
 
     const row = data.mediaLibrary.a1b2c3d4e5f60718;
@@ -646,7 +646,7 @@ describe('editLoad media targets', () => {
         return inner(url);
       }),
     );
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
+    const routes = createContentRoutes({ runtime: mediaRuntime(MEDIA_ON) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.mediaTargets).toEqual({});
     expect(data.mediaLibrary).toEqual({});
@@ -658,7 +658,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: serializeMediaManifest({}) },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime({ enabled: false }));
+    const routes = createContentRoutes({ runtime: mediaRuntime({ enabled: false }) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(readsOf(gh, MEDIA_PATH)).toBe(0);
     expect(data.mediaTargets).toEqual({});
@@ -699,7 +699,7 @@ describe('editLoad taxonomy enforcement', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\ntopics:\n  - a\n  - legacy\n---\nThe body.' },
     });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
+    const routes = createContentRoutes({ runtime: taxonomyRuntime([{ value: 'a', label: 'A' }]) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     const topics = topicsField(data);
     // The closed picker: options = vocabulary union orphan, creatable false.
@@ -716,7 +716,7 @@ describe('editLoad taxonomy enforcement', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\ntopics:\n  - a\n  - legacy\n---\nThe body.' },
     });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([]));
+    const routes = createContentRoutes({ runtime: taxonomyRuntime([]) });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     const topics = topicsField(data);
     // The open creatable multiselect is unchanged: no options injected, creatable stays true.
@@ -733,7 +733,7 @@ describe('editLoad tidy projection: truthful visibility on a cached-unhealthy ke
 
   it('reads enabled when tidy is on and the key-health cache is clean', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const routes = createContentRoutes(tidyRuntime());
+    const routes = createContentRoutes({ runtime: tidyRuntime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.tidy.enabled).toBe(true);
   });
@@ -741,7 +741,7 @@ describe('editLoad tidy projection: truthful visibility on a cached-unhealthy ke
   it('hides the Tidy control when the cache says the key is unhealthy', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     markKeyUnhealthy();
-    const routes = createContentRoutes(tidyRuntime());
+    const routes = createContentRoutes({ runtime: tidyRuntime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.tidy.enabled).toBe(false);
   });
@@ -751,7 +751,7 @@ describe('editLoad tidy projection: truthful visibility on a cached-unhealthy ke
     markKeyUnhealthy(0);
     vi.useFakeTimers();
     vi.setSystemTime(11 * 60 * 1000);
-    const routes = createContentRoutes(tidyRuntime());
+    const routes = createContentRoutes({ runtime: tidyRuntime() });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     vi.useRealTimers();
     expect(data.tidy.enabled).toBe(true);

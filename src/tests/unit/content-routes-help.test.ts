@@ -63,7 +63,7 @@ describe('helpLoad', () => {
   it('derives progress from the committed manifest, returns the reference, and passes the support contact through', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest(ONE_PUBLISHED_POST) } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = await routes.helpLoad(event());
 
     // One published post completes the write and publish steps; no page leaves the third open.
@@ -82,7 +82,7 @@ describe('helpLoad', () => {
 
   it('degrades to an empty corpus (0 of 3) when GitHub is unreachable, never throwing', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const failingBackend = makeGithubBackend(REPO, async () => {
       throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     });

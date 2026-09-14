@@ -206,7 +206,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     title: 'Custom /admin mount looks incomplete',
     why: "The four-file /admin mount (the shared +layout that renders CairnAdminShell and calls the composer's shellLoad, and the [...path] catch-all that renders CairnAdmin) appears not fully wired, so a custom admin screen or the shared chrome may not render. This is a best-effort text heuristic, so an unconventionally-wired site can trip it without being broken.",
     remediation:
-      'Mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin(runtime).shellLoad, and the /admin/[...path] catch-all that renders CairnAdmin.',
+      'Mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin({ runtime }).shellLoad, and the /admin/[...path] catch-all that renders CairnAdmin.',
     docsAnchor: 'is-it-working.md#wire-the-admin-mount',
   },
   'skill.admin-screens-stale': {

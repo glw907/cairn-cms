@@ -288,7 +288,8 @@ shared shell layout. This is the whole admin mount:
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$theme/cairn.config.js';
 
-export const admin = createCairnAdmin(runtime, {
+export const admin = createCairnAdmin({
+  runtime,
   auth: { bootstrapOwner: { email: 'you@example.com', displayName: 'You' } },
 });
 ```

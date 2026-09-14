@@ -342,7 +342,7 @@ const ADMIN_MOUNT_PATHS = [
 // The one-line guidance the skip carries: the expected files plus the fix. It also seeds the
 // admin.mount-incomplete condition's remediation, kept here so the skip detail reads on its own.
 const ADMIN_MOUNT_GUIDANCE =
-  'no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin(runtime).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin';
+  'no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin({ runtime }).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin';
 
 // The mount-shape heuristic, loose like wiresCairnGuard above so a renamed or wrapped composer
 // still reads as wired. A shellLoad member-access on ANY identifier (not a literal admin.shellLoad)

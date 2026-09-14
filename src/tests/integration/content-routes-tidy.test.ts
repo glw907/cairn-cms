@@ -113,7 +113,7 @@ type TidyResult = { status?: number; data?: { error?: string } } & {
 describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('returns { corrected, model, tokens } on a stubbed success and commits nothing', async () => {
     const tidy = vi.fn<TidyClient['tidy']>(async () => cannedResult('the cat'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidy) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidy) } });
     const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
@@ -129,7 +129,8 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   });
 
   it('sends no effort tier to a model without effort tiers (claude-haiku-4-5) and still succeeds', async () => {
-    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }), {
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }),
       tidy: { client: strictAnthropic(() => 'the cat') },
     });
     const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
@@ -142,7 +143,8 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('sends effort: "low" to a model with effort tiers (claude-sonnet-5)', async () => {
     const tidy = vi.fn<TidyClient['tidy']>(async () => cannedResult('the cat'));
-    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-sonnet-5', conventions: {} } }), {
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, model: 'claude-sonnet-5', conventions: {} } }),
       tidy: { client: fakeAnthropic(tidy) },
     });
     await routes.tidyAction(tidyEvent({ text: 'teh cat' }));
@@ -152,7 +154,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(403) on a bad CSRF header, before the session read and any model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent({ csrf: 'wrong' }))) as TidyResult;
 
     expect(res.status).toBe(403);
@@ -161,7 +163,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const event = tidyEvent() as unknown as { cookies: unknown };
     event.cookies = undefined;
     await expect(routes.tidyAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
@@ -170,7 +172,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('surfaces a missing session as the guard redirect (no model call)', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     // requireSession throws a redirect; the action does not catch it (the manual-redirect 303 the
     // client reads as status-0). Assert it throws and the model was never called.
     await expect(routes.tidyAction(tidyEvent({ hasEditor: false }))).rejects.toMatchObject({ status: 303 });
@@ -179,7 +181,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(503) when tidy is disabled, before any model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime({ tidy: { enabled: false } }), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
@@ -188,7 +190,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(503) when the API key is missing, before any model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent({ platformEnv: {} }))) as TidyResult;
 
     expect(res.status).toBe(503);
@@ -197,7 +199,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(413) when the text is too large, before the model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const huge = 'a '.repeat(20000); // well past the cap
     const res = (await routes.tidyAction(tidyEvent({ text: huge }))) as TidyResult;
 
@@ -221,7 +223,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       });
     }) as unknown as TidyClient['tidy'];
     // A short deadline so the test does not wait the real 30s.
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn), timeoutMs: 20 } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn), timeoutMs: 20 } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     // The action reached the call with a real signal in the options argument, and the deadline mapped
@@ -234,7 +236,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const tidyFn = vi.fn(async () => {
       throw new Error('overloaded');
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
@@ -246,7 +248,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       refused: true,
       tokens: { input: 5, output: 0 },
     }));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(422);
@@ -254,7 +256,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(400) on a malformed body, before the model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent({ rawBody: 'not json' }))) as TidyResult;
 
     expect(res.status).toBe(400);
@@ -267,7 +269,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const tidyFn = vi.fn(async () => {
       throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const warn = vi.spyOn(log, 'warn');
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
@@ -283,7 +285,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const tidyFn = vi.fn(async () => {
       throw Object.assign(new Error('forbidden'), { status: 403 });
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
@@ -299,7 +301,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
         });
       });
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn), timeoutMs: 20 } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn), timeoutMs: 20 } });
     const warn = vi.spyOn(log, 'warn');
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
@@ -311,7 +313,8 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const tidyFn = vi.fn(async () => {
       throw Object.assign(new Error("output_config.effort: is not supported for model 'claude-haiku-4-5'"), { status: 400 });
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }), {
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }),
       tidy: { client: fakeAnthropic(tidyFn) },
     });
     const warn = vi.spyOn(log, 'warn');
@@ -329,7 +332,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const tidyFn = vi.fn(async () => {
       throw new Error('overloaded');
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const warn = vi.spyOn(log, 'warn');
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
@@ -364,7 +367,7 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
     sdkAbsent();
     // No injected client, so the action resolves the default factory: the path a real site takes.
     // The short deadline bounds the call regardless of how the resolution fails.
-    const routes = createContentRoutes(runtime(), { tidy: { timeoutMs: 200 } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { timeoutMs: 200 } });
     const warn = vi.spyOn(log, 'warn');
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
@@ -378,7 +381,7 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
 
   it('never marks the key unhealthy when the SDK is absent (the key was never tried)', async () => {
     sdkAbsent();
-    const routes = createContentRoutes(runtime(), { tidy: { timeoutMs: 200 } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { timeoutMs: 200 } });
     await routes.tidyAction(tidyEvent());
 
     expect(keyKnownUnhealthy()).toBe(false);
@@ -387,7 +390,7 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
   it('an injected client still succeeds unchanged with the SDK absent', async () => {
     sdkAbsent();
     const tidyFn = vi.fn<TidyClient['tidy']>(async () => cannedResult('the cat'));
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
@@ -400,7 +403,7 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
     const tidyFn = vi.fn(async () => {
       throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     await routes.tidyAction(tidyEvent());
     expect(keyKnownUnhealthy()).toBe(true);
   });
@@ -409,7 +412,7 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
     const tidyFn = vi.fn(async () => {
       throw Object.assign(new Error('forbidden'), { status: 403 });
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     await routes.tidyAction(tidyEvent());
     expect(keyKnownUnhealthy()).toBe(true);
   });
@@ -418,7 +421,7 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
     const tidyFn = vi.fn(async () => {
       throw new Error('overloaded');
     }) as unknown as TidyClient['tidy'];
-    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(tidyFn) } });
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     await routes.tidyAction(tidyEvent());
     expect(keyKnownUnhealthy()).toBe(false);
   });
@@ -427,12 +430,12 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
     const failingFn = vi.fn(async () => {
       throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
     }) as unknown as TidyClient['tidy'];
-    let routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(failingFn) } });
+    let routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(failingFn) } });
     await routes.tidyAction(tidyEvent());
     expect(keyKnownUnhealthy()).toBe(true);
 
     const succeedingFn = vi.fn(async () => cannedResult('fixed'));
-    routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(succeedingFn) } });
+    routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(succeedingFn) } });
     await routes.tidyAction(tidyEvent());
     expect(keyKnownUnhealthy()).toBe(false);
   });

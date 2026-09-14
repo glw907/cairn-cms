@@ -302,6 +302,17 @@
 
 ### Changed
 
+- **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
+  parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.
+  `ContentRoutesConfig` and `CairnAdminConfig` each gain a required `runtime: CairnRuntime` member
+  carrying what the removed positional argument carried; every other member is unchanged. The two
+  internal factories (`createContentRoutesInternal`, `createCairnAdminInternal`, reachable from no
+  package subpath) take the same one-bag shape, so the composition root and the public factory
+  never diverge. Consumers must: change `createContentRoutes(runtime, config)` to
+  `createContentRoutes({ runtime, ...config })`, and `createCairnAdmin(runtime, config)` to
+  `createCairnAdmin({ runtime, ...config })`; a call with no `config` becomes
+  `createContentRoutes({ runtime })` or `createCairnAdmin({ runtime })`.
+
 - `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
   names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
   alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone

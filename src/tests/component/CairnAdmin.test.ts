@@ -259,7 +259,7 @@ describe('form-action contract', () => {
     return [...names];
   }
 
-  const dispatcherActions = new Set(Object.keys(createCairnAdmin(runtime()).actions));
+  const dispatcherActions = new Set(Object.keys(createCairnAdmin({ runtime: runtime() }).actions));
 
   const views: Array<[AdminData['view'], AdminData]> = [
     ['login', loginData()],
@@ -292,7 +292,7 @@ describe('form-action contract', () => {
     // whose success payload shares a field name with another action's failure payload (the
     // TidyResult.usage/MediaDeleteFailure.usage collision this test was written against) fails this
     // to compile, before it ever reaches a consumer site's own svelte-check.
-    const actions = createCairnAdmin(runtime()).actions;
+    const actions = createCairnAdmin({ runtime: runtime() }).actions;
     type ActionOutcome = AwaitedActions<typeof actions>;
     const outcome = {} as ActionOutcome;
     const form: ComponentProps<typeof CairnAdmin>['form'] = outcome;

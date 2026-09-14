@@ -15,7 +15,7 @@ function ctx(files: Record<string, string>): DoctorContext {
 // must detect both signals despite the rename.
 const RENAMED_LAYOUT_SERVER = `import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$lib/cairn';
-const cms = createCairnAdmin(runtime);
+const cms = createCairnAdmin({ runtime });
 export const load = cms.shellLoad;
 `;
 

@@ -94,7 +94,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('vocabularyLoad', () => {
   it('returns the committed vocabulary, a per-value usage count, and the unlisted seed set', async () => {
     seeded();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([
       { value: 'svelte', label: 'Svelte' },
@@ -123,7 +123,7 @@ describe('vocabularyLoad', () => {
       if (method === 'GET' && url.includes('/git/matching-refs/')) return new Response('boom', { status: 500 });
       return new Response('{}', { status: 200 });
     }));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([
       { value: 'svelte', label: 'Svelte' },
@@ -135,7 +135,7 @@ describe('vocabularyLoad', () => {
 
   it('degrades the vocabulary to empty when the config read fails, not the error page', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([]);
     expect(data.usage).toEqual({});
@@ -144,7 +144,7 @@ describe('vocabularyLoad', () => {
 
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
     seeded();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.vocabularyLoad(loadEvent('?error=You+have+been+signed+out'));
     expect(data).not.toHaveProperty('error');
   });
@@ -153,7 +153,7 @@ describe('vocabularyLoad', () => {
 describe('vocabularySaveAction', () => {
   it('commits a renamed label with no value change, head-guarded, with the editor as author', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // Rename Svelte -> SvelteKit, value unchanged; rust unchanged.
     const posted = JSON.stringify([
       { value: 'svelte', label: 'SvelteKit' },
@@ -174,7 +174,7 @@ describe('vocabularySaveAction', () => {
 
   it('commits an added entry', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const posted = JSON.stringify([
       { value: 'svelte', label: 'Svelte' },
       { value: 'rust', label: 'Rust' },
@@ -188,7 +188,7 @@ describe('vocabularySaveAction', () => {
 
   it('refuses removing an in-use value in place, naming it, with no commit', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // Drop svelte, which the seeded post carries: blocked by the strict cross-branch gate.
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
     const result = (await routes.vocabularySaveAction(
@@ -204,7 +204,7 @@ describe('vocabularySaveAction', () => {
 
   it('commits when an unused value is removed', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // Drop rust, which no entry carries: allowed.
     const posted = JSON.stringify([{ value: 'svelte', label: 'Svelte' }]);
     const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted)));
@@ -216,7 +216,7 @@ describe('vocabularySaveAction', () => {
   it('refuses a malformed posted vocabulary in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // A value that violates SAFE_TAG_VALUE makes validateVocabulary throw.
     const result = (await routes.vocabularySaveAction(
       saveEvent('[{"value":"Not A Slug","label":"x"}]'),
@@ -231,7 +231,7 @@ describe('vocabularySaveAction', () => {
     // never reach the response, only fixed copy (the LOW7 review finding this pins).
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.vocabularySaveAction(
       saveEvent('<script>not json</script>'),
     )) as unknown as { status: number; data: { error: string } };
@@ -250,7 +250,7 @@ describe('vocabularySaveAction', () => {
     // the log record for the site's operator, never in the editor-facing alert.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
     const result = (await routes.vocabularySaveAction(
@@ -273,7 +273,7 @@ describe('vocabularySaveAction', () => {
     // an empty list instead of bouncing to an ?error= redirect (there is no in-flight save to fail).
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const data = await routes.vocabularyLoad(loadEvent());
     expect(data.vocabulary).toEqual([]);
@@ -301,7 +301,7 @@ describe('vocabularySaveAction', () => {
       }
       return new Response('{}', { status: 200 });
     }));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     // A pure label rename (no removed value) reaches the commit, where the head moves under it.
     const posted = JSON.stringify([
       { value: 'svelte', label: 'SvelteKit' },

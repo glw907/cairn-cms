@@ -133,7 +133,7 @@ describe('mediaOrphanScan', () => {
     // R2 holds the referenced bytes and one orphan whose hash has no manifest row.
     const stored = [r2Key(HASH_REFERENCED, 'jpg'), r2Key(HASH_ORPHAN, 'jpg')];
     const bucket = fakeBucket(stored, timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const scan = (await routes.mediaOrphanScanAction(scanEvent(bucket))) as MediaOrphanScanResult;
 
@@ -168,7 +168,7 @@ describe('mediaOrphanScan', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([r2Key(HASH_REFERENCED, 'jpg')], timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const event = scanEvent(bucket);
     const wrapped = globalThis.fetch;
@@ -200,7 +200,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const claimedKey = r2Key(HASH_REFERENCED, 'jpg');
@@ -230,7 +230,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected but confirm is empty: the count gate fails.
@@ -259,7 +259,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One selected, so the typed confirm is the count "1".
@@ -291,7 +291,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const event = purgeEvent([orphanKey], '1', bucket);
@@ -321,7 +321,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutesInternal(runtime());
+    const routes = createContentRoutesInternal({ runtime: runtime() });
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected, confirm "2": does not match the count of 1.

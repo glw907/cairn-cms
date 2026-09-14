@@ -80,7 +80,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
   it('refuses (409) with inclusion-naming copy when a published entry includes the fragment', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
 
     // Publish the fragment itself, then a post whose body includes it. manifestEntryFromFile's real
     // extractIncludes computes the includes row from this body; nothing here hand-writes the manifest.
@@ -113,7 +113,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
   it('proceeds when nothing includes the fragment', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     await redirectedTo(
       routes.publishAction(saveEvent('fragments', 'lonely', { title: 'Lonely', body: 'No one needs me.' })),
     );
@@ -129,7 +129,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
     // since the build's include-resolver backstop catches a real dangling reference.
     const gh = new GithubDouble({ main: { 'src/content/fragments/orphan.md': '---\ntitle: Orphan\n---\nbody' } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const out = await del(routes, 'fragments', 'orphan');
     expect(out.location).toBe('/admin/fragments');
     expect(gh.read('main', 'src/content/fragments/orphan.md')).toBeNull();
@@ -140,7 +140,7 @@ describe('saveAction/publishAction: the write-path round trip for includes (Task
   it('saves the include directive to the pending branch, then publishes an includes row to main', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutes({ runtime: runtime() });
     const form = { title: 'Hi', date: '2026-05-01', body: 'See.\n\n::include{fragment="welcome"}' };
 
     // saveAction: the branch commit is real (the entry's own file), and nothing lands on main yet,

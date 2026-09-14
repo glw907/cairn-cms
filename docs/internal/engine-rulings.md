@@ -138,6 +138,18 @@ open edits, not part of the shape itself.
   `EditorRoutesConfig`, `PublicRoutesConfig`).
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 1, and Task 1/Task 2.
+- **Amendment (2026-09-08, polish-C Task 2):** the bag carries an arity clause the ratified text
+  above does not state: `runtime` is a required member of the bag where the factory needs one, and
+  positional runtimes go, so `createContentRoutes` and `createCairnAdmin` each take exactly one
+  parameter with no default. This closes the "R1 applied as written" text on `runtime`'s place in
+  the bag rather than beside it. The source of this clause is
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  dated 2026-09-08, decision 11, rather than a sitting quotation this pass records as Geoff's own
+  words: "One shape for every route factory: a single config bag, with `runtime` a required member
+  of the bag where the factory needs one. Positional runtimes go." One amendment covers all four
+  factories the decision reaches (`createContentRoutes`, `createContentRoutesInternal`,
+  `createCairnAdmin`, `createCairnAdminInternal`); `createNavRoutes` and `createMediaRoute` execute
+  the same clause in Task 3 without a second amendment.
 
 ## convention-interop-carve-out: a host ecosystem's convention wins over cairn's grammar on an interop surface  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -2170,6 +2182,9 @@ when the remediation pass lands.
   (`convention-parameter-bags`); the `deps` parameter renames to `config` on every factory that
   takes this bag (`createContentRoutesInternal`, `createContentRoutes`,
   `createContentRoutesContext`). The shape and behavior are unchanged.
+- **Note (polish-C, Task 2):** `ContentRoutesConfig` gains a required `runtime: CairnRuntime`
+  member; `createContentRoutes(config: ContentRoutesConfig): ContentRoutes` is now the whole
+  signature. Verdict unchanged.
 
 ## audit-sveltekit-createcontentroutes: `createContentRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -2177,6 +2192,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 76.
 - **Any-site case:** A site hand-mounting /admin route-by-route, because its admin URLs must match an existing information architecture, wires editLoad, saveAction and publishAction onto its own files.
+- **Note (polish-C, Task 2):** `createContentRoutes(config: ContentRoutesConfig): ContentRoutes` is
+  now the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-admindata: `AdminData`  (keep, 2026-08-26, any-site audit)
 
@@ -2217,6 +2234,9 @@ when the remediation pass lands.
 - **Annotation (conventions pass, Task 2):** renamed `CairnAdminOptions` → `CairnAdminConfig`
   (`convention-parameter-bags`); the `deps` parameter renames to `config` on `createCairnAdmin`
   the same way. The shape and behavior are unchanged.
+- **Note (polish-C, Task 2):** `CairnAdminConfig` gains a required `runtime: CairnRuntime` member;
+  `createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes` is now the whole signature.
+  Verdict unchanged.
 
 ## audit-sveltekit-attentionitem: `AttentionItem`  (keep, 2026-08-26, any-site audit)
 
@@ -2610,6 +2630,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 128.
 - **Any-site case:** The recommended path for every site: two route pairs mount the whole /admin surface, so the site restates no route table and wires no action names by hand.
+- **Note (polish-C, Task 2):** `createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes` is
+  now the whole signature; `config.runtime` carries the composed runtime. Verdict unchanged.
 
 ## audit-sveltekit-createauthguard: `createAuthGuard`  (keep, 2026-08-26, any-site audit)
 

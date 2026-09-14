@@ -115,27 +115,27 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('path validation', () => {
   it('404s save posted to a list path', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.actions.save(actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('404s create posted to an edit path', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.actions.create(actionEvent('/admin/posts/2026-05-01-hi'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('404s publishAll posted to the login path', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.actions.publishAll(actionEvent('/admin/login'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('404s request posted to a non-login path', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.actions.request(actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('404s logout posted to a path the parser refuses', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.actions.logout(actionEvent('/admin/bogus'))).rejects.toMatchObject({ status: 404 });
   });
 
@@ -148,14 +148,14 @@ describe('path validation', () => {
       'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody' },
     });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/help', { editor: { email: 'own@t', displayName: 'Own', role: 'owner', capability: 'owner' } });
     await expectRedirect(admin.actions.publishAll(event), '/admin/posts?publishedAll=1');
   });
 
   it('logout posted from the help path does not 404 (it reaches the action and redirects)', async () => {
     const { db } = fakeD1();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/help', {
       env: { AUTH_DB: db },
       cookies: { '__Host-cairn_session': 'sid' },
@@ -167,7 +167,7 @@ describe('path validation', () => {
 describe('auth actions', () => {
   it('request delegates on the login view and answers neutrally for an unknown email', async () => {
     const { db } = fakeD1();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/login', {
       editor: null,
       form: { email: 'who@t' },
@@ -178,7 +178,7 @@ describe('auth actions', () => {
 
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
     const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/auth/confirm', {
       editor: null,
       form: { token: 'tok' },
@@ -197,7 +197,7 @@ describe('auth actions', () => {
 
   it('logout works from any parsed view: clears the session cookie and redirects to login', async () => {
     const { db, calls } = fakeD1();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts', {
       env: { AUTH_DB: db },
       cookies: { '__Host-cairn_session': 'sid' },
@@ -223,7 +223,7 @@ describe('content actions', () => {
 
   it('create delegates on the list view with the concept synthesized from the URL', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts', { form: { title: 'Hello', slug: 'hello', date: '2026-06-11' } });
     await expectRedirect(admin.actions.create(event), '/admin/posts/2026-06-11-hello?new=1&date=2026-06-11&title=Hello');
   });
@@ -231,7 +231,7 @@ describe('content actions', () => {
   it('save delegates on the edit view: commits to the pending branch and redirects saved', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
     await expectRedirect(admin.actions.save(event), '/admin/posts/2026-05-01-hi?saved=1');
     expect(gh.read('cairn/posts/2026-05-01-hi', 'src/content/posts/2026-05-01-hi.md')).toContain('body');
@@ -241,7 +241,7 @@ describe('content actions', () => {
   it('publish delegates on the edit view: lands the entry on main and redirects published', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
     await expectRedirect(admin.actions.publish(event), '/admin/posts/2026-05-01-hi?published=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toContain('body');
@@ -254,7 +254,7 @@ describe('content actions', () => {
       'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': raw + ' edited' },
     });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts/2026-05-01-hi');
     await expectRedirect(admin.actions.discard(event), '/admin/posts/2026-05-01-hi?discarded=1');
     expect(gh.branches.has('cairn/posts/2026-05-01-hi')).toBe(false);
@@ -263,7 +263,7 @@ describe('content actions', () => {
   it('rename delegates on the edit view: moves the file and redirects to the new id', async () => {
     const gh = new GithubDouble({ main: { 'src/content/posts/2026-05-01-hi.md': raw } });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts/2026-05-01-hi', { form: { slug: 'bye' } });
     await expectRedirect(admin.actions.rename(event), '/admin/posts/2026-05-01-bye?renamed=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-bye.md')).toContain('title: Hi');
@@ -273,7 +273,7 @@ describe('content actions', () => {
   it('delete on the edit view takes the id from the path', async () => {
     const gh = new GithubDouble({ main: { 'src/content/posts/2026-05-01-hi.md': raw } });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts/2026-05-01-hi');
     await expectRedirect(admin.actions.delete(event), '/admin/posts');
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toBeNull();
@@ -282,7 +282,7 @@ describe('content actions', () => {
   it('delete on the list view takes the id from the form body', async () => {
     const gh = new GithubDouble({ main: { 'src/content/posts/2026-05-01-hi.md': raw } });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/posts', { form: { id: '2026-05-01-hi' } });
     await expectRedirect(admin.actions.delete(event), '/admin/posts');
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toBeNull();
@@ -294,7 +294,7 @@ describe('content actions', () => {
       'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': raw },
     });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/editors', { editor: { email: 'own@t', displayName: 'Own', role: 'owner', capability: 'owner' } });
     await expectRedirect(admin.actions.publishAll(event), '/admin/posts?publishedAll=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toBe(raw);
@@ -313,7 +313,7 @@ describe('content actions', () => {
     }));
     const anthropic = vi.fn(() => ({ tidy: tidyFn }));
     const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
-    const admin = createCairnAdmin(tidyRuntime, { ...deps, tidy: { client: anthropic } });
+    const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps, tidy: { client: anthropic } });
 
     // A CSRF-valid raw POST: the token rides the X-Cairn-CSRF header and the __Host-cairn_csrf cookie.
     const csrf = 'csrf-token-value-0123456789abcdef';
@@ -354,7 +354,7 @@ describe('content actions', () => {
     }) => TidyClient;
     const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
     // A short deadline so the test does not wait the real 30s default.
-    const admin = createCairnAdmin(tidyRuntime, { ...deps, tidy: { client: anthropic, timeoutMs: 20 } });
+    const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps, tidy: { client: anthropic, timeoutMs: 20 } });
 
     const csrf = 'csrf-token-value-0123456789abcdef';
     const event = testEvent({
@@ -380,7 +380,7 @@ describe('content actions', () => {
 describe('media view load', () => {
   it('returns the media library data (chrome rides the shell load, not this view load)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/media');
     const data = (await admin.load({ ...event, setHeaders: () => {} })) as {
       view: string;
@@ -398,7 +398,7 @@ describe('media view load', () => {
       'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody' },
     });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/media');
     await expectRedirect(admin.actions.publishAll(event), '/admin/posts?publishedAll=1');
   });
@@ -414,47 +414,47 @@ describe('media replace and alt actions (composer wiring)', () => {
 
   for (const name of mediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
-      const admin = createCairnAdminInternal(runtime(), deps);
+      const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
       await expect(admin.actions[name](actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
     });
   }
 
   it('mediaUpload on the media view reaches uploadAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     const result = await admin.actions.mediaUpload(actionEvent('/admin/media'));
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaReplace on the media view reaches the apply (400 on a missing hash)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     await expect(admin.actions.mediaReplace(actionEvent('/admin/media'))).rejects.toMatchObject({ status: 400 });
   });
 
   it('mediaReplacePreview on the media view reaches the preview (403 without the CSRF header)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     const result = await admin.actions.mediaReplacePreview(actionEvent('/admin/media'));
     expect(result).toMatchObject({ status: 403 });
   });
 
   it('mediaAltPropagate on the media view reaches the apply (400 on a missing hash)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     await expect(admin.actions.mediaAltPropagate(actionEvent('/admin/media'))).rejects.toMatchObject({ status: 400 });
   });
 });
 
 describe('dictionaryAdd action (composer wiring)', () => {
   it('404s dictionaryAdd posted outside the edit view', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.actions.dictionaryAdd(actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
   });
 
   it('reaches the content action on the edit view (403 without the CSRF header)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     // The composer's actionEvent posts no X-Cairn-CSRF header, so the content action refuses with a
     // 403 csrf envelope: proof the route parsed the edit view and reached dictionaryAdd.
     const result = await admin.actions.dictionaryAdd(actionEvent('/admin/posts/2026-05-01-hi'));
@@ -467,28 +467,28 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
 
   for (const name of newMediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
-      const admin = createCairnAdminInternal(runtime(), deps);
+      const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
       await expect(admin.actions[name](actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
     });
   }
 
   it('mediaBulkDelete on the media view reaches the content action (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     const result = await admin.actions.mediaBulkDelete(actionEvent('/admin/media'));
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaOrphanScan on the media view reaches the content action (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     const result = await admin.actions.mediaOrphanScan(actionEvent('/admin/media'));
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaOrphanPurge on the media view reaches mediaOrphanPurgeAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdminInternal(runtime(), deps);
+    const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
     const result = await admin.actions.mediaOrphanPurge(actionEvent('/admin/media'));
     expect(result).toMatchObject({ status: 503 });
   });
@@ -502,13 +502,13 @@ describe('save on the nav view', () => {
     gh.install();
     const rt = runtime();
     rt.navMenu = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-    const admin = createCairnAdmin(rt, deps);
+    const admin = createCairnAdmin({ runtime: rt, ...deps });
     const event = actionEvent('/admin/nav', { form: { tree: JSON.stringify([{ label: 'Home', url: '/' }]) } });
     await expectRedirect(admin.actions.save(event), '/admin/nav?saved=1');
   });
 
   it('404s when the runtime configures no navMenu', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/nav', { form: { tree: '[]' } });
     await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 404 });
   });
@@ -519,7 +519,7 @@ describe('editor actions', () => {
 
   it('editorAdd delegates on the editors view and inserts the row', async () => {
     const { db, calls } = fakeD1();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/editors', {
       editor: owner,
       form: { email: 'new@x.dev', name: 'New', role: 'editor' },
@@ -531,7 +531,7 @@ describe('editor actions', () => {
 
   it('editorRemove delegates on the editors view and deletes the row', async () => {
     const { db, calls } = fakeD1({ 'FROM editor': { email: 'gone@t', display_name: 'Gone', role: 'editor' } });
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/editors', { editor: owner, form: { email: 'gone@t' }, env: { AUTH_DB: db } });
     await expect(admin.actions.editorRemove(event)).resolves.toEqual({ ok: true });
     expect(calls.some((c) => c.sql.includes('DELETE FROM editor') && c.args[0] === 'gone@t')).toBe(true);
@@ -539,7 +539,7 @@ describe('editor actions', () => {
 
   it('editorSetRole delegates on the editors view and updates the role', async () => {
     const { db, calls } = fakeD1({ 'FROM editor': { email: 'up@t', display_name: 'Up', role: 'editor' } });
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/editors', { editor: owner, form: { email: 'up@t', role: 'owner' }, env: { AUTH_DB: db } });
     await expect(admin.actions.editorSetRole(event)).resolves.toEqual({ ok: true });
     expect(calls.some((c) => c.sql.includes('UPDATE editor SET role') && c.args[0] === 'owner' && c.args[1] === 'up@t')).toBe(true);
@@ -558,7 +558,7 @@ describe('settings view', () => {
   }
 
   it('404s settingsSave posted outside the settings view (the viewAction gate)', async () => {
-    const admin = createCairnAdmin(tidyRuntime(), deps);
+    const admin = createCairnAdmin({ runtime: tidyRuntime(), ...deps });
     await expect(admin.actions.settingsSave(actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
   });
 
@@ -566,14 +566,14 @@ describe('settings view', () => {
     // settingsSaveAction is a head-guarded atomic commit, so the stateful double seeds main with the YAML
     // and answers the ref read, the head-guarded commit sequence, and the write.
     new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\ntidy:\n  enabled: true\n' } }).install();
-    const admin = createCairnAdmin(tidyRuntime(), deps);
+    const admin = createCairnAdmin({ runtime: tidyRuntime(), ...deps });
     const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true,"oxfordComma":"always"}' } });
     await expectRedirect(admin.actions.settingsSave(event), '/admin/settings?saved=1');
   });
 
   it('settingsSave 404s when tidy is off, proving it reached settingsSaveAction (the server half of the gate)', async () => {
     // The default runtime has no tidy block, so the action 404s before any read.
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true}' } });
     await expect(admin.actions.settingsSave(event)).rejects.toMatchObject({ status: 404 });
   });
@@ -586,7 +586,7 @@ describe('settings view', () => {
       tidy: async () => { throw new Error('unused'); },
       models: { list: async () => ({ data: [] }) },
     }));
-    const admin = createCairnAdmin(tidyRuntime(), { ...deps, tidy: { client: anthropic } });
+    const admin = createCairnAdmin({ runtime: tidyRuntime(), ...deps, tidy: { client: anthropic } });
     const event = actionEvent('/admin/settings', { env: { ANTHROPIC_API_KEY: 'sk-test' } });
     const data = (await admin.load({ ...event, setHeaders: () => {} })) as {
       view: string;
@@ -625,7 +625,7 @@ const CALM_COPY =
 
 describe('unexpected admin action failures (admin.action.failed, no raw 500)', () => {
   it('a throwing create action on the list view returns fail(500) with the calm copy and logs admin.action.failed', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const base = actionEvent('/admin/pages', { form: { title: 'Trailhead', slug: 'trailhead' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
@@ -642,7 +642,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   });
 
   it('a throwing save action on the edit view logs the concept, id, and editor, and returns fail(500) with the calm copy', async () => {
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
@@ -664,7 +664,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     // new=1 flag to avoid stranding the draft behind editLoad's unsaved-entry 404. Now the
     // failure never navigates at all, so the flag has nothing to preserve; posting new=1 changes
     // nothing about the fail(500) response.
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const result = (await admin.actions.save(event)) as { status?: number; data?: { error?: string } };
@@ -691,7 +691,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
         delete: () => {},
       },
     });
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = (await admin.actions.dictionaryAdd(event)) as {
@@ -722,7 +722,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
       ...runtime(),
       tidy: { enabled: true, model: 'claude-test', conventions: null as unknown as Record<string, unknown> },
     } as CairnRuntime;
-    const admin = createCairnAdmin(tidyRuntime, deps);
+    const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps });
     const event = testEvent({
       url: 'https://t.example/admin/posts/2026-05-01-hi',
       route: '/admin/[...path]',
@@ -757,7 +757,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
       'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody edited' },
     });
     gh.install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const event = actionEvent('/admin/posts/2026-05-01-hi');
     const result = await expectRedirectAssertion(() => admin.actions.discard(event));
@@ -770,7 +770,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     // deliberate throw. The facade widened just this call site so the wrapper's unexpected-failure
     // fail(500) can still reach the editor instead of the type lying about what the action can hand
     // back.
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const base = actionEvent('/admin/posts/2026-05-01-hi');
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
@@ -789,7 +789,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
 
   it('an HttpError thrown by an action (its own deliberate 404) still propagates untouched, with no log', async () => {
     // No navMenu configured, so the nav branch of save's delegate throws error(404) itself.
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const event = actionEvent('/admin/nav', { form: { tree: '[]' } });
     await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 404 });
@@ -798,7 +798,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
 
   it('a fail() return (a validated refusal) passes through unchanged, with no log', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = await admin.actions.mediaUpload(actionEvent('/admin/media'));
     expect(result).toMatchObject({ status: 503 });

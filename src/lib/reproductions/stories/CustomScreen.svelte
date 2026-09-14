@@ -8,8 +8,10 @@ only the toolkit primitives the doc snippet names: `PageHeader`, `AdminTable`, `
 card div around `AdminTable` is written at the call site with the design system's floating-card
 recipe (`card-shell card-shadow`) rather than by a wrapping component, since `AdminTable` already
 owns its own horizontal overflow and a second `overflow-x-auto` on this div would double the
-scroll container. Keep this in lockstep with the doc snippet rather than improving on it; a drift
-here is a drift a reader of that page would hit.
+scroll container. `overflow-hidden` on the div is the corner clip: `card-shell` rounds its
+border but sets no clipping of its own, so `AdminTable`'s square table would otherwise paint
+over the card's rounded corners. Keep this in lockstep with the doc snippet rather than
+improving on it; a drift here is a drift a reader of that page would hit.
 -->
 <script lang="ts">
   import { PageHeader, AdminTable, StatusChip } from '../../admin-toolkit/index.js';
@@ -19,7 +21,7 @@ here is a drift a reader of that page would hit.
 
 <PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
 
-<div class="card-shell card-shadow">
+<div class="overflow-hidden card-shell card-shadow">
   <AdminTable rowCount={data.events.length}>
     {#snippet header()}
       <th scope="col">Name</th>

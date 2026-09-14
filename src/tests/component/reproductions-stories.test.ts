@@ -1010,6 +1010,7 @@ describe('toolkit/custom-screen', () => {
     expect(card).not.toBeNull();
     expect(card?.classList.contains('card-shadow')).toBe(true);
     expect(card?.classList.contains('overflow-x-auto')).toBe(false);
+    expect(card?.classList.contains('overflow-hidden')).toBe(true);
 
     // The column headers, transcribed with `scope="col"` (WCAG 1.3.1: an association a data
     // table needs to be programmatically determinable).

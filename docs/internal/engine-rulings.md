@@ -5819,8 +5819,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   replacement is not a gap; it is a named recipe already in the admin's own design system, the
   floating-card composition (`card-shell card-shadow`, `docs/internal/admin-design-system.md`,
   "Component recipes") that a custom `/admin/` screen now composes directly: `PageHeader` for the
-  header band, then a `card-shell card-shadow` div with no `overflow-x-auto` of its own around
-  `AdminTable`, whose own wrapper is the one scroll owner.
+  header band, then an `overflow-hidden card-shell card-shadow` div with no `overflow-x-auto` of
+  its own around `AdminTable`, whose own wrapper is the one scroll owner; `overflow-hidden`
+  carries the corner clip `OfficeList.svelte:47`'s `overflow-x-auto card-shadow` used to compute
+  (`overflow-x: auto` against a default `overflow-y: visible` resolves both axes to `auto`, which
+  also clips), so the replacement needs its own explicit clip to keep it.
 - **Reopens on:** a shape genuinely needing a second, independently-scrolling region inside a
   screen's own card, distinct from `AdminTable`'s own table wrapper.
 - **Shape:** delete `OfficeList.svelte` and its export from `/admin-toolkit`; a screen composes
@@ -5829,5 +5832,6 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md` (2026-09-08), decision 8
   ("`OfficeList` retires... `AdminTable` is the sole scroll owner").
 - **Verified:** `src/lib/admin-toolkit/index.ts` no longer exports `OfficeList`;
-  `docs/extend/migration-notes.md` carries the replacement composition as a typechecked `svelte`
-  fence with no `overflow-x-auto` on the outer card wrapper.
+  `docs/extend/migration-notes.md` carries the replacement composition as a `svelte` fence with
+  no `overflow-x-auto` and an `overflow-hidden` clip on the outer card wrapper, and with
+  `AdminTable`'s required `rowCount` and `header` props supplied.

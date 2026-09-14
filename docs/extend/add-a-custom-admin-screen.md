@@ -92,10 +92,11 @@ Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md) bef
 list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `PageHeader`
 for the title band, `AdminTable` for the triage table, `ListToolbar` for search and filters,
 `Pagination`, `StatusChip` for a status pill, `EmptyState` for the zero-rows case, and
-`FieldLabel` for a form control's label. Wrap `AdminTable` in a `<div>` carrying `card-shell
-card-shadow`, the [floating-card recipe](../internal/admin-design-system.md) the admin's own
-screens use for a table's shell; `AdminTable` sets its own horizontal scroll, so the wrapping div
-does not also carry `overflow-x-auto`. Every one of these primitives ships pre-compiled inside
+`FieldLabel` for a form control's label. Wrap `AdminTable` in a `<div>` carrying `overflow-hidden
+card-shell card-shadow`, the [floating-card recipe](../internal/admin-design-system.md) the
+admin's own screens use for a table's shell; `AdminTable` sets its own horizontal scroll, so the
+wrapping div does not also carry `overflow-x-auto`, but it does carry `overflow-hidden` so the
+card's rounded corners clip the table's square edges. Every one of these primitives ships pre-compiled inside
 cairn's own admin stylesheet, so it renders correctly with no Tailwind setup of your own; your
 route's own markup outside these components compiles through your site's usual build and can use
 anything your stack supports.
@@ -109,7 +110,7 @@ anything your stack supports.
 
 <PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
 
-<div class="card-shell card-shadow">
+<div class="overflow-hidden card-shell card-shadow">
   <AdminTable rowCount={data.events.length}>
     {#snippet header()}
       <th scope="col">Name</th>

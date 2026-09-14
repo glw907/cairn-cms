@@ -281,13 +281,16 @@
   shipped admin sheet also drops `gap-0` and `overflow-x-auto`: `OfficeList.svelte` was the tree's
   only user of each, and neither compiles into the packaged `cairn-admin.css` now that the
   component is gone. Consumers must: replace an `<OfficeList eyebrow title meta action>...
-  </OfficeList>` composition with `PageHeader` beside `AdminTable` inside a bare `card-shell
-  card-shadow` div (no `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries
-  the horizontal scroll):
+  </OfficeList>` composition with `PageHeader` beside `AdminTable` inside a bare `overflow-hidden
+  card-shell card-shadow` div (no `overflow-x-auto` on that div; `AdminTable`'s own wrapper
+  already carries the horizontal scroll, and `overflow-hidden` clips the table's square edges to
+  the card's rounded corners):
 
   ```svelte
   <script lang="ts">
     import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+
+    let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
   </script>
 
   <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
@@ -295,9 +298,14 @@
       <button type="button" class="btn btn-primary btn-sm">New event</button>
     {/snippet}
   </PageHeader>
-  <div class="card-shell card-shadow">
-    <AdminTable>
-      <!-- rows -->
+  <div class="overflow-hidden card-shell card-shadow">
+    <AdminTable rowCount={data.events.length}>
+      {#snippet header()}
+        <th scope="col">Name</th>
+      {/snippet}
+      {#snippet children()}
+        <!-- rows -->
+      {/snippet}
     </AdminTable>
   </div>
   ```
@@ -1340,6 +1348,11 @@
   `outcome: 'confirmed'` and every other value unchanged
   (`'bad-code'`, `'expired'`, `'locked'`, `'throttled'`, `'challenge-required'`,
   `'no-pending-request'`, `'unavailable'`); the challenge-required-is-a-retry ruling is unchanged.
+  A `result.ok` or `result.error` read fails the build, but `if ('error' in result)` still
+  compiles and now always reads false, silently treating every refusal as a success; grep for
+  `'error' in` against a held `createAuthChannel` result and rewrite each to `result.outcome !==
+  'sent'` / `result.outcome !== 'confirmed'`. The example site's own login route carried the
+  `'error' in result` pattern before this pass rewrote it, so check a copy of that route first.
   `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: the discriminant key changes from
   `reason` to `outcome`, and `draft_exists`, `ref_unknown`, and `history_stale` become
   `draft-exists`, `ref-unknown`, and `history-stale`; the `draftEditor` and `draftLastSavedAt`

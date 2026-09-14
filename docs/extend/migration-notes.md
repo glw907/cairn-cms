@@ -94,7 +94,12 @@ The release step sets the version number at the cut and renames this section to 
   `ChannelRequestOutcome` and `ChannelConfirmOutcome` and drop their `{ sent | ok: true } | {
   error: ... }` splits for one shape each; a site holding `createAuthChannel`'s return switches its
   `request` and `confirm` handling to the single `outcome` field, including the renamed success
-  values `'sent'` and `'confirmed'`. `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: a
+  values `'sent'` and `'confirmed'`. A `result.ok` or `result.error` read fails the build, but `if
+  ('error' in result)` still compiles and now always reads false, silently treating every refusal
+  as a success; grep for `'error' in` against a held `createAuthChannel` result and rewrite each
+  to `result.outcome !== 'sent'` / `result.outcome !== 'confirmed'`. The example site's own
+  `src/routes/members/login/+page.server.ts` carried the `'error' in result` pattern before this
+  pass rewrote it, so check a copy of that route first. `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: a
   history screen switches from `form.reason` to `form.outcome`, and from
   `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
   `'draft-exists'`/`'ref-unknown'`/`'history-stale'`; `draftEditor`, `draftLastSavedAt`, and
@@ -298,13 +303,15 @@ The release step sets the version number at the cut and renames this section to 
   `audit.sink.call_failed` in any log filter, alert, or subscriber; `audit.sink.write_failed` is
   unchanged and every record's field set is unchanged.
 - **`OfficeList` (`/admin-toolkit`) is retired.** Replace an `<OfficeList>` composition with
-  `PageHeader` beside `AdminTable` inside a bare `card-shell card-shadow` div (no
+  `PageHeader` beside `AdminTable` inside a bare `overflow-hidden card-shell card-shadow` div (no
   `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries the horizontal
-  scroll):
+  scroll, and `overflow-hidden` clips the table's square edges to the card's rounded corners):
 
   ```svelte
   <script lang="ts">
     import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+
+    let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
   </script>
 
   <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
@@ -312,9 +319,14 @@ The release step sets the version number at the cut and renames this section to 
       <button type="button" class="btn btn-primary btn-sm">New event</button>
     {/snippet}
   </PageHeader>
-  <div class="card-shell card-shadow">
-    <AdminTable>
-      <!-- rows -->
+  <div class="overflow-hidden card-shell card-shadow">
+    <AdminTable rowCount={data.events.length}>
+      {#snippet header()}
+        <th scope="col">Name</th>
+      {/snippet}
+      {#snippet children()}
+        <!-- rows -->
+      {/snippet}
     </AdminTable>
   </div>
   ```

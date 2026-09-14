@@ -94,7 +94,7 @@ Five filters feed `filters`, four `'select'`-display and one `'menu'`-display:
 ## The table: the row register
 
 ```svelte
-<div class="card-shell card-shadow">
+<div class="overflow-hidden card-shell card-shadow">
   <AdminTable density="sm" zebra rowCount={paged.length} emptyColspan={5}>
     {#snippet header()}
       <th class={HEADER_CELL}>Household</th>
@@ -108,7 +108,9 @@ Five filters feed `filters`, four `'select'`-display and one `'menu'`-display:
 
 The `card-shell card-shadow` wrapper carries no `overflow-x-auto` of its own: `AdminTable`'s
 own wrapper (`AdminTable.svelte:78`) is the one horizontal scroll container in this
-composition, so the outer card never nests a second scroll boundary over the same table.
+composition, so the outer card never nests a second scroll boundary over the same table. It
+does carry `overflow-hidden`, since `card-shell` rounds its border but does not clip, and the
+table's square edges would otherwise paint over the card's rounded corners.
 
 `HEADER_CELL` is `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`, one
 token this site declared for every column header. That value, 0.6875rem, is exactly

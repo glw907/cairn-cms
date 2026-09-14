@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import postcss from 'postcss';
+import prefixSelector from 'postcss-prefix-selector';
+import { transform, Features } from 'lightningcss';
+import { chromium } from 'playwright';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
+import type { Browser } from 'playwright';
 
 describe('admin css build', () => {
   // Compile the sheet once and share it across the assertions. Each case used to run its own full
@@ -183,5 +188,116 @@ describe('admin css build', () => {
     // The universal reset that resolves --tw-content to an empty string absent any utility
     // overriding it (e.g. a tooltip's own `--tw-content: attr(data-tip)`).
     expect(css).toMatch(/--tw-content:\s*("");/);
+  });
+
+  // The authoring-form proof: --default-transition-duration and --default-transition-timing-function
+  // point at the token custom properties, not at a millisecond or cubic-bezier literal. This is what
+  // makes the override an unlayered restatement of Tailwind's own theme-layer default rather than a
+  // hand-copied value that could drift from the token table.
+  it('points the Tailwind transition defaults at a --cairn-dur- token reference, not a literal', () => {
+    expect(css).toMatch(/--default-transition-duration:\s*var\(--cairn-dur-base\)/);
+    expect(css).toMatch(/--default-transition-timing-function:\s*var\(--cairn-ease-standard\)/);
+  });
+});
+
+// The source-order proof (adapted from the shipped pipeline's own three stages: Tailwind/postcss,
+// lightningcss's nesting flatten, then postcss-prefix-selector): a class-bearing restatement placed
+// AFTER the blanket reduced-motion rule, inside the same guard, with a DIFFERENT declaration value,
+// stays after it in the compiled output. Both selectors tie at (0,1,0) specificity and both carry
+// !important, so only source order decides which one an element matching both ends up computing;
+// this is measured against the actual toolchain rather than asserted as a general CSS fact, because a
+// future restatement (the floor clause a later task adds) depends on winning that tie by staying
+// later in the file.
+describe('the reduced-motion guard: source order between tied-specificity !important rules', () => {
+  const SCOPE = ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])";
+
+  async function compileLikePipeline(source: string): Promise<string> {
+    // Stage 1b/2 only: the risk this proof measures is whether the nesting-flatten step or the
+    // selector-prefix step reorders same-specificity rules, not whether Tailwind's own utility
+    // generation does, so the fixture skips the Tailwind stage and hands plain CSS straight to the
+    // same two transforms build-admin-css.mjs applies.
+    const flattened = new TextDecoder().decode(
+      transform({
+        filename: 'fixture.css',
+        code: new TextEncoder().encode(source),
+        include: Features.Nesting,
+        minify: false,
+      }).code,
+    );
+    const scoped = await postcss([
+      prefixSelector({
+        prefix: SCOPE,
+        transform(_prefix, selector, prefixed) {
+          return selector.includes('[data-theme=') ? selector : prefixed;
+        },
+      }),
+    ]).process(flattened, { from: undefined });
+    return scoped.css;
+  }
+
+  it('keeps a later class-bearing restatement after the blanket rule in the compiled output', async () => {
+    const source = [
+      "@media (prefers-reduced-motion: reduce) {",
+      "  [data-theme='cairn-admin'], [data-theme='cairn-admin'] * {",
+      '    transition-duration: 0.01ms !important;',
+      '  }',
+      '  .cairn-caret {',
+      '    transition-duration: 150ms !important;',
+      '  }',
+      '}',
+    ].join('\n');
+    const out = await compileLikePipeline(source);
+    const blanketAt = out.indexOf('.01ms !important');
+    const restatementAt = out.indexOf('.cairn-caret');
+    expect(blanketAt, 'expected the blanket rule in the compiled fixture').toBeGreaterThan(-1);
+    expect(restatementAt, 'expected the restatement rule in the compiled fixture').toBeGreaterThan(-1);
+    expect(restatementAt).toBeGreaterThan(blanketAt);
+  });
+});
+
+// The runtime proof: a resting frame carries no curve, so the source-text assertions above cannot
+// show the largest visual delta this task makes (the default easing curve). This drives a headless
+// browser (already a project dependency) to read the actual COMPUTED transition-duration and
+// transition-timing-function Tailwind's own transition-colors utility resolves to under each admin
+// theme root, proving the cascade genuinely lands on the token values rather than on Tailwind's stock
+// 150ms/cubic-bezier(.4, 0, .2, 1) pair.
+describe('the admin transition defaults: runtime computed style', () => {
+  let css: string;
+  let browser: Browser;
+
+  beforeAll(async () => {
+    css = await buildAdminCss();
+    browser = await chromium.launch();
+  }, 60_000);
+
+  afterAll(async () => {
+    await browser.close();
+  });
+
+  async function computedTransition(theme: string): Promise<{ duration: string; timing: string }> {
+    const page = await browser.newPage();
+    await page.setContent(
+      `<!doctype html><html><head><style>${css}</style></head>` +
+        `<body><div data-theme="${theme}"><button class="transition-colors">x</button></div></body></html>`,
+    );
+    const result = await page.evaluate(() => {
+      const el = document.querySelector('button')!;
+      const style = getComputedStyle(el);
+      return { duration: style.transitionDuration, timing: style.transitionTimingFunction };
+    });
+    await page.close();
+    return result;
+  }
+
+  it('resolves to the base duration and the standard curve under the light theme root', async () => {
+    const { duration, timing } = await computedTransition('cairn-admin');
+    expect(duration).toBe('0.15s');
+    expect(timing).toBe('cubic-bezier(0.2, 0, 0.38, 0.9)');
+  });
+
+  it('resolves to the base duration and the standard curve under the dark theme root', async () => {
+    const { duration, timing } = await computedTransition('cairn-admin-dark');
+    expect(duration).toBe('0.15s');
+    expect(timing).toBe('cubic-bezier(0.2, 0, 0.38, 0.9)');
   });
 });

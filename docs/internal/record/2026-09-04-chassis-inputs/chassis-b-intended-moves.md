@@ -1002,3 +1002,26 @@ proof and leaving those five widths' baselines untouched.
   and Add button running past the 320px viewport edge (dark scheme also shows the overflow as an
   unthemed white strip); the after pair shows both inputs and the Add button fitting inside the
   320px viewport with no overflow.
+
+## Admin motion
+
+### Task 1: the token set, the theme defaults, and the two shipped bugs
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-1/before/` and
+  `~/.cache/cairn-admin-motion/task-1/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. Adding the `--cairn-dur-*`/`--cairn-ease-*` tokens and repointing
+  `--default-transition-duration`/`--default-transition-timing-function` changes the default
+  easing curve a `transition-*` utility resolves at rest, not any resting frame's own paint; a
+  resting frame carries no curve. The two new reduced-motion delay declarations likewise change
+  nothing at rest. No task's own screen (`signups`, `styleguide`) exercises a transition mid-shot.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests, the
+  full `admin-signups-*` set) passed 28 of 28 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 78 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 88 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-1/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-1/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-1/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the token addition and
+  the default-transition repoint leak nothing onto a resting frame.

@@ -342,6 +342,13 @@
 
 ### Changed
 
+- The admin sheet sets `--default-transition-duration` and `--default-transition-timing-function`
+  to cairn tokens on the admin root. A bare `transition` utility on a custom screen changes curve
+  from Tailwind's `cubic-bezier(0.4, 0, 0.2, 1)` to Carbon's productive standard
+  `cubic-bezier(0.2, 0, 0.38, 0.9)`. The duration is unchanged at 150ms. The admin's reduced-motion
+  block now zeroes `transition-delay` and `animation-delay`. Consumers must: a custom screen that
+  relied on a delay surviving a reduced-motion preference loses it, which is the fix.
+
 - **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
   parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.
   `ContentRoutesConfig` and `CairnAdminConfig` each gain a required `runtime: CairnRuntime` member

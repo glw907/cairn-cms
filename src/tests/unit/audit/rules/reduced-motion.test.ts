@@ -47,6 +47,27 @@ describe('reduced-motion', () => {
     expect(check(component('.card { transition: none; }'))).toEqual([]);
   });
 
+  // The inverse-gate bug: `(prefers-reduced-motion: no-preference)` runs ONLY when the visitor has
+  // NOT asked for reduced motion, so a rule inside it guards nothing a reduced-motion visitor would
+  // see. Before the fix, `isReducedMotionGuarded` matched it too, so it registered `.card` as
+  // guarded and this outer, genuinely unguarded `.card` rule went unflagged.
+  it('still flags a selector whose only nearby guard-shaped rule is inside no-preference, the inverse gate', () => {
+    const findings = check(
+      component(
+        [
+          '.card { transition: color 200ms ease; }',
+          '@media (prefers-reduced-motion: no-preference) {',
+          '  .card { transition-duration: 400ms; }',
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(
+      findings.some((f) => f.ruleId === 'reduced-motion' && f.message.includes('.card')),
+      'expected the outer .card rule to still be flagged as unguarded'
+    ).toBe(true);
+  });
+
   it('is suppressed by a directive naming the rule, and counted', () => {
     const file = parseComponent(
       'Fixture.svelte',

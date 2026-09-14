@@ -17,21 +17,22 @@ green.
 ## Immediate next action (2026-09-14)
 
 **Polish-C is MERGED** (PR #59, CI green, merge commit `ece054b8`; entry and post-mortem in
-[`HISTORY.md`](HISTORY.md)). **Next, the admin motion pass** (plan
-`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`, runs unread), per the sequence
-ruled by Geoff on 2026-09-13 (rulings in `~/.cache/cairn-overnight-2026-09-12/conductor-notes.md`):
-the admin motion pass -> on `main` with no worktree live, the dependency sweep plus the bounded
-pre-cut task (ROADMAP Next: the four accepted admin defaults and the Blueprint audit's one line)
--> the cut as **0.97.0** via `cairn-release` (verify the number is free first). Held for Geoff
-after the release: cairn.pub's engine pin bump (a production deploy), the three dependency
-tripwires, the `blueprint-audit` dotfiles script, the post-mortem, then the borrowable-patterns
-pass in a fresh session.
+[`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-14 13:2x).
+**Next, a fresh session launches the admin motion pass** per
+`~/.cache/cairn-overnight-2026-09-12/LAUNCH.md` (its 2026-09-14 handoff section is the step list:
+copy `cairn-motion.js` and the chains script to the new scratchpad, rewrite `chainsScript`, arm the
+guards and the full inhibitor set, launch). The pass runs UNREAD on its reviewed plan
+(`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; Geoff, 2026-09-13). Then, on
+`main` with no worktree live, the **pre-cut window pass** on its APPROVED plan
+(`docs/superpowers/plans/2026-09-14-pre-cut-window-pass.md`: the dependency sweep through the
+`dependency-upgrade` skill, three accepted Carbon defaults, records; four per-task Agent chains,
+ceiling 3.30M). Then the cut as **0.97.0** via `cairn-release` (verify the number is free first).
+Held for Geoff after the release: cairn.pub's engine pin bump (a production deploy), the three
+dependency tripwires, the `blueprint-audit` dotfiles script, the post-mortem.
 
-Spend on this overnight run so far: see `~/.cache/cairn-overnight-2026-09-12/conductor-notes.md`.
-
-Standing rulings (`CLAUDE.md`, "Gate economy on a pass"): the per-task gate omits the e2e suite
-for paint-neutral tasks; merges bring `main` in first with STATUS taking main's; gates run only
-through `cairn-run-gate`.
+After the cut, in fresh sessions: the Go tool 1.0 (below) in parallel with the borrowable-patterns
+spec's fresh read (cache draft, re-read against post-C `api-surface.md`), then the docs rewrite
+from pass 2a. Polish-C's run spent 7.2M subagent tokens (conductor-notes.md has the detail).
 
 ## Parallel tracks
 
@@ -41,11 +42,9 @@ through `cairn-run-gate`.
   engine's (Geoff, 2026-09-01).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only, under
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
-- **Go `cairn` tool, Pass A.** Ready to execute; plan at
-  `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
-  window.
-- **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since
-  `0.95.0`; the editors rewrite queues behind Geoff's site updates.
+- **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 as a product for any operator on Linux, macOS, and
+  Windows (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`); awaits Geoff's read.
+- **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.
 
 ## Open decisions
 

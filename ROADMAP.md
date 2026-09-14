@@ -888,8 +888,12 @@ the named human gates only):**
   its Reconciliation block re-verified against the post-C tree first, and the plan re-cut at
   the CLI-versus-HUD boundary: Pass A ships the registry, the health checks, the cobra
   subcommands, and the scheduled tripwire with every action usable from the shell; the
-  bubbletea HUD becomes a later pass that adds a view over what already works, which the
-  module's downward package order already allows (Geoff, 2026-09-13)) runs in parallel with the
+  tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
+  TUI; its 2.0 adds the bubbletea HUD and multi-site management. The 1.0 architecture must
+  carry both: keep the registry's shape and site record (the 2026-08-20 plan's registry adopts
+  several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
+  site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a
+  loop over sites without reshaping anything beneath (Geoff, 2026-09-13)) runs in parallel with the
   borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
   (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the

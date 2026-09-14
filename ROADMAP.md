@@ -884,8 +884,8 @@ the named human gates only):**
 ## Next
 
 - **One register for cairn.pub and the admin; waymark stays neutral (Geoff, 2026-09-13).**
-  cairn.pub adopts the admin's Warm Stone system (tokens, Bricolage Grotesque and Figtree, the
-  design-system recipes and voice) as a public reading surface; today its theme is byte-identical
+  cairn.pub adopts the admin's Warm Stone system (tokens, Bricolage Grotesque display and IBM Plex Sans body,
+  the design-system recipes and voice) as a public reading surface; today its theme is byte-identical
   to waymark's unskinned default (record `docs/internal/record/2026-09-13-blueprint-design-spike.md`).
   That lands with the front-door rewrite after the docs rewrite. Waymark, the scaffold every site
   reskins, stays neutral: its "not stock DaisyUI" work after borrow-1 is craft (type scale, spacing,

@@ -4,6 +4,16 @@
 
 ### Added
 
+- `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
+  `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
+  computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still
+  makes a reader who asked for less motion wait before anything moves. Registered at advisory
+  tier: every offender the rule has found so far is a DaisyUI component default cairn ships no
+  override for. The rendered runner gains an opt-in emulation axis (`RenderedRule.axes`) rules
+  declare the way `states` already works, and `RenderedBrowser.newContext` gains `reducedMotion`
+  and `hasTouch` options for it. A new CI step in `.github/workflows/norms.yml` runs the rule
+  against a live showcase preview on its own port.
+
 - `previewRevoke` (`/sveltekit`) completes the pair `previewMint` opened: a site that mints a
   preview link from its own workflow route could not revoke one, since revocation lived only
   behind the engine's own `previewRevokeAction` route. `previewRevoke(runtime, event, { concept,

@@ -62,3 +62,42 @@ jobs:
           cat /tmp/showcase-preview.log
           exit 1
       - run: npm run norms:check
+
+  # The rendered `motion-reduced-delay` audit. Wired here rather than into a new file: this job
+  # reuses the "Serve the showcase admin" recipe two jobs above verbatim, on its own port (4174,
+  # never 4173, since the showcase e2e suite and capture-surfaces.mjs both hard-code that port and
+  # this workflow never runs beside them, but a distinct port keeps that true by construction).
+  #
+  # `npm ci` at the repo root triggers the package's own `prepare` script (`npm run package`), which
+  # is what builds `dist/audit/bin.js` before `npx cairn-audit` ever runs; no separate build step is
+  # needed for that reason, the same reason the `norms` job above never runs one either.
+  motion-reduced-delay:
+    name: motion-reduced-delay rendered audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix examples/showcase
+      - run: npx playwright install --with-deps chromium
+      - run: VITE_CAIRN_E2E=1 npm --prefix examples/showcase run build
+      - name: Serve the showcase admin
+        run: |
+          # Detached, with its output redirected: a background process still holding the step's
+          # stdout keeps the step from ever finishing.
+          CAIRN_DEV_BACKEND=1 nohup npm --prefix examples/showcase run preview -- --port 4174 \
+            > /tmp/showcase-preview-motion.log 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:4174/admin/posts && exit 0
+            sleep 2
+          done
+          echo "the showcase preview never answered at http://localhost:4174"
+          cat /tmp/showcase-preview-motion.log
+          exit 1
+      - run: BASE_URL=http://localhost:4174 npx cairn-audit --rendered

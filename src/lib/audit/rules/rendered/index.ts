@@ -3,12 +3,15 @@
 // refuses to run against an empty registry rather than reporting a silently clean audit, so this
 // list is what turns the rendered harness on.
 //
-// Sixteen rules are registered: seven error-tier rules (`one-filled-action`, `focus-renders`,
+// Seventeen rules are registered: seven error-tier rules (`one-filled-action`, `focus-renders`,
 // `interactive-contrast`, `touch-targets`, `viewport-overflow`, `panel-width`, `list-role`;
 // `chip-ground-collision` demoted out of this tier pending its
-// chroma repair, see ROADMAP), then nine advisory ones (`chip-ground-collision`, `border-contrast`,
+// chroma repair, see ROADMAP), then ten advisory ones (`chip-ground-collision`, `border-contrast`,
 // `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`, `form-font-parity`,
-// `field-edge-alignment`, `container-inset-asymmetry`), which report and never reach the exit code.
+// `field-edge-alignment`, `container-inset-asymmetry`, `motion-reduced-delay`), which report and
+// never reach the exit code. `motion-reduced-delay` is the one rule declaring an `axes` other than
+// the default: it opens its own `reducedMotion: 'reduce'` context rather than adding to every
+// other rule's page-load count.
 // `form-font-parity` is registered PROVISIONALLY at advisory: its own
 // header names the intended promotion to error, gated on a CI re-check. `panel-width`
 // closes the hole `viewport-overflow` declines on purpose (see its own header): a row clipped
@@ -24,6 +27,7 @@ import { focusRenders } from './focus-renders.js';
 import { formFontParity } from './form-font-parity.js';
 import { interactiveContrast } from './interactive-contrast.js';
 import { listRoleRendered } from './list-role.js';
+import { motionReducedDelay } from './motion-reduced-delay.js';
 import { normsBands } from './norms-bands.js';
 import { oneFilledAction } from './one-filled-action.js';
 import { panelWidth } from './panel-width.js';
@@ -56,5 +60,6 @@ export function renderedRules(): RenderedRule[] {
     formFontParity,
     fieldEdgeAlignment,
     containerInsetAsymmetry,
+    motionReducedDelay,
   ];
 }

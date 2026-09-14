@@ -17,8 +17,8 @@ component usually measure" as data instead of inference from a screenshot.
 ## Tier map
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
-running dev server, both themes) runs twenty-eight rules across two modes: twelve static, all
-error tier, and sixteen rendered, seven error and nine advisory. Full descriptions live in
+running dev server, both themes) runs twenty-nine rules across two modes: twelve static, all
+error tier, and seventeen rendered, seven error and ten advisory. Full descriptions live in
 [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
 (the installed package's copy, reached from where this skill lives once `cairn-doctor --fix`
 installs it at `.claude/skills/cairn-admin-screens/`).
@@ -34,7 +34,7 @@ installs it at `.claude/skills/cairn-admin-screens/`).
 differently on purpose; reported, never gating): `chip-ground-collision`, `border-contrast`,
 `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`, `form-font-parity`
 (registered provisionally at advisory; the intended tier is error, pending a CI re-check),
-`field-edge-alignment`, `container-inset-asymmetry`.
+`field-edge-alignment`, `container-inset-asymmetry`, `motion-reduced-delay`.
 
 ## Screen anatomy
 

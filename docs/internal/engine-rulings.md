@@ -4526,6 +4526,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 26.
 - **Any-site case:** "Replace does nothing for me" answered without a repro: the record says the typed-slug confirm gate fired, not that references are the problem.
+- **Note (polish-C, Task 10):** renamed to `media.replace_refused`. Verdict unchanged.
 
 ## audit-log-media-delete-blocked: `media.delete_blocked`  (keep, 2026-08-26, any-site audit)
 
@@ -4533,6 +4534,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 27.
 - **Any-site case:** The most common media support question a content site fields. `foundIn` (the count of referencing entries) is the actionable field: the editor must clear that many references first.
+- **Note (polish-C, Task 10):** renamed to `media.delete_refused`. Verdict unchanged.
 
 ## audit-log-commit-succeeded: `commit.succeeded`  (reshape, 2026-08-26, any-site audit)
 
@@ -4680,6 +4682,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 46.
 - **Any-site case:** An anonymous developer mounts a custom admin route outside the guard's coverage. The doc is honest that it is "expected to be rare on a route the guard actually covers" and names what earns it: "it's the only gate a custom admin route reaches if it's ever mounted outside the guard's coverage."
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 10):** renamed to `admin.action.csrf_refused`. Verdict unchanged.
 
 ## audit-log-media-resolve-missing: `media.resolve_missing`  (keep, 2026-08-26, any-site audit)
 
@@ -4804,6 +4807,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 62.
 - **Any-site case:** The most common admin support question — "why can't this role reach that screen" — answered with the role and the target in one line, and distinguishable from auth.role.unknown (no rule versus no valid role). Four emit sites share one shape (email, role, target) across requireAccess, the engine's own gated screens, and createSectionAction's 403 branch; the uniform `target` is the right generic form, since a screen id, a site route target, and 'media' all read the same way to a query.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 10):** renamed to `auth.access.refused`. Verdict unchanged.
 
 ## audit-log-publish-address-collision: `publish.address_collided`  (keep, 2026-08-26, any-site audit)
 
@@ -4886,6 +4890,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 73.
 - **Any-site case:** The entire admin is unreachable on a new deploy, and the reason — a missing AUTH_DB binding versus an origin mismatch behind a proxy versus plain HTTP versus CAIRN_DEV_BACKEND left set in production — lives only here. Eight emit sites, five reasons, and a level split that is itself the triage (error for the two operator faults, warn for the three request refusals). The reasoning is stated at guard.ts:118-121: "That is an operator fault, not a sign-in problem, so name the condition on every admin path, the public ones included, instead of rendering a login form that can never succeed." Carries conditionId on bindings. Listed in docs/admin/troubleshooting.md.
+- **Note (polish-C, Task 10):** renamed to `guard.refused`. Verdict unchanged.
 
 ## audit-log-preview-rejected: `preview.rejected`  (keep, 2026-08-26, any-site audit)
 
@@ -4893,6 +4898,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 74.
 - **Any-site case:** An editor shares a preview link with a client, the client sees a 404, and the site owner must choose between "apply migration 0003", "bind AUTH_DB", "the link expired", and "the draft was reverted into an invalid state" — four different days of work, selected by one `reason` field. The doc makes the argument in one sentence: "Every outward response is an identical 404, except bindings_missing, which answers 503; this log is the only place the distinction survives." Seven reasons in a documented check order span an unbound binding, an un-migrated table, an unknown hash, an expiry, a stale row, a draft that no longer validates, and a vanished branch — seven different operator actions behind one deliberately indistinguishable response, since distinguishing them on the wire would leak preview-token validity to a prober. The conditional field policy is equally disciplined: concept/id only on the three reasons where an entry is identified, `binding` only on bindings_missing, and never the token.
+- **Note (polish-C, Task 10):** renamed to `preview.refused`. Verdict unchanged.
 
 ## audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c: `check:dogfood tripwire proposed into cairn-audit (coherence C13 / R-8)`  (retire, 2026-08-26, any-site audit)
 

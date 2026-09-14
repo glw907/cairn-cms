@@ -102,7 +102,7 @@ function row(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
   return { id: 'sibling', concept: 'posts', title: 'Sibling', permalink: '/posts/sibling', draft: true, links: [], ...overrides };
 }
 
-/** Every `preview.rejected` (or any) console record captured while `run` executes. */
+/** Every `preview.refused` (or any) console record captured while `run` executes. */
 async function records(run: () => Promise<unknown>): Promise<Record<string, unknown>[]> {
   const captured: Record<string, unknown>[] = [];
   const grab = (c: unknown[]) => captured.push(c[0] as Record<string, unknown>);
@@ -245,7 +245,7 @@ describe('loadPreview: the missing AUTH_DB binding', () => {
         expect(isHttpError(e) && e.status).toBe(503);
       }
     });
-    const record = captured.find((r) => r.event === 'preview.rejected');
+    const record = captured.find((r) => r.event === 'preview.refused');
     expect(record).toMatchObject({ reason: 'bindings_missing', binding: 'AUTH_DB' });
     expect(headers).toContainEqual(EXPECTED_HEADERS);
   });
@@ -257,7 +257,7 @@ describe('loadPreview: the row-verification chain', () => {
     gh.install();
     const { event } = loadEvent('y'.repeat(43));
     const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
-    expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'unknown' });
+    expect(captured.find((r) => r.event === 'preview.refused')).toMatchObject({ reason: 'unknown' });
   });
 
   it('answers 404 with reason expired for a lapsed token, distinctly from unknown', async () => {
@@ -266,7 +266,7 @@ describe('loadPreview: the row-verification chain', () => {
     const token = await seedExpiredToken();
     const { event } = loadEvent(token);
     const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
-    expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'expired' });
+    expect(captured.find((r) => r.event === 'preview.refused')).toMatchObject({ reason: 'expired' });
   });
 
   it('answers 404 with reason row_invalid for a row naming a concept the runtime no longer declares', async () => {
@@ -275,7 +275,7 @@ describe('loadPreview: the row-verification chain', () => {
     const token = await mintValidToken('ghost-concept');
     const { event } = loadEvent(token);
     const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
-    expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'row_invalid', concept: 'ghost-concept' });
+    expect(captured.find((r) => r.event === 'preview.refused')).toMatchObject({ reason: 'row_invalid', concept: 'ghost-concept' });
   });
 
   it('answers 404 with reason table_missing when the table is absent, and restores it after', async () => {
@@ -286,7 +286,7 @@ describe('loadPreview: the row-verification chain', () => {
     try {
       const { event } = loadEvent(token);
       const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
-      expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'table_missing' });
+      expect(captured.find((r) => r.event === 'preview.refused')).toMatchObject({ reason: 'table_missing' });
     } finally {
       await db.exec(
         'CREATE TABLE preview_tokens (token_hash TEXT PRIMARY KEY, concept TEXT NOT NULL, entry_id TEXT NOT NULL, editor TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)',
@@ -300,7 +300,7 @@ describe('loadPreview: the row-verification chain', () => {
     const token = await mintValidToken();
     const { event } = loadEvent(token);
     const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
-    expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'draft_invalid' });
+    expect(captured.find((r) => r.event === 'preview.refused')).toMatchObject({ reason: 'draft_invalid' });
   });
 
   it('answers 404 with reason branch_gone when neither the branch nor the main file exists (a discarded new entry)', async () => {
@@ -309,7 +309,7 @@ describe('loadPreview: the row-verification chain', () => {
     const token = await mintValidToken();
     const { event } = loadEvent(token);
     const captured = await records(() => expectNotFound(() => loadPreview(runtime(), publicConfig(), event)));
-    expect(captured.find((r) => r.event === 'preview.rejected')).toMatchObject({ reason: 'branch_gone' });
+    expect(captured.find((r) => r.event === 'preview.refused')).toMatchObject({ reason: 'branch_gone' });
   });
 });
 

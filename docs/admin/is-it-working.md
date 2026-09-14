@@ -175,7 +175,7 @@ page names where the setting lives.
 ## Admin CSRF token rejected
 
 **`auth.csrf-token-invalid`, a blocker.** `cairn-doctor` never reports this one: it's your site's
-own guard refusing a request outright, on the spot, logged as `guard.rejected` with
+own guard refusing a request outright, on the spot, logged as `guard.refused` with
 `reason: csrf`. An admin form submission carried no valid CSRF token, or one that didn't match.
 This is almost always a stale browser tab or a browser blocking cookies for the site, not a
 configuration problem.
@@ -186,7 +186,7 @@ link.
 ## Non-admin origin rejected
 
 **`auth.csrf-origin-mismatch`, a blocker.** `cairn-doctor` never reports this one either: it's
-your site's own guard refusing the request, logged as `guard.rejected` with `reason: origin`. A
+your site's own guard refusing the request, logged as `guard.refused` with `reason: origin`. A
 form submission outside the admin carried an `Origin` header that didn't match your site, so
 cairn's own origin check refused it.
 
@@ -200,10 +200,10 @@ rewrites the `Origin` header.
 `identity` on the auth guard, replacing magic-link sign-in with the site's own identity gate
 (Cloudflare Access, for example). The gate either refused the request outright or threw while
 cairn tried to resolve who was asking, so cairn never learned an identity and could not start a
-session. Logged as `guard.rejected` with `reason: identity`.
+session. Logged as `guard.refused` with `reason: identity`.
 
 **Act:** sign in through the gate again. If it keeps happening, ask whoever runs the site to
-check the gate's own configuration and the `guard.rejected` log record's `detail` field.
+check the gate's own configuration and the `guard.refused` log record's `detail` field.
 
 ## You're not on this site's editor roster
 

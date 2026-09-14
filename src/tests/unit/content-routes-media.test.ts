@@ -349,7 +349,7 @@ function mediaActionEvent(
 }
 
 describe('mediaDeleteAction in-use refusal', () => {
-  it('refuses a published-referenced asset against a fresh recheck and emits media.delete_blocked', async () => {
+  it('refuses a published-referenced asset against a fresh recheck and emits media.delete_refused', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({
       main: {
@@ -371,8 +371,8 @@ describe('mediaDeleteAction in-use refusal', () => {
     // Neither the commit nor the R2 delete ran.
     expect(timeline).toEqual([]);
     expect(bucket.delete).not.toHaveBeenCalled();
-    const blocked = warnSpy.mock.calls.map((c) => c[0] as { event?: string; foundIn?: number }).find((r) => r.event === 'media.delete_blocked');
-    expect(blocked).toMatchObject({ event: 'media.delete_blocked', foundIn: 1 });
+    const blocked = warnSpy.mock.calls.map((c) => c[0] as { event?: string; foundIn?: number }).find((r) => r.event === 'media.delete_refused');
+    expect(blocked).toMatchObject({ event: 'media.delete_refused', foundIn: 1 });
   });
 
   it('lists the breaking entries published-first then by branch', async () => {

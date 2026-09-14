@@ -38,7 +38,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     why: 'The JS-free admin sign-in posts a form, and the framework CSRF guard rejects a form POST whose origin scheme does not match, so an admin reached over http hits an opaque 403.',
     remediation: 'Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates, and keep HSTS on.',
     docsAnchor: 'is-it-working.md#force-https-at-the-edge',
-    logEvent: 'guard.rejected',
+    logEvent: 'guard.refused',
   },
   'auth.csrf-token-invalid': {
     id: 'auth.csrf-token-invalid',
@@ -47,7 +47,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     why: 'An admin form POST carried no valid __Host-cairn_csrf double-submit token, usually a stale tab or blocked cookies.',
     remediation: 'Open the sign-in page fresh, allow cookies for the site, and request a new link.',
     docsAnchor: 'is-it-working.md#admin-csrf-token-rejected',
-    logEvent: 'guard.rejected',
+    logEvent: 'guard.refused',
   },
   'auth.csrf-origin-mismatch': {
     id: 'auth.csrf-origin-mismatch',
@@ -56,7 +56,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     why: "A non-admin unsafe form POST carried an Origin that did not match the site, so cairn's restored framework Origin check rejected it.",
     remediation: 'Post the form from the same origin, or check a proxy that strips or rewrites the Origin header.',
     docsAnchor: 'is-it-working.md#non-admin-origin-rejected',
-    logEvent: 'guard.rejected',
+    logEvent: 'guard.refused',
   },
   'email.sender-not-onboarded': {
     id: 'email.sender-not-onboarded',
@@ -224,7 +224,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     why: "The site's identity gate refused this request, or threw while resolving it, so cairn never learned who you are and cannot start a session.",
     remediation: 'Sign in through the gate again. If this keeps happening, ask whoever runs the site to check the gate configuration and the guard logs.',
     docsAnchor: 'is-it-working.md#sign-in-gate-refused-the-request',
-    logEvent: 'guard.rejected',
+    logEvent: 'guard.refused',
   },
   'auth.identity-unknown': {
     id: 'auth.identity-unknown',

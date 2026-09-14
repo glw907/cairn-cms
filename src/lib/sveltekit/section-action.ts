@@ -215,7 +215,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       /** One refused-authorization exit: the audit carries which gate refused, the response never does. */
       function deny(detail: string): ActionFailure<{ error: string }> {
         ctx.audit({ action: opts.action, entity: opts.entity, detail });
-        log.warn('auth.access.denied', { email: ctx.editor.email, role: ctx.editor.role, target });
+        log.warn('auth.access.refused', { email: ctx.editor.email, role: ctx.editor.role, target });
         return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
       }
 

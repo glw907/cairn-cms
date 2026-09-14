@@ -120,7 +120,7 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     //      restricting `media` restricts it too (the documented media-picker landmine): a role edits
     //      an image-bearing concept only when it also reaches `media`.
     if (!canReach(runtime.access, editor, 'media')) {
-      log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: 'media' });
+      log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: 'media' });
       return refuse(403, 'access_denied');
     }
 

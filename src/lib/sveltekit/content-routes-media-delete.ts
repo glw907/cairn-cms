@@ -161,7 +161,7 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
       // treated as never-confirmed: the typed confirm cannot be bypassed.
       const confirmSlug = String(form.get('confirmSlug') ?? '');
       if (row.slug === '' || confirmSlug !== row.slug) {
-        log.warn('media.delete_blocked', { editor: editor.email, hash, foundIn });
+        log.warn('media.delete_refused', { editor: editor.email, hash, foundIn });
         // Group published-first, then branch entries by branch name, so the list reads stably.
         const usage = [...rows].sort((a, b) => originRank(a) - originRank(b) || branchKey(a).localeCompare(branchKey(b)));
         return fail(409, {

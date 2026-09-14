@@ -187,6 +187,12 @@ The release step sets the version number at the cut and renames this section to 
   `.ec-icon-secondary` to `.cairn-icon-secondary`, `.ec-glyph` to `.cairn-glyph`, and `.ec-grid`
   to `.cairn-grid` in any hand-authored prose CSS that targets `cardShell`/`headRow`/`iconSpan`/
   `renderGlyph`/`markFirstList` output. See `docs/reference/render.md` for the full emitted list.
+- **Six log events rename onto the `refused` verb.** Rename any log subscriber matching on the
+  old string, preview.rejected to `preview.refused`, guard.rejected to `guard.refused`,
+  media.delete_blocked to `media.delete_refused`, media.replace_blocked to
+  `media.replace_refused`, auth.access.denied to `auth.access.refused`, and
+  admin.action.csrf_rejected to `admin.action.csrf_refused`; every record's field set is
+  unchanged.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

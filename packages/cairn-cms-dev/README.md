@@ -77,7 +77,7 @@ Three independent layers keep the bypass out of production. The bypass ships onl
 2. The `devDependency` boundary. A production install with `npm ci --omit=dev` skips the package, so a
    forced import throws at runtime instead of bypassing.
 3. The engine tripwire. If `CAIRN_DEV_BACKEND` reaches a deployed runtime, cairn's auth guard refuses
-   the request with a 503 and logs `guard.rejected` with `reason: "dev_backend_in_prod"`. A polluted
+   the request with a 503 and logs `guard.refused` with `reason: "dev_backend_in_prod"`. A polluted
    environment fails closed.
 
 ## Two risk tiers

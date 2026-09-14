@@ -231,7 +231,7 @@ magic-link session cookie left over from before a site switched to `identity` ne
 a request either way.
 
 **`hasSession` on a CSRF rejection is structurally always `false` under `identity`.** The
-[`guard.rejected`](../reference/log-events.md) record for a CSRF refusal carries `hasSession`, a
+[`guard.refused`](../reference/log-events.md) record for a CSRF refusal carries `hasSession`, a
 read of whether the session cookie was present on the request. Under `identity` the guard never
 sets that cookie, so the field reads `false` on every identity-mode CSRF rejection; it is not
 repurposed to mean "an identity resolved," since resolving identity would mean running
@@ -323,7 +323,7 @@ every request passes through it in this fixed order.
    read. A site configuring `identity` replaces this step with the gate's own resolution instead;
    see [Identity from a gate](#identity-from-a-gate).
 
-Every step that refuses a request logs a named [`guard.rejected`](../reference/log-events.md)
+Every step that refuses a request logs a named [`guard.refused`](../reference/log-events.md)
 reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`. On the built-in magic-link
 path, step 6 is the one exception: a missing or invalid session redirects to `/admin/login`
 without logging. Under `identity`, step 6's refusals are logged; see [Identity from a
@@ -487,7 +487,7 @@ site's own routes. `createSectionAction` runs it on every call and refuses with 
 `createAdminAction` runs it only when the call sets the `access` option, and refuses by throwing
 `error(403, ...)`; with the option omitted it authorizes nothing, which is what every action
 written before the option existed relies on. Either way the refusal is audited through
-`cairnAuditSink` and logged as `auth.access.denied`, and the response names no gate.
+`cairnAuditSink` and logged as `auth.access.refused`, and the response names no gate.
 
 ## Response hardening
 

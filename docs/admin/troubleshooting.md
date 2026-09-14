@@ -68,14 +68,14 @@ content. Start with [Force HTTPS at the edge](./is-it-working.md#force-https-at-
 [Admin CSRF token rejected](./is-it-working.md#admin-csrf-token-rejected) and
 [Non-admin origin rejected](./is-it-working.md#non-admin-origin-rejected), which cover the other
 two cases even though the doctor doesn't report them itself; each of those two shows up as a
-`guard.rejected` log record instead.
+`guard.refused` log record instead.
 
 If instead **every** admin page, including the sign-in page itself, shows the same branded error,
 that's a different reason: your database binding is missing, and
 [Deploy the Worker with its bindings](./is-it-working.md#deploy-the-worker-with-its-bindings)
 covers the fix.
 
-**The log event:** `guard.rejected`, whose `reason` field names which case it was: `https`,
+**The log event:** `guard.refused`, whose `reason` field names which case it was: `https`,
 `csrf`, and `origin` are the three above, and `bindings` is the missing-database case.
 
 ## A save or publish reports a conflict, or just fails

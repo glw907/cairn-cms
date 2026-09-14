@@ -387,7 +387,7 @@ route-group segments (`/admin/(app)/roster` reads as `/admin/roster`), so a map 
 URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a map keyed by
 its prefix still matches; a declared `target` is used exactly as given, never normalized. So the
 common call, `const editor = requireAccess(event);`, is still the whole authorization story for a
-route that opts into the map. Every denial, mapped or unmatched, emits `auth.access.denied` (see
+route that opts into the map. Every denial, mapped or unmatched, emits `auth.access.refused` (see
 [log events](./log-events.md)) with the editor's email, role, and the resolved (normalized)
 target.
 
@@ -514,7 +514,7 @@ seam for.
 editor's session passes both checks and reaches the wrapped handler unchanged, exactly as before
 the option existed. Set `access: { target, ownerOnly? }` and the wrapper runs the same access-map
 sequence [`createSectionAction`](#createsectionaction) runs, audits a refusal through `ctx.audit`,
-logs `auth.access.denied`, and throws `error(403, ...)`; the return type stays your handler's own,
+logs `auth.access.refused`, and throws `error(403, ...)`; the return type stays your handler's own,
 since refusals throw rather than returning a `fail()`. The option is opt-in rather than on by
 default because a zero-config site's guard attaches an empty access map, which admits no target,
 so enforcing by default would refuse every action on the documented database-less default instead
@@ -841,7 +841,7 @@ is deployed:
 The three 403 branches share one default message and the two 500 branches another
 (`deniedMessage` overrides the 403 copy only), so a session learns no deployment or gating
 detail from the response; the branch identity lives in the audit `detail` and the structured
-log. All three 403 branches also emit the guard's own `auth.access.denied` (see [log
+log. All three 403 branches also emit the guard's own `auth.access.refused` (see [log
 events](./log-events.md)), so a site alerting on load denials covers POST denials with the same
 query, and both 500 branches emit `admin.action.misconfigured`. A denial's own audit record
 carries no `entityId` (the refused write never named one); a handler's own `ctx.audit` call
@@ -1352,7 +1352,7 @@ with no D1 read and no log, so spray traffic costs nothing), the `AUTH_DB` bindi
 by hash, the row's expiry, the row's stored concept and id against the live `runtime.concepts`,
 and finally the branch read, whose own miss is the branch-gone signal (there's no separate
 existence pre-check). Every refusal throws an identical `error(404)` with the same plain body;
-only the `preview.rejected` log (see [Log events](./log-events.md)) carries which of the seven
+only the `preview.refused` log (see [Log events](./log-events.md)) carries which of the seven
 reasons applied, and it never carries the token itself. A missing `AUTH_DB` binding answers
 `error(503)` instead, after the same log, since a load can't return a bare `Response`.
 

@@ -1326,6 +1326,17 @@
   field and every behavior is unchanged. Consumers must: rename any imported `EditorRow` type
   reference to `UnresolvedEditor`.
 
+- **Breaking:** six log events on the `refused` verb, so a policy-decided refusal reads the same
+  as every other one in the vocabulary. `preview.rejected` renames to `preview.refused`,
+  `guard.rejected` to `guard.refused`, `media.delete_blocked` to `media.delete_refused`,
+  `media.replace_blocked` to `media.replace_refused`, `auth.access.denied` to
+  `auth.access.refused`, and `admin.action.csrf_rejected` to `admin.action.csrf_refused`. Every
+  record's field set is unchanged; only the `event` string changes. No in-tree subscriber
+  switches on any of the six, so nothing inside the engine breaks; a site's own log subscriber
+  that switches on one of the old strings is the only place the rename lands. Consumers must:
+  rename any of the six event strings a site's own log subscriber matches on, old to new, per the
+  list above.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

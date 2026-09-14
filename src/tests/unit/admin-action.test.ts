@@ -131,13 +131,13 @@ describe('createAdminAction: CSRF guard (defense-in-depth)', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('logs admin.action.csrf_rejected with the path and editor, never the response', async () => {
+  it('logs admin.action.csrf_refused with the path and editor, never the response', async () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const handler = vi.fn();
     const action = createAdminAction(handler);
     await httpErrorStatusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })));
     expect(warnSpy).toHaveBeenCalledWith(
-      'admin.action.csrf_rejected',
+      'admin.action.csrf_refused',
       expect.objectContaining({ path: '/admin/club/events', editor: editor.email }),
     );
     warnSpy.mockRestore();
@@ -185,7 +185,7 @@ describe('createAdminAction: CSRF rejection discriminator (Task 3)', () => {
     const action = createAdminAction(vi.fn());
     await httpErrorStatusOf(action(makeEvent({ csrfField: 'TOK' })));
     expect(warnSpy).toHaveBeenCalledWith(
-      'admin.action.csrf_rejected',
+      'admin.action.csrf_refused',
       expect.objectContaining<CsrfRecord>({ detail: 'no-cookie', witness: 'field' }),
     );
     warnSpy.mockRestore();
@@ -196,7 +196,7 @@ describe('createAdminAction: CSRF rejection discriminator (Task 3)', () => {
     const action = createAdminAction(vi.fn());
     await httpErrorStatusOf(action(makeEvent({ cookie: 'TOK' })));
     expect(warnSpy).toHaveBeenCalledWith(
-      'admin.action.csrf_rejected',
+      'admin.action.csrf_refused',
       expect.objectContaining<CsrfRecord>({ detail: 'no-witness', witness: 'field' }),
     );
     warnSpy.mockRestore();
@@ -207,7 +207,7 @@ describe('createAdminAction: CSRF rejection discriminator (Task 3)', () => {
     const action = createAdminAction(vi.fn());
     await httpErrorStatusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })));
     expect(warnSpy).toHaveBeenCalledWith(
-      'admin.action.csrf_rejected',
+      'admin.action.csrf_refused',
       expect.objectContaining<CsrfRecord>({ detail: 'mismatch', witness: 'field' }),
     );
     warnSpy.mockRestore();
@@ -218,7 +218,7 @@ describe('createAdminAction: CSRF rejection discriminator (Task 3)', () => {
     const action = createAdminAction(vi.fn());
     await httpErrorStatusOf(action(makeEvent({ cookie: 'MATCH', csrfHeader: 'WRONG', csrfField: 'MATCH' })));
     expect(warnSpy).toHaveBeenCalledWith(
-      'admin.action.csrf_rejected',
+      'admin.action.csrf_refused',
       expect.objectContaining<CsrfRecord>({ detail: 'mismatch', witness: 'header' }),
     );
     warnSpy.mockRestore();
@@ -329,11 +329,11 @@ describe('createAdminAction: opt-in authorization', () => {
     expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: not owner' }));
   });
 
-  it('logs auth.access.denied with the session and the target on a refusal', async () => {
+  it('logs auth.access.refused with the session and the target on a refusal', async () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const { action } = guarded({ target });
     await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] } })));
-    expect(warnSpy).toHaveBeenCalledWith('auth.access.denied', { email: staff.email, role: staff.role, target });
+    expect(warnSpy).toHaveBeenCalledWith('auth.access.refused', { email: staff.email, role: staff.role, target });
     warnSpy.mockRestore();
   });
 

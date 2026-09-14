@@ -159,7 +159,7 @@ function serializeThrownError(error: unknown): string {
  *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
  * 3. With `deps.access` set, and only then, the site's access map must admit the session for the
  *    declared target (see {@link authorizeAdminTarget}); a refusal audits through `ctx.audit`,
- *    logs `auth.access.denied`, and throws `error(403, ...)`. Omitted, this step does not run at
+ *    logs `auth.access.refused`, and throws `error(403, ...)`. Omitted, this step does not run at
  *    all, which is the behavior every caller had before the option existed.
  * 4. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
  *    handler that returns normally (its request succeeded) and emitted zero records throws a 500
@@ -243,7 +243,7 @@ export function createAdminAction<T>(
       // produced it; the response never gets either, since it renders to a real browser through
       // the nearest +error.svelte. No hasSession field here (unlike the guard's own record): this
       // wrapper only ever runs with a resolved editor, so a session is always known to be present.
-      log.warn('admin.action.csrf_rejected', {
+      log.warn('admin.action.csrf_refused', {
         path: event.url.pathname,
         editor: editor.email,
         detail: verdict.detail,
@@ -307,7 +307,7 @@ export function createAdminAction<T>(
       const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);
       if (authorization.outcome !== 'allowed') {
         ctx.audit({ action: 'deny', entity: 'admin-action', detail: ADMIN_DENIAL_DETAIL[authorization.outcome] });
-        log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: deps.access.target });
+        log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: deps.access.target });
         throw error(403, DENIED_MESSAGE);
       }
     }

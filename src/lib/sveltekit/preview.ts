@@ -240,7 +240,7 @@ const TOKEN_SHAPE_RE = /^[A-Za-z0-9_-]{43}$/;
  * The one refusal body every rejection answers, malformed shape included: plain not-found wording
  *  that never names preview, so a probe cannot distinguish "no such token" from "no such page" and
  *  a shared link's failure mode teaches nothing about the feature that minted it. The distinguishing
- *  reason lives only in the `preview.rejected` log.
+ *  reason lives only in the `preview.refused` log.
  */
 const NOT_FOUND_MESSAGE = 'Not found';
 
@@ -261,9 +261,9 @@ const PREVIEW_HEADERS: Record<string, string> = {
 /** The six token/row-verification refusal reasons; the missing-binding 503 logs its own separately. */
 type PreviewRejectedReason = 'unknown' | 'expired' | 'branch_gone' | 'row_invalid' | 'draft_invalid' | 'table_missing';
 
-/** Log `preview.rejected` and throw the one shared 404. Never called for the malformed-shape gate, which logs nothing. */
+/** Log `preview.refused` and throw the one shared 404. Never called for the malformed-shape gate, which logs nothing. */
 function rejectPreview(reason: PreviewRejectedReason, fields: Record<string, unknown> = {}): never {
-  log.warn('preview.rejected', { reason, ...fields });
+  log.warn('preview.refused', { reason, ...fields });
   throw error(404, NOT_FOUND_MESSAGE);
 }
 
@@ -390,7 +390,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  with no D1 read or log for spray traffic), the `AUTH_DB` binding, the row lookup by hash, the
  *  row's expiry, the row's stored concept and id against the live runtime, and finally the branch
  *  read, whose own miss is the branch-gone signal (there is no separate `branchHead` pre-check).
- *  Every refusal answers the identical `error(404, NOT_FOUND_MESSAGE)`; only the `preview.rejected`
+ *  Every refusal answers the identical `error(404, NOT_FOUND_MESSAGE)`; only the `preview.refused`
  *  log distinguishes why, and it never carries the token or any attacker-supplied string.
  *
  * No cookie is read or set, and `locals.cairnEditor`/`locals.cairnAccess` are never read: the
@@ -453,7 +453,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
     db = requireDb(env);
   } catch (err) {
     if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') {
-      log.warn('preview.rejected', { reason: 'bindings_missing', binding: 'AUTH_DB' });
+      log.warn('preview.refused', { reason: 'bindings_missing', binding: 'AUTH_DB' });
       throw error(503, 'Service unavailable');
     }
     throw err;

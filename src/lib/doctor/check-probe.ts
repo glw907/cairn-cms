@@ -212,10 +212,10 @@ async function classifyLoginResponse(
   // branch: with no platform, csrfSecure's own PUBLIC_ORIGIN consultation never fires, so an
   // https origin still resolves Secure outright and every non-https origin (local or not) still
   // resolves not-Secure, exactly as the bare protocol check did.
-  const cookieName = csrfCookieName(csrfSecure({ url: origin, platform: undefined }));
-  const cookieValue = setCookieValue(res.headers.getSetCookie(), cookieName);
+  const expectedCookieName = csrfCookieName(csrfSecure({ url: origin, platform: undefined }));
+  const cookieValue = setCookieValue(res.headers.getSetCookie(), expectedCookieName);
   if (cookieValue === undefined) {
-    return { result: fail(`GET /admin/login set no ${cookieName} cookie`), sawGate: false };
+    return { result: fail(`GET /admin/login set no ${expectedCookieName} cookie`), sawGate: false };
   }
   const field = csrfFieldValue(html);
   if (field === undefined) {
@@ -225,7 +225,7 @@ async function classifyLoginResponse(
     };
   }
   return {
-    result: await postRequestAction(ctx, origin, `${cookieName}=${cookieValue}`, field),
+    result: await postRequestAction(ctx, origin, `${expectedCookieName}=${cookieValue}`, field),
     sawGate: false,
   };
 }

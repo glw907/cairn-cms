@@ -158,13 +158,13 @@ npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
 Paste the base64 string from the encoding step when prompted.
 
 The App ID and Installation ID are **not** secrets; the engine treats them as plain identity,
-never as credentials to sign with. Pass them directly into `githubApp(...)` in
+never as credentials to sign with. Pass them directly into `createGithubApp(...)` in
 `cairn.config.ts` alongside your repo's owner and name:
 
 ```ts
-import { githubApp } from '@glw907/cairn-cms';
+import { createGithubApp } from '@glw907/cairn-cms';
 
-const backend = githubApp({
+const backend = createGithubApp({
   owner: 'your-github-username',
   repo: 'your-repo',
   branch: 'main',
@@ -173,7 +173,7 @@ const backend = githubApp({
 });
 ```
 
-[The core reference](../reference/core.md#githubapp) documents `githubApp`'s full shape, and
+[The core reference](../reference/core.md#creategithubapp) documents `createGithubApp`'s full shape, and
 [Cloudflare](../reference/cloudflare.md) and [`CairnEnv`](../reference/ambient.md) document the
 binding surface this page just wired.
 

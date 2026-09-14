@@ -125,7 +125,7 @@ const KEPT = [
   'defineComponent',
   'fields',
   'defineFieldset',
-  'githubApp',
+  'createGithubApp',
   'parseSiteConfig',
   'renderGlyph',
   'parseMarkdown',

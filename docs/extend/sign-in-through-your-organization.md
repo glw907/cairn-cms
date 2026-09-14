@@ -342,7 +342,7 @@ mail through something else.
 
 A `BackendProvider`, documented in the [core reference](../reference/core.md), commits every
 concept cairn manages: the adapter's `backend` value carries the provider's kind and default
-branch, and `connect(env)` returns a live `Backend` when a route needs one. `githubApp(...)` is
+branch, and `connect(env)` returns a live `Backend` when a route needs one. `createGithubApp(...)` is
 the one provider cairn ships, wrapping the GitHub App flow this project defaults to; none ships
 with cairn today. A site that stores content somewhere other than GitHub implements
 `BackendProvider` against its own store.

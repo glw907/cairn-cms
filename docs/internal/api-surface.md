@@ -27,6 +27,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `composeRuntime`: ({ adapter, siteConfig }: ComposeInput) => CairnRuntime
 - `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
+- `createGithubApp`: (config: { owner: string; repo: string; branch: string; appId: string; installationId: string }) => GithubAppProvider
 - `createRenderer`: (registry?: ComponentRegistry, options?: RendererConfig) => { remarkPlugins: PluggableList; rehypePlugins: PluggableList; renderMarkdown: (content: string, opts?: ResolveOptions) => Promise<string>; renderDocument: (content: string, opts?: ResolveOptions) => Promise<{ html: string; headings: DocHeading[] }> }
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
@@ -52,7 +53,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FileChange`: { path: string; content: string | null }
 - `formatManifest`: (manifest: Manifest) => string
 - `FragmentResolve`: (id: string) => string | undefined
-- `githubApp`: (config: { owner: string; repo: string; branch: string; appId: string; installationId: string }) => GithubAppProvider
 - `GithubAppProvider`: { kind: "github-app"; owner: string; repo: string; appId: string; installationId: string; branch: string; connect: (env: CairnEnv) => Backend }
 - `hasAccessRule`: (access: AccessMap | undefined, target: string) => boolean
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -163,7 +163,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/auth-crypto`
 
-- `cookieName`: (base: string, secure: boolean) => string
+- `buildCookieName`: (base: string, secure: boolean) => string
 - `generateToken`: () => string
 - `hashToken`: (token: string) => Promise<string>
 - `tokensMatch`: (a: string, b: string) => boolean
@@ -425,7 +425,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/sveltekit`
 
 - `AccessMap`: { [x: string]: string[] }
-- `adminAction`: <T>(handler: (args: { event: CairnEvent<CairnEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionOptions) => (event: CairnEvent<CairnEnv>) => Promise<T>
 - `AdminActionAudit`: { action: string; entity: string; entityId?: string | number; detail?: string }
 - `AdminActionAuditRecord`: AdminActionAudit & { actor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
@@ -463,6 +462,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentRoutesConfig`: { runtime: CairnRuntime; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => AttentionItem[] | Promise<AttentionItem[]>); preview?: PreviewTokenConfig }
 - `CookieJar`: { get: (name: string) => string | undefined; set: (name: string, value: string, opts: CookieSetOptions) => void; delete: (name: string, opts: { path: string; secure?: boolean }) => void }
 - `CookieSetOptions`: { path: string; httpOnly?: boolean; secure?: boolean; sameSite?: "none" | "lax" | "strict"; maxAge?: number }
+- `createAdminAction`: <T>(handler: (args: { event: CairnEvent<CairnEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionOptions) => (event: CairnEvent<CairnEnv>) => Promise<T>
 - `createAuthGuard`: (config?: AuthGuardConfig) => Handle
 - `createAuthRoutes`: (config: AuthRoutesConfig) => AuthRoutes
 - `createCairnAdmin`: (config: CairnAdminConfig) => CairnAdminRoutes

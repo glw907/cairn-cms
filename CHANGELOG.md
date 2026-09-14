@@ -342,6 +342,15 @@
   `serializeManifest` to `formatManifest`, `deriveExcerpt` to `buildExcerpt`, and
   `diffNewlyPublished` to `buildNewlyPublished` at any call site.
 
+- **Breaking:** three noun-first factory functions rename per `convention-bare-noun-functions`
+  and `convention-verb-rules`'s "function factories belong to `create*`". `cookieName`
+  (`/auth-crypto`) to `buildCookieName`, `githubApp` (`.`) to `createGithubApp`, and `adminAction`
+  (`/sveltekit`) to `createAdminAction`. Every signature, return type, and thrown error is
+  unchanged; only the three identifiers change. `src/theme/cairn.config.ts` is the site file every
+  consumer meets for `createGithubApp`, since every production site's adapter calls it directly.
+  Consumers must: rename `cookieName` to `buildCookieName`, `githubApp` to `createGithubApp` (in
+  `cairn.config.ts`'s `backend` call), and `adminAction` to `createAdminAction` at any call site.
+
 - `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
   names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
   alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone
@@ -3369,7 +3378,7 @@ removal, nothing this list needs to carry.
   either way; the failure logs a new `admin.action.sink_threw` event instead. The same
   catch also rethrows SvelteKit's own `redirect()`/`error()` untouched, so a sink built on one of
   those control-flow primitives is never swallowed into a log line the site never sees. See
-  [SvelteKit](docs/reference/sveltekit.md#adminaction) and [log
+  [SvelteKit](docs/reference/sveltekit.md#createadminaction) and [log
   events](docs/reference/log-events.md). Consumers must: nothing; a throwing or rejecting sink
   previously failed the action and now does not.
 

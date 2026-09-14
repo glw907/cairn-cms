@@ -5,7 +5,7 @@
 // a factory the action calls with the resolved key, returning the narrow engine-owned TidyClient
 // whose `tidy` method the test stubs. The default factory (unset here) builds the real SDK client.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { createContentRoutes, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import { keyKnownUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import { supportsEffort } from '../../lib/sveltekit/content-routes-tidy.js';
@@ -26,7 +26,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     siteName: 'Test Site',
     sender: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },

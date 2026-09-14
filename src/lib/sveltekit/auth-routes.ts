@@ -12,7 +12,7 @@ import {
   SEND_COOLDOWN_MS,
   sessionCookieName,
   csrfCookieName,
-  cookieName,
+  buildCookieName,
 } from '../auth/crypto.js';
 import {
   findEditor,
@@ -128,7 +128,7 @@ const PENDING_COOKIE_TTL_MULTIPLE = 6;
  */
 function mintOrReusePendingNonce(event: CairnEvent): string {
   const secure = csrfSecure({ url: event.url, platform: event.platform });
-  const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+  const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
   const nonce = event.cookies.get(pendingCookie) ?? generateToken();
   event.cookies.set(pendingCookie, nonce, {
     path: '/',
@@ -338,7 +338,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // One variable for the whole handler: this same `secure` names the pending cookie read and
     // deleted here, the session cookie set below, and the CSRF cookie rotated after it.
     const secure = csrfSecure({ url: event.url, platform: event.platform });
-    const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+    const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
     const nonce = event.cookies.get(pendingCookie);
 
     const now = Date.now();
@@ -455,7 +455,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // The pending-login nonce is a cairn-owned credential too, so a sign-out clears it. One
     // name form only, this request's own: a stranded nonce under the other form names a token
     // row that its ten-minute TTL has already swept, so nothing can confirm against it.
-    event.cookies.delete(cookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
+    event.cookies.delete(buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
     if (!event.locals.cairnIdentity && id) {
       try {
         // The record fires only when a row was actually destroyed and was still live, and names

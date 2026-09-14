@@ -213,7 +213,7 @@ import {
   defineRegistry,
   defineFieldset,
   fields,
-  githubApp,
+  createGithubApp,
   createRenderer,
   composeRuntime,
   parseSiteConfig,
@@ -239,7 +239,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: githubApp({
+  backend: createGithubApp({
     owner: 'you',
     repo: 'my-cairn-site',
     branch: 'main',
@@ -425,7 +425,7 @@ and a save-then-publish round trip succeeds.
 <details>
 <summary>Why does an adapter with placeholder GitHub credentials even typecheck?</summary>
 
-`githubApp(...)` builds the value the adapter's `backend` field takes; it validates shape, not
+`createGithubApp(...)` builds the value the adapter's `backend` field takes; it validates shape, not
 whether the values name a real App. The dev backend replaces the connection at request time
 (`event.locals.cairnBackend` wins over the real provider), so nothing in this milestone ever
 dials out to GitHub. The values start mattering the moment you remove the dev backend, which is
@@ -588,7 +588,7 @@ placeholders from Milestone 2:
 
 <!-- snippet-check-skip: elides the defineAdapter object opened in Milestone 2's block above to show only the backend and email members that change -->
 ```ts
-backend: githubApp({
+backend: createGithubApp({
   owner: 'your-github-username',
   repo: 'my-cairn-site',
   branch: 'main',

@@ -46,7 +46,7 @@ optional.
 
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
-import { defineAdapter, defineConcept, defineFieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineFieldset, fields, createGithubApp, createRenderer } from '@glw907/cairn-cms';
 import { registry, icons } from './components.js';
 
 const { renderMarkdown } = createRenderer(registry);
@@ -65,7 +65,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   rendering: {
     render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
@@ -75,12 +75,12 @@ export const cairn = defineAdapter({
 });
 ```
 
-#### `githubApp`
+#### `createGithubApp`
 
 Stability tier: Extension API.
 
 ```ts
-declare function githubApp(config: {
+declare function createGithubApp(config: {
   owner: string;
   repo: string;
   branch: string;
@@ -1057,7 +1057,7 @@ function signatures above reference these.
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
-| `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
+| `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `createGithubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
 | `FileChange` | Extension API | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `BackendCommit` | Extension API | `interface BackendCommit { ref: string; author: { name: string; email: string }; date: string }` | One entry in `Backend.listCommits`'s answer, newest first: the commit's full sha (`ref`), the git commit-author trailer (`author`, never the matched GitHub account, which is null for a magic-link editor), and `date` (ISO 8601, when the commit landed on the read ref). A file's log can hold commits made outside cairn, so `author` renders whoever git recorded, not necessarily a cairn editor. |
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |

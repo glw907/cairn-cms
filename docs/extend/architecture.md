@@ -76,7 +76,7 @@ site reaches into:
 - **`navLayout`**, one ordered tree arranging the whole admin sidebar, mixing the engine's own
   screens with a site's custom ones. See [Organize your admin nav](./organize-your-admin-nav.md).
 - **The Backend**, the read-and-commit interface over the content repository. The packaged
-  `githubApp` provider is the only shipped implementation; the interface exists so the commit path
+  `createGithubApp` provider is the only shipped implementation; the interface exists so the commit path
   is a typed contract rather than a hard-coded GitHub call threaded through every route. See
   [Core](../reference/core.md).
 - **`AssetConfig`**, a site's optional media declaration, resolved into the R2 bucket binding and

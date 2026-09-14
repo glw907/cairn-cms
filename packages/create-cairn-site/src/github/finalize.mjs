@@ -12,24 +12,24 @@ import path from 'node:path';
 const CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 
 /**
- * The showcase's own placeholder `githubApp(...)` call, verified character for character
+ * The showcase's own placeholder `createGithubApp(...)` call, verified character for character
  * against `examples/showcase/src/theme/cairn.config.ts`. `appId` and `installationId` are
- * strings in `githubApp`'s config type (src/lib/github/backend.ts), so the placeholders are
+ * strings in `createGithubApp`'s config type (src/lib/github/backend.ts), so the placeholders are
  * quoted digits, not numbers.
  */
 export const TEMPLATE_GITHUB_APP_LITERAL =
-  "githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })";
+  "createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })";
 
 /**
- * Build the real `githubApp(...)` call, keeping every value single-quoted and `branch: 'main'`
+ * Build the real `createGithubApp(...)` call, keeping every value single-quoted and `branch: 'main'`
  * intact, the same shape as the template literal it replaces.
  * @param {{ owner: string, repo: string, appId: string | number, installationId: string | number }} identity
  *  the site's real GitHub App identity
- * @returns {string} the rewritten `githubApp(...)` call
+ * @returns {string} the rewritten `createGithubApp(...)` call
  */
 function buildRealLiteral({ owner, repo, appId, installationId }) {
   return (
-    `githubApp({ owner: '${owner}', repo: '${repo}', branch: 'main', ` +
+    `createGithubApp({ owner: '${owner}', repo: '${repo}', branch: 'main', ` +
     `appId: '${appId}', installationId: '${installationId}' })`
   );
 }

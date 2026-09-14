@@ -28,7 +28,7 @@ and store function. Audience semantics, the store schema, and the rule that a se
 session store never blurs with the engine's own stay entirely site-owned.
 
 ```ts
-import { generateToken, hashToken, cookieName } from '@glw907/cairn-cms/auth-crypto';
+import { generateToken, hashToken, buildCookieName } from '@glw907/cairn-cms/auth-crypto';
 ```
 
 ## Generating tokens
@@ -88,12 +88,12 @@ the moment a caller reaches for `tokensMatch` on a value that isn't one of those
 
 ## Naming a cookie
 
-### `cookieName`
+### `buildCookieName`
 
 Stability tier: Extension API.
 
 ```ts
-declare function cookieName(base: string, secure: boolean): string;
+declare function buildCookieName(base: string, secure: boolean): string;
 ```
 
 Builds a cookie name, applying the `__Host-` prefix discipline: `` `__Host-${base}` `` when
@@ -125,12 +125,12 @@ delegate through this same function, so a site base in that namespace does not t
 colliding with an engine cookie.
 
 ```ts
-import { cookieName } from '@glw907/cairn-cms/auth-crypto';
+import { buildCookieName } from '@glw907/cairn-cms/auth-crypto';
 
 // `secure` is derived from the externally visible scheme (here, a trusted platform header set
 // by the edge that terminates TLS), never from `url.protocol`, per the warning above.
 function memberSessionCookieName(request: Request): string {
-  return cookieName('member-session', request.headers.get('X-Forwarded-Proto') === 'https');
+  return buildCookieName('member-session', request.headers.get('X-Forwarded-Proto') === 'https');
 }
 ```
 

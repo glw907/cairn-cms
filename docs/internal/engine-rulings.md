@@ -1258,6 +1258,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 85.
 - **Any-site case:** The required backend member of every adapter, with a security-shaped contract: the private key 'stays the Worker secret ... read at request time and never from the adapter source'.
+- **Note (polish-C, Task 6):** renamed to `createGithubApp`, per `convention-bare-noun-functions`
+  and `convention-verb-rules`'s "function factories belong to `create*`". Verdict unchanged.
 
 ## audit-adapter-emailrecipient: `EmailRecipient`  (keep, 2026-08-26, any-site audit)
 
@@ -2508,6 +2510,8 @@ when the remediation pass lands.
 - **Shape:** A bag named Options whose only member is an injected build flag advertises configuration that does not exist. Fold the flag into the function's own testing surface, or name it for what it is rather than as the wrapper's options.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 108; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Note (polish-C, Task 6):** the row now names `createAdminAction`. This rename changes the
+  function's name and not its signature, so the retire stays open and the blocker is unchanged.
 
 ## audit-sveltekit-unauditedactionerror: `UnauditedActionError`  (keep, 2026-08-26, any-site audit)
 
@@ -2612,6 +2616,8 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 121.
 - **Any-site case:** A custom admin screen with a form but no database binding: it resolves the signed-in editor as typed ctx.editor and makes an unaudited mutation a build failure rather than a discipline.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (polish-C, Task 6):** renamed to `createAdminAction`, per `convention-bare-noun-functions`
+  and the `createSectionAction` sibling. Verdict unchanged.
 
 ## audit-sveltekit-createmediaroute: `createMediaRoute`  (keep, 2026-08-26, any-site audit)
 
@@ -3414,6 +3420,8 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 16.
 - **Any-site case:** A site setting a member session cookie on a deployment that is https in production and plain http under wrangler dev: hard-coded __Host- breaks local dev, omitting it drops origin binding in production.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (polish-C, Task 6):** renamed to `buildCookieName`, per `convention-bare-noun-functions`
+  and `convention-verb-rules`. Verdict unchanged.
 
 ## audit-auth-tokensmatch: `tokensMatch`  (keep, 2026-08-26, any-site audit)
 

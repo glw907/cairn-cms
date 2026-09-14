@@ -103,7 +103,7 @@ const channel = createAuthChannel<Env>({
   and no `deliver` call; an escalated `confirm` answers `{error: 'challenge-required'}` with no
   attempt charged and no row consumed, so a member always has a retry path.
 - **`cookie.name`**: the session cookie's base name, through
-  [`cookieName`](./auth-crypto.md#cookiename); the same base plus a `_pending` suffix names the
+  [`buildCookieName`](./auth-crypto.md#buildcookiename); the same base plus a `_pending` suffix names the
   nonce cookie. A `cairn_`-prefixed base throws at construction, since it would collide with the
   engine's own admin cookies.
 - **`verify?(subject, ctx)`**: consulted by `resolveSubject` on every resolution, with the same

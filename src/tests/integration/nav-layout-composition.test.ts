@@ -10,7 +10,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -65,7 +65,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
@@ -169,7 +169,7 @@ function accessRuntime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',

@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getPlatformProxy } from 'wrangler';
 import type { RequestHandler } from '@sveltejs/kit';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -37,7 +37,7 @@ function runtime(resolvedAssets: ResolvedAssetConfig): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',

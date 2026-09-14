@@ -43,7 +43,7 @@ async function freshStateDir(t) {
 /**
  * Build a fixture scaffold directory: a couple of real files, so pushScaffold has something to
  * ship and the secret-scan test has something to walk, plus a `cairn.config.ts` carrying the
- * showcase's own placeholder `githubApp(...)` call, so the push step's finalizeGithubIdentity
+ * showcase's own placeholder `createGithubApp(...)` call, so the push step's finalizeGithubIdentity
  * hop has a real target to rewrite rather than throwing its rot-gate error on every test.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
@@ -57,9 +57,9 @@ async function fixtureScaffoldDir(t) {
   await mkdir(path.join(dir, 'src/theme'), { recursive: true });
   await writeFile(
     path.join(dir, 'src/theme/cairn.config.ts'),
-    "import { defineAdapter, githubApp } from '@glw907/cairn-cms';\n\n" +
+    "import { defineAdapter, createGithubApp } from '@glw907/cairn-cms';\n\n" +
       'export default defineAdapter({\n' +
-      "  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),\n" +
+      "  backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),\n" +
       '});\n',
   );
   return dir;

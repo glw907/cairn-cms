@@ -1,5 +1,5 @@
 // cairn-cms: the GitHub backend's plain data types and its one typed error. The GitHub App
-// provider config (`githubApp`'s input) carries these repo coordinates; `RepoRef` is the
+// provider config (`createGithubApp`'s input) carries these repo coordinates; `RepoRef` is the
 // `{ owner, repo, branch }` subset the read and commit transports take, so the provider config
 // is assignable wherever a `RepoRef` is wanted with no conversion.
 

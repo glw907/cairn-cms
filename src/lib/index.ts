@@ -124,7 +124,7 @@ export type { ReferenceEdge } from './content/references.js';
 export type { RepoFile, CommitAuthor } from './github/types.js';
 export { CommitConflictError, BranchExistsError } from './github/types.js';
 // The Backend seam: the store interface and its default GitHub provider.
-export { githubApp } from './github/backend.js';
+export { createGithubApp } from './github/backend.js';
 export type { Backend, BackendProvider, GithubAppProvider, BackendCommit } from './github/backend.js';
 export type { FileChange } from './github/repo.js';
 

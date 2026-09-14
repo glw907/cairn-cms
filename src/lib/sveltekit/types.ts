@@ -39,7 +39,7 @@ export interface PlatformContext<Env> {
  * carries every member here and more, and the engine never imports a site's generated `App.*`
  * ambient types, so any kit server event satisfies it with zero casts. It replaces five
  * separately-declared event shapes cairn used to carry, one per surface (the shared core, the
- * auth/editor routes, the content routes, the admin facade, and `adminAction`): three names for
+ * auth/editor routes, the content routes, the admin facade, and `createAdminAction`): three names for
  * one shape was the original defect, and a fourth only compounded it.
  *
  * `params` and `route` end the documented anti-idiom of reading route identity out of a form
@@ -76,11 +76,11 @@ export interface CairnEvent<Env = CairnEnv> {
   // read in any repo with no namespace to peel back first.
   // `cairnBackend` is the per-request content store the dev-backend handle injects; the engine
   // resolves it ahead of the real provider, so typing it here makes the seam a checked contract
-  // rather than a cast. A production request leaves it absent and the real `githubApp` provider
+  // rather than a cast. A production request leaves it absent and the real `createGithubApp` provider
   // connects. `cairnAccess` is the site's declared access map, attached by the guard alongside
   // `cairnEditor`; it is internal (never serialized to a page payload) and exists only so
   // `requireAccess` needs no extra argument at the call site. `cairnAuditSink` is a site's
-  // optional sink for `adminAction`'s audit records, wired the same way. `cairnIdentity` is the
+  // optional sink for `createAdminAction`'s audit records, wired the same way. `cairnIdentity` is the
   // guard's identity-gate snapshot, set on every admin path under identity mode; the guard is
   // its only writer.
   locals: {

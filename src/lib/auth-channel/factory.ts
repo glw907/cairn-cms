@@ -9,7 +9,7 @@
 // victim's identity may deny, delay, or destroy anything. Denial keys on the requester; an
 // identity-keyed control either escalates through `challenge-required` or only logs.
 import { error, isHttpError, isRedirect } from '@sveltejs/kit';
-import { cookieName, generateToken, hashToken } from '../auth/crypto.js';
+import { buildCookieName, generateToken, hashToken } from '../auth/crypto.js';
 import { originMatches } from '../sveltekit/csrf.js';
 import { log } from '../log/index.js';
 import {
@@ -286,7 +286,7 @@ export interface AuthChannelConfig<Env> {
    * `challenge-required` without ever hard-failing, so a member always has a retry path.
    */
   challenge: (event: CairnEvent<Env>, form: FormData) => Promise<boolean>;
-  /** The session cookie's base name, through `cookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's own admin cookies). */
+  /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's own admin cookies). */
   cookie: { name: string };
   /**
    * Consulted by `resolveSubject` on every resolution; false revokes on the next request.
@@ -389,8 +389,8 @@ function requireFn(field: string, value: unknown): void {
 
 /**
  * Validate the session cookie's base name and, by extension, the `_pending` nonce cookie's name
- * derived from it: both go through `cookieName`'s RFC 6265 token-set and prefix-conflict checks,
- * and a `cairn_`-prefixed base is rejected here even though `cookieName` itself permits it, since
+ * derived from it: both go through `buildCookieName`'s RFC 6265 token-set and prefix-conflict checks,
+ * and a `cairn_`-prefixed base is rejected here even though `buildCookieName` itself permits it, since
  * it would collide with the engine's own admin cookies.
  */
 function resolveCookieBase(cookie: { name: string } | undefined): string {
@@ -403,8 +403,8 @@ function resolveCookieBase(cookie: { name: string } | undefined): string {
       `createAuthChannel: config.cookie.name "${base}" starts with the engine's reserved "cairn_" prefix, which collides with cairn's own admin cookies; choose a site-specific base`,
     );
   }
-  cookieName(base, false);
-  cookieName(`${base}_pending`, false);
+  buildCookieName(base, false);
+  buildCookieName(`${base}_pending`, false);
   return base;
 }
 
@@ -784,7 +784,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // resolveRateLimit, are deliberate; either could fold into one shared reader if the reasons
     // above ever collapse, but neither is an accident.
     const secure = event.url.protocol === 'https:';
-    const pendingCookie = cookieName(pendingBase, secure);
+    const pendingCookie = buildCookieName(pendingBase, secure);
     const existingNonce = event.cookies.get(pendingCookie);
     const nonceToken = existingNonce ?? generateToken();
     const nonceHash = await hashToken(nonceToken);
@@ -921,7 +921,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // answered before any store access, so a cookie-blocked or cross-browser member gets an exit
     // instead of an endless bad-code loop.
     const secure = event.url.protocol === 'https:';
-    const pendingCookie = cookieName(pendingBase, secure);
+    const pendingCookie = buildCookieName(pendingBase, secure);
     const nonceToken = event.cookies.get(pendingCookie);
     if (!nonceToken) {
       return { error: 'no-pending-request' };
@@ -1026,7 +1026,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // itself, and a browser discards a Secure Set-Cookie arriving over http, so a delete that
     // leaves the flag to the jar can answer with a clear the browser drops on the floor.
     event.cookies.delete(pendingCookie, { path: '/', secure });
-    const sessionCookie = cookieName(cookieBase, secure);
+    const sessionCookie = buildCookieName(cookieBase, secure);
     const existingSessionToken = event.cookies.get(sessionCookie);
     if (existingSessionToken) {
       // The record keys on THIS flow's correlation id, the one the confirm already derived, and
@@ -1068,8 +1068,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     assertOriginAndScheme(event);
 
     const secure = event.url.protocol === 'https:';
-    const sessionCookie = cookieName(cookieBase, secure);
-    const pendingCookie = cookieName(pendingBase, secure);
+    const sessionCookie = buildCookieName(cookieBase, secure);
+    const pendingCookie = buildCookieName(pendingBase, secure);
     const token = event.cookies.get(sessionCookie);
     // Both deletes state their setter's own `secure`, for the reason confirmAction's does: a
     // logout that leaves the flag to the jar's default can clear a cookie the browser then keeps.
@@ -1105,7 +1105,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    */
   async function resolveSubject(event: CairnEvent<Env>): Promise<string | null> {
     const secure = event.url.protocol === 'https:';
-    const sessionCookie = cookieName(cookieBase, secure);
+    const sessionCookie = buildCookieName(cookieBase, secure);
     const token = event.cookies.get(sessionCookie);
     if (!token) return null;
 

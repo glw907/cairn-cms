@@ -10,7 +10,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { testEvent } from '../helpers/test-event.js';
@@ -59,7 +59,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Access Site',
     concepts: [concept('posts'), concept('pages')],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',

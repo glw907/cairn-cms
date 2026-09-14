@@ -69,7 +69,7 @@ export type {
 } from './admin-nav.js';
 export type { PublishActionEntry } from './publish-actions.js';
 export {
-  adminAction,
+  createAdminAction,
   UnauditedActionError,
   type AdminActionAudit,
   type AdminActionAuditRecord,

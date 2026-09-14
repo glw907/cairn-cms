@@ -244,11 +244,11 @@ test('a display name slugging to 58 characters is bounded before any derived res
  * lines before and after the `email:` entry, so the "touches nothing else" test has real lines to
  * diff against.
  */
-const MINIMAL_CAIRN_CONFIG = `import { defineAdapter, githubApp } from '@glw907/cairn-cms';
+const MINIMAL_CAIRN_CONFIG = `import { defineAdapter, createGithubApp } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   content: {},
-  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   media: { bucketBinding: 'MEDIA_BUCKET' },
 });

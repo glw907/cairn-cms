@@ -86,9 +86,9 @@ frontmatter while only prefixing the filename with the year.
 ## Point at your GitHub repository
 
 ```ts
-import { githubApp } from '@glw907/cairn-cms';
+import { createGithubApp } from '@glw907/cairn-cms';
 
-const backend = githubApp({
+const backend = createGithubApp({
   owner: 'your-github-username',
   repo: 'your-repo',
   branch: 'main',
@@ -116,7 +116,7 @@ covers that cost if you haven't set it up yet.
 
 ```ts
 // src/theme/cairn.config.ts
-import { defineAdapter, defineConcept, defineRegistry, defineFieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineRegistry, defineFieldset, fields, createGithubApp, createRenderer } from '@glw907/cairn-cms';
 
 const registry = defineRegistry({ components: [] });
 const { renderMarkdown } = createRenderer(registry);
@@ -135,7 +135,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: githubApp({
+  backend: createGithubApp({
     owner: 'your-github-username',
     repo: 'your-repo',
     branch: 'main',

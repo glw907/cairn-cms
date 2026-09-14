@@ -32,30 +32,30 @@ export interface AdminActionAudit {
 }
 
 /**
- * What a site's audit sink receives. `adminAction` and `createSectionAction` set `actor` to the
+ * What a site's audit sink receives. `createAdminAction` and `createSectionAction` set `actor` to the
  * verified editor's email. A site may also call a sink directly to record its own domain events,
  * `createD1AuditSink` included. `actor` then holds whatever identity that event names, and need
  * not be a cairn editor.
  */
 export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 
-/** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
+/** A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
 
 /** What a wrapped handler receives: the verified editor and a bound audit emitter. */
 export interface AdminActionContext {
   /** The verified editor; the only identity a wrapped action may act as. */
   editor: Editor;
-  /** Emit one audit record. A mutating action that emits zero is a defect; see `adminAction`. */
+  /** Emit one audit record. A mutating action that emits zero is a defect; see `createAdminAction`. */
   audit: (record: AdminActionAudit) => void;
 }
 
 /**
- * Thrown by `adminAction` for exactly one meaning: a handler that returned normally (not
+ * Thrown by `createAdminAction` for exactly one meaning: a handler that returned normally (not
  * `fail()`) having emitted zero `ctx.audit` records, thrown only when running under `esm-env`'s
  * `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal: in
- * production the same condition logs `admin.action.unaudited` instead (see `adminAction`).
- * `adminAction`'s own authorization refusals, a missing editor session or a CSRF mismatch, throw
+ * production the same condition logs `admin.action.unaudited` instead (see `createAdminAction`).
+ * `createAdminAction`'s own authorization refusals, a missing editor session or a CSRF mismatch, throw
  * SvelteKit's own `redirect()` or `error()` instead, which carry their status to the browser
  * directly and need no `handleError` mapping; this class carries no production status and never
  * stood for one.
@@ -69,14 +69,14 @@ export class UnauditedActionError extends Error {
   }
 }
 
-/** Injectable dependencies for `adminAction`, so a test can drive both branches of the unaudited path. */
+/** Injectable dependencies for `createAdminAction`, so a test can drive both branches of the unaudited path. */
 export interface AdminActionOptions {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
   /**
    * Opt in to the access-map authorization `createSectionAction` performs, checked against
    * `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on top of
-   * the map check rather than standing in for it. Omitted, `adminAction` authorizes nothing, its
+   * the map check rather than standing in for it. Omitted, `createAdminAction` authorizes nothing, its
    * behavior for every existing caller. Present, a refused session is audited through
    * `ctx.audit` and then thrown as `error(403, ...)`.
    */
@@ -94,7 +94,7 @@ export type AdminTargetAuthorization =
   | { outcome: 'not-owner' };
 
 /**
- * The audit `detail` each refusal records, one string per refusing gate. Shared so `adminAction`
+ * The audit `detail` each refusal records, one string per refusing gate. Shared so `createAdminAction`
  * and `createSectionAction` record a denial identically, whatever channel each refuses through.
  */
 export const ADMIN_DENIAL_DETAIL: Record<Exclude<AdminTargetAuthorization['outcome'], 'allowed'>, string> = {
@@ -176,7 +176,7 @@ function serializeThrownError(error: unknown): string {
  * ```ts
  * // src/routes/admin/club/events/[id]/+page.server.ts
  * export const actions = {
- *   approve: adminAction(async ({ form, ctx }) => {
+ *   approve: createAdminAction(async ({ form, ctx }) => {
  *     const id = String(form.get('id'));
  *     await db.signups.approve(id);
  *     ctx.audit({ action: 'approve', entity: 'signup', entityId: id });
@@ -185,7 +185,7 @@ function serializeThrownError(error: unknown): string {
  * };
  * ```
  *
- * `adminAction` itself stays non-generic over `Env` by design, on the same
+ * `createAdminAction` itself stays non-generic over `Env` by design, on the same
  * grounds as {@link CairnEvent}'s own default, not because it never reads
  * `event.platform`: its returned function is declared as taking `CairnEvent<CairnEnv>` (the
  * default type parameter), and a compile-only fixture (`src/tests/unit/env-genericity.test.ts`)
@@ -196,14 +196,14 @@ function serializeThrownError(error: unknown): string {
  * needs its own env bindings, plus a database binding to resolve, reaches for
  * `createSectionAction` (`./section-action.js`), which is generic over `Env` for exactly that
  * reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
- * contract with no database binding stays on `adminAction` itself rather than reaching for that
+ * contract with no database binding stays on `createAdminAction` itself rather than reaching for that
  * door.
  *
  * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
  * {@link authorizeAdminTarget} rather than falling back to `canReach`'s own permissive nav
  * reading, since a site-authored POST needs an authorization floor it can rely on absolutely.
  */
-export function adminAction<T>(
+export function createAdminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
   deps: AdminActionOptions = {},
 ): (event: CairnEvent) => Promise<T> {
@@ -301,7 +301,7 @@ export function adminAction<T>(
     // attaches an EMPTY access map rather than none, and an empty map has no rule for any target,
     // so enforcing by default would 403 every consumer of the documented DB-less default instead
     // of hardening anything. A refusal audits first, through the same sink a site already reads,
-    // and then throws error(403): authorization refusals are adminAction's own channel, so the
+    // and then throws error(403): authorization refusals are createAdminAction's own channel, so the
     // wrapper's return type stays the handler's own T.
     if (deps.access) {
       const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);

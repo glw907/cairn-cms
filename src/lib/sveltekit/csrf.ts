@@ -171,7 +171,7 @@ export function csrfHeaderVerdict(event: {
 
 /**
  * The field-witness verdict against an already-parsed form, for a caller that already read the
- * request body for its own purposes (`adminAction`) and so has no need for
+ * request body for its own purposes (`createAdminAction`) and so has no need for
  * {@link csrfTokenVerdict}'s own body clone. `form.has('csrf')` discriminates an absent field from
  * a submitted-empty one; a plain `form.get('csrf') ?? ''` collapses that distinction.
  */

@@ -8,7 +8,7 @@
 // declares real reference edges.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
@@ -54,7 +54,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [posts, pages],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,

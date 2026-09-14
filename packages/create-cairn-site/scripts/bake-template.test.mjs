@@ -49,7 +49,7 @@ test('bake emits a real tree, not just a rewritten package.json', async (t) => {
 // a pushed scaffold's cairn.config.ts, verified against the showcase directly. Pinning it here
 // too means showcase drift that changes the backend line's shape fails this fast bake test,
 // rather than surfacing only inside a live create-cairn-site run against real GitHub.
-test('the baked template\'s cairn.config.ts carries the exact githubApp(...) literal finalizeGithubIdentity targets', async (t) => {
+test('the baked template\'s cairn.config.ts carries the exact createGithubApp(...) literal finalizeGithubIdentity targets', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
   const config = await readFile(path.join(to, 'src/theme/cairn.config.ts'), 'utf8');

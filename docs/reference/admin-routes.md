@@ -224,7 +224,7 @@ export const handle = sequence(theme, createAuthGuard());
 The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.
 
 The guard gates who reaches the subtree, not what a custom form action inside it may do. An
-[`adminAction`](./sveltekit.md#adminaction)-wrapped action authorizes against the site's access
+[`createAdminAction`](./sveltekit.md#createadminaction)-wrapped action authorizes against the site's access
 map only when it sets the `access` option. Omitted, the wrapper only authenticates and verifies
 the CSRF token, its behavior for every action written before the option existed.
 [`createSectionAction`](./sveltekit.md#createsectionaction) runs that same sequence always.

@@ -21,7 +21,7 @@ async function fixtureScaffoldDir(t, backendLine) {
   await mkdir(path.join(dir, 'src/theme'), { recursive: true });
   await writeFile(
     path.join(dir, CONFIG_RELATIVE),
-    `import { defineAdapter, githubApp } from '@glw907/cairn-cms';\n\n` +
+    `import { defineAdapter, createGithubApp } from '@glw907/cairn-cms';\n\n` +
       `export default defineAdapter({\n  backend: ${backendLine},\n});\n`,
   );
   return dir;
@@ -40,7 +40,7 @@ test('finalizeGithubIdentity writes the real owner, repo, appId, and installatio
   const content = await readFile(path.join(dir, CONFIG_RELATIVE), 'utf8');
   assert.ok(
     content.includes(
-      "githubApp({ owner: 'alpine-club-owner', repo: 'alpine-club', branch: 'main', appId: '12345', installationId: '67890' })",
+      "createGithubApp({ owner: 'alpine-club-owner', repo: 'alpine-club', branch: 'main', appId: '12345', installationId: '67890' })",
     ),
   );
   assert.ok(!content.includes("owner: 'showcase'"));
@@ -57,8 +57,8 @@ test('finalizeGithubIdentity keeps every value single-quoted', async (t) => {
   });
 
   const content = await readFile(path.join(dir, CONFIG_RELATIVE), 'utf8');
-  const match = content.match(/githubApp\(\{[^}]+\}\)/);
-  assert.ok(match, 'expected a githubApp({ ... }) call in the rewritten file');
+  const match = content.match(/createGithubApp\(\{[^}]+\}\)/);
+  assert.ok(match, 'expected a createGithubApp({ ... }) call in the rewritten file');
   assert.ok(!match[0].includes('"'), `expected no double quotes in the rewritten call: ${match[0]}`);
   assert.match(match[0], /branch: 'main'/);
 });
@@ -93,7 +93,7 @@ test('finalizeGithubIdentity still rewrites when the real owner is literally "sh
   const content = await readFile(path.join(dir, CONFIG_RELATIVE), 'utf8');
   assert.ok(
     content.includes(
-      "githubApp({ owner: 'showcase', repo: 'alpine-club', branch: 'main', appId: '12345', installationId: '67890' })",
+      "createGithubApp({ owner: 'showcase', repo: 'alpine-club', branch: 'main', appId: '12345', installationId: '67890' })",
     ),
     `the real repo and ids must be written even when the owner matches the placeholder: ${content}`,
   );
@@ -103,7 +103,7 @@ test('finalizeGithubIdentity still rewrites when the real owner is literally "sh
 test('finalizeGithubIdentity throws naming the file and the missing string when the template has drifted', async (t) => {
   const dir = await fixtureScaffoldDir(
     t,
-    "githubApp({ owner: \"showcase\", repo: \"demo\", branch: \"main\", appId: \"1\", installationId: \"2\" })",
+    "createGithubApp({ owner: \"showcase\", repo: \"demo\", branch: \"main\", appId: \"1\", installationId: \"2\" })",
   );
 
   await assert.rejects(

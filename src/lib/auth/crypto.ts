@@ -11,7 +11,7 @@ const COOKIE_BASE = 'cairn_session';
  * dev the prefix is dropped, since __Host- requires Secure and the dev cookie cannot set it.
  */
 export function sessionCookieName(secure: boolean): string {
-  return cookieName(COOKIE_BASE, secure);
+  return buildCookieName(COOKIE_BASE, secure);
 }
 
 /** The CSRF double-submit cookie base name, __Host- prefixed when the cookie is Secure. */
@@ -24,7 +24,7 @@ const CSRF_COOKIE_BASE = 'cairn_csrf';
  * resolve different `secure` values on the same request.
  */
 export function csrfCookieName(secure: boolean): string {
-  return cookieName(CSRF_COOKIE_BASE, secure);
+  return buildCookieName(CSRF_COOKIE_BASE, secure);
 }
 
 // RFC 6265 cookie-name is an HTTP token: no separators, no CTLs, no whitespace.
@@ -45,16 +45,16 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  * namespace: the engine's own cookie names delegate through this function, and a site base in
  * that namespace does not throw, but risks colliding with an engine cookie.
  */
-export function cookieName(base: string, secure: boolean): string {
+export function buildCookieName(base: string, secure: boolean): string {
   const lowerBase = base.toLowerCase();
   if (lowerBase.startsWith('__host-') || lowerBase.startsWith('__secure-')) {
     throw new Error(
-      `cookieName: base "${base}" already carries a __Host- or __Secure- prefix; pass the unprefixed base and let cookieName apply it`,
+      `buildCookieName: base "${base}" already carries a __Host- or __Secure- prefix; pass the unprefixed base and let buildCookieName apply it`,
     );
   }
   if (!COOKIE_TOKEN_RE.test(base)) {
     throw new Error(
-      `cookieName: base "${base}" contains a character outside the RFC 6265 cookie-name token set`,
+      `buildCookieName: base "${base}" contains a character outside the RFC 6265 cookie-name token set`,
     );
   }
   return secure ? `__Host-${base}` : base;

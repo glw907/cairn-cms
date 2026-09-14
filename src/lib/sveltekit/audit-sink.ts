@@ -1,5 +1,5 @@
 // cairn-cms: the packaged implementation of the `AdminActionAuditSink` seam (seam 5 of the
-// 2026-08-01 engine-seams design). `adminAction` and `createSectionAction` already call
+// 2026-08-01 engine-seams design). `createAdminAction` and `createSectionAction` already call
 // `event.locals.cairnAuditSink` for every mutating action and every authorization refusal; this is the
 // first sink the engine ships, backed by the `audit_log` table `migrations/0002_audit.sql` adds.
 // Opt-in: a site applies the migration and wires this factory only if it wants the trail
@@ -66,7 +66,7 @@ function truncate(rawValue: unknown, max: number): string {
  * The sink is fail-open end to end: it returns synchronously, before the insert settles, and a
  * failure anywhere in the attempt, a throwing coercion, a synchronous throw from `prepare`,
  * `bind`, or `waitUntil` itself, or a rejected insert, is caught and logged rather than left to
- * escape the caller. `adminAction` guards its own `ctx.audit` call too, so an escaping throw is
+ * escape the caller. `createAdminAction` guards its own `ctx.audit` call too, so an escaping throw is
  * caught either way; this sink still catches its own, because only here is the failing stage known,
  * and a caller-level catch could report neither the `reason` nor the record it tried to persist.
  * Whichever path catches the failure logs the

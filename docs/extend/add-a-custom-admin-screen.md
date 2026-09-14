@@ -80,10 +80,10 @@ gets refused at both the read and the write, never one without the other. Declar
 this route's path in the access map or every session, owner included, gets a 403; see
 [Restrict admin access by role](./restrict-admin-access.md) for the map itself.
 
-`createSectionAction` also runs the audit and authentication work `adminAction` does
+`createSectionAction` also runs the audit and authentication work `createAdminAction` does
 underneath it (editor identity, CSRF, one form read), so a section built on it never calls
-`adminAction` directly. A one-off action outside a whole gated section reaches for
-`adminAction` alone instead; see [Refusal channels and `adminAction`](../reference/sveltekit.md#adminaction)
+`createAdminAction` directly. A one-off action outside a whole gated section reaches for
+`createAdminAction` alone instead; see [Refusal channels and `createAdminAction`](../reference/sveltekit.md#createadminaction)
 for the bare form.
 
 ## Compose the screen

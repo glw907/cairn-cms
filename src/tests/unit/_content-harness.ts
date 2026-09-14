@@ -5,7 +5,7 @@
 // expect, so each test file states only what makes it different rather than re-declaring the
 // whole skeleton. Modeled on src/tests/integration/_auth-harness.ts.
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { Backend } from '../../lib/github/backend.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
@@ -42,7 +42,7 @@ export function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [postsConcept()],
-    backend: githubApp(REPO),
+    backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',

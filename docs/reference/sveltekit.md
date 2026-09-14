@@ -62,7 +62,7 @@ finds every engine read in any repo: `cairnEditor` (the session
 [`createAuthGuard`](#createauthguard) resolved), `cairnBackend` (a dev or test double for the
 content store; a production request leaves it absent and the real GitHub provider connects),
 `cairnAuditSink` (a site's optional [`AdminActionAuditSink`](#adminactionauditsink), wired through
-`adminAction`'s audit contract), and `cairnAccess` (the site's declared [access
+`createAdminAction`'s audit contract), and `cairnAccess` (the site's declared [access
 map](./core.md#access-map), attached by the guard alongside `cairnEditor`).
 
 `Env` defaults to [`CairnEnv`](#cairnenv): a compile-only fixture proves every factory on this
@@ -417,12 +417,12 @@ that raised it.
 
 `requireOwner`, `requireEditor`, and `requireAccess` all perform authorization: a signed-in session
 either carries the required role or capability, or the call throws. `requireSession` and
-`adminAction` perform authentication only, establishing who the caller is without deciding what
+`createAdminAction` perform authentication only, establishing who the caller is without deciding what
 they may reach: `requireSession` throws only for a session that was never resolved at all, and
-`adminAction`'s own checks (identity plus CSRF) let a `none`-capability editor's session pass
+`createAdminAction`'s own checks (identity plus CSRF) let a `none`-capability editor's session pass
 through unchanged and reach the wrapped handler. All five throw
 SvelteKit's own `error()` (a 403) or `redirect()` (a 303 to `/admin/login`), whether called
-directly inside a hand-rolled load or action, or underneath `adminAction`'s wrapper. SvelteKit
+directly inside a hand-rolled load or action, or underneath `createAdminAction`'s wrapper. SvelteKit
 recognizes both as its native thrown shapes and renders the correct status through the nearest
 `+error.svelte`, or follows the redirect, with no site code required to translate either one, and
 no `handleError` mapping to write.
@@ -480,7 +480,7 @@ One further channel exists inside the engine and is never written by a site dire
 or action runs, returning a raw, branded `Response` for a CSRF, origin, HTTPS, missing-binding, or
 dev-backend-in-production failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a
 deployed runtime, so a build that leaked its dev fixture fails loud rather than serving it). This
-channel is why `adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal
+channel is why `createAdminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal
 already covers every unsafe POST under `/admin/**` whose content type is one of the three a
 browser can send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
 `multipart/form-data`, `text/plain`), not literally every unsafe POST; a JSON POST is not
@@ -488,14 +488,14 @@ screened by this check. That is not a gap in practice: those three are exactly t
 a browser can forge cross-origin without a preflight the site never answers, and SvelteKit itself
 rejects a non-form-content-type action POST with a 415 before the action ever runs. It does mean
 this section is not license to hand-roll a JSON admin endpoint under the same protection. So
-`adminAction`'s own check is rarely the one that actually fires.
+`createAdminAction`'s own check is rarely the one that actually fires.
 
-### `adminAction`
+### `createAdminAction`
 
 Stability tier: Extension API.
 
 ```ts
-declare function adminAction<T>(
+declare function createAdminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
   deps?: AdminActionOptions,
 ): (event: CairnEvent) => Promise<T>;
@@ -504,12 +504,12 @@ declare function adminAction<T>(
 Wrap a custom admin action's handler: the admin-scoped server helper a site's own `/admin/` form
 action calls for the engine's editor and audit contract.
 `createAuthGuard` already verifies the double-submit CSRF token on every unsafe POST under
-`/admin/**`, custom routes included, before any route's own action runs, so `adminAction`'s own CSRF
+`/admin/**`, custom routes included, before any route's own action runs, so `createAdminAction`'s own CSRF
 check is defense-in-depth, not the sole gate; its real job is resolving the signed-in editor as a
 typed `ctx.editor` and requiring an audit emit for a mutating action, a hook the engine has no other
 seam for.
 
-`adminAction` authenticates and verifies CSRF, and authorizes only when you ask it to. Omit the
+`createAdminAction` authenticates and verifies CSRF, and authorizes only when you ask it to. Omit the
 `access` option, the default, and it performs no authorization at all: a `none`-capability
 editor's session passes both checks and reaches the wrapped handler unchanged, exactly as before
 the option existed. Set `access: { target, ownerOnly? }` and the wrapper runs the same access-map
@@ -523,10 +523,10 @@ receiving denial records, one per refused request. [`requireAccess`](#requireacc
 handler is still available for a check the map can't express.
 
 ```ts
-import { adminAction } from '@glw907/cairn-cms/sveltekit';
+import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
 
 export const actions = {
-  approve: adminAction(async ({ ctx }) => ({ approvedBy: ctx.editor.email }), {
+  approve: createAdminAction(async ({ ctx }) => ({ approvedBy: ctx.editor.email }), {
     access: { target: '/admin/club/events', ownerOnly: true },
   }),
 };
@@ -562,7 +562,7 @@ needs a site `handleError` mapping. Only the
 dev-only required-audit check throws [`UnauditedActionError`](#types), which SvelteKit doesn't
 recognize as one of its own thrown shapes; it fires only under `esm-env`'s `DEV`, so it's a
 build-time author signal, never a production response, and it too needs no `handleError` mapping.
-A site building on [`createSectionAction`](#createsectionaction) inherits `adminAction`'s two
+A site building on [`createSectionAction`](#createsectionaction) inherits `createAdminAction`'s two
 authentication branches with the same no-mapping guarantee; only that factory's own authorization,
 rate-limit, and binding branches return `fail(...)` instead.
 
@@ -588,11 +588,11 @@ at the point `ctx.audit` invokes it.
 
 ```ts
 // src/routes/admin/club/events/[id]/+page.server.ts
-import { adminAction } from '@glw907/cairn-cms/sveltekit';
+import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
 import { db } from '$lib/club/db.js';
 
 export const actions = {
-  approve: adminAction(async ({ form, ctx }) => {
+  approve: createAdminAction(async ({ form, ctx }) => {
     const id = String(form.get('id'));
     await db.signups.approve(id);
     ctx.audit({ action: 'approve', entity: 'signup', entityId: id });
@@ -613,7 +613,7 @@ declare function createD1AuditSink(
 ```
 
 The packaged implementation of the [`AdminActionAuditSink`](#adminactionauditsink) seam:
-persists every audit record `adminAction` and `createSectionAction` emit into one `audit_log`
+persists every audit record `createAdminAction` and `createSectionAction` emit into one `audit_log`
 table, opt-in the same way the auth migrations are.
 
 Calling it directly, with a record your own site code composes rather than one `ctx.audit`
@@ -624,9 +624,9 @@ persists the same way an admin action's audit does. `actor` is the acting identi
 and need not be a cairn editor; namespace your action names (`roster.add`, not a bare `add`) so a
 domain row stays distinguishable from an admin-action row in the shared table. The fail-open,
 truncation, and `waitUntil` promises documented below apply to a direct call exactly as they do to
-one `adminAction` makes.
+one `createAdminAction` makes.
 
-A direct call logs nothing on the way in. `admin.action.audited` is `adminAction`'s own record of a
+A direct call logs nothing on the way in. `admin.action.audited` is `createAdminAction`'s own record of a
 `ctx.audit` emit, so a row your site code writes leaves no log line unless the insert fails, which
 logs `audit.sink.write_failed` the same as any other. Log the event yourself if you want the trail
 in Workers Logs as well as the table.
@@ -754,7 +754,7 @@ contract for the curried wrapper (never `ReturnType<typeof createSectionAction>`
 Build a whole section's guarded action wrapper in one call, the enforcement every site-built
 admin section otherwise hand-rolls: SvelteKit dispatches a matched action directly, with no
 ancestor layout `load` run first, so a page's own guard never runs before a POST to one of its
-actions. `createSectionAction` composes [`adminAction`](#adminaction) (editor identity, CSRF,
+actions. `createSectionAction` composes [`createAdminAction`](#createadminaction) (editor identity, CSRF,
 the single form read, the audit contract) with the same access-map check
 [`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
 binding, so a section's own actions need no hand-rolled precondition. This is the sanctioned
@@ -807,7 +807,7 @@ limit, which deliberately degrades to open. Authorization runs before the databa
 check: a session the access map refuses learns nothing about whether the section's own database
 is deployed:
 
-1. `adminAction` resolves the editor, verifies CSRF, and reads the form once. Its own authentication
+1. `createAdminAction` resolves the editor, verifies CSRF, and reads the form once. Its own authentication
    guards throw SvelteKit's own `redirect()`/`error()`, not a `fail()`, and need no site
    `handleError` mapping; only this factory's own branches below render as form failures.
 2. The rate limit, when configured: an unresolved binding logs `admin.action.rate_limit_absent`
@@ -853,7 +853,7 @@ check (that check runs on `Actions` dispatch too), so a site that adds a remote 
 
 The rate-limit `key` must carry an actor-scoped, normalized component (the editor's email,
 lowercased), never the bare request path alone, and one binding backs one shared budget across
-every action that reads it, not a budget per action; the limiter runs after `adminAction`'s own
+every action that reads it, not a budget per action; the limiter runs after `createAdminAction`'s own
 form read, so it never bounds the cost of parsing the request body.
 
 `Env` is your site's `App.Platform['env']` in a real route; the example below names the section's
@@ -1972,18 +1972,18 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="authroutesconfig"></a>`AuthRoutesConfig` | Unstable API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }` | The config `createAuthRoutes` takes: the email branding, an optional custom sender, and the optional [config-declared bootstrap owner](#createauthroutes). |
 | `AuthRoutes` | Unstable API | `type AuthRoutes` | What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers, shown expanded in [`createAuthRoutes`](#createauthroutes). |
 | `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
-| `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
-| `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { actor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus `actor`, the acting identity. `adminAction` and `createSectionAction` populate it with the verified editor's email; a direct `createD1AuditSink` call names its own actor, which need not be a cairn editor. |
-| <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. Optional; every emit logs `admin.action.audited` regardless. |
+| `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `createAdminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
+| `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { actor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus `actor`, the acting identity. `createAdminAction` and `createSectionAction` populate it with the verified editor's email; a direct `createD1AuditSink` call names its own actor, which need not be a cairn editor. |
+| <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`. Optional; every emit logs `admin.action.audited` regardless. |
 | <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`createSectionAction`](#createsectionaction) calls; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. |
 | <a id="sectionactionconfig"></a>`SectionActionConfig` | Extension API | `interface SectionActionConfig<Env, Db> { resolveDb: (env: Env \| undefined) => Db \| undefined; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key: (ctx: AdminActionContext) => string; message?: string } }` | Site-fixed configuration for one [`createSectionAction`](#createsectionaction) factory, called once per section: the DB binding resolver (`undefined` fails the action closed with a 500) and the optional rate limit, degrade-to-open. |
 | <a id="sectionactionoptions"></a>`SectionActionOptions` | Extension API | `interface SectionActionOptions { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }` | Per-call-site options for one [`createSectionAction`](#createsectionaction)-wrapped handler: the audit verbs, declared once and reused on every denial and as `ctx.audit`'s own default, the optional authorization `target` override (defaults to `event.route.id`, never `event.url.pathname`), the `ownerOnly` stack, and an override for the shared 403 copy. |
 | <a id="sectionactionaudit"></a>`SectionActionAudit` | Extension API | `interface SectionActionAudit { action?: string; entity?: string; entityId?: string \| number; detail?: string }` | One audit record a [`createSectionAction`](#createsectionaction)-wrapped handler emits through `ctx.audit`: `action` and `entity` default from the call site's own `SectionActionOptions` when omitted, and either can still be overridden for a call that touches more than one entity. |
-| <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `adminAction`'s own context, with `audit` replaced by the defaulting [`SectionActionAudit`](#types) form, plus the resolved, non-nullable database binding, so no handler re-resolves it. |
+| <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `createAdminAction`'s own context, with `audit` replaced by the defaulting [`SectionActionAudit`](#types) form, plus the resolved, non-nullable database binding, so no handler re-resolves it. |
 | <a id="sectionaction"></a>`SectionAction` | Extension API | `type SectionAction<Env, Db> = <T>(handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent<Env>) => Promise<T \| ActionFailure<{ error: string }>>` | What [`createSectionAction`](#createsectionaction) returns: the per-call-site wrapper, curried over the handler's own success type `T`, hand-declared (never `ReturnType<typeof createSectionAction>`). |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
-| `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. `access` opts the action into the access-map authorization [`createSectionAction`](#createsectionaction) performs, against `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on the map check; omitted, `adminAction` authorizes nothing, its behavior for every caller written before the option existed. |
-| `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
+| `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }` | Injectable dependencies for `createAdminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. `access` opts the action into the access-map authorization [`createSectionAction`](#createsectionaction) performs, against `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on the map check; omitted, `createAdminAction` authorizes nothing, its behavior for every caller written before the option existed. |
+| `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `createAdminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `createAdminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. `mediaBase` is the resolved delivery base (the site's own `assets.publicBase`, or `/media`) that `CairnAdminShell` hands every descendant media surface through context, so a non-default base reaches admin thumbnails too. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. `NavConcept`, named in `concepts`, carries no export row of its own: a consumer reaches it as `Extract<AdminShellData, { public: false }>['concepts'][number]`. |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; routable: boolean; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). `routable` mirrors the concept's `routing.routable`, so the create form asks a non-routable concept (Fragments) for a name rather than an address. `EntrySummary`, named in `entries`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'list' }>['page']['entries'][number]`. |
 | `EditData` | Extension API | `interface EditData { conceptId; id; label; singular; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; fragmentTargets: { id; title; body }[] \| null; routable: boolean; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; publishActions: PublishActionLink[]; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[]; orphanTags: string[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the site's [publish-actions](#the-publish-actions-seam) resolved for this entry (`publishActions`, rendered only alongside `publishedFlash`), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). `singular` is the delete refusal's noun ("This post could not be deleted."), from the descriptor (defaulted to `label`), mirroring `ListData.singular`. `fragmentTargets` carries the published fragments this entry can include, for the fragment picker and the preview's include resolution, each a minimal `{ id; title; body }` projection; null when nothing here can include one, which covers both a site that declares no `fragments` concept and an entry that is itself a fragment (a fragment can't include a fragment), and empty when fragments are includable but none are published yet. `routable` mirrors the entry's concept `routing.routable`, so the Address fieldset shows a bare name instead of a URL for a non-routable concept (Fragments). `orphanTags` carries the entry's prior tags absent from the configured vocabulary, for the closed taxonomy picker's own-tag flag, and stays empty when the site configures no vocabulary, the concept has no taxonomy field, or every prior tag is already in the vocabulary. `AdvisoryNotice`, `PublishActionLink`, and `ResolvedPreview`, named in `advisories`, `publishActions`, and `preview`, carry no export row of their own: a consumer reaches them as `Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`, `Extract<AdminData, { view: 'edit' }>['page']['publishActions'][number]`, and `NonNullable<Extract<AdminData, { view: 'edit' }>['page']['preview']>` respectively. |
@@ -2019,7 +2019,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="platformcontext"></a>`PlatformContext` | Extension API | `interface PlatformContext<Env> { env?: Env }` | The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own `App.Platform` type is free to carry other members (`ctx`, and so on) alongside it, since a real SvelteKit `RequestEvent` has more than this structural subset and still satisfies it. |
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |
-| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a runtime `config.bindings-missing` error. **A recommended convenience preset, not a requirement:** every route factory's env parameter is `CairnEnv`, structurally satisfied by a bare `wrangler types`-generated env too (`EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`), so intersecting this type exists to catch a forgotten binding at compile time, not to unblock a route factory assignment. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `githubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
+| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a runtime `config.bindings-missing` error. **A recommended convenience preset, not a requirement:** every route factory's env parameter is `CairnEnv`, structurally satisfied by a bare `wrangler types`-generated env too (`EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`), so intersecting this type exists to catch a forgotten binding at compile time, not to unblock a route factory assignment. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `createGithubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
 | <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since it exists only when the adapter's [`media` member](./core.md#media-adapter-member) turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. `MEDIA_BUCKET` is the conventional binding name this preset assumes; a site whose adapter names a different `bucketBinding` declares that name in its own env intersection instead of this preset. |
 | `TidyClient` | Unstable API | `interface TidyClient` | The narrow, engine-owned client contract the tidy action calls: `tidy(request, options)` corrects `request.text` under `request.system` for `request.model`, returning `{ corrected, refused, tokens: { input, output } }`; an optional `models.list` probes a key's health. No `@anthropic-ai/sdk` type reaches this interface; the real SDK adapter is internal, and a test injects a stub through `ContentRoutesConfig.tidy.client`. |
 | `TidyEffort` | Unstable API | `type TidyEffort = 'low' \| 'medium' \| 'high' \| 'xhigh' \| 'max'` | `TidyClient.tidy`'s optional `effort` field: the adaptive-thinking tier a model with effort tiers (Sonnet 5 and later) runs at. The tidy action sends `'low'` only for a model `supportsEffort` recognizes, never for one without effort tiers. |

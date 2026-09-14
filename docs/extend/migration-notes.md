@@ -32,6 +32,11 @@ The release step sets the version number at the cut and renames this section to 
   (`/delivery/data`) to `buildNewlyPublished` at any call site; every signature and behavior is
   unchanged. `parseManifest`'s canonical home also moves to `.`, beside `formatManifest`, but it
   stays importable from `/delivery/data` too, so this half needs no action.
+- **Three noun-first factory functions rename per the engine's verb vocabulary.** Rename
+  `cookieName` (`/auth-crypto`) to `buildCookieName`, `githubApp` (`.`) to `createGithubApp`, and
+  `adminAction` (`/sveltekit`) to `createAdminAction` at any call site; every signature, return
+  type, and thrown error is unchanged. `src/theme/cairn.config.ts` is the site file every consumer
+  meets for `createGithubApp`, since every production site's adapter calls it directly.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and

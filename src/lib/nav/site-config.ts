@@ -310,7 +310,7 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
 const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
   content:
     'cairn: site config no longer carries per-concept URL policy; move permalink/datePrefix into defineConcept (Contract v2)',
-  backend: 'cairn: "backend" belongs in cairn.config.ts (githubApp(...)), not site.config.yaml',
+  backend: 'cairn: "backend" belongs in cairn.config.ts (createGithubApp(...)), not site.config.yaml',
   email: 'cairn: "email" belongs in cairn.config.ts (the adapter\'s SenderConfig), not site.config.yaml',
   rendering: 'cairn: "rendering" belongs in cairn.config.ts (the adapter\'s render subsystem), not site.config.yaml',
   media: 'cairn: "media" belongs in cairn.config.ts (the adapter\'s AssetConfig), not site.config.yaml',

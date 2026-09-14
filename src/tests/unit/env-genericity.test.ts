@@ -15,7 +15,7 @@ import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import { createAuthRoutes, type RequestResult } from '../../lib/sveltekit/auth-routes.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { healthLoad, type HealthData } from '../../lib/sveltekit/health.js';
-import { adminAction } from '../../lib/sveltekit/admin-action.js';
+import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
@@ -36,7 +36,7 @@ describe('env-genericity compile fixtures', () => {
     expect(typeof createAuthRoutes).toBe('function');
     expect(typeof createEditorRoutes).toBe('function');
     expect(typeof healthLoad).toBe('function');
-    expect(typeof adminAction).toBe('function');
+    expect(typeof createAdminAction).toBe('function');
     expect(typeof createMediaRoute).toBe('function');
   });
 });
@@ -108,13 +108,13 @@ function typeOnlyCairnAdminAssignability(): void {
 }
 void typeOnlyCairnAdminAssignability;
 
-// adminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
+// createAdminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
 // 2, pre-beta C1 review pass). Its returned function is typed `(event: AdminActionEvent<CairnEnv>)
 // => Promise<T>` via the default type parameter; this proves that assigns clean into a route's
 // generated `Actions`, on the same `CairnPlatformBindings` grounds as every pin above, never
 // because it "does not read event.platform" (see the corrected doc comment at admin-action.ts).
 function typeOnlyAdminActionAssignability(): void {
-  const action = adminAction(async () => ({ ok: true }) as Record<string, unknown>);
+  const action = createAdminAction(async () => ({ ok: true }) as Record<string, unknown>);
   action satisfies (event: SiteRequestEvent) => SiteActionReturn;
 }
 void typeOnlyAdminActionAssignability;

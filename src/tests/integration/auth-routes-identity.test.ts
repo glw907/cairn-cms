@@ -8,7 +8,7 @@ import { makeEvent, makeRecordingCookies, countRows, expectRedirect, expectHttpE
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import { createSession } from '../../lib/auth/store.js';
-import { githubApp } from '../../lib/index.js';
+import { createGithubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
@@ -30,7 +30,7 @@ function runtime(): CairnRuntime {
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',

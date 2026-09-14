@@ -14,7 +14,7 @@ import channelMigration from '../../../migrations-channel/0000_channel.sql?raw';
 import { mintCode, provisionSalt } from '../../lib/auth-channel/store.js';
 import { deriveIdentity, generateCode } from '../../lib/auth-channel/identity.js';
 import type { AuthChannelConfig } from '../../lib/auth-channel/index.js';
-import { cookieName, hashToken } from '../../lib/auth/crypto.js';
+import { buildCookieName, hashToken } from '../../lib/auth/crypto.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 
 /** The platform env a channel suite's events carry: the channel's own binding, never AUTH_DB. */
@@ -26,10 +26,10 @@ const db = env.CHANNEL_DB;
 const COOKIE_BASE = 'member_session';
 
 /** The pending-nonce and session cookie names, in their https (`__Host-` prefixed) and http forms. */
-export const PENDING_HTTPS = cookieName(`${COOKIE_BASE}_pending`, true);
-export const PENDING_HTTP = cookieName(`${COOKIE_BASE}_pending`, false);
-export const SESSION_HTTPS = cookieName(COOKIE_BASE, true);
-export const SESSION_HTTP = cookieName(COOKIE_BASE, false);
+export const PENDING_HTTPS = buildCookieName(`${COOKIE_BASE}_pending`, true);
+export const PENDING_HTTP = buildCookieName(`${COOKIE_BASE}_pending`, false);
+export const SESSION_HTTPS = buildCookieName(COOKIE_BASE, true);
+export const SESSION_HTTP = buildCookieName(COOKIE_BASE, false);
 
 /** Apply the packaged channel migration to the CHANNEL_DB binding, statement by statement. */
 export async function applyChannelSchema(): Promise<void> {

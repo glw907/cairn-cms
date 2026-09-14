@@ -3,7 +3,7 @@ import {
   generateToken,
   generateSessionId,
   hashToken,
-  cookieName,
+  buildCookieName,
   tokensMatch,
   sessionCookieName,
   csrfCookieName,
@@ -37,44 +37,44 @@ describe('generateToken / generateSessionId', () => {
   });
 });
 
-describe('cookieName', () => {
+describe('buildCookieName', () => {
   it('prefixes with __Host- when secure, and leaves the base bare otherwise', () => {
-    expect(cookieName('cairn_session', true)).toBe('__Host-cairn_session');
-    expect(cookieName('cairn_session', false)).toBe('cairn_session');
+    expect(buildCookieName('cairn_session', true)).toBe('__Host-cairn_session');
+    expect(buildCookieName('cairn_session', false)).toBe('cairn_session');
   });
 
   it('applies the same prefixing to an arbitrary base', () => {
-    expect(cookieName('asc-member', true)).toBe('__Host-asc-member');
-    expect(cookieName('asc-member', false)).toBe('asc-member');
+    expect(buildCookieName('asc-member', true)).toBe('__Host-asc-member');
+    expect(buildCookieName('asc-member', false)).toBe('asc-member');
   });
 
   it('is the byte-identical basis for the engine cookie-name functions', () => {
     for (const secure of [true, false]) {
-      expect(sessionCookieName(secure)).toBe(cookieName('cairn_session', secure));
-      expect(csrfCookieName(secure)).toBe(cookieName('cairn_csrf', secure));
+      expect(sessionCookieName(secure)).toBe(buildCookieName('cairn_session', secure));
+      expect(csrfCookieName(secure)).toBe(buildCookieName('cairn_csrf', secure));
     }
   });
 
   it('throws on a base that already carries a __Host- or __Secure- prefix', () => {
-    expect(() => cookieName('__Host-cairn_session', true)).toThrow();
-    expect(() => cookieName('__Secure-cairn_session', true)).toThrow();
+    expect(() => buildCookieName('__Host-cairn_session', true)).toThrow();
+    expect(() => buildCookieName('__Secure-cairn_session', true)).toThrow();
   });
 
   it('throws on a differently-cased prefix, since a browser matches __Host-/__Secure- case-insensitively', () => {
-    expect(() => cookieName('__host-cairn_session', true)).toThrow();
-    expect(() => cookieName('__SECURE-cairn_session', true)).toThrow();
+    expect(() => buildCookieName('__host-cairn_session', true)).toThrow();
+    expect(() => buildCookieName('__SECURE-cairn_session', true)).toThrow();
   });
 
   it('throws on a base carrying a character outside the cookie-name token set', () => {
-    expect(() => cookieName('bad;name', true)).toThrow();
-    expect(() => cookieName('bad=name', true)).toThrow();
-    expect(() => cookieName('bad name', true)).toThrow();
-    expect(() => cookieName('bad\nname', true)).toThrow();
+    expect(() => buildCookieName('bad;name', true)).toThrow();
+    expect(() => buildCookieName('bad=name', true)).toThrow();
+    expect(() => buildCookieName('bad name', true)).toThrow();
+    expect(() => buildCookieName('bad\nname', true)).toThrow();
   });
 
   it('does not throw on the engine-reserved cairn_ namespace', () => {
-    expect(() => cookieName('cairn_session', true)).not.toThrow();
-    expect(() => cookieName('cairn_anything', false)).not.toThrow();
+    expect(() => buildCookieName('cairn_session', true)).not.toThrow();
+    expect(() => buildCookieName('cairn_anything', false)).not.toThrow();
   });
 });
 

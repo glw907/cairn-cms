@@ -232,8 +232,8 @@ The release step sets the version number at the cut and renames this section to 
   every editor-capability session; the warning names exactly which ones on the next server start,
   and `docs/extend/security-model.md#recovering-whitelist-semantics` gives the exhaustive-map
   recipe to close the gap.
-- **Two log event names change to match the vocabulary's own grammar.** `taxonomy.unmarked_field`
-  becomes `taxonomy.field_unmarked` and `publish.address_collision` becomes
+- **Two log event names change to match the vocabulary's own grammar.** taxonomy.unmarked_field
+  becomes `content.field_unmarked` and `publish.address_collision` becomes
   `publish.address_collided`. Rename both in any log filter or alert.
 - **`mintPreview` replaces `mintPreviewToken`** (`/sveltekit`), taking
   `(runtime, config, event, { concept, entryId })` and performing the entry-scoped authorization
@@ -267,6 +267,14 @@ The release step sets the version number at the cut and renames this section to 
   `/reproductions/manifest`.** Pass `mediaBase` to `ReproContext` instead of importing
   `fixtureMediaBase`; a site deployed under a SvelteKit `paths.base` composes fixture image URLs
   inside its own namespace by passing that prefix.
+- **`MarkdownEditor`'s thirteen `register*` props retire in favor of one `registerEditor`
+  callback.** `registerInsert`, `registerInsertLink`, `registerInsertImage`,
+  `registerCaretCoords`, `registerFocusEditor`, `registerImagePlaceholders`,
+  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`,
+  `registerFormat`, `registerReplaceRange`, and `registerSelectRange` retire. Replace any of
+  them passed directly to `MarkdownEditor` with one `registerEditor` callback that reads the
+  matching member off the `EditorApi` it receives (annotatable as `EditorApi | null` from
+  `/components`).
 - **`MarkdownEditor`'s `registerEditor` now also delivers `null` once, from its real `onDestroy`
   teardown, revoking the mount grant.** A host holding one `editor` reference from a direct
   `MarkdownEditor` mount whose `registerEditor` callback assumed it was only ever called with a
@@ -286,10 +294,9 @@ The release step sets the version number at the cut and renames this section to 
   `media.replace_refused`, auth.access.denied to `auth.access.refused`, and
   admin.action.csrf_rejected to `admin.action.csrf_refused`; every record's field set is
   unchanged.
-- **Two log events move onto their true areas.** Rename taxonomy.field_unmarked to
-  `content.field_unmarked` and admin.action.sink_threw to `audit.sink.call_failed` in any log
-  filter, alert, or subscriber; `audit.sink.write_failed` is unchanged and every record's field
-  set is unchanged.
+- **One log event moves onto its true area.** Rename admin.action.sink_threw to
+  `audit.sink.call_failed` in any log filter, alert, or subscriber; `audit.sink.write_failed` is
+  unchanged and every record's field set is unchanged.
 - **`OfficeList` (`/admin-toolkit`) is retired.** Replace an `<OfficeList>` composition with
   `PageHeader` beside `AdminTable` inside a bare `card-shell card-shadow` div (no
   `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries the horizontal

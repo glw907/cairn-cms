@@ -1333,6 +1333,13 @@
   names its two documented cross-subpath exceptions, `PublicRoutesConfig` and `EntryData`, both
   canonical on `/delivery`. No signature changed and no export moved.
 
+- `docs/extend/add-a-custom-admin-screen.md`'s worked example now composes `PageHeader` beside
+  `AdminTable` inside the floating-card recipe's own `card-shell card-shadow` div, in place of
+  wrapping `AdminTable` in `OfficeList`. `AdminTable` already owns its own horizontal scroll, so
+  the div does not also carry `overflow-x-auto`. The `toolkit/custom-screen` reproduction is
+  rewritten to match, in lockstep with the doc snippet. No export changed; this is a doc and
+  reproduction change only.
+
 - `docs/internal/admin-design-system.md` gains a busy section naming the admin's two busy shapes
   (native `disabled` plus an always-mounted status region for a control mid-wait, `aria-disabled`
   plus `cairn-btn-guarded` for a control refused with a reason) and the upload recipe's own

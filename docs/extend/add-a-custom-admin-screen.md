@@ -89,24 +89,27 @@ for the bare form.
 ## Compose the screen
 
 Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md) before hand-rolling a
-list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `OfficeList`
-renders the title band and the triage table together, `AdminTable` for a table with no
-`OfficeList` wrapping it, `ListToolbar` for search and filters, `Pagination`, `StatusChip` for a
-status pill, `EmptyState` for the zero-rows case, and `FieldLabel` for a form control's label.
-Reach for `PageHeader` alone only on a screen that isn't `OfficeList`-shaped: `OfficeList` already
-renders its own `PageHeader`, so a screen never nests both, which would render two `<h1>`s. Every
-one of these primitives ships pre-compiled inside cairn's own admin stylesheet, so it renders
-correctly with no Tailwind setup of your own; your route's own markup outside these components
-compiles through your site's usual build and can use anything your stack supports.
+list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `PageHeader`
+for the title band, `AdminTable` for the triage table, `ListToolbar` for search and filters,
+`Pagination`, `StatusChip` for a status pill, `EmptyState` for the zero-rows case, and
+`FieldLabel` for a form control's label. Wrap `AdminTable` in a `<div>` carrying `card-shell
+card-shadow`, the [floating-card recipe](../internal/admin-design-system.md) the admin's own
+screens use for a table's shell; `AdminTable` sets its own horizontal scroll, so the wrapping div
+does not also carry `overflow-x-auto`. Every one of these primitives ships pre-compiled inside
+cairn's own admin stylesheet, so it renders correctly with no Tailwind setup of your own; your
+route's own markup outside these components compiles through your site's usual build and can use
+anything your stack supports.
 
 ```svelte
 <script lang="ts">
-  import { OfficeList, AdminTable, StatusChip } from '@glw907/cairn-cms/admin-toolkit';
+  import { PageHeader, AdminTable, StatusChip } from '@glw907/cairn-cms/admin-toolkit';
 
   let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
 </script>
 
-<OfficeList eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`}>
+<PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
+
+<div class="card-shell card-shadow">
   <AdminTable rowCount={data.events.length}>
     {#snippet header()}
       <th scope="col">Name</th>
@@ -121,7 +124,7 @@ compiles through your site's usual build and can use anything your stack support
       {/each}
     {/snippet}
   </AdminTable>
-</OfficeList>
+</div>
 ```
 
 A component that renders one of cairn's own content concepts, a `ConceptList` row or an `EditPage`

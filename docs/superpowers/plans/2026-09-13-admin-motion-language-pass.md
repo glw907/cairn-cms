@@ -26,7 +26,8 @@ safety and the mechanics lens wins on executability**.
    shell. Mechanics showed `conditions` cannot discriminate DaisyUI's layer output from cairn's own.
    Executability decides the discriminator: the exemption tests the compiled declaration's source
    rule, and falls back to an explicit DaisyUI class-name list shipped with the rule.
-3. **The zen transition is authored in `cairn-admin.css`** (domain D2, mechanics 5 and 6, contract 2).
+3. **The zen transition (superseded by Frame offset, below) is authored in `cairn-admin.css`** (domain
+   D2, mechanics 5 and 6, contract 2).
    All three found that `CairnAdminShell.svelte` carries no `<style>` block, no `margin-left`, and no
    `setZen()`. Executability decides: `cairn-admin.css` is the only file a `.drawer-content` selector
    can live in, the exception is keyed on that file, and `setZen()` is at `EditPage.svelte:441`.
@@ -158,8 +159,11 @@ use, compiles to `margin-left`, measured in the built sheet as
 `.ml-56{margin-left:calc(var(--spacing) * 56)}`, so a transition naming `margin-inline-start` would
 animate nothing.
 
-**The join is the substrate's, with one internal field added.** The sheet half matches the rule's own
-`[data-cairn-motion="frame-offset"]` selector, which `SheetDeclaration` carries verbatim. The markup
+**The join is the substrate's, with one internal field added.** The sheet half matches a declaring
+rule whose selector contains `[data-cairn-motion="frame-offset"]` (the engine authors it inside the
+two-theme-root prelude,
+`:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) [data-cairn-motion="frame-offset"]`),
+which `SheetDeclaration` carries verbatim. The markup
 half reads `SourceNode.attributes` at the same `elementStart` the class join already groups tokens
 by, and `ElementAttribute` gains one optional field carrying a literal string value, since it records
 a name alone today. `./audit` is not a package export subpath, so no package surface moves. Task 3's
@@ -503,12 +507,10 @@ Spot-measured at plan authoring. Every one is re-verified at dispatch.
   message.
 - **`transition: all` has one owner, `motion-band`.** Rule 1 does not re-report it, so one construct
   produces one finding under one id.
-- **The one exception is keyed on the triple**, the engine-owned file
-  (`src/lib/components/cairn-admin.css`, or its `dist` equivalent) plus the `.drawer-content` selector
-  plus `margin-left`. Keying on the selector alone would hand the licence to any consumer element
-  named `.drawer-content`, which is DaisyUI's own class name. The file is the admin sheet rather than
-  the shell because the shell carries no `<style>` block, so no `.drawer-content` rule can come from
-  it.
+- **The exception is keyed on the attribute plus the property: an element carrying
+  `data-cairn-motion="frame-offset"` may transition `margin-left` and nothing else, one such
+  element per screen. There is no file key and no selector key.** A class or selector key hands the
+  licence to any name a consumer can spell, which is what `.drawer-content` did.
 - **No paint opts back in under reduced motion this pass.** The permission stands for a consumer;
   cairn takes none of it, because `check-custom-surface.mjs:158` compares the unlayered rule list to
   the allowlist by length, so nine restatements would cost nine allowlist entries in a budget whose
@@ -1029,9 +1031,12 @@ half can read the attribute; `motion-hover-gate` with both predicates; and both 
   `margin-left` rather than `margin-inline-start` because Tailwind's `ml-*`, which the shell's two
   conditional utilities use, compiles to `margin-left`, so a transition naming the logical property
   would animate nothing.
-- **The join is the substrate's, with one internal field added.** The sheet half matches the rule's
-  own `[data-cairn-motion="frame-offset"]` selector, which `SheetDeclaration` carries verbatim
-  (`sheet.ts:16-24`). The markup half reads `SourceNode.attributes` at the same `elementStart` the
+- **The join is the substrate's, with one internal field added.** The sheet half matches a declaring
+  rule whose selector contains `[data-cairn-motion="frame-offset"]` (the engine authors it inside the
+  two-theme-root prelude,
+  `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) [data-cairn-motion="frame-offset"]`),
+  which `SheetDeclaration` carries verbatim (`sheet.ts:16-24`). The markup half reads
+  `SourceNode.attributes` at the same `elementStart` the
   class join already groups tokens by (`markup.ts:26-33`, `:500-526`, `:547-556`), and
   `ElementAttribute` gains one optional field carrying the attribute's literal string value, since
   it records a name and no value today (`markup.ts:36-49`). A bound or interpolated value reads as
@@ -1084,9 +1089,12 @@ half can read the attribute; `motion-hover-gate` with both predicates; and both 
   what the run reports and the task names the rule each new entry came from.
 - [ ] **Step 1: the failing fixtures first, for `motion-property`.** Write the ten fixtures the spec
   names and watch each fail with the rule module absent: a `transition-[width]` class fails; a
-  `width 200ms` CSS declaration fails; a `transition-all` construct produces NO `motion-property`
-  finding; an element carrying `data-cairn-motion="frame-offset"` transitioning `margin-left` passes;
-  an element without the attribute transitioning `margin-left` fails; the carrying element
+  `width 200ms` CSS declaration fails; an element carrying `data-cairn-motion="frame-offset"`
+  transitioning `margin-left` under a declaring rule scoped as
+  `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) [data-cairn-motion="frame-offset"]`
+  passes, proving the CSS-family half matches on containment rather than exact equality; a
+  `transition-all` construct produces NO `motion-property`
+  finding; an element without the attribute transitioning `margin-left` fails; the carrying element
   transitioning `margin-left` plus a second layout property fails on the second property; a
   consumer-owned element carrying the attribute passes; a second element carrying the attribute on
   the same screen fails on that second element; `class="drawer-side"` joined to the vendor's `width`
@@ -1094,7 +1102,9 @@ half can read the attribute; `motion-hover-gate` with both predicates; and both 
 - [ ] **Step 2:** write `motion-property` until all ten pass. Include the three-property cap (more
   than three properties in one declaration is a finding) and the `animate-*` clause (an `animate-*`
   class is checked through its `--animate-*` custom property's keyframes, so animating a snap-list
-  property is the same finding as transitioning one), each with its own fixture.
+  property is the same finding as transitioning one), each with its own fixture. The frame-offset
+  fixtures exercise the one optional value field `ElementAttribute` gains in `src/lib/audit/markup.ts`,
+  where the field lands.
 - [ ] **Step 3: the failing fixtures first, for `motion-hover-gate`.** `cairn-admin.css:1002` passes,
   because it is guarded and declares paint rather than motion; a `:hover` state on an element whose
   base rule declares a transition, ungated, fails; a `:hover` rule declaring a transition directly,
@@ -2033,10 +2043,10 @@ reproduction is a static mount that cannot show motion. `src/lib/reproductions/m
 - [ ] **Step 4:** add the three ids to `RULE_IDS` and `src/lib/components/cairn-admin.css` to
   `CSS_FILES`. Run `node scripts/checks/check-invisible-craft.mjs` and confirm it exits 0. If it does
   not, paste every finding and stop: a red gate here means the migration tasks left something, and
-  guessing a suppression is not the fix. Then run the pair the acceptance criteria turn on: a control
-  arm with the gate's `static.adminScope` set to the five `SCAN_SCOPE` roots, which produces the
-  which produces the showcase theme's findings, against the shipping arm with the three admin
-  roots, which produces none. The control arm is a local edit run and reverted, never a committed
+  guessing a suppression is not the fix. Then run the pair the acceptance criteria turn on: a
+  control arm with the gate's `static.adminScope` set to the five `SCAN_SCOPE` roots,
+  which produces the showcase theme's findings, against the shipping arm with the three admin roots,
+  which produces none. The control arm is a local edit run and reverted, never a committed
   second config. Paste both arms with their per-id finding counts. **If a named arm returns zero
   where the criteria expect findings, stop and report it**, with both configs and both outputs
   pasted: an empty control arm means the instrument is not reading what it was meant to read, and
@@ -2152,13 +2162,11 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   their own theme CSS in `static.cssFiles` if they want the CSS-family rules to read it, which is
   already true of `token-colors`, and naming `static.adminScope` if their admin screens sit outside
   `src/routes/admin` and `src/lib/admin-toolkit`. It states how a developer claims the one property
-  allowance on a screen whose frame column collapses.
-  The exception is keyed on the attribute plus the property: an element carrying
-  `data-cairn-motion="frame-offset"` may transition `margin-left` and nothing else, one such
-  element per screen. There is no file key and no selector key. It carries the one non-obvious
-  authoring step,
-  splitting a `:hover` and `:focus-visible` selector list before adding the modality guard, and the
-  opt-back-in permission with its budget caveat.
+  allowance on a screen whose frame column collapses: the exception is keyed on the attribute plus
+  the property, an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`
+  and nothing else, one such element per screen, and there is no file key and no selector key. It
+  carries the one non-obvious authoring step, splitting a `:hover` and `:focus-visible` selector
+  list before adding the modality guard, and the opt-back-in permission with its budget caveat.
 - **The reference gets three static rows, one rendered advisory row, the `static.adminScope` config
   key with its default, the `motion-band` band correction, and the coverage limits.** The key is the
   pass's one consumer-facing config addition, so the reference page is where a consumer meets it.

@@ -43,7 +43,8 @@ standing rule that the domain lens wins on safety and the mechanics lens wins on
    the discriminator: the exemption tests whether the compiled declaration's rule came from DaisyUI's
    plugin output, and where the sheet cannot answer that, it falls back to an explicit list of
    DaisyUI component class names shipped with the rule.
-3. **The zen offset is authored in `cairn-admin.css`.** Both the domain lens and the mechanics lens
+3. **The zen offset (superseded by Frame offset, below) is authored in `cairn-admin.css`.** Both the
+   domain lens and the mechanics lens
    found that `CairnAdminShell.svelte` carries no `<style>` block, no `margin-left`, and no
    `setZen()`, so the exception's file key matched nothing that could exist. Executability decides
    the authoring site: `cairn-admin.css` is the only file a `.drawer-content` selector can live in,
@@ -409,17 +410,20 @@ before.
 
 **The property is `margin-left` rather than `margin-inline-start`.** The value the transition
 animates is set by the shell's two conditional Tailwind margin utilities
-(`CairnAdminShell.svelte:692-693`), and Tailwind's `ml-*` compiles to `margin-left`, measured in the
-built sheet as `.ml-56{margin-left:calc(var(--spacing) * 56)}`. A transition naming
+(`CairnAdminShell.svelte:692-693`), and Tailwind's `ml-*` compiles to `margin-left`, measured as
+`.ml-56{margin-left:calc(var(--spacing) * 56)}` in the showcase's Vite client output, compiled from
+the `lg:ml-56` and `xl:ml-56` variants those utilities use, not in `cairn-admin.css`. A transition naming
 `margin-inline-start` would name a property nothing sets, so it would animate nothing. `ms-*` is the
 logical-property form and is not what the shell ships.
 
 **What the rule reads.** The allowance has two halves, and neither needs a file key.
 
-- The sheet half. The transition is authored in `src/lib/components/cairn-admin.css` as a rule whose
-  selector is `[data-cairn-motion="frame-offset"]`. `SheetDeclaration` carries the declaring rule's
-  full selector text as written (`sheet.ts:16-24`), so the CSS-family half matches that attribute
-  selector directly.
+- The sheet half. The transition is authored in `src/lib/components/cairn-admin.css` inside the
+  two-theme-root prelude, as
+  `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) [data-cairn-motion="frame-offset"]`.
+  `SheetDeclaration` carries the declaring rule's full selector text as written (`sheet.ts:16-24`),
+  so the CSS-family half matches a declaring rule whose selector contains
+  `[data-cairn-motion="frame-offset"]`, not one equal to it.
 - The markup half. `SourceNode.attributes` already yields every attribute and `class:` directive a
   node carries, keyed by the node's own `start`, which is the offset `ClassToken.elementStart` holds
   (`markup.ts:26-33`, `:500-526`, `:547-556`). The class join therefore reaches the attribute at the
@@ -1468,10 +1472,9 @@ limits, and the two configuration lines a consumer may owe, neither required by 
 their own theme CSS in `static.cssFiles` if they want the CSS-family rules to read it, which is
 already true of `token-colors`, and naming `static.adminScope` if their admin screens sit outside
 `src/routes/admin` and `src/lib/admin-toolkit`). It states how a developer claims the one property
-allowance on a screen whose frame column collapses.
-The exception is keyed on the attribute plus the property: an element carrying
-`data-cairn-motion="frame-offset"` may transition `margin-left` and nothing else, one such
-element per screen. There is no file key and no selector key. It also
+allowance on a screen whose frame column collapses: the exception is keyed on the attribute plus
+the property, an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`
+and nothing else, one such element per screen, and there is no file key and no selector key. It also
 carries the one non-obvious authoring step, splitting a `:hover` and
 `:focus-visible` selector list before adding the modality guard, and the opt-back-in permission with
 its budget caveat. It cites the design system's Motion section as canonical rather than restating its
@@ -1721,7 +1724,8 @@ re-baselines the two existing suites against the widened predicate. The `no-pref
 **3. `motion-property` and `motion-hover-gate`. Not paint.**
 Files: `src/lib/audit/rules/static/motion-property.ts`, `motion-hover-gate.ts`, `src/lib/audit/types.ts`
 (the optional `adminOnly` field), `src/lib/audit/config.ts` (the optional `static.adminScope` key),
-`src/lib/audit/run.ts` (resolving the one over the other), the static registry
+`src/lib/audit/run.ts` (resolving the one over the other), `src/lib/audit/markup.ts` (the one optional
+value field `ElementAttribute` gains), the static registry
 `src/lib/audit/rules/static/index.ts`, the two fixture suites under
 `src/tests/unit/audit/rules/`, and `src/tests/unit/audit/run.test.ts`, which takes the resolution and
 existence assertions and whose shared temporary root gains a `src/lib/components` fixture.

@@ -266,7 +266,7 @@ export function createAdminAction<T>(
         // above already logged the full record, so this failure log carries only the identity
         // fields and the error, never `record.detail`, which can hold arbitrary site data.
         const logSinkFailure = (error: unknown): void => {
-          log.error('admin.action.sink_threw', {
+          log.error('audit.sink.call_failed', {
             path: event.url.pathname,
             action: record.action,
             entity: record.entity,

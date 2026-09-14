@@ -1337,6 +1337,17 @@
   rename any of the six event strings a site's own log subscriber matches on, old to new, per the
   list above.
 
+- **Breaking:** two log events move onto their true areas. `taxonomy.field_unmarked` renames to
+  `content.field_unmarked` (`taxonomy` was the union's only use of that area, and the sibling
+  event `content.field_behavior_failed` already named the right one for the same subsystem), and
+  `admin.action.sink_threw` renames to `audit.sink.call_failed`, converging with
+  `audit.sink.write_failed` on one area and one verb (`failed`) with two subjects: `call_failed`
+  for the site's own sink throwing when `ctx.audit` invokes it, `write_failed` for the packaged
+  D1 sink failing to persist. `audit.sink.write_failed` itself is unchanged. Every record's field
+  set is unchanged; only the two `event` strings change. Consumers must: rename
+  `taxonomy.field_unmarked` to `content.field_unmarked` and `admin.action.sink_threw` to
+  `audit.sink.call_failed` in any log filter, alert, or subscriber.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

@@ -419,7 +419,7 @@ describe('createAdminAction: the audit sink is fail-open', () => {
     expect(sink).toHaveBeenCalledOnce();
   });
 
-  it('logs admin.action.sink_threw with the action identity and the error, never the record contents', async () => {
+  it('logs audit.sink.call_failed with the action identity and the error, never the record contents', async () => {
     const sink = vi.fn(() => {
       throw new Error('sink exploded');
     });
@@ -432,7 +432,7 @@ describe('createAdminAction: the audit sink is fail-open', () => {
     await action(event);
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.action.sink_threw',
+        event: 'audit.sink.call_failed',
         path: '/admin/club/events',
         action: 'approve',
         entity: 'signup',
@@ -513,7 +513,7 @@ describe('createAdminAction: the audit sink is fail-open', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.action.sink_threw',
+        event: 'audit.sink.call_failed',
         action: 'approve',
         entity: 'signup',
         entityId: '42',

@@ -370,6 +370,11 @@ open edits, not part of the shape itself.
   vocabulary already carries defect nouns, `chip-ground-collision` among them, and C16 counsels
   restraint beyond the namespace fix), and the `allowlist-` sub-prefix stays (`rendered` is the
   area; the clause namespaces by area, not by sub-mechanism).
+- **Note (polish-C, Task 11):** the events header (`src/lib/log/events.ts`) widens its own
+  grammar clause on the same reasoning as the amendment above: the subject segment of
+  `area[.subject].verb_phrase` may itself be dotted, so `auth.channel.session.created` conforms
+  as written rather than standing as the grammar's one four-segment outlier. The clause is
+  widened, not the name flattened, matching this ruling's own declined-tidy precedent.
 
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 
@@ -4355,6 +4360,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 3.
 - **Any-site case:** A member reports "the code worked but I'm not logged in": this record's presence or absence after auth.channel.confirmed isolates the fault to the session row write.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** string unchanged. `convention-identifier-grammar`'s header clause
+  widens to admit a dotted subject, naming this event as its live case, so the four-segment name
+  now conforms as written rather than standing as the grammar's one outlier. Verdict unchanged.
 
 ## audit-log-auth-session-created: `auth.session.created`  (keep, 2026-08-26, any-site audit)
 
@@ -4559,6 +4567,13 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Rename to the grammar `events.ts` ratifies in its own header: `taxonomy.unmarked_field` becomes `taxonomy.field_unmarked`, a state adjective naming a detected condition. The verify record found a second bare noun phrase, `publish.address_collision`, which becomes `publish.address_collided`; any rename lands both.
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 30.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** superseded. `taxonomy.field_unmarked` renames to
+  `content.field_unmarked`: `taxonomy` was the union's only use of that area, and the sibling
+  event `content.field_behavior_failed` already names the right one for the same subsystem. An
+  event name is public-observable contract, so both this rename and the earlier one that produced
+  `taxonomy.field_unmarked` ride the one unpublished breaking window with a `Consumers must:` line
+  naming each, above the `0.96.0` boundary under `## Unreleased`; a consumer upgrading across the
+  window crosses one rename, not two.
 
 ## audit-log-media-orphans-purged: `media.orphans_purged`  (keep, 2026-08-26, any-site audit)
 
@@ -4754,6 +4769,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 55.
 - **Any-site case:** A developer's own audit sink silently loses records while every action still succeeds (the wrapper is fail-open). Its redaction reasoning is the vocabulary's best precedent: it omits record.detail "not because detail is sensitive but to avoid duplication: admin.action.audited already logged the full untruncated record ... one line earlier."
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** renamed to `audit.sink.call_failed`. The area moves off `admin`
+  onto `audit.sink`, converging with `audit.sink.write_failed` on one area and one verb
+  (`failed`) with two subjects: this event names the site's own sink throwing when `ctx.audit`
+  invokes it, and `audit.sink.write_failed` names the packaged D1 sink failing to persist. Verdict
+  unchanged.
 
 ## audit-log-admin-action-unaudited: `admin.action.unaudited`  (keep, 2026-08-26, any-site audit)
 
@@ -4839,6 +4859,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 66.
 - **Any-site case:** A site's audit table quietly missing rows while every action succeeds. The doc states the keep burden itself: "The audited action already completed (the sink is fail-open), so this is the only surviving record of the persisted row." Four reasons separate a data problem from a binding problem, it persists the whole truncated record with a placeholder for whichever field's coercion failed, and it guarantees at most one record. It is also the one event whose `actor` is documented as not necessarily an editor, a correct generic accommodation for site code calling createD1AuditSink with its own domain events.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md).
+- **Note (polish-C, Task 11):** string unchanged. `admin.action.sink_threw` renames to
+  `audit.sink.call_failed` and converges with this event on one area, `audit.sink`, and one verb,
+  `failed`, with two subjects, this event's `write_failed` naming the packaged D1 sink's own
+  persist failure. Verdict unchanged.
 
 ## audit-log-admin-action-misconfigured: `admin.action.misconfigured`  (keep, 2026-08-26, any-site audit)
 

@@ -3,8 +3,11 @@
 // breaking change. See docs/reference/log-events.md, kept in step with this union.
 //
 // The grammar: `area[.subject].verb_phrase`. A past-tense verb phrase names an occurrence; a
-// state adjective names a detected condition. Every `reason`/`scope` value a record carries is
-// snake_case.
+// state adjective names a detected condition. The subject segment may itself be dotted, so a
+// four-segment name is grammar-conforming as long as it still reads area, subject, verb phrase:
+// `auth.channel.session.created` namespaces by area (`auth.channel`) and subject
+// (`session`), not by a flattened third segment. Every `reason`/`scope` value a record carries
+// is snake_case.
 //
 // Two verbs cover every refusal-shaped event. `refused` names a decision the engine made on
 // policy: the request or the state violates a rule the engine chose to enforce, and a different
@@ -27,7 +30,7 @@ export type CairnLogEvent =
   | 'config.invalid'
   | 'config.access_unmapped'
   | 'content.field_behavior_failed'
-  | 'taxonomy.field_unmarked'
+  | 'content.field_unmarked'
   | 'entry.published'
   | 'entry.discarded'
   | 'preview.token.minted'
@@ -75,7 +78,7 @@ export type CairnLogEvent =
   | 'admin.action.rate_limit_failed'
   | 'admin.action.rate_limited'
   | 'admin.action.misconfigured'
-  | 'admin.action.sink_threw'
+  | 'audit.sink.call_failed'
   | 'turnstile.verify_failed'
   | 'audit.sink.write_failed'
   // The auth-channel factory (createAuthChannel), twelve events, plus

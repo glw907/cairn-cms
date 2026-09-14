@@ -91,3 +91,49 @@ test('a plain var already on the platform proxy (PUBLIC_ORIGIN) survives onto an
   // The fakes still win: this is not a passthrough that could shadow AUTH_DB with a real proxy value.
   expect(event.platform.env.AUTH_DB).toBeTruthy();
 });
+
+test('the handle attaches the supplied access map to locals.cairnAccess on an /admin request', async () => {
+  const access = { '/admin/signups': ['owner'] };
+  const handle = devBackendHandle({ access });
+  const event = {
+    url: new URL('http://localhost/admin/signups'),
+    locals: {},
+    platform: undefined,
+  } as any;
+
+  await handle({ event, resolve: async () => new Response('ok') });
+
+  // The site's own declaration reaches locals verbatim, the same object, never a copy derived
+  // from the minted owner session.
+  expect(event.locals.cairnAccess).toBe(access);
+});
+
+test('a handle given no access map leaves locals.cairnAccess undefined rather than an empty map', async () => {
+  const handle = devBackendHandle();
+  const event = {
+    url: new URL('http://localhost/admin/signups'),
+    locals: {},
+    platform: undefined,
+  } as any;
+
+  await handle({ event, resolve: async () => new Response('ok') });
+
+  // Undefined, not {}: createSectionAction reads an absent map as a misconfigured wiring and
+  // fails 500, which is the signal a developer needs under the dev backend.
+  expect(event.locals.cairnAccess).toBeUndefined();
+  expect('cairnAccess' in event.locals).toBe(false);
+});
+
+test('neither handle attaches an access map on a non-/admin path', async () => {
+  const access = { '/admin/signups': ['owner'] };
+  const withMap = devBackendHandle({ access });
+  const withoutMap = devBackendHandle();
+  const withMapEvent = { url: new URL('http://localhost/about'), locals: {}, platform: undefined } as any;
+  const withoutMapEvent = { url: new URL('http://localhost/about'), locals: {}, platform: undefined } as any;
+
+  await withMap({ event: withMapEvent, resolve: async () => new Response('ok') });
+  await withoutMap({ event: withoutMapEvent, resolve: async () => new Response('ok') });
+
+  expect(withMapEvent.locals.cairnAccess).toBeUndefined();
+  expect(withoutMapEvent.locals.cairnAccess).toBeUndefined();
+});

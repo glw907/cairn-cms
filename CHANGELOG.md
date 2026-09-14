@@ -259,6 +259,20 @@
   no longer leaks a stub across test files; `vi.restoreAllMocks` never restored globals. Internal
   test-harness fix only; no consumer action.
 
+- `devBackendHandle` (`@glw907/cairn-cms-dev`) accepts `access` and `roles`, so the dev backend
+  reaches parity with `createAuthGuard` on `locals.cairnAccess`: a site hands the one declaration
+  object it already hands the guard to whichever hook branch is live, and the attached-versus-absent
+  map behaves the same in local development and in production (`hasAccessRule`,
+  `createSectionAction`'s `access_map_not_attached` 500, and the nav's `hrefReachable`). The dev
+  backend mints an owner session, so a role-based refusal cannot be exercised locally; only the
+  map's attachment, not a role decision, is what this parity covers. `access` is attached verbatim
+  beside the minted owner editor on every `/admin` request; `roles` is carried so the same object
+  needs no reshaping and resolves no capability here, since the dev backend mints the literal
+  owner capability. Given no `access`, the handle leaves `locals.cairnAccess` undefined rather
+  than the guard's `{}` default, keeping `createSectionAction`'s misconfigured-wiring refusal
+  reachable under the dev backend, which replaces the guard rather than running beside it. Both
+  parameters are optional and additive; no consumer action.
+
 ### Removed
 
 - `iconSpan`, `cardShell`, and `headRow` (`/render`) are gone from the engine; the subpath is now
@@ -287,6 +301,28 @@
   own `src/chassis/render.ts`.
 
 ### Changed
+
+- `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
+  names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
+  alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone
+  spellings are normalized to their canonical spelling before parsing, so `new Date()` stays
+  deterministic across a Worker's SSR and a browser's hydration rather than falling back to
+  implementation-defined `Date.parse` behavior. A zone-less near-ISO string still returns
+  unchanged. The signature is unchanged. No consumer action.
+
+- The showcase's custom Signups admin screen, and the Waymark template that mirrors it, now build
+  both form actions through `createSectionAction` instead of a hand-rolled
+  `requireOwner`/`formData`/`fail` shape. The exemplar's job is to teach the documented path, and
+  the raw shape taught a developer to copy the minimum that compiles. The wrapper resolves the
+  route's own `APP_DB` binding, emits an audit record per mutation (`create`/`signup` and
+  `remove`/`signup`), and authorizes each POST against the site's access declaration before the
+  binding resolves, with `ownerOnly` still stacked on the destructive action. That authorization is
+  fail-closed on every call, per the `access-semantics-documented-divergence` ruling: an unmapped
+  target refuses, so a site copying this route declares a rule for it. The `load` moves from
+  `requireOwner` to `requireAccess`, so it resolves against the same site access map the section
+  actions already check: a section's load and its POST actions agreeing on one predicate means a
+  denied POST's page render exposes nothing the load would not already have refused. The `ownerOnly`
+  nav flag stays cosmetic only. Example and template code only; no consumer action.
 
 - The engine's own admin components (`src/lib/components/*.svelte`) now sit under the same
   `check:comments` TSDoc gate the showcase's `.svelte` files carry: the ESLint `.svelte` block's
@@ -1308,6 +1344,46 @@
 
 ### Fixed
 
+- The showcase's Signups admin screen, and the Waymark template that mirrors it, give the create
+  form's Name and Email fields a visible label in place of the `sr-only` pair: each control now
+  sits inside a `<label>` carrying a `type-body font-medium` span above it, the same stacked
+  register `LoginPage` uses, so a sighted user reads the field's name rather than only a
+  placeholder that vanishes on the first keystroke. The screen also gains one always-mounted
+  `role="status"` region beneath the form, present and empty on first load, that reads any
+  `form.error` (the create validation failure and both of `createSectionAction`'s own refusal
+  paths share that field) or either action's own success outcome, so adding or removing a signup,
+  and a denied or misconfigured request, all announce something instead of nothing. The render
+  proof at 320 and 390 in both color schemes showed the existing `flex gap-2` row composing
+  without overflow before and after the label change, so the finding that it could not compose at
+  those widths does not hold; the row keeps its flex-row shape rather than moving to `flex-col`. No
+  consumer action.
+
+- The showcase's Signups admin screen's create form, and the Waymark template that mirrors it,
+  progressively enhance instead of round-tripping a full-page POST: both actions carry
+  `use:enhance`, so a create or remove outcome mutates the already-mounted `role="status"` region
+  in the live document, which a screen reader announces, rather than arriving on a brand-new
+  document a screen reader never observes. A create failure ties to its fields with
+  `aria-describedby`/`aria-invalid` and moves focus to the Name input. The delete-confirm dialog's
+  `showModal()` is delayed with `tick()` so its `aria-labelledby` heading has flushed the pending
+  row's name before focus moves into the dialog. Wrapping each input in a visible `<label>` had
+  also collapsed the input's own `clamp(3rem, 20rem, 100%)` width (the `100%` term could no longer
+  resolve against the label's auto-sized containing block, shrinking each field from 320px to
+  185px at 768px and above) and left the create row's Add button pinned to `flex-start` while the
+  taller labelled inputs grew past it; the label itself now carries the sizing as a flex item
+  (`flex-basis: 20rem` down to a `3rem` floor, so a field shrinks below 20rem only where the row
+  has no room for it) and the form takes `items-end` so the button shares the inputs' bottom edge
+  at every width and scheme. No consumer action.
+
+- The showcase's Signups admin screen, and the Waymark template that mirrors it, name and confirm
+  the destructive row. Each row's Delete trigger now carries an `aria-label` naming its own signup
+  (`ManageEditors.svelte`'s per-row shape), and the click no longer posts directly: it opens one
+  shared confirm, a native `<dialog>` with `role="alertdialog"` and `aria-modal="true"`, opened
+  with `showModal()` and labelled by its own heading, following the design system's safe-delete
+  recipe. There is no light-dismiss backdrop, so a stray click cannot discard a destructive action,
+  and the row survives until the dialog's own Delete button submits the `?/remove` action. One
+  dialog serves every row (opened with the clicked row's id and name) rather than one per row,
+  which avoids a duplicate label id across a table. No consumer action.
+
 - `CairnAdminShell`'s two keyboard blockers are cleared. The editor card's own chords (bold,
   italic, inline code, the heading pair, the list pair, quote, and the web-link dialog) now call
   `stopPropagation()` alongside their existing `preventDefault()`, so Ctrl/Cmd+B inside the editor
@@ -1321,7 +1397,7 @@
   activation the label never had; it flips `drawerOpen` directly on click, and the hidden
   checkbox stays the CSS mechanism. `editor-shortcuts.ts`'s two `Ctrl K` rows now read
   consistently: the Web link row keeps the chord, and the Command palette row states it is
-  unavailable while the editor has focus. Consumers must: nothing.
+  unavailable while the editor has focus. No consumer action.
 
 - `CairnAdminShell`'s command palette trigger now carries `aria-haspopup="dialog"`, matching its
   Publish-site sibling, and the palette's `<dialog>` is named "Commands" so its accessible name no
@@ -1330,7 +1406,7 @@
   result keeps its own DOM node as the list is filtered rather than swapping identity with
   whatever now sits at the same position. The site-wide Publish confirm gains an `id` and its
   trigger an `aria-controls` naming it, since the palette trigger now shares the same
-  `aria-haspopup` value. Consumers must: nothing.
+  `aria-haspopup` value. No consumer action.
 
 - `CairnAdminShell`'s command palette is now a real ARIA combobox, following `MediaPicker`'s own
   shape. The search input carries `role="combobox"` with `aria-expanded="true"` for as long as the
@@ -1348,7 +1424,7 @@
   Two always-mounted live regions, a `role="status"` result count and an active-option narration,
   replace the closed-conditioned "No matches" text, so a query narrowing to zero announces.
   `MediaPicker`'s own no-match row picks up the same `role="presentation"` fix, since it shares this
-  listbox shape. Consumers must: nothing.
+  listbox shape. No consumer action.
 
 - The admin's pressed-segment cue and two focus edges are settled. `segmentTintClass`'s active
   ring now mixes `base-content` at 55% instead of 20%: the old mix measured 1.492:1 light and
@@ -1362,7 +1438,7 @@
   dropzone drops its own `focus-visible:outline-none`/`ring-1`/`ring-[...]` utilities, so its
   keyboard focus now shows the admin's own brand-violet `:focus-visible` outline (the sheet's own
   rule, `outline: 2px solid var(--color-primary)`) instead of the ring its own
-  `focus-visible:outline-none` was quietly suppressing that rule for. Consumers must: nothing.
+  `focus-visible:outline-none` was quietly suppressing that rule for. No consumer action.
 
 - `create-cairn-site`'s cost copy no longer offers Cloudflare's Workers Paid plan as a later or
   optional step: the scaffold hand-over paragraph, the domain-chapter's turn-it-on prompt, and
@@ -1719,7 +1795,7 @@
   arrives, so a denied or unavailable clipboard reliably falls back to selecting the field.
   `LoginPage`'s confirmation block drops a `role="status"` that never announced anything (the
   block mounts fresh with the branch switch, so the region never observed its own first content);
-  the "Check your email" heading carries the announcement instead. Consumers must: nothing.
+  the "Check your email" heading carries the announcement instead. No consumer action.
 
 - The edit page's desk band now speaks the admin toolkit's own `StatusChip` vocabulary instead of
   raw daisyUI `badge-warning`/`badge-info`/`badge-neutral` fills. All three publish states
@@ -1732,15 +1808,14 @@
   it. `badge-warning`/`badge-info`/`badge-neutral` were cairn's own last callers of those three
   classes; rather than let them silently drop out of the packaged sheet, they join the
   compatibility safelist in `scripts/build/admin-css.input.css` beside `badge-ghost`, so a
-  consumer's own hand-authored admin markup already riding them keeps compiling. Consumers must:
-  nothing.
+  consumer's own hand-authored admin markup already riding them keeps compiling. No consumer action.
 
 - The edit page's desk band and its below-sm bottom action bar both render their Save/Publish
   pair unconditionally now, at every width, instead of swapping the pair in and out of the DOM
   after mount. Which pair is reachable is a responsive Tailwind class (paint) plus `inert` bound
   to the live `narrow` match (interaction and the accessibility tree), so the phone composition
   is correct at first paint with no post-hydration swap, and exactly one Save control and one
-  Publish control is ever reachable at any width. Consumers must: nothing.
+  Publish control is ever reachable at any width. No consumer action.
 
 - `LoginPage`'s confirmation mark drops its bracketed `text-[var(--color-success)]` and inline
   `style` for `cairn-text-success` plus `bg-success/15 ring-1 ring-inset ring-success/22`, the
@@ -1749,7 +1824,7 @@
   underline-offset-2` at rest, the borderless-underlined reference-link recipe, rather than only
   on hover. The email input's redundant `aria-label="Email"` is removed; its accessible name now
   comes from the visible `<span>Email</span>` label wrapping it, as it already did before the
-  attribute was ever read. Consumers must: nothing.
+  attribute was ever read. No consumer action.
 
 - The engine's small conformance sweep closes its second half. Every bare decorative Lucide glyph
   across the media, nav, login, and shell components now carries `aria-hidden="true"` directly on
@@ -1766,7 +1841,7 @@
   Preflight, say); the sheet-based reset holds at either starting margin and needed no
   compensating utility on `CairnAdminShell`, `LoginPage`, or `ConfirmPage`. `cairn-admin.css`'s
   reduced-motion rule now also matches the theme roots themselves, not only their descendants.
-  Consumers must: nothing.
+  No consumer action.
 
 ### Documentation
 
@@ -1776,7 +1851,7 @@
   outside `check:custom-surface`'s reach to the Later tier with its measured count, and leaves
   the `formatTimestamp` widening, the `createSectionAction` adoption, and the `OfficeList`/
   `AdminTable` item open for the passes that ship them. Internal documentation only; no code
-  changed. Consumers must: nothing.
+  changed. No consumer action.
 
 ## 0.96.0
 

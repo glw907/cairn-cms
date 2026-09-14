@@ -9,7 +9,7 @@
 // deployed runtime; the GitHub/R2/D1 doubles only degrade to "saves do not persist." The bypass is
 // why the fence exists; never relax it by analogy to the harmless mock.
 import type { Handle } from '@sveltejs/kit';
-import type { Backend } from '@glw907/cairn-cms';
+import type { AccessMap, Backend, RolesDeclaration } from '@glw907/cairn-cms';
 import {
   createDevBackend,
   seedMediaLibrary,
@@ -31,6 +31,25 @@ export interface DevBackendOptions {
    * effect yet.
    */
   seedContent?: boolean;
+  /**
+   * The site's own access declaration, the same object it hands `createAuthGuard`, attached to
+   * `event.locals.cairnAccess` on every /admin request this handle mints an editor for. Omitted,
+   * `locals.cairnAccess` stays undefined rather than the `access ?? {}` the engine guard attaches.
+   * That divergence is deliberate: undefined and `{}` are behavior-identical to `canReach` and
+   * `hasAccessRule`, which both fail closed on an unmapped target, but `createSectionAction` reads
+   * an absent map as a misconfigured route and refuses with `fail(500)`. This handle REPLACES the
+   * guard rather than running beside it, so that refusal is the one signal telling a developer the
+   * access wiring is missing; defaulting to an empty map would make it permanently unreachable in
+   * the environment the developer builds in.
+   */
+  access?: AccessMap;
+  /**
+   * The site's role vocabulary, carried so the single declaration object a site hands
+   * `createAuthGuard` can be handed here without reshaping. It resolves no capability in this
+   * handle, which mints the literal owner capability rather than reading a role declaration, so
+   * setting it changes no authorization decision here.
+   */
+  roles?: RolesDeclaration;
 }
 
 /**
@@ -40,7 +59,9 @@ export interface DevBackendOptions {
  * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
  * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
  * untouched.
- * @param options - {@link DevBackendOptions}; `seedContent` is the Part B content-seeding hook.
+ * @param options - {@link DevBackendOptions}; `access` is the site's own declaration, attached to
+ * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
+ * hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
 export function devBackendHandle(options?: DevBackendOptions): Handle {
@@ -135,6 +156,14 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
         role: 'owner',
         capability: 'owner',
       };
+      if (options?.access !== undefined) {
+        // Mirrors the guard, which sets locals.cairnAccess immediately after minting
+        // locals.cairnEditor on a guarded admin path, so a site's own route gates and section
+        // actions read the same declaration under either hook branch. The guard defaults an absent
+        // declaration to {}; this attaches only a supplied one, for the reason DevBackendOptions
+        // records.
+        event.locals.cairnAccess = options.access;
+      }
     }
     return resolve(event);
   };

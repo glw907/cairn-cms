@@ -2,6 +2,7 @@ import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
+import { access } from './access.js';
 
 // adminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
 // throw SvelteKit's own redirect()/error(), which SvelteKit renders correctly with no site
@@ -17,7 +18,7 @@ import { devBackendOptIn } from '$chassis/dev-gate.js';
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle();
+  handle = devBackendHandle({ access });
   // cairn-template:exclude-start
   // The showcase members fixture's own dev wiring, dynamically imported for the same reason as
   // devBackendHandle above: excluded from every scaffolded site, so this line and its import must
@@ -29,7 +30,7 @@ if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   handle = sequence(handle, membersDevHandle);
   // cairn-template:exclude-end
 } else {
-  handle = createAuthGuard();
+  handle = createAuthGuard({ access });
 }
 
 export { handle };

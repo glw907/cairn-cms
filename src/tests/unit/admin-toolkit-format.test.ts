@@ -75,6 +75,18 @@ describe('formatTimestamp', () => {
     );
   });
 
+  it('accepts an ISO string with no seconds, matching the equivalent full ISO moment', () => {
+    expect(formatTimestamp('2026-06-01T12:00Z')).toBe(formatTimestamp('2026-06-01T12:00:00Z'));
+  });
+
+  it('accepts a basic (colonless) UTC offset, matching the equivalent colon-offset moment', () => {
+    expect(formatTimestamp('2026-06-01T14:00:00+0200')).toBe(formatTimestamp('2026-06-01T14:00:00+02:00'));
+  });
+
+  it('accepts a lowercase z suffix, matching the equivalent uppercase Z moment', () => {
+    expect(formatTimestamp('2026-06-01T12:00:00z')).toBe(formatTimestamp('2026-06-01T12:00:00Z'));
+  });
+
   it('passes a zone-less near-ISO string through unchanged, rather than parsing it in the runtime local zone', () => {
     expect(formatTimestamp('2026-06-01T12:00:00')).toBe('2026-06-01T12:00:00');
   });

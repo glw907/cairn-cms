@@ -791,3 +791,214 @@ fix, is `~/.cache/cairn-polish-11b-i/task-10-round2/after/` (`signups` only, `--
   regions, two schemes, two states). Both measured causes fall under Playwright's own snapshot
   tolerance, which is why the unmodified admin-visual suite passed with zero diffs at every one of
   the ten `signups` cases even though `AE` against the original is nonzero throughout.
+
+## Polish-11b-ii
+
+### Task 3: The signups form's labels, composition, and outcome
+
+`signups` is the only capture-matrix surface reaching the route this task rewrites. Before set
+captured fresh at this task's parent commit (`e6e342c4`, Task 2's commit; no predecessor in this
+pass had captured a pass-wide before set), `~/.cache/cairn-polish-11b-ii/task-3/before/`
+(`--only signups`). After set `~/.cache/cairn-polish-11b-ii/task-3/after/` (`--only signups`).
+
+- INTENDED MOVES: `signups 320 light`: the two sr-only labels become a visible stacked
+  `type-body font-medium` register above each input, adding two lines of label text above the
+  row / moves `admin-signups-light-320`. `signups 320 dark`: same reason, dark scheme / moves
+  `admin-signups-dark-320`. `signups 390 light`: same reason / moves `admin-signups-light-390`.
+  `signups 390 dark`: same reason / moves `admin-signups-dark-390`. `signups 768 light`: same
+  reason / moves `admin-signups-light-768`. `signups 768 dark`: same reason / moves
+  `admin-signups-dark-768`. `signups 1440 light`: same reason / moves `admin-signups-light-1440`.
+  `signups 1440 dark`: same reason / moves `admin-signups-dark-1440`. `signups 2560 light`: same
+  reason / moves `admin-signups-light-2560`. `signups 2560 dark`: same reason / moves
+  `admin-signups-dark-2560`.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this task's source edits, produced exactly 10 failures,
+  all ten `admin-signups-{light,dark}-{320,390,768,1440,2560}` cases (18 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those ten files and none other; the regenerated suite passes 28 of 28.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 1405.42, light 390
+  1643.21, light 768 4415.12, light 1440 4440.69, light 2560 4440.5, dark 320 1781.68, dark 390
+  2172.81, dark 768 6169.49, dark 1440 6227.07, dark 2560 6226.81 pixels of AE, nonzero on every
+  tile as expected for the added label text; the change is confined to the form row above the
+  fold (the table stays empty in every capture, so the rest of each tile is unaffected).
+- READ ME: the four render-proof pairs (A12): `~/.cache/cairn-polish-11b-ii/task-3/before/full/
+  signups-light-320.png`, `signups-light-390.png`, `signups-dark-320.png`, `signups-dark-390.png`,
+  and their after-set counterparts under `~/.cache/cairn-polish-11b-ii/task-3/after/full/` (eight
+  files). A12 verdict: retire. Both the before and after renders show the create row (two inputs
+  and the Add button, `flex gap-2`) composing without overflow, clipping, or wrapping at 320 and
+  390 in both schemes.
+- **Correction (fix round "restore the create row's input width," below): the claim that "the row's
+  width is unaffected" was false at 768/1440/2560.** Wrapping each input in a `flex flex-col` label
+  left `.input`'s own `width: clamp(3rem, 20rem, 100%)` unable to resolve its `100%` term against
+  the label's own auto-sized containing block, so each input measured 185px instead of 320px at
+  every width from 768 up, shrinking the row's rendered content extent (label + label + button,
+  measured left edge to right edge) from about 715px to about 444px. The pass-end visual verifier
+  caught this on its second read; the fix round below restores both the input width and the row
+  extent.
+
+### Task 4: The signups exemplar's destructive row
+
+`signups` is the only capture-matrix surface reaching the route this task rewrites. Before set
+captured fresh at this task's parent commit (`bbede067`, Task 3's commit),
+`~/.cache/cairn-polish-11b-ii/task-4/before/` (`--only signups`). After set
+`~/.cache/cairn-polish-11b-ii/task-4/after/` (`--only signups`).
+
+- INTENDED MOVES: none. The captured surfaces render the signups table with no rows (the
+  capture harness seeds no data), so the per-row `aria-label` and the shared confirm dialog, both
+  scoped to a row's Delete trigger and to a dialog that is closed by default, have no pixel to
+  move. The Delete button's own text and class stay unchanged.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this task's source edits, produced zero failures (28 of
+  28 passed unchanged). No regeneration was run, since there was nothing to regenerate.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 0, light 390 0, light 768
+  0, light 1440 0, light 2560 0, dark 320 0, dark 390 0, dark 768 0, dark 1440 0, dark 2560 0
+  pixels of AE. Zero on every tile, matching the empty-table capture and the produced zero
+  failures.
+- READ ME: two render-proof pairs: `~/.cache/cairn-polish-11b-ii/task-4/before/full/
+  signups-light-1440.png` and its after-set counterpart under
+  `~/.cache/cairn-polish-11b-ii/task-4/after/full/signups-light-1440.png` (two files). Both show
+  the identical empty table and create row; the shared alertdialog added below the table renders
+  nothing while closed.
+
+### Fix round: the create row's button alignment
+
+The pass-end visual verifier found Task 3's ten moved baselines carried an undisclosed second
+move: the Add button no longer aligns with its inputs, since the create form
+(`examples/showcase/src/routes/admin/signups/+page.svelte:39`) is `class="my-4 flex gap-2"` with
+no `items-end`, so once the labels grew each field's column the button stayed pinned to
+`flex-start` while the fields grew taller beneath their labels. Fixed by adding `items-end` to
+the form's class. Before set captured fresh at this fix round's parent commit (`1d8da38e`),
+`~/.cache/cairn-polish-11b-ii/fix-alignment/before/` (`--only signups`). After set
+`~/.cache/cairn-polish-11b-ii/fix-alignment/after/` (`--only signups`).
+
+- INTENDED MOVES: `signups 320 light`: the Add button's top edge moves down to align with the
+  inputs' bottom edge / moves `admin-signups-light-320`. `signups 320 dark`: same reason, dark
+  scheme / moves `admin-signups-dark-320`. `signups 390 light`: same reason / moves
+  `admin-signups-light-390`. `signups 390 dark`: same reason / moves `admin-signups-dark-390`.
+  `signups 768 light`: same reason / moves `admin-signups-light-768`. `signups 768 dark`: same
+  reason / moves `admin-signups-dark-768`. `signups 1440 light`: same reason / moves
+  `admin-signups-light-1440`. `signups 1440 dark`: same reason / moves
+  `admin-signups-dark-1440`. `signups 2560 light`: same reason / moves
+  `admin-signups-light-2560`. `signups 2560 dark`: same reason / moves
+  `admin-signups-dark-2560`.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this fix's source edit, produced exactly 10 failures,
+  all ten `admin-signups-{light,dark}-{320,390,768,1440,2560}` cases (18 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those ten files and none other; the regenerated suite passes 28 of 28. The full pass
+  gate's `CI=1 npm --prefix examples/showcase run test:e2e` step also ran `site-visual.spec.ts`,
+  which failed on `site home` and `archive page 2` at every width and scheme (20 files, none
+  under this fix's surface). Per global constraint 15, this is the workstation's documented
+  renderer drift, not a finding: none of the twenty are `signups` baselines, this fix touches no
+  file `site-visual.spec.ts` renders, and the same twenty-file set is named in the
+  workstation-cannot-reproduce durable gotcha. Not regenerated.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 1172.96, light 390
+  1172.97, light 768 1172.96, light 1440 1172.97, light 2560 1172.94, dark 320 1711.89, dark 390
+  1711.89, dark 768 1711.89, dark 1440 1711.89, dark 2560 1711.9 pixels of AE, nonzero on every
+  tile as expected for the button's vertical shift; the change is confined to the create row (the
+  table stays empty in every capture, so the rest of each tile is unaffected).
+- READ ME: two render-proof pairs: `~/.cache/cairn-polish-11b-ii/fix-alignment/before/full/
+  signups-light-1440.png` and its after-set counterpart under
+  `~/.cache/cairn-polish-11b-ii/fix-alignment/after/full/signups-light-1440.png`, plus
+  `signups-dark-320.png` before and after (four files). The before pair shows the Add button's
+  top aligned with the labels and its bottom mid-input; the after pair shows the button and both
+  inputs sharing one bottom edge.
+
+### Fix round: restore the create row's input width
+
+The pass-end visual verifier's second read found the ten `admin-signups-*` baselines still carried
+an undisclosed regression: wrapping each input in a `flex flex-col` label (Task 3) left `.input`'s
+own `width: clamp(3rem, 20rem, 100%)` unable to resolve its `100%` term against the label's own
+auto-sized containing block, collapsing each input from 320px to 185px at every width from 768 up
+in both schemes, and shrinking the create row's rendered extent from about 715px to about 444px.
+A first attempt (a Tailwind `w-80` utility, then `w-80!`) had no effect: the site's own custom
+admin routes ride the engine's precompiled `cairn-admin.css`
+(`scripts/build/admin-css.input.css`'s `source(none)` plus its explicit `@source` roots, which scan
+only `src/lib/components/**` and `src/lib/admin-toolkit/**`), so a Tailwind class written only in
+`examples/showcase/src/routes/admin/signups/+page.svelte` never compiles into any stylesheet the
+page loads. Fixed with a plain scoped `<style>` rule in the route's own component
+(`.signup-create-field { width: 20rem; }`, an unlayered declaration that wins over the layered
+`.input` clamp regardless of specificity), which does not touch the engine's build. Before set
+captured fresh at this fix round's parent commit (`050d9125`),
+`~/.cache/cairn-polish-11b-ii/fix-input-width/before/` (`--only signups`). After set
+`~/.cache/cairn-polish-11b-ii/fix-input-width/after/` (`--only signups`). Measured directly against
+the built preview server (Playwright `boundingBox`/`getBoundingClientRect`, not image inspection):
+each input is 320px and the row's content extent (its left-most label's left edge to the button's
+right edge) is 715px at 768, 1440, and 2560, in both light and dark, matching Task 3's own
+pre-regression figure.
+
+- INTENDED MOVES: `signups 320 light`: each input widens back to 320px (from the flex-col wrap's
+  185px collapse), lengthening the create row / moves `admin-signups-light-320`. `signups 320
+  dark`: same reason, dark scheme / moves `admin-signups-dark-320`. `signups 390 light`: same
+  reason / moves `admin-signups-light-390`. `signups 390 dark`: same reason / moves
+  `admin-signups-dark-390`. `signups 768 light`: same reason / moves `admin-signups-light-768`.
+  `signups 768 dark`: same reason / moves `admin-signups-dark-768`. `signups 1440 light`: same
+  reason / moves `admin-signups-light-1440`. `signups 1440 dark`: same reason / moves
+  `admin-signups-dark-1440`. `signups 2560 light`: same reason / moves `admin-signups-light-2560`.
+  `signups 2560 dark`: same reason / moves `admin-signups-dark-2560`.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this fix's source edit, produced exactly 10 failures, all
+  ten `admin-signups-{light,dark}-{320,390,768,1440,2560}` cases (18 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those ten files and none other; the regenerated suite passes 28 of 28.
+- TILE DIFF: `magick compare -metric AE` on the one tile (`-00`) of each of the ten `signups`
+  width/scheme pairs, `before/tiles/` against `after/tiles/`: light 320 1283.51, light 390
+  1368.82, light 768 2833.87, light 1440 2833.78, light 2560 2833.63, dark 320 1547.76, dark 390
+  1680.75, dark 768 3910.55, dark 1440 3910.45, dark 2560 3910.24 pixels of AE, nonzero on every
+  tile as expected for the widened fields; the change is confined to the create row (the table
+  stays empty in every capture, so the rest of each tile is unaffected).
+- READ ME: two render-proof pairs: `~/.cache/cairn-polish-11b-ii/fix-input-width/before/full/
+  signups-light-1440.png` and its after-set counterpart under
+  `~/.cache/cairn-polish-11b-ii/fix-input-width/after/full/signups-light-1440.png`, plus
+  `signups-dark-320.png` before and after (four files). The before pair shows both inputs narrow
+  (185px) with a large gap before the Add button; the after pair shows both inputs at full width
+  (320px) with the button close behind, matching Task 3's original composition.
+
+### Fix round: restore the create row's narrow-viewport width
+
+The pass-end visual verifier's fourth read found the "restore the create row's input width" fix
+above wrong at 320 and 390: the fixed `.signup-create-field { width: 20rem; }` gave both inputs
+320px each regardless of viewport, so the create row (two 320px inputs plus the Add button, no
+wrap) measured `document.scrollWidth` 731px against a 320px or 390px viewport, overflowing in
+both schemes and, in dark scheme, exposing an unthemed white strip where the overflowed Email
+field and Add button rendered past the shell. Task 3's own render-proof had shown the row
+composing without overflow at 320 and 390 under the original clamp-based sizing
+(`width: clamp(3rem, 20rem, 100%)`), a claim the fixed-320px rule contradicted.
+
+Fixed by moving the sizing constraint from the input to its label: `.signup-create-label { flex: 1
+1 0; min-width: 3rem; max-width: 20rem; }` with `.signup-create-field { width: 100%; }`. As a flex
+item with a definite flex-basis, each label grows to 20rem when the row has room and shrinks below
+that (down to 3rem) when it does not, so the row never overflows or wraps; the input then fills its
+label at 100%, which resolves cleanly because the label (unlike `.input`'s own auto-sized flex-col
+containing block) now has a definite computed width from the flex algorithm. Measured directly
+against the built preview server (`document.documentElement.scrollWidth` versus `clientWidth`,
+and `.signup-create-field` `boundingBox().width`): no overflow at 320 or 390 in either scheme, and
+each input still measures exactly 320px at 768, 1440, and 2560, matching the prior fix round's own
+proof and leaving those five widths' baselines untouched.
+
+- INTENDED MOVES: `signups 320 light`: each input narrows from its fixed 320px to fit the 320px
+  viewport, shortening the create row / moves `admin-signups-light-320`. `signups 320 dark`: same
+  reason, dark scheme, and the white overflow strip is gone / moves `admin-signups-dark-320`.
+  `signups 390 light`: same reason at 390 / moves `admin-signups-light-390`. `signups 390 dark`:
+  same reason, dark scheme / moves `admin-signups-dark-390`. No other width or scheme moves: 768,
+  1440, and 2560 have room for both inputs at their 20rem maximum, so their baselines are
+  unaffected in either scheme.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts`, run after
+  `npm run package` rebuilt `dist/` from this fix's source edit, produced exactly 4 failures, the
+  four `admin-signups-{light,dark}-{320,390}` cases (24 of 28 passed unchanged).
+  `CI=1 npx playwright test e2e/admin-visual.spec.ts --update-snapshots=changed` then rewrote
+  exactly those four files and none other; the regenerated suite passes 28 of 28.
+- TILE DIFF: `magick compare -metric AE` on the full baseline PNG (fullPage capture, one tile) for
+  each of the four moved files, prior baseline against the regenerated one: light 320 17379.8,
+  dark 320 301589, light 390 14773.7, dark 390 250579 pixels of AE, nonzero on every file as
+  expected for the narrowed fields.
+- READ ME: two render-proof pairs:
+  `~/.cache/cairn-polish-11b-ii/fix-narrow-overflow/before/signups-light-320.png` and its after-set
+  counterpart under `~/.cache/cairn-polish-11b-ii/fix-narrow-overflow/after/signups-light-320.png`,
+  plus `signups-dark-320.png` before and after (four files). The before pair shows the Email field
+  and Add button running past the 320px viewport edge (dark scheme also shows the overflow as an
+  unthemed white strip); the after pair shows both inputs and the Add button fitting inside the
+  320px viewport with no overflow.

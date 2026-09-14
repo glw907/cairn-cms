@@ -326,15 +326,15 @@ The original decision framing, for the record:
     inputs that fed it. **Polish-11b-i closed two of them (2026-09-13):** the `ShareLinkPanel`
     busy-button idiom ruling against `EditPage`'s own rule (the design system now rules the busy
     idiom, `ShareLinkPanel` converged onto it) and the command palette's own live region (the
-    palette is now a real ARIA combobox with two always-mounted live regions). The
-    `OfficeList`/`AdminTable` double scroll-container ownership question, ruling-first: raise the
-    `OfficeList` outright-retire question before touching the scroll containers, since
-    `audit-admin-officelist` is a CLOSED reshape row (`engine-rulings.md:2660-2666`, executed by
-    4b, `Reopens on: closed`), so an outright retire there is a new proposal against a closed
-    row, not a reopen. A `formatTimestamp` (`/admin-toolkit`) widening. Chassis-A's close routes
-    one more item here: the `createSectionAction` adoption in
-    `admin/signups/+page.server.ts` with its dev-package seam, deferred past both chassis passes
-    because adopting the helper changes its auth and audit path.
+    palette is now a real ARIA combobox with two always-mounted live regions). **Polish-11b-ii
+    closed two more (2026-09-13):** the `formatTimestamp` (`/admin-toolkit`) widening, and the
+    `createSectionAction` adoption in `admin/signups/+page.server.ts` with its dev-package seam,
+    the item Chassis-A's close routed here, deferred past both chassis passes because adopting the
+    helper changes its auth and audit path. The `OfficeList`/`AdminTable` double scroll-container
+    ownership question is still open, ruling-first: raise the `OfficeList` outright-retire
+    question before touching the scroll containers, since `audit-admin-officelist` is a CLOSED
+    reshape row (`engine-rulings.md:2660-2666`, executed by 4b, `Reopens on: closed`), so an
+    outright retire there is a new proposal against a closed row, not a reopen.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,

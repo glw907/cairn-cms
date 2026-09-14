@@ -1228,3 +1228,102 @@ post-11a module map as its Reconciliation input.
 
 The `cairn-pass` ritual appends the post-mortem here at pass close, scoring both budgets against
 the ceiling and the interaction counts.
+
+**What landed.** All six tasks completed on `polish-11b-ii`: the dev handle's `cairnAccess` parity
+and the showcase's first `access` declaration (Task 1), the signups exemplar's server half adopting
+`createSectionAction` (Task 2), the form's stacked labels, composition, and outcome region (Task
+3), the destructive row's per-row `aria-label` and shared safe-delete alertdialog (Task 4),
+`formatTimestamp`'s widened accepted domain (Task 5), and this pass's records (Task 6). Full detail
+is `docs/HISTORY.md`'s Polish-11b-ii entry, kept current with this post-mortem in the same commit.
+
+**Decisions locked.**
+- **Task 2's `load` moved off the plan's own ruling.** The plan explicitly ruled the load out of
+  scope, kept on `requireOwner`. The pass-end reviewer fan-out (`web-auth-security-reviewer` and,
+  independently, `svelte-reviewer`) found the load and the section actions authorizing from two
+  different predicates: harmless as shipped (the declared map and `requireOwner` coincide exactly
+  on `['owner']`), but a trap for a site that widens the map to admit an editor, since the load
+  would then still refuse a role the action admits, the engine's own reference states the opposite
+  requirement. The conductor overrode the plan's own decision and switched the load to
+  `requireAccess`, landed with the rest of the reviewer fix round in `9fb38fd5`.
+- **The pass-end visual-verifier caught two regressions Task 3's own render proof did not
+  anticipate**, both consequences of wrapping each input in a visible `<label>` rather than of the
+  A12 flex-row-versus-column question the render proof actually settled: the Add button stayed
+  pinned to `flex-start` while the taller labelled inputs grew past it, and DaisyUI's own
+  `.input` `clamp(3rem, 20rem, 100%)` width collapsed to 185px at 768px and above because its
+  `100%` term could no longer resolve against the label's auto-sized containing block. Three fix
+  rounds followed before a clean read: `050d9125` added `items-end`; `e457e16a` restored the input
+  width, surfacing a standing constraint worth naming on its own, a Tailwind utility class written
+  only inside a showcase route compiles into nothing, since the admin surface rides the engine's
+  precompiled `cairn-admin.css`, scanned only over `src/lib/components` and `src/lib/admin-toolkit`,
+  so the fix is a plain scoped style rule instead; and `9e850717` corrected that fix's own new
+  overflow at 320 and 390 by moving the sizing constraint onto the label as a flex item
+  (`flex-basis: 20rem` down to a `3rem` floor). The verifier's fifth read passed clean, with one
+  pre-existing engine-level cosmetic filed as an observation rather than a pass defect:
+  `AdminTable`'s scroll wrapper clips a row's Delete button past the 320px viewport with no visible
+  scroll affordance, present before this pass and out of its scope.
+- **The always-mounted `role="status"` outcome region, as Task 3 shipped it, could not announce
+  anything**, because neither form used SvelteKit's `use:enhance`: a native POST arrives on a
+  brand-new document, and text already present when a document loads is not a status change an
+  assistive technology announces. All three pass-end reviewers converged on this independently.
+  Fixed in the same round as the load change (`9fb38fd5`): both forms progressively enhance, a
+  create failure ties to its fields with `aria-describedby`/`aria-invalid` and moves focus to the
+  Name input, and the delete-confirm dialog's `showModal()` is delayed with `tick()` so its
+  `aria-labelledby` heading has flushed the pending row's name before focus moves in.
+- **`1d8da38e`** consolidated the safe-delete recipe's rationale to the dialog markup alone,
+  comment-only, after it was carried twice (also on the script block's state declarations).
+
+**What the gate and the reviewers caught.**
+- The dev-fold tripwire, which greps the deployed Worker bundle for literal dev-backend names,
+  caught `access.ts`'s own doc comment naming `devBackendHandle` while describing the two hook
+  branches; that module ships in the default (non-dev) build, so Rollup carried the comment into
+  the bundle. Fixed in `89423955` by describing the dev branch without naming its package or
+  handle. No code leaked, only a comment.
+- **The pass-end reviewer fan-out** (`web-auth-security-reviewer`, `svelte-reviewer`,
+  `daisyui-a11y-reviewer`; `cloudflare-workers-reviewer` did not run, since no task touches Worker
+  runtime code, a D1 query, or a binding) returned eight blocking findings between them, one pair
+  identical (the parity comment, caught by both `web-auth-security-reviewer` and
+  `svelte-reviewer`), seven distinct: the non-announcing outcome region (all three), the
+  `access.ts`/`CHANGELOG.md` comment overstating an authorization parity the dev backend cannot
+  provide, since it always mints the owner capability (two), the load/action predicate divergence
+  above (two), the delete dialog's premature `showModal()` racing the pending row's name into its
+  label (`daisyui-a11y-reviewer`), and the create failure not tied to its fields
+  (`daisyui-a11y-reviewer`). All seven were fixed in the single round that produced `9fb38fd5`, with
+  a new discriminating e2e assertion, the Name input carries focus after a create failure, which
+  passes only through the enhanced (no-navigation) path rather than merely asserting the region has
+  text. `svelte-reviewer`'s and `web-auth-security-reviewer`'s summaries both call the underlying
+  seam sound and, on balance, a net security improvement over the raw shape it replaces: every new
+  denial path is fail-closed with one generic message per class, CSRF coverage on the route
+  strictly improves under the dev backend, and the widened `formatTimestamp` regex is anchored and
+  linear.
+- **22 non-blocking findings** across the three reviewers (nine, fourteen, and ten, with some
+  overlap) were read and are not actioned in this pass; none names a defect this pass's own
+  acceptance criteria cover. They include `web-auth-security-reviewer`'s and `svelte-reviewer`'s
+  shared observation that `devBackendHandle`'s new `access`/`roles` parameters ship with no
+  published `docs/extend/` page yet, which the next docs-covering pass reads rather than this one
+  re-deriving.
+- An untracked scratch file, `examples/showcase/e2e/capture-signups-verify.spec.ts`, remains in the
+  worktree: the visual-verifier's own one-off round-5 capture harness, never part of the committed
+  suite. Left in place, matching polish-11b-i's own precedent for the same kind of file.
+
+**Both budgets.**
+- **Tokens.** Ceiling 5.0M. This close-out dispatch (the post-mortem, `docs/HISTORY.md`, the
+  `CHANGELOG.md` reconciliation against the four fix-round commits, the ROADMAP and
+  migration-notes confirmation, and the three doc gates) spent approximately 0.66M, added to the
+  six-task chain's own execution spend, which covers the four fix rounds beyond the six planned
+  tasks (the alignment fix, two width fixes, and the seven-finding reviewer fix), as
+  `pass-execute-chains.js` reported it at pass end; that execution-spend figure is not preserved in
+  any committed artifact this dispatch can read, so the conductor completes the total against the
+  ceiling from its own workflow run summary.
+- **Attended time.** Planning misses: 0. Execution sittings: 0. No question reached Geoff mid-pass;
+  the load/action divergence, the outcome-announcement gap, and all three visual regressions were
+  caught and resolved inside the reviewer and visual-verifier fan-out the plan itself specified,
+  with the extra fix rounds absorbed as gate and review cycles rather than surfaced as decisions
+  needing Geoff's input.
+
+**Gate.** `check:docs`, `check:vale`, and `check:rulings-format` run clean in this close-out commit.
+The six tasks' and four fix rounds' own full-gate runs are recorded in the chain's own reports and
+the pass-end ritual's CI regens (`e2e.yml` runs `34806199520` and `34801282702`, both green); this
+dispatch did not re-run the full local gate.
+
+**Release.** No version bump, no tag, no publish. `package.json` is untouched in this pass's diff.
+The window holds for polish-C's single cut, per the plan's Ruled inputs.

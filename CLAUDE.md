@@ -85,15 +85,14 @@ durable orientation only.
   the gate), and the `code-simplifier` plugin agent pins Opus in its own frontmatter. The
   conductor (Fable) runs plan and execution in one session and never reads diffs itself; the
   `diff-reviewer` agent does, per the global "Conducting a pass" rule.
-- **DaisyUI reference:** the official DaisyUI skill (`~/.claude/skills/daisyui/`, dotfiles) is the
-  component reference for every admin markup change, and the official daisyUI Blueprint MCP server runs at user scope on this workstation
-  (licensed; a contributor without a license can add the free GitMCP mirror
-  `https://gitmcp.io/saadeghi/daisyui`). `.mcp.json` adds two servers for the main loop: the official Svelte MCP (`mcp.svelte.dev`, versioned Svelte 5 and SvelteKit 2 docs plus
-  a static check of Svelte code), and Microsoft's Playwright MCP for structured DOM inspection when an
-  e2e failure needs reproducing. Implementer and reviewer agents run a fixed tool list without MCP, so
-  what reaches them is the skill on disk. Prefer a stock DaisyUI component over a home-grown one
-  unless `docs/internal/engine-rulings.md` records the defect that forced it; the admin design system
-  wins over the skill on any conflict.
+- **Claude tooling for this stack** lives at user scope on the workstation, not in this repo: the
+  official DaisyUI skill (the component reference every implementer and reviewer reads; prefer a
+  stock DaisyUI component over a home-grown one unless `docs/internal/engine-rulings.md` records
+  the defect that forced it, and the admin design system wins over the skill on any conflict),
+  the licensed daisyUI Blueprint server (its rules enforcer and quality inspector are the pre-cut
+  admin audit), the official Svelte server, and Microsoft's Playwright server. Inventory and
+  rules: `~/.claude/docs/claude-tooling.md`. A contributor without that setup can add the free
+  DaisyUI mirror `https://gitmcp.io/saadeghi/daisyui` and `https://mcp.svelte.dev/mcp`.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 

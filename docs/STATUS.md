@@ -10,25 +10,24 @@ the present.
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
-engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii unpublished under
-`## Unreleased`; the window holds for one cut after polish-C (below). CI on `main` is green.
+engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii/C unpublished under `##
+Unreleased`; the window holds for one cut after the admin motion pass (below). CI on `main` is
+green.
 
-## Immediate next action (2026-09-13)
+## Immediate next action (2026-09-14)
 
-**Polish-11b-ii is MERGED** (PR #58, CI green, merge commit `e833a661`; entry and post-mortem in
-[`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-13 22:10).
-**Next, a fresh session launches polish-C** per `~/.cache/cairn-overnight-2026-09-12/LAUNCH.md`
-(its 2026-09-13 handoff section is the step list: copy the scripts to the new scratchpad, arm the
-guards and inhibitors, launch `cairn-c-to-release.js`). The sequence to the single release, all
-ruled by Geoff on 2026-09-13 (rulings in that cache dir's `conductor-notes.md`): C -> the admin
-motion pass (plan `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`, runs unread)
--> on `main` with no worktree live, the dependency sweep plus the bounded pre-cut task (ROADMAP
-Next: the four accepted admin defaults and the Blueprint audit's one line) -> the cut as **0.97.0**
-via `cairn-release` (verify the number is free first). Held for Geoff after the release: cairn.pub's
-engine pin bump (a production deploy), the three dependency tripwires, the `blueprint-audit`
-dotfiles script, the post-mortem, then the borrowable-patterns pass in a fresh session.
+**Polish-C is MERGED** (PR #59, CI green, merge commit `ece054b8`; entry and post-mortem in
+[`HISTORY.md`](HISTORY.md)). **Next, the admin motion pass** (plan
+`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`, runs unread), per the sequence
+ruled by Geoff on 2026-09-13 (rulings in `~/.cache/cairn-overnight-2026-09-12/conductor-notes.md`):
+the admin motion pass -> on `main` with no worktree live, the dependency sweep plus the bounded
+pre-cut task (ROADMAP Next: the four accepted admin defaults and the Blueprint audit's one line)
+-> the cut as **0.97.0** via `cairn-release` (verify the number is free first). Held for Geoff
+after the release: cairn.pub's engine pin bump (a production deploy), the three dependency
+tripwires, the `blueprint-audit` dotfiles script, the post-mortem, then the borrowable-patterns
+pass in a fresh session.
 
-Spend on this overnight run so far: **6.02M tokens**.
+Spend on this overnight run so far: see `~/.cache/cairn-overnight-2026-09-12/conductor-notes.md`.
 
 Standing rulings (`CLAUDE.md`, "Gate economy on a pass"): the per-task gate omits the e2e suite
 for paint-neutral tasks; merges bring `main` in first with STATUS taking main's; gates run only
@@ -36,9 +35,10 @@ through `cairn-run-gate`.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1-7 and chassis-A/B1/B2 MERGED; polish-11a/11b-i/
-  11b-ii MERGED, polish-C next (above), then ONE release cut. ROADMAP's audit-remediation entry
-  is the canonical routing record; the chassis quality bar equals the engine's (Geoff, 2026-09-01).
+- **Audit remediation (ROADMAP Now).** Slices 1-7, chassis-A/B1/B2, and polish-11a/11b-i/11b-ii/C
+  all MERGED; the admin motion pass next (above), then ONE release cut. ROADMAP's
+  audit-remediation entry is the canonical routing record; the chassis quality bar equals the
+  engine's (Geoff, 2026-09-01).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only, under
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at

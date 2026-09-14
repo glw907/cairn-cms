@@ -15,7 +15,7 @@ import type { ListData } from '../../lib/sveltekit/content-routes-list.js';
 import type { HelpData, AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
 import type { HistoryData } from '../../lib/sveltekit/types.js';
 import type { MediaLibraryData } from '../../lib/sveltekit/content-routes-media-library.js';
-import type { NavLoadData } from '../../lib/sveltekit/nav-routes.js';
+import type { NavData } from '../../lib/sveltekit/nav-routes.js';
 import type { SettingsData } from '../../lib/sveltekit/content-routes-settings.js';
 import type { ReproStory } from '../../lib/reproductions/index.js';
 
@@ -111,9 +111,9 @@ function typeOnlyAdminShellDataLeak(data: Extract<AdminShellData, { public: fals
 }
 void typeOnlyAdminShellDataLeak;
 
-// NavLoadData's leak: NavPageOption.
-function typeOnlyNavLoadDataLeak(data: NavLoadData): void {
-  const navPageOption: NavLoadData['pages'][number] = data.pages[0];
+// NavData's leak: NavPageOption.
+function typeOnlyNavLoadDataLeak(data: NavData): void {
+  const navPageOption: NavData['pages'][number] = data.pages[0];
   void navPageOption;
 }
 void typeOnlyNavLoadDataLeak;

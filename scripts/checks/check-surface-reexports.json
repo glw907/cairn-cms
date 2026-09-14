@@ -330,7 +330,7 @@
       "name": "AccessMap",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `AuthGuardOptions`, `CairnEvent` name it on this subpath."
+      "reason": "R4 closure: `AuthGuardConfig`, `CairnEvent` name it on this subpath."
     },
     {
       "name": "ArrayField",
@@ -564,7 +564,7 @@
       "name": "NavNode",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `NavLoadData` names it on this subpath."
+      "reason": "R4 closure: `NavData` names it on this subpath."
     },
     {
       "name": "NumberField",
@@ -612,7 +612,7 @@
       "name": "RolesDeclaration",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `AuthGuardOptions`, `EditorRoutesOptions`, `CairnRuntime` name it on this subpath."
+      "reason": "R4 closure: `AuthGuardConfig`, `EditorRoutesOptions`, `CairnRuntime` name it on this subpath."
     },
     {
       "name": "RoutingRule",
@@ -690,7 +690,7 @@
       "name": "VocabularyEntry",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `VocabularyLoadData`, `CairnRuntime` name it on this subpath."
+      "reason": "R4 closure: `VocabularyData`, `CairnRuntime` name it on this subpath."
     }
   ]
 }

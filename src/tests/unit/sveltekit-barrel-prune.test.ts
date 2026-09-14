@@ -53,7 +53,7 @@ const KEPT = [
   'ContentRoutesConfig',
   'ContentFormFailure',
   'createNavRoutes',
-  'NavLoadData',
+  'NavData',
   'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',

@@ -81,20 +81,20 @@ The facade and its two guard helpers: the one path most sites wire.
 Stability tier: Scaffold API.
 
 ```ts
-declare function createAuthGuard(opts?: AuthGuardOptions): Handle;
+declare function createAuthGuard(config?: AuthGuardConfig): Handle;
 ```
 
 Build the SvelteKit `Handle` that gates every `/admin/**` path and hardens the admin response
 headers. Wire it in `hooks.server.ts`. A site with its own hook keeps it by sequencing the guard
 last, so the site hook sees every request and the guard owns admin gating.
 
-`opts.roles` is the site's declared [role vocabulary](./core.md#roles) (`defineRoles`, a [core](./core.md)
+`config.roles` is the site's declared [role vocabulary](./core.md#roles) (`defineRoles`, a [core](./core.md)
 export); omitted, the guard resolves every session against the implicit owner/editor pair, so a
 zero-config site sees no behavior change. The guard resolves capability once per request and
 attaches it to `locals.cairnEditor.capability`, so every downstream load and action reads it with
 no re-derivation.
 
-`opts.access` is the site's declared [access map](./core.md#access-map) (`defineAccess`, a
+`config.access` is the site's declared [access map](./core.md#access-map) (`defineAccess`, a
 [core](./core.md) export). Omitted, the engine's own screens and a site's own
 [`requireAccess`](#requireaccess) calls read differently. The engine's own screens (gated through
 `requireEngineAccess`'s `canReach` check) stay open to any editor-capability session, so a
@@ -104,7 +104,7 @@ owner included; see [`requireAccess`](#requireaccess) below for the reasoning. T
 the map internally to `locals.cairnAccess`, alongside `locals.cairnEditor`, so `requireAccess`
 needs no extra argument.
 
-`opts.includeSubDomains` controls the `includeSubDomains` directive on the
+`config.includeSubDomains` controls the `includeSubDomains` directive on the
 `Strict-Transport-Security` header the guard attaches to each admin response it returns. `max-age`
 is always sent there; the admin surface is the one place the engine has standing to insist on
 HTTPS. The guard's rejection pages and its login redirect send no `Strict-Transport-Security` at
@@ -114,10 +114,10 @@ Omitted or `false`, the header carries only `max-age`, so a zero-config site see
 change and does not pin any sibling subdomain to HTTPS. Set it to `true` to pin the whole domain,
 a decision that belongs to whoever owns it.
 
-`opts.identity` replaces the guard's session-cookie resolution with a site's own identity gate
+`config.identity` replaces the guard's session-cookie resolution with a site's own identity gate
 (Cloudflare Access, or any reverse proxy that authenticates the request before it reaches this
 Worker). Omitted, the guard resolves the session cookie exactly as today, byte for byte.
-**Stability tier note:** `createAuthGuard` and `AuthGuardOptions` stay Scaffold API; `identity`
+**Stability tier note:** `createAuthGuard` and `AuthGuardConfig` stay Scaffold API; `identity`
 and the three types it names (`IdentityResolver`, `ResolvedIdentity`, `IdentityRefusal`) are
 Unstable API inside that otherwise-frozen interface, so the option's shape may change or leave in
 any minor release. `identity.resolve` takes a [`CairnEvent`](#the-event-shape), the same
@@ -1057,7 +1057,7 @@ type ContentRoutes = {
   mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>;
   settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>;
   settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure>>;
-  vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
+  vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyData>;
   vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>;
   createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
@@ -1191,7 +1191,7 @@ own: a consumer reaches it as `Awaited<ReturnType<ContentRoutes['settingsSaveAct
 
 `vocabularyLoad` and
 `vocabularySaveAction` back the tag-vocabulary screen at `/admin/vocabulary`. `vocabularyLoad` returns the
-`VocabularyLoadData` the screen renders: the committed `{ value, label }` vocabulary in config order
+`VocabularyData` the screen renders: the committed `{ value, label }` vocabulary in config order
 (`vocabulary`), each value's cross-branch in-use count (`usage`, keyed by value over the default
 branch unioned with every open `cairn/*` branch), and the in-use-but-unlisted tags with their counts
 (`unlisted`, the seed candidates). The usage overlay is best-effort: a failed read degrades `usage` to
@@ -1497,7 +1497,7 @@ interface NavRoutesConfig {
 }
 
 type NavRoutes = {
-  navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>;
+  navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavData>;
   navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>>;
 };
 ```
@@ -1992,7 +1992,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="mediarouteconfig"></a>`MediaRouteConfig` | Scaffold API | `interface MediaRouteConfig { runtime: CairnRuntime }` | The one config bag `createMediaRoute` takes: the composed runtime, mirroring every other route factory's shape. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. `GettingStarted` and `MarkdownReferenceRow`, named in `gettingStarted` and `reference`, carry no export row of their own: a consumer reaches them as `Extract<AdminData, { view: 'help' }>['page']['gettingStarted']` and `Extract<AdminData, { view: 'help' }>['page']['reference'][number]` respectively. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. `TidyKeyProbeResult`, named in `keyStatus`, carries no export row of its own: a consumer reaches it as `Exclude<Extract<AdminData, { view: 'settings' }>['page']['keyStatus'], 'missing'>`. |
-| `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
+| `VocabularyData` | Extension API | `interface VocabularyData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
 | <a id="contentroutesconfig"></a>`ContentRoutesConfig` | Unstable API | `interface ContentRoutesConfig { runtime: CairnRuntime; tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]>; preview?: PreviewTokenConfig }` | The one config bag `createContentRoutes` takes: `runtime` is the composed runtime the routes close over, and the rest are injectable dependencies grouped for the tidy action to read (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. `preview` is the TTL [`previewMintAction`](#createcontentroutes) mints against, absent resolving to [`PreviewTokenConfig`](#types)'s own seven-day default. |
 | `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the load and action vocabulary a site can mount by hand, shown expanded in [`createContentRoutes`](#createcontentroutes). The engine's Media Library janitorial actions (bulk delete, orphan scan and purge, replace, alt propagation, per-asset delete and update, and the Library-direct upload) are not members: they reach the browser only through [`createCairnAdmin`](#createcairnadmin). |
 | <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`previewMint`](#previewmint): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
@@ -2003,16 +2003,16 @@ imports the matching `*Data` type to type its `data` prop.
 | `EditorRoutesConfig` | Unstable API | `interface EditorRoutesConfig { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
 | <a id="navroutesconfig"></a>`NavRoutesConfig` | Unstable API | `interface NavRoutesConfig { runtime: CairnRuntime }` | The one config bag `createNavRoutes` takes: the composed runtime, mirroring every other route factory's shape. |
-| `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. `NavPageOption`, named in `pages`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'nav' }>['page']['pages'][number]`. |
+| `NavData` | Extension API | `interface NavData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. `NavPageOption`, named in `pages`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'nav' }>['page']['pages'][number]`. |
 | `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
 | <a id="cairnadminconfig"></a>`CairnAdminConfig` | Extension API | `interface CairnAdminConfig { runtime: CairnRuntime; auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesConfig['tidy']; navFilter?: ContentRoutesConfig['navFilter']; attention?: ContentRoutesConfig['attention']; preview?: ContentRoutesConfig['preview'] }` | The one config bag `createCairnAdmin` takes: `runtime` is the composed runtime the admin bundle closes over, and the rest are injectable dependencies grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, `attention`, and `preview` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, `attention` is the per-session pending-work seam (see `ContentRoutesConfig` below and [the attention seam](#the-attention-seam)), and `preview` is the preview-link lifetime `previewMint` mints against, so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
 | `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, `shellLoad`, and the `actions` vocabulary narrowed against the ten media-janitorial actions (see the note after the actions table in [`createCairnAdmin`](#createcairnadmin)), shown expanded there. |
-| `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'history' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `HistoryData` for the `history` view, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
+| `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'history' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `HistoryData` for the `history` view, `MediaLibraryData`, `NavData`, `VocabularyData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
-| `AuthGuardOptions` | Scaffold API | `interface AuthGuardOptions { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |
+| `AuthGuardConfig` | Scaffold API | `interface AuthGuardConfig { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |
 | <a id="identityresolver"></a>`IdentityResolver` | Unstable API | `interface IdentityResolver { resolve(event: CairnEvent): Promise<ResolvedIdentity \| IdentityRefusal>; logoutUrl: string; label?: string }` | A site's own identity gate. `resolve` proves who is making the request, or says why it could not; the guard calls it only on guarded admin paths and wraps it in a try/catch, treating a throw as a refusal. `logoutUrl` is validated once at `createAuthGuard`'s construction: a root-relative path or an absolute `https:` URL, or construction throws. `label` names the gate for the hand-off page and the doctor probe, defaulting to "your organization's sign-in." |
 | <a id="resolvedidentity"></a>`ResolvedIdentity` | Unstable API | `interface ResolvedIdentity { ok: true; email: string; displayName?: string }` | A request the gate has already authenticated. The guard normalizes `email` (trim, lowercase) before the roster lookup and the log record; `displayName` is advisory only, capped at 120 characters, and the roster row's own `displayName` wins whenever it is set. |
 | <a id="identityrefusal"></a>`IdentityRefusal` | Unstable API | `interface IdentityRefusal { ok: false; reason: string }` | A request the gate could not authenticate. `reason` is for the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`, `'expired'`, `'no_email'`, `'keys'`, or a site's own word, every value snake_case. |

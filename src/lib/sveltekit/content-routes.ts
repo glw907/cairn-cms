@@ -48,7 +48,7 @@ export type { EditData } from './content-routes-entry-read.js';
 
 export type { MediaLibraryData, MediaLibraryEntry } from './content-routes-media-library.js';
 
-export type { SettingsData, VocabularyLoadData } from './content-routes-settings.js';
+export type { SettingsData, VocabularyData } from './content-routes-settings.js';
 
 export type { DictionaryAddFailure } from './content-routes-dictionary.js';
 

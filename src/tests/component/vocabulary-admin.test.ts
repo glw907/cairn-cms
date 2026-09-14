@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import VocabularyAdmin from '../../lib/components/VocabularyAdmin.svelte';
-import type { VocabularyLoadData } from '../../lib/sveltekit/content-routes.js';
+import type { VocabularyData } from '../../lib/sveltekit/content-routes.js';
 
 // SAFE_TAG_VALUE is the engine's slug shape; the screen derives the same value on add.
 const SAFE_TAG_VALUE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // A two-entry vocabulary: "Snow report" is in use (8 posts), "Gear" is unused. One unlisted seed
 // candidate ("Trip reports", in use on 3 posts) sits in the seed section.
-function data(over: Partial<VocabularyLoadData> = {}): VocabularyLoadData {
+function data(over: Partial<VocabularyData> = {}): VocabularyData {
   return {
     vocabulary: [
       { value: 'snow-report', label: 'Snow report' },

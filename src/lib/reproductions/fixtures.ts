@@ -1,14 +1,14 @@
 // cairn-cms: the deliberately minimal fixture set the live-reproduction seam's stories mount
 // against. One sample concept, a handful of entries, a small media library, a tag vocabulary, one
 // signed-in editor, and the nav/worked-navlayout example, typed against the engine's own load-time
-// shapes (ListData's EntrySummary, HistoryData, MediaLibraryData, VocabularyLoadData,
+// shapes (ListData's EntrySummary, HistoryData, MediaLibraryData, VocabularyData,
 // ResolvedNavLayout) so a story's props are exactly what a real admin route would hand the same
 // component. Node-safe like ./manifest.ts: no `.svelte` import, no @sveltejs/kit, no DOM outside the
 // `atob`/`File` globals both Node and a browser carry. Every module this file value-imports
 // (./fixtures.js excepted) is plain data or a pure function with the same guarantee, including
 // `diffChanges` (tidy-diff.ts) and `resolveTidyConventions` (nav/site-config.ts), both leaf modules
 // with no relative imports of their own; every heavier shape (ConceptDescriptor, EntrySummary,
-// HistoryData, MediaLibraryData, VocabularyLoadData, ResolvedNavLayout) is a type-only import, so a
+// HistoryData, MediaLibraryData, VocabularyData, ResolvedNavLayout) is a type-only import, so a
 // file that pulls in @sveltejs/kit or the GitHub client to declare its interface never drags that
 // weight in here.
 //
@@ -22,7 +22,7 @@ import type { EntrySummary } from '../sveltekit/content-routes-list.js';
 import type { HistoryData } from '../sveltekit/types.js';
 import type { MediaLibraryData, MediaUsageInfo } from '../sveltekit/content-routes-media-library.js';
 import type { MediaLibraryEntry } from '../media/library-entry.js';
-import type { VocabularyLoadData } from '../sveltekit/content-routes-settings.js';
+import type { VocabularyData } from '../sveltekit/content-routes-settings.js';
 import type { ResolvedNavLayout } from '../sveltekit/admin-nav.js';
 import { diffChanges, type Change } from '../components/tidy-diff.js';
 import { resolveTidyConventions, type TidyConventions } from '../nav/site-config.js';
@@ -249,7 +249,7 @@ export const fixtureMediaLibrary: MediaLibraryData = {
  * A tag vocabulary carrying one unused tag (the trash icon reads active), one in-use tag (the
  *  guarded delete), and one in-use-but-unlisted tag (the not-on-this-list section).
  */
-export const fixtureVocabulary: VocabularyLoadData = {
+export const fixtureVocabulary: VocabularyData = {
   vocabulary: [
     { value: 'trail-guide', label: 'Trail Guide' },
     { value: 'gear', label: 'Gear' },

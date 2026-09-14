@@ -150,6 +150,19 @@ open edits, not part of the shape itself.
   factories the decision reaches (`createContentRoutes`, `createContentRoutesInternal`,
   `createCairnAdmin`, `createCairnAdminInternal`); `createNavRoutes` and `createMediaRoute` execute
   the same clause in Task 3 without a second amendment.
+- **Amendment (2026-09-08, polish-C Task 4):** the row's populated text scoped itself to four
+  `*Config` rows and did not reach a bag a single call takes rather than a factory's own
+  construction-time bag. This amendment states the split explicitly: a bag a factory takes at
+  construction is `*Config`, with `config` its primary parameter identifier; a bag a single call
+  takes is `*Options`. `createSectionAction` already drew the line the engine now states as a
+  rule: `SectionActionConfig` is the factory-level bag `createSectionAction` itself takes,
+  `SectionActionOptions` is the per-call bag its returned wrapper takes on each invocation. Under
+  this clause, `AuthGuardOptions`, `RendererOptions`, and `FieldsetOptions` rename to
+  `AuthGuardConfig`, `RendererConfig`, and `FieldsetConfig`; `CairnManifestOptions` is exempt under
+  `convention-interop-carve-out`, since it types an interop surface external tooling already
+  expects an `Options` bag on, and stays named as it is. Source:
+  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  dated 2026-09-08.
 
 ## convention-interop-carve-out: a host ecosystem's convention wins over cairn's grammar on an interop surface  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -923,6 +936,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 43.
 - **Any-site case:** fieldset's options parameter, carrying refine. A site writing a shared refine-builder types the options object, and core.md:507 states the constraint it must design around: refine is deliberately synchronous.
+- **Note (polish-C, Task 4):** renamed to `FieldsetConfig`, per `convention-parameter-bags`'s
+  factory-versus-per-call clause. Verdict unchanged.
 
 ## audit-adapter-validationissue: `ValidationIssue`  (keep, 2026-08-26, any-site audit)
 
@@ -1407,6 +1422,8 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 106.
 - **Any-site case:** The archetype of an absorbed divergence: before the plugin seam a site re-parsed cairn's HTML into a second unified pipeline; after it, the site's plugin composes over the same hast tree.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Note (polish-C, Task 4):** renamed to `RendererConfig`, per `convention-parameter-bags`'s
+  factory-versus-per-call clause. Verdict unchanged.
 
 ## audit-adapter-siterender: `SiteRender`  (keep, 2026-08-26, any-site audit)
 
@@ -2016,6 +2033,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 55.
 - **Any-site case:** A site that puts tag management on its own route, beside its own taxonomy tooling, mounts the vocabulary screen and types data with this.
+- **Note (polish-C, Task 4):** renamed to `VocabularyData`, dropping `Load` to join the load-data
+  types that already omit it. Verdict unchanged.
 
 ## audit-sveltekit-settingsdata: `SettingsData`  (keep, 2026-08-26, any-site audit)
 
@@ -2030,6 +2049,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 57.
 - **Any-site case:** A site whose public menu is edited beside its other site settings mounts the drag-to-reorder nav editor on its own route and types data.
+- **Note (polish-C, Task 4):** renamed to `NavData`, dropping `Load` to join the load-data types
+  that already omit it. Verdict unchanged.
 
 ## audit-sveltekit-historydata: `HistoryData`  (keep, 2026-08-26, any-site audit)
 
@@ -2601,6 +2622,8 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 123.
 - **Any-site case:** Any site declaring roles or an access map writes this object in hooks.server.ts; each member is a decision only the site can make.
+- **Note (polish-C, Task 4):** renamed to `AuthGuardConfig`, per `convention-parameter-bags`'s
+  factory-versus-per-call clause. Verdict unchanged.
 
 ## audit-sveltekit-requireowner: `requireOwner`  (keep, 2026-08-26, any-site audit)
 

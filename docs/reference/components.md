@@ -472,10 +472,10 @@ under the same names.
 Stability tier: Unstable API.
 
 ```ts
-let { data, form }: { data: NavLoadData; form?: ContentFormFailure | null };
+let { data, form }: { data: NavData; form?: ContentFormFailure | null };
 ```
 
-The drag-to-reorder navigation editor. `data` is the `NavLoadData` from the nav load (the menu
+The drag-to-reorder navigation editor. `data` is the `NavData` from the nav load (the menu
 metadata, the current tree, the page options, and the feature flags). Saving posts the named
 `?/save` action, which commits the rebuilt nav to the site config; `form` carries a refused save's
 `ContentFormFailure`, so a stale-edit reload or a rejected tree reapplies its message. On the
@@ -554,7 +554,7 @@ an explicit empty string suppresses the hand-off, the self-serve state. It mount
 Stability tier: Unstable API.
 
 ```ts
-let { data, form }: { data: VocabularyLoadData; form?: ContentFormFailure | null };
+let { data, form }: { data: VocabularyData; form?: ContentFormFailure | null };
 ```
 
 The tag-vocabulary admin screen ("Tags"). `data` is the committed vocabulary, the per-value
@@ -569,9 +569,9 @@ mutation. It mounts inside `CairnAdminShell` on `PageHeader` for its header band
 ```svelte
 <script lang="ts">
   import { VocabularyAdmin } from '@glw907/cairn-cms/components';
-  import type { VocabularyLoadData } from '@glw907/cairn-cms/sveltekit';
+  import type { VocabularyData } from '@glw907/cairn-cms/sveltekit';
 
-  let { data }: { data: VocabularyLoadData } = $props();
+  let { data }: { data: VocabularyData } = $props();
 </script>
 
 <VocabularyAdmin {data} />

@@ -163,7 +163,7 @@ export const cairn = defineAdapter({
   rendering: {
     // Render through the engine so registered components (the callout) produce their markup; the
     // engine's own pipeline already wraps every table in a scrollable, labeled region by default
-    // (RendererOptions.tableScroll). The default media resolver backs the public build; the
+    // (RendererConfig.tableScroll). The default media resolver backs the public build; the
     // preview path injects its own resolveMedia. resolveFragment forwards the same way: the build
     // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
     // one (EditPage), and this site's render never needs to vary fragment resolution itself.

@@ -83,7 +83,7 @@ export interface SettingsData {
  *  count, and the in-use-but-unlisted seed set. The usage overlay is best-effort, so it degrades to
  *  an empty `usage`/`unlisted` while the committed `vocabulary` stays visible when a read fails.
  */
-export interface VocabularyLoadData {
+export interface VocabularyData {
   /** The committed `{ value, label }` entries, in config order. */
   vocabulary: VocabularyEntry[];
   /** Each vocabulary value to its cross-branch in-use count (main plus open cairn/* branches). */
@@ -325,7 +325,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  `{}` and `unlisted` to `[]` on any failure, keeping the committed vocabulary visible. The safety
    *  boundary is the strict gate on vocabularySaveAction, never this load, so degrading here is correct.
    */
-  async function vocabularyLoad(event: CairnEvent): Promise<VocabularyLoadData> {
+  async function vocabularyLoad(event: CairnEvent): Promise<VocabularyData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
     const backend = ctx.resolveBackend(event);

@@ -15,12 +15,12 @@ import {
   type EditData,
   type MediaLibraryData,
   type SettingsData,
-  type VocabularyLoadData,
+  type VocabularyData,
   type HelpData,
   type WelcomeData,
 } from './content-routes.js';
 import { createEditorRoutes, type EditorsData } from './editors-routes.js';
-import { createNavRoutes, type NavLoadData } from './nav-routes.js';
+import { createNavRoutes, type NavData } from './nav-routes.js';
 import type { AuthRoutesConfig } from './auth-routes.js';
 import type { AuthBranding } from '../email.js';
 import type { CairnRuntime } from '../content/types.js';
@@ -75,10 +75,10 @@ export type AdminData =
   | { view: 'edit'; page: EditData }
   | { view: 'history'; page: HistoryData }
   | { view: 'editors'; page: EditorsData }
-  | { view: 'nav'; page: NavLoadData }
+  | { view: 'nav'; page: NavData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
-  | { view: 'vocabulary'; page: VocabularyLoadData }
+  | { view: 'vocabulary'; page: VocabularyData }
   | { view: 'help'; page: HelpData }
   | { view: 'welcome'; page: WelcomeData };
 

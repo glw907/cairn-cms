@@ -79,8 +79,8 @@ export { defineFieldset } from './content/fieldset.js';
 export type {
   Fieldset,
   InferFieldset,
-  FieldsetOptions,
-  // `FieldsetOptions.behavior` and `Fieldset.behavior` name these.
+  FieldsetConfig,
+  // `FieldsetConfig.behavior` and `Fieldset.behavior` name these.
   BehaviorTable,
   FieldBehavior,
 } from './content/fieldset.js';
@@ -107,7 +107,7 @@ export type { IconSet } from './render/glyph.js';
 export { createRenderer } from './render/pipeline.js';
 // `createRenderer`'s returned `renderMarkdown`/`renderDocument` name `ResolveOptions` in their own
 // `opts` parameter.
-export type { RendererOptions, Renderer, DocHeading, ResolveOptions } from './render/pipeline.js';
+export type { RendererConfig, Renderer, DocHeading, ResolveOptions } from './render/pipeline.js';
 // The `::include` fragment resolver type: `renderMarkdown`'s `resolveFragment` option and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';

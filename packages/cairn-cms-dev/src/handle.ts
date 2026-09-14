@@ -23,7 +23,7 @@ import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
 
 /** Options for the dev-backend handle. */
-export interface DevBackendOptions {
+export interface DevBackendConfig {
   /**
    * The Part B seam for seeding the consumer's own committed starter content into the in-memory
    * repo, so the template ships realistic posts instead of the showcase's hard-coded seed. Part A
@@ -59,12 +59,12 @@ export interface DevBackendOptions {
  * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
  * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
  * untouched.
- * @param options - {@link DevBackendOptions}; `access` is the site's own declaration, attached to
+ * @param config - {@link DevBackendConfig}; `access` is the site's own declaration, attached to
  * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
  * hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
-export function devBackendHandle(options?: DevBackendOptions): Handle {
+export function devBackendHandle(config?: DevBackendConfig): Handle {
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
   seedMediaLibrary();
 
@@ -156,13 +156,13 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
         role: 'owner',
         capability: 'owner',
       };
-      if (options?.access !== undefined) {
+      if (config?.access !== undefined) {
         // Mirrors the guard, which sets locals.cairnAccess immediately after minting
         // locals.cairnEditor on a guarded admin path, so a site's own route gates and section
         // actions read the same declaration under either hook branch. The guard defaults an absent
-        // declaration to {}; this attaches only a supplied one, for the reason DevBackendOptions
+        // declaration to {}; this attaches only a supplied one, for the reason DevBackendConfig
         // records.
-        event.locals.cairnAccess = options.access;
+        event.locals.cairnAccess = config.access;
       }
     }
     return resolve(event);

@@ -21,6 +21,12 @@ The release step sets the version number at the cut and renames this section to 
 - **`createNavRoutes` and `createMediaRoute` (`/sveltekit`) take one config bag, not a positional
   runtime.** Change `createNavRoutes(runtime)` to `createNavRoutes({ runtime })`, and
   `createMediaRoute(runtime)` to `createMediaRoute({ runtime })`.
+- **Six factory-level parameter and load-data bags are renamed, across both packages.** Rename
+  any imported type reference: `AuthGuardOptions` to `AuthGuardConfig` (`/sveltekit`),
+  `RendererOptions` to `RendererConfig` (`.`), `FieldsetOptions` to `FieldsetConfig` (`.`),
+  `DevBackendOptions` to `DevBackendConfig` (`@glw907/cairn-cms-dev`), `NavLoadData` to `NavData`
+  (`/sveltekit`), and `VocabularyLoadData` to `VocabularyData` (`/sveltekit`). A call site passing
+  the bag positionally or by inference needs no change.
 - **`iconSpan`, `cardShell`, and `headRow` are gone from `/render`**, now type-only
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and

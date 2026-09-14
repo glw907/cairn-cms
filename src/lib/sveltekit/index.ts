@@ -9,7 +9,7 @@ export {
   requireOwner,
   requireEditor,
   requireAccess,
-  type AuthGuardOptions,
+  type AuthGuardConfig,
   type IdentityResolver,
   type ResolvedIdentity,
   type IdentityRefusal,
@@ -40,7 +40,7 @@ export type {
   HelpData,
   WelcomeData,
   SettingsData,
-  VocabularyLoadData,
+  VocabularyData,
   MediaLibraryData,
   ContentRoutesConfig,
   AttentionItem,
@@ -52,7 +52,7 @@ export type {
   MediaLibraryEntry,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes, type NavRoutesConfig } from './nav-routes.js';
-export type { NavLoadData } from './nav-routes.js';
+export type { NavData } from './nav-routes.js';
 export type {
   NavIcon,
   ResolvedNavEntry,

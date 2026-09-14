@@ -319,6 +319,17 @@
   must: change `createNavRoutes(runtime)` to `createNavRoutes({ runtime })`, and
   `createMediaRoute(runtime)` to `createMediaRoute({ runtime })`.
 
+- **Breaking:** six factory-level parameter and load-data bags are renamed, across both packages,
+  per `convention-parameter-bags`'s factory-versus-per-call clause: `AuthGuardOptions` to
+  `AuthGuardConfig` (`/sveltekit`), `RendererOptions` to `RendererConfig` (`.`), `FieldsetOptions`
+  to `FieldsetConfig` (`.`), `DevBackendOptions` to `DevBackendConfig`
+  (`@glw907/cairn-cms-dev`), `NavLoadData` to `NavData` (`/sveltekit`), and `VocabularyLoadData` to
+  `VocabularyData` (`/sveltekit`). `createAuthGuard`, `defineFieldset`, and `devBackendHandle` each
+  name their renamed parameter `config`. Every member of every renamed type keeps its name,
+  optionality, and doc; only the type names and the three parameter identifiers change. Consumers
+  must: rename any imported type reference from the old name to the new one; a call site passing
+  the bag positionally or by inference needs no change.
+
 - `formatTimestamp` (`/admin-toolkit`) widens its accepted domain to every ISO 8601 shape that
   names its own zone: a no-seconds variant, a colonless `±hhmm` offset, and a lowercase `z` suffix,
   alongside the ISO forms and the SQLite shape it already accepted. The two non-standard zone

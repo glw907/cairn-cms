@@ -14,7 +14,7 @@ import type { CairnEvent } from './types.js';
 /**
  * One page option for the URL picker datalist. Module-internal (its export was retired, a
  * sanctioned NavIcon-class leak); a consumer reads it structurally as
- * `NavLoadData['pages'][number]`.
+ * `NavData['pages'][number]`.
  */
 interface NavPageOption {
   label: string;
@@ -22,7 +22,7 @@ interface NavPageOption {
 }
 
 /** The nav editor's load data: the menu meta, the current tree, page options, and flags. */
-export interface NavLoadData {
+export interface NavData {
   menu: { name: string; label: string; maxDepth: number };
   tree: NavNode[];
   pages: NavPageOption[];
@@ -76,7 +76,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
   }
 
   /** Load the nav editor. A missing or unparsable config degrades to an empty tree so it still opens. */
-  async function navLoad(event: CairnEvent): Promise<NavLoadData> {
+  async function navLoad(event: CairnEvent): Promise<NavData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;
@@ -174,6 +174,6 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
 
 /** What `createNavRoutes` returns: the nav editor's load and save functions. */
 export interface NavRoutes {
-  navLoad: (event: CairnEvent) => Promise<NavLoadData>;
+  navLoad: (event: CairnEvent) => Promise<NavData>;
   navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;
 }

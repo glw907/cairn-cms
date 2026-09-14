@@ -38,7 +38,7 @@ export type ResolveOptions = {
   resolveFragment?: FragmentResolve;
 };
 
-export interface RendererOptions {
+export interface RendererConfig {
   /**
    * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
    *  directive markers and the common benign tags) and returns the schema to use. Add to the
@@ -84,7 +84,7 @@ export interface RendererOptions {
 /**
  * Compose a site's render pipeline from its component registry: directive syntax to
  *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the fully composed
- *  remark/rehype plugin arrays, including any `RendererOptions.remarkPlugins`/`rehypePlugins`
+ *  remark/rehype plugin arrays, including any `RendererConfig.remarkPlugins`/`rehypePlugins`
  *  a site supplied, so the admin editor preview can reuse the exact same set. `renderDocument`
  *  takes the same options and additionally returns the document's `headings`, collected from the
  *  final rehype tree (after `rehypeSlug` and any site `rehypePlugins` have run), in document
@@ -92,7 +92,7 @@ export interface RendererOptions {
  */
 export function createRenderer(
   registry: ComponentRegistry = defineRegistry({ components: [] }),
-  options: RendererOptions = {},
+  options: RendererConfig = {},
 ) {
   const remarkPlugins: PluggableList = [
     remarkDirective,

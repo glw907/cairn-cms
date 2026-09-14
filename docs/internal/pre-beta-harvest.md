@@ -395,13 +395,13 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
 
 ## Engine
 
-- **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererOptions` gained
+- **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererConfig` gained
   `remarkPlugins`/`rehypePlugins`, additive lists appended after cairn's own markdown- and
   hast-stage steps. Additive, not breaking; 907.life's hand-rolled second unified pipeline
   migrated onto it (`67b8f0d`). ecxc-ski's migration is CANDIDATE, not moot: its `main` is no
   longer reverted (the chrome repair and the chassis restructure both landed there, `8b68aed`,
   on `^0.80.0`), but it still carries its own local table-scroll wiring rather than this seam.
-- **Table-scroll as a built-in default** — LANDED (`71c131d`). `RendererOptions.tableScroll`
+- **Table-scroll as a built-in default** — LANDED (`71c131d`). `RendererConfig.tableScroll`
   (default `true`) wraps every rendered table by default, opt-out via `tableScroll: false`.
   907.life deleted its local wiring (`b56a241`); ecxc-ski's migration is CANDIDATE (see above).
 - **Sitemap extra-routes** — LANDED (`278035e`). `sitemapView` gained an `extraRoutes` argument and a new

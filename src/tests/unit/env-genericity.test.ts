@@ -91,7 +91,7 @@ void typeOnlyBareWranglerEnvAssignsClean;
  * to SvelteKit's own generated `Actions`, whose `Action` return is `MaybePromise<Record<string,
  * any> | void>` (kit's own `OutputData` default), rather than the looser `unknown` that accepts
  * any return, checked or not. `any`, not `unknown`, matches kit exactly: an interface return type
- * with no explicit index signature (`HelpData`, `NavLoadData`, an `ActionFailure`) is not
+ * with no explicit index signature (`HelpData`, `NavData`, an `ActionFailure`) is not
  * structurally assignable to `Record<string, unknown>`, the same reason kit's own default reaches
  * for `any` here.
  */

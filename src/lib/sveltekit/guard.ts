@@ -31,7 +31,7 @@ function isAdminPath(pathname: string): boolean {
 }
 
 /** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
-export interface AuthGuardOptions {
+export interface AuthGuardConfig {
   /**
    * The site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every
    *  session against the implicit owner/editor pair, so a zero-config site sees no behavior change.
@@ -161,11 +161,11 @@ function isSafeLogoutUrl(logoutUrl: string): boolean {
  * contract-first-returns rule on its own, since the host ecosystem's convention wins over
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
-export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
-  const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
-  const access = opts.access;
-  const includeSubDomains = opts.includeSubDomains;
-  const identity = opts.identity;
+export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
+  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
+  const access = config.access;
+  const includeSubDomains = config.includeSubDomains;
+  const identity = config.identity;
   // Validated once, at construction, not per request: an invalid logoutUrl is a site
   // misconfiguration, and failing fast here beats admitting an open redirect at request time.
   // The published snapshot below is what every admin path reads; identity.logoutUrl is never

@@ -485,7 +485,7 @@ Stability tier: Extension API.
 ```ts
 declare function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
-  options?: FieldsetOptions,
+  config?: FieldsetConfig,
 ): Fieldset<R>;
 ```
 
@@ -497,9 +497,9 @@ constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
 `pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `defineFieldset()`
 call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric
 `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
-`options.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
+`config.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
 
-[`FieldsetOptions.refine`](#field-types) is deliberately synchronous: it returns
+[`FieldsetConfig.refine`](#field-types) is deliberately synchronous: it returns
 `Record<string, string> | undefined` directly, never a `Promise`, because it runs inline in the
 save action's own request path, on every save. A site needing async validation (a uniqueness check
 against a database, an external lookup) pre-fetches whatever data the check needs and reads it
@@ -522,7 +522,7 @@ Stability tier: Extension API.
   [`content.field_behavior_failed`](log-events.md) record, never the validated data.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
   declared `required: true` is a required key.
-- `FieldsetOptions` carries the `refine` cross-field check and the `behavior` table.
+- `FieldsetConfig` carries the `refine` cross-field check and the `behavior` table.
 
 ### Render
 
@@ -536,7 +536,7 @@ Stability tier: Extension API.
 ```ts
 declare function createRenderer(
   registry?: ComponentRegistry,
-  options?: RendererOptions,
+  options?: RendererConfig,
 ): {
   remarkPlugins: PluggableList;
   rehypePlugins: PluggableList;
@@ -549,17 +549,17 @@ declare function createRenderer(
 
 Compose a site's render pipeline from its component registry: directive syntax, then stamped
 markers, then registry-built hast. It returns `renderMarkdown` plus the fully composed remark and
-rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
+rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererConfig`
 carries the sanitize and anchor controls, the table-scroll default, and a
 `remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
 
-[`RendererOptions.sanitizeSchema`](#createrenderer) is deliberately synchronous too: `(defaults:
+[`RendererConfig.sanitizeSchema`](#createrenderer) is deliberately synchronous too: `(defaults:
 Schema) => Schema`, called inline while the pipeline composes its sanitize floor for every render
 call, with no seam to await external data before extending the allowlist.
 
 `renderDocument` takes the same options as `renderMarkdown` and additionally returns `headings`: a
 `DocHeading[]` collected from the final rehype tree, after `rehypeSlug` stamps ids and after any
-`RendererOptions.rehypePlugins` a site supplied have run, so a site rewrite of a heading's id is
+`RendererConfig.rehypePlugins` a site supplied have run, so a site rewrite of a heading's id is
 the id collected. Headings come back in document order, one entry per h1-h6, with `text` flattened
 to plain content (inline code, emphasis, and links reduce to their text). A page that needs a
 table of contents or a heading anchor list calls `renderDocument` instead of `renderMarkdown`.
@@ -583,12 +583,12 @@ const { renderMarkdown } = createRenderer(registry);
 // render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
 ```
 
-`RendererOptions.tableScroll` (default `true`) wraps every rendered table in a labeled,
+`RendererConfig.tableScroll` (default `true`) wraps every rendered table in a labeled,
 keyboard-reachable `role="region"` div, so a narrow viewport scrolls the wrapper instead of
 squeezing the table's columns while the table itself keeps its role in the accessibility tree. Set
 it to `false` for a site that supplies its own table wrapping.
 
-`RendererOptions.remarkPlugins` and `RendererOptions.rehypePlugins` add a site's own [unified](https://unifiedjs.com)
+`RendererConfig.remarkPlugins` and `RendererConfig.rehypePlugins` add a site's own [unified](https://unifiedjs.com)
 plugins to the pipeline. A remark plugin runs after cairn's own markdown-stage steps (directive
 stamping, `cairn:` link resolution, figures, `media:` resolution) and before the conversion to
 hast. A rehype plugin runs after cairn's own hast-stage steps (dispatch, the sanitize floor, heading
@@ -1064,7 +1064,7 @@ function signatures above reference these.
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |
-| `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
+| `RendererConfig` | Extension API | `interface RendererConfig` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
 | `Renderer` | Extension API | `type Renderer` | What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`, shown expanded in [`createRenderer`](#createrenderer). |
 | `DocHeading` | Extension API | `interface DocHeading` | One heading `renderDocument` collected from a rendered page: `id`, flattened `text`, and `depth` (1-6), in document order. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |

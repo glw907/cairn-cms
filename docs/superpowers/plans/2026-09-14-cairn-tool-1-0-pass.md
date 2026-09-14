@@ -81,7 +81,7 @@ restate it. Where this plan contradicts the spec, this plan wins, and the contra
 listed under "Knowing corrections to the spec" below.
 
 **Status: the three-lens review is folded, and the 2026-09-14 portability ruling is applied.**
-The three-lens review, its fold, the independent fold read, the product revision, and its scoped read are all folded. The plan awaits Geoff's read; no task dispatches before it.
+**Approved:** Geoff, 2026-09-14, after the three-lens review, the fold, the independent fold read, the product revision, and its scoped read. The two header items below (the exit-code convention and the registry path) are confirmed by that approval. The plan-approval gate is closed.
 Two changes to the spec's own contracts await Geoff's confirmation at that read, and each is
 marked where it lands. The exit-code contract now follows the monitoring-plugin convention
 instead of the spec's four codes (Task 21). The registry path now resolves through
@@ -223,7 +223,7 @@ Both gain a 1.0 caller in Task 12's `creds` check, which is the first member of 
 - The spec's `--expect-sites N` sits on `health`. In 1.0 `health` takes one site, so the flag
   moves to `cairn sites --expect-sites N`, which is where a registry-level count belongs.
   `ExitCode` keeps the parameter.
-- **The exit codes change convention, and this one awaits Geoff's confirmation at his read.**
+- **The exit codes change convention (confirmed by Geoff's approval, 2026-09-14).**
   The spec sets its own four codes, with 0 for a run degraded by an absent credential and 4 for a
   tool fault. 1.0 adopts the monitoring-plugin convention instead, which Nagios and every
   alerting tool compatible with it already read: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. A
@@ -231,7 +231,7 @@ Both gain a 1.0 caller in Task 12's `creds` check, which is the first member of 
   dropped: a scheduled routine alerts on any non-zero exit, and WARNING is what a human reads at
   a prompt. The spec's exit 4 is dropped, because a tool fault is what UNKNOWN means. Task 21
   holds the mapping and Task 25 amends the spec if Geoff confirms.
-- **The registry path resolves through `os.UserConfigDir`, and this one awaits his confirmation
+- **The registry path resolves through `os.UserConfigDir` (confirmed by Geoff's approval, 2026-09-14),
   too.** The spec rules `os.UserConfigDir` out and hand-builds `~/.config/cairn/sites` on Linux
   and macOS so the Go tool matches the Node CLI. The 2026-09-14 ruling names `os.UserConfigDir`
   on every platform. Task 5 measures the divergence and keeps the Node CLI's path as a documented
@@ -1303,7 +1303,7 @@ every write runs the scrub last.
   fault while a warning is a disclosed and accepted one. The table covers one row per pairing.
 - A tool fault is UNKNOWN, set by `main` on an error return from a command. `ExitCode` has no
   notion of a tool fault, so the two paths cannot collide. The spec's exit 4 is dropped, and this
-  change to the spec's contract awaits Geoff's confirmation at his read; Task 25 amends the spec
+  change to the spec's contract is confirmed by his approval of 2026-09-14; Task 25 amends the spec
   if he confirms.
 - `render.Verdict` is this function's return value widened to a type, and Task 20's verdict line
   prints its word. A test asserts the four codes and the four words correspond, so the printed

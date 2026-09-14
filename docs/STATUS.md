@@ -43,7 +43,7 @@ from pass 2a. Polish-C's run spent 7.2M subagent tokens (conductor-notes.md has 
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only, under
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 as a product for any operator on Linux, macOS, and
-  Windows (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`); awaits Geoff's read.
+  Windows (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, APPROVED 2026-09-14).
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.
 
 ## Open decisions

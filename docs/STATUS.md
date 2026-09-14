@@ -20,11 +20,11 @@ passes, A, B1, B2). CI on `main` is fully green.
 
 ## Immediate next action (2026-09-13)
 
-**Polish-11b-i is MERGED** (PR #57, CI green, merge commit `0e833332`; the pass entry and
-post-mortem are in [`HISTORY.md`](HISTORY.md)). Next: **11b-ii**, the same overnight launch's
-next stage, driven by the orchestrator from the session that ran 11a and 11b-i
-(`~/.cache/cairn-overnight-2026-09-12/`). If this session is gone, resume per that cache
-dir's `LAUNCH.md`.
+**Polish-11b-ii is MERGED** (PR #58, CI green, merge commit `e833a661`; the pass entry and
+post-mortem are in [`HISTORY.md`](HISTORY.md)). Next: **polish-C**, the same overnight run's
+next stage, launched automatically from the session that ran 11a, 11b-i, and 11b-ii
+(`cairn-c-to-release.js` in `~/.cache/cairn-overnight-2026-09-12/`). If that session is gone,
+resume per that cache dir's `LAUNCH.md`.
 
 **Earlier state (11:20):**
 

@@ -16,10 +16,17 @@ engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii unpublished under
 ## Immediate next action (2026-09-13)
 
 **Polish-11b-ii is MERGED** (PR #58, CI green, merge commit `e833a661`; entry and post-mortem in
-[`HISTORY.md`](HISTORY.md)). Next: **polish-C**, launched from this session's scratchpad copy of
-`cairn-c-to-release.js` (APPROVED, Geoff 2026-09-12). After C merges: the admin motion pass, the
-release cut, then the borrowable-patterns pass in a fresh session. If this session is gone,
-resume per `~/.cache/cairn-overnight-2026-09-12/LAUNCH.md`.
+[`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-13 22:10).
+**Next, a fresh session launches polish-C** per `~/.cache/cairn-overnight-2026-09-12/LAUNCH.md`
+(its 2026-09-13 handoff section is the step list: copy the scripts to the new scratchpad, arm the
+guards and inhibitors, launch `cairn-c-to-release.js`). The sequence to the single release, all
+ruled by Geoff on 2026-09-13 (rulings in that cache dir's `conductor-notes.md`): C -> the admin
+motion pass (plan `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`, runs unread)
+-> on `main` with no worktree live, the dependency sweep plus the bounded pre-cut task (ROADMAP
+Next: the four accepted admin defaults and the Blueprint audit's one line) -> the cut as **0.97.0**
+via `cairn-release` (verify the number is free first). Held for Geoff after the release: cairn.pub's
+engine pin bump (a production deploy), the three dependency tripwires, the `blueprint-audit`
+dotfiles script, the post-mortem, then the borrowable-patterns pass in a fresh session.
 
 Spend on this overnight run so far: **6.02M tokens**.
 

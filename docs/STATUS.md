@@ -37,9 +37,10 @@ after rebuilding or repairing that site on the current engine.
 
 **Polish-11b-i is the stage in flight**, driven by the overnight orchestrator from the session
 that ran 11a (run `wf_2d52758e-603`, scratchpad copy of `~/.cache/cairn-overnight-2026-09-12/`);
-11b-ii follows in the same launch. Polish-C and the release cut are APPROVED (Geoff, 2026-09-12 23:58) and launch
-automatically from this session when 11b-ii merges (`cairn-c-to-release.js` in the launch
-cache); after the cut, the **borrowable patterns** pass (ROADMAP Next, first entry) opens
+11b-ii follows in the same launch. Polish-C is APPROVED (Geoff, 2026-09-12 23:58) and launches automatically from this
+session when 11b-ii merges (`cairn-c-to-release.js` in the launch cache); the **admin motion
+pass** runs after C merges (ROADMAP Next, first entry; spec and plan from the 2026-09-13 research
+records), and the release cut follows the motion pass (Geoff, 2026-09-13); after the cut, the **borrowable patterns** pass (ROADMAP Next, first entry) opens
 in a fresh session with its spec update, adversarial design review, and plans. That is the
 next launch (`~/.cache/cairn-polish-c/`). If this session is gone, resume per that cache dir's
 `LAUNCH.md` with the merge-step and gate-runner fixes recorded there.

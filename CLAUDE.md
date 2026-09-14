@@ -85,6 +85,14 @@ durable orientation only.
   the gate), and the `code-simplifier` plugin agent pins Opus in its own frontmatter. The
   conductor (Fable) runs plan and execution in one session and never reads diffs itself; the
   `diff-reviewer` agent does, per the global "Conducting a pass" rule.
+- **Claude tooling for this stack** lives at user scope on the workstation, not in this repo: the
+  official DaisyUI skill (the component reference every implementer and reviewer reads; prefer a
+  stock DaisyUI component over a home-grown one unless `docs/internal/engine-rulings.md` records
+  the defect that forced it, and the admin design system wins over the skill on any conflict),
+  the licensed daisyUI Blueprint server (its rules enforcer and quality inspector are the pre-cut
+  admin audit), the official Svelte server, and Microsoft's Playwright server. Inventory and
+  rules: `~/.claude/docs/claude-tooling.md`. A contributor without that setup can add the free
+  DaisyUI mirror `https://gitmcp.io/saadeghi/daisyui` and `https://mcp.svelte.dev/mcp`.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 
@@ -224,7 +232,7 @@ never use it alone for a port. What is cairn-specific, not in the skill:
 
 Before any work on the `/admin` interface (the `src/lib/components/*.svelte` admin components or
 `cairn-admin.css`), read and follow [`docs/internal/admin-design-system.md`](docs/internal/admin-design-system.md).
-It is the agent-facing design system: the Warm Stone tokens, the Bricolage/Figtree type, the component
+It is the agent-facing design system: the Warm Stone tokens, the Bricolage Grotesque display and IBM Plex Sans body type, the component
 recipes (cards, eyebrow groups, the brand tile, the CTA, empty states, the command palette), the voice,
 and the load-bearing rules that are not visible in the markup (most importantly: `data-theme` goes on a
 bare wrapper, never on a styled element, and scoped overrides go in `@layer components`). Keep the doc

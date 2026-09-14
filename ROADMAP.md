@@ -883,6 +883,113 @@ the named human gates only):**
 
 ## Next
 
+- **One register for cairn.pub and the admin; waymark stays neutral (Geoff, 2026-09-13).**
+  cairn.pub adopts the admin's Warm Stone system (tokens, Bricolage Grotesque display and IBM Plex Sans body,
+  the design-system recipes and voice) as a public reading surface; today its theme is byte-identical
+  to waymark's unskinned default (record `docs/internal/record/2026-09-13-blueprint-design-spike.md`).
+  That lands with the front-door rewrite after the docs rewrite. Waymark, the scaffold every site
+  reskins, stays neutral: its "not stock DaisyUI" work after borrow-1 is craft (type scale, spacing,
+  restraint) graded against the public design standard, never a cairn identity a site would strip
+  out; the spike's moves that would brand it (rotate its primary hue, adopt the admin type pairing)
+  are out.
+
+- **Five admin defaults from the Carbon survey, accepted (Geoff, 2026-09-13; record
+  `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Part 5b).** Three land as one
+  bounded task in the pre-cut window on `main`, after the motion pass merges and beside the
+  dependency sweep, since each is a few lines with no new surface: `Pagination`'s selected
+  page gains a non-color cue (the design-system gap below, sweep finding 23); `DeleteDialog`
+  drops its `method="dialog"` backdrop form so a stray click no longer dismisses a destructive
+  confirm (Carbon forbids outside-click dismissal on a danger modal; cairn's safe-delete recipe
+  already agrees); `AdminTable` takes an optional accessible-name prop and every engine screen
+  passes one; and, from the daisyUI Blueprint audit (record
+  `docs/internal/record/2026-09-13-blueprint-audit.md`), `EditPage`'s flash strip drops
+  `transition-all` for the two properties it animates. Two are borrow-1 work because they reshape a pattern: the native `title`
+  tooltips (never shown on keyboard focus or touch, not dismissable, WCAG 1.4.13) give way to
+  one accessible tooltip primitive, which also retires the `cairn-btn-guarded` workaround; and
+  the batch-action pattern built fully inside `CairnMediaLibrary` graduates onto `AdminTable`
+  so a consumer's multi-select screen composes it rather than reinventing it. Two survey calls
+  stand unless reopened: "sign in" stays over Carbon's "log in" (the editor docs grade under
+  Microsoft), and Carbon Charts is rejected outright (its stylesheet force-loads IBM Plex);
+  Carbon's chart guidance is a recipe reference only.
+
+- **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
+  `cairn` tool Pass A (plan `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
+  its Reconciliation block re-verified against the post-C tree first, and the plan re-cut at
+  the CLI-versus-HUD boundary: Pass A ships the registry, the health checks, the cobra
+  subcommands, and the scheduled tripwire with every action usable from the shell; the
+  tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
+  TUI; its 2.0 adds the bubbletea HUD and multi-site management. The 1.0 architecture must
+  carry both: keep the registry's shape and site record (the 2026-08-20 plan's registry adopts
+  several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
+  site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a
+  loop over sites without reshaping anything beneath. The rule generalizes: the spine's API is
+  the product and every front end is a view over it, the CLI first, the HUD second, a local
+  web interface if wanted, and an MCP front end (Geoff, 2026-09-13: a server over the spine
+  gives a developer's Claude Code the live operational surface, health, deploy and build
+  state, the auth store, content operations, log queries; a docs-only server is not wanted, since
+  the tarball docs reach every agent; the agent-facing docs form is layered instead: the
+  docs rewrite adds a short docs index to the tarball that the shipped Claude fragment and
+  skill point at (not `llms.txt`: that format is for crawlers, which ignore it; this is a
+  file an agent is sent to), the Go tool gains a `docs`
+  search subcommand over the installed version so any agent reaches retrieval from Bash,
+  and the MCP front end exposes that same search as a tool), each calling the same actions and reading the same records and
+  results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
+  borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
+  the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
+  (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the
+  docs because it changes what the admin track describes and because building its checks
+  surfaces what the operational contract leaves unsaid.
+
+- **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
+  browser).** The admin animates in places (the drawer's width, the palette's opacity, the
+  desk band's dot, `transition-colors` on controls), and `cairn-audit` holds two rules about it
+  (`motion-band` on durations, `reduced-motion` on the guard), but no design-system section says
+  which state changes animate and which snap, the easing curves, the duration bands per class of
+  change (hover, press, enter, exit, layout), how enter and exit differ, and how the reduced-motion
+  guard degrades each. Purpose (Geoff, 2026-09-13): professional-level visual polish and nothing novel; the
+  transitions fit the admin's register, clean, conventional, polished, understated, and
+  professional. Direction (Geoff, 2026-09-13): gentle and minimal (short, eased, one property at a time,
+  nothing that draws attention to itself), with ONE web-based reference for both the feel and the
+  ruleset: IBM Carbon's productive motion set (its duration and easing tokens under cairn names,
+  its entrance and exit pairing, its distance rule), with Atlassian as the tiebreaker only where
+  Carbon is silent, and the industry-default component (shadcn's sidebar) for the one exception
+  (Geoff, 2026-09-13). GNOME is not the reference, since its idiom is a desktop toolkit
+  and it publishes no motion rules; the named
+  example is zen mode, whose entry and exit are abrupt today. The bar for the adopted system
+  (Geoff, 2026-09-13): restrained, polished, and complete, meaning it covers every web case
+  (hover, press, focus, enter, exit, layout, page-level mode changes, list and table changes,
+  dialogs and drawers, toasts and live regions, route transitions, theme changes, reduced motion)
+  so no surface has to invent its own timing. Open question the research brief did not
+  cover (Geoff, 2026-09-13): how the rules change under responsive design, meaning per viewport
+  and per input modality: touch has no hover state, the drawer is a slide on a phone and a
+  persistent column at desktop widths, a layout change caused by a resize or an orientation change
+  snaps rather than animates, and each rule is stated for the family's five-viewport bar (320,
+  390, 768, 1440, 2560). Decision (Geoff, 2026-09-13): zen mode transitions the content offset the way the industry
+  default (shadcn) does, and the ruleset carries ONE documented exception for it, enforced by
+  selector in the property-allowlist rule; the sidebar prior-art survey and cairn's own toggle
+  measurement are the record. Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
+  developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
+  runs on its own screens (the borrowable-patterns gates layer), which means the checker must
+  reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not
+  only a component's own `<style>` block, and the audit must run over the engine's own tree so
+  cairn is held to the rules first. Sequence (Geoff, 2026-09-13): a second research read on the responsive
+  axis extends the brief; the settled document gets a fresh-context adversarial review; then a
+  spec through brainstorming and a plan through writing-plans. Research brief with the
+  seven-system comparison and a proposed token set:
+  `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
+  with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
+  sweep of the admin components onto it. Borrowable by consumers through the audit and the
+  design tokens, per the borrowable-patterns architecture. **Borrow hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
+  borrowable-patterns work: each rule is specified for a consumer's tree as well as cairn's own
+  (what it reads, error versus advisory tier on first adoption, the fix message naming the cairn
+  token), the DaisyUI component-class decision is written consumer-first, and the pass writes the
+  extend track's motion recipe page (the first per-pattern recipe borrow-2's `cairn-extend` skill
+  routes to). **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
+  release cut, so the cut carries the tokens and the audit rules; the C launch script now stops
+  at C's merge and the cut fires after this pass merges. Spec through brainstorming and plan
+  through writing-plans start when the revised research records land; both get an adversarial
+  review, and the pass runs UNREAD on the reviewed plan as soon as C merges (Geoff, 2026-09-13).
+
 - **Borrowable patterns (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
   developer extending cairn borrows the refined patterns instead of reinventing them.**
   Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three
@@ -901,7 +1008,8 @@ the named human gates only):**
   (guidance, with the docs rewrite it routes to). Draft spec:
   `~/.cache/cairn-overnight-2026-09-12/borrowable-patterns-design-DRAFT.md`; it lands at
   `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md` after step 2.
-  **Trigger:** polish-C merged and the release cut.
+  Site migration waits until ALL the borrow work has landed (borrow-1, the docs rewrite,
+  borrow-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
 
 - **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after borrow-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
@@ -2055,6 +2163,17 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **Carbon for AI's label-plus-explainability pattern on the Tidy surface (filed 2026-09-13
+  from the Carbon AI-tooling survey, `docs/internal/record/2026-09-13-carbon-ai-tooling.md`).**
+  cairn's in-buffer Tidy copy-edit and the `CairnTidySettings` screen show AI-touched content
+  with no visual marker and no "how was this built" affordance; Carbon for AI's pattern (a label
+  on AI-generated content plus an explainability disclosure) is the conventional answer and
+  copies as a design pattern, never a package. The survey rules out Carbon's MCP server, its
+  docs skill, `carbon-ai-chat`, and its `llms.txt` (Carbon's own component vocabulary, or
+  chat-widget products outside scope) and keeps `stylelint-plugin-carbon-tokens` watch-only, since
+  `cairn-audit`'s token rules already do the same job. **Trigger:** the next pass that touches
+  the Tidy surface, or the docs rewrite reaching the AI posture page.
 
 - **The bracketed fill-tone population outside `check:custom-surface`'s reach (polish-11b-i,
   2026-09-13).** The admin tree's `retiredTokenPattern` in

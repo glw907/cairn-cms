@@ -110,8 +110,8 @@ follow from the one mechanism rather than reopening it.
 - **The no-key failure mode is under-coverage, not a red gate.** Resolving the boundary inside
   `runStatic` means a gate that sets no key narrows the three rules to the key's default rather than
   widening them. In this tree that default reaches `src/lib/admin-toolkit` alone and never
-  `src/lib/components/cairn-admin.css`, where the shipped declarations and the zen exception live,
-  so the gate would be green over almost none of the admin frame. The CI wiring section now argues
+  `src/lib/components/cairn-admin.css`, where the shipped declarations and the frame-offset
+  exception live, so the gate would be green over almost none of the admin frame. The CI wiring section now argues
   it that way, and task 10's failing assertion, a `motion-property` finding from a
   `src/lib/components` fixture under the gate's config, is the proof against it.
 - **The key's default names one absent root, not two.** `src/routes/admin` is absent from this tree,
@@ -120,15 +120,59 @@ follow from the one mechanism rather than reopening it.
   it.
 - **Task 10's paired run gets a control arm that can produce findings.** Both arms of the old pair,
   with and without the key, returned nothing. The instrument is a control arm with the gate's
-  `static.adminScope` set to the five `SCAN_SCOPE` roots, which produces the showcase theme and
-  chassis findings, against the shipping arm with the three admin roots, which produces none.
-  `gap-scale`, `token-colors`, and `motion-band` keep the full five-root scope, proved by their
-  finding counts being equal in both arms.
+  `static.adminScope` set to the five `SCAN_SCOPE` roots,
+  which produces the showcase theme's findings, against the shipping arm with the three admin
+  roots, which produces none. `gap-scale`, `token-colors`, and `motion-band` keep the full five-root
+  scope, proved by their finding counts being equal in both arms.
 
 One semantics joins them, stated above with the mechanism: `static.adminScope` follows
 `static.scope`'s existence rule exactly, a config-named root that is missing throwing and a default
 root that is missing being skipped. The plan carries the rest, the gate's exported `ADMIN_SCOPE` and
 three fixture corrections.
+
+### Frame offset (Geoff, 2026-09-13)
+
+Geoff amended decision 3 after the plan's second read. The amendment supersedes fold item 3's file
+key and leaves the rest of that item standing.
+
+**The motion case gets a neutral, borrowable name.** A frame offset is a page-level mode change in
+which a persistent frame column collapses and the content column's offset moves. Zen mode is its
+first instance and keeps its feature name in the admin. The reason is the consumer: a custom admin
+screen can have the same shape of change, and a case named after cairn's own feature reads as
+cairn's alone.
+
+**The exception is re-keyed from a selector onto an attribute.** The exception is keyed on the
+attribute plus the property: an element carrying `data-cairn-motion="frame-offset"` may transition
+`margin-left` and nothing else, one such element per screen. There is no file key and no selector
+key. The shell applies the attribute to its drawer content element, and a consumer applies it to at
+most one element per screen. Fold item 3's key, the file plus `.drawer-content` plus `margin-left`,
+is superseded. `cairn-admin.css` is still where the engine authors its own rule, and it is no longer
+part of the key.
+
+**The property is `margin-left`.** Tailwind's `ml-*`, which the shell's two conditional utilities
+use, compiles to `margin-left`, so a transition naming `margin-inline-start` would animate nothing.
+The exception section carries the measurement.
+
+**The join is the substrate's, with one internal field added.** The sheet half matches the rule's own
+`[data-cairn-motion="frame-offset"]` selector, which `SheetDeclaration` carries verbatim. The markup
+half reads `SourceNode.attributes` at the same `elementStart` the class join already groups by, and
+`ElementAttribute` gains one optional field carrying a literal string value, since it records a name
+alone today. `./audit` is not a package export subpath, so no package surface moves.
+
+**What moved.** The exception section and the case table row, `motion-property`'s specification and
+its fixture list, the recipe page deliverable, task 3, task 7, task 11, and `Consumers must:` line 1,
+which gains one sentence rather than an eighth line. The layout-count assertions and the measurement
+method are unchanged. Everywhere else "zen" still names the admin feature: `setZen()`, the zen chrome
+regions, the zen chip, and the zen editor card. The rename reaches the offset case alone, which is
+the one a consumer can borrow.
+
+### The second read's instrument correction (2026-09-13)
+
+The paired-run instrument names the showcase theme alone. All six occurrences across this document
+and the plan read "which produces the showcase theme's findings". The chassis is out of the
+instrument's reach: the gate names no chassis CSS file, and the chassis root holds no component with
+a scoped `<style>` block, so the three motion ids have nothing to read there. Bringing the chassis
+into reach is a scope decision, and this pass does not take it.
 
 ## Revision 2 (2026-09-13)
 
@@ -147,7 +191,7 @@ This revision applied all of them. What changed:
 - **Three attributions to Carbon are corrected.** The one-band-faster exit ladder and the
   stays-nearby carve-out are cairn's, on Atlassian and Material precedent. Carbon is not silent on
   reduced motion, and its "always provide alternatives" is quoted with decision 3 recorded as
-  overriding it for the zen offset. The scrim's departure from Carbon's `duration-slow-02` is stated.
+  overriding it for the frame offset. The scrim's departure from Carbon's `duration-slow-02` is stated.
 - **The theme-change cross-fade row is cut to a dash**, and the scope bound is restated to cover what
   the pass does add.
 - **"May opt back in" is a permission**, and the opt-back-ins this pass mandates are listed.
@@ -168,7 +212,8 @@ stays the vendor's vocabulary.
    opens and sticks) is filed to the borrowable-patterns borrow-1 pass beside the rendered hover-gate
    half, carrying the review's finding that a transition guard does not fix a visibility rule.
 2. **The drawer scoping to `isPersistentSidebar` is dropped.** The persistent drawer's vendor
-   transition is recorded as a fifth vendor disagreement. The zen offset exception stands as decided.
+   transition is recorded as a fifth vendor disagreement. The frame offset exception stands as
+   decided.
 
 ## The aim
 
@@ -179,7 +224,7 @@ the admin onto it, and hands the result to the borrowable-patterns work as the e
 per-pattern recipe.
 
 Three things bound the scope. The pass adds motion in exactly two places, each named here and
-nowhere else: the zen offset (decision 3) and the dropzone's drag-over paint state. Every other
+nowhere else: the frame offset (decision 3) and the dropzone's drag-over paint state. Every other
 transition it touches is a migration of a declaration that ships today. It takes no rendered rule beyond the delay check. And it changes no public export.
 No paint opts back in under reduced motion this pass, for the budget reason the migration states.
 
@@ -198,10 +243,13 @@ cites this spec by path and date and quotes the decision text below.
    reduced motion designs", and it publishes no `prefers-reduced-motion` pattern to check. GNOME and
    Material are comparison data and govern nothing, except where this spec cites Material or
    Atlassian by name for a rule Carbon does not publish.
-3. **Zen mode:** the industry default, shadcn's shape. A transition on `.drawer-content`'s
-   `margin-left` at the shift token on Carbon's productive entrance curve, exiting one band faster
-   on the exit curve, snapping under reduced motion. It is the one documented exception to the
-   property allowlist, enforced by selector.
+3. **The frame offset, whose first instance is zen mode:** the industry default, shadcn's shape. A
+   transition on the content column's `margin-left` at the shift token on Carbon's productive
+   entrance curve, exiting one band faster on the exit curve, snapping under reduced motion. It is
+   the one documented exception to the property allowlist, enforced by the
+   `data-cairn-motion="frame-offset"` attribute the moving element carries. Amended 2026-09-13: the
+   decision as first ruled named zen mode and said "enforced by selector", and the amendment gives
+   the case a neutral name and a borrowable key. Zen mode keeps its feature name in the admin.
 4. **Conform to conventions:** DaisyUI's component timings stay the vendor's own vocabulary. No
    unlayered override of the four components (`.modal`, `.drawer`, `.collapse`, `.btn`). cairn's
    rules enforce authored code. The audit treats a DaisyUI component class as a vendor contribution,
@@ -341,30 +389,63 @@ distance.
 - Anything sized by the reader's own typing.
 - Every property on the named-error list above.
 
-### The one exception
+### The one exception: the frame offset
 
-The admin sheet's `.drawer-content` rule transitions `margin-left`, at `--cairn-dur-shift` on
-`--cairn-ease-entrance` entering zen and one band faster (`--cairn-dur-base`) on `--cairn-ease-exit`
-leaving it. Under reduced motion it takes the blanket block and snaps.
+**The case has a neutral name.** A frame offset is a page-level mode change in which a persistent
+frame column collapses and the content column's offset moves. Zen mode is its first instance. The
+case is named for the shape rather than for the feature because a consumer's own custom admin screen
+can have the same shape of change, and zen mode keeps its feature name in the admin.
 
-**The authoring site is `src/lib/components/cairn-admin.css`, and the exception is keyed on it.**
-`CairnAdminShell.svelte` carries no `<style>` block, so a `.drawer-content` rule cannot come from
-that file at all, and the shipped offset is two conditional Tailwind margin utilities on the
-drawer-content element (`CairnAdminShell.svelte:692-693`), which the class-token join would see as
-the compiled sheet's own utility selector rather than as `.drawer-content`. The admin sheet is the
-one file a `.drawer-content` selector can live in, so the transition rule is authored there beside
-the margin utilities the shell keeps.
+The moving element transitions `margin-left`, at `--cairn-dur-shift` on `--cairn-ease-entrance`
+entering and one band faster (`--cairn-dur-base`) on `--cairn-ease-exit` leaving. Under reduced
+motion it takes the blanket block and snaps.
 
-The exception is an allowlist entry scoped to one engine-owned file, one selector in it, and one
-property, never a global relaxation. Keying it on the selector alone would hand the licence to any
-consumer element that happens to be called `.drawer-content`, which is DaisyUI's class name and
-therefore likely. The key is the triple: the file must resolve inside the engine's own tree
-(`src/lib/components/cairn-admin.css`, or its `dist` equivalent when the rule runs from an installed
-package), the selector must be `.drawer-content`, and the property must be `margin-left`. Any other
-element transitioning a snap-list property still fails, in the engine and on a consumer's custom
-screens alike. It ships with a three-sided fixture: the admin sheet's own offset passes, a second
-selector in the same file transitioning `margin-left` fails, and a consumer-owned file's
-`.drawer-content` transitioning `margin-left` fails.
+**The key.** The exception is keyed on the attribute plus the property: an element carrying
+`data-cairn-motion="frame-offset"` may transition `margin-left` and nothing else, one such
+element per screen. There is no file key and no selector key. A second layout
+property on the carrying element is a finding, a second element carrying the attribute on the same
+screen is a finding on that second element, and every layout property elsewhere fails as it did
+before.
+
+**The property is `margin-left` rather than `margin-inline-start`.** The value the transition
+animates is set by the shell's two conditional Tailwind margin utilities
+(`CairnAdminShell.svelte:692-693`), and Tailwind's `ml-*` compiles to `margin-left`, measured in the
+built sheet as `.ml-56{margin-left:calc(var(--spacing) * 56)}`. A transition naming
+`margin-inline-start` would name a property nothing sets, so it would animate nothing. `ms-*` is the
+logical-property form and is not what the shell ships.
+
+**What the rule reads.** The allowance has two halves, and neither needs a file key.
+
+- The sheet half. The transition is authored in `src/lib/components/cairn-admin.css` as a rule whose
+  selector is `[data-cairn-motion="frame-offset"]`. `SheetDeclaration` carries the declaring rule's
+  full selector text as written (`sheet.ts:16-24`), so the CSS-family half matches that attribute
+  selector directly.
+- The markup half. `SourceNode.attributes` already yields every attribute and `class:` directive a
+  node carries, keyed by the node's own `start`, which is the offset `ClassToken.elementStart` holds
+  (`markup.ts:26-33`, `:500-526`, `:547-556`). The class join therefore reaches the attribute at the
+  element it is already grouping tokens by. `ElementAttribute` records a name and no value
+  (`markup.ts:36-49`), so it gains one optional field carrying the attribute's literal string value
+  when the value is a single static string. A bound or interpolated value reads as absent and claims
+  no allowance. The field is internal, and `./audit` is not a package export subpath, so no package
+  surface moves.
+
+**Why the attribute rather than a class token.** The join yields class tokens only, and a `data-`
+attribute is never a class token, so keying the allowance on a class would hand the licence back to
+any name a consumer can spell. That is what keying it on `.drawer-content` did, and
+`.drawer-content` is DaisyUI's own class name.
+
+**One element per screen.** A screen is one component file. The rule counts the elements in a file
+carrying the attribute, allows the first in document order, and convicts every later one, so the
+allowance cannot be spread across a screen one element at a time.
+
+The shipped instance is the shell's drawer content element, which task 7 gives the attribute while
+`cairn-admin.css` carries the rule. The shell keeps its two conditional margin utilities, which are
+what change the value; the sheet rule is what transitions it.
+
+It ships with a four-case fixture: the engine's own carrying element passes, an element without the
+attribute transitioning `margin-left` fails, the carrying element transitioning `margin-left` plus a
+second layout property fails on the second property, and the consumer case, where a consumer-owned
+element carrying the attribute passes and a second carrying element on the same screen fails.
 
 The evidence for it, from the zen record: shadcn/ui, the most-copied admin sidebar on the web,
 animates `width` and `left` for 200ms and ships that way, so the industry default is a
@@ -401,7 +482,7 @@ the travel window rather than about the resting frame, which is the only thing a
 Keeping the focus sequence synchronous is necessary and not sufficient; the Motion section records
 that the travel window is unasserted, so a later pass knows the gap is known rather than missed.
 
-The zen offset fits the same description and does not take the carve-out. The offset leaves and
+The frame offset fits the same description and does not take the carve-out. The offset leaves and
 stays nearby in exactly the chrome's sense, so the carve-out would give it `shift` in both
 directions on the standard curve. Decision 3 settles it the other way, at `shift` in on the entrance
 curve and `base` out on the exit curve, because the offset is the motion the reader asked for and
@@ -479,7 +560,7 @@ what nobody named. It keeps `0.01ms` rather than `0s`, so `transitionend` still 
 | Paint (`opacity`, `color`, `background-color`, `border-color`, `box-shadow`, `outline-*`) | **May** opt back in by restating the transition inside the same guard with `!important`. Paint carries no positional motion, so keeping it is defensible. This is a permission, not a behavior: the floor is what the paint gets unless someone writes the restatement. cairn's own admin writes none this pass, for the budget reason below |
 | Transform (`translate`, `scale`, `rotate`, `transform`) | Stays at the floor. Where the transform carried an entrance, substitute an opacity fade at the same band |
 | Layout (`grid-template-rows`) | Stays at the floor. Snap |
-| The zen offset | Stays at the floor. Snap, per decision 3 |
+| The frame offset | Stays at the floor. Snap, per decision 3 |
 | Looping motion (a skeleton shimmer) | Off entirely, static tint instead. DaisyUI already gates `.skeleton`, so nothing is owed |
 | Indeterminate progress (a spinner) | Runs. It conveys state, and WCAG 2.2.2 reaches auto-starting motion presented in parallel with other content, which a spinner replacing the content is not |
 
@@ -525,7 +606,7 @@ instant."
 Carbon's own position runs the other way and is recorded rather than elided. Its motion overview asks
 a system to "always provide alternatives for interface state transitions" and to ensure "there is
 always a way to communicate similar messages statically", which is the strongest published argument
-for giving the zen offset a static substitute instead of a bare snap. **Decision 3 overrides it.**
+for giving the frame offset a static substitute instead of a bare snap. **Decision 3 overrides it.**
 The reasoning: zen's own state is already communicated statically by the chrome that is gone and the
 chip that names the mode, so the snap is not a silent blank, and a substitute cross-fade would be
 new motion the pass's scope bound refuses. Carbon publishes no `prefers-reduced-motion` pattern to
@@ -602,7 +683,7 @@ Three rules follow from the split, each of which the audit reaches:
 
   **What holds the resize case meanwhile.** A layout change caused by a resize snaps structurally,
   because no layout property in the admin transitions: every one of them is on the named-error list
-  and the one exception is the zen offset, which a resize does not drive. The residue is the vendor
+  and the one exception is the frame offset, which a resize does not drive. The residue is the vendor
   drawer transition at the breakpoint flip, recorded as a disagreement. The design system's Motion
   section states the limitation in the responsive rules, and ROADMAP's Later tier carries the stopper
   with the finding that its working form costs an unlayered rule, which is what a future pass needs
@@ -643,7 +724,7 @@ escalations were ruled (2026-09-13), it governs cairn's own authored rules and n
 | Login and confirm pages | No motion of their own | Same | Nothing to reduce | - | `LoginPage.svelte`, `ConfirmPage.svelte` |
 | Drawer, overlay | Reachable below 1024 on content routes, below 1280 on desk routes | Translate from the inline start, scrim fades | Scrim fades, panel snaps | `settle` | DaisyUI `.drawer-side`, vendor timing kept (disagreement 3) |
 | Drawer, persistent | The language says no motion, because it is furniture. The vendor transition runs anyway at the breakpoint flip and stays (disagreement 5) | Not reachable at this width | The blanket block zeroes it | - | DaisyUI `.drawer-side`; `isPersistentSidebar` at `CairnAdminShell.svelte:556` |
-| Zen content offset | `margin-left`, the one exception | Not reachable; no offset below 1024 | Snap | `shift` in, `base` out | `cairn-admin.css`, on `.drawer-content`; the shell keeps the margin utilities at `CairnAdminShell.svelte:692-693` |
+| Frame offset, zen mode its first instance | `margin-left`, the one exception, keyed on `data-cairn-motion="frame-offset"` | Not reachable; no offset below 1024 | Snap | `shift` in, `base` out | `cairn-admin.css`, on `[data-cairn-motion="frame-offset"]`; the shell applies the attribute and keeps the margin utilities at `CairnAdminShell.svelte:692-693` |
 | Zen chrome regions | Opacity out at `quick` on the exit curve, back at `quick` on the standard curve | Same | Snap | `quick` | `EditPage.svelte` |
 | Zen chip | In at `base` on the entrance curve after a 110ms delay, the delay authored inside a `(prefers-reduced-motion: no-preference)` guard; out at `quick` on the exit curve with no delay | Same, and the short exit matters more: the finger is still on the glass | Snap, and the guard means the delay never resolves nonzero, so rule 4 does not fire on it | `base` in, `quick` out | `EditPage.svelte` |
 | Zen editor card box | Snaps. `padding` is a named error and `max-width` is outside the allowlist, so both snap for different reasons | Snaps; at 390 there is nothing to reclaim | Snaps | - | `EditPage.svelte` |
@@ -977,19 +1058,25 @@ default rather than a consumer one.
   discriminator rule 2 uses, including the explicit class-name fallback. The CSS-family half keeps
   the full check, because a declaration the audit reads out of an authored CSS file is authored code
   by definition.
-- The one exception passes: `margin-left` on `.drawer-content` in `cairn-admin.css`, keyed on that
-  file plus that selector plus that property, never on the selector alone.
+- **The frame offset passes.**
+  The exception is keyed on the attribute plus the property: an element carrying
+  `data-cairn-motion="frame-offset"` may transition `margin-left` and nothing else, one such
+  element per screen. There is no file key and no selector key. A second layout property on that
+  element is a finding, a second
+  carrying element on the same screen is a finding, and every layout property elsewhere fails as it
+  did before.
 
 **Fix message.** Names the property, the rule ("the admin's motion language transitions paint,
 transform, and `grid-template-rows`"), and the remedy.
 
 **Fixtures, from the shipped examples.** `EditPage.svelte:2047` (`transition-[width]`, fails);
 `MarkdownEditor.svelte:530` (`width 200ms`, fails); `EditPage.svelte:1643` (`transition-all`, this
-rule does not report, `motion-band` does); the admin sheet's own `margin-left` on `.drawer-content`
-(passes); a second selector in the same file transitioning `margin-left` (fails); a consumer-owned
-file's `.drawer-content` transitioning `margin-left` (fails); `class="drawer-side"` joined to the
-vendor's `width` transition (exempt, no finding); the same `width` transition authored in a CSS file
-the audit reads (fails).
+rule does not report, `motion-band` does); the carrying element's `margin-left` (passes); an element
+without the attribute transitioning `margin-left` (fails); the carrying element transitioning
+`margin-left` plus a second layout property (fails on the second); a consumer-owned element carrying
+the attribute (passes); a second element carrying it on the same screen (fails on the second);
+`class="drawer-side"` joined to the vendor's `width` transition (exempt, no finding); the same
+`width` transition authored in a CSS file the audit reads (fails).
 
 This is the cheapest rule and the one that catches every shipped violation on day one. Build it
 first.
@@ -1284,8 +1371,8 @@ gate's default for the key is the consumer default, which names one root this tr
 (`src/routes/admin`, since there is no `src/routes` at all) and one that covers only part of the
 admin frame (`src/lib/admin-toolkit`), so the gate has to set it. Adding the three ids without
 setting it leaves them resolving over that default, which reaches `src/lib/admin-toolkit` alone and
-never reaches `src/lib/components/cairn-admin.css`, where the shipped declarations and the zen
-exception live. The failure is silent under-coverage rather than a red gate: the wiring would land,
+never reaches `src/lib/components/cairn-admin.css`, where the shipped declarations and the
+frame-offset exception live. The failure is silent under-coverage rather than a red gate: the wiring would land,
 the gate would report green, and it would have audited almost none of the admin frame. Task 10's own
 failing assertion is what catches it, a `motion-property` finding from a `src/lib/components` fixture
 under the gate's config.
@@ -1362,7 +1449,7 @@ visible in the markup called out.
 
 Four limitations belong in it rather than in a reader's inference. The resize stopper is not shipped,
 and the section says what does hold the resize case (every layout property snaps already) and what
-does not (the vendor drawer transition at the breakpoint flip). The zen offset's travel window is
+does not (the vendor drawer transition at the breakpoint flip). The frame offset's travel window is
 unasserted against 2.4.11, so the synchronous focus sequence is necessary and not sufficient. The
 skeleton shimmer's own 2.2.2 answer is DaisyUI's reduced-motion off switch, not the spinner's
 replaces-the-content reasoning. And a focus indicator's own geometry animates at `instant` and no
@@ -1380,8 +1467,12 @@ write, the four rules they will meet and what each fix message means, the three 
 limits, and the two configuration lines a consumer may owe, neither required by default (naming
 their own theme CSS in `static.cssFiles` if they want the CSS-family rules to read it, which is
 already true of `token-colors`, and naming `static.adminScope` if their admin screens sit outside
-`src/routes/admin` and `src/lib/admin-toolkit`). It also carries the one non-obvious authoring step,
-splitting a `:hover` and
+`src/routes/admin` and `src/lib/admin-toolkit`). It states how a developer claims the one property
+allowance on a screen whose frame column collapses.
+The exception is keyed on the attribute plus the property: an element carrying
+`data-cairn-motion="frame-offset"` may transition `margin-left` and nothing else, one such
+element per screen. There is no file key and no selector key. It also
+carries the one non-obvious authoring step, splitting a `:hover` and
 `:focus-visible` selector list before adding the modality guard, and the opt-back-in permission with
 its budget caveat. It cites the design system's Motion section as canonical rather than restating its
 rules. It joins `docs/extend/README.md`'s index. It grades under Vale's Google package and the extend
@@ -1480,7 +1571,9 @@ Seven `Consumers must:` lines, all in one release.
    `motion-hover-gate`) and one advisory rendered rule (`motion-reduced-delay`). A custom admin screen
    that transitions a layout property, writes `transition-all`, writes a literal duration or easing, or
    declares an ungated hand-authored `:hover` transition now fails `npx cairn-audit`. Move onto the
-   `--cairn-dur-*` and `--cairn-ease-*` tokens, or suppress with a reason.
+   `--cairn-dur-*` and `--cairn-ease-*` tokens, or suppress with a reason. One layout property is
+   allowed, and only by the frame-offset key: an element carrying `data-cairn-motion="frame-offset"`,
+   at most one per screen, may transition `margin-left`.
 2. `motion-band`'s band widens from 150ms to 250ms to 70ms to 400ms, and it no longer reports a call
    site that references a token. A site relying on the narrow band loses that check; the vocabulary
    rule is what replaces it. An existing `cairn-audit-disable-next-line motion-band` directive that
@@ -1554,8 +1647,9 @@ and their values in the built sheet, and task 1 owns that assertion.
   the key are task 3's, the second rule declares the
   field in task 4, and the gate's `static.adminScope` is task 10's. Mitigation: task 10's acceptance
   criterion is a paired run, a control arm with the gate's `static.adminScope` set to the five
-  `SCAN_SCOPE` roots, which produces the showcase theme and chassis findings, against the shipping
-  arm with the three admin roots, which produces none. `gap-scale`, `token-colors`, and `motion-band`
+  `SCAN_SCOPE` roots,
+  which produces the showcase theme's findings, against the shipping arm with the three admin
+  roots, which produces none. `gap-scale`, `token-colors`, and `motion-band`
   keep the full five-root scope, proved by their finding counts being equal in both arms.
 - **The vendor exemption is a coverage loss on cairn's own markup, not only a false-positive fix.**
   Exempting the four DaisyUI property disagreements means `motion-property` cannot see a snap-list
@@ -1635,8 +1729,9 @@ This task also adds the optional `adminOnly` field to the static rule type, the 
 config key it resolves over, and declares the field on both new rules. `motion-property` carries the
 allowlist, the snap list, the three-property cap, the
 `animate-*` keyframe clause, the deferral of `transition: all` to `motion-band`, the vendor-class
-exemption on its class-join half, and the zen exception keyed on `cairn-admin.css` plus
-`.drawer-content` plus `margin-left`, with its three-sided fixture. `motion-hover-gate` mirrors
+exemption on its class-join half, and the frame-offset exception keyed on the
+`data-cairn-motion="frame-offset"` attribute plus `margin-left`, with its four-case fixture and the
+one optional value field `ElementAttribute` gains so the markup half can read the attribute. `motion-hover-gate` mirrors
 `focus-parity`'s shape, carries both predicates, and its fix message warns about the hover and focus
 selector-list split, a warning its own firing fixture makes detectable.
 Revision 1 gave `motion-hover-gate` its own task; it is one 59-line rule in the same file family with
@@ -1684,8 +1779,9 @@ filed; the responsive rules section carries the reasons. Depends on task 6a, who
 Files: `src/lib/components/cairn-admin.css`, `CairnAdminShell.svelte`, `EditPage.svelte`,
 `examples/showcase/e2e/admin-visual.spec.ts`, and
 `src/tests/unit/fixtures/admin-sheet-inventory.txt`.
-The `.drawer-content` `margin-left` transition authored in `cairn-admin.css` at `shift` in and `base`
-out on the paired curves, the chrome regions' fade in and out, the chip's delayed entrance and
+The `margin-left` transition authored in `cairn-admin.css` on `[data-cairn-motion="frame-offset"]`
+at `shift` in and `base` out on the paired curves, with the shell applying the attribute to its
+drawer content element, the chrome regions' fade in and out, the chip's delayed entrance and
 immediate exit with the 110ms delay authored inside a `(prefers-reduced-motion: no-preference)`
 guard, the card's box left snapping, and `setZen()`'s `flushSync()` focus sequence at
 `EditPage.svelte:441` kept synchronous so motion never gates focus. It also carries the two zen

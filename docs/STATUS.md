@@ -16,6 +16,16 @@ green.
 
 ## Immediate next action (2026-09-14)
 
+**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
+launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
+(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
+merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
+2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
+cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
+superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
+after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
+blueprint-audit, the post-mortem.
+
 **Overnight run halted at stage motion:run1.** Reason: task 2 (the shipped-rule reconciliation)
 accepted, fixRounds 1; task 3 (motion-property and motion-hover-gate) escalated, fixRounds 0; task
 4 (motion-vocabulary) deferred, fixRounds 0; task 6a (the admin migrated onto the language)

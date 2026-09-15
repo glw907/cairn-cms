@@ -16,6 +16,16 @@ green.
 
 ## Immediate next action (2026-09-14)
 
+**Recovery, 2026-09-14 17:xx (session 7c350980).** A desktop crash at 16:03 (two full gates side by
+side; systemd-oomd killed GNOME Shell) took both conducting sessions. This session resumed both:
+the motion pass runs as workflow `wf_0c5004bd-52c` (tasks 1 and 8 accepted, chain A on task 3 of
+its remaining eight; chain B merges at the close), and **Go tool Pass A is at its Task 3 segment
+boundary**, held unmerged on branch `cairn-tool-a` (draft PR #60, three green tool legs on every
+push; the release job's dispatch dry run waits for main). Tasks 4 through 11 resume in a fresh
+session after the cut. Ledger for that resume: the fake's `tokenVerifyId` default and three test
+files still carry the real Cloudflare API token id (outside the corpus ban list; scrub as a chore).
+Gates now run in an 8G-capped user scope (`cairn-run-gate`); one browser-bearing gate at a time.
+
 **Polish-C is MERGED** (PR #59, CI green, merge commit `ece054b8`; entry and post-mortem in
 [`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-14 13:2x).
 **Next, a fresh session launches the admin motion pass** per

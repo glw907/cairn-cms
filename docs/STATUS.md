@@ -62,7 +62,8 @@ relaunch re-verifies and reviews it rather than redoing it); stages
 zero-findings criterion was unmet only by DaisyUI vendor CSS (btn, modal, dropdown, toggle) and the
 reduced-motion floor, so the two rules' exemption lists widened; the plan's contradiction on HelpHome's
 two `:hover` pairs resolved for the rule's side (guarded, superseding task 6a's "no guard" decision);
-the commit footer is the single co-author line. Task 11 records all three in the plan. Spend tonight:
+the commit footer is the single co-author line. Task 11 records all three in the plan, plus the 01:1x ruling that accepted `6a-fix` and ratified
+motion-property's `transition: none` parsing (zero properties, the reduced-motion snap idiom). Spend tonight:
 about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
 stop to drop the Go tool, one wind-down).
 

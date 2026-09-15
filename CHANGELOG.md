@@ -302,6 +302,13 @@
   toggle set, each measured against the shipped admin sheet's own literal duration or curve.
   Resolves over `static.adminScope`, the same as `motion-property` and `motion-hover-gate`.
 
+- The hero image field's empty-state dropzone now paints a drag-over state: `MediaHeroField`
+  toggles the variant-free equivalents of its own `hover:border` and `hover:bg` classes on
+  `dragenter`/`dragover` and clears them on `drop` and on `dragleave` once the pointer leaves the
+  dropzone button itself, so its own icon and label spans do not flicker the paint off as a drag
+  crosses them. The paint rides the button's existing `transition-colors`, so it resolves to the
+  theme's `base` default like the same element's hover paint; no new CSS rule is added.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

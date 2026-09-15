@@ -373,8 +373,19 @@ popover's runUpload but resolves to this field, not an editor placeholder.
 
   // The empty dropzone's drag-and-drop: a dropped image routes straight to the upload path, opening
   // the dialog to the loading state. preventDefault stops the browser from navigating to the file.
+  // dragOver drives the dropzone's drag-over paint (toggled utility classes, not a CSS rule).
+  let dragOver = $state(false);
+
+  function onDropzoneDragenter(_e: DragEvent) {
+    dragOver = true;
+  }
+  function onDropzoneDragover(e: DragEvent) {
+    e.preventDefault();
+    dragOver = true;
+  }
   function onDropzoneDrop(e: DragEvent) {
     e.preventDefault();
+    dragOver = false;
     const file = firstImageFile(e.dataTransfer ?? {});
     if (file) {
       view = 'chooser';
@@ -382,8 +393,16 @@ popover's runUpload but resolves to this field, not an editor placeholder.
       void runUpload(file);
     }
   }
-  function onDropzoneDragover(e: DragEvent) {
-    e.preventDefault();
+  /**
+   * Clears the drag-over state, unless the leave lands on a target still inside the dropzone
+   * button (one of its own icon or label spans), which would otherwise flicker the paint off as
+   * the pointer crosses a child element on its way across the dropzone.
+   */
+  function onDropzoneDragleave(e: DragEvent) {
+    const button = e.currentTarget as HTMLElement;
+    const related = e.relatedTarget as Node | null;
+    if (related && button.contains(related)) return;
+    dragOver = false;
   }
 </script>
 
@@ -447,11 +466,15 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     <span class="type-body font-medium">{field.label}</span>
     <button
       type="button"
-      class="flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left transition-colors hover:border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)] focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
+      class="flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left transition-colors hover:border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)] focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)] {dragOver
+        ? 'border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)]'
+        : ''}"
       aria-haspopup="dialog"
       onclick={() => openDialog('chooser')}
-      ondrop={onDropzoneDrop}
+      ondragenter={onDropzoneDragenter}
       ondragover={onDropzoneDragover}
+      ondrop={onDropzoneDrop}
+      ondragleave={onDropzoneDragleave}
     >
       <span class="flex h-7 w-7 flex-none items-center justify-center rounded-field bg-[color-mix(in_oklab,var(--color-primary)_10%,transparent)] text-[var(--color-primary)]" aria-hidden="true">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></svg>

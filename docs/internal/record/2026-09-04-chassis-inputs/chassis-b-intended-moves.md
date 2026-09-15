@@ -1047,3 +1047,22 @@ proof and leaving those five widths' baselines untouched.
   the same width; `~/.cache/cairn-admin-motion/task-6a/before/full/styleguide-light-1440.png` and
   its after-set counterpart. All three pairs are pixel-identical, proving the migration leaks
   nothing onto a resting frame.
+
+### Task 6b: the dropzone's drag-over state
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-6b/before/` and
+  `~/.cache/cairn-admin-motion/task-6b/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. The hero field's empty-state dropzone does not render on `signups` or
+  `styleguide`, and the drag-over paint is drag-triggered besides, so no resting-state screenshot
+  of either surface exercises the new state.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests)
+  passed 28 of 28 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-6b/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-6b/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-6b/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the new drag-over state
+  leaks nothing onto a resting frame.

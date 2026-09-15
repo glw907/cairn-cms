@@ -16,6 +16,14 @@ green.
 
 ## Immediate next action (2026-09-14)
 
+**Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 10-fix (Task 10's doc
+comment, changelog wording, and the stray capture script): accepted, fixRounds 0; task 11 (Docs
+and records (last)): escalated, fixRounds 0. Resume prompt: Read the motion run journal, decide
+the non-accepted task per docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md, then
+Relaunch the orchestrator with stages ["motion","precut","release","parallel","final"]. Trim
+every accepted task out of that pass's args file in ~/.cache/cairn-overnight-2026-09-14/, re-run
+`node build.mjs`, and launch the built script again.
+
 **Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 7-fix (Zen's chrome
 fade scoped off first paint, and the chip's exit made real): accepted, fixRounds 1; task 10 (the
 engine's tree wired, and the visual suite): escalated, fixRounds 0; task 11 (docs and records

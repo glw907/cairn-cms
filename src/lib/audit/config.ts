@@ -238,6 +238,11 @@ interface AuditFlags {
   config?: string;
   /** `--help` printed `USAGE` and exited before any run started. */
   help?: boolean;
+  /**
+   * Rule ids `--rule` named, one per repetition, in the order given. Undefined when `--rule` was
+   * never passed, so a caller runs the full registry the same way it did before this flag existed.
+   */
+  rule?: string[];
 }
 
 /**
@@ -250,7 +255,7 @@ export type AuditArgs =
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
 export const USAGE = [
-  'Usage: cairn-audit [--rendered] [--config <path>] [--help]',
+  'Usage: cairn-audit [--rendered] [--config <path>] [--rule <id>]... [--help]',
   '       cairn-audit norms <selector-or-role>',
 ].join('\n');
 
@@ -283,6 +288,15 @@ export function parseArgs(argv: string[]): AuditArgs {
         throw new Error(`--config needs a value\n${USAGE}`);
       }
       flags.config = value;
+      i += 2;
+      continue;
+    }
+    if (flag === '--rule') {
+      const value = rest[i + 1];
+      if (value === undefined || value.startsWith('--')) {
+        throw new Error(`--rule needs a value\n${USAGE}`);
+      }
+      flags.rule = [...(flags.rule ?? []), value];
       i += 2;
       continue;
     }

@@ -201,6 +201,26 @@ describe('parseArgs', () => {
   it('reads --help as a flag rather than rejecting it', () => {
     expect(parseArgs(['--help'])).toEqual({ command: 'audit', rendered: false, help: true });
   });
+
+  it('reads a single --rule', () => {
+    expect(parseArgs(['--rendered', '--rule', 'motion-reduced-delay'])).toEqual({
+      command: 'audit',
+      rendered: true,
+      rule: ['motion-reduced-delay'],
+    });
+  });
+
+  it('reads --rule repeated, in the order given', () => {
+    expect(parseArgs(['--rendered', '--rule', 'viewport-overflow', '--rule', 'panel-width'])).toEqual({
+      command: 'audit',
+      rendered: true,
+      rule: ['viewport-overflow', 'panel-width'],
+    });
+  });
+
+  it('rejects --rule without a value', () => {
+    expect(() => parseArgs(['--rendered', '--rule'])).toThrow(/--rule/);
+  });
 });
 
 // The Plan 07 packaging lesson (proven in doctor-bin.test.ts): prove the emitted bin runs under

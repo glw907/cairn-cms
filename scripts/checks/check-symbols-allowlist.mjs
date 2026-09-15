@@ -16,6 +16,7 @@ export const ALLOWLIST = new Set([
   'cli-flag:--command', // wrangler d1 execute's own flag
   'cli-flag:--port', // vite preview's own flag, shown after `npm run preview --`
   'cli-flag:--rendered', // cairn-audit's own flag, not create-cairn-site's
+  'cli-flag:--rule', // cairn-audit's own flag, not create-cairn-site's
   'cli-flag:--fix', // cairn-doctor's own flag, not create-cairn-site's
   'cli-flag:--from', // cairn-doctor's and cairn-media-seed's own flag, not create-cairn-site's
   'cli-flag:--repo', // cairn-doctor's own flag, not create-cairn-site's

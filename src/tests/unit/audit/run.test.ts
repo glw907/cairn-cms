@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig } from '../../../lib/audit/config.js';
-import { runStatic } from '../../../lib/audit/run.js';
+import { runStatic, selectRules } from '../../../lib/audit/run.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
 import { noUncompiledClass } from '../../../lib/audit/rules/static/no-uncompiled-class.js';
@@ -87,6 +87,24 @@ describe('the static rule registry', () => {
 
   it('hands back a fresh array each call', () => {
     expect(staticRules()).not.toBe(staticRules());
+  });
+});
+
+describe('selectRules', () => {
+  const all = staticRules();
+
+  it('returns every rule, in registry order, when no ids are named', () => {
+    expect(selectRules(all, undefined)).toEqual(all);
+  });
+
+  it('narrows to the named ids, in registry order regardless of the ids order', () => {
+    const selected = selectRules(all, ['motion-property', 'gap-scale']);
+    expect(selected.map((rule) => rule.id)).toEqual(['gap-scale', 'motion-property']);
+  });
+
+  it('throws naming the known ids when an id matches no registered rule', () => {
+    expect(() => selectRules(all, ['not-a-real-rule'])).toThrow(/not-a-real-rule/);
+    expect(() => selectRules(all, ['not-a-real-rule'])).toThrow(/gap-scale/);
   });
 });
 

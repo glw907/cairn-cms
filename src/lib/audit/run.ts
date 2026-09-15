@@ -92,6 +92,27 @@ function loadSheetSources(config: AuditConfig): string {
 }
 
 /**
+ * Narrow a rule registry to the ids `--rule` named, in registry order regardless of the order
+ * `ids` lists them. Undefined or empty `ids` returns `rules` unchanged, the whole registry a
+ * caller ran before `--rule` existed. Generic over both rule shapes (static and rendered) since
+ * the narrowing logic is identical: an id that matches no registered rule throws, naming every
+ * known id, since silently running a smaller registry than the one asked for is the ambiguity
+ * `--rule` exists to remove.
+ */
+export function selectRules<T extends { id: string }>(rules: T[], ids: string[] | undefined): T[] {
+  if (ids === undefined || ids.length === 0) return rules;
+  const known = rules.map((rule) => rule.id);
+  const unknown = ids.filter((id) => !known.includes(id));
+  if (unknown.length > 0) {
+    throw new Error(
+      `unknown --rule id${unknown.length > 1 ? 's' : ''} ${unknown.join(', ')}. Known rule ids: ${known.join(', ')}`
+    );
+  }
+  const wanted = new Set(ids);
+  return rules.filter((rule) => wanted.has(rule.id));
+}
+
+/**
  * Run the static audit. `rules` defaults to the shipped registry and is injectable so a test can
  * drive the pipeline with a rule of its own.
  */

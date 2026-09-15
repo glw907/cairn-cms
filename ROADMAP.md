@@ -281,6 +281,18 @@ The original decision framing, for the record:
 
 ## Now
 
+- **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
+  and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
+  pass.** The unscoped run (`cairn-audit --rendered`, no `--rule`) had never actually run in CI
+  before that dispatch; all 200 findings are this one rule, on `/admin/editors`, `/admin/media`,
+  `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, example `div.flex-none: renders 405px
+  wide against a 390px viewport`. Hypothesis: the off-canvas drawer's transformed layer is being
+  measured (405px against a 390px viewport), since the admin-visual suite is green at those same
+  widths, so the defect may be the rule's transform handling rather than the actual layout. Next
+  step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
+  the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
+  hypothesis.
+
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API

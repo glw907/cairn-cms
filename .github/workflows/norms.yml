@@ -100,4 +100,6 @@ jobs:
           echo "the showcase preview never answered at http://localhost:4174"
           cat /tmp/showcase-preview-motion.log
           exit 1
-      - run: BASE_URL=http://localhost:4174 npx cairn-audit --rendered
+      # Scoped to motion-reduced-delay alone with --rule: the job exercises one advisory rule and
+      # exits 0 unless the run itself fails to start, never a gate on the rule's own findings.
+      - run: BASE_URL=http://localhost:4174 npx cairn-audit --rendered --rule motion-reduced-delay

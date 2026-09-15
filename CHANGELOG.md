@@ -12,7 +12,9 @@
   override for. The rendered runner gains an opt-in emulation axis (`RenderedRule.axes`) rules
   declare the way `states` already works, and `RenderedBrowser.newContext` gains `reducedMotion`
   and `hasTouch` options for it. A new CI step in `.github/workflows/norms.yml` runs the rule
-  against a live showcase preview on its own port.
+  against a live showcase preview on its own port. The `cairn-audit` CLI gains `--rule <id>`
+  (repeatable) to narrow a static or rendered run to the named registered rule ids; the CI step
+  passes `--rule motion-reduced-delay` so it exercises that one advisory rule alone.
 
 - `previewRevoke` (`/sveltekit`) completes the pair `previewMint` opened: a site that mints a
   preview link from its own workflow route could not revoke one, since revocation lived only

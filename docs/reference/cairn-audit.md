@@ -6,12 +6,19 @@ puts it on the project's path.
 ```bash
 npx cairn-audit                          # run the static rules over the admin surfaces
 npx cairn-audit --rendered               # run the rendered rules against a running admin
+npx cairn-audit --rule motion-reduced-delay --rendered  # run only the named rule
 npx cairn-audit norms <selector-or-role> # look up a measured norm
 npx cairn-audit --help                   # print usage and exit
 ```
 
 The static audit reads the working directory. The `norms` subcommand reads only the manifest inside
 the installed package, so it needs no config, no built stylesheet, and no browser.
+
+Pass `--rule <id>` to narrow a run to one or more registered rule ids, instead of the full static or
+rendered registry. Repeat the flag for more than one id: `--rule viewport-overflow --rule
+panel-width`. An id that names no registered rule exits nonzero with a message listing the known
+ids, so a typo never runs a silently narrower audit than the one you asked for. `--rule` on its own,
+without `--rendered`, scopes the static run the same way.
 
 A build agent points at these mechanical checks rather than holding their formulas in working
 memory. The packaged `cairn-admin-screens` skill names them by rule id and defers to the audit for

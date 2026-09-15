@@ -2787,11 +2787,11 @@ describe('EditPage', () => {
   // Ctrl+Shift+. enter and exit; the band, the document title, the toolbar strip, and the footer
   // hide; a floating chip keeps the save state and the way out (the WordPress/Ghost rule).
   describe('zen', () => {
-    // The zen chip's exit fade waits on a real `transitionend`, which only fires when the chip's
-    // own transition-duration resolves to a positive value; the admin duration tokens it reads
-    // (--cairn-dur-quick, --cairn-dur-base) are declared only inside the compiled admin sheet's
-    // theme roots, so this suite wires the same real-sheet, real-theme-root harness the guarded
-    // Figure/callout suites above use, rather than the token falling back to its unset 0s.
+    // The assertions below read the chip's computed transition-duration and transition-delay,
+    // and the admin duration tokens those declarations reference (--cairn-dur-quick,
+    // --cairn-dur-base) are declared only inside the compiled admin sheet's theme roots. This
+    // suite wires the same real-sheet, real-theme-root harness the guarded Figure/callout suites
+    // above use, so the tokens resolve to their real values rather than an unset 0s.
     let sheet: HTMLStyleElement;
 
     beforeAll(() => {

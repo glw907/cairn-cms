@@ -467,8 +467,8 @@ persistent "?" carries Markdown help).
   // reactive flush, which can race the browser's own transition-start bookkeeping and drop the
   // event under load, where a timer cannot be dropped. The margin is a generous multiple of the
   // exit duration and delay tokens above, not the CSS transition itself, so a JS scheduling
-  // delay never truncates the fade a reader actually sees, and it stays under 300ms so no wait
-  // is perceptible as a pause. A reduced-motion reader gets no fade in either direction and
+  // delay never truncates the fade a reader actually sees, and it stays at or below 300ms so no
+  // wait is perceptible as a pause. A reduced-motion reader gets no fade in either direction and
   // unmounts at once instead of waiting out a timer with nothing to show.
   const CHIP_EXIT_WAIT_MS = 300;
   let chipMounted = $state(false);

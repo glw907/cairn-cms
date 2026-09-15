@@ -1,8 +1,9 @@
 // cairn-audit's motion-hover-gate rule: a hand-authored `:hover` selector never declares motion
 // (a transition or an animation) unless it sits inside `@media (hover: hover)`, the shipped model
-// at cairn-admin.css:1002. A touch device fires `:hover` on tap-and-hold with no release event, so
-// an ungated hover transition can get stuck mid-motion; the guard is the fix, and it has already
-// shipped once. The rule carries two predicates, and the widening is what stops it being vacuous
+// guarding the `.btn-active:hover` rule in cairn-admin.css. A touch device fires `:hover` on
+// tap-and-hold with no release event, so an ungated hover transition can get stuck mid-motion; the
+// guard is the fix, and it has already shipped once. The rule carries two predicates, and the
+// widening is what stops it being vacuous
 // against the engine's own tree: it fires whether the motion sits on the `:hover` rule itself or on
 // the BASE rule the same selector matches, and it fires on a `:focus-visible` alternative declaring
 // motion from INSIDE the guard, the mistake its own fix message invites (a keyboard user on a
@@ -51,9 +52,10 @@ function declarationsFor(
 function fixMessage(selector: string): string {
   return (
     `selector "${selector}" declares motion outside a hover-capable-device gate; wrap the block in ` +
-    '"@media (hover: hover)", the shipped model at cairn-admin.css:1002, and if the selector list ' +
-    'pairs ":hover" with ":focus-visible" or ":focus-within" split them first, since a keyboard user ' +
-    'on a touch device still needs the focus motion the guard would otherwise silence too'
+    '"@media (hover: hover)", the shipped model guarding the `.btn-active:hover` rule in ' +
+    'cairn-admin.css, and if the selector list pairs ":hover" with ":focus-visible" or ' +
+    '":focus-within" split them first, since a keyboard user on a touch device still needs the ' +
+    'focus motion the guard would otherwise silence too'
   );
 }
 

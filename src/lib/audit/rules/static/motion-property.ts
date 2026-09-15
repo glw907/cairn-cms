@@ -9,11 +9,18 @@
 // Three surfaces feed the same classification. Hand-authored CSS (a component's own scoped
 // `<style>` block, or a file `static.cssFiles` names) is read in full: authored code owns its own
 // property choice. A Tailwind class the built admin sheet compiles is read through the class join,
-// exempting the eleven recorded vendor disagreements rather than fixing them: `conditions` alone
+// exempting the four recorded vendor component classes rather than fixing them: `conditions` alone
 // cannot attribute a declaration to DaisyUI's own plugin output, since cairn's own rules share the
 // same `@layer components` and the same theme-root prelude, so the fallback is the explicit class
-// list below. And an `animate-*` utility is checked through its `--animate-*` custom property's
-// keyframes, since animating a snap-list property is the same judder as transitioning one.
+// list below. The class join also exempts Tailwind's own compiled `transition-property` utility
+// group (`transition`, `transition-all`, `transition-colors`, `transition-opacity`,
+// `transition-shadow`, `transition-transform`): the same vendor category as the DaisyUI classes,
+// since `.transition-colors` compiles to ten names the shipped sheet chose, not the class author.
+// The exemption is keyed on the utility name alone, never on what its compiled list contains, so an
+// arbitrary-value class such as `transition-[width]`, whose bracket names the property the author
+// typed, keeps its ordinary conviction. And an `animate-*` utility is checked through its
+// `--animate-*` custom property's keyframes, since animating a snap-list property is the same
+// judder as transitioning one.
 //
 // The frame offset is the one documented exception, keyed on the attribute plus the property: an
 // element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, and only the
@@ -74,6 +81,19 @@ const NAMED_ERROR = new Set([
 // transitioning `margin`, `padding`, and `border-width`, `.collapse ::details-content` transitioning
 // `min-height`, `padding`, and `height`, and `.toggle:before` transitioning `inset-inline-start`.
 const DAISYUI_VENDOR_CLASSES = new Set(['drawer-side', 'filter', 'collapse', 'toggle']);
+
+// Tailwind's own compiled `transition-property` utility group. Each name here compiles a fixed,
+// vendor-chosen property list the class author does not type; `transition-[width]` and any other
+// bracketed arbitrary form are deliberately absent, since their bracket names the property the
+// author chose, the same authored decision the allowlist exists to check.
+const TAILWIND_TRANSITION_UTILITIES = new Set([
+  'transition',
+  'transition-all',
+  'transition-colors',
+  'transition-opacity',
+  'transition-shadow',
+  'transition-transform',
+]);
 
 const FRAME_OFFSET_ATTRIBUTE = 'data-cairn-motion';
 const FRAME_OFFSET_VALUE = 'frame-offset';
@@ -175,7 +195,9 @@ function checkClassJoin(ctx: StaticRuleContext): Finding[] {
   const findings: Finding[] = [];
   for (const file of ctx.files) {
     for (const token of file.classTokens) {
-      if (DAISYUI_VENDOR_CLASSES.has(utilityBase(token.value))) continue;
+      const base = utilityBase(token.value);
+      if (DAISYUI_VENDOR_CLASSES.has(base)) continue;
+      if (TAILWIND_TRANSITION_UTILITIES.has(base)) continue;
       for (const decl of ctx.sheet.declarations(token.value)) {
         if (!isTransitionListProperty(decl.property)) continue;
         const names = propertyNamesIn(decl.value);

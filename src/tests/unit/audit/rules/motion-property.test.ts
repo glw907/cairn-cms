@@ -126,6 +126,44 @@ describe('motion-property: the vendor class-join exemption', () => {
   });
 });
 
+describe('motion-property: the Tailwind transition-utility class-join exemption', () => {
+  const TEN_NAME_SHEET = parseSheet(
+    [
+      '.transition-colors {',
+      '  transition-property: color, background-color, border-color, outline-color,',
+      '    text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via,',
+      '    --tw-gradient-to;',
+      '}',
+      '.cairn-many-props {',
+      '  transition-property: color, background-color, border-color, outline-color,',
+      '    text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via,',
+      '    --tw-gradient-to;',
+      '}',
+    ].join('\n')
+  );
+
+  it('exempts class="transition-colors" from the cap and the allowlist, over both properties at once', () => {
+    const findings = motionProperty.check({
+      files: [component('<div class="transition-colors"></div>')],
+      sheet: TEN_NAME_SHEET,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('still convicts an authored class with the same ten-name compiled list, keyed on the name alone', () => {
+    const findings = motionProperty.check({
+      files: [component('<div class="cairn-many-props"></div>')],
+      sheet: TEN_NAME_SHEET,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.some((f) => f.message.includes('10 properties'))).toBe(true);
+  });
+});
+
 describe('motion-property: the frame-offset exception', () => {
   it('passes the carrying element, matching the declaring rule on containment rather than exact equality', () => {
     const findings = check(

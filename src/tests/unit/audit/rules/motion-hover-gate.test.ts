@@ -19,7 +19,7 @@ function component(style: string, markup = '<div class="card"></div>'): ParsedCo
 
 describe('motion-hover-gate', () => {
   // The shipped model: a guarded rule declaring paint alone, never motion.
-  it('passes cairn-admin.css:1002\'s own shape, a guarded rule declaring paint only', () => {
+  it('passes the shipped model\'s shape, a guarded rule declaring paint only', () => {
     const findings = check(
       component(
         [
@@ -41,7 +41,7 @@ describe('motion-hover-gate', () => {
     expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('.step-act:hover');
     expect(findings[0].message).toContain('@media (hover: hover)');
-    expect(findings[0].message).toContain('cairn-admin.css:1002');
+    expect(findings[0].message).toContain('.btn-active:hover');
     expect(findings[0].message).toContain(':focus-visible');
   });
 
@@ -83,7 +83,7 @@ describe('motion-hover-gate', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('.btn:focus-visible');
     expect(findings[0].message).toContain('@media (hover: hover)');
-    expect(findings[0].message).toContain('cairn-admin.css:1002');
+    expect(findings[0].message).toContain('.btn-active:hover');
   });
 
   it('declares adminOnly, so it never reads a site\'s own public components', () => {

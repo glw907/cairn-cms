@@ -66,6 +66,13 @@
   `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
   existing re-export. Consumers must: nothing.
 
+- The packaged admin sheet (`cairn-admin.css`) gains three new classes: `sm:flex-nowrap`,
+  `sm:gap-3.5`, and `sm:items-center`, from `CairnMediaLibrary`'s selection-action bar splitting
+  into two flex rows below the `sm` breakpoint (count and scope on one row, the action buttons on
+  the next) so a narrow viewport no longer squeezes every button's text one word per line with
+  "Delete N" pushed past the edge; at `sm` and up the bar keeps its original single row. Consumers
+  must: nothing.
+
 - The packaged admin sheet (`cairn-admin.css`) gains two new classes: `cairn-text-warning` and
   `cairn-text-success`, the on-surface warning and success text idioms (`--cairn-warning-ink` and
   `--color-positive-ink`), replacing the bracketed `text-[var(--cairn-warning-ink)]` form with a

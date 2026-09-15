@@ -1138,3 +1138,28 @@ proof and leaving those five widths' baselines untouched.
   `examples/showcase/e2e/admin-visual.spec.ts-snapshots/admin-{edit-zen,drawer-overlay,
   sidebar-persistent,delete-dialog,command-palette,media-selected}-{light,dark}-{320,390,768,1440,
   2560}-linux.png`.
+
+### Task 10 fix round: the media-selected bar's narrow-width overflow
+
+- **Before/after:** no `capture-surfaces.mjs` pair; `CairnMediaLibrary.svelte` is not
+  `cairn-admin.css` or `CairnAdminShell.svelte`, so it does not carry `signups`/`styleguide` reach.
+  The only rendered surface it can move is `media-selected`, proved directly through the visual
+  suite's own before/after screenshots.
+- INTENDED MOVES: `media-selected 320 light`, `media-selected 320 dark`, `media-selected 390
+  light`, `media-selected 390 dark`: the pass-end visual verifier found the sticky "Selection
+  actions" bar's single-row layout collapsing at 320/390px, wrapping button text one word per
+  line and pushing "Delete 1" past the viewport edge (320 also overflowed the document). The fix
+  splits the bar into two flex rows below the `sm` breakpoint (count/scope, then the action
+  buttons) so no row is squeezed; at `sm` and up it stays the original single row.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts -g "admin
+  media selected"` against the rebuilt dist failed exactly these 4 of 10: `admin media selected —
+  light — 320px`, `admin media selected — dark — 320px`, `admin media selected — light — 390px`,
+  `admin media selected — dark — 390px`. The other 6 (768/1440/2560, both schemes) passed
+  unchanged.
+- TILE DIFF: none captured; `media-selected` is a first-render surface from Task 10 with no
+  `capture-surfaces.mjs` tile set, so the fix is proved by the moved-baseline failure/regen pair
+  above and the full-page reads below, matching Task 10's own new-surface convention.
+- READ ME: `examples/showcase/e2e/admin-visual.spec.ts-snapshots/admin-media-selected-light-320-linux.png`
+  and `admin-media-selected-dark-390-linux.png`, the two regenerated baselines read after
+  regeneration: the selection bar now stacks into two rows at both widths, "Delete 1" sits fully
+  inside the viewport, and no button text wraps mid-word.

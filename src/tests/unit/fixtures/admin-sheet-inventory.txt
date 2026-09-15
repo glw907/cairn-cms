@@ -199,7 +199,7 @@ dropdown-open
 dropdown-right
 dropdown-start
 dropdown-top
-duration-[250ms]
+duration-(--cairn-dur-base)
 fieldset
 fieldset-legend
 filter
@@ -779,8 +779,7 @@ tracking-tight
 tracking-wide
 transform
 transition
-transition-[width]
-transition-all
+transition-[opacity,translate]
 transition-colors
 transition-opacity
 transition-shadow

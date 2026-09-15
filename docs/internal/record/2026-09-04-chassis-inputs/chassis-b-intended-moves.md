@@ -1025,3 +1025,25 @@ proof and leaving those five widths' baselines untouched.
   the same width; `~/.cache/cairn-admin-motion/task-1/before/full/styleguide-light-1440.png` and
   its after-set counterpart. All three pairs are pixel-identical, proving the token addition and
   the default-transition repoint leak nothing onto a resting frame.
+
+### Task 6a: the admin migrated onto the language
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-6a/before/` and
+  `~/.cache/cairn-admin-motion/task-6a/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. The preview pane's removed width transition and the upload fill's removed
+  width transition are both mid-shot changes: a resting-state screenshot of `signups` or
+  `styleguide` never catches either pane or fill in motion, so removing the transition changes
+  nothing a still capture can see. Every other change this task makes (the token migrations on the
+  feedback strip, the fold chevron, the unfold flash, `HelpHome`'s hover pairs, and the disclosure
+  caret) repoints a duration or a curve, which a resting frame also carries no evidence of.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests)
+  passed 28 of 28 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-6a/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-6a/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-6a/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the migration leaks
+  nothing onto a resting frame.

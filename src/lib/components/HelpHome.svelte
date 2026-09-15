@@ -559,7 +559,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     font: 600 0.78125rem/1 var(--font-body);
     cursor: pointer;
     text-decoration: none;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    transition: border-color var(--cairn-dur-base) var(--cairn-ease-standard), background-color var(--cairn-dur-base) var(--cairn-ease-standard);
   }
   /* :focus-visible pairs the same tint with a keyboard tab onto this link (cairn-audit's
      focus-parity rule), so a keyboard user sees the same affordance a mouse hover gives. */
@@ -784,7 +784,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
-    transition: border-color 150ms ease, color 150ms ease;
+    transition: border-color var(--cairn-dur-base) var(--cairn-ease-standard), color var(--cairn-dur-base) var(--cairn-ease-standard);
   }
   .btn-quiet:hover,
   .btn-quiet:focus-visible {

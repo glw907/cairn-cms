@@ -385,6 +385,23 @@
   reports as a dead suppression at error tier that cannot itself be suppressed; delete the directive
   on upgrade.
 
+- The rest of the admin's own shipped motion moves onto the `--cairn-dur-*`/`--cairn-ease-*`
+  tokens: the edit page's feedback strip, the `MarkdownEditor` fold chevron and unfold flash, the
+  `HelpHome` step and quiet-button hover pairs, and `cairn-admin.css`'s disclosure caret. The edit
+  page's preview pane no longer animates its width when the split changes. Consumers must: nothing;
+  the resize now snaps instead of easing.
+
+- The upload progress fill no longer transitions its `width`, and no motion replaces it: the fill
+  snaps to each new value. The native `<progress>` element is unchanged and keeps its implicit
+  `progressbar` role and its `value`/`max` mapping, so nothing changes for assistive technology.
+  The reduced-motion pin on `::-webkit-progress-value` goes with the transition it pinned.
+  Consumers must: nothing; this changes only the packaged admin editor's own upload widget.
+
+- Three utility classes leave the packaged admin sheet, because their last call sites go:
+  `transition-all`, `transition-[width]`, and `duration-[250ms]`. Consumers must: a site whose own
+  markup carries any of the three was relying on the engine's sheet to compile it; add the class to
+  that site's own Tailwind content or restate the declaration.
+
 - **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
   parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.
   `ContentRoutesConfig` and `CairnAdminConfig` each gain a required `runtime: CairnRuntime` member

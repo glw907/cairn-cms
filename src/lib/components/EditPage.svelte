@@ -1425,7 +1425,7 @@ persistent "?" carries Markdown help).
         <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
              squashes the transition for editors who asked for that. -->
         <span
-          class="cairn-save-state flex items-center gap-1.5 type-meta text-muted transition-opacity duration-[250ms]"
+          class="cairn-save-state flex items-center gap-1.5 type-meta text-muted transition-opacity"
           class:opacity-0={!saveState}
           aria-live="off"
         >
@@ -1640,7 +1640,7 @@ persistent "?" carries Markdown help).
 <!-- The feedback strip slides in directly under the one header band: @starting-style drives the
      entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
 {#if flash}
-  <div class="cairn-feedback alert alert-success mb-4 type-body transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
+  <div class="cairn-feedback alert alert-success mb-4 type-body transition-[opacity,translate] duration-(--cairn-dur-base) starting:-translate-y-2 starting:opacity-0">
     {flash}
   </div>
 {/if}
@@ -2041,10 +2041,11 @@ persistent "?" carries Markdown help).
           tabindex={previewHtml && !previewFailed ? undefined : 0}
           class="bg-base-200 px-4 py-6 lg:px-8"
         >
-          <!-- The frame column: centered, sized by the picked device (capped at the pane), with
-               the width eased; the admin sheet's prefers-reduced-motion rule squashes the move. -->
+          <!-- The frame column: centered, sized by the picked device (capped at the pane). The
+               width snaps to each new device size rather than easing, since width is a layout
+               property the admin's motion language does not transition. -->
           <div
-            class="cairn-preview-frame mx-auto max-w-full transition-[width] duration-[250ms]"
+            class="cairn-preview-frame mx-auto max-w-full"
             style:width={activeDevice.width === null ? '100%' : `${activeDevice.width}px`}
           >
             {#if activeDevice.width !== null}

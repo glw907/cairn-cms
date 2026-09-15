@@ -574,7 +574,7 @@
     display: none;
   }
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-caret {
-    transition: rotate 150ms ease;
+    transition: rotate var(--cairn-dur-quick) var(--cairn-ease-standard);
   }
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) details[open] > summary .cairn-caret {
     rotate: 90deg;

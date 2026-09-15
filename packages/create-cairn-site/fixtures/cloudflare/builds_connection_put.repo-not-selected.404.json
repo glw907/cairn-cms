@@ -1,0 +1,18 @@
+{
+  "provenance": {
+    "captured": "2026-08-12",
+    "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md",
+    "status": 404
+  },
+  "body": {
+    "success": false,
+    "errors": [
+      {
+        "code": 8000012,
+        "message": "The project is linked to a repository that no longer exists, this may cause deployments to fail. Refer to https://developers.cloudflare.com/pages/platform/git-integration/#the-project-is-linked-to-a-repository-that-no-longer-exists-this-may-cause-deployments-to-fail"
+      }
+    ],
+    "messages": [],
+    "result": null
+  }
+}

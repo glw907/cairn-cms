@@ -1,0 +1,13 @@
+{
+  "provenance": {
+    "captured": "2026-08-12",
+    "source": "packages/create-cairn-site/test/fake-cloudflare.mjs:627-630",
+    "status": 200,
+    "note": "no per-body capture comment"
+  },
+  "body": {
+    "id": "d07b2a25f05151591830c45053186979",
+    "status": "active",
+    "messages": [{ "code": 10000, "message": "This API Token is valid and active", "type": null }]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "provenance": {
+    "captured": "2026-08-12",
+    "source": "packages/create-cairn-site/test/fake-cloudflare.mjs:627-630",
+    "status": 200,
+    "note": "no per-body capture comment"
+  },
+  "body": {
+    "cursor": "WzAsMzRd",
+    "truncated": false,
+    "lines": [[1784052295481, "Initializing build environment..."]],
+    "events": [{ "type": "initializing", "started_on": "2026-08-13T02:34:29.793Z", "ended_on": "2026-08-13T02:34:35.117Z" }]
+  }
+}

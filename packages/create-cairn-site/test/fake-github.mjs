@@ -10,7 +10,10 @@
 // A real client never talks to both from the same base URL, so keeping them separate here
 // catches a client that accidentally points a web-flow call at the API host or vice versa.
 import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
-import { compile, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
+import { compile, loadFixture, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
+
+/** The captured repo-create name-conflict body, `POST /user/repos` and `POST /orgs/:org/repos` alike. */
+const REPO_CREATE_NAME_CONFLICT_BODY = loadFixture('github', 'repo_create.name-conflict.422').body;
 
 /**
  * @typedef {object} FakeGithub
@@ -386,10 +389,7 @@ function createRepoHandler(getOwner, ctx) {
     const name = body?.name ?? 'repo';
     const exists = ctx.state.repos.some((repo) => repo.owner.login === owner && repo.name === name);
     if (exists) {
-      sendJson(res, 422, {
-        message: 'Repository creation failed.',
-        errors: [{ resource: 'Repository', code: 'custom', field: 'name', message: 'name already exists on this account' }]
-      });
+      sendJson(res, 422, REPO_CREATE_NAME_CONFLICT_BODY);
       return;
     }
     const id = ctx.counters.nextRepoId;

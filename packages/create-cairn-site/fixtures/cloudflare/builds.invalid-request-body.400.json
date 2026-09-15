@@ -1,0 +1,13 @@
+{
+  "provenance": {
+    "captured": "2026-08-12",
+    "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md (\"Step 4: confirmed by three rejected bodies returning 12002\")",
+    "status": 400
+  },
+  "body": {
+    "success": false,
+    "errors": [{ "code": 12002, "message": "Invalid request body" }],
+    "messages": [],
+    "result": null
+  }
+}

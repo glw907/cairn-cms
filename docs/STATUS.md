@@ -226,7 +226,11 @@ facts entry, links resolve, the remaining docs-only checks scope to what is left
 makes the container the default source and the cairn-pass ritual's docs step becomes "grow the container";
 skills and agents citing arm pages are re-pointed; extend-1 and extend-2's docs deliverables are amended
 to container entries. The container grows with every pass and is the fact basis for the eventual
-human-facing rewrite. **Sequence from here:** motion merge;
+human-facing rewrite. **Site round under this pattern (Geoff, 2026-09-15):** the container is the docs
+while aksailingclub-org is upgraded and finished and ecxc-ski and 907-life are upgraded and polished;
+every site pass hunts holes in it (information, recipes, reference, architecture) and appends them to
+`docs/internal/facts/gaps.md`, triaged complete-or-move like the friction log; once ecxc-ski and 907-life
+are done and polished, the container extends into the set of public-facing docs. **Sequence from here:** motion merge;
 the brief's skeleton; the dynamic gate tier (runner half in dotfiles started 2026-09-15 from this session,
 classifier half in this repo after the merge); extend-1; extend-2; the pre-cut pass with the brief's
 completion added; the cut; the site round. Every consumer pin bump,

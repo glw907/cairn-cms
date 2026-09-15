@@ -37,9 +37,9 @@
 // compiled sheet's `conditions` cannot attribute a declaration to DaisyUI's plugin output (cairn's
 // own rules share the same `@layer components` prelude), so the working discriminator is the
 // explicit DaisyUI class-name list below, not the attribution `conditions` was hoped to carry. Its
-// fallback limit is the same as task 3's: a cairn-authored class that happens to share a name with
-// a listed DaisyUI component would be wrongly exempted, which is why the list stays short and
-// reviewed rather than pattern-matched.
+// fallback limit is the same limit motion-property's own class-name list carries: a cairn-authored
+// class that happens to share a name with a listed DaisyUI component would be wrongly exempted,
+// which is why the list stays short and reviewed rather than pattern-matched.
 //
 // Three join limits, stated as what they miss rather than claimed away, none exercised by a
 // fixture below because each is a structural property of the class join itself:
@@ -87,6 +87,13 @@ const INFINITE_WORD = /\binfinite\b/;
 const ALLOW_DISCRETE = /\ballow-discrete\b/;
 const CALC_FOREIGN_VAR = /calc\([^;]*var\(\s*--(?!cairn-dur-|cairn-ease-)/;
 
+// Every compiled Tailwind transition utility carries `transition-duration: var(--tw-duration, var(
+// --default-transition-duration))` and the easing equivalent: the value never resolves statically,
+// it rides whichever default the theme root sets. Such a value is treated as riding the default
+// rather than as an explicit literal or token reference, so the companion assertion (not this
+// per-declaration check) is what stands behind it.
+const DEFAULT_RIDING_VAR = /var\(\s*--(?:tw-duration|tw-ease|default-transition-duration|default-transition-timing-function)\b/;
+
 // The same discriminator motion-property uses, reproduced rather than imported (this rule owns no
 // file that re-exports it): the built sheet's `conditions` cannot attribute a rule to DaisyUI's
 // plugin output, so the explicit class-name list is the only discriminator that actually works.
@@ -95,6 +102,11 @@ const CALC_FOREIGN_VAR = /calc\([^;]*var\(\s*--(?!cairn-dur-|cairn-ease-)/;
 const DAISYUI_VENDOR_CLASSES = new Set(['btn', 'drawer-side', 'filter', 'collapse', 'toggle']);
 
 const ADMIN_ROOT_SELECTORS = ["[data-theme='cairn-admin']", "[data-theme='cairn-admin-dark']"];
+
+/** Normalizes a selector's quote character so a double-quoted build output matches a single-quoted one. */
+function normalizeSelectorQuotes(selector: string): string {
+  return selector.replace(/"/g, "'");
+}
 
 interface VocabEvent {
   message: string;
@@ -108,6 +120,7 @@ interface VocabEvent {
 interface DeclarationVerdict {
   messages: string[];
   abstain?: string;
+  ridesDefault?: boolean;
 }
 
 /** Whether a property's value carries the closed set's shorthand or list form, for the companion clause. */
@@ -166,7 +179,7 @@ function companionAssertionOk(sheet: CompiledSheet): boolean {
   return ADMIN_ROOT_SELECTORS.every((selector) =>
     sheet.rules.some(
       (rule) =>
-        rule.selector === selector &&
+        normalizeSelectorQuotes(rule.selector) === selector &&
         rule.declarations.some((decl) => decl.property === '--default-transition-duration' && DURATION_VAR.test(decl.value)) &&
         rule.declarations.some(
           (decl) => decl.property === '--default-transition-timing-function' && EASE_VAR.test(decl.value)
@@ -204,6 +217,8 @@ function evaluateDeclaration(property: string, value: string, surface: Surface):
 
   const abstain = abstentionReason(property, value);
   if (abstain) return { messages: [], abstain };
+
+  if (DEFAULT_RIDING_VAR.test(value)) return { messages: [], ridesDefault: true };
 
   const infinite = property === 'animation' && INFINITE_WORD.test(value);
   const messages: string[] = [];
@@ -249,6 +264,7 @@ function scanDeclarations(declarations: { property: string; value: string }[], s
       abstains.push(verdict.abstain);
       continue;
     }
+    if (verdict.ridesDefault) continue;
     sawDurationOrEasing = true;
     if (verdict.messages.length > 0) messages.push(verdict.messages.join('; '));
   }

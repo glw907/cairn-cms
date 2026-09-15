@@ -16,6 +16,14 @@ const COMPANION_GREEN = [
   "[data-theme='cairn-admin-dark'] { --default-transition-duration: var(--cairn-dur-base); --default-transition-timing-function: var(--cairn-ease-standard); }",
 ].join(' ');
 
+// The built sheet the audit reads (dist/components/cairn-admin.css) emits the two admin theme
+// roots with double-quoted attribute selectors, not the single-quoted form above; this shape
+// proves the companion assertion's green path against what the build actually ships.
+const COMPANION_GREEN_BUILD_QUOTES = [
+  '[data-theme="cairn-admin"] { --default-transition-duration: var(--cairn-dur-base); --default-transition-timing-function: var(--cairn-ease-standard); }',
+  '[data-theme="cairn-admin-dark"] { --default-transition-duration: var(--cairn-dur-base); --default-transition-timing-function: var(--cairn-ease-standard); }',
+].join(' ');
+
 const COMPANION_RED =
   "[data-theme='cairn-admin'] { --default-transition-duration: .15s; --default-transition-timing-function: ease; }";
 
@@ -100,7 +108,10 @@ describe('motion-vocabulary: the class-join surface', () => {
   const CLASS_SHEET = [
     '.duration-\\[250ms\\] { transition-duration: 250ms; }',
     '.duration-\\(--cairn-dur-base\\) { transition-duration: var(--cairn-dur-base); }',
-    '.transition-colors { transition-property: color, background-color, border-color; }',
+    // The compiled shape the build actually emits for a bare transition-colors utility: a
+    // transition-property list plus the two custom-property-riding declarations that fall through
+    // to the theme root's default, not a lone transition-property declaration.
+    '.transition-colors { transition-property: color, background-color, border-color; transition-timing-function: var(--tw-ease, var(--default-transition-timing-function)); transition-duration: var(--tw-duration, var(--default-transition-duration)); }',
     ':root { --animate-spin: spin 1s linear infinite; }',
     '.animate-spin { animation: var(--animate-spin); }',
     ':root { --animate-fizzle: fizzle 700ms ease; }',
@@ -130,6 +141,13 @@ describe('motion-vocabulary: the class-join surface', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('companion assertion');
     expect(findings[0].message).not.toContain('transition-colors');
+  });
+
+  it('passes transition-colors when the companion roots carry the double-quoted selector form the build emits', () => {
+    const findings = check(`${COMPANION_GREEN_BUILD_QUOTES} ${CLASS_SHEET}`, [
+      component('<div class="transition-colors"></div>'),
+    ]);
+    expect(findings).toEqual([]);
   });
 
   it('passes animate-spin on both halves, its duration exempt and its linear easing checked', () => {

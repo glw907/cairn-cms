@@ -16,6 +16,15 @@ green.
 
 ## Immediate next action (2026-09-14)
 
+**Overnight run halted at stage motion:run1.** Reason: task 2 (the shipped-rule reconciliation)
+accepted, fixRounds 1; task 3 (motion-property and motion-hover-gate) escalated, fixRounds 0; task
+4 (motion-vocabulary) deferred, fixRounds 0; task 6a (the admin migrated onto the language)
+deferred, fixRounds 0; task 6b (the dropzone's drag-over state) deferred, fixRounds 0; task 7
+(zen) deferred, fixRounds 0; task 10 (the engine's tree wired, and the visual suite) deferred,
+fixRounds 0; task 11 (docs and records, last) deferred, fixRounds 0. Resume prompt: Read the
+motion run-1 journal, decide the non-accepted task, then resume the remaining tasks per
+docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md.
+
 **Recovery, 2026-09-14 17:xx (session 7c350980).** A desktop crash at 16:03 (two full gates side by
 side; systemd-oomd killed GNOME Shell) took both conducting sessions. This session resumed both:
 the motion pass runs as workflow `wf_0c5004bd-52c` (tasks 1 and 8 accepted, chain A on task 3 of

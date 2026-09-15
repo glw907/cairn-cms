@@ -43,7 +43,8 @@ task `6a-fix` IMPLEMENTED in two commits (`fix(audit): exempt DaisyUI vendor mot
 reduced-motion floor`, `ec203cac fix(admin): guard HelpHome hover paint on hover-capable pointers`)
 but NOT yet reviewed or accepted. Remaining: 6b, 7, 10, 11, the close ritual, then precut, the
 0.97.0 cut, and extend-1. **The Go tool branch is DROPPED from the run** (Geoff, 2026-09-15); pass A
-stays held at its Task 3 boundary on `cairn-tool-a` (draft PR #60) to pick up the week of 2026-09-21.
+stays held at its Task 3 boundary on `cairn-tool-a` (draft PR #60) to pick up the week of 2026-09-21,
+and the docs rewrite (from pass 2a) moves to that same week (Geoff, 2026-09-15).
 Resume prompt: from a fresh session, follow `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md` steps 1
 to 7 again (`launch.json` already carries the one-line footer and `toolA: null`; `motion-args.json`
 already carries `6a-fix` first with a partial-work note that counts its two commits as landed, so a

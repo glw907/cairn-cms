@@ -1428,9 +1428,9 @@ disagreements over timing, curve, or modality; four are over property, and the v
 
 The rules' own `DAISYUI_VENDOR_CLASSES` exemption lists are broader than these eleven
 disagreements: `motion-property.ts` (about `:81`-`:90`) also names `modal-box`, `dropdown`,
-`dropdown-content`, `checkbox`, and `card`, classes the compiled-sheet class join convicts on
-their own vendor motion but that do not appear as numbered disagreements above. A reader should
-not take the two lists as the same set.
+`dropdown-content`, `checkbox`, and `card`, classes the compiled-sheet class join would convict on
+their own vendor motion but for this exemption, and that do not appear as numbered disagreements
+above. A reader should not take the two lists as the same set.
 
 1. **`.btn`, press.** Runs 200ms where the language says `instant` (70ms), and transitions
    `transform`.

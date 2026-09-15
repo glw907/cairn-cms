@@ -68,6 +68,55 @@ describe('reduced-motion', () => {
     ).toBe(true);
   });
 
+  // cairn-admin.css's own shipped guard is a blanket universal-descendant selector, not a selector
+  // named by text, and .cairn-caret's own `transition` shorthand is the shorthand-counts-as-longhand
+  // case: the floor declares only `transition-duration`.
+  it('discharges a rule under a blanket floor that zeroes the transition-duration longhand its shorthand implies', () => {
+    const findings = check(
+      component(
+        [
+          '.cairn-caret { transition: rotate 150ms ease; }',
+          '@media (prefers-reduced-motion: reduce) {',
+          "  [data-theme='cairn-admin'] * { transition-duration: 0.01ms; }",
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it('discharges a rule declaring the longhand directly under the same blanket floor', () => {
+    const findings = check(
+      component(
+        [
+          '.cairn-caret { transition-duration: 150ms; }',
+          '@media (prefers-reduced-motion: reduce) {',
+          "  [data-theme='cairn-admin'] * { transition-duration: 0.01ms; }",
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // The floor's own longhand never proves it zeroes a property the longhand doesn't cover, so a
+  // rule declaring only transition-timing-function still owes its own guarded sibling.
+  it('still flags a rule declaring only transition-timing-function under a blanket floor that never touches it', () => {
+    const findings = check(
+      component(
+        [
+          '.cairn-caret { transition-timing-function: ease; }',
+          '@media (prefers-reduced-motion: reduce) {',
+          "  [data-theme='cairn-admin'] * { transition-duration: 0.01ms; }",
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].ruleId).toBe('reduced-motion');
+    expect(findings[0].message).toContain('.cairn-caret');
+  });
+
   it('is suppressed by a directive naming the rule, and counted', () => {
     const file = parseComponent(
       'Fixture.svelte',

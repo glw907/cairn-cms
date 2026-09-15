@@ -349,6 +349,16 @@
   block now zeroes `transition-delay` and `animation-delay`. Consumers must: a custom screen that
   relied on a delay surviving a reduced-motion preference loses it, which is the fix.
 
+- `cairn-audit`'s `motion-band` band widens from 150ms to 250ms to 70ms to 400ms, and it no longer
+  reports a call site that references a token. A site relying on the narrow band loses that check;
+  the vocabulary rule is what replaces it. The motion predicate `motion-band` and `reduced-motion`
+  share also widens, so a `transition-delay` reaches `motion-band`'s band check and a rule declaring
+  only `transition-timing-function` now owes a reduced-motion sibling under `reduced-motion`.
+  Consumers must: an existing `cairn-audit-disable-next-line motion-band` directive that covered a
+  finding inside the old band and outside the new one now silences nothing, which `cairn-audit`
+  reports as a dead suppression at error tier that cannot itself be suppressed; delete the directive
+  on upgrade.
+
 - **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
   parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.
   `ContentRoutesConfig` and `CairnAdminConfig` each gain a required `runtime: CairnRuntime` member

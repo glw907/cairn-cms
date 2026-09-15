@@ -502,7 +502,9 @@ function literalValue(value: unknown): string | undefined {
   if (!Array.isArray(value) || value.length !== 1) return undefined;
   const part = value[0] as RawNode;
   if (part.type !== 'Text') return undefined;
-  return typeof part.raw === 'string' ? part.raw : typeof part.data === 'string' ? part.data : undefined;
+  if (typeof part.raw === 'string') return part.raw;
+  if (typeof part.data === 'string') return part.data;
+  return undefined;
 }
 
 /** Whether an `Attribute` node's value is unconditionally on: a shorthand or a literal `true`. */

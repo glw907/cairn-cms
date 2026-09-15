@@ -52,7 +52,9 @@ function findReducedDelays(): DelayFinding[] {
   const helpers = globalThis.__cairnAudit;
   const results: DelayFinding[] = [];
   const seen = new Set<string>();
-  const anyNonzero = (value: string) => value.split(',').some((part) => parseFloat(part) > 0);
+  function anyNonzero(value: string): boolean {
+    return value.split(',').some((part) => parseFloat(part) > 0);
+  }
   const properties: { property: DelayProperty; cssProp: 'transitionDelay' | 'animationDelay' }[] = [
     { property: 'transition-delay', cssProp: 'transitionDelay' },
     { property: 'animation-delay', cssProp: 'animationDelay' },
@@ -99,7 +101,7 @@ export const motionReducedDelay: RenderedRule = {
       const locator =
         f.locatedSelector && f.locatedFile
           ? `the authored rule "${f.locatedSelector}" in ${f.locatedFile} declares it`
-          : 'no matching authored rule was found in the page\'s stylesheets';
+          : "no matching authored rule was found in the page's stylesheets";
       return {
         ruleId: RULE_ID,
         tier: 'advisory',

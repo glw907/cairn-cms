@@ -266,7 +266,8 @@ function installPageHelpers(): void {
         current += char;
       }
     }
-    if (current.trim()) parts.push(current.trim());
+    const last = current.trim();
+    if (last) parts.push(last);
     return parts;
   }
 

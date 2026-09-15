@@ -376,7 +376,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   // dragOver drives the dropzone's drag-over paint (toggled utility classes, not a CSS rule).
   let dragOver = $state(false);
 
-  function onDropzoneDragenter(_e: DragEvent) {
+  function onDropzoneDragenter() {
     dragOver = true;
   }
   function onDropzoneDragover(e: DragEvent) {

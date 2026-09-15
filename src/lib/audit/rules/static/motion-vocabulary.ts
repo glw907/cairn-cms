@@ -237,7 +237,7 @@ function abstentionReason(property: string, value: string, conditions: string[])
     return 'a var() occupying the shorthand property slot, so which property or keyframe is being animated cannot be read statically';
   }
   if (CALC_FOREIGN_VAR.test(value)) {
-    return "a calc() expression over a variable this rule does not own, so the resolved duration cannot be checked";
+    return 'a calc() expression over a variable this rule does not own, so the resolved duration cannot be checked';
   }
   return undefined;
 }
@@ -420,7 +420,7 @@ export const motionVocabulary: StaticRule = {
 
 /**
  * The abstention notes {@link motionVocabulary} records instead of a finding, one per declaration
- * matching one of the rule's own doc comment's three abstention shapes. Exposed separately because
+ * matching one of the rule's own doc comment's four abstention shapes. Exposed separately because
  * {@link StaticRule.check} carries only findings, and a check that skips itself needs a visible
  * trace for a test to hold it to.
  */

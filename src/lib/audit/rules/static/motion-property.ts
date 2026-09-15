@@ -121,10 +121,10 @@ const FRAME_OFFSET_VALUE = 'frame-offset';
 const FRAME_OFFSET_SELECTOR = '[data-cairn-motion="frame-offset"]';
 const FRAME_OFFSET_PROPERTY = 'margin-left';
 
-const ALLOWLIST_PHRASE =
-  "cairn's motion property allowlist (opacity, color, background-color, border-color, box-shadow, " +
-  'outline-color, outline-width, outline-offset, rotate, translate, scale, transform, and ' +
-  'grid-template-rows)';
+// Spelled from the allowlist itself rather than retyped, so a property added to the set can never
+// leave the message naming the old one.
+const ALLOWLIST_NAMES = [...PAINT_ALLOWLIST];
+const ALLOWLIST_PHRASE = `cairn's motion property allowlist (${ALLOWLIST_NAMES.slice(0, -1).join(', ')}, and ${ALLOWLIST_NAMES[ALLOWLIST_NAMES.length - 1]})`;
 
 type Verdict = 'ok' | 'named-error' | 'outside';
 
@@ -312,7 +312,7 @@ function checkFrameOffset(ctx: StaticRuleContext): Finding[] {
   const findings: Finding[] = [];
   for (const file of ctx.files) {
     const carrying = file.nodes.filter(carriesFrameOffset);
-    carrying.forEach((node, index) => {
+    for (const [index, node] of carrying.entries()) {
       const isFirstOnScreen = index === 0;
       for (const property of declared) {
         if (isFirstOnScreen && property.name === FRAME_OFFSET_PROPERTY) continue;
@@ -328,7 +328,7 @@ function checkFrameOffset(ctx: StaticRuleContext): Finding[] {
           message: propertyMessage(property.declProperty, property.declValue, property.name, verdict),
         });
       }
-    });
+    }
   }
   return findings;
 }

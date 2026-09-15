@@ -97,11 +97,11 @@ export const reducedMotion: StaticRule = {
     const findings: Finding[] = [];
     for (const site of bearing) {
       const floors = floorsByFile.get(site.scope.file) ?? [];
-      const matchingSelector = floors.filter((floor) => floor.blanket || floor.selector === site.selector);
+      const matchingFloors = floors.filter((floor) => floor.blanket || floor.selector === site.selector);
       const discharged =
-        matchingSelector.length > 0 &&
+        matchingFloors.length > 0 &&
         [...site.properties].every((property) =>
-          matchingSelector.some((floor) => dischargedByFloor(floor, property))
+          matchingFloors.some((floor) => dischargedByFloor(floor, property))
         );
       if (discharged) continue;
       findings.push({

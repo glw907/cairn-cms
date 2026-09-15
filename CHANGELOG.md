@@ -273,6 +273,20 @@
   reachable under the dev backend, which replaces the guard rather than running beside it. Both
   parameters are optional and additive; no consumer action.
 
+- `cairn-audit` gains `motion-vocabulary`, static and error tier: every transition or animation
+  duration and easing curve a component declares, on both surfaces (hand-authored CSS and the
+  Tailwind class join), must resolve to one of the eight cairn motion tokens rather than a
+  literal, a bare `ease`/`linear` keyword, or a raw `cubic-bezier()`. The rule ships with a
+  companion assertion that the built sheet repoints `--default-transition-duration` and
+  `--default-transition-timing-function` at cairn tokens on both admin theme roots, so a class
+  that declares no explicit duration or easing can still be trusted to ride the default; when the
+  assertion fails, the rule reports the assertion rather than the relying element. An `infinite`
+  animation is exempt from the duration check only and must declare the literal `linear` easing.
+  Three shapes this rule's own parsing cannot resolve (a `var()` in the shorthand's property slot,
+  a `calc()` over a foreign variable, and a shorthand carrying an `allow-discrete` keyword) record
+  a note rather than a finding. Resolves over `static.adminScope`, the same as `motion-property`
+  and `motion-hover-gate`.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

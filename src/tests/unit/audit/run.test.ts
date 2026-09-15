@@ -58,9 +58,9 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
   // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, and the motion
-  // pass's motion-property and motion-hover-gate are the modules that have registered since,
-  // without touching run.ts.
-  it('carries the fourteen static rules registered since Task 7', () => {
+  // pass's motion-property, motion-hover-gate, and motion-vocabulary are the modules that have
+  // registered since, without touching run.ts.
+  it('carries the fifteen static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -75,6 +75,7 @@ describe('the static rule registry', () => {
         'focus-parity',
         'motion-band',
         'motion-property',
+        'motion-vocabulary',
         'motion-hover-gate',
         'reduced-motion',
         'stripe-trim-parity',
@@ -124,10 +125,10 @@ describe('runStatic', () => {
     // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full fourteen-rule registry. The new
+    // default (no rules override) run wires up the full fifteen-rule registry. The new
     // `src/lib/components/PublicWidget.svelte` fixture carries no class and no CSS, so it trips
     // nothing beyond the two no-uncompiled-class findings the tree already carried.
-    expect(report.ruleIds).toHaveLength(14);
+    expect(report.ruleIds).toHaveLength(15);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });

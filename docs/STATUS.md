@@ -76,7 +76,11 @@ motion-property's `transition: none` parsing (zero properties, the reduced-motio
 04:5x rulings on task 7 (zen, commit `5c41f061` kept; task `7-fix` inserted): the nested four-rule
 frame-offset form and the `data-cairn-frame-open` direction key are ratified; chrome fades are
 entrance-only but gated off first paint by a `data-cairn-zen-used` attribute; the chip's exit is keyed
-on state so both directions ship. Task 6b accepted after one fix round. Spend tonight:
+on state so both directions ship. Task 6b accepted after one fix round; 7-fix accepted after one fix
+round; task 10 in flight at 08:5x. **Geoff, 2026-09-15 morning:** the per-task gate is LIGHTENED for the
+rest of the run (the showcase e2e narrowed to admin-visual.spec.ts per task; the full string runs at each
+close ritual and on CI), and **extend-1 is HELD**: the run stops after the 0.97.0 cut (stages
+motion, precut, release, final) and extend-1 launches separately. Spend tonight:
 about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
 stop to drop the Go tool, one wind-down).
 

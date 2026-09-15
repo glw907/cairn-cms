@@ -220,7 +220,8 @@ brief is its release-scoped view. **Docs-to-facts pass (Geoff, 2026-09-15 midday
 harvest fold and the motion merge, before extend-1:** the facts harvest (seven slices under
 `docs/internal/facts/`, in flight) is folded and committed; the admin, editors, extend, and why-cairn arms
 and the docs README are REMOVED from the tree and the tarball; the REFERENCE ARM STAYS (one gated page per
-export) with its behaviors in the container; the docs gates re-point at the container (every export has a
+export) but MOVES INTO the container at `docs/internal/facts/reference/` (Geoff, 2026-09-15), out of the
+tarball, its two gates re-pointed, its behaviors harvested beside it; the docs gates re-point at the container (every export has a
 facts entry, links resolve, the remaining docs-only checks scope to what is left); CLAUDE.md's docs section
 makes the container the default source and the cairn-pass ritual's docs step becomes "grow the container";
 skills and agents citing arm pages are re-pointed; extend-1 and extend-2's docs deliverables are amended

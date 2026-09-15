@@ -221,7 +221,14 @@ docs-to-facts pass is planned:** three fresh-context Opus reviewers, disjoint le
 mechanics; evolution feasibility from container through the site round to public docs, and what a
 facts-only record loses; charter and per-pass cost), graded against the goal of docs kept light and
 efficient while cairn is finalized yet collecting what full-featured public docs will need. Findings fold
-into the pass plan. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after that review and the
+into the pass plan. The infra shape the review tests (Geoff asked that the initiative survive every
+context, 2026-09-15): the container SHIPS in the tarball in place of the removed arms, so a site reads
+version-locked facts from its installed engine; the engine-consult skill reads it first and its brief
+gains a "facts consulted" line; site-implementer and cairn-implementer name it as the docs; each site
+repo's CLAUDE.md gets one pointer line from the pass that upgrades it; growth is a gated pass dimension
+(every export has an entry, every bullet a source and tag, links resolve) and the cairn-pass docs step
+becomes "grow the container"; the gaps file and the friction log are the two intake files, both
+complete-or-move; the claude-tooling manifest and memory carry the pointer. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after that review and the
 motion merge, before extend-1:** the facts harvest (seven slices under
 `docs/internal/facts/`, in flight) is folded and committed; the admin, editors, extend, and why-cairn arms
 and the docs README are REMOVED from the tree and the tarball; the REFERENCE ARM STAYS (one gated page per

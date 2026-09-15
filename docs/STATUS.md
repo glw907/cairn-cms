@@ -216,7 +216,16 @@ the human-facing rewrite fills the arms from the harvest afterward. The skeleton
 CONTAINER (Geoff, 2026-09-15): the facts harvest from the old docs lands there, every fact carrying its
 source (file and symbol, check script, changelog line, or owner brief; sourceless entries are candidates),
 agent-facing and never shipped; the arms render prose from it and are checked against it, and the upgrade
-brief is its release-scoped view. **Sequence from here:** motion merge;
+brief is its release-scoped view. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after the
+harvest fold and the motion merge, before extend-1:** the facts harvest (seven slices under
+`docs/internal/facts/`, in flight) is folded and committed; the admin, editors, extend, and why-cairn arms
+and the docs README are REMOVED from the tree and the tarball; the REFERENCE ARM STAYS (one gated page per
+export) with its behaviors in the container; the docs gates re-point at the container (every export has a
+facts entry, links resolve, the remaining docs-only checks scope to what is left); CLAUDE.md's docs section
+makes the container the default source and the cairn-pass ritual's docs step becomes "grow the container";
+skills and agents citing arm pages are re-pointed; extend-1 and extend-2's docs deliverables are amended
+to container entries. The container grows with every pass and is the fact basis for the eventual
+human-facing rewrite. **Sequence from here:** motion merge;
 the brief's skeleton; the dynamic gate tier (runner half in dotfiles started 2026-09-15 from this session,
 classifier half in this repo after the merge); extend-1; extend-2; the pre-cut pass with the brief's
 completion added; the cut; the site round. Every consumer pin bump,

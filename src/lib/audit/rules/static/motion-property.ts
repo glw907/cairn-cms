@@ -124,7 +124,7 @@ const FRAME_OFFSET_PROPERTY = 'margin-left';
 // Spelled from the allowlist itself rather than retyped, so a property added to the set can never
 // leave the message naming the old one.
 const ALLOWLIST_NAMES = [...PAINT_ALLOWLIST];
-const ALLOWLIST_PHRASE = `cairn's motion property allowlist (${ALLOWLIST_NAMES.slice(0, -1).join(', ')}, and ${ALLOWLIST_NAMES[ALLOWLIST_NAMES.length - 1]})`;
+const ALLOWLIST_PHRASE = `cairn's motion property allowlist (${ALLOWLIST_NAMES.slice(0, -1).join(', ')}, and ${ALLOWLIST_NAMES.at(-1)})`;
 
 type Verdict = 'ok' | 'named-error' | 'outside';
 
@@ -213,12 +213,7 @@ function checkCssFamily(ctx: StaticRuleContext): Finding[] {
     if (isFrameOffsetSelector(scope.rule.selector)) continue; // the frame-offset check owns this rule
     for (const decl of scope.rule.declarations) {
       for (const message of declarationMessages(decl)) {
-        findings.push({
-          ruleId: 'motion-property',
-          tier: 'error',
-          ...cssRulePosition(scope),
-          message,
-        });
+        findings.push({ ruleId: 'motion-property', tier: 'error', ...cssRulePosition(scope), message });
       }
     }
   }

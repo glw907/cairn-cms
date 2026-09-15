@@ -59,6 +59,16 @@ function fixMessage(selector: string): string {
   );
 }
 
+/** The one finding shape both passes below raise, differing only in which site earned it. */
+function gateFinding(site: SelectorSite): Finding {
+  return {
+    ruleId: 'motion-hover-gate',
+    tier: 'error',
+    ...cssRulePosition(site.scope),
+    message: fixMessage(site.selector),
+  };
+}
+
 export const motionHoverGate: StaticRule = {
   id: 'motion-hover-gate',
   tier: 'error',
@@ -83,22 +93,12 @@ export const motionHoverGate: StaticRule = {
       if (site.gated || !site.selector.includes(HOVER)) continue;
       const base = declarationsBySite.get(siteKey(site.scope.file, withoutHover(site.selector))) ?? [];
       if (!declaresMotion(site.scope.rule.declarations) && !declaresMotion(base)) continue;
-      findings.push({
-        ruleId: 'motion-hover-gate',
-        tier: 'error',
-        ...cssRulePosition(site.scope),
-        message: fixMessage(site.selector),
-      });
+      findings.push(gateFinding(site));
     }
     for (const site of sites) {
       if (!site.gated || !site.selector.includes(FOCUS_VISIBLE)) continue;
       if (!declaresMotion(site.scope.rule.declarations)) continue;
-      findings.push({
-        ruleId: 'motion-hover-gate',
-        tier: 'error',
-        ...cssRulePosition(site.scope),
-        message: fixMessage(site.selector),
-      });
+      findings.push(gateFinding(site));
     }
     return findings;
   },

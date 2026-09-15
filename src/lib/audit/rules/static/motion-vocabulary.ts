@@ -337,6 +337,17 @@ type EventPosition = Pick<VocabEvent, 'file' | 'line' | 'start' | 'end'>;
  * companion assertion when this is the first declaration in the run to rely on the theme root's
  * defaults while that assertion is failing.
  */
+/** One declaration verdict's events: its abstention note, or its findings joined into one message. */
+function* verdictEvents(verdict: DeclarationVerdict, position: EventPosition): Generator<VocabEvent> {
+  if (verdict.abstain) {
+    yield { message: verdict.abstain, abstain: true, ...position };
+    return;
+  }
+  if (verdict.messages.length > 0) {
+    yield { message: verdict.messages.join('; '), abstain: false, ...position };
+  }
+}
+
 function* scanEvents(
   result: DeclarationScanResult,
   position: EventPosition,
@@ -372,14 +383,7 @@ function* walkClassJoin(ctx: StaticRuleContext, companion: CompanionState): Gene
           const animationValue = customPropertyValue(ctx.sheet, customProperty);
           if (!animationValue) continue;
           const verdict = evaluateDeclaration('animation', animationValue, 'class');
-          if (!verdict) continue;
-          if (verdict.abstain) {
-            yield { message: verdict.abstain, abstain: true, ...position };
-            continue;
-          }
-          if (verdict.messages.length > 0) {
-            yield { message: verdict.messages.join('; '), abstain: false, ...position };
-          }
+          if (verdict) yield* verdictEvents(verdict, position);
         }
         continue;
       }

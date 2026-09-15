@@ -18,7 +18,13 @@ if ! command -v vale >/dev/null 2>&1; then
   exit 1
 fi
 
-mapfile -t files < <(
+# Built with a plain read loop, not a bash-4-only array builtin: macOS CI
+# runners ship bash 3.2, which lacks those. files=() keeps the array declared
+# and empty under set -u even when the loop below reads zero lines.
+files=()
+while IFS= read -r f; do
+  files+=("$f")
+done < <(
   { git ls-files '*.go' -- .; git ls-files --others --exclude-standard '*.go' -- .; } | sort -u
 )
 [ "${#files[@]}" -gt 0 ] || { echo "vale-comments: no Go files"; exit 0; }

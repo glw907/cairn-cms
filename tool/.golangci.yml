@@ -1,0 +1,23 @@
+version: "2"
+
+# default: none plus an explicit enable list. v2's default set silently drops
+# errcheck, unused, and ineffassign unless named.
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - modernize
+    - misspell
+    - unparam
+  settings:
+    errcheck:
+      check-type-assertions: true
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

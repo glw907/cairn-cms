@@ -1,0 +1,13 @@
+{
+  "provenance": {
+    "captured": "2026-08-13",
+    "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md:188",
+    "status": 200
+  },
+  "body": {
+    "cursor": "WzAsMzRd",
+    "truncated": false,
+    "lines": [[1784052295481, "Initializing build environment..."]],
+    "events": [{ "type": "initializing", "started_on": "2026-08-13T02:34:29.793Z", "ended_on": "2026-08-13T02:34:35.117Z" }]
+  }
+}

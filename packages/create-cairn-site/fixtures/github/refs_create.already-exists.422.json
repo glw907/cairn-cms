@@ -1,0 +1,10 @@
+{
+  "provenance": {
+    "captured": "2026-08-10",
+    "source": "packages/create-cairn-site/test/fake-github.mjs:673",
+    "status": 422
+  },
+  "body": {
+    "message": "Reference already exists"
+  }
+}

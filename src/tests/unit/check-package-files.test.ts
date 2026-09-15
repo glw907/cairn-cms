@@ -6,6 +6,7 @@ import {
   checkSkillPacked,
   checkWorkerCondition,
   checkRuleReachability,
+  checkNoToolPathPacked,
   parseRelativeImportSpecifiers,
   walkModuleGraph,
   parsePackFilePaths
@@ -244,6 +245,21 @@ describe('checkWorkerCondition', () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('./auth-crypto');
+  });
+});
+
+// The tool/ module is a separate Go module with its own gate, never a package export, so a
+// `files` entry that swept it in would ship a whole standalone codebase inside the npm tarball.
+describe('checkNoToolPathPacked', () => {
+  it('passes when no packed path begins with tool/', () => {
+    expect(checkNoToolPathPacked(['dist/index.js', 'CHANGELOG.md'])).toEqual({ ok: true });
+  });
+
+  it('fails naming a packed path under tool/', () => {
+    const result = checkNoToolPathPacked(['dist/index.js', 'tool/cmd/cairn/main.go']);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('tool/cmd/cairn/main.go');
   });
 });
 

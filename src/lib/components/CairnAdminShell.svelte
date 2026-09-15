@@ -687,10 +687,20 @@ discriminant, not the fields, gates the chrome).
     <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
          pointer, keyboard, and assistive tech (the APG modal-dialog contract). Never inert
          at the persistent breakpoint, where the sidebar sits beside the document, not over it. -->
+    <!-- The frame-offset attribute below is the persistent-frame case of the motion language's
+         one documented allowance: an element carrying it may transition the margin cairn-admin.css
+         reads off it, the value the two margin toggles below choose. Its sibling boolean
+         attribute names which direction that rule is in (present once the persistent frame's
+         margin is restored, absent while zen has closed it): cairn-audit's class-join scan
+         resolves every class token a component uses, including these two margin toggles, so
+         keying the exit-vs-entrance split off them would rewrite what class-join finds for them
+         everywhere, not just here; a plain, unclassed attribute stays outside that scan. -->
     <div
       class="drawer-content flex flex-col"
       class:lg:ml-56={!isDeskRoute && !topbar.zen}
       class:xl:ml-56={isDeskRoute && !topbar.zen}
+      data-cairn-motion="frame-offset"
+      data-cairn-frame-open={!topbar.zen || undefined}
       inert={isDrawerOverlay}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
@@ -706,8 +716,15 @@ discriminant, not the fields, gates the chrome).
            overlay drawer, not a visible band to align against, so the alignment argument does not
            bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
            phone-desk band. Office routes keep the full 64px band at every width. -->
+      <!-- Chrome fade, the carve-out band: the band leaves but stays nearby, ready to reappear, so
+           it fades at quick on the theme's own standard curve (the admin root's
+           default-transition-timing-function) rather than taking the exit curve's one-band
+           reduction the offset itself takes. @starting-style drives the entry the same way the
+           feedback strip's own fade does; the departure is instant, the same limitation that
+           entry-only idiom already carries, since the band leaves the DOM outright rather than
+           animating out of it. -->
       <div
-        class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
+        class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8 transition-opacity duration-(--cairn-dur-quick) starting:opacity-0"
         class:max-sm:px-2={isDeskRoute}
         class:max-sm:h-12={isDeskRoute}
         class:max-sm:min-h-12={isDeskRoute}

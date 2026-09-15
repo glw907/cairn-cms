@@ -100,6 +100,30 @@
      (Tailwind's own default already matches --cairn-dur-base); the curve is the real change. */
   --default-transition-duration: var(--cairn-dur-base);
   --default-transition-timing-function: var(--cairn-ease-standard);
+
+  /* The frame offset, the persistent-frame case of the motion language's one documented
+     allowance: an element carrying data-cairn-motion="frame-offset" may transition margin-left
+     and nothing else (cairn-audit's motion-property rule keys the exception on the attribute
+     plus the property, not on this selector, so a consumer claims the same allowance in its own
+     sheet with no theme-root prelude required). Nested under the theme root rather than authored
+     as its own top-level rule, so it never adds a new entry to check:custom-surface's pinned
+     unlayered-rule set, which is already full. The shell's own lg:ml-56/xl:ml-56 toggles choose
+     the margin value; the sibling data-cairn-frame-open marker (present once that margin is
+     restored) is what this pair keys its direction off, rather than the ml-56 classes themselves:
+     cairn-audit's class-join scan resolves every class a component uses, so a compound selector
+     naming lg:ml-56/xl:ml-56 here would rewrite what that scan finds for those classes everywhere,
+     not just on this element. Entering the offset (the margin closing to zero) takes the slower
+     shift/entrance pair; leaving it (the margin's return) takes the faster base/exit pair one band
+     down, since the trip back is the one the waiting reader wants first. The reduced-motion floor
+     below already zeroes transition-duration and transition-delay on every descendant of both
+     theme roots, so this pair snaps under reduced motion with no dedicated guard of its own. */
+  [data-cairn-motion="frame-offset"] {
+    transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
+  }
+  [data-cairn-motion="frame-offset"][data-cairn-frame-open] {
+    transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
+  }
+
   --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Bricolage Grotesque Variable', var(--font-body);
   --font-editor: 'iA Writer Mono', ui-monospace, monospace;
@@ -286,6 +310,16 @@
   --cairn-ease-exit: cubic-bezier(0.2, 0, 1, 0.9);
   --default-transition-duration: var(--cairn-dur-base);
   --default-transition-timing-function: var(--cairn-ease-standard);
+
+  /* See the light root for the full rationale: the same frame-offset exception, unchanged by
+     color scheme. */
+  [data-cairn-motion="frame-offset"] {
+    transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
+  }
+  [data-cairn-motion="frame-offset"][data-cairn-frame-open] {
+    transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
+  }
+
   --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Bricolage Grotesque Variable', var(--font-body);
   --font-editor: 'iA Writer Mono', ui-monospace, monospace;

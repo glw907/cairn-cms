@@ -1811,7 +1811,11 @@ persistent "?" carries Markdown help).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
       <!-- cairn-audit-disable-next-line type-scale -- the editor's own prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
-      <div class={prefs.surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+      <!-- Chrome fade, the carve-out band: the title leaves but stays nearby, ready to reappear, so
+           it fades at quick on the admin root's default standard curve rather than the exit
+           curve's one-band reduction the offset itself takes. @starting-style drives the entry;
+           the departure is instant, since the title leaves the DOM outright. -->
+      <div class={prefs.surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)] transition-opacity duration-(--cairn-dur-quick) starting:opacity-0' : 'mb-4 w-full px-5 transition-opacity duration-(--cairn-dur-quick) starting:opacity-0'}>
         <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its own type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
         <input
           class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {prefs.focusMode ? 'cairn-doc-title-dim' : ''}"
@@ -2097,9 +2101,13 @@ persistent "?" carries Markdown help).
            display:none (the same reasoning EditorToolbar's moreExtra mount-gate documents for the
            More popover). -->
       {#if !prefs.zen && !narrow}
+      <!-- Chrome fade, the carve-out band: the footer strip leaves but stays nearby, ready to
+           reappear, so it fades at quick on the admin root's default standard curve rather than
+           the exit curve's one-band reduction the offset itself takes. @starting-style drives
+           the entry; the departure is instant, since the strip leaves the DOM outright. -->
       <div
         data-testid="cairn-editor-footer"
-        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 type-meta text-muted"
+        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 type-meta text-muted transition-opacity duration-(--cairn-dur-quick) starting:opacity-0"
       >
         <span class="flex shrink-0 items-center gap-1.5">
           <span class="tabular-nums">{wordLabel}</span>
@@ -2312,9 +2320,13 @@ persistent "?" carries Markdown help).
      narrowing the composition below sm stays an attribute, not a second condition on this gate,
      so a phone under zen never gets this bar back through a stale-condition gap. -->
 {#if !prefs.zen}
+  <!-- Chrome fade, the carve-out band: the bar leaves but stays nearby, ready to reappear, so it
+       fades at quick on the admin root's default standard curve rather than the exit curve's
+       one-band reduction the offset itself takes. @starting-style drives the entry; the
+       departure is instant, since the bar leaves the DOM outright. -->
   <div
     data-testid="cairn-edit-actionbar"
-    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:hidden"
+    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:hidden transition-opacity duration-(--cairn-dur-quick) starting:opacity-0"
     hidden={!narrow}
     inert={!narrow}
   >
@@ -2571,8 +2583,7 @@ persistent "?" carries Markdown help).
      orphan. */
   .cairn-save-state,
   .cairn-feedback,
-  .cairn-preview-frame,
-  .cairn-zen-chip {
+  .cairn-preview-frame {
     --cairn-naming-hook: true;
   }
 
@@ -2585,5 +2596,33 @@ persistent "?" carries Markdown help).
      preference key of the same name (coincidence, not a dependency). */
   .cairn-editor-zen {
     --cairn-naming-hook: true;
+  }
+
+  /* The zen chip's own entrance and exit, the two things WordPress/Ghost say never disappear
+     under zen carried on a surface that itself appears and disappears. The chip mounts and
+     unmounts with zen (an {#if}, like the chrome it replaces), so only the entrance ever paints:
+     @starting-style drives it, the same idiom the feedback strip's own fade uses, and the
+     unguarded declaration below is what a future always-mounted chip would use leaving zen. The
+     guard keeps the 110ms entrance delay off a reduced-motion reader (the delay rides inside the
+     same transition shorthand, so a reduced-motion reader's computed delay is zero rather than a
+     value this rule owes its own zeroing); the exit carries no delay, since the finger that
+     opened the exit is already on the glass. */
+  .cairn-zen-chip {
+    transition: opacity var(--cairn-dur-quick) var(--cairn-ease-exit);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .cairn-zen-chip {
+      transition: opacity var(--cairn-dur-base) var(--cairn-ease-entrance) 110ms;
+    }
+  }
+  @starting-style {
+    .cairn-zen-chip {
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cairn-zen-chip {
+      transition: none;
+    }
   }
 </style>

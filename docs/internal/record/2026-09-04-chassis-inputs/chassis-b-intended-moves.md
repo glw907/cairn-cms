@@ -1066,3 +1066,24 @@ proof and leaving those five widths' baselines untouched.
   the same width; `~/.cache/cairn-admin-motion/task-6b/before/full/styleguide-light-1440.png` and
   its after-set counterpart. All three pairs are pixel-identical, proving the new drag-over state
   leaks nothing onto a resting frame.
+
+### Task 7: zen
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-7/before/` and
+  `~/.cache/cairn-admin-motion/task-7/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. Zen is not a resting state on either captured surface: the frame-offset
+  transition, the chrome fade, and the zen chip's entrance all paint only while zen is toggled on
+  the edit page, which neither `signups` nor `styleguide` ever enters. A resting-state screenshot
+  carries no evidence of any of the three.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (30 tests,
+  the 28 existing plus the two new zen layout-count assertions) passed 30 of 30 with no failures,
+  so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-7/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-7/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-7/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving zen's motion leaks
+  nothing onto a resting frame.

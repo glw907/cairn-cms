@@ -239,3 +239,51 @@ for (const width of SIGNUPS_WIDTHS) {
     await expect(page).toHaveScreenshot(`admin-signups-dark-${width}.png`, { fullPage: true });
   });
 }
+
+// The zen toggle's frame offset, the pass's only real proof that the persistent-frame margin
+// actually animates rather than merely carrying the right CSS on paper. Both tests sample
+// `.drawer-content`'s computed margin-left over the toggle window at a fixed cadence; the count of
+// distinct values seen is the signal, not any particular frame interval. Neither test screenshots:
+// a resting frame either side of the toggle proves nothing about the travel between them.
+async function sampleDrawerMarginLeft(page: import('@playwright/test').Page, windowMs: number) {
+  const drawerContent = page.locator('.drawer-content');
+  const samples = new Set<string>();
+  const deadline = Date.now() + windowMs;
+  while (Date.now() < deadline) {
+    samples.add(await drawerContent.evaluate((el) => getComputedStyle(el).marginLeft));
+    await page.waitForTimeout(20);
+  }
+  return samples;
+}
+
+test('admin edit page zen toggle — the frame offset animates through more than two margin-left values', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/posts/2026-06-hello');
+  const zenToggle = page.getByRole('button', { name: 'Zen' });
+  await expect(zenToggle).toBeVisible();
+  await zenToggle.click();
+  const samples = await sampleDrawerMarginLeft(page, 400);
+  expect(samples.size).toBeGreaterThan(2);
+});
+
+test('admin edit page zen toggle — reduced motion samples at most two margin-left values', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.goto('/admin/posts/2026-06-hello');
+  const zenToggle = page.getByRole('button', { name: 'Zen' });
+  await expect(zenToggle).toBeVisible();
+  await zenToggle.click();
+  const samples = await sampleDrawerMarginLeft(page, 400);
+  expect(samples.size).toBeLessThanOrEqual(2);
+});

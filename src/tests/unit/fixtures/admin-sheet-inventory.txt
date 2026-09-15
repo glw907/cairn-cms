@@ -202,6 +202,7 @@ dropdown-right
 dropdown-start
 dropdown-top
 duration-(--cairn-dur-base)
+duration-(--cairn-dur-quick)
 fieldset
 fieldset-legend
 filter

@@ -72,7 +72,11 @@ zero-findings criterion was unmet only by DaisyUI vendor CSS (btn, modal, dropdo
 reduced-motion floor, so the two rules' exemption lists widened; the plan's contradiction on HelpHome's
 two `:hover` pairs resolved for the rule's side (guarded, superseding task 6a's "no guard" decision);
 the commit footer is the single co-author line. Task 11 records all three in the plan, plus the 01:1x ruling that accepted `6a-fix` and ratified
-motion-property's `transition: none` parsing (zero properties, the reduced-motion snap idiom). Spend tonight:
+motion-property's `transition: none` parsing (zero properties, the reduced-motion snap idiom), and the
+04:5x rulings on task 7 (zen, commit `5c41f061` kept; task `7-fix` inserted): the nested four-rule
+frame-offset form and the `data-cairn-frame-open` direction key are ratified; chrome fades are
+entrance-only but gated off first paint by a `data-cairn-zen-used` attribute; the chip's exit is keyed
+on state so both directions ship. Task 6b accepted after one fix round. Spend tonight:
 about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
 stop to drop the Go tool, one wind-down).
 

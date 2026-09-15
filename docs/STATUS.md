@@ -199,6 +199,15 @@ superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e397
 after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
 blueprint-audit, the post-mortem.
 
+**Release plan, Geoff 2026-09-15 10:3x: ONE release, not a series.** Geoff is the only cairn consumer until
+the upgrade and extend tools ship, so the window keeps accumulating on `main`: no 0.97.0 cut now, no
+pre-cut window pass now (the dependency sweep runs immediately before the eventual cut), extend-1 and
+extend-2 land first, then one cut carrying everything (extend-1's "Available since" reads 0.97.0 and its
+advisory rules promote at 0.98.0; `launch.json` updated). After that cut Geoff upgrades every site at once,
+documents the friction, ships one improvement release from it, then beta. Every consumer pin bump,
+cairn.pub's docs pin included, holds until then. The overnight run now stops after the motion pass merges
+(stages motion, final).
+
 **Task 11 ruling, 2026-09-15 10:2x.** Task 11 (commit `48fba6fe`, the records) is ACCEPTED with a docs-only
 `11-fix` task on top: two Verified lines in the rulings ledger reworded to what `custom-surface-budget.json`
 holds, HISTORY's chain A count set to nine plus the four correction tasks, the changelog window settled at

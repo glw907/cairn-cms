@@ -6,7 +6,9 @@
 > Execution. Steps use checkbox syntax for tracking. Every anchor is re-verified at dispatch
 > against the branch HEAD, per the Reconciliation block below.
 
-**Date:** 2026-09-14. **Spec:** `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md`
+**Date:** 2026-09-14. **Approved:** Geoff, 2026-09-14, after the three-lens adversarial review, the
+fold read over the spec and both plans, and the targeted read of the fold's own mechanisms. The
+plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md`
 (Layer 3, the Trust boundary, Adoption, Fold 6, 9, and 10). The plan argues from the spec;
 executors read both.
 

@@ -2,8 +2,8 @@
 // duration a component's own CSS declares lands in the admin's 70-400ms band, the span the token
 // set's five durations cover, and `transition: all` never ships (it re-animates every property a
 // future edit adds, including ones that should snap). motion-band is the one owner of
-// `transition: all` and the `transition-all` utility class it compiles from: rule 1
-// (`motion-property`) defers to it by name rather than re-reporting the same declaration. A
+// `transition: all` and the `transition-all` utility class it compiles from, so any other rule
+// that sees the same declaration defers to `motion-band` by id rather than re-reporting it. A
 // declaration inside a `prefers-reduced-motion: reduce` guard is exempt: that guard's whole job is
 // to collapse a transition toward zero for a reduced-motion reader, so a near-instant duration
 // there is the fix this rule polices FOR, never a violation of it.

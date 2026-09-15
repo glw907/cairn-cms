@@ -36,6 +36,28 @@ superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e397
 after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
 blueprint-audit, the post-mortem.
 
+**Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_5447b584-7b1`.**
+The first launch (`wf_085689cc-81b`) halted when the diff-reviewer escalated task 6a: its own work
+was verified complete and paint-clean (commit `69c57db2`, ACCEPTED), but its zero-findings criterion
+was unmet for reasons outside its Files. Conductor rulings, reversible in the morning: (1) a task
+`6a-fix` is inserted before 6b, widening motion-property's and motion-vocabulary's DaisyUI vendor
+exemptions (btn, modal, dropdown, toggle) and teaching motion-vocabulary to abstain on the
+reduced-motion floor, since the first compiled-sheet class join over `src/lib/components` convicted
+vendor CSS across 42 files; (2) the plan's own contradiction on HelpHome's two `:hover` pairs is
+resolved for the rule's side, so the `:hover` halves gain the `@media (hover: hover)` guard the
+rule's fix message teaches, superseding task 6a's "adds no guard" decision; (3) the commit footer is
+the single co-author line, since this session has no URL. Task 11 records all three in the plan.
+
+**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
+launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
+(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
+merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
+2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
+cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
+superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
+after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
+blueprint-audit, the post-mortem.
+
 **Overnight run halted at stage motion:run1.** Reason: task 2 (the shipped-rule reconciliation)
 accepted, fixRounds 1; task 3 (motion-property and motion-hover-gate) escalated, fixRounds 0; task
 4 (motion-vocabulary) deferred, fixRounds 0; task 6a (the admin migrated onto the language)

@@ -16,6 +16,15 @@ green.
 
 ## Immediate next action (2026-09-15, written by session 4e54c24b before it closes)
 
+The overnight run halted at stage "motion:ci-regen-end" on 2026-09-15. Reason: baseline regen
+dispatch and the e2e job succeeded, but the overall workflow run failed because a separate job
+(norms / motion-reduced-delay rendered audit) failed, so this is reported as a failed run per
+instructions. Resume prompt: Resume the motion pass-end ritual at step "motion:ci-regen-end" in
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/admin-motion, then Relaunch the orchestrator
+with stages ["precut","release","parallel","final"]. Trim every accepted task out of that pass's
+args file in ~/.cache/cairn-overnight-2026-09-14/, re-run `node build.mjs`, and launch the built
+script again.
+
 **The admin motion pass is in its close ritual** as workflow `wf_f43d9c7a-ade` (built script and args in
 `~/.cache/cairn-overnight-2026-09-14/`, stages `["motion","final"]`, the Go tool and the pre-cut and release
 stages removed by Geoff's decisions below). Every task is accepted on `admin-motion`: 1 to 4, 6a, 6b, 7, 8,

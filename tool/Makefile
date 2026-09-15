@@ -8,7 +8,7 @@ MODULE := github.com/glw907/cairn-cms/tool
 GOLANGCI := tools/bin/golangci-lint
 GOVULNCHECK := tools/bin/govulncheck
 
-VERSION := $(shell git describe --tags --dirty --always 2>/dev/null || echo dev)
+VERSION := $(shell git describe --tags --match 'tool/v*' --dirty --always 2>/dev/null || echo dev)
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/internal/version.Commit=$(COMMIT)'
 

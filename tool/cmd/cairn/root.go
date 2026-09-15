@@ -7,24 +7,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// flags holds the root command's flag values.
+type flags struct {
+	showVersion bool
+}
+
 // newRootCmd builds the cairn command tree. Later tasks attach subcommands
 // to the returned command.
 func newRootCmd() *cobra.Command {
-	var showVersion bool
+	var f flags
 
 	cmd := &cobra.Command{
-		Use:          "cairn",
-		Short:        "Operate a cairn-cms production site",
-		SilenceUsage: true,
+		Use:           "cairn",
+		Short:         "Operate a cairn-cms production site",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if showVersion {
-				_, err := fmt.Fprintln(cmd.OutOrStdout(), version.String())
+			if f.showVersion {
+				_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s (%s)\n", version.String(), version.Commit)
 				return err
 			}
 			return cmd.Help()
 		},
 	}
-	cmd.Flags().BoolVar(&showVersion, "version", false, "print the version and exit")
+	cmd.Flags().BoolVar(&f.showVersion, "version", false, "print the version and exit")
 
 	return cmd
 }

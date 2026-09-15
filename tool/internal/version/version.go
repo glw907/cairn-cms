@@ -8,12 +8,10 @@ package version
 
 import "runtime/debug"
 
-// Version is the binary's version. A repository build sets it with
-// -ldflags; left at the default, String falls back to build info.
+// Version is the binary's version, set by a repository build via -ldflags.
 var Version = "dev"
 
-// Commit is the binary's short commit SHA. A repository build sets it
-// with -ldflags; left at the default, no commit is known.
+// Commit is the binary's short commit SHA, set by a repository build via -ldflags.
 var Commit = "none"
 
 // mainModuleVersion reads the running binary's main module version, as

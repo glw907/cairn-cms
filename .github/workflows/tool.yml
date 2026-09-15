@@ -38,8 +38,9 @@ env:
 jobs:
   check:
     # GitHub does not evaluate `paths` for a tag push, so a `tool/v*` tag push runs this job
-    # unconditionally; skip it there and let the release job below do the tag's own work.
-    if: ${{ !startsWith(github.ref, 'refs/tags/tool/v') }}
+    # unconditionally, same as workflow_dispatch. That is intentional: the release job below
+    # needs this job's binaries to come from a ref the gate ran on, so it declares `needs: check`
+    # rather than the two jobs racing independently on a tag push.
     name: make check (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -59,23 +60,33 @@ jobs:
       - name: Install Vale (macOS)
         if: runner.os == 'macOS'
         run: |
-          curl -sfL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_macOS_64-bit.tar.gz" -o vale.tar.gz
+          # macos-latest is arm64; select the asset from runner.arch rather than hardcoding,
+          # since GitHub has moved macos-latest to arm64 before without renaming the label.
+          asset="64-bit"
+          if [ "${{ runner.arch }}" = "ARM64" ]; then
+            asset="arm64"
+          fi
+          curl -sfL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_macOS_${asset}.tar.gz" -o vale.tar.gz
           sudo tar -xz -C /usr/local/bin -f vale.tar.gz vale
       - name: Install Vale (Windows)
         if: runner.os == 'Windows'
         run: |
+          # 7z (7-Zip) is preinstalled on windows-latest; unzip is not. Extract into a relative
+          # directory under the workspace, not $RUNNER_TEMP: that variable holds a backslash
+          # Windows path, and interpolating it into a bash mkdir -p / mv breaks on the separator.
           curl -sfL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Windows_64-bit.zip" -o vale.zip
-          unzip vale.zip vale.exe
-          mkdir -p "$RUNNER_TEMP/vale"
-          mv vale.exe "$RUNNER_TEMP/vale/vale.exe"
-          echo "$RUNNER_TEMP/vale" >> "$GITHUB_PATH"
+          7z x vale.zip -ovale-bin -y
+          echo "$PWD/vale-bin" >> "$GITHUB_PATH"
       - run: vale --version
       - run: make -C tool check
 
   release:
     # Runs on a real `tool/v*` tag (the publish) and on workflow_dispatch (Task 1's dry run,
     # which proves the cross-compile without publishing anything). Task 23 is the first tag push.
+    # `needs: check` means the binaries below only build after the same ref has passed the full
+    # three-platform gate; a tag push that fails `check` never reaches this job.
     name: release
+    needs: check
     if: ${{ startsWith(github.ref, 'refs/tags/tool/v') || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
@@ -89,8 +100,10 @@ jobs:
         working-directory: tool
         run: |
           set -euo pipefail
-          version="$(git describe --tags --always)"
-          commit="$(git rev-parse --short HEAD)"
+          # Scoped to the tool's own tags and matching the Makefile's build target exactly, so
+          # a release binary reports the same version a local `make -C tool build` would.
+          version="$(git describe --tags --match 'tool/v*' --dirty --always 2>/dev/null || echo dev)"
+          commit="$(git rev-parse --short HEAD 2>/dev/null || echo none)"
           module="github.com/glw907/cairn-cms/tool"
           ldflags="-X '${module}/internal/version.Version=${version}' -X '${module}/internal/version.Commit=${commit}'"
           mkdir -p dist

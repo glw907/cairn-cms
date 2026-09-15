@@ -184,6 +184,114 @@ describe('motion-vocabulary: the vendor-class exemption', () => {
     const findings = check(`${COMPANION_GREEN} ${VENDOR_SHEET}`, [component('<div class="drawer-side"></div>')]);
     expect(findings).toEqual([]);
   });
+
+  it('exempts .modal, its own literal timing and curve', () => {
+    const modalSheet = [
+      '.modal { transition: transform .3s cubic-bezier(0.32, 0.72, 0, 1), opacity .2s ease-out; }',
+    ].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${modalSheet}`, [component('<div class="modal"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .dropdown, its own literal timing', () => {
+    const dropdownSheet = ['.dropdown { transition: opacity .2s ease-out; }'].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${dropdownSheet}`, [component('<div class="dropdown"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .modal-box, its own literal timing and curve', () => {
+    const sheet = [
+      '.modal-box { transition: translate .3s ease-out, scale .3s ease-out, opacity .2s ease-out 50ms, box-shadow .3s ease-out; }',
+    ].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="modal-box"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .dropdown-content, the second half of the dropdown vendor pair', () => {
+    const sheet = [
+      '.dropdown .dropdown-content { transition-duration: .2s; transition-timing-function: cubic-bezier(.4, 0, .2, 1); }',
+    ].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="dropdown-content"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .menu, its own literal duration and curve', () => {
+    const sheet = [
+      '.menu { transition-duration: .2s; transition-timing-function: cubic-bezier(0, 0, .2, 1); }',
+    ].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="menu"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .select, its own literal duration and curve on its option list', () => {
+    const sheet = [
+      '.select { transition-duration: .2s; transition-timing-function: cubic-bezier(0, 0, .2, 1); }',
+    ].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="select"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .radio, its own literal-duration checkmark animation', () => {
+    const sheet = ['.radio { animation: .2s ease-out radio; }'].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="radio"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .checkbox, its own literal-duration check mark motion', () => {
+    const sheet = ['.checkbox { transition: background-color .2s, box-shadow .2s; }'].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="checkbox"></div>')]);
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts .card, its own literal-duration outline focus transition', () => {
+    const sheet = ['.card { transition: outline .2s ease-in-out; }'].join(' ');
+    const findings = check(`${COMPANION_GREEN} ${sheet}`, [component('<div class="card"></div>')]);
+    expect(findings).toEqual([]);
+  });
+});
+
+describe('motion-vocabulary: the reduced-motion floor abstention', () => {
+  it('abstains on transition-duration: 0.01ms !important inside the reduced-motion media query', () => {
+    const files = [
+      component(
+        '<div class="mover"></div>',
+        "@media (prefers-reduced-motion: reduce) { [data-theme='cairn-admin'] { transition-duration: 0.01ms !important; } }"
+      ),
+    ];
+    expect(check(COMPANION_GREEN, files)).toEqual([]);
+    const recorded = notes(COMPANION_GREEN, files);
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0].reason).toContain('reduced-motion');
+  });
+
+  it('abstains on animation-duration: 0.01ms inside the reduced-motion media query, with no !important', () => {
+    const files = [
+      component(
+        '<div class="mover"></div>',
+        "@media (prefers-reduced-motion: reduce) { [data-theme='cairn-admin'] { animation-duration: 0.01ms; } }"
+      ),
+    ];
+    expect(check(COMPANION_GREEN, files)).toEqual([]);
+  });
+
+  it('still convicts a literal 0.01ms transition-duration declared OUTSIDE the reduced-motion media query', () => {
+    const findings = check(COMPANION_GREEN, [
+      component('<div class="mover"></div>', '.mover { transition-duration: 0.01ms; }'),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('0.01ms');
+  });
+
+  it('still convicts a different literal duration declared INSIDE the reduced-motion media query', () => {
+    const findings = check(COMPANION_GREEN, [
+      component(
+        '<div class="mover"></div>',
+        "@media (prefers-reduced-motion: reduce) { .mover { transition-duration: 150ms !important; } }"
+      ),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('150ms');
+  });
 });
 
 describe('motion-vocabulary: the three abstention shapes', () => {

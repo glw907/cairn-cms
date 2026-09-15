@@ -294,8 +294,13 @@
   animation is exempt from the duration check only and must declare the literal `linear` easing.
   Three shapes this rule's own parsing cannot resolve (a `var()` in the shorthand's property slot,
   a `calc()` over a foreign variable, and a shorthand carrying an `allow-discrete` keyword) record
-  a note rather than a finding. Resolves over `static.adminScope`, the same as `motion-property`
-  and `motion-hover-gate`.
+  a note rather than a finding, joined by a fourth positive case: a `transition-duration` or
+  `animation-duration` of `0.01ms` inside `@media (prefers-reduced-motion: reduce)`, the shipped
+  reduced-motion floor, records a note rather than a finding too. The DaisyUI vendor-class
+  exemption widens to cover `.modal`, `.modal-box`, `.dropdown`, `.dropdown-content`, `.menu`,
+  `.select`, `.radio`, `.checkbox`, and `.card`, beside `.btn` and the drawer/filter/collapse/
+  toggle set, each measured against the shipped admin sheet's own literal duration or curve.
+  Resolves over `static.adminScope`, the same as `motion-property` and `motion-hover-gate`.
 
 ### Removed
 
@@ -368,8 +373,13 @@
   first polices the admin's closed motion-property allowlist (paint only, nine named layout
   properties, a three-property cap on one transition, and an `animate-*` utility checked through
   its own `--animate-*` keyframes) with the one documented frame-offset exception, keyed on an
-  element's `data-cairn-motion="frame-offset"` attribute plus the `margin-left` property alone; the
-  second polices a hand-authored `:hover` state (whether the motion sits on the `:hover` rule
+  element's `data-cairn-motion="frame-offset"` attribute plus the `margin-left` property alone, and
+  a DaisyUI vendor-class exemption on the class join covering `.btn`, `.modal`, `.modal-box`,
+  `.dropdown`, `.dropdown-content`, `.menu`, `.checkbox`, `.card`, `.toggle`, `.drawer-side`,
+  `.filter`, and `.collapse`, each a recorded vendor disagreement rather than a convicted finding.
+  The rule's own `transition: none` idiom now clears to zero properties, the same as
+  `transition: all`, rather than reading "none" as a property name.
+  The second polices a hand-authored `:hover` state (whether the motion sits on the `:hover` rule
   itself or on the base rule the same selector matches) for a missing `@media (hover: hover)` gate,
   and a `:focus-visible` alternative that wrongly declares its own motion from inside that gate.
   Both resolve over a new `static.adminScope` config key (`src/routes/admin` and

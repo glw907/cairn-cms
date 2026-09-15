@@ -24,14 +24,18 @@
 // backward every repeat, which is why the carve-out names one keyword rather than widening to the
 // token set.
 //
-// Three shapes record a note instead of a finding, each because this rule's own hand-rolled
+// Four shapes record a note instead of a finding. Three because this rule's own hand-rolled
 // parsing genuinely cannot resolve the value, not because the construct is presumed legal: a
 // var() occupying the shorthand's own property slot (the first token of `transition`/`animation`
 // is dynamic, so which construct is even being described is unknown); a calc() expression over a
 // variable this rule does not own (the resolved millisecond value is unknowable statically); and a
 // shorthand carrying an `allow-discrete` keyword (CSS Transitions Level 2's extra token, which this
-// rule does not attempt to parse around). `motionVocabularyAbstentions` exposes the notes
-// separately, since `StaticRule.check` carries only findings.
+// rule does not attempt to parse around). The fourth is positive rather than a parsing limit: a
+// `transition-duration` or `animation-duration` of `0.01ms` inside `@media (prefers-reduced-motion:
+// reduce)` is the shipped floor a reduced-motion preference snaps every duration to, not a literal
+// this rule's own vocabulary governs, so it is read by intent rather than convicted as an
+// off-token value. `motionVocabularyAbstentions` exposes every note separately, since
+// `StaticRule.check` carries only findings.
 //
 // The vendor-class exemption mirrors motion-property's own discriminator and its own limit: the
 // compiled sheet's `conditions` cannot attribute a declaration to DaisyUI's plugin output (cairn's
@@ -90,6 +94,9 @@ const BARE_EASE_KEYWORD = /(?<![\w-])(ease-in-out|ease-in|ease-out|ease|linear|s
 const INFINITE_WORD = /\binfinite\b/;
 const ALLOW_DISCRETE = /\ballow-discrete\b/;
 const CALC_FOREIGN_VAR = /calc\([^;]*var\(\s*--(?!cairn-dur-|cairn-ease-)/;
+const REDUCED_MOTION_FLOOR_PROPERTIES = new Set(['transition-duration', 'animation-duration']);
+const REDUCED_MOTION_FLOOR_VALUE = /^0\.01ms\s*(!important)?$/i;
+const REDUCED_MOTION_MEDIA_CONDITION = /prefers-reduced-motion:\s*reduce/;
 
 // Every compiled Tailwind transition utility carries `transition-duration: var(--tw-duration, var(
 // --default-transition-duration))` and the easing equivalent: the value never resolves statically,
@@ -101,9 +108,27 @@ const DEFAULT_RIDING_VAR = /var\(\s*--(?:tw-duration|tw-ease|default-transition-
 // The same discriminator motion-property uses, reproduced rather than imported (this rule owns no
 // file that re-exports it): the built sheet's `conditions` cannot attribute a rule to DaisyUI's
 // plugin output, so the explicit class-name list is the only discriminator that actually works.
-// `.btn` is measured at five properties across 19 elements at rest on `/admin/posts`, added
-// beside motion-property's own four vendor classes.
-const DAISYUI_VENDOR_CLASSES = new Set(['btn', 'drawer-side', 'filter', 'collapse', 'toggle']);
+// `.btn` is measured at five properties across 19 elements at rest on `/admin/posts`; `.modal` and
+// `.dropdown` each carry their own vendor timing and curve; `.modal-box`, `.dropdown-content`,
+// `.menu`, `.select`, `.radio`, `.checkbox`, and `.card` each carry a literal duration, easing
+// curve, or both on their own vendor motion, measured against the shipped admin sheet the same
+// hand run that found the rest of this list.
+const DAISYUI_VENDOR_CLASSES = new Set([
+  'btn',
+  'drawer-side',
+  'filter',
+  'collapse',
+  'modal',
+  'modal-box',
+  'dropdown',
+  'dropdown-content',
+  'menu',
+  'select',
+  'radio',
+  'checkbox',
+  'card',
+  'toggle',
+]);
 
 const ADMIN_ROOT_SELECTORS = ["[data-theme='cairn-admin']", "[data-theme='cairn-admin-dark']"];
 
@@ -189,8 +214,22 @@ function companionAssertionOk(sheet: CompiledSheet): boolean {
   );
 }
 
-/** The one of the three abstention shapes a declaration's value carries, or none. */
-function abstentionReason(property: string, value: string): string | undefined {
+/** Whether a duration declaration is the shipped reduced-motion floor, `0.01ms` under the media query. */
+function isReducedMotionFloor(property: string, value: string, conditions: string[]): boolean {
+  if (!REDUCED_MOTION_FLOOR_PROPERTIES.has(property)) return false;
+  if (!REDUCED_MOTION_FLOOR_VALUE.test(value.trim())) return false;
+  return conditions.some((condition) => REDUCED_MOTION_MEDIA_CONDITION.test(condition));
+}
+
+/** The one of the four abstention shapes a declaration's value carries, or none. */
+function abstentionReason(property: string, value: string, conditions: string[]): string | undefined {
+  if (isReducedMotionFloor(property, value, conditions)) {
+    return (
+      'the reduced-motion floor idiom, a `transition-duration`/`animation-duration: 0.01ms` inside ' +
+      '`@media (prefers-reduced-motion: reduce)`, the shipped floor every duration snaps to under a ' +
+      'reduced-motion preference rather than a literal this vocabulary governs'
+    );
+  }
   if (ALLOW_DISCRETE.test(value)) {
     return 'a shorthand carrying an allow-discrete keyword; this rule does not parse around the extra CSS Transitions Level 2 token and abstains rather than guess';
   }
@@ -211,12 +250,17 @@ function infiniteEasingOk(value: string): { ok: boolean; found: string } {
 }
 
 /** One declaration's duration/easing verdict, or `undefined` when it names neither property. */
-function evaluateDeclaration(property: string, value: string, surface: Surface): DeclarationVerdict | undefined {
+function evaluateDeclaration(
+  property: string,
+  value: string,
+  surface: Surface,
+  conditions: string[] = []
+): DeclarationVerdict | undefined {
   const durationBearing = DURATION_BEARING.has(property);
   const easingBearing = EASING_BEARING.has(property);
   if (!durationBearing && !easingBearing) return undefined;
 
-  const abstain = abstentionReason(property, value);
+  const abstain = abstentionReason(property, value, conditions);
   if (abstain) return { messages: [], abstain };
 
   if (DEFAULT_RIDING_VAR.test(value)) return { messages: [], ridesDefault: true };
@@ -252,14 +296,18 @@ interface DeclarationScanResult {
   sawDurationOrEasing: boolean;
 }
 
-function scanDeclarations(declarations: { property: string; value: string }[], surface: Surface): DeclarationScanResult {
+function scanDeclarations(
+  declarations: { property: string; value: string }[],
+  surface: Surface,
+  conditions: string[] = []
+): DeclarationScanResult {
   const messages: string[] = [];
   const abstains: string[] = [];
   let sawMotionShorthand = false;
   let sawDurationOrEasing = false;
   for (const decl of declarations) {
     if (MOTION_SHORTHAND_OR_LIST.has(decl.property)) sawMotionShorthand = true;
-    const verdict = evaluateDeclaration(decl.property, decl.value, surface);
+    const verdict = evaluateDeclaration(decl.property, decl.value, surface, conditions);
     if (!verdict) continue;
     if (verdict.abstain) {
       abstains.push(verdict.abstain);
@@ -304,7 +352,7 @@ function* scanEvents(
 
 function* walkCssFamily(ctx: StaticRuleContext, companion: CompanionState): Generator<VocabEvent> {
   for (const scope of cssScopeRules(ctx)) {
-    const result = scanDeclarations(scope.rule.declarations, 'css');
+    const result = scanDeclarations(scope.rule.declarations, 'css', scope.rule.conditions);
     yield* scanEvents(result, cssRulePosition(scope), companion);
   }
 }

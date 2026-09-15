@@ -124,6 +124,105 @@ describe('motion-property: the vendor class-join exemption', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('width');
   });
+
+  it('exempts class="btn" joined to DaisyUI\'s own five-property transition list, over the cap', () => {
+    const btnSheet = parseSheet(
+      '.btn { transition-property: color, background-color, border-color, box-shadow, --btn-fs; }'
+    );
+    const findings = motionProperty.check({
+      files: [component('<div class="btn"></div>')],
+      sheet: btnSheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="modal" joined to its own vendor transitions', () => {
+    const modalSheet = parseSheet('.modal { transition: transform .3s cubic-bezier(0.32, 0.72, 0, 1); }');
+    const findings = motionProperty.check({
+      files: [component('<div class="modal"></div>')],
+      sheet: modalSheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="dropdown" joined to its own vendor transitions', () => {
+    const dropdownSheet = parseSheet('.dropdown { transition: opacity, transform, display; }');
+    const findings = motionProperty.check({
+      files: [component('<div class="dropdown"></div>')],
+      sheet: dropdownSheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="modal-box", DaisyUI\'s own four-property open/close transition', () => {
+    const modalBoxSheet = parseSheet(
+      '.modal-box { transition: translate .3s ease-out, scale .3s ease-out, opacity .2s ease-out 50ms, box-shadow .3s ease-out; }'
+    );
+    const findings = motionProperty.check({
+      files: [component('<div class="modal-box"></div>')],
+      sheet: modalBoxSheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="dropdown-content", the second half of the dropdown vendor pair', () => {
+    const sheet = parseSheet('.dropdown .dropdown-content { transition-property: opacity, scale, display, overlay; }');
+    const findings = motionProperty.check({
+      files: [component('<div class="dropdown-content"></div>')],
+      sheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="menu", DaisyUI\'s own details-content property list', () => {
+    const sheet = parseSheet('.menu { transition-property: block-size, content-visibility; }');
+    const findings = motionProperty.check({
+      files: [component('<div class="menu"></div>')],
+      sheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="checkbox", DaisyUI\'s own clip-path check mark motion', () => {
+    const sheet = parseSheet('.checkbox:before { transition: clip-path .3s .1s, opacity .1s .1s, rotate .3s .1s, translate .3s .1s; }');
+    const findings = motionProperty.check({
+      files: [component('<div class="checkbox"></div>')],
+      sheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it('exempts class="card", DaisyUI\'s own outline-shorthand focus transition', () => {
+    const sheet = parseSheet('.card { transition: outline .2s ease-in-out; }');
+    const findings = motionProperty.check({
+      files: [component('<div class="card"></div>')],
+      sheet,
+      config: CONFIG,
+      cssFiles: [],
+    });
+    expect(findings).toEqual([]);
+  });
+});
+
+describe('motion-property: the transition: none idiom', () => {
+  it('names zero properties, the same clearing transition: all already gets', () => {
+    const findings = check([component('<div class="mover"></div>', '.mover { transition: none; }')]);
+    expect(findings).toEqual([]);
+  });
 });
 
 describe('motion-property: the Tailwind transition-utility class-join exemption', () => {

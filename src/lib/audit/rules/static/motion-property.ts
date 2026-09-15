@@ -4,12 +4,13 @@
 // the errors this admin has already shipped and removed once, so their message names the hazard
 // directly, and anything neither allowlisted nor named still fails as outside the language, with a
 // different message, because it is a construct nobody has reasoned about yet. `transition: all` and
-// `transition-all` are motion-band's own construct and are never re-reported here.
+// `transition-all` are motion-band's own construct and are never re-reported here; `transition:
+// none` names no property to check at all, the idiom for disabling a rule's transitions outright.
 //
 // Three surfaces feed the same classification. Hand-authored CSS (a component's own scoped
 // `<style>` block, or a file `static.cssFiles` names) is read in full: authored code owns its own
 // property choice. A Tailwind class the built admin sheet compiles is read through the class join,
-// exempting the four recorded vendor component classes rather than fixing them: `conditions` alone
+// exempting the recorded vendor component classes rather than fixing them: `conditions` alone
 // cannot attribute a declaration to DaisyUI's own plugin output, since cairn's own rules share the
 // same `@layer components` and the same theme-root prelude, so the fallback is the explicit class
 // list below. The class join also exempts Tailwind's own compiled `transition-property` utility
@@ -77,11 +78,30 @@ const NAMED_ERROR = new Set([
   ...PADDING_LONGHANDS,
 ]);
 
-// The four recorded DaisyUI component disagreements, never convicted, each measured against the
+// The recorded DaisyUI component disagreements, never convicted, each measured against the
 // shipped admin sheet: `.drawer-side` transitioning `width`, `.filter input`
 // transitioning `margin`, `padding`, and `border-width`, `.collapse ::details-content` transitioning
-// `min-height`, `padding`, and `height`, and `.toggle:before` transitioning `inset-inline-start`.
-const DAISYUI_VENDOR_CLASSES = new Set(['drawer-side', 'filter', 'collapse', 'toggle']);
+// `min-height`, `padding`, and `height`, `.toggle:before` transitioning `inset-inline-start`, `.btn`
+// declaring five properties on one `transition-property` list (over the three-property cap),
+// `.modal` and `.dropdown` each carrying their own vendor timing on a vendor-chosen property list,
+// `.modal-box`'s own four-property open/close transition (over the cap), `.dropdown-content`'s
+// `display`/`overlay` pair (neither allowlisted nor named), `.menu`'s `block-size`/
+// `content-visibility` disclosure transition, `.checkbox:before`'s `clip-path` check-mark motion,
+// and `.card`'s `outline` shorthand focus transition.
+const DAISYUI_VENDOR_CLASSES = new Set([
+  'btn',
+  'drawer-side',
+  'filter',
+  'collapse',
+  'modal',
+  'modal-box',
+  'dropdown',
+  'dropdown-content',
+  'menu',
+  'checkbox',
+  'card',
+  'toggle',
+]);
 
 // Tailwind's own compiled `transition-property` utility group. Each name here compiles a fixed,
 // vendor-chosen property list the class author does not type; `transition-[width]` and any other
@@ -146,13 +166,18 @@ function isTransitionListProperty(property: string): boolean {
   return property === 'transition' || property === 'transition-property';
 }
 
-/** The transitioned property names a `transition`/`transition-property` value lists, `all` cleared. */
+/**
+ * The transitioned property names a `transition`/`transition-property` value lists, `all` and
+ * `none` both cleared: `all` is motion-band's own construct (never re-reported here), and `none`
+ * names no property at all, the CSS idiom for disabling every transition on a rule rather than a
+ * property named "none".
+ */
 function propertyNamesIn(value: string): string[] {
   const names = value
     .split(',')
     .map((part) => part.trim().split(/\s+/)[0])
     .filter((name) => name.length > 0);
-  return names.length === 1 && names[0] === 'all' ? [] : names;
+  return names.length === 1 && (names[0] === 'all' || names[0] === 'none') ? [] : names;
 }
 
 function isFrameOffsetSelector(selector: string): boolean {

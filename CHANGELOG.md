@@ -411,6 +411,10 @@
   page's preview pane no longer animates its width when the split changes. Consumers must: nothing;
   the resize now snaps instead of easing.
 
+- `HelpHome`'s step-action and quiet-button hover paint now sits inside `@media (hover: hover)`,
+  so a coarse-pointer tap no longer leaves the hover tint stuck after release; the keyboard
+  `:focus-visible` state is unchanged and unguarded.
+
 - The upload progress fill no longer transitions its `width`, and no motion replaces it: the fill
   snaps to each new value. The native `<progress>` element is unchanged and keeps its implicit
   `progressbar` role and its `value`/`max` mapping, so nothing changes for assistive technology.

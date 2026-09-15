@@ -562,11 +562,18 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     transition: border-color var(--cairn-dur-base) var(--cairn-ease-standard), background-color var(--cairn-dur-base) var(--cairn-ease-standard);
   }
   /* :focus-visible pairs the same tint with a keyboard tab onto this link (cairn-audit's
-     focus-parity rule), so a keyboard user sees the same affordance a mouse hover gives. */
-  .step-act:hover,
+     focus-parity rule), so a keyboard user sees the same affordance a mouse hover gives. Gated on
+     @media (hover: hover) so a touch device's tap-and-hold :hover never sticks mid-transition;
+     :focus-visible stays unguarded, since a keyboard user on a touch device still needs it. */
   .step-act:focus-visible {
     border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border));
     background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+  }
+  @media (hover: hover) {
+    .step-act:hover {
+      border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border));
+      background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+    }
   }
   .step-act svg {
     width: 13px;
@@ -786,10 +793,18 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     white-space: nowrap;
     transition: border-color var(--cairn-dur-base) var(--cairn-ease-standard), color var(--cairn-dur-base) var(--cairn-ease-standard);
   }
-  .btn-quiet:hover,
+  /* Gated on @media (hover: hover) so a touch device's tap-and-hold :hover never sticks
+     mid-transition; :focus-visible stays unguarded, since a keyboard user on a touch device
+     still needs it. */
   .btn-quiet:focus-visible {
     border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
     color: var(--color-primary);
+  }
+  @media (hover: hover) {
+    .btn-quiet:hover {
+      border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
+      color: var(--color-primary);
+    }
   }
   .btn-quiet svg {
     width: 15px;

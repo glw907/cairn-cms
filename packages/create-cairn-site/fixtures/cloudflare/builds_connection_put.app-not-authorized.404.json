@@ -2,7 +2,8 @@
   "provenance": {
     "captured": "2026-08-12",
     "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md",
-    "status": 404
+    "status": 404,
+    "note": "date and doc path inherited from the section comment at fake-cloudflare.mjs:625-648"
   },
   "body": {
     "success": false,

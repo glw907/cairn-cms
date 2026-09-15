@@ -50,7 +50,11 @@ test('no fixture carries an email address or the estate account id', () => {
       offenders.push(path);
       continue;
     }
-    if (path.endsWith('.json') && hasEmailShapedString(JSON.parse(contents))) offenders.push(path);
+    if (path.endsWith('.json')) {
+      if (hasEmailShapedString(JSON.parse(contents))) offenders.push(path);
+    } else if (EMAIL_PATTERN.test(contents)) {
+      offenders.push(path);
+    }
   }
   assert.deepEqual(offenders, [], `fixture(s) carry a real identifier: ${offenders.join(', ')}`);
 });

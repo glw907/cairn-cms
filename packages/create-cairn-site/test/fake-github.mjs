@@ -15,6 +15,21 @@ import { compile, loadFixture, matchRoute, readRawBody, sendJson, startLoopbackS
 /** The captured repo-create name-conflict body, `POST /user/repos` and `POST /orgs/:org/repos` alike. */
 const REPO_CREATE_NAME_CONFLICT_BODY = loadFixture('github', 'repo_create.name-conflict.422');
 
+/** The generic `Not Found` body this fake serves for every unmatched route and missing resource. */
+const NOT_FOUND_BODY = loadFixture('github', 'not_found.default.404');
+
+/** The Git Data API's empty-repo body, served by every git/* route until the repo is seeded. */
+const EMPTY_REPO_BODY = loadFixture('github', 'git_data.empty-repo.409');
+
+/** The body a user access token gets from `PUT .../installations/:iid/repositories/:rid`. */
+const INSTALLATION_LINK_NOT_ACCESSIBLE_BODY = loadFixture('github', 'installation_link.not-accessible.403');
+
+/** The body `GET /app/installations` returns for an unverified app JWT. */
+const APP_INSTALLATIONS_BAD_CREDENTIALS_BODY = loadFixture('github', 'app_installations.bad-credentials.401');
+
+/** The body a duplicate `POST .../git/refs` gets back. */
+const REFS_CREATE_ALREADY_EXISTS_BODY = loadFixture('github', 'refs_create.already-exists.422');
+
 /**
  * @typedef {object} FakeGithub
  * @property {string} apiBase the fake api.github.com base URL, `http://127.0.0.1:<port>`
@@ -151,7 +166,7 @@ function makeHandler(routes, { requests, failNextMap }) {
 
     const { match, params } = matchRoute(routes, req.method, url.pathname);
     if (!match) {
-      sendJson(res, 404, { message: 'Not Found' });
+      sendJson(res, 404, NOT_FOUND_BODY);
       return;
     }
 
@@ -324,7 +339,7 @@ function redirectMatches(registeredUrls, requestedUrl) {
 function createConversionsHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     if (params.code === 'expired') {
-      sendJson(res, 404, { message: 'Not Found' });
+      sendJson(res, 404, NOT_FOUND_BODY);
       return;
     }
     // Modeled two ways: a raw JSON body (what a test driving this fake directly sends), or a
@@ -382,7 +397,7 @@ function createConversionsHandler(ctx) {
 function createRepoHandler(getOwner, ctx) {
   return async (_req, res, params, _url, body) => {
     if (ctx.state.installations.length === 0) {
-      sendJson(res, 404, { message: 'Not Found' });
+      sendJson(res, 404, NOT_FOUND_BODY);
       return;
     }
     const owner = getOwner(params);
@@ -433,7 +448,7 @@ function createRepoHandler(getOwner, ctx) {
  */
 function createLinkHandler() {
   return async (_req, res) => {
-    sendJson(res, 403, { message: 'Resource not accessible by integration' });
+    sendJson(res, 403, INSTALLATION_LINK_NOT_ACCESSIBLE_BODY);
   };
 }
 
@@ -444,9 +459,9 @@ function createLinkHandler() {
  */
 function createGetRepoHandler(ctx) {
   return async (_req, res, params, _url, _body, headers) => {
-    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, NOT_FOUND_BODY);
     const repo = ctx.state.repos.find((candidate) => candidate.owner.login === params.owner && candidate.name === params.repo);
-    if (!repo) return sendJson(res, 404, { message: 'Not Found' });
+    if (!repo) return sendJson(res, 404, NOT_FOUND_BODY);
     sendJson(res, 200, repo);
   };
 }
@@ -484,9 +499,9 @@ function getGitEntry(ctx, owner, repo) {
 function createBlobHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, blobs included.
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
+    if (!entry.seeded) return sendJson(res, 409, EMPTY_REPO_BODY);
     const sha = randomSha();
     entry.blobs.set(sha, body?.content ?? '');
     sendJson(res, 201, { sha, url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/blobs/${sha}` });
@@ -506,15 +521,15 @@ function createBlobHandler(ctx) {
 function createTreeHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, trees included.
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
+    if (!entry.seeded) return sendJson(res, 409, EMPTY_REPO_BODY);
     const incoming = Array.isArray(body?.tree) ? body.tree : [];
 
     let merged = incoming;
     if (body?.base_tree) {
       const base = entry.trees.get(body.base_tree);
-      if (!base) return sendJson(res, 404, { message: 'Not Found' });
+      if (!base) return sendJson(res, 404, NOT_FOUND_BODY);
       const byPath = new Map(base.map((candidate) => [candidate.path, candidate]));
       for (const candidate of incoming) byPath.set(candidate.path, candidate);
       merged = [...byPath.values()];
@@ -537,11 +552,11 @@ function createTreeHandler(ctx) {
  */
 function createGetTreeHandler(ctx) {
   return async (_req, res, params, _url, _body, headers) => {
-    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, NOT_FOUND_BODY);
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     const tree = entry.trees.get(params.sha);
-    if (!tree) return sendJson(res, 404, { message: 'Not Found' });
+    if (!tree) return sendJson(res, 404, NOT_FOUND_BODY);
     sendJson(res, 200, {
       sha: params.sha,
       url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/trees/${params.sha}`,
@@ -554,11 +569,11 @@ function createGetTreeHandler(ctx) {
 /** Read a stored blob back, in the real API's `{ sha, content, encoding, size, url }` shape. */
 function createGetBlobHandler(ctx) {
   return async (_req, res, params, _url, _body, headers) => {
-    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, NOT_FOUND_BODY);
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     const content = entry.blobs.get(params.sha);
-    if (content === undefined) return sendJson(res, 404, { message: 'Not Found' });
+    if (content === undefined) return sendJson(res, 404, NOT_FOUND_BODY);
     sendJson(res, 200, {
       sha: params.sha,
       content,
@@ -588,9 +603,9 @@ function treeRef(ctx, owner, repo, sha) {
 function createCreateCommitHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, commit creation included.
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
+    if (!entry.seeded) return sendJson(res, 409, EMPTY_REPO_BODY);
     const sha = randomSha();
     const message = body?.message ?? '';
     // parents/tree are carried in state (and echoed back), not just message: task 8's push
@@ -612,11 +627,11 @@ function createCreateCommitHandler(ctx) {
 
 function createGetCommitHandler(ctx) {
   return async (_req, res, params, _url, _body, headers) => {
-    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, NOT_FOUND_BODY);
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     const commit = entry.commits.get(params.sha);
-    if (!commit) return sendJson(res, 404, { message: 'Not Found' });
+    if (!commit) return sendJson(res, 404, NOT_FOUND_BODY);
     sendJson(res, 200, {
       sha: commit.sha,
       message: commit.message,
@@ -629,9 +644,9 @@ function createGetCommitHandler(ctx) {
 function createUpdateRefHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref update included.
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
+    if (!entry.seeded) return sendJson(res, 409, EMPTY_REPO_BODY);
     entry.refs.set(`heads/${params.branch}`, body?.sha);
     sendJson(res, 200, { ref: `refs/heads/${params.branch}`, object: { sha: body?.sha, type: 'commit' } });
   };
@@ -639,11 +654,11 @@ function createUpdateRefHandler(ctx) {
 
 function createGetRefHandler(ctx) {
   return async (_req, res, params, _url, _body, headers) => {
-    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, NOT_FOUND_BODY);
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref read included.
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
+    if (!entry.seeded) return sendJson(res, 409, EMPTY_REPO_BODY);
     const sha = entry.refs.get(`heads/${params.branch}`);
     sendJson(res, 200, { ref: `refs/heads/${params.branch}`, object: { sha, type: 'commit' } });
   };
@@ -652,11 +667,11 @@ function createGetRefHandler(ctx) {
 function createCreateRefHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
-    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    if (!entry) return sendJson(res, 404, NOT_FOUND_BODY);
     const refName = String(body?.ref ?? '').replace(/^refs\//, '');
     if (entry.refs.has(refName)) {
       // spike-confirmed 2026-08-10: a duplicate ref create returns 422 "Reference already exists".
-      sendJson(res, 422, { message: 'Reference already exists' });
+      sendJson(res, 422, REFS_CREATE_ALREADY_EXISTS_BODY);
       return;
     }
     entry.refs.set(refName, body?.sha);
@@ -668,7 +683,7 @@ function createListInstallationsHandler(ctx) {
   return async (_req, res, _params, _url, _body, headers) => {
     const verified = verifyAppJwt(ctx.state, headers.authorization);
     if (!verified.ok) {
-      sendJson(res, 401, { message: 'Bad credentials' });
+      sendJson(res, 401, APP_INSTALLATIONS_BAD_CREDENTIALS_BODY);
       return;
     }
     sendJson(res, 200, ctx.state.installations);
@@ -685,7 +700,7 @@ function createGetOrgHandler(ctx) {
   return async (_req, res, params) => {
     const org = ctx.state.orgs.find((candidate) => candidate.login === params.org);
     if (!org) {
-      sendJson(res, 404, { message: 'Not Found' });
+      sendJson(res, 404, NOT_FOUND_BODY);
       return;
     }
     sendJson(res, 200, { login: org.login });
@@ -696,7 +711,7 @@ function createGetMembershipHandler(ctx) {
   return async (_req, res, params) => {
     const org = ctx.state.orgs.find((candidate) => candidate.login === params.org);
     if (!org) {
-      sendJson(res, 404, { message: 'Not Found' });
+      sendJson(res, 404, NOT_FOUND_BODY);
       return;
     }
     const role = org.memberships?.[params.user] ?? 'admin';

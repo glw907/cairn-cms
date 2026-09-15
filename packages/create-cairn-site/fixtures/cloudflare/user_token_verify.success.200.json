@@ -1,12 +1,12 @@
 {
   "provenance": {
     "captured": "2026-08-12",
-    "source": "packages/create-cairn-site/test/fake-cloudflare.mjs:627-630",
+    "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md:49",
     "status": 200,
-    "note": "no per-body capture comment"
+    "note": "token id replaced with a synthetic value; the fake serves ctx.tokenVerifyId"
   },
   "body": {
-    "id": "d07b2a25f05151591830c45053186979",
+    "id": "00000000000000000000000000000001",
     "status": "active",
     "messages": [{ "code": 10000, "message": "This API Token is valid and active", "type": null }]
   }

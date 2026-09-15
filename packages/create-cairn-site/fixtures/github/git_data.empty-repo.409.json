@@ -1,0 +1,11 @@
+{
+  "provenance": {
+    "captured": "2026-08-10",
+    "source": "packages/create-cairn-site/test/fake-github.mjs:489",
+    "status": 409,
+    "note": "no per-body capture comment"
+  },
+  "body": {
+    "message": "Git Repository is empty."
+  }
+}

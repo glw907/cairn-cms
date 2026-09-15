@@ -1,0 +1,11 @@
+{
+  "provenance": {
+    "captured": "2026-08-10",
+    "source": "packages/create-cairn-site/test/fake-github.mjs:151",
+    "status": 404,
+    "note": "no per-body capture comment"
+  },
+  "body": {
+    "message": "Not Found"
+  }
+}

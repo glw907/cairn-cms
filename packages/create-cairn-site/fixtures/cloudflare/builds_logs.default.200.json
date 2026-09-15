@@ -1,9 +1,8 @@
 {
   "provenance": {
-    "captured": "2026-08-12",
-    "source": "packages/create-cairn-site/test/fake-cloudflare.mjs:627-630",
-    "status": 200,
-    "note": "no per-body capture comment"
+    "captured": "2026-08-13",
+    "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md:188",
+    "status": 200
   },
   "body": {
     "cursor": "WzAsMzRd",

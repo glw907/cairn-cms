@@ -16,16 +16,19 @@ green.
 
 ## Immediate next action (2026-09-15, written by session 4e54c24b before it closes)
 
-The overnight run halted at stage "motion:ci-regen-end" on 2026-09-15. Reason: baseline regen
-dispatch and the e2e job succeeded, but the overall workflow run failed because a separate job
-(norms / motion-reduced-delay rendered audit) failed, so this is reported as a failed run per
-instructions. Resume prompt: Resume the motion pass-end ritual at step "motion:ci-regen-end" in
-/var/home/glw907/Projects/cairn-cms/.claude/worktrees/admin-motion, then Relaunch the orchestrator
-with stages ["precut","release","parallel","final"]. Trim every accepted task out of that pass's
-args file in ~/.cache/cairn-overnight-2026-09-14/, re-run `node build.mjs`, and launch the built
-script again.
+**Halt at the CI regen, ruled 2026-09-15 12:3x.** Run 35016669005's e2e job regenerated and committed the
+baselines on `origin/admin-motion`, but task 8's new `norms / motion-reduced-delay rendered audit` job
+failed: the audit CLI cannot scope a rendered run to one rule, so all 17 rendered rules ran and
+`viewport-overflow` (pre-existing, never before run in CI) produced all 200 errors on the admin routes at
+320 and 390; the advisory target rule produced 2 advisories and cannot fail a job. Ruling: task `8-fix` on
+the branch adds `--rule <id>` to the audit CLI, scopes the job to its rule, documents the flag, and files
+the viewport-overflow findings to ROADMAP as their own defect (likely the rule measuring the transformed
+off-canvas drawer). `motion-args.json` now carries only `8-fix`; the built script is rebuilt. **The ritual
+is NOT running. Relaunch FRESH (no `resumeFromRunId`: the cached regen failure would replay):** LAUNCH.md
+steps 2 to 7, stages `["motion","final"]`; the ritual re-runs from its first step (about two and a half
+hours), then the sequence below.
 
-**The admin motion pass is in its close ritual** as workflow `wf_f43d9c7a-ade` (built script and args in
+**The admin motion pass state** (last workflow `wf_f43d9c7a-ade`, halted) (built script and args in
 `~/.cache/cairn-overnight-2026-09-14/`, stages `["motion","final"]`, the Go tool and the pre-cut and release
 stages removed by Geoff's decisions below). Every task is accepted on `admin-motion`: 1 to 4, 6a, 6b, 7, 8,
 10, 11, plus the four conductor-inserted corrections 6a-fix, 7-fix, 10-fix, 11-fix; chain B merged; the

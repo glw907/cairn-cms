@@ -36,6 +36,36 @@ superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e397
 after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
 blueprint-audit, the post-mortem.
 
+**Overnight run 2 WOUND DOWN, 2026-09-15 00:3x (Geoff: 75% of the weekly token budget used).**
+Nothing is running; guards and inhibitors released. State on `admin-motion` (clean, pushed): tasks 1
+to 4, 6a, 8 accepted; chain B merged (`5bcc2258`); simplifier fold (`263654d0`); the conductor-inserted
+task `6a-fix` IMPLEMENTED in two commits (`fix(audit): exempt DaisyUI vendor motion and the
+reduced-motion floor`, `ec203cac fix(admin): guard HelpHome hover paint on hover-capable pointers`)
+but NOT yet reviewed or accepted. Remaining: 6b, 7, 10, 11, the close ritual, then precut, the
+0.97.0 cut, and extend-1. **The Go tool branch is DROPPED from the run** (Geoff, 2026-09-15); pass A
+stays held at its Task 3 boundary on `cairn-tool-a` (draft PR #60) to pick up the week of 2026-09-21.
+Resume prompt: from a fresh session, follow `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md` steps 1
+to 7 again (`launch.json` already carries the one-line footer and `toolA: null`; `motion-args.json`
+already carries `6a-fix` first with a partial-work note that counts its two commits as landed, so a
+relaunch re-verifies and reviews it rather than redoing it); stages
+`["motion","precut","release","parallel","final"]`. Rulings behind `6a-fix`: task 6a's
+zero-findings criterion was unmet only by DaisyUI vendor CSS (btn, modal, dropdown, toggle) and the
+reduced-motion floor, so the two rules' exemption lists widened; the plan's contradiction on HelpHome's
+two `:hover` pairs resolved for the rule's side (guarded, superseding task 6a's "no guard" decision);
+the commit footer is the single co-author line. Task 11 records all three in the plan. Spend tonight:
+about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
+stop to drop the Go tool, one wind-down).
+
+**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
+launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
+(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
+merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
+2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
+cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
+superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
+after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
+blueprint-audit, the post-mortem.
+
 **Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_f43d9c7a-ade` (a second relaunch, after `wf_5447b584-7b1` was stopped for a runner error: a malformed args entry made the task run return empty, which the orchestrator now treats as a halt).**
 The first launch (`wf_085689cc-81b`) halted when the diff-reviewer escalated task 6a: its own work
 was verified complete and paint-clean (commit `69c57db2`, ACCEPTED), but its zero-findings criterion

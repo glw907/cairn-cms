@@ -14,357 +14,48 @@ engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii/C unpublished und
 Unreleased`; the window holds for one cut after the admin motion pass (below). CI on `main` is
 green.
 
-## Immediate next action (2026-09-14)
+## Immediate next action (2026-09-15, written by session 4e54c24b before it closes)
 
-**Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 10-fix (Task 10's doc
-comment, changelog wording, and the stray capture script): accepted, fixRounds 0; task 11 (Docs
-and records (last)): escalated, fixRounds 0. Resume prompt: Read the motion run journal, decide
-the non-accepted task per docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md, then
-Relaunch the orchestrator with stages ["motion","precut","release","parallel","final"]. Trim
-every accepted task out of that pass's args file in ~/.cache/cairn-overnight-2026-09-14/, re-run
-`node build.mjs`, and launch the built script again.
+**The admin motion pass is in its close ritual** as workflow `wf_f43d9c7a-ade` (built script and args in
+`~/.cache/cairn-overnight-2026-09-14/`, stages `["motion","final"]`, the Go tool and the pre-cut and release
+stages removed by Geoff's decisions below). Every task is accepted on `admin-motion`: 1 to 4, 6a, 6b, 7, 8,
+10, 11, plus the four conductor-inserted corrections 6a-fix, 7-fix, 10-fix, 11-fix; chain B merged; the
+simplifier ran. Remaining: full gate, six-surface verifier, four reviewers, records, PR, CI, the CI baseline
+regen, merge. **If the ritual is not running when you read this** (a session clear kills it), check
+`gh pr list --head admin-motion` and the worktree: a merged PR means done; otherwise relaunch from
+`LAUNCH.md`'s "State on 2026-09-15" section (steps 2 to 7; every ritual step is idempotent) or finish the
+named step by hand. The night's halt ledger and every ruling: `~/.cache/cairn-overnight-2026-09-14/NIGHT-ledger.md`
+(fold into HISTORY at the post-mortem; task 11 already recorded the rulings in the plan).
 
-**Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 7-fix (Zen's chrome
-fade scoped off first paint, and the chip's exit made real): accepted, fixRounds 1; task 10 (the
-engine's tree wired, and the visual suite): escalated, fixRounds 0; task 11 (docs and records
-(last)): deferred, fixRounds 0. Resume prompt: Read the motion run journal, decide the
-non-accepted task per docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md, then
-Relaunch the orchestrator with stages ["motion","precut","release","parallel","final"]. Trim
-every accepted task out of that pass's args file in ~/.cache/cairn-overnight-2026-09-14/,
-re-run `node build.mjs`, and launch the built script again.
+**Then, in order (Geoff, 2026-09-15):**
 
-**Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 6b (the dropzone's
-drag-over state): accepted, fixRounds 1; task 7 (zen): escalated, fixRounds 0; task 10 (the
-engine's tree wired, and the visual suite): deferred, fixRounds 0; task 11 (docs and records
-(last)): deferred, fixRounds 0. Resume prompt: Read the motion run journal, decide the
-non-accepted task per docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md, then
-Relaunch the orchestrator with stages ["motion","precut","release","parallel","final"]. Trim
-every accepted task out of that pass's args file in ~/.cache/cairn-overnight-2026-09-14/,
-re-run `node build.mjs`, and launch the built script again.
+1. **Adversarial review of the facts container** (`docs/internal/facts/`, landed `b9282369`: 727 facts, 641
+   verified, 14 drift, 31 candidates): three fresh-context `claude-opus-5` reviewers with disjoint lenses
+   (structure and mechanics; evolution feasibility from container through the site round to public docs,
+   and what a facts-only record loses; charter and per-pass cost), graded against the goal of docs kept
+   light while cairn is finalized yet collecting what public docs will need. Findings fold into item 2.
+2. **The docs-to-facts pass** (plan it; small): remove the admin, editors, extend, and why-cairn arms and
+   the docs README from the tree and the tarball; MOVE `docs/reference/` into the container at
+   `docs/internal/facts/reference/` and re-point its two gates; ship the container in the tarball in place
+   of the arms; the container check (every export has an entry, every bullet a source and one tag, links
+   resolve); CLAUDE.md's docs section and the `cairn-pass` docs step become container-first; re-point
+   engine-consult (a "facts consulted" line), site-implementer, cairn-implementer; amend extend-1 and
+   extend-2's docs deliverables to container entries; the `cairn-fact` dotfiles command (`fact`, `gap`) and
+   its skill; the `gate-tier.mjs` classifier (the runner half landed in dotfiles 2026-09-15, unpushed; the
+   ROADMAP Now entry has the tier table). The 14 drift bullets are the first corrections to make.
+3. **extend-1, then extend-2** (docs as container entries; extend-1's "Available since" reads 0.97.0 and
+   its advisory rules promote at 0.98.0, per `launch.json`).
+4. **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's tools section added
+   to the pre-cut pass). No release before this; every consumer pin bump holds, cairn.pub's included.
+5. **The site round:** aksailingclub-org upgraded and finished, ecxc-ski and 907-life upgraded and
+   polished, each as a model cairn site on the new best practices; every site pass hunts holes into
+   `docs/internal/facts/gaps.md` and files facts with `cairn-fact`; then one improvement release, then the
+   public docs extended from the container, then beta.
 
-**Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 6a-fix (the motion
-rules' vendor exemptions widened, and the HelpHome hover halves guarded): escalated, fixRounds 0;
-task 6b (the dropzone's drag-over state): deferred, fixRounds 0; task 7 (zen): deferred,
-fixRounds 0; task 10 (the engine's tree wired, and the visual suite): deferred, fixRounds 0; task
-11 (docs and records (last)): deferred, fixRounds 0. Resume prompt: Read the motion run journal,
-decide the non-accepted task per docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md,
-then Relaunch the orchestrator with stages ["motion","precut","release","parallel","final"]. Trim
-every accepted task out of that pass's args file in ~/.cache/cairn-overnight-2026-09-14/, re-run
-`node build.mjs`, and launch the built script again.
-
-**Overnight run halted again at stage motion:run1 (2026-09-15).** Reason: task 6a (the admin
-migrated onto the language) escalated, fixRounds 0; task 6b (the dropzone's drag-over state)
-deferred, fixRounds 0; task 7 (zen) deferred, fixRounds 0; task 10 (the engine's tree wired, and
-the visual suite) deferred, fixRounds 0; task 11 (docs and records, last) deferred, fixRounds 0.
-Resume prompt: Read the motion run journal, decide the non-accepted task per
-docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md, then Relaunch the orchestrator
-with stages ["motion","precut","release","parallel","final"]. Trim every accepted task out of
-that pass's args file in ~/.cache/cairn-overnight-2026-09-14/, re-run `node build.mjs`, and
-launch the built script again.
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Overnight run 2 RELAUNCHED, 2026-09-15 00:4x (Geoff: "continue to the launch"), as workflow `wf_f43d9c7a-ade`, task run resumed, guards re-armed until 09:00.** The wind-down state it resumes from: State on `admin-motion` (clean, pushed): tasks 1
-to 4, 6a, 8 accepted; chain B merged (`5bcc2258`); simplifier fold (`263654d0`); the conductor-inserted
-task `6a-fix` IMPLEMENTED in two commits (`fix(audit): exempt DaisyUI vendor motion and the
-reduced-motion floor`, `ec203cac fix(admin): guard HelpHome hover paint on hover-capable pointers`)
-but NOT yet reviewed or accepted. Remaining: 6b, 7, 10, 11, the close ritual, then precut, the
-0.97.0 cut, and extend-1. **The Go tool branch is DROPPED from the run** (Geoff, 2026-09-15); pass A
-stays held at its Task 3 boundary on `cairn-tool-a` (draft PR #60) to pick up the week of 2026-09-21,
-and the docs rewrite (from pass 2a) moves to that same week (Geoff, 2026-09-15).
-Resume prompt: from a fresh session, follow `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md` steps 1
-to 7 again (`launch.json` already carries the one-line footer and `toolA: null`; `motion-args.json`
-already carries `6a-fix` first with a partial-work note that counts its two commits as landed, so a
-relaunch re-verifies and reviews it rather than redoing it); stages
-`["motion","precut","release","parallel","final"]`. Rulings behind `6a-fix`: task 6a's
-zero-findings criterion was unmet only by DaisyUI vendor CSS (btn, modal, dropdown, toggle) and the
-reduced-motion floor, so the two rules' exemption lists widened; the plan's contradiction on HelpHome's
-two `:hover` pairs resolved for the rule's side (guarded, superseding task 6a's "no guard" decision);
-the commit footer is the single co-author line. Task 11 records all three in the plan, plus the 01:1x ruling that accepted `6a-fix` and ratified
-motion-property's `transition: none` parsing (zero properties, the reduced-motion snap idiom), and the
-04:5x rulings on task 7 (zen, commit `5c41f061` kept; task `7-fix` inserted): the nested four-rule
-frame-offset form and the `data-cairn-frame-open` direction key are ratified; chrome fades are
-entrance-only but gated off first paint by a `data-cairn-zen-used` attribute; the chip's exit is keyed
-on state so both directions ship. Task 6b accepted after one fix round; 7-fix accepted after one fix
-round; task 10 in flight at 08:5x. **Geoff, 2026-09-15 morning:** the per-task gate is LIGHTENED for the
-rest of the run (the showcase e2e narrowed to admin-visual.spec.ts per task; the full string runs at each
-close ritual and on CI), and **extend-1 is HELD**: the run stops after the 0.97.0 cut (stages
-motion, precut, release, final) and extend-1 launches separately. Spend tonight:
-about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
-stop to drop the Go tool, one wind-down).
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_f43d9c7a-ade` (a second relaunch, after `wf_5447b584-7b1` was stopped for a runner error: a malformed args entry made the task run return empty, which the orchestrator now treats as a halt).**
-The first launch (`wf_085689cc-81b`) halted when the diff-reviewer escalated task 6a: its own work
-was verified complete and paint-clean (commit `69c57db2`, ACCEPTED), but its zero-findings criterion
-was unmet for reasons outside its Files. Conductor rulings, reversible in the morning: (1) a task
-`6a-fix` is inserted before 6b, widening motion-property's and motion-vocabulary's DaisyUI vendor
-exemptions (btn, modal, dropdown, toggle) and teaching motion-vocabulary to abstain on the
-reduced-motion floor, since the first compiled-sheet class join over `src/lib/components` convicted
-vendor CSS across 42 files; (2) the plan's own contradiction on HelpHome's two `:hover` pairs is
-resolved for the rule's side, so the `:hover` halves gain the `@media (hover: hover)` guard the
-rule's fix message teaches, superseding task 6a's "adds no guard" decision; (3) the commit footer is
-the single co-author line, since this session has no URL. Task 11 records all three in the plan.
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Task 10 ruling, 2026-09-15 09:2x.** Task 10 (commit `4d2ed14e`) is ACCEPTED with its 60 new admin-visual
-baselines committed from this workstation (precedent `d882921c`); the ritual's CI regen re-canonicalizes
-them. A small `10-fix` task (doc comment, changelog root name, the stray capture script deleted) runs
-before task 11 under the light gate. Relaunched as the same workflow `wf_f43d9c7a-ade`.
-
-**Overnight run 2 RELAUNCHED, 2026-09-15 00:4x (Geoff: "continue to the launch"), as workflow `wf_f43d9c7a-ade`, task run resumed, guards re-armed until 09:00.** The wind-down state it resumes from: State on `admin-motion` (clean, pushed): tasks 1
-to 4, 6a, 8 accepted; chain B merged (`5bcc2258`); simplifier fold (`263654d0`); the conductor-inserted
-task `6a-fix` IMPLEMENTED in two commits (`fix(audit): exempt DaisyUI vendor motion and the
-reduced-motion floor`, `ec203cac fix(admin): guard HelpHome hover paint on hover-capable pointers`)
-but NOT yet reviewed or accepted. Remaining: 6b, 7, 10, 11, the close ritual, then precut, the
-0.97.0 cut, and extend-1. **The Go tool branch is DROPPED from the run** (Geoff, 2026-09-15); pass A
-stays held at its Task 3 boundary on `cairn-tool-a` (draft PR #60) to pick up the week of 2026-09-21,
-and the docs rewrite (from pass 2a) moves to that same week (Geoff, 2026-09-15).
-Resume prompt: from a fresh session, follow `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md` steps 1
-to 7 again (`launch.json` already carries the one-line footer and `toolA: null`; `motion-args.json`
-already carries `6a-fix` first with a partial-work note that counts its two commits as landed, so a
-relaunch re-verifies and reviews it rather than redoing it); stages
-`["motion","precut","release","parallel","final"]`. Rulings behind `6a-fix`: task 6a's
-zero-findings criterion was unmet only by DaisyUI vendor CSS (btn, modal, dropdown, toggle) and the
-reduced-motion floor, so the two rules' exemption lists widened; the plan's contradiction on HelpHome's
-two `:hover` pairs resolved for the rule's side (guarded, superseding task 6a's "no guard" decision);
-the commit footer is the single co-author line. Task 11 records all three in the plan, plus the 01:1x ruling that accepted `6a-fix` and ratified
-motion-property's `transition: none` parsing (zero properties, the reduced-motion snap idiom), and the
-04:5x rulings on task 7 (zen, commit `5c41f061` kept; task `7-fix` inserted): the nested four-rule
-frame-offset form and the `data-cairn-frame-open` direction key are ratified; chrome fades are
-entrance-only but gated off first paint by a `data-cairn-zen-used` attribute; the chip's exit is keyed
-on state so both directions ship. Task 6b accepted after one fix round; 7-fix accepted after one fix
-round; task 10 in flight at 08:5x. **Geoff, 2026-09-15 morning:** the per-task gate is LIGHTENED for the
-rest of the run (the showcase e2e narrowed to admin-visual.spec.ts per task; the full string runs at each
-close ritual and on CI), and **extend-1 is HELD**: the run stops after the 0.97.0 cut (stages
-motion, precut, release, final) and extend-1 launches separately. Spend tonight:
-about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
-stop to drop the Go tool, one wind-down).
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_f43d9c7a-ade` (a second relaunch, after `wf_5447b584-7b1` was stopped for a runner error: a malformed args entry made the task run return empty, which the orchestrator now treats as a halt).**
-The first launch (`wf_085689cc-81b`) halted when the diff-reviewer escalated task 6a: its own work
-was verified complete and paint-clean (commit `69c57db2`, ACCEPTED), but its zero-findings criterion
-was unmet for reasons outside its Files. Conductor rulings, reversible in the morning: (1) a task
-`6a-fix` is inserted before 6b, widening motion-property's and motion-vocabulary's DaisyUI vendor
-exemptions (btn, modal, dropdown, toggle) and teaching motion-vocabulary to abstain on the
-reduced-motion floor, since the first compiled-sheet class join over `src/lib/components` convicted
-vendor CSS across 42 files; (2) the plan's own contradiction on HelpHome's two `:hover` pairs is
-resolved for the rule's side, so the `:hover` halves gain the `@media (hover: hover)` guard the
-rule's fix message teaches, superseding task 6a's "adds no guard" decision; (3) the commit footer is
-the single co-author line, since this session has no URL. Task 11 records all three in the plan.
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Release plan, Geoff 2026-09-15 10:3x: ONE release, not a series.** Geoff is the only cairn consumer until
-the upgrade and extend tools ship, so the window keeps accumulating on `main`: no 0.97.0 cut now, no
-pre-cut window pass now (the dependency sweep runs immediately before the eventual cut), extend-1 and
-extend-2 land first, then one cut carrying everything (extend-1's "Available since" reads 0.97.0 and its
-advisory rules promote at 0.98.0; `launch.json` updated). After that cut Geoff upgrades every site at once,
-documents the friction, ships one improvement release from it, then beta. **The site round is an
-upgrade AND a rewrite (Geoff, 2026-09-15):** each site is brought onto the new best practices the extend
-tools teach and becomes a model cairn site, and the friction it surfaces is the fodder for the docs
-rewrite, which therefore follows the site round rather than the week of 2026-09-21. **Docs shape
-(Geoff, 2026-09-15 late morning):** the reference arm (gated) and the extend recipes (shipped by the
-extend passes) stand as they are; ONE agent-facing site upgrade brief for the release is authored in two
-steps, its window section as a small task right after the motion merge and its tools-and-recipes section
-plus the done-check as an added task in the pre-cut window pass; the site round runs against those three;
-the human-facing rewrite fills the arms from the harvest afterward. The skeleton is also the FACTS
-CONTAINER (Geoff, 2026-09-15): the facts harvest from the old docs lands there, every fact carrying its
-source (file and symbol, check script, changelog line, or owner brief; sourceless entries are candidates),
-agent-facing and never shipped; the arms render prose from it and are checked against it, and the upgrade
-brief is its release-scoped view. **Adversarial review of the container (Geoff, 2026-09-15), right after the fold and before the
-docs-to-facts pass is planned:** three fresh-context Opus reviewers, disjoint lenses (structure and
-mechanics; evolution feasibility from container through the site round to public docs, and what a
-facts-only record loses; charter and per-pass cost), graded against the goal of docs kept light and
-efficient while cairn is finalized yet collecting what full-featured public docs will need. Findings fold
-into the pass plan. The infra shape the review tests (Geoff asked that the initiative survive every
-context, 2026-09-15): the container SHIPS in the tarball in place of the removed arms, so a site reads
-version-locked facts from its installed engine; the engine-consult skill reads it first and its brief
-gains a "facts consulted" line; site-implementer and cairn-implementer name it as the docs; each site
-repo's CLAUDE.md gets one pointer line from the pass that upgrades it; growth is a gated pass dimension
-(every export has an entry, every bullet a source and tag, links resolve) and the cairn-pass docs step
-becomes "grow the container"; the gaps file and the friction log are the two intake files, both
-complete-or-move; the claude-tooling manifest and memory carry the pointer. **The write path from a site session (Geoff,
-2026-09-15):** a dotfiles command `cairn-fact` with two verbs, `fact` (arm, sentence, source) and `gap`
-(sentence, what you were doing), stamping the repo, pass, date, and installed engine version, appending
-to the cairn checkout on main, running the cheap container check, committing, and pushing; a user-scope
-skill makes an agent verify the true fact against the engine source in the sibling checkout and file it
-before finishing the task; site-implementer's report gains a "facts filed" line and the site-pass
-harvest step asks for the count. Reads are version-locked to the installed engine; writes go forward on
-main. A deliverable of the docs-to-facts pass. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after that review and the
-motion merge, before extend-1:** the facts harvest (seven slices under
-`docs/internal/facts/`, in flight) is folded and committed; the admin, editors, extend, and why-cairn arms
-and the docs README are REMOVED from the tree and the tarball; the REFERENCE ARM STAYS (one gated page per
-export) but MOVES INTO the container at `docs/internal/facts/reference/` (Geoff, 2026-09-15), out of the
-tarball, its two gates re-pointed, its behaviors harvested beside it; the docs gates re-point at the container (every export has a
-facts entry, links resolve, the remaining docs-only checks scope to what is left); CLAUDE.md's docs section
-makes the container the default source and the cairn-pass ritual's docs step becomes "grow the container";
-skills and agents citing arm pages are re-pointed; extend-1 and extend-2's docs deliverables are amended
-to container entries. The container grows with every pass and is the fact basis for the eventual
-human-facing rewrite. **Site round under this pattern (Geoff, 2026-09-15):** the container is the docs
-while aksailingclub-org is upgraded and finished and ecxc-ski and 907-life are upgraded and polished;
-every site pass hunts holes in it (information, recipes, reference, architecture) and appends them to
-`docs/internal/facts/gaps.md`, triaged complete-or-move like the friction log; once ecxc-ski and 907-life
-are done and polished, the container extends into the set of public-facing docs. **Sequence from here:** motion merge;
-the brief's skeleton; the dynamic gate tier (runner half in dotfiles started 2026-09-15 from this session,
-classifier half in this repo after the merge); extend-1; extend-2; the pre-cut pass with the brief's
-completion added; the cut; the site round. Every consumer pin bump,
-cairn.pub's docs pin included, holds until then. The overnight run now stops after the motion pass merges
-(stages motion, final).
-
-**Task 11 ruling, 2026-09-15 10:2x.** Task 11 (commit `48fba6fe`, the records) is ACCEPTED with a docs-only
-`11-fix` task on top: two Verified lines in the rulings ledger reworded to what `custom-surface-budget.json`
-holds, HISTORY's chain A count set to nine plus the four correction tasks, the changelog window settled at
-the pre-pass 211 plus six (task 1's merged line counts once; the two unassigned "Consumers must: nothing"
-lines from tasks 7 and 10 removed), and three polish items. Then the close ritual. Relaunched as the same
-workflow `wf_f43d9c7a-ade`.
-
-**Task 10 ruling, 2026-09-15 09:2x.** Task 10 (commit `4d2ed14e`) is ACCEPTED with its 60 new admin-visual
-baselines committed from this workstation (precedent `d882921c`); the ritual's CI regen re-canonicalizes
-them. A small `10-fix` task (doc comment, changelog root name, the stray capture script deleted) runs
-before task 11 under the light gate. Relaunched as the same workflow `wf_f43d9c7a-ade`.
-
-**Overnight run 2 RELAUNCHED, 2026-09-15 00:4x (Geoff: "continue to the launch"), as workflow `wf_f43d9c7a-ade`, task run resumed, guards re-armed until 09:00.** The wind-down state it resumes from: State on `admin-motion` (clean, pushed): tasks 1
-to 4, 6a, 8 accepted; chain B merged (`5bcc2258`); simplifier fold (`263654d0`); the conductor-inserted
-task `6a-fix` IMPLEMENTED in two commits (`fix(audit): exempt DaisyUI vendor motion and the
-reduced-motion floor`, `ec203cac fix(admin): guard HelpHome hover paint on hover-capable pointers`)
-but NOT yet reviewed or accepted. Remaining: 6b, 7, 10, 11, the close ritual, then precut, the
-0.97.0 cut, and extend-1. **The Go tool branch is DROPPED from the run** (Geoff, 2026-09-15); pass A
-stays held at its Task 3 boundary on `cairn-tool-a` (draft PR #60) to pick up the week of 2026-09-21,
-and the docs rewrite (from pass 2a) moves to that same week (Geoff, 2026-09-15).
-Resume prompt: from a fresh session, follow `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md` steps 1
-to 7 again (`launch.json` already carries the one-line footer and `toolA: null`; `motion-args.json`
-already carries `6a-fix` first with a partial-work note that counts its two commits as landed, so a
-relaunch re-verifies and reviews it rather than redoing it); stages
-`["motion","precut","release","parallel","final"]`. Rulings behind `6a-fix`: task 6a's
-zero-findings criterion was unmet only by DaisyUI vendor CSS (btn, modal, dropdown, toggle) and the
-reduced-motion floor, so the two rules' exemption lists widened; the plan's contradiction on HelpHome's
-two `:hover` pairs resolved for the rule's side (guarded, superseding task 6a's "no guard" decision);
-the commit footer is the single co-author line. Task 11 records all three in the plan, plus the 01:1x ruling that accepted `6a-fix` and ratified
-motion-property's `transition: none` parsing (zero properties, the reduced-motion snap idiom), and the
-04:5x rulings on task 7 (zen, commit `5c41f061` kept; task `7-fix` inserted): the nested four-rule
-frame-offset form and the `data-cairn-frame-open` direction key are ratified; chrome fades are
-entrance-only but gated off first paint by a `data-cairn-zen-used` attribute; the chip's exit is keyed
-on state so both directions ship. Task 6b accepted after one fix round; 7-fix accepted after one fix
-round; task 10 in flight at 08:5x. **Geoff, 2026-09-15 morning:** the per-task gate is LIGHTENED for the
-rest of the run (the showcase e2e narrowed to admin-visual.spec.ts per task; the full string runs at each
-close ritual and on CI), and **extend-1 is HELD**: the run stops after the 0.97.0 cut (stages
-motion, precut, release, final) and extend-1 launches separately. Spend tonight:
-about 1.3M subagent tokens over four launches (one escalation halt, one runner-error stop, one
-stop to drop the Go tool, one wind-down).
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_f43d9c7a-ade` (a second relaunch, after `wf_5447b584-7b1` was stopped for a runner error: a malformed args entry made the task run return empty, which the orchestrator now treats as a halt).**
-The first launch (`wf_085689cc-81b`) halted when the diff-reviewer escalated task 6a: its own work
-was verified complete and paint-clean (commit `69c57db2`, ACCEPTED), but its zero-findings criterion
-was unmet for reasons outside its Files. Conductor rulings, reversible in the morning: (1) a task
-`6a-fix` is inserted before 6b, widening motion-property's and motion-vocabulary's DaisyUI vendor
-exemptions (btn, modal, dropdown, toggle) and teaching motion-vocabulary to abstain on the
-reduced-motion floor, since the first compiled-sheet class join over `src/lib/components` convicted
-vendor CSS across 42 files; (2) the plan's own contradiction on HelpHome's two `:hover` pairs is
-resolved for the rule's side, so the `:hover` halves gain the `@media (hover: hover)` guard the
-rule's fix message teaches, superseding task 6a's "adds no guard" decision; (3) the commit footer is
-the single co-author line, since this session has no URL. Task 11 records all three in the plan.
-
-**Overnight launch, 2026-09-14 late (session 7c350980 closes after writing this).** A fresh session
-launches ONE run from `~/.cache/cairn-overnight-2026-09-14/LAUNCH.md`, stages in order: `motion`
-(admin-motion resumed at task 6a; tasks 1 to 4 and 8 accepted, worktrees clean; close ritual and
-merge), `precut` (the pre-cut window pass on main), `release` (the 0.97.0 cut, approved by Geoff
-2026-09-14), `parallel` (extend-1 in two new worktrees beside Go tool pass A tasks 4 to 9 in
-cairn-tool-a, held at Task 10 for Geoff), `final` (this file). The earlier halt paragraph below is
-superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e3974). Morning items
-after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
-blueprint-audit, the post-mortem.
-
-**Overnight run halted at stage motion:run1.** Reason: task 2 (the shipped-rule reconciliation)
-accepted, fixRounds 1; task 3 (motion-property and motion-hover-gate) escalated, fixRounds 0; task
-4 (motion-vocabulary) deferred, fixRounds 0; task 6a (the admin migrated onto the language)
-deferred, fixRounds 0; task 6b (the dropzone's drag-over state) deferred, fixRounds 0; task 7
-(zen) deferred, fixRounds 0; task 10 (the engine's tree wired, and the visual suite) deferred,
-fixRounds 0; task 11 (docs and records, last) deferred, fixRounds 0. Resume prompt: Read the
-motion run-1 journal, decide the non-accepted task, then resume the remaining tasks per
-docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md.
-
-**Recovery, 2026-09-14 17:xx (session 7c350980).** A desktop crash at 16:03 (two full gates side by
-side; systemd-oomd killed GNOME Shell) took both conducting sessions. This session resumed both:
-the motion pass runs as workflow `wf_0c5004bd-52c` (tasks 1 and 8 accepted, chain A on task 3 of
-its remaining eight; chain B merges at the close), and **Go tool Pass A is at its Task 3 segment
-boundary**, held unmerged on branch `cairn-tool-a` (draft PR #60, three green tool legs on every
-push; the release job's dispatch dry run waits for main). Tasks 4 through 11 resume in a fresh
-session after the cut. Ledger for that resume: the fake's `tokenVerifyId` default and three test
-files still carry the real Cloudflare API token id (outside the corpus ban list; scrub as a chore).
-Gates now run in an 8G-capped user scope (`cairn-run-gate`); one browser-bearing gate at a time.
-
-**Polish-C is MERGED** (PR #59, CI green, merge commit `ece054b8`; entry and post-mortem in
-[`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-14 13:2x).
-**Next, a fresh session launches the admin motion pass** per
-`~/.cache/cairn-overnight-2026-09-12/LAUNCH.md` (its 2026-09-14 handoff section is the step list:
-copy `cairn-motion.js` and the chains script to the new scratchpad, rewrite `chainsScript`, arm the
-guards and the full inhibitor set, launch). The pass runs UNREAD on its reviewed plan
-(`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; Geoff, 2026-09-13). Then, on
-`main` with no worktree live, the **pre-cut window pass** on its APPROVED plan
-(`docs/superpowers/plans/2026-09-14-pre-cut-window-pass.md`: the dependency sweep through the
-`dependency-upgrade` skill, three accepted Carbon defaults, records; four per-task Agent chains,
-ceiling 3.30M). Then the cut as **0.97.0** via `cairn-release` (verify the number is free first).
-Held for Geoff after the release: cairn.pub's engine pin bump (a production deploy), the three
-dependency tripwires, the `blueprint-audit` dotfiles script, the post-mortem.
-
-After the cut, in fresh sessions: the Go tool 1.0 (below) in parallel with the extend
-spec's fresh read (cache draft, re-read against post-C `api-surface.md`), then the docs rewrite
-from pass 2a. Polish-C's run spent 7.2M subagent tokens (conductor-notes.md has the detail).
+Held for the week of 2026-09-21: Go tool pass A at its Task 3 boundary on `cairn-tool-a` (draft PR #60).
+Morning items still open: the three dependency tripwires, `blueprint-audit`, the motion post-mortem.
+Spend on the night: about 5.5M subagent tokens for the motion pass across six launches, plus about 2.5M
+for the facts harvest, tightening, and fold.
 
 ## Parallel tracks
 

@@ -36,8 +36,7 @@ superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e397
 after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
 blueprint-audit, the post-mortem.
 
-**Overnight run 2 WOUND DOWN, 2026-09-15 00:3x (Geoff: 75% of the weekly token budget used).**
-Nothing is running; guards and inhibitors released. State on `admin-motion` (clean, pushed): tasks 1
+**Overnight run 2 RELAUNCHED, 2026-09-15 00:4x (Geoff: "continue to the launch"), as workflow `wf_f43d9c7a-ade`, task run resumed, guards re-armed until 09:00.** The wind-down state it resumes from: State on `admin-motion` (clean, pushed): tasks 1
 to 4, 6a, 8 accepted; chain B merged (`5bcc2258`); simplifier fold (`263654d0`); the conductor-inserted
 task `6a-fix` IMPLEMENTED in two commits (`fix(audit): exempt DaisyUI vendor motion and the
 reduced-motion floor`, `ec203cac fix(admin): guard HelpHome hover paint on hover-capable pointers`)

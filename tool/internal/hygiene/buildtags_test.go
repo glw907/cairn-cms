@@ -39,7 +39,11 @@ func TestNoBuildTags(t *testing.T) {
 			}
 			return nil
 		}
-		if !strings.HasSuffix(path, ".go") || path == thisFile {
+		// runtime.Caller(0) always reports thisFile with forward slashes, but
+		// WalkDir yields OS-native separators, so compare both in slash form;
+		// on Windows a raw == comparison never matches and the walk flags
+		// this file's own //go:build reference in the doc comment above.
+		if !strings.HasSuffix(path, ".go") || filepath.ToSlash(path) == filepath.ToSlash(thisFile) {
 			return nil
 		}
 		data, err := os.ReadFile(path)

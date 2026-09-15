@@ -1,4 +1,4 @@
-# Borrow-1 Pass Implementation Plan (gates and atoms, after the 0.97.0 cut, beside Go tool pass A, before the docs rewrite)
+# Extend-1 Pass Implementation Plan (gates and atoms, after the 0.97.0 cut, beside Go tool pass A, before the docs rewrite)
 
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via
@@ -8,7 +8,7 @@
 
 **Date:** 2026-09-14. **Approved:** Geoff, 2026-09-14, after the three-lens adversarial review, the
 fold read over the spec and both plans, and the targeted read of the fold's own mechanisms. The
-plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md`
+plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-extend-design.md`
 (revision 2, with Fold 10 carrying this plan's review back). The plan argues from the spec;
 executors read both.
 
@@ -27,7 +27,7 @@ domain-risk). Every ranked change is applied. The decisions that changed the pla
    directory plus the gate string, so two worktrees' FULL gates run concurrently, which is the
    recorded 2026-09-14 desktop crash, and `CI=1` disables Playwright's server reuse so the second
    run dies on port 4173. Tasks 7 and 8a/8b run CHECK-PLUS-UNIT; the seam's e2e proof, its
-   captures, and its three assertions run once, after `borrow-1-site` merges, as a ritual step.
+   captures, and its three assertions run once, after `extend-1-site` merges, as a ritual step.
 2. **Anything a scaffolded site must carry travels through the bake, not the overlay.** The
    overlay directory composes only into the GitHub template repository. The CI workflow lives at
    `examples/showcase/.github/workflows/check.yml` (GitHub ignores a nested `.github`), the bake
@@ -54,7 +54,7 @@ domain-risk). Every ranked change is applied. The decisions that changed the pla
 After the `0.97.0` cut. In parallel with the rest of the Go tool pass A
 (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`), which lives under `tool/` and touches
 no file this pass touches except the three pass-close files, merged in whichever order the closes
-land. Before the docs rewrite, so the rewrite documents exports that exist. borrow-2 follows the
+land. Before the docs rewrite, so the rewrite documents exports that exist. extend-2 follows the
 rewrite. Site migration waits until all three have landed (Geoff, 2026-09-13).
 
 **Architecture:** nine tasks in two chains. Chain A is engine work under `src/lib` plus the two
@@ -69,9 +69,9 @@ site's standalone compile, with a PostCSS fallback mirroring the engine's own
 `scripts/build/build-admin-css.mjs`), daisyUI 5.6, Vitest, Playwright, the `cairn-audit` static
 substrate, the `create-cairn-site` bake (`packages/create-cairn-site/scripts/bake-template.mjs`).
 
-**Not in this pass:** the guidance layer and `cairn-guidance` (borrow-2), any change to
+**Not in this pass:** the guidance layer and `cairn-guidance` (extend-2), any change to
 `cairn-doctor` (retiring; Geoff, 2026-09-14), the recipe pages (the docs rewrite), the ledger
-execution of the retired doctor row (borrow-2), the removal of `cairn-btn-guarded` from the sheet
+execution of the retired doctor row (extend-2), the removal of `cairn-btn-guarded` from the sheet
 (a later pass with its budget edit).
 
 ## Token ceiling
@@ -100,10 +100,10 @@ scratchpad first. **Two chains, one run.**
 
 | Chain | Tasks, in order | Worktree | Branch | Gate |
 |---|---|---|---|---|
-| A | 1, 2, 3, 4, 5, 6 | `.claude/worktrees/borrow-1` | `borrow-1` | CHECK-PLUS-UNIT; FULL for 3 and 4 |
-| B | 7, 8a, 8b | `.claude/worktrees/borrow-1-site` | `borrow-1-site` | CHECK-PLUS-UNIT only |
+| A | 1, 2, 3, 4, 5, 6 | `.claude/worktrees/extend-1` | `extend-1` | CHECK-PLUS-UNIT; FULL for 3 and 4 |
+| B | 7, 8a, 8b | `.claude/worktrees/extend-1-site` | `extend-1-site` | CHECK-PLUS-UNIT only |
 
-`borrow-1` merges; `borrow-1-site` branches from the same commit and merges into `borrow-1` at the
+`extend-1` merges; `extend-1-site` branches from the same commit and merges into `extend-1` at the
 ritual. `maxFix` is `1`. Only chain A ever holds port 4173, the headless browser, and an 8G gate
 scope at a time, because chain B runs no e2e and captures nothing; task 7's proof runs after the
 merge (ritual step 1).
@@ -219,7 +219,7 @@ under `src/lib/components/`, `src/lib/audit/rules/`, `docs/reference/cairn-audit
 - **Batch actions are additive.** No existing `AdminTable` prop changes; rows stay caller-rendered.
 - **The doctor is untouched.** No check, no flag, no doctor transcript.
 - **The scaffolded workflow's last step is a comment this pass**; the spec's "staleness prints
-  on every push" lands when borrow-2 ships `cairn-guidance` and uncomments it.
+  on every push" lands when extend-2 ships `cairn-guidance` and uncomments it.
 - **Redaction is whole-key**, case-insensitive, against `REDACTED_LOG_KEYS` exported beside
   `createLogger`: `token`, `secret`, `password`, `cookie`, `authorization`, `session_id`,
   `sessionId`, `apiKey`, `privateKey`. `tokens`, `tokenLength`, `hasSession` survive.
@@ -582,16 +582,16 @@ changelog window reconciled; the record file.
   on action controls across ten admin route files; `audit-rule-advisory-first-tier` accept, placed
   with the `audit-cli-*` rows, the standing rule for consumer-facing rules; `batch-actions-additive`
   recorded as engine work with the charter-test note), `ROADMAP.md` (close the tooltip and
-  batch-action items in "Five admin defaults"; close the borrow-1 half of the borrowable-patterns
+  batch-action items in "Five admin defaults"; close the extend-1 half of the extend
   entry; add `/log` and `/admin-toolkit` to the "Toward 1.0" seam bullet),
   `docs/extend/migration-notes.md`, `CHANGELOG.md` (chain A's entries reconciled),
-  `docs/internal/record/2026-09-14-borrow-1-record.md` (what the gate caught; what a later pass
+  `docs/internal/record/2026-09-14-extend-1-record.md` (what the gate caught; what a later pass
   would be wrong to rediscover; the `cairn-guidance check` report line for a surviving
-  `cairn-btn-guarded` in a site tree, recorded for borrow-2)
+  `cairn-btn-guarded` in a site tree, recorded for extend-2)
 
 **Steps:**
 - [ ] **Step 1:** the rows in the ledger's fenced format; `npm run check:rulings-format`. The
-  `stylesheet-seam` row is written only if `borrow-1-site` has merged when this task runs;
+  `stylesheet-seam` row is written only if `extend-1-site` has merged when this task runs;
   otherwise the conductor writes it at the ritual after the merge, and the report says which.
 - [ ] **Step 2:** ROADMAP, migration notes, changelog reconciliation, the record.
 - [ ] **Step 3:** the CHECK-PLUS-UNIT gate. Commit.
@@ -602,7 +602,7 @@ changelog window reconciled; the record file.
   `/admin-toolkit`.
 - The CHECK-PLUS-UNIT string exits 0.
 
-**Gate:** CHECK-PLUS-UNIT. **Commit:** one, `docs(borrow-1): ledger rows, roadmap, records`.
+**Gate:** CHECK-PLUS-UNIT. **Commit:** one, `docs(extend-1): ledger rows, roadmap, records`.
 
 ---
 
@@ -651,7 +651,7 @@ runs.
   fixture's by exactly one added sheet, whose body contains the chosen utility's declaration; (c)
   the `getComputedStyle` snapshot over the engine-owned properties is unchanged from the fixture on
   all three admin pages. The fixture is the "without" side; there is no second build.
-- Consumed by task 8a (the bake), by the ritual (the proof run), and by borrow-2's snippets.
+- Consumed by task 8a (the bake), by the ritual (the proof run), and by extend-2's snippets.
 
 **Decisions the plan makes:**
 - Step 2's first act, after installing the devDependency, is a probe:
@@ -819,13 +819,13 @@ admin markup), `norms.yml`, `scaffold.yml` and `create-site.yml` (blocking for 8
   the item and the report says so.
 - **Chain B halted after task 7:** the showcase carries the seam, the template does not;
   mergeable, with 8a and 8b carried forward.
-- **Chain B not merged:** `borrow-1` merges without the seam; the `stylesheet-seam` ledger row is
+- **Chain B not merged:** `extend-1` merges without the seam; the `stylesheet-seam` ledger row is
   not written; the spec's Layer 2 row stays open.
 
 ## Pass-end ritual
 
 0. The conductor's own first acts, in order: write STATUS for the checkpoint and the close; merge
-   `borrow-1-site` into `borrow-1`, reconciling `CHANGELOG.md` by hand and re-running
+   `extend-1-site` into `extend-1`, reconciling `CHANGELOG.md` by hand and re-running
    `npm run emit:template` on the merged tree; open the PR; push.
 1. **The post-merge proof, one dispatch:** first, capture `e2e/fixtures/admin-sheet-baseline.json`
    from a throwaway worktree at this pass's branch point, previewed on port 4273, commit it, and
@@ -841,7 +841,7 @@ admin markup), `norms.yml`, `scaffold.yml` and `create-site.yml` (blocking for 8
 4. The six CI-only gates confirmed green inside that run.
 5. The from-scratch consumer build: a fresh `npm install` in `examples/showcase`, build, e2e.
 6. `design.yml`, `scaffold.yml`, and `create-site.yml` green on the PR.
-7. The pass-end CI regen, `gh workflow run e2e.yml --ref borrow-1 -f update_snapshots=true`; read
+7. The pass-end CI regen, `gh workflow run e2e.yml --ref extend-1 -f update_snapshots=true`; read
    the diff against the union of every `INTENDED MOVES:` declaration; an undeclared move is
    blocking.
 8. The fresh-context `visual-verifier` over the signups screen (before at the parent commit, after
@@ -851,7 +851,7 @@ admin markup), `norms.yml`, `scaffold.yml` and `create-site.yml` (blocking for 8
     `docs/reference/log.md`; the changelog window finalized under `## Unreleased`; no version bump.
 11. HISTORY entry, STATUS (present tense, under sixty lines), ROADMAP as task 6 left it; the record
     file. Score both budgets.
-12. Merge on green CI. Close the session; borrow-2 waits on the docs rewrite.
+12. Merge on green CI. Close the session; extend-2 waits on the docs rewrite.
 
 ## What this pass hands forward
 
@@ -859,7 +859,7 @@ admin markup), `norms.yml`, `scaffold.yml` and `create-site.yml` (blocking for 8
   recipe with the utilities-only rule, the forbidden-include clause, and the probe's answer on the
   compile tool; the "Available since" opening line on every recipe page; `docs/reference/log.md`
   as the page the logger recipe links.
-- **To borrow-2:** the six `cairn-guidance check` report items and their snippets (the workflow
+- **To extend-2:** the six `cairn-guidance check` report items and their snippets (the workflow
   under `examples/showcase/.github/`, task 7's scripts and config, the import line, the
   exclusion, the guidance tree); the workflow's commented final step to enable; the ledger
   execution of the retired doctor row; the `cairn-btn-guarded` report line from the record file.

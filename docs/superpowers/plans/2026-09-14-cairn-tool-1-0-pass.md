@@ -128,10 +128,10 @@ explicitly and the workflow's gate string is `make -C tool check`.
 **Segments.** Pass A segments after Task 3, Task 6, and Task 9. Pass B segments after Task 15,
 Task 19, and Task 22. Every boundary sits on a commit the gate proved green.
 
-**Sequencing.** Both passes run after the `0.97.0` cut, in parallel with `borrow-1`, and before
+**Sequencing.** Both passes run after the `0.97.0` cut, in parallel with `extend-1`, and before
 the docs rewrite. The tool lives under its own module, so the parallelism is real. Honor the
 one-executor-per-worktree rule: these passes run on their own feature worktree off `main`, and
-`borrow-1` runs on its own. Neither pass touches `src/lib`, so the branches contend over six
+`extend-1` runs on its own. Neither pass touches `src/lib`, so the branches contend over six
 files only: `CHANGELOG.md`, `docs/STATUS.md`, and `ROADMAP.md`, all written at a pass close;
 `CLAUDE.md` and `docs/superpowers/2026-08-18-tui-skills-setup-brief.md`, written by Task 2; and
 `docs/internal/what-cairn-is-and-is-not.md`, written by Task 25.

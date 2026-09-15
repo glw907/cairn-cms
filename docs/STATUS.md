@@ -49,7 +49,7 @@ ceiling 3.30M). Then the cut as **0.97.0** via `cairn-release` (verify the numbe
 Held for Geoff after the release: cairn.pub's engine pin bump (a production deploy), the three
 dependency tripwires, the `blueprint-audit` dotfiles script, the post-mortem.
 
-After the cut, in fresh sessions: the Go tool 1.0 (below) in parallel with the borrowable-patterns
+After the cut, in fresh sessions: the Go tool 1.0 (below) in parallel with the extend
 spec's fresh read (cache draft, re-read against post-C `api-surface.md`), then the docs rewrite
 from pass 2a. Polish-C's run spent 7.2M subagent tokens (conductor-notes.md has the detail).
 

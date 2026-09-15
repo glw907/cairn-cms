@@ -1,4 +1,4 @@
-# Borrow-2 Pass Implementation Plan (the guidance layer, after the docs rewrite)
+# Extend-2 Pass Implementation Plan (the guidance layer, after the docs rewrite)
 
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via
@@ -8,7 +8,7 @@
 
 **Date:** 2026-09-14. **Approved:** Geoff, 2026-09-14, after the three-lens adversarial review, the
 fold read over the spec and both plans, and the targeted read of the fold's own mechanisms. The
-plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md`
+plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-extend-design.md`
 (Layer 3, the Trust boundary, Adoption, Fold 6, 9, and 10). The plan argues from the spec;
 executors read both.
 
@@ -54,8 +54,8 @@ changed the plan's shape:
 
 ## Where it sits
 
-After borrow-1 has merged and after the docs rewrite has landed the per-pattern recipe pages and
-the tarball docs index. borrow-1 runs after the `0.97.0` cut beside Go tool pass A and before the
+After extend-1 has merged and after the docs rewrite has landed the per-pattern recipe pages and
+the tarball docs index. extend-1 runs after the `0.97.0` cut beside Go tool pass A and before the
 rewrite; this pass is third. Site migration (ASC, ecxc, 907) waits until this pass has landed
 (Geoff, 2026-09-13).
 
@@ -90,10 +90,10 @@ combined question. **Checkpoint interval:** every four tasks; written when the r
 
 | Chain | Tasks, in order | Worktree | Branch |
 |---|---|---|---|
-| A | 1a, 1b, 2, 3a, 3b, 4 | `.claude/worktrees/borrow-2` | `borrow-2` |
-| B | 5, 6, 7 | `.claude/worktrees/borrow-2-skills` | `borrow-2-skills` |
+| A | 1a, 1b, 2, 3a, 3b, 4 | `.claude/worktrees/extend-2` | `extend-2` |
+| B | 5, 6, 7 | `.claude/worktrees/extend-2-skills` | `extend-2-skills` |
 
-`borrow-2` merges; `borrow-2-skills` merges into it at the ritual. Chain B touches
+`extend-2` merges; `extend-2-skills` merges into it at the ritual. Chain B touches
 `scripts/checks/check-skill-budget.mjs` and its test, `scripts/checks/docs-links.mjs`,
 `skills/cairn-extend/**`, `skills/cairn-consult/**`, and the changelog; chain A touches none of
 those. No paint, so every task runs CHECK-PLUS-UNIT and port 4173 is never contended. `maxFix` is `1`.
@@ -105,7 +105,7 @@ covers `skills/**` and `claude/**` after the merge. Neither chain waits on the o
 
 ### Pre-dispatch
 
-1. Confirm borrow-1 and the docs rewrite have merged and CI on `main` is green.
+1. Confirm extend-1 and the docs rewrite have merged and CI on `main` is green.
 2. Confirm no live executor holds either worktree. Create both off the same commit; `npm install`
    at each root and from scratch in each `examples/showcase`.
 3. Confirm the branch carries this plan (committed on `main` at authoring). Write STATUS. Arm the
@@ -114,30 +114,30 @@ covers `skills/**` and `claude/**` after the merge. Neither chain waits on the o
 ## Reconciliation at dispatch
 
 Measured on `main` at `55fc7762` by the spec's mechanics review and the plan's own; two later
-passes (borrow-1, the rewrite) move anchors under `docs/extend/`, `docs/reference/`,
+passes (extend-1, the rewrite) move anchors under `docs/extend/`, `docs/reference/`,
 `package.json`, and the scaffold.
 
 | Anchor | Who moves it | Which task cares | How to relocate |
 |---|---|---|---|
 | `docs/extend/README.md` recipe index | the docs rewrite | Task 6 | No task reads this table for content: task 6 reads the index on the branch, cites every recipe page it lists, and quotes the list in its report |
 | The tarball docs index path | the docs rewrite | Task 2 | Read `package.json` `files` and the rewrite's HISTORY entry at execution; the fragment names the path it found |
-| `examples/showcase/.github/workflows/check.yml` (the commented final step) | borrow-1 task 8a | Task 3b | Locate the comment by text |
-| `examples/showcase/package.json` scripts, `cairn-audit.config.json` | borrow-1 task 7 | Task 2's snippets copy them | Read both whole |
-| `src/lib/doctor/check-skill.ts` (whole, 150 lines), `assemble.ts:36-51`, `:73-77`, `:206-227`, `bin.ts:47-56`, `:58-71` | untouched by borrow-1 | Tasks 1a, 1b | Verify at dispatch |
+| `examples/showcase/.github/workflows/check.yml` (the commented final step) | extend-1 task 8a | Task 3b | Locate the comment by text |
+| `examples/showcase/package.json` scripts, `cairn-audit.config.json` | extend-1 task 7 | Task 2's snippets copy them | Read both whole |
+| `src/lib/doctor/check-skill.ts` (whole, 150 lines), `assemble.ts:36-51`, `:73-77`, `:206-227`, `bin.ts:47-56`, `:58-71` | untouched by extend-1 | Tasks 1a, 1b | Verify at dispatch |
 | `src/lib/diagnostics/conditions.ts:212-219` (`skill.admin-screens-stale`), `scripts/checks/check-readiness.mjs:14-25`, `docs/admin/is-it-working.md:155`, `:452-457` | untouched | Task 1b | Locate by id and heading |
 | `docs/reference/doctor.md:45`, `:95`, `:246-270`; `docs/reference/cairn-audit.md:18` (the `#the---fix-skill-install` link); `docs/reference/README.md:53-56`, `:84-90` (the CLI list and counts) | untouched | Tasks 1a, 1b | Locate by text |
 | `scripts/checks/check-symbols-allowlist.mjs:19` (`cli-flag:--fix`), `scripts/checks/check-package-files.mjs:121-138` | untouched | Tasks 1b, 2 | Locate by text |
-| `package.json:36` (the `package` script's `chmod` list), `:175-180` (`bin`), `:181-193` (`files`) | borrow-1 task 1 adds an export | Tasks 1a, 2 | Read whole |
-| `scripts/checks/check-skill-budget.mjs:20`, `:25`, `:61-65`, `:75-88`, `:152-161`, `:163-181` | borrow-1 task 2 adds a section name | Task 5 | Read whole |
+| `package.json:36` (the `package` script's `chmod` list), `:175-180` (`bin`), `:181-193` (`files`) | extend-1 task 1 adds an export | Tasks 1a, 2 | Read whole |
+| `scripts/checks/check-skill-budget.mjs:20`, `:25`, `:61-65`, `:75-88`, `:152-161`, `:163-181` | extend-1 task 2 adds a section name | Task 5 | Read whole |
 | `scripts/checks/docs-links.mjs:15`, `:36` (the scan roots) | untouched | Task 5 | Read whole |
-| `.github/workflows/create-site.yml:105-107`, `:131-141` | borrow-1 task 8b edits both; re-read the whole step | Task 3b | Locate by the `existsSync` text |
-| `packages/create-cairn-site/scripts/bake-template.mjs:26-58` (`SITE_README`), `:60` (`DEV_SHIM`), `:180` (the engine spec), `:197` | borrow-1 task 8a edits `DEV_SHIM` | Task 3a | Read whole |
+| `.github/workflows/create-site.yml:105-107`, `:131-141` | extend-1 task 8b edits both; re-read the whole step | Task 3b | Locate by the `existsSync` text |
+| `packages/create-cairn-site/scripts/bake-template.mjs:26-58` (`SITE_README`), `:60` (`DEV_SHIM`), `:180` (the engine spec), `:197` | extend-1 task 8a edits `DEV_SHIM` | Task 3a | Read whole |
 | `packages/create-cairn-site/template/src/chassis/tokens.css:47` and `examples/showcase/src/chassis/tokens.css:47` | untouched | Task 3a | Locate by `@import "tailwindcss"` |
 | `packages/create-cairn-site/template/gitignore` | untouched | Task 3a | Read whole |
 | `docs/extend/upgrade-cairn.md:38-42` (step 4) | the rewrite rebuilds the page | Task 4 | Locate by the doctor command |
 | `docs/internal/engine-rulings.md:4955` | rows appended elsewhere | Task 4 | Locate by slug |
-| `ROADMAP.md:940` (borrowable patterns), `:1447-1452` (the DX decisions), `:1456-1460` (the no-pruning note) | borrow-1 task 6 closes its half | Task 4 | Locate by heading text |
-| The gate string | unchanged unless a later pass edits `.github/workflows/`; borrow-1 task 7 appends one step | Every task | Re-derive at the branch point |
+| `ROADMAP.md:940` (extend), `:1447-1452` (the DX decisions), `:1456-1460` (the no-pruning note) | extend-1 task 6 closes its half | Task 4 | Locate by heading text |
+| The gate string | unchanged unless a later pass edits `.github/workflows/`; extend-1 task 7 appends one step | Every task | Re-derive at the branch point |
 
 ## Ruled inputs (recorded; no task re-derives them)
 
@@ -326,7 +326,7 @@ the link test.
 
 **Files (12):**
 - Create: `claude/CLAUDE.md`, `claude/agents/cairn-extension-reviewer.md`,
-  `claude/snippets/check-cairn.json` (the seven script entries borrow-1 task 7 added: `build:admin-css`, `precheck`, `prebuild`, `predev`, `dev:admin-css`, `check:cairn`, `check:cairn:rendered`), `claude/snippets/cairn-audit.config.json`,
+  `claude/snippets/check-cairn.json` (the seven script entries extend-1 task 7 added: `build:admin-css`, `precheck`, `prebuild`, `predev`, `dev:admin-css`, `check:cairn`, `check:cairn:rendered`), `claude/snippets/cairn-audit.config.json`,
   `claude/snippets/check.yml`, `claude/snippets/settings-hook.json`, `claude/snippets/claude-md-import.txt`,
   `src/tests/unit/packaging-guidance.test.ts`
 - Modify: `package.json:181-193` (`files` gains `claude`), `scripts/checks/check-package-files.mjs:121-138`
@@ -469,15 +469,15 @@ the migration note, the changelog window, and the record.
 - Modify: `docs/extend/upgrade-cairn.md` (a new step between the current steps 3 and 4, "Refresh
   the engine's guidance: `npx cairn-guidance install`", one sentence naming `.orig` and pointing at
   `docs/reference/guidance.md`; the doctor step keeps its text, renumbered),
-  `docs/internal/engine-rulings.md` (a dated `- **Note (borrow-2, Task 4):**` on
+  `docs/internal/engine-rulings.md` (a dated `- **Note (extend-2, Task 4):**` on
   `audit-cli-skill-admin-screens-check-and-cairn-doctor-fix` recording the late execution, the
   relocation to `cairn-guidance`, each of the three grounds' disposition, and the
   executed-without-removal discrepancy; a new `guidance-layer` accept row citing the spec),
-  `ROADMAP.md` (close the borrowable-patterns entry at `:940`; close the pre-release DX-decisions
+  `ROADMAP.md` (close the extend entry at `:940`; close the pre-release DX-decisions
   entry at `:1447`, whose two open calls the `.orig` rule and the flag's removal answer; close the
   no-pruning note at `:1456`, answered by `MANIFEST`; the site-migration follow-up moves to each
   site's own roadmap by reference), `docs/extend/migration-notes.md`, `CHANGELOG.md`,
-  `docs/internal/record/2026-09-14-borrow-2-record.md`
+  `docs/internal/record/2026-09-14-extend-2-record.md`
 
 **Steps:**
 - [ ] **Step 1:** the ledger edits; `npm run check:rulings-format`.
@@ -490,7 +490,7 @@ the migration note, the changelog window, and the record.
   doctor step still follows it.
 - The gate string exits 0.
 
-**Gate:** CHECK-PLUS-UNIT. **Commit:** one, `docs(borrow-2): upgrade step, ledger, roadmap, records`.
+**Gate:** CHECK-PLUS-UNIT. **Commit:** one, `docs(extend-2): upgrade step, ledger, roadmap, records`.
 
 ---
 
@@ -604,8 +604,8 @@ file is a paraphrase with a link, stated as such); the gate string exits 0.
 
 ## Gate
 
-Derived at authoring from the committed `.github/workflows/`; byte-identical to the borrow-1
-plan's derivation plus the `check:cairn` step borrow-1's task 7 appends. **Re-derive it from the
+Derived at authoring from the committed `.github/workflows/`; byte-identical to the extend-1
+plan's derivation plus the `check:cairn` step extend-1's task 7 appends. **Re-derive it from the
 branch point before the first dispatch.**
 
 **The CHECK-PLUS-UNIT string**, for every task, run through `cairn-run-gate '<string>'` in the
@@ -638,7 +638,7 @@ and 3b), `design.yml`, `norms.yml`, `tsgo.yml`, `publish.yml`.
 
 ## Pass-end ritual
 
-0. STATUS for the checkpoint and the close; merge `borrow-2-skills` into `borrow-2`, reconciling
+0. STATUS for the checkpoint and the close; merge `extend-2-skills` into `extend-2`, reconciling
    `CHANGELOG.md` and re-running `npm run emit:template`; open the PR; push.
 1. `code-simplifier`; re-run the gate.
 2. The FULL gate green once in the npm-script form.

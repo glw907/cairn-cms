@@ -834,7 +834,7 @@ the named human gates only):**
   the design-system recipes and voice) as a public reading surface; today its theme is byte-identical
   to waymark's unskinned default (record `docs/internal/record/2026-09-13-blueprint-design-spike.md`).
   That lands with the front-door rewrite after the docs rewrite. Waymark, the scaffold every site
-  reskins, stays neutral: its "not stock DaisyUI" work after borrow-1 is craft (type scale, spacing,
+  reskins, stays neutral: its "not stock DaisyUI" work after extend-1 is craft (type scale, spacing,
   restraint) graded against the public design standard, never a cairn identity a site would strip
   out; the spike's moves that would brand it (rotate its primary hue, adopt the admin type pairing)
   are out.
@@ -849,7 +849,7 @@ the named human gates only):**
   already agrees); `AdminTable` takes an optional accessible-name prop and every engine screen
   passes one; and, from the daisyUI Blueprint audit (record
   `docs/internal/record/2026-09-13-blueprint-audit.md`), `EditPage`'s flash strip drops
-  `transition-all` for the two properties it animates. Two are borrow-1 work because they reshape a pattern: the native `title`
+  `transition-all` for the two properties it animates. Two are extend-1 work because they reshape a pattern: the native `title`
   tooltips (never shown on keyboard focus or touch, not dismissable, WCAG 1.4.13) give way to
   one accessible tooltip primitive, which also retires the `cairn-btn-guarded` workaround; and
   the batch-action pattern built fully inside `CairnMediaLibrary` graduates onto `AdminTable`
@@ -880,9 +880,9 @@ the named human gates only):**
   search subcommand over the installed version so any agent reaches retrieval from Bash,
   and the MCP front end exposes that same search as a tool), each calling the same actions and reading the same records and
   results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
-  borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
+  extend spec and plan, since the tool lives under its own module; (2) extend-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
-  (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the
+  (4) extend-2; (5) site migration, once all the extend work has landed. The tool precedes the
   docs because it changes what the admin track describes and because building its checks
   surfaces what the operational contract leaves unsaid.
 
@@ -915,7 +915,7 @@ the named human gates only):**
   selector in the property-allowlist rule; the sidebar prior-art survey and cairn's own toggle
   measurement are the record. Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
   developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
-  runs on its own screens (the borrowable-patterns gates layer), which means the checker must
+  runs on its own screens (the extend gates layer), which means the checker must
   reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not
   only a component's own `<style>` block, and the audit must run over the engine's own tree so
   cairn is held to the rules first. Sequence (Geoff, 2026-09-13): a second research read on the responsive
@@ -925,18 +925,18 @@ the named human gates only):**
   `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
   sweep of the admin components onto it. Borrowable by consumers through the audit and the
-  design tokens, per the borrowable-patterns architecture. **Borrow hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
-  borrowable-patterns work: each rule is specified for a consumer's tree as well as cairn's own
+  design tokens, per the extend architecture. **Extend hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
+  extend work: each rule is specified for a consumer's tree as well as cairn's own
   (what it reads, error versus advisory tier on first adoption, the fix message naming the cairn
   token), the DaisyUI component-class decision is written consumer-first, and the pass writes the
-  extend track's motion recipe page (the first per-pattern recipe borrow-2's `cairn-extend` skill
+  extend track's motion recipe page (the first per-pattern recipe extend-2's `cairn-extend` skill
   routes to). **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
   release cut, so the cut carries the tokens and the audit rules; the C launch script now stops
   at C's merge and the cut fires after this pass merges. Spec through brainstorming and plan
   through writing-plans start when the revised research records land; both get an adversarial
   review, and the pass runs UNREAD on the reviewed plan as soon as C merges (Geoff, 2026-09-13).
 
-- **Borrowable patterns (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
+- **Extend (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
   developer extending cairn borrows the refined patterns instead of reinventing them.**
   Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three
   layers: gates a consumer runs on its own code (`cairn-audit` wired by the scaffold plus a new
@@ -950,21 +950,21 @@ the named human gates only):**
   evidence is the aksailingclub-org and ecxc-ski surveys (working examples, not exemplars).
   The pass opens in a FRESH session: (1) update the draft spec against post-C export names
   (C renames outcomes, verbs, and the log vocabulary), (2) an adversarial review of the
-  design, (3) `writing-plans` for borrow-1 (gates and atoms, a minor release) and borrow-2
+  design, (3) `writing-plans` for extend-1 (gates and atoms, a minor release) and extend-2
   (guidance, with the docs rewrite it routes to). Draft spec:
-  `~/.cache/cairn-overnight-2026-09-12/borrowable-patterns-design-DRAFT.md`; it lands at
-  `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md` after step 2.
-  Site migration waits until ALL the borrow work has landed (borrow-1, the docs rewrite,
-  borrow-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
+  `~/.cache/cairn-overnight-2026-09-12/extend-design-DRAFT.md`; it lands at
+  `docs/superpowers/specs/2026-09-12-extend-design.md` after step 2.
+  Site migration waits until ALL the extend work has landed (extend-1, the docs rewrite,
+  extend-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
 
-- **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after borrow-1
+- **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after extend-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
   `docs/internal/record/2026-09-04-cairn-case/` is history, not an input. The rewrite follows
   the `docs-rebuild-not-edit` method (each page rebuilt from a brief, the old page mined for
-  facts, reference entries edited in place) and carries the borrowable-patterns recipe pages,
-  one per pattern with its engine ruling linked, that borrow-2's skills route to; borrow-2
-  lands in or just after it. Sequenced after borrow-1 so the extend track documents exports
-  that exist. **Trigger:** borrow-1 merged.
+  facts, reference entries edited in place) and carries the extend recipe pages,
+  one per pattern with its engine ruling linked, that extend-2's skills route to; extend-2
+  lands in or just after it. Sequenced after extend-1 so the extend track documents exports
+  that exist. **Trigger:** extend-1 merged.
 
 - **Two `showcase`-flavored strings survive in what a scaffolded site ships (chassis-B2's
   Task 7 read, filed rather than fixed since both sit outside a docs task's scope and one

@@ -1,4 +1,4 @@
-# Borrowable patterns: design
+# Extend: design
 
 Drafted 2026-09-12 during the polish run, from a brainstorm with Geoff. Revision 2, landed
 2026-09-14 after a fresh-context read against post-C `main` at `55fc7762` and a three-lens
@@ -6,8 +6,8 @@ adversarial review (charter-and-ledger, mechanics-and-feasibility, domain-risk).
 records what the review changed; "What the fresh read changed" records what the read changed
 before it. Geoff reads those two sections; the rest is the design as it now stands.
 
-Executed by two plans: `docs/superpowers/plans/2026-09-14-borrow-1-pass.md` (gates and atoms) and
-`docs/superpowers/plans/2026-09-14-borrow-2-pass.md` (guidance).
+Executed by two plans: `docs/superpowers/plans/2026-09-14-extend-1-pass.md` (gates and atoms) and
+`docs/superpowers/plans/2026-09-14-extend-2-pass.md` (guidance).
 
 ## Fold (2026-09-14)
 
@@ -55,7 +55,7 @@ that changed the design's shape, with the lens that forced each:
    and `AdminTable` has no row model, so the shape is an additive `selection` prop plus a snippet
    with rows still caller-owned. The Tooltip primitive passes the test on ASC's evidence (native
    `title` on action controls across ten admin route files) and stays.
-9. **The doctor is not the installer, and no borrow pass adds a doctor check** (Geoff,
+9. **The doctor is not the installer, and no extend pass adds a doctor check** (Geoff,
    2026-09-14, after the fold: the Go `cairn` tool's 1.0 build is in flight and `cairn-doctor`
    is about to retire). The guidance install and the wiring report move to a new package bin,
    `cairn-guidance`, which is the doctor's existing skill-install code relocated to a bin whose
@@ -85,8 +85,8 @@ that changed the design's shape, with the lens that forced each:
    two worktrees do not serialize and their browser-bearing gates would run concurrently, which is
    the recorded 2026-09-14 crash; a pass's second chain therefore runs no browser-bearing gate.
 
-Smaller applied changes: the ledger action is executed in borrow-2 as Fold 9 states (charter 8
-asked for a reversal in borrow-1; Geoff's note settled it the other way); `createLogger` lives
+Smaller applied changes: the ledger action is executed in extend-2 as Fold 9 states (charter 8
+asked for a reversal in extend-1; Geoff's note settled it the other way); `createLogger` lives
 in its own module so `check:self-use` sees a caller (mechanics 7); `check:reference` is
 configured per subpath and needs a `CONFIG` entry, and the sentence claiming it fails on its own is
 corrected (mechanics 8); the skill budget check is decoupled from the tier-map assertion
@@ -97,7 +97,7 @@ the migration, and any new consumer-facing audit rule enters at advisory tier fo
 (risk 8 and 9); the Tooltip ships its own scoped styles rather than DaisyUI's excluded `.tooltip`
 (risk 7); `check:cairn` is static-only with the rendered half opt-in (charter 6); ten public
 `*Outcome` types, not eleven (mechanics 18); the upgrade page gains a guidance-install step in
-borrow-2 (mechanics 19, revised by Fold 9); `/log` and `/admin-toolkit` are added to ROADMAP's seam bullet rather than riding
+extend-2 (mechanics 19, revised by Fold 9); `/log` and `/admin-toolkit` are added to ROADMAP's seam bullet rather than riding
 it (mechanics 20); the members login exemplar is described accurately as a consumer of engine
 outcome types (charter 11); the create-site CI assertions are amended as a named deliverable
 (mechanics 2); the transcript fixtures are re-captured (mechanics 16); the seam proof's
@@ -109,8 +109,8 @@ The audit-remediation and polish slices refined a set of patterns inside the eng
 easy for a developer extending cairn to borrow them, given that the ways a site extends cairn are
 unpredictable?
 
-Two consumer sites are the evidence, as working examples of what happens without borrowable
-patterns, never as exemplars. aksailingclub-org (ASC) built a twenty-section custom admin over its
+Two consumer sites are the evidence, as working examples of what happens without the extend
+initiative, never as exemplars. aksailingclub-org (ASC) built a twenty-section custom admin over its
 own D1 schema and a second member identity. ecxc-ski built a registration and contact pipeline with
 no custom admin at all. Their survey (session record, 2026-09-12) shows one thing borrowed well and
 two classes reinvented:
@@ -179,12 +179,12 @@ later changed one, the Fold governs.
    (`src/lib/doctor/check-skill.ts`), the flag (`assemble.ts`), the reference row and section
    (`docs/reference/doctor.md:45`, `:246`), and the packaged skill. The retire was recorded as
    executed without the removal, which is a ledger integrity failure on its own. The first
-   ground stands and the doctor is retiring anyway (Fold 9), so borrow-2 removes the check and
+   ground stands and the doctor is retiring anyway (Fold 9), so extend-2 removes the check and
    the flag from the doctor and moves the install to `cairn-guidance`. The second ground is
    superseded by Geoff's 2026-09-12 decision: the harness assumption is accepted as the
    package's stated target, with the docs carrying every statement for everyone else. The third
    ground is closed by mechanism (the `@source not "./.claude"` exclusion, written by the
-   scaffold and reported by `cairn-guidance check`). borrow-2 appends a dated Note recording the
+   scaffold and reported by `cairn-guidance check`). extend-2 appends a dated Note recording the
    late execution, the relocation, each ground's disposition, and the executed-without-removal
    discrepancy.
 5. **The stylesheet seam has a shape**, given in Layer 2 as the Fold revised it. The packaged
@@ -194,9 +194,9 @@ later changed one, the Fold governs.
    so the site lists the packaged sheet and its own.
 6. **The save hook is documented, never installed**, and the same rule now covers every file the
    package did not create (Fold 6), whichever bin does the writing (Fold 9).
-7. **Two Carbon defaults join borrow-1**, per ROADMAP's "Five admin defaults" entry: the Tooltip
+7. **Two Carbon defaults join extend-1**, per ROADMAP's "Five admin defaults" entry: the Tooltip
    primitive as an atom, the batch-action graduation as engine work (Fold 8).
-8. **The motion pass hands borrow five things**, per its plan's "What this pass hands forward":
+8. **The motion pass hands extend five things**, per its plan's "What this pass hands forward":
    the three static rules and one rendered rule as the gates layer's first consumer-run motion
    members; `docs/extend/animate-a-custom-screen.md` as the extend track's first per-pattern recipe;
    the rendered half of `motion-hover-gate` with its trigger; the `.tooltip` touch defect, whose
@@ -205,10 +205,10 @@ later changed one, the Fold governs.
 9. **The scaffold writes a CI workflow, which it does not do today**, and its GitHub App manifest
    gains the permission that makes the push legal (Fold 7). Gated rules hold only where something
    runs them.
-10. **borrow-1 owns its own reference page.** `check:surface` derives its subpath list from
+10. **extend-1 owns its own reference page.** `check:surface` derives its subpath list from
     `package.json` and fails on an unregistered one; `check:reference` checks only the subpaths
     its `CONFIG` names, so a new subpath needs an entry there and a page with a stability-tier
-    marker on every export. Both land in borrow-1. The recipes stay with the docs rewrite.
+    marker on every export. Both land in extend-1. The recipes stay with the docs rewrite.
 
 ## Layer 1: gates
 
@@ -242,10 +242,10 @@ before the motion pass, which adds three static and one rendered), gains three t
    opts into, a `cairn-audit.config.json` naming the packaged sheet and the site's compiled admin
    sheet, and `.github/workflows/check.yml` running install, the site's check (whose `precheck`
    compiles the admin sheet), and `check:cairn`, with no secrets and no browser, and a last step
-   `npx cairn-guidance check` under `continue-on-error` once borrow-2 ships that bin. ecxc's dead classes would have
+   `npx cairn-guidance check` under `continue-on-error` once extend-2 ships that bin. ecxc's dead classes would have
    failed `no-uncompiled-class` on the first push.
 3. **The named-sheet hard error, locked by a test.** The audit already throws when a named
-   sheet path is missing; borrow-1 pins that with a named test and documents it, so a workflow
+   sheet path is missing; extend-1 pins that with a named test and documents it, so a workflow
    that audits before the compile step fails loudly rather than reading a false green. The engine's
    own CI gains `npm --prefix examples/showcase run check:cairn`, so the seam cannot rot.
 
@@ -301,7 +301,7 @@ utility and an engine component rule tie on specificity and the utilities layer 
 memory-recorded Tailwind v4 fact and the intended direction: a utility on the site's own element
 beats the engine's component default for that element.
 
-borrow-1 proves it on the showcase's signups screen with one utility the engine's sheet does not
+extend-1 proves it on the showcase's signups screen with one utility the engine's sheet does not
 compile. The static half runs in the task: the audit fails before the seam and passes after. The
 rendered half runs once after the merge, against a branch-point capture: a public page's served
 CSS is unchanged; each admin page gains exactly one sheet, whose body carries the utility; the
@@ -319,7 +319,7 @@ and their write order (fields first, then `level`, `event`, `timestamp`), the re
 secret-named keys to `'<redacted>'`, `REDACTED_LOG_KEYS`, and `CAIRN_LOG_EVENTS`. The console sink is not promised.
 Every `createLogger` instance emits through the module's one sink, so a future subscriber fan-out
 registered on the module reaches the site's records and the engine's alike: the stream stays one.
-`CLAUDE.md`'s paragraph stating the logger is internal is rewritten in borrow-1, and `/log` and
+`CLAUDE.md`'s paragraph stating the logger is internal is rewritten in extend-1, and `/log` and
 `/admin-toolkit` are added to ROADMAP's 1.0 seam bullet, which names the log event names already.
 
 ## Layer 3: guidance
@@ -339,7 +339,7 @@ retrieval path (its planned `docs` search over the installed version). The fragm
 developer's agent at `cairn docs <query>` where the tool is installed and at the tarball's docs
 index where it is not. The tool owns no developer-tooling install; a later tool version may
 surface guidance staleness as one of its health checks by reading `.claude/cairn/VERSION`
-against the installed package, which is a hand-forward to the tool's 2.0, never a borrow task. Every statement in these files also lives in the extend
+against the installed package, which is a hand-forward to the tool's 2.0, never an extend task. Every statement in these files also lives in the extend
 docs, so a developer without Claude Code loses nothing.
 
 - **A `CLAUDE.md` fragment** at `.claude/cairn/CLAUDE.md`, which the site's own `CLAUDE.md`
@@ -379,7 +379,7 @@ The recipes themselves are docs in the extend track, one page per pattern, each 
 ruling as the why and opening with the version the pattern shipped in, so a site on an older range
 reading cairn.pub's newer docs is told rather than led into a module it does not have. The skill
 points at those pages rather than restating them, so there is one source and the docs rewrite owns
-it. The first such page, the motion recipe, exists before borrow-2 starts.
+it. The first such page, the motion recipe, exists before extend-2 starts.
 
 **Versioning and refresh.** `.claude/cairn/VERSION` is stamped from the package version at install.
 `cairn-guidance check` compares it by the same tree hash `check-skill.ts` uses today, and the
@@ -390,7 +390,7 @@ whose content differs and writes `<file>.orig` beside anything it overwrites, ne
 existing `.orig` (the recovery copy is most needed on the second upgrade), and writes
 `.claude/cairn/MANIFEST` so a later install names any path the package no longer ships rather than
 leaving a retired agent discoverable forever. It never deletes. An edited skill is recoverable and
-an upgrade's guidance change is a reviewable diff in the site's repo. borrow-2 adds a step to `docs/extend/upgrade-cairn.md` running `cairn-guidance install`
+an upgrade's guidance change is a reviewable diff in the site's repo. extend-2 adds a step to `docs/extend/upgrade-cairn.md` running `cairn-guidance install`
 after the bump, ahead of the existing doctor step, and removes the doctor's `--fix` flag, its `skill.admin-screens` check, and the
 reference page's `--fix` section, since the doctor will not carry them into its retirement.
 
@@ -408,7 +408,7 @@ the package's guidance is the consent, and the one deliberate act that removes a
 `.claude/skills/cairn-*`, `.claude/agents/cairn-extension-reviewer.md`, and `.claude/cairn/`.
 Everything the bin writes is committed to the site's repository, so it is diffable, and the
 install says so. The
-`@`-import syntax is another vendor's, so its change is an external trigger: borrow-2 files a
+`@`-import syntax is another vendor's, so its change is an external trigger: extend-2 files a
 scheduled routine that watches Claude Code's `CLAUDE.md` import documentation and pings on change,
 per this repo's watch-item rule.
 
@@ -418,13 +418,13 @@ The showcase keeps one demonstration per archetype, written to be read: a header
 archetype, the atoms it composes, and the recipe page it illustrates.
 
 - **The custom admin screen over the site's own table**: the signups route, the extend track's
-  custom-screen example since polish-11b-ii and polish-C. borrow-1 moves its hand-written
+  custom-screen example since polish-11b-ii and polish-C. extend-1 moves its hand-written
   `console.error` onto `createLogger`, adds the one site-compiled utility that proves the
   stylesheet seam, and leaves its two-outcome actions as they are, since the ruling allows them.
 - **The public form with a domain action** (ecxc's shape): the members login route, which consumes
   the engine's `ChannelRequestOutcome` and `ChannelConfirmOutcome` at a site boundary and returns
   two-outcome `ActionData` of its own. That is the lesson an extender needs (switch on the engine's
-  `outcome`, never on a boolean), and borrow-1 adds the logger to its request action and the
+  `outcome`, never on a boolean), and extend-1 adds the logger to its request action and the
   header comment saying exactly that. No new route, no new e2e surface, no new baseline.
 - **External identity**: stays a recipe in the extend track, per the identity-seam ruling.
 
@@ -432,7 +432,7 @@ The scaffold copies none of the exemplar code; it copies the wiring only (gates,
 
 ## Drift
 
-- `/log` and `/admin-toolkit` are added to ROADMAP's 1.0 seam bullet the day borrow-1 lands, so
+- `/log` and `/admin-toolkit` are added to ROADMAP's 1.0 seam bullet the day extend-1 lands, so
   `check:surface` and `check:reference` cover them from the first release.
 - Every move of a stable seam ships a `Consumers must:` line and a `cairn-guidance check` line
   where the old shape is detectable in the site's tree. `cairn-btn-guarded` stays compiled for one minor after the Tooltip lands, and
@@ -442,7 +442,7 @@ The scaffold copies none of the exemplar code; it copies the wiring only (gates,
 
 ## Adoption on existing sites
 
-Not by default. `cairn-guidance check` (borrow-2) reports six things, each with the snippet the
+Not by default. `cairn-guidance check` (extend-2) reports six things, each with the snippet the
 scaffold would have written: the `check:cairn` script, the audit config, the CI workflow, the
 `CLAUDE.md` import line, the `@source not "./.claude"` exclusion (inspecting the entry Vite
 builds, accepting a gitignored `.claude` as equivalent, and stating the Tailwind 4.1 floor), and
@@ -463,14 +463,14 @@ ground, and the remainder is a harvest candidate.
 
 After the `0.97.0` cut.
 
-1. **borrow-1** (engine): the gates and atoms. Runs in parallel with the rest of the Go tool pass A,
+1. **extend-1** (engine): the gates and atoms. Runs in parallel with the rest of the Go tool pass A,
    since the tool lives under its own module, and before the docs rewrite, so the rewrite documents
    exports that exist. Two independent chains: engine (the rules, `/log`, the Tooltip, batch
    actions, the exemplars, the ledger) and site (the seam proof, the scaffold wiring). A minor
    release when it is next cut, since `/log` is new surface.
 2. **The docs rewrite**: the recipe pages with their "available since" lines, the docs index in the
    tarball.
-3. **borrow-2** (engine): the guidance layer. It waits on the rewrite for the recipe pages it routes
+3. **extend-2** (engine): the guidance layer. It waits on the rewrite for the recipe pages it routes
    to and the index the fragment points at.
 4. **Site adoption**: one task in each site's next pass, after all three have landed, so each site
    migrates once onto the finished set (Geoff, 2026-09-13).

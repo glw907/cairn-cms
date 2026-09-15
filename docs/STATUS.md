@@ -212,7 +212,11 @@ rewrite, which therefore follows the site round rather than the week of 2026-09-
 extend passes) stand as they are; ONE agent-facing site upgrade brief for the release is authored in two
 steps, its window section as a small task right after the motion merge and its tools-and-recipes section
 plus the done-check as an added task in the pre-cut window pass; the site round runs against those three;
-the human-facing rewrite fills the arms from the harvest afterward. **Sequence from here:** motion merge;
+the human-facing rewrite fills the arms from the harvest afterward. The skeleton is also the FACTS
+CONTAINER (Geoff, 2026-09-15): the facts harvest from the old docs lands there, every fact carrying its
+source (file and symbol, check script, changelog line, or owner brief; sourceless entries are candidates),
+agent-facing and never shipped; the arms render prose from it and are checked against it, and the upgrade
+brief is its release-scoped view. **Sequence from here:** motion merge;
 the brief's skeleton; the dynamic gate tier (runner half in dotfiles started 2026-09-15 from this session,
 classifier half in this repo after the merge); extend-1; extend-2; the pre-cut pass with the brief's
 completion added; the cut; the site round. Every consumer pin bump,

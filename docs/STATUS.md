@@ -16,6 +16,16 @@ green.
 
 ## Immediate next action (2026-09-14)
 
+**Overnight run halted at stage motion:run1 (2026-09-15).** Reason: task 6a-fix (the motion
+rules' vendor exemptions widened, and the HelpHome hover halves guarded): escalated, fixRounds 0;
+task 6b (the dropzone's drag-over state): deferred, fixRounds 0; task 7 (zen): deferred,
+fixRounds 0; task 10 (the engine's tree wired, and the visual suite): deferred, fixRounds 0; task
+11 (docs and records (last)): deferred, fixRounds 0. Resume prompt: Read the motion run journal,
+decide the non-accepted task per docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md,
+then Relaunch the orchestrator with stages ["motion","precut","release","parallel","final"]. Trim
+every accepted task out of that pass's args file in ~/.cache/cairn-overnight-2026-09-14/, re-run
+`node build.mjs`, and launch the built script again.
+
 **Overnight run halted again at stage motion:run1 (2026-09-15).** Reason: task 6a (the admin
 migrated onto the language) escalated, fixRounds 0; task 6b (the dropzone's drag-over state)
 deferred, fixRounds 0; task 7 (zen) deferred, fixRounds 0; task 10 (the engine's tree wired, and

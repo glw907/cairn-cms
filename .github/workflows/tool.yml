@@ -78,6 +78,14 @@ jobs:
           7z x vale.zip -ovale-bin -y
           echo "$PWD/vale-bin" >> "$GITHUB_PATH"
       - run: vale --version
+      - name: Install GNU make (Windows)
+        # windows-latest ships no GNU make (7zip, CMake, gcc, gdb, binutils are preinstalled;
+        # make is not), so the make step below needs it installed first.
+        if: runner.os == 'Windows'
+        run: choco install make --version=4.4.1 --no-progress -y
+      - name: Show make version (Windows)
+        if: runner.os == 'Windows'
+        run: make --version
       - run: make -C tool check
 
   release:

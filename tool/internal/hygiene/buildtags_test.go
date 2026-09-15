@@ -18,8 +18,8 @@ func TestNoBuildTags(t *testing.T) {
 	if !ok {
 		t.Fatal("resolve this file's own path")
 	}
-	// thisFile is tool/internal/hygiene/buildtags_test.go; walk from the
-	// module root, two directories up from internal/hygiene.
+	// thisFile is tool/internal/hygiene/buildtags_test.go; strip the file name,
+	// then walk up two directories from internal/hygiene to reach the module root.
 	root := filepath.Dir(filepath.Dir(filepath.Dir(thisFile)))
 	if _, err := os.Stat(filepath.Join(root, "go.mod")); err != nil {
 		t.Fatalf("resolved root %s has no go.mod: %v", root, err)

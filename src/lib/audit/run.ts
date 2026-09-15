@@ -136,7 +136,11 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   // deduplicated by path so its suppression directives resolve once, never once per scope.
   const suppressionSources = new Map<string, ParsedComponent | CssSource>();
   for (const file of [...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
-  const split = applySuppressions(raised, [...suppressionSources.values()]);
+  // A `--rule`-scoped run passes a narrowed `rules`, so a directive naming a rule outside that
+  // selection is judged against the ids this run actually executed, not the full registry, which
+  // is what keeps a scoped run from reporting every ordinary out-of-scope directive as dead.
+  const ranRuleIds = new Set(rules.map((rule) => rule.id));
+  const split = applySuppressions(raised, [...suppressionSources.values()], ranRuleIds);
   return {
     findings: [...split.findings].sort(byPosition),
     suppressed: [...split.suppressed].sort(byPosition),

@@ -232,6 +232,34 @@ describe('runStatic', () => {
       expect(() => runStatic(loadConfig(siteRoot, configPath))).toThrow(/absent\.css/);
     });
   });
+
+  // A directive naming a rule the scoped run excluded is neither live nor provably dead: the run
+  // never executed that rule, so nothing could have matched the directive either way. Reporting it
+  // dead is a false error a `--rule`-scoped run would otherwise raise on every ordinary suppression
+  // for a rule outside the selection.
+  describe('a rule-scoped run', () => {
+    let scopedRoot: string;
+
+    beforeAll(() => {
+      scopedRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-scoped-'));
+      mkdirSync(join(scopedRoot, 'dist/components'), { recursive: true });
+      mkdirSync(join(scopedRoot, 'src/lib/components'), { recursive: true });
+      writeFileSync(join(scopedRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
+      writeFileSync(
+        join(scopedRoot, 'src/lib/components/Fixture.svelte'),
+        '<!-- cairn-audit-disable-next-line type-scale -- reviewed separately -->\n<div class="text-[30px]"></div>\n'
+      );
+    });
+
+    afterAll(() => {
+      rmSync(scopedRoot, { recursive: true, force: true });
+    });
+
+    it('raises no dead-suppression finding for a directive naming a rule the scope excluded', () => {
+      const report = runStatic(loadConfig(scopedRoot), selectRules(staticRules(), ['gap-scale']));
+      expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
+    });
+  });
 });
 
 /** A rule that reports one finding naming every component file its context received. */

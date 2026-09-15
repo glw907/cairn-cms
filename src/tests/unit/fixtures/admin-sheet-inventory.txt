@@ -139,6 +139,7 @@ cairn-caret
 cairn-chip-outline
 cairn-chip-quiet
 cairn-chip-warning
+cairn-chrome-fade
 cairn-doc-title
 cairn-doc-title-dim
 cairn-field-stacked
@@ -202,7 +203,6 @@ dropdown-right
 dropdown-start
 dropdown-top
 duration-(--cairn-dur-base)
-duration-(--cairn-dur-quick)
 fieldset
 fieldset-legend
 filter

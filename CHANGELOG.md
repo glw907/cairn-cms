@@ -437,10 +437,13 @@
   the entrance curve and leaving one band faster at 150ms on the exit curve, through the same
   `data-cairn-motion="frame-offset"` allowance a consumer's own admin screen can claim on one
   element per screen. The topbar band, the document title, the editor footer strip, and the
-  mobile action bar each fade at 110ms rather than disappearing without transition. The floating
-  zen chip's entrance carries a 110ms delay so it never leaps into a still-focused editor; its
-  exit does not. The editor card's own box is unchanged and does not transition. Consumers must:
-  nothing; every change is additive motion on an existing state change.
+  mobile action bar each fade at 110ms rather than disappearing without transition, and only on
+  the return from zen: a fresh page load carries no fade, since the shell marks the drawer content
+  zen-used only once zen first turns on. The floating zen chip's entrance carries a 110ms delay so
+  it never leaps into a still-focused editor; its exit now plays for real, at 110ms on the exit
+  curve with no delay, since the chip stays mounted through its own fade instead of vanishing with
+  the rest of the chrome. The editor card's own box is unchanged and does not transition.
+  Consumers must: nothing; every change is additive motion on an existing state change.
 
 - **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
   parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.

@@ -785,6 +785,25 @@ describe('CairnAdminShell', () => {
     expect(content().classList.contains('xl:ml-56')).toBe(true);
   });
 
+  it('marks the drawer content zen-used only after zen first turns on, and keeps the mark after exiting', async () => {
+    // The chrome regions' entrance fade (cairn-admin.css) keys off this attribute so it never
+    // plays on a page's first paint, only on the return from zen; a page that never enters zen
+    // should never carry it at all.
+    const screen = await render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+      zen: false,
+    });
+    const content = () => screen.container.querySelector('.drawer-content')!;
+    expect(content().hasAttribute('data-cairn-zen-used')).toBe(false);
+
+    await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: true });
+    await expect.poll(() => content().hasAttribute('data-cairn-zen-used')).toBe(true);
+
+    // Exiting zen leaves the mark in place, since the fade is for the return trip.
+    await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: false });
+    expect(content().hasAttribute('data-cairn-zen-used')).toBe(true);
+  });
+
   it('lays out the shell as nested drawer regions, not merely styled parts', async () => {
     // The visual proof of the shell confirms only "styled", not "laid out": a DaisyUI nested-scoping
     // bug once shipped a non-rendering (display:block) drawer whose classes were all present. This

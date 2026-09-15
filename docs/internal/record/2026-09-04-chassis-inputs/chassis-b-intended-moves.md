@@ -1087,3 +1087,25 @@ proof and leaving those five widths' baselines untouched.
   the same width; `~/.cache/cairn-admin-motion/task-7/before/full/styleguide-light-1440.png` and
   its after-set counterpart. All three pairs are pixel-identical, proving zen's motion leaks
   nothing onto a resting frame.
+
+### Task 7-fix: zen's chrome fade scoped off first paint, and the chip's exit made real
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-7-fix/before/` (a symlink to
+  `~/.cache/cairn-admin-motion/task-7/after/`, task 7's own after set at the same parent commit,
+  since no capture happened between the two) and `~/.cache/cairn-admin-motion/task-7-fix/after/`,
+  both `node examples/showcase/scripts/capture-surfaces.mjs --only signups,styleguide`, `signups`
+  and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. This fix scopes an existing entrance fade off first paint (a mount-time
+  attribute) and rebuilds the zen chip's exit mechanics (a transition timing fix and a lifecycle
+  change); neither `signups` nor `styleguide` ever enters zen or triggers the chrome fade, so
+  their resting frames carry no evidence of either change.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (the same 30
+  tests) passed 30 of 30 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-7-fix/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-7-fix/after/full/signups-light-320.png`; the dark-scheme pair
+  at the same width; `~/.cache/cairn-admin-motion/task-7-fix/before/full/styleguide-light-1440.png`
+  and its after-set counterpart. All three pairs are pixel-identical, proving the fade-scoping and
+  chip-lifecycle change leaks nothing onto a resting frame.

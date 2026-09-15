@@ -537,6 +537,15 @@ discriminant, not the fields, gates the chrome).
   let topbar = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(topbar);
 
+  // Whether zen has been entered at least once since this shell mounted. Absent (false) at a
+  // page's first paint, so the chrome regions' entrance fade below never plays on a plain load;
+  // true from the first `topbar.zen` flip onward, so the fade plays only on the return trip out
+  // of zen, which is the one that fired it before this flag existed.
+  let zenUsed = $state(false);
+  $effect(() => {
+    if (topbar.zen) zenUsed = true;
+  });
+
   // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
   // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
   // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
@@ -701,6 +710,7 @@ discriminant, not the fields, gates the chrome).
       class:xl:ml-56={isDeskRoute && !topbar.zen}
       data-cairn-motion="frame-offset"
       data-cairn-frame-open={!topbar.zen || undefined}
+      data-cairn-zen-used={zenUsed || undefined}
       inert={isDrawerOverlay}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
@@ -719,12 +729,14 @@ discriminant, not the fields, gates the chrome).
       <!-- Chrome fade, the carve-out band: the band leaves but stays nearby, ready to reappear, so
            it fades at quick on the theme's own standard curve (the admin root's
            default-transition-timing-function) rather than taking the exit curve's one-band
-           reduction the offset itself takes. @starting-style drives the entry the same way the
-           feedback strip's own fade does; the departure is instant, the same limitation that
-           entry-only idiom already carries, since the band leaves the DOM outright rather than
-           animating out of it. -->
+           reduction the offset itself takes. cairn-chrome-fade's rule (cairn-admin.css) keys the
+           transition and its @starting-style entrance under the drawer content's
+           data-cairn-zen-used marker, so the fade plays only on the way back out of zen, never on
+           a page's first paint, when this band mounts for the first time with nothing to return
+           from. The departure is instant, the same limitation that entry-only idiom already
+           carries, since the band leaves the DOM outright rather than animating out of it. -->
       <div
-        class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8 transition-opacity duration-(--cairn-dur-quick) starting:opacity-0"
+        class="cairn-chrome-fade navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
         class:max-sm:px-2={isDeskRoute}
         class:max-sm:h-12={isDeskRoute}
         class:max-sm:min-h-12={isDeskRoute}

@@ -124,6 +124,25 @@
     transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
   }
 
+  /* The chrome-region entrance fade, scoped off a page's first paint. data-cairn-zen-used lives
+     on the same drawer content element the frame offset above keys on, set by the shell the
+     first time zen turns on and left in place until the next navigation. Nesting the rule under
+     that attribute, rather than under mount alone, is what keeps a fresh page load from ever
+     seeing this fade: @starting-style only ever matches a chrome region's first style
+     resolution, and every admin page mounts these regions once at load regardless of whether
+     zen was ever used, so a plain mount-driven rule fades in on every load. Keying under
+     data-cairn-zen-used restricts both the transition and its @starting-style entrance to a
+     chrome region remounting after a return from zen, which is the one case the fade is for.
+     Nested under the theme root rather than authored as its own top-level rule, so it never adds
+     a new entry to check:custom-surface's pinned unlayered-rule set, the same reasoning the
+     frame offset above documents. */
+  [data-cairn-zen-used] .cairn-chrome-fade {
+    transition: opacity var(--cairn-dur-quick) var(--cairn-ease-standard);
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
   --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Bricolage Grotesque Variable', var(--font-body);
   --font-editor: 'iA Writer Mono', ui-monospace, monospace;
@@ -318,6 +337,15 @@
   }
   [data-cairn-motion="frame-offset"][data-cairn-frame-open] {
     transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
+  }
+
+  /* See the light root for the full rationale: the same first-paint-scoped chrome fade,
+     unchanged by color scheme. */
+  [data-cairn-zen-used] .cairn-chrome-fade {
+    transition: opacity var(--cairn-dur-quick) var(--cairn-ease-standard);
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

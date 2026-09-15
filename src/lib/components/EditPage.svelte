@@ -457,6 +457,37 @@ persistent "?" carries Markdown help).
       (editorCard?.querySelector('.cm-content') as HTMLElement | null)?.focus();
     }
   }
+  // The zen chip's own mount lifecycle, kept apart from setZen() above so that function's
+  // flushSync focus sequence stays untouched. Entering zen mounts the chip at once, the same
+  // instant an `{#if prefs.zen}` gate would; leaving zen keeps it mounted through its own CSS
+  // exit fade and unmounts only once that fade has had time to play, so the exit the chip's
+  // style block describes is a transition a reader actually sees rather than an instant removal.
+  // The wait is a fixed timer rather than a `transitionend` listener: the class removal that
+  // starts the fade and the effect that would attach the listener both run inside the same
+  // reactive flush, which can race the browser's own transition-start bookkeeping and drop the
+  // event under load, where a timer cannot be dropped. The margin is a generous multiple of the
+  // exit duration and delay tokens above, not the CSS transition itself, so a JS scheduling
+  // delay never truncates the fade a reader actually sees, and it stays under 300ms so no wait
+  // is perceptible as a pause. A reduced-motion reader gets no fade in either direction and
+  // unmounts at once instead of waiting out a timer with nothing to show.
+  const CHIP_EXIT_WAIT_MS = 300;
+  let chipMounted = $state(false);
+  $effect(() => {
+    if (prefs.zen) {
+      chipMounted = true;
+      return;
+    }
+    if (!chipMounted) return;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    if (reduced) {
+      chipMounted = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      chipMounted = false;
+    }, CHIP_EXIT_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  });
   // The footer controls dress as what they are (the spec's rule). Each helper returns a verbatim
   // Tailwind class string: the admin CSS build's @source scan reads this file as raw text, so the
   // utilities must appear whole, never assembled from fragments.
@@ -1081,7 +1112,7 @@ persistent "?" carries Markdown help).
   // deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
   // tidyNoopDialog, tidyMessageDialog, detailsPanel,
   // heroNeedsAlt, actionsOpen, narrow, device, assertiveNonce,
-  // diagnosticsCounts
+  // diagnosticsCounts, chipMounted
 
   // Reads one post-save redirect flag off the search string as a display list. page.url is
   // reactive kit state, so a client-side navigation that swaps the search string re-derives every
@@ -1813,9 +1844,12 @@ persistent "?" carries Markdown help).
       <!-- cairn-audit-disable-next-line type-scale -- the editor's own prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
       <!-- Chrome fade, the carve-out band: the title leaves but stays nearby, ready to reappear, so
            it fades at quick on the admin root's default standard curve rather than the exit
-           curve's one-band reduction the offset itself takes. @starting-style drives the entry;
-           the departure is instant, since the title leaves the DOM outright. -->
-      <div class={prefs.surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)] transition-opacity duration-(--cairn-dur-quick) starting:opacity-0' : 'mb-4 w-full px-5 transition-opacity duration-(--cairn-dur-quick) starting:opacity-0'}>
+           curve's one-band reduction the offset itself takes. cairn-chrome-fade's rule
+           (cairn-admin.css) keys the transition and its @starting-style entrance under the
+           drawer content's data-cairn-zen-used marker, so the fade plays only on the return from
+           zen, never on the first paint that mounts this title with nothing to return from. The
+           departure is instant, since the title leaves the DOM outright. -->
+      <div class={prefs.surface === 'prose' ? 'cairn-chrome-fade mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'cairn-chrome-fade mb-4 w-full px-5'}>
         <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its own type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
         <input
           class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {prefs.focusMode ? 'cairn-doc-title-dim' : ''}"
@@ -2103,11 +2137,14 @@ persistent "?" carries Markdown help).
       {#if !prefs.zen && !narrow}
       <!-- Chrome fade, the carve-out band: the footer strip leaves but stays nearby, ready to
            reappear, so it fades at quick on the admin root's default standard curve rather than
-           the exit curve's one-band reduction the offset itself takes. @starting-style drives
-           the entry; the departure is instant, since the strip leaves the DOM outright. -->
+           the exit curve's one-band reduction the offset itself takes. cairn-chrome-fade's rule
+           (cairn-admin.css) keys the transition and its @starting-style entrance under the
+           drawer content's data-cairn-zen-used marker, so the fade plays only on the return from
+           zen, never on the first paint that mounts this strip with nothing to return from. The
+           departure is instant, since the strip leaves the DOM outright. -->
       <div
         data-testid="cairn-editor-footer"
-        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 type-meta text-muted transition-opacity duration-(--cairn-dur-quick) starting:opacity-0"
+        class="cairn-chrome-fade flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 type-meta text-muted"
       >
         <span class="flex shrink-0 items-center gap-1.5">
           <span class="tabular-nums">{wordLabel}</span>
@@ -2322,11 +2359,14 @@ persistent "?" carries Markdown help).
 {#if !prefs.zen}
   <!-- Chrome fade, the carve-out band: the bar leaves but stays nearby, ready to reappear, so it
        fades at quick on the admin root's default standard curve rather than the exit curve's
-       one-band reduction the offset itself takes. @starting-style drives the entry; the
-       departure is instant, since the bar leaves the DOM outright. -->
+       one-band reduction the offset itself takes. cairn-chrome-fade's rule (cairn-admin.css)
+       keys the transition and its @starting-style entrance under the drawer content's
+       data-cairn-zen-used marker, so the fade plays only on the return from zen, never on the
+       first paint that mounts this bar with nothing to return from. The departure is instant,
+       since the bar leaves the DOM outright. -->
   <div
     data-testid="cairn-edit-actionbar"
-    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:hidden transition-opacity duration-(--cairn-dur-quick) starting:opacity-0"
+    class="cairn-chrome-fade fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:hidden"
     hidden={!narrow}
     inert={!narrow}
   >
@@ -2354,9 +2394,15 @@ persistent "?" carries Markdown help).
 <!-- The floating zen chip (the mockup's .zen-chip): fixed top-right, it carries the two things the
      WordPress/Ghost rule says never disappear under zen, the live save state and the way out. The
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
-     restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
-{#if prefs.zen}
-  <div class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 type-meta text-muted shadow-[var(--cairn-shadow)]">
+     restores the chrome, with the Esc hint as the secondary cue. It mounts on entering zen and
+     stays mounted, `inert`, through its own exit fade before the chipMounted effect above unmounts
+     it, so it never disappears mid-fade the way an `{#if prefs.zen}` gate would. -->
+{#if chipMounted}
+  <div
+    class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 type-meta text-muted shadow-[var(--cairn-shadow)]"
+    class:zen-active={prefs.zen}
+    inert={!prefs.zen}
+  >
     <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
       {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}
       {dirty ? 'Unsaved changes' : 'Saved'}
@@ -2598,30 +2644,38 @@ persistent "?" carries Markdown help).
     --cairn-naming-hook: true;
   }
 
-  /* The zen chip's own entrance and exit, the two things WordPress/Ghost say never disappear
-     under zen carried on a surface that itself appears and disappears. The chip mounts and
-     unmounts with zen (an {#if}, like the chrome it replaces), so only the entrance ever paints:
-     @starting-style drives it, the same idiom the feedback strip's own fade uses, and the
-     unguarded declaration below is what a future always-mounted chip would use leaving zen. The
-     guard keeps the 110ms entrance delay off a reduced-motion reader (the delay rides inside the
-     same transition shorthand, so a reduced-motion reader's computed delay is zero rather than a
-     value this rule owes its own zeroing); the exit carries no delay, since the finger that
-     opened the exit is already on the glass. */
+  /* The zen chip's real entrance and exit, the two things WordPress/Ghost say never disappear
+     under zen carried on a surface that itself appears and disappears. The zen-active class
+     (bound to prefs.zen, not to whether the chip is mounted) carries the direction: its absence
+     is the resting-hidden state the chip's own script keeps the element mounted through on the
+     way out, at quick on the exit curve with no delay, since the finger that opened the exit is
+     already on the glass; its presence is the state the chip animates to on mount, at base on
+     the entrance curve after a 110ms delay so the chip does not compete with the chrome regions
+     leaving the same frame. @starting-style targets only the zen-active state, since that is the
+     one a fresh mount actually reaches (the chip only ever mounts already zen-active). The
+     entrance delay lives inside a prefers-reduced-motion: no-preference guard; a reduced-motion
+     reader gets transition: none in both directions and the chip's own script unmounts it at
+     once rather than waiting out a fade timer with nothing to show. */
   .cairn-zen-chip {
+    opacity: 0;
     transition: opacity var(--cairn-dur-quick) var(--cairn-ease-exit);
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .cairn-zen-chip {
-      transition: opacity var(--cairn-dur-base) var(--cairn-ease-entrance) 110ms;
-    }
+  .cairn-zen-chip.zen-active {
+    opacity: 1;
   }
   @starting-style {
-    .cairn-zen-chip {
+    .cairn-zen-chip.zen-active {
       opacity: 0;
     }
   }
+  @media (prefers-reduced-motion: no-preference) {
+    .cairn-zen-chip.zen-active {
+      transition: opacity var(--cairn-dur-base) var(--cairn-ease-entrance) 110ms;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .cairn-zen-chip {
+    .cairn-zen-chip,
+    .cairn-zen-chip.zen-active {
       transition: none;
     }
   }

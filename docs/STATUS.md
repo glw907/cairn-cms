@@ -216,8 +216,13 @@ the human-facing rewrite fills the arms from the harvest afterward. The skeleton
 CONTAINER (Geoff, 2026-09-15): the facts harvest from the old docs lands there, every fact carrying its
 source (file and symbol, check script, changelog line, or owner brief; sourceless entries are candidates),
 agent-facing and never shipped; the arms render prose from it and are checked against it, and the upgrade
-brief is its release-scoped view. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after the
-harvest fold and the motion merge, before extend-1:** the facts harvest (seven slices under
+brief is its release-scoped view. **Adversarial review of the container (Geoff, 2026-09-15), right after the fold and before the
+docs-to-facts pass is planned:** three fresh-context Opus reviewers, disjoint lenses (structure and
+mechanics; evolution feasibility from container through the site round to public docs, and what a
+facts-only record loses; charter and per-pass cost), graded against the goal of docs kept light and
+efficient while cairn is finalized yet collecting what full-featured public docs will need. Findings fold
+into the pass plan. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after that review and the
+motion merge, before extend-1:** the facts harvest (seven slices under
 `docs/internal/facts/`, in flight) is folded and committed; the admin, editors, extend, and why-cairn arms
 and the docs README are REMOVED from the tree and the tarball; the REFERENCE ARM STAYS (one gated page per
 export) but MOVES INTO the container at `docs/internal/facts/reference/` (Geoff, 2026-09-15), out of the

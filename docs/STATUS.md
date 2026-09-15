@@ -228,7 +228,14 @@ gains a "facts consulted" line; site-implementer and cairn-implementer name it a
 repo's CLAUDE.md gets one pointer line from the pass that upgrades it; growth is a gated pass dimension
 (every export has an entry, every bullet a source and tag, links resolve) and the cairn-pass docs step
 becomes "grow the container"; the gaps file and the friction log are the two intake files, both
-complete-or-move; the claude-tooling manifest and memory carry the pointer. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after that review and the
+complete-or-move; the claude-tooling manifest and memory carry the pointer. **The write path from a site session (Geoff,
+2026-09-15):** a dotfiles command `cairn-fact` with two verbs, `fact` (arm, sentence, source) and `gap`
+(sentence, what you were doing), stamping the repo, pass, date, and installed engine version, appending
+to the cairn checkout on main, running the cheap container check, committing, and pushing; a user-scope
+skill makes an agent verify the true fact against the engine source in the sibling checkout and file it
+before finishing the task; site-implementer's report gains a "facts filed" line and the site-pass
+harvest step asks for the count. Reads are version-locked to the installed engine; writes go forward on
+main. A deliverable of the docs-to-facts pass. **Docs-to-facts pass (Geoff, 2026-09-15 midday), runs after that review and the
 motion merge, before extend-1:** the facts harvest (seven slices under
 `docs/internal/facts/`, in flight) is folded and committed; the admin, editors, extend, and why-cairn arms
 and the docs README are REMOVED from the tree and the tarball; the REFERENCE ARM STAYS (one gated page per

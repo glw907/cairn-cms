@@ -39,6 +39,8 @@ describe('MediaHeroField dropzone drag-over state', () => {
     await tick();
     expect(classTokens(trigger)).toContain(DRAG_OVER_BORDER);
     expect(classTokens(trigger)).toContain(DRAG_OVER_BG);
+    expect(classTokens(trigger)).not.toContain('border-base-300');
+    expect(classTokens(trigger)).not.toContain('bg-base-100');
   });
 
   it('ondragover sets the drag-over state and calls preventDefault', async () => {
@@ -50,6 +52,8 @@ describe('MediaHeroField dropzone drag-over state', () => {
     expect(event.defaultPrevented).toBe(true);
     expect(classTokens(trigger)).toContain(DRAG_OVER_BORDER);
     expect(classTokens(trigger)).toContain(DRAG_OVER_BG);
+    expect(classTokens(trigger)).not.toContain('border-base-300');
+    expect(classTokens(trigger)).not.toContain('bg-base-100');
   });
 
   it('ondrop clears the drag-over state', async () => {
@@ -62,6 +66,8 @@ describe('MediaHeroField dropzone drag-over state', () => {
     await tick();
     expect(classTokens(trigger)).not.toContain(DRAG_OVER_BORDER);
     expect(classTokens(trigger)).not.toContain(DRAG_OVER_BG);
+    expect(classTokens(trigger)).toContain('border-base-300');
+    expect(classTokens(trigger)).toContain('bg-base-100');
   });
 
   it('ondragleave with a relatedTarget inside the button does not clear the state', async () => {
@@ -93,5 +99,7 @@ describe('MediaHeroField dropzone drag-over state', () => {
     await tick();
     expect(classTokens(trigger)).not.toContain(DRAG_OVER_BORDER);
     expect(classTokens(trigger)).not.toContain(DRAG_OVER_BG);
+    expect(classTokens(trigger)).toContain('border-base-300');
+    expect(classTokens(trigger)).toContain('bg-base-100');
   });
 });

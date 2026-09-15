@@ -16,12 +16,6 @@ green.
 
 ## Immediate next action (2026-09-15, written by session 4e54c24b before it closes)
 
-**Overnight run halted at stage "preflight" on 2026-09-15.** Reason: chainsScript path not
-found; rebuild with the scratchpad path
-(`/tmp/claude-1000/-var-home-glw907-Projects-cairn-cms/7c4dbba7-9864-431b-a475-6e14aeaf358c/scratchpad/pass-execute-chains.js`).
-Resume: copy `pass-execute-chains.js` into this session's scratchpad, re-run `node build.mjs
---chains-script <that path>`, and relaunch the orchestrator with stages `["motion","final"]`.
-
 **Halt at the CI regen, ruled 2026-09-15 12:3x.** Run 35016669005's e2e job regenerated and committed the
 baselines on `origin/admin-motion`, but task 8's new `norms / motion-reduced-delay rendered audit` job
 failed: the audit CLI cannot scope a rendered run to one rule, so all 17 rendered rules ran and

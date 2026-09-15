@@ -43,10 +43,13 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { compile, loadFixture, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
 
 /** The captured zone-not-found body, reused by every route that 404s on an unknown zone id. */
-const ZONE_NOT_FOUND_BODY = loadFixture('cloudflare', 'zone.not-found.404').body;
+const ZONE_NOT_FOUND_BODY = loadFixture('cloudflare', 'zone.not-found.404');
 
 /** The captured body for a request matching no route in this fake's own table. */
-const UNMATCHED_ROUTE_BODY = loadFixture('cloudflare', 'dispatcher.unmatched.404').body;
+const UNMATCHED_ROUTE_BODY = loadFixture('cloudflare', 'dispatcher.unmatched.404');
+
+/** The captured `messages` array a token-verify success carries alongside its result. */
+const TOKEN_VERIFY_MESSAGES = loadFixture('cloudflare', 'user_token_verify.success.200').messages;
 
 /**
  * @typedef {object} FakeCloudflare
@@ -538,10 +541,10 @@ function createWorkersDomainListHandler(ctx) {
 //    the same ambiguity and is scripted the same way.
 
 /** The captured create response, minus `name`/`return_path_domain`, which the handler echoes. */
-const EMAIL_SUBDOMAIN_CREATE_FIXTURE = loadFixture('cloudflare', 'email_subdomain_create.success.200').body;
+const EMAIL_SUBDOMAIN_CREATE_FIXTURE = loadFixture('cloudflare', 'email_subdomain_create.success.200');
 
 /** The captured send-success result: an empty-arrays body, not the documented recipient-naming shape. */
-const EMAIL_SEND_SUCCESS_FIXTURE = loadFixture('cloudflare', 'email_send.success.200').body;
+const EMAIL_SEND_SUCCESS_FIXTURE = loadFixture('cloudflare', 'email_send.success.200');
 
 /**
  * The second sender-not-ready send refusal, captured live 2026-08-12 alongside the 10203 body
@@ -550,7 +553,7 @@ const EMAIL_SEND_SUCCESS_FIXTURE = loadFixture('cloudflare', 'email_send.success
  * sending subdomain entry returned different codes). A test drives it the same way as the 10203
  * body, via `cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY)`.
  */
-export const SENDER_NOT_CONFIGURED_REFUSED_BODY = loadFixture('cloudflare', 'email_send.refused-sender-not-configured.403').body;
+export const SENDER_NOT_CONFIGURED_REFUSED_BODY = loadFixture('cloudflare', 'email_send.refused-sender-not-configured.403');
 
 /**
  * Build the `GET /zones/:zoneId/email/sending/subdomains` handler: a plain paginated list over
@@ -638,24 +641,24 @@ function createEmailSendHandler() {
  * The first authorization refusal, captured live for `mojombo/grit`: the owner's GitHub account
  * has never authorized Cloudflare's GitHub App at all. HTTP 404, not 403.
  */
-export const APP_NOT_AUTHORIZED_REFUSED_BODY = loadFixture('cloudflare', 'builds_connection_put.app-not-authorized.404').body;
+export const APP_NOT_AUTHORIZED_REFUSED_BODY = loadFixture('cloudflare', 'builds_connection_put.app-not-authorized.404');
 
 /**
  * The second authorization refusal, captured live for `glw907/cairn-t4c-spike` before it was
  * added to the App's repository selection: the App is authorized, but this repository is not
  * selected. HTTP 404, not 403.
  */
-export const REPO_NOT_SELECTED_REFUSED_BODY = loadFixture('cloudflare', 'builds_connection_put.repo-not-selected.404').body;
+export const REPO_NOT_SELECTED_REFUSED_BODY = loadFixture('cloudflare', 'builds_connection_put.repo-not-selected.404');
 
 /**
  * The captured build-token create response shape (`build_token_uuid`, `owner_type`,
  * `build_token_name`, `cloudflare_token_id`); an empty-body create is rejected with this shape
  * (spike Step 4: "confirmed by three rejected bodies returning 12002").
  */
-const INVALID_REQUEST_BODY_FIXTURE = loadFixture('cloudflare', 'builds.invalid-request-body.400').body;
+const INVALID_REQUEST_BODY_FIXTURE = loadFixture('cloudflare', 'builds.invalid-request-body.400');
 
 /** The captured logs body, seeded onto a kicked build's `state.buildLogs` entry. */
-export const BUILD_LOGS_FIXTURE = loadFixture('cloudflare', 'builds_logs.default.200').body;
+export const BUILD_LOGS_FIXTURE = loadFixture('cloudflare', 'builds_logs.default.200');
 
 /** Write a Builds route's 404: the v4 failure envelope carrying one numeric error. */
 function sendBuildsNotFound(res, code, message) {
@@ -825,8 +828,7 @@ function createBuildTokenCreateHandler(ctx) {
  */
 function createUserTokenVerifyHandler(ctx) {
   return async (_req, res) => {
-    const { messages } = loadFixture('cloudflare', 'user_token_verify.success.200').body;
-    sendSuccess(res, 200, { id: ctx.tokenVerifyId, status: 'active' }, { messages });
+    sendSuccess(res, 200, { id: ctx.tokenVerifyId, status: 'active' }, { messages: TOKEN_VERIFY_MESSAGES });
   };
 }
 

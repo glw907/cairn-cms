@@ -13,7 +13,7 @@ import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
 import { compile, loadFixture, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
 
 /** The captured repo-create name-conflict body, `POST /user/repos` and `POST /orgs/:org/repos` alike. */
-const REPO_CREATE_NAME_CONFLICT_BODY = loadFixture('github', 'repo_create.name-conflict.422').body;
+const REPO_CREATE_NAME_CONFLICT_BODY = loadFixture('github', 'repo_create.name-conflict.422');
 
 /**
  * @typedef {object} FakeGithub

@@ -18,18 +18,18 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Read one captured-body fixture from `fixtures/<provider>/<name>.json`, the corpus each fake
- * loads its response bodies from (see `fixtures/README.md`). The Go tool reads the same files by
- * path, so this stays a plain synchronous file read rather than a bundler import: no build step
- * sits between the corpus and either reader.
+ * Read the captured body out of `fixtures/<provider>/<name>.json`, the corpus each fake plays its
+ * responses back from (see `fixtures/README.md`). The file's `provenance` record is documentation
+ * for a reader of the corpus, not part of the response, so it is not returned. The Go tool reads
+ * the same files by path, so this stays a plain synchronous file read rather than a bundler
+ * import: no build step sits between the corpus and either reader.
  * @param {'cloudflare' | 'github'} provider the corpus subdirectory
  * @param {string} name the file stem, without `.json`
- * @returns {{ provenance: { captured: string, source: string, status: number, note?: string }, body: unknown }}
- *  the fixture's provenance record and captured body
+ * @returns {any} the fixture's captured response body
  */
 export function loadFixture(provider, name) {
   const path = fileURLToPath(new URL(`../fixtures/${provider}/${name}.json`, import.meta.url));
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return JSON.parse(readFileSync(path, 'utf8')).body;
 }
 
 /**

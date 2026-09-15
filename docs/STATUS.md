@@ -207,7 +207,15 @@ advisory rules promote at 0.98.0; `launch.json` updated). After that cut Geoff u
 documents the friction, ships one improvement release from it, then beta. **The site round is an
 upgrade AND a rewrite (Geoff, 2026-09-15):** each site is brought onto the new best practices the extend
 tools teach and becomes a model cairn site, and the friction it surfaces is the fodder for the docs
-rewrite, which therefore follows the site round rather than the week of 2026-09-21. Every consumer pin bump,
+rewrite, which therefore follows the site round rather than the week of 2026-09-21. **Docs shape
+(Geoff, 2026-09-15 late morning):** the reference arm (gated) and the extend recipes (shipped by the
+extend passes) stand as they are; ONE agent-facing site upgrade brief for the release is authored in two
+steps, its window section as a small task right after the motion merge and its tools-and-recipes section
+plus the done-check as an added task in the pre-cut window pass; the site round runs against those three;
+the human-facing rewrite fills the arms from the harvest afterward. **Sequence from here:** motion merge;
+the brief's skeleton; the dynamic gate tier (runner half in dotfiles started 2026-09-15 from this session,
+classifier half in this repo after the merge); extend-1; extend-2; the pre-cut pass with the brief's
+completion added; the cut; the site round. Every consumer pin bump,
 cairn.pub's docs pin included, holds until then. The overnight run now stops after the motion pass merges
 (stages motion, final).
 

@@ -25,6 +25,8 @@ beforeAll(() => {
     '<span class="type-label">x</span>\n'
   );
   writeFileSync(join(root, 'src/routes/admin/posts/+page.svelte'), '<div class="card"></div>\n');
+  mkdirSync(join(root, 'src/lib/components'), { recursive: true });
+  writeFileSync(join(root, 'src/lib/components/PublicWidget.svelte'), '<div></div>\n');
 });
 
 afterAll(() => {
@@ -55,9 +57,10 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
-  // Task 9b's five CSS-family rules, and the harvest-detection pass's Tasks 3 and 4 are the
-  // modules that have registered since, without touching run.ts.
-  it('carries the twelve static rules registered since Task 7', () => {
+  // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, and the motion
+  // pass's motion-property and motion-hover-gate are the modules that have registered since,
+  // without touching run.ts.
+  it('carries the fourteen static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -71,6 +74,8 @@ describe('the static rule registry', () => {
         'grammar-boundary',
         'focus-parity',
         'motion-band',
+        'motion-property',
+        'motion-hover-gate',
         'reduced-motion',
         'stripe-trim-parity',
         'unlayered-font-clobber',
@@ -88,10 +93,14 @@ describe('runStatic', () => {
   it('parses every component under the scan scope and resolves the built sheet', () => {
     const seen: StaticRuleContext[] = [];
     const report = runStatic(loadConfig(root), [probeRule(seen)]);
-    expect(report.filesScanned).toBe(2);
+    // Task 3's own `src/lib/components` fixture (a `src/lib/components` root, no `adminOnly`
+    // declaration on this probe) joins the two roots already here, since the probe resolves
+    // over `static.scope`, not `static.adminScope`.
+    expect(report.filesScanned).toBe(3);
     expect(seen).toHaveLength(1);
     expect(seen[0].files.map((f) => f.file).sort()).toEqual([
       'src/lib/admin-toolkit/FieldLabel.svelte',
+      'src/lib/components/PublicWidget.svelte',
       'src/routes/admin/posts/+page.svelte',
     ]);
     expect(seen[0].sheet.has('type-body')).toBe(true);
@@ -115,8 +124,10 @@ describe('runStatic', () => {
     // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full twelve-rule registry.
-    expect(report.ruleIds).toHaveLength(12);
+    // default (no rules override) run wires up the full fourteen-rule registry. The new
+    // `src/lib/components/PublicWidget.svelte` fixture carries no class and no CSS, so it trips
+    // nothing beyond the two no-uncompiled-class findings the tree already carried.
+    expect(report.ruleIds).toHaveLength(14);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });
@@ -201,6 +212,115 @@ describe('runStatic', () => {
       );
       expect(() => runStatic(loadConfig(siteRoot, configPath))).toThrow(/absent\.css/);
     });
+  });
+});
+
+/** A rule that reports one finding naming every component file its context received. */
+function seenFilesRule(id: string, adminOnly: boolean): StaticRule {
+  return {
+    id,
+    tier: 'error',
+    adminOnly,
+    check(ctx) {
+      return ctx.files.map((file) => ({
+        ruleId: id,
+        tier: 'error' as const,
+        file: file.file,
+        line: 1,
+        start: 0,
+        end: 1,
+        message: `saw ${file.file}`,
+      }));
+    },
+  };
+}
+
+/** A rule that reports one finding naming every standalone CSS file its context received. */
+function seenCssFilesRule(id: string, adminOnly: boolean): StaticRule {
+  return {
+    id,
+    tier: 'error',
+    adminOnly,
+    check(ctx) {
+      return (ctx.cssFiles ?? []).map((cssFile) => ({
+        ruleId: id,
+        tier: 'error' as const,
+        file: cssFile.file,
+        line: 1,
+        start: 0,
+        end: 1,
+        message: `saw ${cssFile.file}`,
+      }));
+    },
+  };
+}
+
+describe('static.adminScope', () => {
+  it('resolves an adminOnly rule over the admin roots, and a plain rule over every static.scope root', () => {
+    const report = runStatic(loadConfig(root), [
+      seenFilesRule('probe-admin', true),
+      seenFilesRule('probe-default', false),
+    ]);
+    const adminSeen = report.findings.filter((f) => f.ruleId === 'probe-admin').map((f) => f.file);
+    const defaultSeen = report.findings.filter((f) => f.ruleId === 'probe-default').map((f) => f.file);
+    // The consumer default: adminScope names src/routes/admin and src/lib/admin-toolkit, never
+    // the middle root a site keeps its own public components in.
+    expect(adminSeen).not.toContain('src/lib/components/PublicWidget.svelte');
+    expect(adminSeen).toContain('src/routes/admin/posts/+page.svelte');
+    expect(defaultSeen).toContain('src/lib/components/PublicWidget.svelte');
+    expect(defaultSeen).toContain('src/routes/admin/posts/+page.svelte');
+  });
+
+  it('reaches a static.cssFiles entry outside the admin roots with a plain rule, and never with an adminOnly one', () => {
+    writeFileSync(join(root, 'src/lib/components/theme.css'), '.foo { color: red }\n');
+    const configPath = join(root, 'admin-scope-css.json');
+    writeFileSync(configPath, JSON.stringify({ static: { cssFiles: ['src/lib/components/theme.css'] } }));
+    const report = runStatic(loadConfig(root, configPath), [
+      seenCssFilesRule('probe-admin-css', true),
+      seenCssFilesRule('probe-default-css', false),
+    ]);
+    expect(report.findings.filter((f) => f.ruleId === 'probe-admin-css')).toEqual([]);
+    expect(report.findings.filter((f) => f.ruleId === 'probe-default-css').map((f) => f.file)).toEqual([
+      'src/lib/components/theme.css',
+    ]);
+  });
+
+  it('behaves as the two-root default when a config is silent about static.adminScope', () => {
+    // No config file at root's default CONFIG_FILE path, so resolveConfig fills DEFAULT_ADMIN_SCOPE.
+    // The prior test already proves that default resolves to src/routes/admin and
+    // src/lib/admin-toolkit, never the middle staticScope root.
+    expect(loadConfig(root).adminScope).toEqual(['src/routes/admin', 'src/lib/admin-toolkit']);
+    expect(loadConfig(root).adminScopeFromConfig).toBe(false);
+  });
+
+  it('skips a default admin root the tree does not carry, and still returns a report', () => {
+    const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-adminscope-'));
+    try {
+      mkdirSync(join(bare, 'dist/components'), { recursive: true });
+      mkdirSync(join(bare, 'src/lib/admin-toolkit'), { recursive: true });
+      writeFileSync(join(bare, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+      writeFileSync(join(bare, 'src/lib/admin-toolkit/Field.svelte'), '<div></div>\n');
+      // No src/routes/admin: the default admin root this tree does not have.
+      const report = runStatic(loadConfig(bare));
+      expect(report.filesScanned).toBe(1);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+  });
+
+  it('fails naming a configured static.adminScope root the tree does not have', () => {
+    const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-adminscope-throws-'));
+    try {
+      mkdirSync(join(bare, 'dist/components'), { recursive: true });
+      mkdirSync(join(bare, 'src/lib/admin-toolkit'), { recursive: true });
+      writeFileSync(join(bare, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+      writeFileSync(join(bare, 'src/lib/admin-toolkit/Field.svelte'), '<div></div>\n');
+      const configPath = join(bare, 'cairn-audit.config.json');
+      writeFileSync(configPath, JSON.stringify({ static: { adminScope: ['src/admin-missing'] } }));
+      expect(() => runStatic(loadConfig(bare, configPath))).toThrow(/src\/admin-missing/);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
   });
 });
 

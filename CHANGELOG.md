@@ -340,6 +340,18 @@
   `xcathletes-org`, `cairn-pub`, and `aksailingclub-org`, import `headRow` and `iconSpan` in their
   own `src/chassis/render.ts`.
 
+- `cairn-audit` gains `motion-property` and `motion-hover-gate`, both static and error tier: the
+  first polices the admin's closed motion-property allowlist (paint only, nine named layout
+  properties, a three-property cap on one transition, and an `animate-*` utility checked through
+  its own `--animate-*` keyframes) with the one documented frame-offset exception, keyed on an
+  element's `data-cairn-motion="frame-offset"` attribute plus the `margin-left` property alone; the
+  second polices a hand-authored `:hover` state (whether the motion sits on the `:hover` rule
+  itself or on the base rule the same selector matches) for a missing `@media (hover: hover)` gate,
+  and a `:focus-visible` alternative that wrongly declares its own motion from inside that gate.
+  Both resolve over a new `static.adminScope` config key (`src/routes/admin` and
+  `src/lib/admin-toolkit` by default) rather than `static.scope`, so an admin-only motion rule
+  never reads a site's own public components; every other static rule is unaffected.
+
 ### Changed
 
 - The admin sheet sets `--default-transition-duration` and `--default-transition-timing-function`

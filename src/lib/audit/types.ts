@@ -54,6 +54,14 @@ export interface StaticRule {
   /** Stable id, the name a suppression directive and the report both use. */
   id: string;
   tier: Tier;
+  /**
+   * Whether this rule resolves over `config.adminScope` instead of `config.staticScope`, for
+   * both surfaces it reads (components under those roots and the `staticCssFiles` entries that
+   * lie inside them). Absent or false runs over `staticScope` as every rule did before this
+   * field existed, so a rule that only manages a site's own admin frame never reads a public
+   * component tree it was never meant to police.
+   */
+  adminOnly?: boolean;
   check(ctx: StaticRuleContext): Finding[];
 }
 

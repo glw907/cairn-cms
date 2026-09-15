@@ -18,6 +18,13 @@ export const DEFAULT_STATIC_SCOPE = [
   'src/lib/components',
 ];
 
+// The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Narrower
+// on purpose: `DEFAULT_STATIC_SCOPE`'s middle root is where a consuming site keeps its shared
+// public components, and an admin-only motion rule reading that root would gate a site's own
+// public design. A site whose admin screens sit outside these two roots names `static.adminScope`
+// itself, the same override `staticScope` already carries.
+export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin-toolkit'];
+
 // Where the built admin stylesheet is, first in the library's own tree and then in a consumer's
 // installed package. The first candidate is the fallback when neither exists, so the run fails
 // naming a path a developer can act on.
@@ -77,6 +84,18 @@ export interface AuditConfig {
    * the silent-green failure this engine exists to avoid.
    */
   staticScopeFromConfig: boolean;
+  /**
+   * Directories an `adminOnly` static rule resolves over instead of `staticScope`, across both
+   * surfaces it reads: the components under these roots, and the `staticCssFiles` entries that
+   * lie inside them. Defaults to `DEFAULT_ADMIN_SCOPE`.
+   */
+  adminScope: string[];
+  /**
+   * Whether the config file named `static.adminScope` itself, the parallel flag
+   * `staticScopeFromConfig` carries for `static.scope`: a default root a given tree does not have
+   * is skipped, while a root the config names and the tree does not have throws.
+   */
+  adminScopeFromConfig: boolean;
   /**
    * Standalone CSS files (paths relative to `root`) the CSS-family static rules also scan,
    * alongside every component's own scoped `<style>` block. Empty by default: a component's
@@ -179,6 +198,8 @@ export function resolveConfig(
     root,
     staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
     staticScopeFromConfig: staticSection.scope !== undefined,
+    adminScope: asPathList(staticSection.adminScope, 'static.adminScope', DEFAULT_ADMIN_SCOPE),
+    adminScopeFromConfig: staticSection.adminScope !== undefined,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
     paletteCssFiles: asPathList(staticSection.paletteFiles, 'static.paletteFiles', DEFAULT_PALETTE_CSS_FILES),
     sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [

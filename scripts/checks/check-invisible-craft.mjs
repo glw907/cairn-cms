@@ -1,10 +1,11 @@
-// cairn-cms: the invisible-craft gate, graduated into the packaged cairn-audit engine's
-// motion-band, gap-scale, and token-colors static rules
-// (src/lib/audit/rules/static/{motion-band,gap-scale,token-colors}.ts). The regex substrate this
-// gate used to carry (a hand-rolled comment stripper plus five duration/bracket/color patterns)
-// is gone; svelte/compiler and the built-sheet resolver are the substrate now, exercised by the
-// audit's own fixture suite
-// (src/tests/unit/audit/rules/{motion-band,gap-scale,token-colors}.test.ts).
+// cairn-cms: the invisible-craft gate, graduated into the packaged cairn-audit engine's static
+// rules: motion-band, gap-scale, and token-colors, joined by the admin-only motion-property,
+// motion-vocabulary, and motion-hover-gate
+// (src/lib/audit/rules/static/{motion-band,gap-scale,token-colors,motion-property,motion-vocabulary,motion-hover-gate}.ts).
+// The regex substrate this gate used to carry (a hand-rolled comment stripper plus five
+// duration/bracket/color patterns) is gone; svelte/compiler and the built-sheet resolver are the
+// substrate now, exercised by the audit's own fixture suite
+// (src/tests/unit/audit/rules/{motion-band,gap-scale,token-colors,motion-property,motion-vocabulary,motion-hover-gate}.test.ts).
 //
 // The budget this gate used to read from scripts/invisible-craft-budget.json is gone too, its
 // eleven entries each resolved one of three ways in the graduation's no-drift proof (see the
@@ -36,7 +37,14 @@ import { scopeReport } from './audit-gate.mjs';
 import { repoRoot } from '../repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const RULE_IDS = ['gap-scale', 'token-colors', 'motion-band'];
+const RULE_IDS = [
+  'gap-scale',
+  'token-colors',
+  'motion-band',
+  'motion-property',
+  'motion-vocabulary',
+  'motion-hover-gate',
+];
 /** The directories this gate audits, every one of which must exist in the tree. */
 export const SCAN_SCOPE = [
   'src/lib/components',
@@ -46,13 +54,30 @@ export const SCAN_SCOPE = [
   'examples/showcase/src/theme',
 ];
 /**
+ * The admin-only roots `motion-property`, `motion-vocabulary`, and `motion-hover-gate` resolve
+ * over instead of `SCAN_SCOPE`: the engine's own admin frame plus the one showcase route that is
+ * shaped like a consumer's own admin screen. `src/routes/admin`, the engine default's own third
+ * root, does not exist in this tree (the library carries no `src/routes` at all), which is why
+ * this gate names its own list rather than taking `DEFAULT_ADMIN_SCOPE`.
+ * `examples/showcase/src/chassis`, `examples/showcase/src/theme`, and the showcase's public
+ * routes stay out on purpose: they carry no admin markup, and an admin-only rule reading them
+ * would gate a site's own public design rather than its admin frame.
+ */
+export const ADMIN_SCOPE = [
+  'src/lib/components',
+  'src/lib/admin-toolkit',
+  'examples/showcase/src/routes/admin',
+];
+/**
  * Standalone CSS files this gate's CSS-family rules scan, beyond a component's own scoped
  * `<style>` block. `theme.css` is Waymark's own palette declaration site (the achromatic
  * `--color-base-*` ladder and the `--cairn-shadow` color-mix blacks are the point, not a hazard),
  * so `main` also passes it as a declared palette site (`static.paletteFiles`), which excludes it
- * from `token-colors` while every other CSS-family rule still scans it.
+ * from `token-colors` while every other CSS-family rule still scans it. `cairn-admin.css` lies
+ * under `ADMIN_SCOPE`, so the three motion rules read it too; `theme.css` does not, so they do
+ * not, while `gap-scale`, `token-colors`, and `motion-band` keep reading both.
  */
-export const CSS_FILES = ['examples/showcase/src/theme/theme.css'];
+export const CSS_FILES = ['examples/showcase/src/theme/theme.css', 'src/lib/components/cairn-admin.css'];
 
 async function main() {
   try {
@@ -64,6 +89,7 @@ async function main() {
       {
         static: {
           scope: SCAN_SCOPE,
+          adminScope: ADMIN_SCOPE,
           cssFiles: CSS_FILES,
           paletteFiles: [...DEFAULT_PALETTE_CSS_FILES, ...CSS_FILES],
         },

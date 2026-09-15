@@ -1109,3 +1109,32 @@ proof and leaving those five widths' baselines untouched.
   at the same width; `~/.cache/cairn-admin-motion/task-7-fix/before/full/styleguide-light-1440.png`
   and its after-set counterpart. All three pairs are pixel-identical, proving the fade-scoping and
   chip-lifecycle change leaks nothing onto a resting frame.
+
+### Task 10: the engine's tree wired, and the visual suite
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-10/before/` and
+  `~/.cache/cairn-admin-motion/task-10/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: six brand-new admin surfaces, 60 files (6 surfaces x 5 widths x 2 schemes),
+  added to `examples/showcase/e2e/admin-visual.spec.ts`, none of which the suite has rendered
+  before: the edit page in zen, the drawer open as an overlay, the persistent sidebar, a dialog
+  open (`DeleteDialog`), the command palette open, and the media library with a selection. No
+  existing baseline moves: wiring `static.adminScope` and the three motion rule ids into
+  `check-invisible-craft.mjs` touches no rendered admin markup, and `signups`/`styleguide` are
+  resting-state captures that never open the drawer, a dialog, the palette, or zen.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (90 tests,
+  the 30 existing plus the 60 new) passed 89 of 90 with one flaky retry (a keyboard-chord timing
+  race on `admin edit page zen — dark — 768px`, unrelated to any moved baseline) and no failures,
+  so no existing baseline moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after. The 60 new surfaces carry no `TILE DIFF` row:
+  each is a first render with no before to compare against.
+- READ ME: `~/.cache/cairn-admin-motion/task-10/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-10/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-10/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the gate wiring and the
+  new spec file leak nothing onto a resting frame. The 60 new baselines themselves live at
+  `examples/showcase/e2e/admin-visual.spec.ts-snapshots/admin-{edit-zen,drawer-overlay,
+  sidebar-persistent,delete-dialog,command-palette,media-selected}-{light,dark}-{320,390,768,1440,
+  2560}-linux.png`.

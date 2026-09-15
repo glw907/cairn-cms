@@ -22,6 +22,8 @@ const HOVER = ':hover';
 const FOCUS_VISIBLE = ':focus-visible';
 const HOVER_MEDIA_CONDITION = /\(hover:\s*hover\)/;
 
+type Declaration = { property: string; value: string };
+
 /** One selector alternative, the CSS rule that declared it, and whether that rule sits guarded. */
 interface SelectorSite {
   scope: CssScopeRule;
@@ -33,20 +35,18 @@ function isHoverGated(conditions: string[]): boolean {
   return conditions.some((condition) => HOVER_MEDIA_CONDITION.test(condition));
 }
 
-function declaresMotion(declarations: { property: string; value: string }[]): boolean {
+function declaresMotion(declarations: Declaration[]): boolean {
   return declarations.some((decl) => isMotionProperty(decl.property));
 }
 
-/** The declarations every rule in a file contributes to one selector, across every occurrence. */
-function declarationsFor(
-  byFile: Map<string, Map<string, { property: string; value: string }[]>>,
-  file: string
-): Map<string, { property: string; value: string }[]> {
-  const known = byFile.get(file);
-  if (known) return known;
-  const created = new Map<string, { property: string; value: string }[]>();
-  byFile.set(file, created);
-  return created;
+/** The key one file's copy of one selector accumulates its declarations under. */
+function siteKey(file: string, selector: string): string {
+  return `${file}\u0000${selector}`;
+}
+
+/** The base selector a `:hover` alternative is the hover state of, every `:hover` dropped. */
+function withoutHover(selector: string): string {
+  return selector.split(HOVER).join('');
 }
 
 function fixMessage(selector: string): string {
@@ -64,16 +64,16 @@ export const motionHoverGate: StaticRule = {
   tier: 'error',
   adminOnly: true,
   check(ctx) {
-    const declsByFile = new Map<string, Map<string, { property: string; value: string }[]>>();
+    const declarationsBySite = new Map<string, Declaration[]>();
     const sites: SelectorSite[] = [];
     for (const scope of cssScopeRules(ctx)) {
       const gated = isHoverGated(scope.rule.conditions);
-      const known = declarationsFor(declsByFile, scope.file);
       for (const raw of splitSelectorList(scope.rule.selector)) {
         const selector = normalizeSelector(raw);
-        const existing = known.get(selector);
+        const key = siteKey(scope.file, selector);
+        const existing = declarationsBySite.get(key);
         if (existing) existing.push(...scope.rule.declarations);
-        else known.set(selector, [...scope.rule.declarations]);
+        else declarationsBySite.set(key, [...scope.rule.declarations]);
         sites.push({ scope, selector, gated });
       }
     }
@@ -81,10 +81,8 @@ export const motionHoverGate: StaticRule = {
     const findings: Finding[] = [];
     for (const site of sites) {
       if (site.gated || !site.selector.includes(HOVER)) continue;
-      const known = declsByFile.get(site.scope.file) ?? new Map();
-      const own = site.scope.rule.declarations;
-      const base = known.get(site.selector.split(HOVER).join('')) ?? [];
-      if (!declaresMotion(own) && !declaresMotion(base)) continue;
+      const base = declarationsBySite.get(siteKey(site.scope.file, withoutHover(site.selector))) ?? [];
+      if (!declaresMotion(site.scope.rule.declarations) && !declaresMotion(base)) continue;
       findings.push({
         ruleId: 'motion-hover-gate',
         tier: 'error',

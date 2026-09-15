@@ -56,6 +56,7 @@
 //   sibling component the two never share a file with, is out of reach: this rule (like every
 //   static rule) reads one component's own markup and CSS at a time.
 import { cssRulePosition, cssScopeRules } from './css-scope.js';
+import { animateCustomProperty, customPropertyValue } from './motion.js';
 import { utilityBase } from './utility.js';
 import type { CompiledSheet } from '../../sheet.js';
 import type { ClassToken, ParsedComponent } from '../../markup.js';
@@ -64,6 +65,9 @@ import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
 type Surface = 'css' | 'class';
 
 const DURATION_BEARING = new Set(['transition', 'transition-duration', 'animation', 'animation-duration']);
+// The shorthand and list forms the companion clause keys on: a declaration naming one of these and
+// no explicit duration or easing is an element riding the theme root's Tailwind defaults.
+const MOTION_SHORTHAND_OR_LIST = new Set(['transition', 'transition-property', 'animation', 'animation-name']);
 const EASING_BEARING = new Set([
   'transition',
   'transition-timing-function',
@@ -123,14 +127,11 @@ interface DeclarationVerdict {
   ridesDefault?: boolean;
 }
 
-/** Whether a property's value carries the closed set's shorthand or list form, for the companion clause. */
-function isMotionShorthandOrList(property: string): boolean {
-  return property === 'transition' || property === 'transition-property' || property === 'animation' || property === 'animation-name';
-}
-
 /** The nearest of the five duration tokens to a literal millisecond value, by absolute difference. */
 function nearestDurationToken(ms: number): { name: string; ms: number } {
-  return DURATION_TOKENS.reduce((best, candidate) => (Math.abs(candidate.ms - ms) < Math.abs(best.ms - ms) ? candidate : best));
+  return DURATION_TOKENS.reduce((best, candidate) =>
+    Math.abs(candidate.ms - ms) < Math.abs(best.ms - ms) ? candidate : best
+  );
 }
 
 function durationAuthoringForm(tokenName: string, surface: Surface): string {
@@ -257,7 +258,7 @@ function scanDeclarations(declarations: { property: string; value: string }[], s
   let sawMotionShorthand = false;
   let sawDurationOrEasing = false;
   for (const decl of declarations) {
-    if (isMotionShorthandOrList(decl.property)) sawMotionShorthand = true;
+    if (MOTION_SHORTHAND_OR_LIST.has(decl.property)) sawMotionShorthand = true;
     const verdict = evaluateDeclaration(decl.property, decl.value, surface);
     if (!verdict) continue;
     if (verdict.abstain) {
@@ -275,35 +276,40 @@ function tokenPosition(file: ParsedComponent, token: ClassToken): Pick<Finding, 
   return { file: file.file, line: token.line, start: token.start, end: token.end };
 }
 
-/** The declaration text an `--animate-*` custom property resolves to, wherever the sheet declares it. */
-function resolveAnimateValue(sheet: CompiledSheet, customProperty: string): string | undefined {
-  for (const rule of sheet.rules) {
-    const decl = rule.declarations.find((entry) => entry.property === customProperty);
-    if (decl) return decl.value.trim();
+/** The companion assertion's verdict, plus whether this run has already reported it once. */
+interface CompanionState {
+  ok: boolean;
+  emitted: boolean;
+}
+
+type EventPosition = Pick<VocabEvent, 'file' | 'line' | 'start' | 'end'>;
+
+/**
+ * One scanned surface's events, in report order: its findings, then its abstention notes, then the
+ * companion assertion when this is the first declaration in the run to rely on the theme root's
+ * defaults while that assertion is failing.
+ */
+function* scanEvents(
+  result: DeclarationScanResult,
+  position: EventPosition,
+  companion: CompanionState
+): Generator<VocabEvent> {
+  for (const message of result.messages) yield { message, abstain: false, ...position };
+  for (const reason of result.abstains) yield { message: reason, abstain: true, ...position };
+  if (result.sawMotionShorthand && !result.sawDurationOrEasing && !companion.ok && !companion.emitted) {
+    companion.emitted = true;
+    yield { message: companionAssertionMessage(), abstain: false, ...position };
   }
-  return undefined;
 }
 
-/** The `--animate-*` custom property name an `animation`/`animation-name` value references. */
-function customPropertyName(value: string): string | undefined {
-  const match = /^var\(\s*(--animate-[a-z0-9-]+)/i.exec(value.trim());
-  return match ? match[1] : undefined;
-}
-
-function* walkCssFamily(ctx: StaticRuleContext, companionOk: boolean, state: { companionEmitted: boolean }): Generator<VocabEvent> {
+function* walkCssFamily(ctx: StaticRuleContext, companion: CompanionState): Generator<VocabEvent> {
   for (const scope of cssScopeRules(ctx)) {
     const result = scanDeclarations(scope.rule.declarations, 'css');
-    const position = cssRulePosition(scope);
-    for (const message of result.messages) yield { message, abstain: false, ...position };
-    for (const reason of result.abstains) yield { message: reason, abstain: true, ...position };
-    if (result.sawMotionShorthand && !result.sawDurationOrEasing && !companionOk && !state.companionEmitted) {
-      yield { message: companionAssertionMessage(), abstain: false, ...position };
-      state.companionEmitted = true;
-    }
+    yield* scanEvents(result, cssRulePosition(scope), companion);
   }
 }
 
-function* walkClassJoin(ctx: StaticRuleContext, companionOk: boolean, state: { companionEmitted: boolean }): Generator<VocabEvent> {
+function* walkClassJoin(ctx: StaticRuleContext, companion: CompanionState): Generator<VocabEvent> {
   for (const file of ctx.files) {
     for (const token of file.classTokens) {
       const base = utilityBase(token.value);
@@ -313,9 +319,9 @@ function* walkClassJoin(ctx: StaticRuleContext, companionOk: boolean, state: { c
       if (base.startsWith('animate-')) {
         for (const decl of ctx.sheet.declarations(token.value)) {
           if (decl.property !== 'animation' && decl.property !== 'animation-name') continue;
-          const customProperty = customPropertyName(decl.value);
+          const customProperty = animateCustomProperty(decl.value);
           if (!customProperty) continue;
-          const animationValue = resolveAnimateValue(ctx.sheet, customProperty);
+          const animationValue = customPropertyValue(ctx.sheet, customProperty);
           if (!animationValue) continue;
           const verdict = evaluateDeclaration('animation', animationValue, 'class');
           if (!verdict) continue;
@@ -331,21 +337,15 @@ function* walkClassJoin(ctx: StaticRuleContext, companionOk: boolean, state: { c
       }
 
       const result = scanDeclarations(ctx.sheet.declarations(token.value), 'class');
-      for (const message of result.messages) yield { message, abstain: false, ...position };
-      for (const reason of result.abstains) yield { message: reason, abstain: true, ...position };
-      if (result.sawMotionShorthand && !result.sawDurationOrEasing && !companionOk && !state.companionEmitted) {
-        yield { message: companionAssertionMessage(), abstain: false, ...position };
-        state.companionEmitted = true;
-      }
+      yield* scanEvents(result, position, companion);
     }
   }
 }
 
 function* walkMotionVocabulary(ctx: StaticRuleContext): Generator<VocabEvent> {
-  const companionOk = companionAssertionOk(ctx.sheet);
-  const state = { companionEmitted: false };
-  yield* walkCssFamily(ctx, companionOk, state);
-  yield* walkClassJoin(ctx, companionOk, state);
+  const companion: CompanionState = { ok: companionAssertionOk(ctx.sheet), emitted: false };
+  yield* walkCssFamily(ctx, companion);
+  yield* walkClassJoin(ctx, companion);
 }
 
 export const motionVocabulary: StaticRule = {

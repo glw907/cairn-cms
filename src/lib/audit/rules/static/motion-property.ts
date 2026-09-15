@@ -27,6 +27,7 @@
 // first such element in a file earns the allowance. There is no file key and no selector key, so a
 // consumer claims the identical allowance the shell does.
 import { cssRulePosition, cssScopeRules } from './css-scope.js';
+import { animateCustomProperty, customPropertyValue } from './motion.js';
 import { utilityBase } from './utility.js';
 import type { CompiledSheet } from '../../sheet.js';
 import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
@@ -115,7 +116,12 @@ function classifyProperty(name: string): Verdict {
   return 'outside';
 }
 
-function propertyMessage(declProperty: string, declValue: string, name: string, verdict: 'named-error' | 'outside'): string {
+function propertyMessage(
+  declProperty: string,
+  declValue: string,
+  name: string,
+  verdict: 'named-error' | 'outside'
+): string {
   if (verdict === 'named-error') {
     return (
       `"${declProperty}: ${declValue}" transitions "${name}", a layout property whose change forces reflow and judders under a transition; it is not on ${ALLOWLIST_PHRASE}, ` +
@@ -159,30 +165,34 @@ function carriesFrameOffset(node: SourceNode): boolean {
   );
 }
 
+/**
+ * Every message one declaration earns: the three-property cap first, then one per transitioned
+ * name the allowlist rejects. A declaration that names no property list earns nothing.
+ */
+function declarationMessages(decl: { property: string; value: string }): string[] {
+  if (!isTransitionListProperty(decl.property)) return [];
+  const names = propertyNamesIn(decl.value);
+  const messages: string[] = [];
+  if (names.length > 3) messages.push(capMessage(decl.property, decl.value, names.length));
+  for (const name of names) {
+    const verdict = classifyProperty(name);
+    if (verdict !== 'ok') messages.push(propertyMessage(decl.property, decl.value, name, verdict));
+  }
+  return messages;
+}
+
 /** The CSS-family surface: a component's own `<style>` block, plus every `cssFiles` entry. */
 function checkCssFamily(ctx: StaticRuleContext): Finding[] {
   const findings: Finding[] = [];
   for (const scope of cssScopeRules(ctx)) {
     if (isFrameOffsetSelector(scope.rule.selector)) continue; // the frame-offset check owns this rule
     for (const decl of scope.rule.declarations) {
-      if (!isTransitionListProperty(decl.property)) continue;
-      const names = propertyNamesIn(decl.value);
-      if (names.length > 3) {
+      for (const message of declarationMessages(decl)) {
         findings.push({
           ruleId: 'motion-property',
           tier: 'error',
           ...cssRulePosition(scope),
-          message: capMessage(decl.property, decl.value, names.length),
-        });
-      }
-      for (const name of names) {
-        const verdict = classifyProperty(name);
-        if (verdict === 'ok') continue;
-        findings.push({
-          ruleId: 'motion-property',
-          tier: 'error',
-          ...cssRulePosition(scope),
-          message: propertyMessage(decl.property, decl.value, name, verdict),
+          message,
         });
       }
     }
@@ -199,15 +209,8 @@ function checkClassJoin(ctx: StaticRuleContext): Finding[] {
       if (DAISYUI_VENDOR_CLASSES.has(base)) continue;
       if (TAILWIND_TRANSITION_UTILITIES.has(base)) continue;
       for (const decl of ctx.sheet.declarations(token.value)) {
-        if (!isTransitionListProperty(decl.property)) continue;
-        const names = propertyNamesIn(decl.value);
-        if (names.length > 3) {
-          findings.push(tokenFinding(file, token, capMessage(decl.property, decl.value, names.length)));
-        }
-        for (const name of names) {
-          const verdict = classifyProperty(name);
-          if (verdict === 'ok') continue;
-          findings.push(tokenFinding(file, token, propertyMessage(decl.property, decl.value, name, verdict)));
+        for (const message of declarationMessages(decl)) {
+          findings.push(tokenFinding(file, token, message));
         }
       }
     }
@@ -217,11 +220,7 @@ function checkClassJoin(ctx: StaticRuleContext): Finding[] {
 
 /** The keyframe name a `--animate-*` custom property names, read off its own declared value. */
 function resolveKeyframeName(sheet: CompiledSheet, customProperty: string): string | undefined {
-  for (const rule of sheet.rules) {
-    const decl = rule.declarations.find((entry) => entry.property === customProperty);
-    if (decl) return decl.value.trim().split(/\s+/)[0];
-  }
-  return undefined;
+  return customPropertyValue(sheet, customProperty)?.split(/\s+/)[0];
 }
 
 /** Every declaration inside a named `@keyframes` block, across all its steps. */
@@ -232,12 +231,6 @@ function keyframeDeclarations(sheet: CompiledSheet, name: string): { property: s
     .flatMap((rule) => rule.declarations);
 }
 
-/** The declaration the animation shorthand resolves through, `var(--animate-name)`'s own value. */
-function customPropertyName(value: string): string | undefined {
-  const match = /^var\(\s*(--animate-[a-z0-9-]+)/i.exec(value.trim());
-  return match ? match[1] : undefined;
-}
-
 /** An `animate-*` utility checked through its `--animate-*` custom property's keyframes. */
 function checkAnimateKeyframes(ctx: StaticRuleContext): Finding[] {
   const findings: Finding[] = [];
@@ -246,7 +239,7 @@ function checkAnimateKeyframes(ctx: StaticRuleContext): Finding[] {
       if (!utilityBase(token.value).startsWith('animate-')) continue;
       for (const decl of ctx.sheet.declarations(token.value)) {
         if (decl.property !== 'animation' && decl.property !== 'animation-name') continue;
-        const customProperty = customPropertyName(decl.value);
+        const customProperty = animateCustomProperty(decl.value);
         if (!customProperty) continue;
         const keyframeName = resolveKeyframeName(ctx.sheet, customProperty);
         if (!keyframeName) continue;

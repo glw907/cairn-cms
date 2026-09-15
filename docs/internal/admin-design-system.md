@@ -1316,6 +1316,168 @@ The runbook:
 The bump is safe once all six steps run green. Hold it on any red gate or an unexplained diff, and
 investigate.
 
+## Motion
+
+**This section is canonical.** `docs/extend/animate-a-custom-screen.md` cites it by heading rather
+than restating its rules; where the two would say the same thing twice, this section is the source.
+
+### Tokens
+
+Five durations and three curves, each a Carbon `@carbon/motion` alias. A component needing a sixth
+duration or a fourth curve is wrong.
+
+| cairn token | Value | Carbon alias | Use |
+|---|---|---|---|
+| `--cairn-dur-instant` | 70ms | `duration-fast-01` | Press, focus ring, any paint feedback on the control under the pointer |
+| `--cairn-dur-quick` | 110ms | `duration-fast-02` | Small fades: a caret, a chip, a disclosure marker |
+| `--cairn-dur-base` | 150ms | `duration-moderate-01` | The default: hover paint, menus, popovers, tooltips, most enter and exit |
+| `--cairn-dur-shift` | 240ms | `duration-moderate-02` | Expansion, toast, system communication, the shell's content offset |
+| `--cairn-dur-settle` | 400ms | `duration-slow-01` | Large expansion: a surface whose travel is the viewport, an important notification |
+| `--cairn-ease-standard` | `cubic-bezier(0.2, 0, 0.38, 0.9)` | `easing.standard.productive` | The element stays visible throughout and moves or resizes |
+| `--cairn-ease-entrance` | `cubic-bezier(0, 0, 0.38, 0.9)` | `easing.entrance.productive` | The element appears |
+| `--cairn-ease-exit` | `cubic-bezier(0.2, 0, 1, 0.9)` | `easing.exit.productive` | The element leaves and does not stay nearby |
+
+The band ladder is `instant`, `quick`, `base`, `shift`, `settle`.
+
+### The property allowlist and the snap list
+
+A transition or a finite animation may name only: `opacity`, `color`, `background-color`,
+`border-color`, `box-shadow`, `outline-color`, `outline-width`, `outline-offset`, `rotate`,
+`translate`, `scale`, `transform`, `grid-template-rows`.
+
+Nine properties are named errors, the layout-thrashing set: `width`, `height`, `top`, `left`,
+`right`, `bottom`, `margin` (and its longhands), `padding` (and its longhands), `font-size`.
+`transition: all` and `transition-all` are `motion-band`'s one finding; rule 1 never re-reports
+them. A property that is neither allowlisted nor named still fails, as merely outside the
+vocabulary.
+
+**The one exception: the frame offset.** An element carrying `data-cairn-motion="frame-offset"`
+may transition `margin-left` and nothing else, one such element per screen. There is no file key
+and no selector key: the exception is keyed on the attribute plus the property. A second layout
+property on the carrying element is a finding, and a second carrying element on the same screen is
+a finding on that second element.
+
+### Enter and exit, with the floor
+
+An exit runs one duration band faster than its enter, on `--cairn-ease-exit`. `instant` is the
+floor: an `instant`-band exit stays at 70ms and changes only its curve, because there is no band
+below it. Asymmetry never applies to hover, press, or focus, which are states of one element
+rather than arrivals and departures.
+
+**The stays-nearby carve-out.** An element that leaves but stays nearby, ready to reappear, uses
+`--cairn-ease-standard` and keeps its band in both directions rather than taking the one-band
+reduction. The zen chrome is the case.
+
+**The frame offset's explicit exception to the carve-out.** The frame offset fits the
+stays-nearby description and does not take the carve-out: it runs at `shift` in on the entrance
+curve and `base` out on the exit curve, because the offset is the motion the reader asked for and
+the way back out is the one the finger is waiting on. This is a deliberate exception, not an
+oversight.
+
+### The modality gate
+
+Every hand-authored `:hover` transition sits inside `@media (hover: hover)`. The gate governs
+cairn's own authored rules only; it does not reach a vendor component, because reaching one means
+an unlayered rule pinned by a DaisyUI internal selector.
+
+**The selector-list split.** The admin authors a hover and focus pair as one selector list, for
+example `.btn-quiet:hover, .btn-quiet:focus-visible`. Wrapping that whole list in the hover media
+feature would carry `:focus-visible` into the guard and kill focus motion for a keyboard attached
+to a touch device. So a pair splits before the guard goes on: the `:hover` alternative moves
+inside the guard and the `:focus-visible` alternative stays outside it.
+
+### Reduced motion, by property class
+
+The blanket block, the `@media (prefers-reduced-motion: reduce)` rule scoped to the two admin
+theme roots, stays unchanged in shape, covering DaisyUI's ungated components. It sets
+`0.01ms` rather than `0s`, so `transitionend` still fires, and it zeroes `transition-delay` and
+`animation-delay` alongside duration.
+
+| Property class | Policy |
+|---|---|
+| Paint (`opacity`, `color`, `background-color`, `border-color`, `box-shadow`, `outline-*`) | May opt back in by restating the transition inside the same guard with `!important`. This is a permission, not a behavior |
+| Transform (`translate`, `scale`, `rotate`, `transform`) | Stays at the floor |
+| Layout (`grid-template-rows`) | Stays at the floor |
+| The frame offset | Stays at the floor |
+| Looping motion (a skeleton shimmer) | Off entirely, static tint instead |
+| Indeterminate progress (a spinner) | Runs; it conveys state |
+
+**The empty opt-back-in list, and its budget reason.** cairn's own admin restates none of the nine
+paint opt-back-ins this pass. `check-custom-surface.mjs:158` compares the unlayered rule list to
+the allowlist by length, so every restatement costs one allowlist entry even when it reuses a
+selector already pinned; nine entries is a 53% growth in a budget whose stated direction is zero,
+in the same pass that declines the vendor hover guards and the `.modal-box` override on the same
+reasoning. The loss is small regardless: under the floor the paint still changes, instantly. The
+permission stands for a consumer, who owns their own budget.
+
+### Responsive rules
+
+The register does not change with viewport or input device; what changes is how far a surface
+travels, and duration follows travel. A breakpoint flip snaps, because the properties that change
+at a breakpoint are the ones the snap list already bans, and a resize is not feedback for an
+action taken inside the interface.
+
+### The DaisyUI decision: eleven vendor disagreements
+
+DaisyUI's shipped sheet and this language disagree in eleven places. Each is recorded rather than
+fixed, because an override is not a CSS edit here, it is a budget change: no layered admin rule
+can outrank a DaisyUI rule, so every override is an unlayered rule pinned by exact selector in
+`scripts/checks/custom-surface-budget.json`, a budget whose stated direction is down. Seven are
+disagreements over timing, curve, or modality; four are over property, and the vendor exemption on
+`motion-property`'s class join records those four instead of convicting them.
+
+1. **`.btn`, press.** Runs 200ms where the language says `instant` (70ms), and transitions
+   `transform`.
+2. **`.modal`, dialog.** Runs 300ms where the language's nearest band is `shift` (240ms), and
+   opens with a `scale: .98` (the declined override below).
+3. **`.drawer`, overlay.** Runs 300ms where the language says `settle` (400ms) for a panel whose
+   travel is the viewport edge.
+4. **`.collapse`, disclosure.** Ships `transition-property: all`, the one construct
+   `motion-band` bans in cairn's own code.
+5. **`.drawer`, at the breakpoint flip.** DaisyUI declares the drawer transition outside the
+   breakpoint media query, so the sidebar slides and resizes when the viewport crosses `lg` or
+   `xl`, where the language says furniture snaps. Nothing in this pass covers it.
+6. **`.tooltip`, hover.** Ships an ungated `:hover` transition, so a coarse pointer can long-press
+   the tooltip open and strand it. Filed to the borrowable-patterns borrow-1 pass.
+7. **`.menu`, hover.** Ships an ungated `:hover` transition, same shape. Filed with the same
+   follow-up.
+8. **`.drawer-side > :not(.drawer-overlay)`** transitions `width` beside `translate`. `width` is a
+   named error, and cairn's own shell markup carries `class="drawer-side"`.
+9. **`.filter input`** transitions `margin`, `padding`, and `border-width` beside `visibility` and
+   `opacity`: three named errors in one declaration.
+10. **`.collapse …::details-content`** transitions `min-height`, `padding`, and `height` among
+    seven properties, the shorthand the vocabulary rule abstains on.
+11. **`.toggle:before`** transitions `inset-inline-start`, a logical `left`, outside both the
+    allowlist and the named-error list.
+
+**The one candidate override, declined.** `.modal-box` opens with `scale: .98` to `1` over 300ms;
+dropping the scale and keeping the rest was the candidate. Declined: an unlayered override of
+`.modal` is already forbidden, the measured travel is small (roughly 10px of edge movement on a
+512px box), and it is zeroed under reduced motion regardless.
+
+<!-- WATCH: if the admin adopts modal-bottom at narrow widths, the modal-box scale override
+becomes warranted, because a bottom sheet's travel is the viewport rather than 10px. Re-open the
+declined override above at that point. -->
+
+### Limitations
+
+Four limitations are named here rather than left to inference.
+
+- **The breakpoint flip is not honored by the shipped sheet, and this pass does not cover it.**
+  The vendor drawer transition (disagreement 5) runs at every breakpoint flip, dragged or
+  scripted, and the resize stopper that would have suppressed it is cut from this pass.
+- **The frame offset's travel window is unasserted against WCAG 2.4.11.** Zen's synchronous focus
+  sequence lands while the frame is still traveling, which is necessary and not sufficient; the
+  travel window's non-obscured behavior has not been measured.
+- **The skeleton shimmer's 2.2.2 answer is DaisyUI's own reduced-motion off switch, not the
+  spinner's replaces-the-content reasoning.** A skeleton shimmer is an infinite loop presented in
+  parallel with other content, which the spinner's own exemption does not cover; what discharges it
+  is the reduced-motion off switch DaisyUI already ships on `.skeleton`.
+- **A focus indicator's own geometry animates at `instant` and no longer band.** Transitioning
+  `outline-width` and `outline-offset` can thin the indicator below 2.4.13's minimum mid-transition;
+  at 70ms the exposure is negligible, which is the bound that keeps both properties on the
+  allowlist.
+
 ## Dates never wrap (Geoff, 2026-07-06)
 
 A date is one visual token: every rendered date gets `whitespace-nowrap` (with

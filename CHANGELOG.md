@@ -393,6 +393,14 @@
   `src/lib/admin-toolkit` by default) rather than `static.scope`, so an admin-only motion rule
   never reads a site's own public components; every other static rule is unaffected.
 
+- `cairn-audit` gains three error-tier static rules (`motion-property`, `motion-vocabulary`,
+  `motion-hover-gate`) and one advisory rendered rule (`motion-reduced-delay`). A custom admin
+  screen that transitions a layout property, writes `transition-all`, writes a literal duration or
+  easing, or declares an ungated hand-authored `:hover` transition now fails `npx cairn-audit`.
+  Consumers must: move onto the `--cairn-dur-*` and `--cairn-ease-*` tokens, or suppress with a
+  reason. One layout property is allowed, and only by the frame-offset key: an element carrying
+  `data-cairn-motion="frame-offset"`, at most one per screen, may transition `margin-left`.
+
 ### Changed
 
 - The admin sheet sets `--default-transition-duration` and `--default-transition-timing-function`

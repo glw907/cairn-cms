@@ -451,7 +451,6 @@
   it never leaps into a still-focused editor; its exit now plays for real, at 110ms on the exit
   curve with no delay, since the chip stays mounted through its own fade instead of vanishing with
   the rest of the chrome. The editor card's own box is unchanged and does not transition.
-  Consumers must: nothing; every change is additive motion on an existing state change.
 
 - `npm run check:invisible-craft` now runs `motion-property`, `motion-vocabulary`, and
   `motion-hover-gate` beside its existing `gap-scale`, `token-colors`, and `motion-band`, over a
@@ -460,7 +459,7 @@
   consumer-shaped admin screen). `cairn-admin.css` joins the gate's scanned CSS files, so the
   shipped declarations and
   the frame-offset exception it carries are in reach of the three motion rules for the first time.
-  Internal to this repo's own gate; no package export changes. Consumers must: nothing.
+  Internal to this repo's own gate; no package export changes.
 
 - **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
   parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.

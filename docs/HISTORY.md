@@ -7,7 +7,7 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
-## Admin motion language pass, eleven tasks (chain A) plus one (chain B), 2026-09-15
+## Admin motion language pass, nine tasks (chain A) plus one (chain B), 2026-09-15
 
 Branch `admin-motion` (chain A) with `admin-motion-8` (chain B, task 8 alone) merged into it; plan
 at `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; spec at
@@ -27,7 +27,9 @@ on `data-cairn-motion="frame-offset"` plus `margin-left`. The dropzone gains a d
 state it never had. Sixty new admin-visual baselines cover six surfaces at five widths in both
 schemes, rendered for the first time. Eleven DaisyUI vendor disagreements are recorded rather than
 fixed, and four named limitations join the design system's Motion section rather than being left
-to inference.
+to inference. Chain A's nine planned tasks (1, 2, 3, 4, 6a, 6b, 7, 10, 11) were joined by four
+conductor-inserted correction tasks (6a-fix, 7-fix, 10-fix, 11-fix), so the branch carries
+thirteen commits' worth of task work in all.
 
 **Five things a later pass would be wrong to rediscover.**
 

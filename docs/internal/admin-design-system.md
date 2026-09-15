@@ -1426,6 +1426,12 @@ can outrank a DaisyUI rule, so every override is an unlayered rule pinned by exa
 disagreements over timing, curve, or modality; four are over property, and the vendor exemption on
 `motion-property`'s class join records those four instead of convicting them.
 
+The rules' own `DAISYUI_VENDOR_CLASSES` exemption lists are broader than these eleven
+disagreements: `motion-property.ts` (about `:81`-`:90`) also names `modal-box`, `dropdown`,
+`dropdown-content`, `checkbox`, and `card`, classes the compiled-sheet class join convicts on
+their own vendor motion but that do not appear as numbered disagreements above. A reader should
+not take the two lists as the same set.
+
 1. **`.btn`, press.** Runs 200ms where the language says `instant` (70ms), and transitions
    `transform`.
 2. **`.modal`, dialog.** Runs 300ms where the language's nearest band is `shift` (240ms), and

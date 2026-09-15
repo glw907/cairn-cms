@@ -8,9 +8,9 @@ screens.
 route under `/admin` to animate.
 
 **The design system's Motion section is canonical.** This page cites its rules by name rather
-than restating them; see [the admin design
-system](../internal/admin-design-system.md#motion) for the full token table, the DaisyUI vendor
-disagreements, and the named limitations.
+than restating them; see the [`cairn-audit` reference](../reference/cairn-audit.md#the-static-rules)
+for the enforced rules, and the internal admin design system for the full token table, the
+DaisyUI vendor disagreements, and the named limitations.
 
 ## The tokens you write
 

@@ -5909,7 +5909,8 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   section.
 - **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
   disagreements", items 6 and 7; `ROADMAP.md`, "Borrowable patterns".
-- **Verified:** no `.tooltip` or `.menu` selector appears in `custom-surface-budget.json`, and
+- **Verified:** no unlayered `@media (hover: hover)` guard on `.tooltip` or `.menu` appears in
+  `custom-surface-budget.json`; its one `.menu` entry is the pre-existing focus-visible rule, and
   `motion-hover-gate`'s own fixtures cover cairn-authored rules alone.
 
 ## motion-drawer-persistent-scoping-dropped: dropping the drawer's `isPersistentSidebar` scoping  (decline, 2026-09-15, admin motion)
@@ -5931,4 +5932,6 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
   disagreements", item 5, and its Limitations; `ROADMAP.md`, the resize stopper entry in the
   Later tier.
-- **Verified:** no `.drawer-side` selector appears in `custom-surface-budget.json`.
+- **Verified:** the two `.drawer-side` entries in `custom-surface-budget.json` are the
+  pre-existing `.lg\:drawer-open` and `.xl\:drawer-open` persistent-sidebar rules; neither
+  suppresses the vendor drawer transition, so no breakpoint-flip scoping rule ships.

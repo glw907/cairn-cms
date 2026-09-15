@@ -44,7 +44,7 @@ past this point assumes one of those paths has already produced a working adapte
 ## Admin surfaces
 
 - **[Add a custom admin screen](./add-a-custom-admin-screen.md)**
-- **[Animate a custom screen](./animate-a-custom-screen.md)**—the tokens, the rules `cairn-audit`
+- **[Animate a custom screen](./animate-a-custom-screen.md)**: the tokens, the rules `cairn-audit`
   enforces, and the one property allowance for a page-level mode change.
 - **[Organize your admin nav](./organize-your-admin-nav.md)**
 - **[Restrict admin access](./restrict-admin-access.md)**

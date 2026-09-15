@@ -204,7 +204,10 @@ the upgrade and extend tools ship, so the window keeps accumulating on `main`: n
 pre-cut window pass now (the dependency sweep runs immediately before the eventual cut), extend-1 and
 extend-2 land first, then one cut carrying everything (extend-1's "Available since" reads 0.97.0 and its
 advisory rules promote at 0.98.0; `launch.json` updated). After that cut Geoff upgrades every site at once,
-documents the friction, ships one improvement release from it, then beta. Every consumer pin bump,
+documents the friction, ships one improvement release from it, then beta. **The site round is an
+upgrade AND a rewrite (Geoff, 2026-09-15):** each site is brought onto the new best practices the extend
+tools teach and becomes a model cairn site, and the friction it surfaces is the fodder for the docs
+rewrite, which therefore follows the site round rather than the week of 2026-09-21. Every consumer pin bump,
 cairn.pub's docs pin included, holds until then. The overnight run now stops after the motion pass merges
 (stages motion, final).
 

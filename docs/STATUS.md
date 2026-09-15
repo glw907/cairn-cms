@@ -36,7 +36,7 @@ superseded. Gates queue on one machine-wide lock in an 8G scope (dotfiles 54e397
 after the run: cairn.pub's pin bump, Go tool Task 10, the three dependency tripwires,
 blueprint-audit, the post-mortem.
 
-**Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_5447b584-7b1`.**
+**Overnight run relaunched, 2026-09-14 23:2x (session 4e54c24b), as workflow `wf_f43d9c7a-ade` (a second relaunch, after `wf_5447b584-7b1` was stopped for a runner error: a malformed args entry made the task run return empty, which the orchestrator now treats as a halt).**
 The first launch (`wf_085689cc-81b`) halted when the diff-reviewer escalated task 6a: its own work
 was verified complete and paint-clean (commit `69c57db2`, ACCEPTED), but its zero-findings criterion
 was unmet for reasons outside its Files. Conductor rulings, reversible in the morning: (1) a task

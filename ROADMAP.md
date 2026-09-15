@@ -281,6 +281,24 @@ The original decision framing, for the record:
 
 ## Now
 
+- **A per-task gate tier chosen from the diff at gate time, before the next pass (Geoff,
+  2026-09-15).** The overnight motion run showed the clock cost of a pass is the gate: the full
+  string runs the showcase's whole browser suite, 25 to 35 minutes, and a task with a fix round
+  runs it three times, while twenty site-visual baselines can never go green on this workstation
+  anyway. The task's declared Files are a forecast; the committed diff is the fact. Build a small
+  repo script that takes a diff range and prints the gate string by tier: docs, records, and
+  changelog only get the prose and reference checks; tests or check scripts only get unit,
+  component, and the check scripts; engine TypeScript adds admin-visual when a component is in
+  the diff; admin CSS or markup gets admin-visual at the five widths; anything reaching public
+  output (the render seam, theme or chassis CSS, a public route, a component a public page
+  imports) or any snapshot file gets the full string. A paint YES task or a non-empty INTENDED
+  MOVES line floors the tier at admin-visual; a plan may pin a tier for a change the diff cannot
+  size (a token value). The chain runner (`~/.claude/workflows/pass-execute-chains.js`) calls it
+  after the implementer commits and before the gate, the reviewer's reproduction uses the same
+  tier, and every close ritual and CI keep the full string. The pass plan's Gate section then
+  names tiers, not strings. A wrong tier costs one fix round at the ritual, the trade the
+  2026-09-15 run accepted per pass and this makes per task.
+
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API

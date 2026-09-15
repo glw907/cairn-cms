@@ -56,9 +56,10 @@ export const SCAN_SCOPE = [
 /**
  * The admin-only roots `motion-property`, `motion-vocabulary`, and `motion-hover-gate` resolve
  * over instead of `SCAN_SCOPE`: the engine's own admin frame plus the one showcase route that is
- * shaped like a consumer's own admin screen. `src/routes/admin`, the engine default's own third
- * root, does not exist in this tree (the library carries no `src/routes` at all), which is why
- * this gate names its own list rather than taking `DEFAULT_ADMIN_SCOPE`.
+ * shaped like a consumer's own admin screen. `DEFAULT_ADMIN_SCOPE` (config.ts) names two roots,
+ * `src/routes/admin` first; that root does not exist in this tree (the library carries no
+ * `src/routes` at all), which is why this gate names its own list rather than taking
+ * `DEFAULT_ADMIN_SCOPE`.
  * `examples/showcase/src/chassis`, `examples/showcase/src/theme`, and the showcase's public
  * routes stay out on purpose: they carry no admin markup, and an admin-only rule reading them
  * would gate a site's own public design rather than its admin frame.

@@ -448,8 +448,9 @@
 - `npm run check:invisible-craft` now runs `motion-property`, `motion-vocabulary`, and
   `motion-hover-gate` beside its existing `gap-scale`, `token-colors`, and `motion-band`, over a
   new `static.adminScope` naming the engine's own three admin roots (`src/lib/components`,
-  `src/lib/admin-toolkit`, and the showcase's `signups` route, the repo's one consumer-shaped admin
-  screen). `cairn-admin.css` joins the gate's scanned CSS files, so the shipped declarations and
+  `src/lib/admin-toolkit`, and `examples/showcase/src/routes/admin`, the repo's one
+  consumer-shaped admin screen). `cairn-admin.css` joins the gate's scanned CSS files, so the
+  shipped declarations and
   the frame-offset exception it carries are in reach of the three motion rules for the first time.
   Internal to this repo's own gate; no package export changes. Consumers must: nothing.
 

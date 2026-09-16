@@ -319,7 +319,7 @@
   theme's `base` default like the same element's hover paint; no new CSS rule is added.
 
 - The showcase compiles its own site admin stylesheet and audits against it, alongside the
-  packaged one: `src/admin.css` is a four-line Tailwind v4 entry (no DaisyUI plugin, utilities
+  packaged one: `src/admin.css` is a five-line Tailwind v4 entry (no DaisyUI plugin, utilities
   only) scoped to `src/routes/admin` with `@tailwindcss/cli`, compiled to `.cairn/admin.css`.
   `cairn-audit.config.json` names both sheets, so `no-uncompiled-class` and the rest of the static
   registry see every class a site route actually writes, not only the ones the packaged toolkit
@@ -329,8 +329,13 @@
   own `check`. The admin layout imports the compiled file so `@tailwindcss/vite` passes it through
   as a hashed, route-split asset; `e2e/admin-sheet.spec.ts` proves that at the ritual against a
   branch-point baseline, once the ritual writes the fixture (the spec stays inert until then). The
-  new `@tailwindcss/cli` devDependency was surveyed against the pinned `tailwindcss`/`@tailwindcss/vite`
-  major and matches at `4.3.3`. No consumer action.
+  fifth line, `@source "../node_modules/@glw907/cairn-cms/dist"`, scans the engine's own dist
+  markup, because both sheets share one utilities cascade layer and the site sheet loading after
+  the engine sheet would otherwise re-emit the engine's shared base utilities ahead of their own
+  `sm:` variants and defeat them on every admin screen; the fix makes the site sheet a superset of
+  the engine's utility set in Tailwind's own emission order, so every shared base utility again
+  precedes its own variant. The new `@tailwindcss/cli` devDependency was surveyed against the
+  pinned `tailwindcss`/`@tailwindcss/vite` major and matches at `4.3.3`. No consumer action.
 
 ### Removed
 

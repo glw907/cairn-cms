@@ -15,19 +15,37 @@ const fixtureExists = existsSync(FIXTURE_PATH);
 const ADMIN_PAGES = ['/admin/posts', '/admin/media', '/admin/settings'] as const;
 const PUBLIC_PAGES = ['/', '/posts'] as const;
 
-// Read off the admin shell's drawer root (CairnAdminShell's own theme-scoped surface, the one
-// element every admin screen renders inside), never a property the site sheet itself sets, so a
-// regression in the engine's own rendered output would show here rather than in the site's added
-// utility.
-const ENGINE_PROPERTIES = ['background-color', 'color', 'font-family'] as const;
+// A viewport wide enough to cross every `sm:` breakpoint the pages under proof rely on.
+const WIDE_VIEWPORT = { width: 1280, height: 900 };
+
+interface PageHeaderFlex {
+  flexDirection: string;
+  alignItems: string;
+  justifyContent: string;
+}
+
+/**
+ * The responsive-variant proof points read from each admin page: the masthead site-name
+ * element's `display` (`CairnAdminShell`'s `hidden ... sm:block` wrapper), the `PageHeader`
+ * row's flex layout (`flex flex-col ... sm:flex-row sm:items-start sm:justify-between`), and,
+ * on `/admin/posts` only, the `ConceptList` date column header's `display`
+ * (`hidden ... sm:table-cell`). These pair a base utility with its responsive variant, so a
+ * collision between the site sheet and the engine sheet's shared utilities layer shows here;
+ * `background-color`/`color`/`font-family` on the drawer root cannot see that class of defect.
+ */
+interface ComputedStyleSnapshot {
+  mastheadDisplay: string;
+  pageHeaderFlex: PageHeaderFlex;
+  dateCellDisplay?: string;
+}
 
 interface AdminSheetBaseline {
   /** SHA-256 of each public page's concatenated stylesheet bodies, in document order. */
   publicDigests: Record<string, string>;
   /** Each admin page's stylesheet `<link>` hrefs, in document order. */
   adminStylesheets: Record<string, string[]>;
-  /** `getComputedStyle` over `ENGINE_PROPERTIES`, read from the admin shell's drawer root. */
-  computedStyle: Record<string, Record<string, string>>;
+  /** Each admin page's `ComputedStyleSnapshot`, read at `WIDE_VIEWPORT`. */
+  computedStyle: Record<string, ComputedStyleSnapshot>;
 }
 
 function loadFixture(): AdminSheetBaseline {
@@ -54,13 +72,38 @@ async function pageStylesheetDigest(request: APIRequestContext, path: string): P
   return createHash('sha256').update(bodies.join('')).digest('hex');
 }
 
-/** `getComputedStyle` over `ENGINE_PROPERTIES`, read from the admin shell's drawer root. */
-async function drawerComputedStyle(page: Page, path: string): Promise<Record<string, string>> {
+/** `getComputedStyle().display` of a locator's first match. */
+async function computedDisplay(page: Page, selector: string): Promise<string> {
+  return page
+    .locator(selector)
+    .first()
+    .evaluate((el) => getComputedStyle(el).display);
+}
+
+/** The `ComputedStyleSnapshot` for one admin page, read at `WIDE_VIEWPORT`. */
+async function pageComputedStyle(page: Page, path: string): Promise<ComputedStyleSnapshot> {
+  await page.setViewportSize(WIDE_VIEWPORT);
   await page.goto(path);
-  return page.locator('.drawer').first().evaluate((el, props: readonly string[]) => {
-    const style = getComputedStyle(el);
-    return Object.fromEntries(props.map((prop) => [prop, style.getPropertyValue(prop)]));
-  }, ENGINE_PROPERTIES);
+  const mastheadDisplay = await computedDisplay(page, '.max-w-\\[30\\%\\].sm\\:block');
+  const pageHeaderFlex = await page
+    .locator('header')
+    .first()
+    .evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        flexDirection: style.flexDirection,
+        alignItems: style.alignItems,
+        justifyContent: style.justifyContent,
+      };
+    });
+  const snapshot: ComputedStyleSnapshot = { mastheadDisplay, pageHeaderFlex };
+  if (path === '/admin/posts') {
+    snapshot.dateCellDisplay = await computedDisplay(
+      page,
+      'th:has(button[aria-label="Sort by date"])',
+    );
+  }
+  return snapshot;
 }
 
 test.describe('the site admin sheet seam', () => {
@@ -93,7 +136,7 @@ test.describe('the site admin sheet seam', () => {
     test(`${path} keeps the engine's own rendered properties unchanged`, async ({ page }) => {
       test.skip(!fixtureExists, 'the baseline fixture is written by the post-merge ritual');
       const fixture = loadFixture();
-      const computed = await drawerComputedStyle(page, path);
+      const computed = await pageComputedStyle(page, path);
       expect(computed, `${path} engine-owned computed style`).toEqual(fixture.computedStyle[path]);
     });
   }

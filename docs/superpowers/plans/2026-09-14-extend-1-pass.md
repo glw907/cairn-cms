@@ -217,7 +217,11 @@ under `src/lib/components/`, `src/lib/audit/rules/`, `docs/reference/cairn-audit
 - **New consumer-facing audit rules and findings enter at advisory tier for one minor**, the
   promotion version stated in the message from the conductor's dispatch args.
 - **The named-sheet hard error exists** (`run.ts:67-82`). Task 2 locks it; no code moves.
-- **The stylesheet seam is utilities-only**, in the four-line form, with no `@plugin "daisyui"`.
+- **The stylesheet seam is utilities-only**, in the five-line form (amended 2026-09-16: the fourth
+  `@source` scans the site's admin routes and a fifth scans the engine's shipped `dist` markup, so the
+  site sheet is a superset of the engine's utilities in Tailwind's order; without it the site's base
+  utilities, loading later in the shared `utilities` layer, defeat the engine's responsive variants),
+  with no `@plugin "daisyui"`.
   The proving utility is a plain utility class, never a bracketed arbitrary value and never an
   inline `var(--…)`, since `check-invisible-craft` and the showcase's `retiredTokenBudget: 0`
   both scan the showcase routes.
@@ -644,7 +648,8 @@ runs.
 **Interfaces:**
 - Produces: `src/admin.css`: the three lines at `scripts/build/admin-css.input.css:10-12` (the
   layer order, the theme import, the utilities import with `source(none)`) plus
-  `@source "./routes/admin";`, the four-line form, and no `@plugin "daisyui"` line.
+  `@source "./routes/admin";` and `@source "../node_modules/@glw907/cairn-cms/dist";`, the five-line form
+  (see Ruled inputs), and no `@plugin "daisyui"` line.
 - Produces: `.cairn/admin.css`, the fixed path; `cairn-audit.config.json` with
   `sheet: ["node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css", ".cairn/admin.css"]`.
 - Produces: the gate string gains `&& npm --prefix examples/showcase run check:cairn` from this
@@ -663,7 +668,7 @@ runs.
 
 **Decisions the plan makes:**
 - Step 2's first act, after installing the devDependency, is a probe:
-  `npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css` on the four-line entry,
+  `npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css` on the five-line entry,
   output non-empty and containing the chosen utility. `@tailwindcss/cli` publishes `4.3.3`,
   matching the pinned `tailwindcss` and `@tailwindcss/vite`. There is no fallback: a failed probe
   halts the task with the output quoted, an escalate for the conductor, because a PostCSS script

@@ -14,25 +14,60 @@ engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii/C unpublished und
 Unreleased`; the window holds for one cut after the admin motion pass (below). CI on `main` is
 green.
 
-## Immediate next action (2026-09-14)
+## Immediate next action (2026-09-15, written by session 4e54c24b before it closes)
 
-**Polish-C is MERGED** (PR #59, CI green, merge commit `ece054b8`; entry and post-mortem in
-[`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-14 13:2x).
-**Next, a fresh session launches the admin motion pass** per
-`~/.cache/cairn-overnight-2026-09-12/LAUNCH.md` (its 2026-09-14 handoff section is the step list:
-copy `cairn-motion.js` and the chains script to the new scratchpad, rewrite `chainsScript`, arm the
-guards and the full inhibitor set, launch). The pass runs UNREAD on its reviewed plan
-(`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; Geoff, 2026-09-13). Then, on
-`main` with no worktree live, the **pre-cut window pass** on its APPROVED plan
-(`docs/superpowers/plans/2026-09-14-pre-cut-window-pass.md`: the dependency sweep through the
-`dependency-upgrade` skill, three accepted Carbon defaults, records; four per-task Agent chains,
-ceiling 3.30M). Then the cut as **0.97.0** via `cairn-release` (verify the number is free first).
-Held for Geoff after the release: cairn.pub's engine pin bump (a production deploy), the three
-dependency tripwires, the `blueprint-audit` dotfiles script, the post-mortem.
+**Halt at the CI regen, ruled 2026-09-15 12:3x.** Run 35016669005's e2e job regenerated and committed the
+baselines on `origin/admin-motion`, but task 8's new `norms / motion-reduced-delay rendered audit` job
+failed: the audit CLI cannot scope a rendered run to one rule, so all 17 rendered rules ran and
+`viewport-overflow` (pre-existing, never before run in CI) produced all 200 errors on the admin routes at
+320 and 390; the advisory target rule produced 2 advisories and cannot fail a job. Ruling: task `8-fix` on
+the branch adds `--rule <id>` to the audit CLI, scopes the job to its rule, documents the flag, and files
+the viewport-overflow findings to ROADMAP as their own defect (likely the rule measuring the transformed
+off-canvas drawer). `motion-args.json` now carries only `8-fix`; the built script is rebuilt. **The ritual
+is NOT running. Relaunch FRESH (no `resumeFromRunId`: the cached regen failure would replay):** LAUNCH.md
+steps 2 to 7, stages `["motion","final"]`; the ritual re-runs from its first step (about two and a half
+hours), then the sequence below.
 
-After the cut, in fresh sessions: the Go tool 1.0 (below) in parallel with the borrowable-patterns
-spec's fresh read (cache draft, re-read against post-C `api-surface.md`), then the docs rewrite
-from pass 2a. Polish-C's run spent 7.2M subagent tokens (conductor-notes.md has the detail).
+**The admin motion pass state** (last workflow `wf_f43d9c7a-ade`, halted) (built script and args in
+`~/.cache/cairn-overnight-2026-09-14/`, stages `["motion","final"]`, the Go tool and the pre-cut and release
+stages removed by Geoff's decisions below). Every task is accepted on `admin-motion`: 1 to 4, 6a, 6b, 7, 8,
+10, 11, plus the four conductor-inserted corrections 6a-fix, 7-fix, 10-fix, 11-fix; chain B merged; the
+simplifier ran. Remaining: full gate, six-surface verifier, four reviewers, records, PR, CI, the CI baseline
+regen, merge. **If the ritual is not running when you read this** (a session clear kills it), check
+`gh pr list --head admin-motion` and the worktree: a merged PR means done; otherwise relaunch from
+`LAUNCH.md`'s "State on 2026-09-15" section (steps 2 to 7; every ritual step is idempotent) or finish the
+named step by hand. The night's halt ledger and every ruling: `~/.cache/cairn-overnight-2026-09-14/NIGHT-ledger.md`
+(fold into HISTORY at the post-mortem; task 11 already recorded the rulings in the plan).
+
+**Then, in order (Geoff, 2026-09-15):**
+
+1. **Adversarial review of the facts container** (`docs/internal/facts/`, landed `b9282369`: 727 facts, 641
+   verified, 14 drift, 31 candidates): three fresh-context `claude-opus-5` reviewers with disjoint lenses
+   (structure and mechanics; evolution feasibility from container through the site round to public docs,
+   and what a facts-only record loses; charter and per-pass cost), graded against the goal of docs kept
+   light while cairn is finalized yet collecting what public docs will need. Findings fold into item 2.
+2. **The docs-to-facts pass** (plan it; small): remove the admin, editors, extend, and why-cairn arms and
+   the docs README from the tree and the tarball; MOVE `docs/reference/` into the container at
+   `docs/internal/facts/reference/` and re-point its two gates; ship the container in the tarball in place
+   of the arms; the container check (every export has an entry, every bullet a source and one tag, links
+   resolve); CLAUDE.md's docs section and the `cairn-pass` docs step become container-first; re-point
+   engine-consult (a "facts consulted" line), site-implementer, cairn-implementer; amend extend-1 and
+   extend-2's docs deliverables to container entries; the `cairn-fact` dotfiles command (`fact`, `gap`) and
+   its skill; the `gate-tier.mjs` classifier (the runner half landed in dotfiles 2026-09-15, unpushed; the
+   ROADMAP Now entry has the tier table). The 14 drift bullets are the first corrections to make.
+3. **extend-1, then extend-2** (docs as container entries; extend-1's "Available since" reads 0.97.0 and
+   its advisory rules promote at 0.98.0, per `launch.json`).
+4. **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's tools section added
+   to the pre-cut pass). No release before this; every consumer pin bump holds, cairn.pub's included.
+5. **The site round:** aksailingclub-org upgraded and finished, ecxc-ski and 907-life upgraded and
+   polished, each as a model cairn site on the new best practices; every site pass hunts holes into
+   `docs/internal/facts/gaps.md` and files facts with `cairn-fact`; then one improvement release, then the
+   public docs extended from the container, then beta.
+
+Held for the week of 2026-09-21: Go tool pass A at its Task 3 boundary on `cairn-tool-a` (draft PR #60).
+Morning items still open: the three dependency tripwires, `blueprint-audit`, the motion post-mortem.
+Spend on the night: about 5.5M subagent tokens for the motion pass across six launches, plus about 2.5M
+for the facts harvest, tightening, and fold.
 
 ## Parallel tracks
 

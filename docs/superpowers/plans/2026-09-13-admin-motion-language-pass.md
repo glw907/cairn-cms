@@ -207,7 +207,7 @@ Two blocking items and four smaller ones, all applied.
 the admin sheet carries, enforced as three error-tier static `cairn-audit` rules and one advisory
 rendered rule a consumer runs on its own screens with no configuration, with the two shipped
 reduced-motion bugs fixed, the seventeen shipped motion declarations migrated onto the tokens, the
-frame offset and zen's chrome given the one documented exception, and the result handed to the borrowable-patterns
+frame offset and zen's chrome given the one documented exception, and the result handed to the extend
 work as the extend track's first per-pattern recipe.
 
 **Spec:** `docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, revision 2 as folded
@@ -226,7 +226,7 @@ removed, merged, or split.
 ruleset differs from the other two, the other two win, per the spec's Inputs note. Supporting reads:
 `docs/internal/admin-design-system.md`, `docs/reference/cairn-audit.md`,
 `docs/internal/what-cairn-is-and-is-not.md`, and ROADMAP's Next-tier entries "A motion language for
-the admin" (`ROADMAP.md:886`) and "Borrowable patterns" (`:936`).
+the admin" (`ROADMAP.md:886`) and "Extend" (`:936`).
 
 **Task count:** ten, matching the spec's outline exactly. The ids are `1`, `2`, `3`, `4`, `6a`, `6b`,
 `7`, `8`, `10`, `11`. **The retired ids 5 and 9 are never reused**, per the spec's outline, so every
@@ -265,7 +265,7 @@ and quotes the decision text.
    audit runs over the engine's own tree first, wired through
    `scripts/checks/check-invisible-craft.mjs`'s `RULE_IDS` and `CSS_FILES`. The reduced-motion rule is
    the CSSOM delay check at advisory tier; the rendered differential is out.
-6. **Borrow hand-off:** the pass writes the extend track's first per-pattern recipe page, beside the
+6. **Extend hand-off:** the pass writes the extend track's first per-pattern recipe page, beside the
    design system's Motion section, which the later `cairn-extend` skill routes to.
 7. **Sequencing:** its own pass, after polish-C merges and before the release cut, so the cut carries
    the tokens and the rules. Single release. The pass runs unread on its reviewed plan.
@@ -274,7 +274,7 @@ and quotes the decision text.
 
 Two escalations of 2026-09-13 came back as rulings and bind the same way. **The two
 `@media (hover: hover)` guards on `.tooltip` and `.menu` are dropped**, recorded as vendor
-disagreements 6 and 7, with the touch-tooltip visibility defect filed to borrow-1. **The drawer
+disagreements 6 and 7, with the touch-tooltip visibility defect filed to extend-1. **The drawer
 scoping to `isPersistentSidebar` is dropped**, recorded as vendor disagreement 5. The frame offset
 exception stands as decided, on the attribute key decision 3's amendment gives it.
 
@@ -2178,9 +2178,9 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
 - **The ledger rows quote decisions 3 and 4 and the two escalation rulings of 2026-09-13**, each
   citing the spec by path and date. Rows take the ledger's own heading form.
 - **Five follow-ups are filed:** the rendered half of `motion-hover-gate` with its trigger (the
-  borrow-1 pass, which owns the consumer-facing gates layer); the `.tooltip` touch defect with the
+  extend-1 pass, which owns the consumer-facing gates layer); the `.tooltip` touch defect with the
   review's finding that closing it means gating the tooltip's **visibility**, not its transition, which
-  is a behavioral override of a vendor component and a decision borrow-1 takes on its own terms; the
+  is a behavioral override of a vendor component and a decision extend-1 takes on its own terms; the
   `.menu` gate with the same follow-up; the `modal-bottom` reopen trigger if it is not carried as a
   `WATCH:`; and **the resize stopper**, in ROADMAP's Later tier, carrying the finding that its
   specified form is a no-op on the bare theme wrapper and its working form is a universal descendant
@@ -2196,7 +2196,7 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   checks whether `src/lib/audit/rules/rendered/motion-reduced-delay.ts` is in the tree before writing
   the line, and reports which version it wrote.
 - **ROADMAP's "A motion language for the admin" entry is closed and removed from the live tier.**
-  "Borrowable patterns" stays open, and this task adds the three filed follow-ups to it rather than
+  "Extend" stays open, and this task adds the three filed follow-ups to it rather than
   creating a fifth tier entry.
 - **The `## Unreleased` block is read whole.** This window carries seven `Consumers must:` lines, and
   this task writes the one the changelog table assigns to it and verifies all seven are present.
@@ -2625,13 +2625,13 @@ This plan's own two.
   it cheap to re-argue: its specified form is a no-op, because a class on the bare theme wrapper never
   matches the admin sheet's scoped rules and transition properties do not inherit, and its working
   form is a universal descendant rule costing one `unlayeredAllowlist` entry.
-- **To the borrowable-patterns work (borrow-1 and borrow-2), five things.** The three static rules and
+- **To the extend work (extend-1 and extend-2), five things.** The three static rules and
   the one rendered rule as the consumer-facing gates layer's first motion members;
   `docs/extend/animate-a-custom-screen.md` as the extend track's first per-pattern recipe, which the
   later `cairn-extend` skill routes to; the rendered half of `motion-hover-gate`, filed with its
   trigger; the `.tooltip` touch defect with the finding that closing it means gating the tooltip's
   visibility rather than its transition, which is a behavioral override of a vendor component and
-  borrow-1's own decision; and the `.menu` gate with the same follow-up.
+  extend-1's own decision; and the `.menu` gate with the same follow-up.
 - **To any later pass, a Motion section that is canonical.** The recipe page cites it by heading
   rather than restating it, and both documents say so, so a later pass edits one place.
 - **To a later pass, the `modal-bottom` reopen trigger**, carried as a `WATCH:` beside the recipe. If

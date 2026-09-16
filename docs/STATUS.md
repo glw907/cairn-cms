@@ -10,36 +10,17 @@ the present.
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
-engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii/C unpublished under `##
-Unreleased`; the window holds for one cut after the admin motion pass (below). CI on `main` is
-green.
+engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, and the admin motion pass
+unpublished under `## Unreleased`; the window holds for one cut after the docs-to-facts pass and
+extend-1/extend-2 (below). CI on `main` is green.
 
-## Immediate next action (2026-09-15, written by session 4e54c24b before it closes)
+## Immediate next action (2026-09-15)
 
-**Halt at the CI regen, ruled 2026-09-15 12:3x.** Run 35016669005's e2e job regenerated and committed the
-baselines on `origin/admin-motion`, but task 8's new `norms / motion-reduced-delay rendered audit` job
-failed: the audit CLI cannot scope a rendered run to one rule, so all 17 rendered rules ran and
-`viewport-overflow` (pre-existing, never before run in CI) produced all 200 errors on the admin routes at
-320 and 390; the advisory target rule produced 2 advisories and cannot fail a job. Ruling: task `8-fix` on
-the branch adds `--rule <id>` to the audit CLI, scopes the job to its rule, documents the flag, and files
-the viewport-overflow findings to ROADMAP as their own defect (likely the rule measuring the transformed
-off-canvas drawer). `motion-args.json` now carries only `8-fix`; the built script is rebuilt. **The ritual
-is NOT running. Relaunch FRESH (no `resumeFromRunId`: the cached regen failure would replay):** LAUNCH.md
-steps 2 to 7, stages `["motion","final"]`; the ritual re-runs from its first step (about two and a half
-hours), then the sequence below.
+**The admin motion pass is MERGED** (PR #64, merge commit `296096eacdcaba15528303d5466c9b4857db475d`);
+full detail in [`docs/HISTORY.md`](HISTORY.md) ("Admin motion language pass, nine tasks (chain A)
+plus one (chain B), 2026-09-15").
 
-**The admin motion pass state** (last workflow `wf_f43d9c7a-ade`, halted) (built script and args in
-`~/.cache/cairn-overnight-2026-09-14/`, stages `["motion","final"]`, the Go tool and the pre-cut and release
-stages removed by Geoff's decisions below). Every task is accepted on `admin-motion`: 1 to 4, 6a, 6b, 7, 8,
-10, 11, plus the four conductor-inserted corrections 6a-fix, 7-fix, 10-fix, 11-fix; chain B merged; the
-simplifier ran. Remaining: full gate, six-surface verifier, four reviewers, records, PR, CI, the CI baseline
-regen, merge. **If the ritual is not running when you read this** (a session clear kills it), check
-`gh pr list --head admin-motion` and the worktree: a merged PR means done; otherwise relaunch from
-`LAUNCH.md`'s "State on 2026-09-15" section (steps 2 to 7; every ritual step is idempotent) or finish the
-named step by hand. The night's halt ledger and every ruling: `~/.cache/cairn-overnight-2026-09-14/NIGHT-ledger.md`
-(fold into HISTORY at the post-mortem; task 11 already recorded the rulings in the plan).
-
-**Then, in order (Geoff, 2026-09-15):**
+**Next, in order (Geoff, 2026-09-15):**
 
 1. **Adversarial review of the facts container** (`docs/internal/facts/`, landed `b9282369`: 727 facts, 641
    verified, 14 drift, 31 candidates): three fresh-context `claude-opus-5` reviewers with disjoint lenses
@@ -71,10 +52,10 @@ for the facts harvest, tightening, and fold.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1-7, chassis-A/B1/B2, and polish-11a/11b-i/11b-ii/C
-  all MERGED; the admin motion pass next (above), then ONE release cut. ROADMAP's
-  audit-remediation entry is the canonical routing record; the chassis quality bar equals the
-  engine's (Geoff, 2026-09-01).
+- **Audit remediation (ROADMAP Now).** Slices 1-7, chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, and
+  the admin motion pass all MERGED; the docs-to-facts pass and extend-1/extend-2 next (above),
+  then ONE release cut. ROADMAP's audit-remediation entry is the canonical routing record; the
+  chassis quality bar equals the engine's (Geoff, 2026-09-01).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only, under
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 as a product for any operator on Linux, macOS, and

@@ -27,8 +27,9 @@ routing record for this track; every slice through docs-to-facts is MERGED.
 task 4; the per-task gate is chosen by `scripts/checks/gate-tier.mjs`, serialized on
 `cairn-run-gate`'s machine lock. Resume prompt if the session is lost: "Resume the extend-1 pass
 (plan above); read STATUS for the task ledger, check both worktrees' `git log`, and relaunch the
-workflow with `resumeFromRunId` if the run id is recorded here, else from the first unaccepted
-task." **Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
+workflow from the built script `extend-1-run.js` in the launching session's scratchpad with
+`resumeFromRunId: wf_335b0ff8-684`, or rebuild it from `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json`
+and start from the first unaccepted task." **Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
 deliverables now file container bullets in `docs/internal/facts/extend.md` instead of editing
 the frozen `docs/extend/` pages; reference pages still update per task. extend-1's "Available
 since" reads `0.97.0`, advisory rules promote at `0.98.0` (`launch.json`).

@@ -38,13 +38,17 @@ the per-task gate tier is chosen from the diff.
 - **The container is not shipped.** Its README's "never shipped" line stands.
 - **No `cairn-fact` CLI this pass.** It is deferred until a site pass has filed about twenty facts
   by hand and the shape has stopped moving (charter report, finding 9 and verdict).
-- **The arms are frozen, not banned.** A pass that changes a public behavior files the container
-  bullet and updates the reference page. It does not rewrite the admin, editors, extend, or
-  why-cairn narrative; the docs rebuild after the site round does that from the container. A
-  pass MAY still fix a sentence on a frozen page when the fix is one line and the page's gate
-  demands it (a transcript floor, an editor quote, a snippet). No page-level banner: the freeze
-  is recorded in CLAUDE.md and the skill, and cairn.pub's readers are not a cost (Geoff,
-  2026-09-15).
+- **The arms are frozen against rewrites, open to fixes (Geoff, 2026-09-15, amended mid-pass).**
+  A pass that changes a public behavior files the container bullet and updates the reference
+  page. No pass rewrites the admin, editors, extend, or why-cairn narrative; the docs rebuild
+  after the site round does that from the container. But a deficiency a site pass DISCOVERS (a
+  missing step, a missing worked example, a wrong warning, a stale command) is fixed on the page
+  the next site will read, in the same pass, gated by that page's existing gates, with the fact
+  bullet filed alongside as the sourced record. The friction log holds only what the site pass
+  could not fix (a capability gap). A consuming pass's engine-consult step reads the container
+  arms it builds on AND the open friction entries before its plan is written, so a hole site one
+  could not close is in front of site two's planner. No page-level banner; the rule is recorded
+  in CLAUDE.md and the skills, and cairn.pub's readers are not a cost.
 
 ## Tasks
 
@@ -131,7 +135,7 @@ check scripts' tests use; match it), `package.json` (`check:facts` wired into `c
 
 - [ ] CLAUDE.md's docs section states, in this order: the reference arm is maintained per pass
       and gated; the three narrative arms and why-cairn are frozen for the finalization window
-      with the one-line-fix exception; every public-behavior change files a bullet in the
+      with the discovered-deficiency exception (fixed on the page in the same pass); every public-behavior change files a bullet in the
       container, gated by `check:facts`; the docs rebuild after the site round rebuilds the
       narrative arms from the container (the `docs-rebuild-not-edit` ruling). The four-track
       description and cairn.pub's versioning paragraph stay; the friction-log paragraph adds the
@@ -164,13 +168,17 @@ Commit in the dotfiles repo; `claude-tooling-sync verify` must stay green.
       second, narrative arms frozen) and adds `check:facts` to the named gate list. The CI-only
       gate list stays accurate. Section length does not grow by more than eight lines.
 - [ ] `engine-consult`: a consulting pass's plan header carries one more line, `**Facts
-      consulted:** <arm files read, or "none">`, and the skill says a brief cites the container
+      consulted:** <arm files read, or "none">`; the skill's pre-plan read names the container
+      arms the pass builds on AND the open entries in cairn-cms `docs/internal/docs-friction-log.md`,
+      so a hole the last site could not close reaches this plan; a brief cites the container
       bullet it disputes when one exists.
 - [ ] `cairn-implementer` and `site-implementer`: one paragraph each. The cairn one: a
       public-behavior change files its container bullet in the same task and runs `check:facts`.
-      The site one: a hole in the facts container is filed in cairn-cms's
-      `docs/internal/docs-friction-log.md` with the site, pass, date, and engine version, never
-      guessed around.
+      The site one: a doc deficiency the task hits (a missing step, example, warning, or a stale
+      command) is fixed on the cairn-cms page the next site will read, in the same task, gated by
+      that page's gates, with the fact bullet filed alongside; only what the task cannot fix goes
+      to cairn-cms `docs/internal/docs-friction-log.md` with the site, pass, date, and engine
+      version, never guessed around.
 - [ ] `claude-tooling-sync verify` green; dotfiles `scripts/check.sh` green.
 
 **Gate:** the dotfiles gate (`scripts/check.sh`) and `claude-tooling-sync verify`; no cairn gate.

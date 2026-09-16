@@ -59,8 +59,11 @@ domain-risk). Every ranked change is applied. The decisions that changed the pla
 After the `0.97.0` cut. In parallel with the rest of the Go tool pass A
 (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`), which lives under `tool/` and touches
 no file this pass touches except the three pass-close files, merged in whichever order the closes
-land. Before the docs rewrite, so the rewrite documents exports that exist. extend-2 follows the
-rewrite. Site migration waits until all three have landed (Geoff, 2026-09-13).
+land. **Resequenced 2026-09-16 (Geoff's 2026-09-15 decision in `docs/STATUS.md`):** extend-2
+follows this pass directly, then one cut, then the site round; the docs rebuild follows the round,
+not this pass. The `0.97.0` cut has not landed either: this pass ships in it, so "Available since"
+reads `0.97.0` and the advisory rules promote at `0.98.0`. Site migration waits until both extend
+passes have landed.
 
 **Architecture:** nine tasks in two chains. Chain A is engine work under `src/lib` plus the two
 showcase exemplar server routes. Chain B is the showcase's stylesheet seam and the scaffold

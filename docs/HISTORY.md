@@ -58,6 +58,14 @@ component test files (1404 tests), `check:facts`, `check:docs`, `check:vale`, `c
 ceiling (raised from 1.5M at the checkpoint); 0 planning misses, 1 execution sitting (the
 ceiling raise) against the attended-time score.
 
+**Two close-ritual findings.** The fold's full gate string omitted `check:arm-indexes`, so a new
+`docs/internal/` page (`pass-gate-tiers.md`) reached CI unindexed and failed there; the ritual's
+CI-only list should name it. And the conductor never armed the suspend inhibitor for a run that
+went unattended for hours; the kernel reported the charger offline while plugged in, GNOME applied
+the battery idle rule, and the machine slept twice (22:41 and 23:21) with a CI push stalled until
+07:43 the next morning. Arm the inhibitor before the first long dispatch, every time. Merged as
+PR #65.
+
 ## Admin motion language pass, nine tasks (chain A) plus one (chain B), 2026-09-15
 
 Branch `admin-motion` (chain A) with `admin-motion-8` (chain B, task 8 alone) merged into it; plan

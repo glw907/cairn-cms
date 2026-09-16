@@ -145,17 +145,21 @@ check scripts' tests use; match it), `package.json` (`check:facts` wired into `c
 
 - [ ] CLAUDE.md's docs section states, in this order: the reference arm is maintained per pass
       and gated; the three narrative arms and why-cairn are frozen for the finalization window
-      with the discovered-deficiency exception (fixed on the page in the same pass); every public-behavior change files a bullet in the
+      with the discovered-deficiency exception (fixed on the page in the same pass, agent-facing, not
+      register-graded), the cross-repo path (a site agent never edits cairn-cms; "Engine docs fixes"
+      batched into one dispatch on `site-docs/<site>-<pass>`), and the carve-out that
+      `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records
+      outside the freeze; every public-behavior change files a bullet in the
       container, gated by `check:facts`; the docs rebuild after the site round rebuilds the
       narrative arms from the container (the `docs-rebuild-not-edit` ruling). The four-track
       description and cairn.pub's versioning paragraph stay; the friction-log paragraph adds the
       facts-hole sentence. Total section length does not grow by more than ten lines.
 - [ ] The two extend plans' docs deliverables are amended: where a task says "update
-      `docs/extend/<page>`" for a narrative page, it now says "file the container bullet(s) in
+      `docs/extend/<page>`" or "update `docs/admin/<page>`" for a frozen narrative page, it now says "file the container bullet(s) in
       `docs/internal/facts/extend.md`; the reference page still updates". Reference-page and
       `docs/reference/README.md` deliverables are untouched. The amendment is a dated note in each
       plan's header plus the edited task lines, not a rewrite.
-- [ ] ROADMAP: the gate-tier Now entry (`ROADMAP.md:296`) is removed when task 5 lands (this task
+- [ ] ROADMAP (tiers are Now / Next / Later / Considering; "Planned" below means `Next`): the gate-tier Now entry (`ROADMAP.md:296`) is removed when task 5 lands (this task
       writes the removal; task 5 is what makes it true, so dispatch this task after task 5 or
       have it note the dependency). A `Planned` line for the `cairn-fact` CLI with its trigger
       ("twenty hand-filed facts"). A `Planned` line for re-sourcing page-only candidates,

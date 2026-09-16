@@ -224,12 +224,12 @@ describe('the CLI (spawned)', () => {
     expect(out.stdout).toBe('');
   });
 
-  it('prints only the gate string on stdout for a real one-commit range, plus the tier on stderr', () => {
-    // Confirms the stdout/stderr split contract against a range this repo actually has: HEAD
-    // against its own parent. The exact tier is not asserted, since it depends on HEAD's own
-    // commit, which this task does not control.
+  it('prints only the gate string on stdout for a real range, plus the tier on stderr', () => {
+    // Confirms the stdout/stderr split contract against a range this repo always has: HEAD against
+    // git's empty tree, which exists in every clone, shallow CI checkouts included (HEAD^ does
+    // not). The exact tier is not asserted; a whole-tree diff resolves to full, and that is fine.
     const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
-    const parent = spawnSync('git', ['rev-parse', `${head}^`], { encoding: 'utf8' }).stdout.trim();
+    const parent = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
     const real = spawnSync(process.execPath, [SCRIPT, '--range', `${parent}..${head}`], {
       encoding: 'utf8',
     });

@@ -12,6 +12,10 @@ plan-approval gate is closed; execution needs no further read. **Spec:** `docs/s
 (Layer 3, the Trust boundary, Adoption, Fold 6, 9, and 10). The plan argues from the spec;
 executors read both.
 
+**2026-09-15 amendment (docs-to-facts pass):** the `extend` narrative arm is frozen against
+rewrites. Task 3a no longer edits `docs/extend/what-the-scaffold-wrote.md`; it files the fact(s)
+in `docs/internal/facts/extend.md` instead. The reference arm is unaffected.
+
 **Goal:** a developer using Claude Code on a cairn site gets the engine's guidance from the
 package it already has: a `CLAUDE.md` fragment, three skills, one read-only review agent, and a
 `Stop` hook the fragment documents as a snippet, all shipped in the tarball, with the fragment,
@@ -396,8 +400,10 @@ handover text and the scaffold doc.
   and `examples/showcase/src/chassis/tokens.css:47` (`@source not "./.claude";` after the import,
   so the bake stays byte-exact), `packages/create-cairn-site/template/gitignore`
   (`.claude/agent-memory/`), `packages/create-cairn-site/src/scaffold.mjs:224-252` (the handover
-  names the guidance and `cairn-guidance check`), `docs/extend/what-the-scaffold-wrote.md`,
-  `templates/waymark/**` (regenerated), `CHANGELOG.md`
+  names the guidance and `cairn-guidance check`), `templates/waymark/**` (regenerated),
+  `CHANGELOG.md`. **(2026-09-15 amendment, docs-to-facts pass):** `docs/extend/what-the-scaffold-wrote.md`
+  is frozen; instead file the container bullet(s) in `docs/internal/facts/extend.md` for the
+  guidance tree, `VERSION`, and `MANIFEST` the bake now writes.
 - Not modified: `examples/showcase/.cairn-template.json`'s `.claude` exclusion, which keeps the
   showcase's own dev tooling out; the bake writes the guidance explicitly.
 
@@ -410,8 +416,8 @@ handover text and the scaffold doc.
 **Steps:**
 - [ ] **Step 1: the failing test first.** The bake test asserts the tree, `VERSION` equal to the
   resolved engine version, and the `CLAUDE.md` import line; `check:template` fails on the diff.
-- [ ] **Step 2:** the bake; the exclusion in both trees; the gitignore; the handover; the doc;
-  `npm run emit:template`.
+- [ ] **Step 2:** the bake; the exclusion in both trees; the gitignore; the handover; the
+  `docs/internal/facts/extend.md` bullet(s); `npm run emit:template`.
 - [ ] **Step 3:** changelog (no consumer action). The gate. Commit.
 
 **Acceptance criteria:**

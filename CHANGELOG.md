@@ -1530,6 +1530,8 @@
   `taxonomy.field_unmarked` to `content.field_unmarked` and `admin.action.sink_threw` to
   `audit.sink.call_failed` in any log filter, alert, or subscriber.
 
+- The facts container (`docs/internal/facts/`) is gated by `check:facts`. No consumer action.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

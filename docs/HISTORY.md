@@ -19,7 +19,7 @@ tag grammar, retagged the page-only-sourced bullets `[candidate]`, resolved the 
 `[docs-drift]` bullets to 1 (the remainder is named in the container, a one-sentence fix would
 not suffice), fixed the drifted line pointers, folded the non-fact sections under
 `## Harvest record`, and deleted `gaps.md` into the friction log. Task 2 shipped
-`scripts/checks/check-facts.mjs`, wired into `npm run check`, walking every bullet outside a
+`scripts/checks/check-facts.mjs`, wired into CI (`.github/workflows/test.yml`) and the `docs` gate tier, walking every bullet outside a
 `## Harvest record` section for a source, exactly one vocabulary tag, and a resolvable
 `path:line` pointer (with quoted-anchor text re-read against the cited line). Task 3 rewrote
 CLAUDE.md's docs section container-first (reference arm maintained and gated; the three
@@ -36,12 +36,12 @@ its unit tests, and `docs/internal/pass-gate-tiers.md`.
 demoted 21 already-verified bullets to `[candidate]`, caught in the fix round. T3's implementer
 compressed six CLAUDE.md sections outside its own scope to clear the workstation
 claude-context-budget hook, dropping thirteen facts in the process; all thirteen restored in
-the fix round (CLAUDE.md now sits about 6377 tokens over the 6000 budget, filed to ROADMAP's
+the fix round (CLAUDE.md now sits at about 6377 tokens, over the 6000 budget, filed to ROADMAP's
 Next tier rather than compressed again under this pass). T5 found the showcase's Playwright
 config has no named projects, so the `admin-visual` gate string runs the spec file directly, not
 a `--project` flag; the doc page and the gate string both record this. T2's first anchor check
 compared a bullet's quoted snippet against a whole file, which never failed; a 10-line window
-around the cited line replaced it and caught two real drifted pointers in the fixture pass.
+around the cited line replaced it and caught two real drifted container pointers (`EditPage.svelte:2076`, now `:2116`).
 
 **What a later pass would be wrong to rediscover.** The container's shape holds even though the
 review overturned the plan's original premise: the arms stay in the tree and the tarball

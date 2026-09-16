@@ -255,7 +255,7 @@ out-of-vocabulary tags and the double-bracket bullet resolved, the 14 `[docs-dri
 corrected to 1 (the remaining one exceeds a sentence and is named in the container), the drifted
 line pointers fixed, the non-fact sections folded under `## Harvest record`, the hand-maintained
 index table removed, `gaps.md` deleted with its entries moved to the friction log. Task 2 added
-`scripts/checks/check-facts.mjs`, wired into `npm run check`, with a good/bad fixture pair and a
+`scripts/checks/check-facts.mjs`, wired into CI (`.github/workflows/test.yml`) and the `docs` gate tier, with a good/bad fixture pair and a
 unit test; it walks every bullet outside a `## Harvest record` section and enforces source, tag
 vocabulary, and pointer resolution (path, line range, and quoted-anchor text). Task 3 rewrote
 CLAUDE.md's docs section to state the container-first order (reference maintained and gated;
@@ -265,7 +265,7 @@ upgrade-cairn outside the freeze), amended both extend plans' docs deliverables,
 ROADMAP and CHANGELOG. Task 4 (dotfiles, outside this repo) carried the same rule into
 `cairn-pass`, `engine-consult`, `cairn-implementer`, and `site-implementer`. Task 5 added
 `scripts/checks/gate-tier.mjs`, its unit tests, and `docs/internal/pass-gate-tiers.md`, verified
-against the last five merged passes and the showcase's actual Playwright project name.
+against the last five merged passes and the showcase Playwright config, which declares no projects, so the admin-visual tier runs the spec file directly.
 
 **Evidence.** Close-ritual full gate (`check`, `test`, `check:comments`, `check:snippets`,
 `check:transcripts`, `check:symbols`, `check:surface`, `check:facts`, `check:docs`,

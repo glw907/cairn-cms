@@ -16,13 +16,9 @@ extend-1/extend-2 (below). CI on `main` is green.
 
 ## Immediate next action (2026-09-15)
 
-**The docs-to-facts pass is MERGED**; full detail in [`docs/HISTORY.md`](HISTORY.md)
-("Docs-to-facts pass, five tasks, 2026-09-15"). `docs/internal/facts/` is now gated by
-`check:facts`, the three narrative arms and why-cairn are frozen against rewrites (open to a
-same-pass discovered-deficiency fix, agent-facing not register-graded), and
-`scripts/checks/gate-tier.mjs` picks the per-task gate tier from the diff. ROADMAP's
-audit-remediation entry is the canonical routing record for this track (Slices 1-7,
-chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass, and docs-to-facts all MERGED).
+**The docs-to-facts pass is MERGED** (PR #65); detail in [`docs/HISTORY.md`](HISTORY.md)
+("Docs-to-facts pass, five tasks, 2026-09-15"). ROADMAP's audit-remediation entry is the canonical
+routing record for this track; every slice through docs-to-facts is MERGED.
 
 **Next: extend-1, then extend-2** (plans `docs/superpowers/plans/2026-09-14-extend-1-pass.md`
 and `-extend-2-pass.md`, worktrees off `main`, per-task `cairn-implementer` chain). Their docs
@@ -61,6 +57,3 @@ Held for the week of 2026-09-21: Go tool pass A at `cairn-tool-a` Task 3 (draft 
   known double-mint residual, not a new mechanism; the discriminator names any genuinely new one.
 - Three ASC staging harvest docs are folded into cairn, slated for deletion in the ASC repo once
   the ASC `email-announce` branch settles.
-
-Everything else, every prior pass, release, and archived checkpoint, is in
-[`docs/HISTORY.md`](HISTORY.md).

@@ -12,10 +12,10 @@ plan-approval gate is closed; execution needs no further read. **Spec:** `docs/s
 (revision 2, with Fold 10 carrying this plan's review back). The plan argues from the spec;
 executors read both.
 
-**2026-09-15 amendment (docs-to-facts pass):** the `extend` narrative arm is frozen against
-rewrites. Task 8b no longer edits `docs/extend/what-the-scaffold-wrote.md`; it files the fact(s)
-in `docs/internal/facts/extend.md` instead. The reference arm and `docs/admin/create-your-site.md`
-are unaffected.
+**2026-09-15 amendment (docs-to-facts pass):** the `extend` and `admin` narrative arms are frozen
+against rewrites. Task 8b no longer edits `docs/extend/what-the-scaffold-wrote.md` or
+`docs/admin/create-your-site.md`; it files the fact(s) in `docs/internal/facts/extend.md` and
+`docs/internal/facts/admin.md` instead. The reference arm is unaffected.
 
 **Goal:** a consumer site runs cairn's gates on its own code and composes cairn's atoms instead of
 reinventing them: two new `cairn-audit` static rules over source text, the scaffold wiring that
@@ -761,11 +761,12 @@ transcript re-capture as a stretch item.
 - Modify: `.github/workflows/create-site.yml:105-107`, `:131-141` (assert `.github/workflows/check.yml`
   exists in the scaffolded site; keep `scripts/` at exactly `["dev.mjs"]`; assert `check:cairn`
   runs green after the build step), `packages/create-cairn-site/src/scaffold.mjs:224-252` (the
-  handover text names `npm run check:cairn` and the workflow), `docs/admin/create-your-site.md`
-  (the prose around the three quoted blocks), `CHANGELOG.md`. **(2026-09-15 amendment, docs-to-facts
-  pass):** `docs/extend/what-the-scaffold-wrote.md` is frozen; instead file the container bullet(s)
-  in `docs/internal/facts/extend.md` for the new workflow file and the `check:cairn:rendered`
-  browser note.
+  handover text names `npm run check:cairn` and the workflow), `CHANGELOG.md`. **(2026-09-15
+  amendment, docs-to-facts pass):** `docs/extend/what-the-scaffold-wrote.md` and
+  `docs/admin/create-your-site.md` are frozen; instead file the container bullet(s) in
+  `docs/internal/facts/extend.md` (the new workflow file and the `check:cairn:rendered` browser
+  note) and `docs/internal/facts/admin.md` (the prose around the three quoted blocks). The
+  reference arm is unaffected.
 - Stretch: `packages/create-cairn-site/test/fixtures/transcripts/01*.txt` re-captured as real
   pty recordings. The harness lives outside the repo and needs a live GitHub App and repository
   creation. The fallback, which polish-11a shipped: leave the fixtures, add a dated staleness note
@@ -775,8 +776,8 @@ transcript re-capture as a stretch item.
 **Steps:**
 - [ ] **Step 1: the failing assertion first.** The workflow-file assertion fails on the current
   scaffold.
-- [ ] **Step 2:** the CI assertions, the handover text, the `docs/admin/create-your-site.md`
-  prose, and the `docs/internal/facts/extend.md` bullet(s).
+- [ ] **Step 2:** the CI assertions, the handover text, the `docs/internal/facts/extend.md`
+  bullet(s), and the `docs/internal/facts/admin.md` bullet(s).
 - [ ] **Step 3:** the stretch re-capture or its fallback note; `npm run check:transcripts`.
 - [ ] **Step 4:** changelog. The CHECK-PLUS-UNIT gate. Commit.
 

@@ -78,13 +78,15 @@ durable orientation only.
 - **Subagent models:** the workstation `.bashrc` sets `CLAUDE_CODE_SUBAGENT_MODEL=inherit`, so
   each agent's frontmatter `model:` wins, and a per-dispatch `model` beats the frontmatter.
   Upshift a single correctness-critical task with `model: opus`; `model: fable` only when an Opus
-  verdict itself hedges. Sonnet implements, Opus 5 reviews, and model diversity is part of the
+  verdict itself hedges on something that matters. Sonnet implements, Opus 5 reviews, and model
+  diversity is part of the
   gate; the `code-simplifier` plugin agent pins Opus. The conductor (Fable) runs plan and
   execution in one session and never reads diffs itself; the `diff-reviewer` agent does, per the
   global "Conducting a pass" rule.
 - **Claude tooling for this stack** lives at user scope, not in this repo: the official DaisyUI
-  skill (prefer a stock component over a home-grown one unless `docs/internal/engine-rulings.md`
-  records the defect that forced it; the admin design system wins over the skill on conflict), the
+  skill (the component reference every implementer and reviewer reads; prefer a stock DaisyUI
+  component over a home-grown one unless `docs/internal/engine-rulings.md` records the defect
+  that forced it; the admin design system wins over the skill on conflict), the
   licensed daisyUI Blueprint server (its rules enforcer and quality inspector are the pre-cut admin
   audit), the official Svelte server, and Microsoft's Playwright server. Inventory:
   `~/.claude/docs/claude-tooling.md`. Without that setup, use the free DaisyUI mirror
@@ -111,12 +113,17 @@ container surfaces (see below) is filed here too, same as any other friction.
 
 **The reference arm is maintained every pass and gated by `check:reference`.** The three
 narrative arms (admin, editors, extend) and `why-cairn.md` are frozen against rewrites for the
-finalization window: no pass rewrites their prose. A deficiency a pass discovers on a frozen page
-(a missing step, a wrong warning, a stale command) is fixed on the page in the same pass, gated by
-that page's own gates; the fix is agent-facing, not register-graded. Every pass that changes a
-public behavior files a bullet in [`docs/internal/facts/`](docs/internal/facts/README.md), gated
-by `check:facts`. The docs rebuild after the site round rebuilds the narrative arms from the
-container (`docs-rebuild-not-edit` memory).
+finalization window, except the per-version extend records below: no pass rewrites their prose.
+A deficiency a pass discovers on a frozen page (a missing step, a wrong warning, a stale command)
+is fixed on the page in the same pass, gated by that page's own gates; the fix is agent-facing,
+not register-graded. Every pass that changes a public behavior files a bullet in
+[`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. The docs rebuild
+after the site round rebuilds the narrative arms from the container (`docs-rebuild-not-edit`
+memory). A site-pass agent never edits the cairn-cms checkout; it records each deficiency under
+"Engine docs fixes" in its report, and the site pass's conductor batches them into one
+`cairn-implementer` dispatch on `site-docs/<site>-<pass>` off `main`, merged by PR before the
+site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are
+per-version records outside the freeze, maintained every pass like the reference arm.
 
 **Maintaining it:** a staging area, never a backlog, measured by what leaves it. Triage is
 complete-or-move: fixed and deleted, promoted to the `ROADMAP.md` tier where it bites, or deleted
@@ -124,8 +131,10 @@ as no longer true, verified against the code first. The log's own header carries
 
 [`ROADMAP.md`](ROADMAP.md) is itself a pass dimension, not a write-once file: a pass that ships an
 item marks it done and removes it from the live tiers, and a pass that surfaces a new direction
-files it into the right tier, the same way the pass updates its reference docs. Shipped history
-lives in `docs/STATUS.md` and the per-plan post-mortems, not in the roadmap.
+files it into the right tier, the same way the pass updates its reference docs. Like the
+friction log, it drifts heavy when work is only ever added, so a pass that removes or renames a
+backlog item is not done until the roadmap stops listing it. Shipped history lives in
+`docs/STATUS.md` and the per-plan post-mortems, not in the roadmap.
 
 Four production sites depend on the package, each on its own version range, so a stale doc costs
 real users (`docs-is-a-pass-dimension` memory). cairn.pub renders the doc arms shipped inside the
@@ -142,20 +151,26 @@ version`, no `gh release create`, no publish, unless a release is independently 
 versions are meaningful, not a per-pass reflex.
 
 **Publishing is a separate, deliberate act with two triggers, never a calendar or a finished
-pass.** Cut a release only when (1) a consumer site needs the change now, or (2) a coherent
+pass.** Cut a release only when (1) a consumer site needs the change now (which also resolves the
+publish-before-push ordering), or (2) a coherent
 capability or initiative has landed and is worth making available, at its natural boundary.
 Default to holding: `main` is always releasable, so completed passes accumulate unpublished, and
-breaking changes batch so a site upgrades across one `Consumers must:` list, not five. An
-internal-only change holds unpublished until consumer-facing work accumulates with it.
+breaking changes batch so a site upgrades across one `Consumers must:` list, not five. The
+admin re-expression sweep is the live example: it changes the admin's internal CSS and
+components, which a consumer never imports, so it holds unpublished until consumer-facing
+work accumulates with it, and may warrant no release of its own.
 
 **When a release is cut, the number tracks the publish, not the passes.** One publish, one
 increment, sized to what the window contains. Keep the work under `## Unreleased` and set the
-number only at the cut. The scheme is SemVer, not CalVer; in `0.x` a minor is a new subsystem or
+number only at the cut (pre-numbering a held pass produces phantoms, as `0.77.0` did when it
+rolled into `0.78.0`). The scheme is SemVer, not CalVer; in `0.x` a minor is a new subsystem or
 public surface and everything else is a patch, and the number signals scale, not compatibility
-(the changelog carries compatibility via `Consumers must:`). Published numbers are immutable, so
-verify the next number is free with `npm view @glw907/cairn-cms versions --json` before promising
-it. The release body is the changelog window since the last published tag, cut with `gh release
-create v<x.y.z> --target main` (fires the OIDC publish workflow).
+(the changelog carries compatibility via `Consumers must:`). Published numbers are immutable and
+every sub-`0.68` number is taken, so verify the next number is free with
+`npm view @glw907/cairn-cms versions --json` before promising it. The release body is the
+changelog window since the last published tag, carrying every
+`Consumers must:` line, cut with `gh release create v<x.y.z> --target main` (fires the OIDC
+publish workflow).
 
 The path to `1.0` and its readiness checklist live in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0");
 the full scheme is in the `cairn-release-process-and-versioning` memory.
@@ -212,11 +227,13 @@ it alone for a port. What is cairn-specific, not in the skill:
   eyes; a member-facing site additionally gets Geoff's before/after.
 - **The responsive standard:** every family artifact (themes, showcase, consumer sites, cairn.pub,
   Topo) meets the five-viewport bar (320, 390, 768, 1440, 2560), composed at the extremes, never
-  merely unbroken. Gated by the showcase's CI width matrix (baselines regenerate on CI); a ported
+  merely unbroken. Gated by the showcase's CI width matrix (baselines regenerate on CI, the
+  canonical renderer); a ported
   theme beats its original at 320 and 2560. Authored docs diagrams are exempt: containment plus a
   text alternative (docs-register.md, Visuals; reasoning docs/internal/public-design-system.md).
 - **The harvest:** every theme or site built on the chassis banks its harvest before the pass
-  closes, in the CHASSIS first, the engine where deeper. Not done until the harvest is banked.
+  closes, in the CHASSIS first (the showcase copy is the starting chassis every next theme
+  receives), the engine where deeper. Not done until the harvest is banked.
 
 ## Admin interface design
 
@@ -244,8 +261,9 @@ how-to: [`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md). Record
 editor's email, never a token or session id, so a log is safe to read and paste.
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
-call, and updates the reference table in the same pass; the event names are the
-public-observable contract.
+call, and updates the reference table in the same pass. The logger is internal (exported from
+no package subpath), so its API is free to grow; the event names are the public-observable
+contract.
 
 ## Durable gotcha (Cloudflare email)
 
@@ -327,8 +345,10 @@ contract and the why, never the type the signature already states, and never a p
 Developer documentation follows the Google Developer Documentation Style Guide, enforced by
 Vale's vendored Google package over the published doc arms only (`.vale.ini` globs `docs/**/*.md`
 onto Google, overrides `docs/editors/**` to Microsoft for its plainer editor voice, and excludes
-internal planning docs); the global `vale-hook` surfaces findings on save and skips
-`superpowers/`, where the em dash is allowed. On top of the Google floor, every published docs
+internal planning docs, since the Google standard governs published documentation, not
+write-once specs, plans, post-mortems, the rolling STATUS, or the friction log); the global
+`vale-hook` surfaces findings on save and skips `superpowers/`, where the em dash is allowed
+(Google's own recommendation, no surrounding spaces). On top of the Google floor, every published docs
 page follows the register standard at
 [`docs/internal/docs-register.md`](docs/internal/docs-register.md) (the arm registers, the
 front-door register, the no-pitch keystone); read it before writing or reviewing docs prose.

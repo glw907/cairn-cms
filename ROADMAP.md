@@ -851,6 +851,11 @@ the named human gates only):**
   `[candidate]` until re-verified. Trigger: the docs rebuild after the site round, which reads
   every arm bullet to rebuild the narrative pages.
 
+- **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (docs-to-facts pass,
+  2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
+  mechanically to clear it, which is not the right place to do a full pass. Trigger: a dedicated
+  trim task with its own `diff-reviewer` read, never a rider on another task.
+
 - **One register for cairn.pub and the admin; waymark stays neutral (Geoff, 2026-09-13).**
   cairn.pub adopts the admin's Warm Stone system (tokens, Bricolage Grotesque display and IBM Plex Sans body,
   the design-system recipes and voice) as a public reading surface; today its theme is byte-identical

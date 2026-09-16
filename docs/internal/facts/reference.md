@@ -45,9 +45,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - The ten media-janitorial actions run at runtime on `createCairnAdmin`'s returned object but are
   absent from the type-level `CairnAdminRoutes` contract; recovering them for a typed caller needs
   a spread (`{ ...admin.actions }`) or a cast. This is a documented type-vs-runtime narrowing, not
-  independently re-verifiable by grep alone; treat as [candidate: searched
+  independently re-verifiable by grep alone. [candidate: searched
   `src/lib/sveltekit/cairn-admin.ts` for `CairnAdminRoutes`, found no type definition in that file
-  to diff against the runtime object directly] pending a dedicated type-level check.
+  to diff against the runtime object directly, pending a dedicated type-level check]
 
 ## docs/reference/admin-toolkit.md
 
@@ -89,8 +89,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/ambient.ts:8-19` (module doc comment), same rationale restated inline. [verified]
 - The `/ambient` module's compiled JS is empty (type-only, side-effect import), so the import is
   free at runtime. Source: `src/lib/ambient.ts` ends with `export {}` and carries no runtime
-  logic beyond the `declare global` block. [verified]
-  beyond what check:reference already gates (see Harvest notes).
+  logic beyond the `declare global` block. [verified: beyond what check:reference already gates,
+  see Harvest record]
 
 ## docs/reference/auth-channel.md
 

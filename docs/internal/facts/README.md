@@ -16,15 +16,29 @@ Every fact is one bullet:
 - <the claim>. Source: <file, symbol, line, or doc citation>. [<tag>]
 ```
 
-A bullet ends with exactly one status tag. A fact with a compound story (partly confirmed,
-partly not) still gets one tag, with the nuance folded into the tag's own qualifier text
-(`[verified: the core claim traces to X; a secondary detail was not independently re-checked]`)
-rather than a second bracket.
+A bullet ends with exactly one status tag, always the last thing on the bullet (never at the
+start, never a second bracket anywhere else in the bullet). A qualifier, when a tag carries one,
+uses the colon form only: `[tag: qualifier text]`, never a space (`[tag qualifier text]` is not
+valid). A fact with a compound story (partly confirmed, partly not) still gets one tag, with the
+nuance folded into that tag's own qualifier text (`[verified: the core claim traces to X; a
+secondary detail was not independently re-checked]`) rather than a second bracket.
+
+A `Source:` naming a code path resolves as `path:line` or `path:line-line`; a `Source:` naming
+only a doc page or a symbol with no line is also accepted, but see the `[verified]` entry below
+for what that means for the tag.
+
+Two non-fact headings exist per file, both skipped by the gate: `## Harvest record` (the
+cross-page-duplicate index, the "not harvested as a fact" notes, and the per-slice harvest
+counts, merged under one heading) and `## Provenance` (the harvest and tightening narrative). A
+bullet under either heading carries no `Source:`/tag requirement.
 
 ## Tag vocabulary
 
 - **`[verified]`**: traced to a specific source file, symbol, line, or constant, and it matches
-  the claim exactly.
+  the claim exactly. A bullet whose only source is a doc arm page, or bare "page text", is never
+  `[verified]`; it is `[candidate: sourced to the page only, not traced to code]` instead, since
+  the arms are frozen prose the container itself is meant to check against, not a source to trace
+  facts to. A bullet whose source names code AND a page keeps `[verified]`.
 - **`[docs-drift: page says "..."]`**: the code says one thing and a published doc page says
   another; the bullet records what the code actually does and quotes the page's wording so the
   drift is visible without opening the page.
@@ -54,29 +68,32 @@ rather than a second bracket.
 
 ## How this container grows
 
-A pass that changes a public behavior adds or corrects the facts it touched, in the arm file for
-the docs track that behavior belongs to. A site pass that hits a hole in the facts (something it
-needed that wasn't recorded, or was recorded wrong) appends the hole to `gaps.md` rather than
-guessing or silently working around it; `gaps.md`'s own header carries its entry shape and its
-triage rule.
+The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
+are frozen for the finalization window: a pass that changes a public behavior files the fact
+bullet here (and updates `docs/reference/` when the change touches a reference page, which stays
+maintained per pass), but does not rewrite the frozen arm's own prose. The docs rebuild that
+follows the site round rewrites the narrative arms from this container, once. The one sanctioned
+exception is a one-line fix a page's own gate demands (a transcript floor, an editor quote, a
+snippet); anything larger stays frozen and the drift is recorded here as a `[docs-drift]` bullet
+instead.
 
-The `cairn-fact` command and an automated container check (a `check:facts`-shaped gate verifying
-every bullet carries a source and a single tag) are planned for the docs-to-facts pass and are
-**not built yet**. Until they land, adding and correcting facts here is a manual, reviewed
-step, the same as editing any other doc.
+A site pass that hits a hole in the facts (something it needed that wasn't recorded, or was
+recorded wrong) files the hole into `docs/internal/docs-friction-log.md`'s open findings with the
+site, pass, date, and engine version, rather than guessing or silently working around it; that
+log's own header carries the entry shape and the triage rule. This container used to keep its own
+separate intake file (`gaps.md`); it folded into the friction log at the 2026-09-15 tightening
+pass so a hole in the facts is triaged the same way as every other docs finding, not a second
+backlog.
 
-## Index
+A `cairn-fact` command that would automate filing a bullet here is deferred, not built: the shape
+of a filed fact is still settling, and a command is worth building once a site pass has filed
+around twenty facts by hand and the shape has stopped moving. Until then, adding and correcting
+facts here is a manual, reviewed step, the same as editing any other doc.
 
-One row per arm file, fact counts by status tag.
+## The gate
 
-| Arm | Facts | Verified | Drift | External | Vendor | Candidate | Rejected |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `admin.md` | 86 | 75 | 4 | 0 | 7 | 0 | 0 |
-| `editors.md` | 83 | 79 | 4 | 0 | 0 | 0 | 0 |
-| `front-door.md` | 42 | 37 | 0 | 0 | 0 | 5 | 0 |
-| `extend.md` | 335 | 302 | 5 | 26 | 0 | 1 | 1 |
-| `reference.md` | 181 | 148 | 1 | 7 | 0 | 25 | 0 |
-| **Total** | **727** | **641** | **14** | **33** | **7** | **31** | **1** |
-
-`gaps.md` is the intake file for holes a site pass finds; it carries no fact bullets of its own
-and is not counted in this table.
+A `check:facts` gate is planned for the docs-to-facts pass, walking every file here to enforce
+the grammar above: a source, exactly one vocabulary tag in colon form at the end of the bullet,
+and every `path:line` pointer resolved against the real file. Once it lands it prints per-file
+counts by tag on success, replacing what used to be a hand-maintained index table in this README;
+until then, this grammar is enforced by review alone.

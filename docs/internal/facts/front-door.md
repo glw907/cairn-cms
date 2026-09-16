@@ -91,9 +91,9 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   (committer omitted, GitHub attributes to the App); the literal string `cairn-cms[bot]` is
   CLAUDE.md's own naming of that App identity, not found verbatim in `src/lib`. [verified]
 - The GitHub App id is `3847496`; a single installation, id `135372268`, covers both ecxc-ski and
-  907-life. Source: CLAUDE.md, "Credentials" section. [verified] (values live in
-  `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, outside this repo; not independently
-  checkable from inside the repo.)
+  907-life. Source: CLAUDE.md, "Credentials" section. [verified: values live in
+  `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, outside this repo, not independently
+  checkable from inside the repo]
 - Two D1 auth databases back magic-link sessions, one per site: `cairn-ecxc-auth`
   (`a47c56d2-25ef-4131-a505-8c9fd5a92f1f`) and `cairn-907-auth`
   (`93aa929d-0228-4f8b-8d1e-5e7e0d755617`), each bound as `AUTH_DB`. Source: `src/lib/env.ts:19`,
@@ -166,8 +166,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - The Go `cairn` tool is a separate operator cockpit over every cairn site a machine knows; it
   replicates admin operations as a second front over the same contracts and never adds to the
   engine's public surface or models a domain actor. Source: same file, "The `cairn` tool is the
-  operator's cockpit, not engine surface." [verified] (Go tool source not in this repo slice; not
-  independently checked against code.)
+  operator's cockpit, not engine surface." [candidate: sourced to the page only, not traced to
+  code; the Go tool's own source is not in this repo slice]
 - `cairn-audit` ships whole as a consumer product: all 28 registered rules audit the `/admin`
   surface, which is itself cairn's own admin toolkit, so design-conformance auditing is the product
   being shipped, not engine-internal apparatus. Source: same file, "`cairn-audit` ships whole, as

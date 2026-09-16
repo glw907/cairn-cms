@@ -6,8 +6,9 @@ reorder a built-in screen, and hide what a given role shouldn't see.
 
 This is the `navLayout` seam, declared on the adapter's `editor` group in `cairn.config.ts`.
 Nothing here is required. A site that declares no `navLayout` gets today's default arrangement:
-concepts and engine screens as a flat, unsectioned list, resolved through the same function a
-declared layout uses, so the two paths never drift apart.
+concepts and engine screens as a flat, unsectioned list, synthesized through the same primitives
+(`engineEntry`, `engineVisible`) a declared layout's own resolution uses, so the two paths never
+drift on what a role can see.
 
 ## Declare a layout
 

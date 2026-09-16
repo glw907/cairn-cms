@@ -10,73 +10,50 @@ the present.
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
-engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, and the admin motion pass
-unpublished under `## Unreleased`; the window holds for one cut after the docs-to-facts pass and
+engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass, and the
+docs-to-facts pass unpublished under `## Unreleased`; the window holds for one cut after
 extend-1/extend-2 (below). CI on `main` is green.
 
 ## Immediate next action (2026-09-15)
 
-**The admin motion pass is MERGED** (PR #64, merge commit `296096eacdcaba15528303d5466c9b4857db475d`);
-full detail in [`docs/HISTORY.md`](HISTORY.md) ("Admin motion language pass, nine tasks (chain A)
-plus one (chain B), 2026-09-15").
+**The docs-to-facts pass is MERGED** (PR #65); detail in [`docs/HISTORY.md`](HISTORY.md)
+("Docs-to-facts pass, five tasks, 2026-09-15"). ROADMAP's audit-remediation entry is the canonical
+routing record for this track; every slice through docs-to-facts is MERGED.
 
-**Next, in order (Geoff, 2026-09-15):**
+**Next: extend-1, then extend-2** (plans `docs/superpowers/plans/2026-09-14-extend-1-pass.md`
+and `-extend-2-pass.md`, worktrees off `main`, per-task `cairn-implementer` chain). Their docs
+deliverables now file container bullets in `docs/internal/facts/extend.md` instead of editing
+the frozen `docs/extend/` pages; reference pages still update per task. extend-1's "Available
+since" reads `0.97.0`, advisory rules promote at `0.98.0` (`launch.json`).
 
-1. **Adversarial review of the facts container** (`docs/internal/facts/`, landed `b9282369`: 727 facts, 641
-   verified, 14 drift, 31 candidates): three fresh-context `claude-opus-5` reviewers with disjoint lenses
-   (structure and mechanics; evolution feasibility from container through the site round to public docs,
-   and what a facts-only record loses; charter and per-pass cost), graded against the goal of docs kept
-   light while cairn is finalized yet collecting what public docs will need. Findings fold into item 2.
-2. **The docs-to-facts pass** (plan it; small): remove the admin, editors, extend, and why-cairn arms and
-   the docs README from the tree and the tarball; MOVE `docs/reference/` into the container at
-   `docs/internal/facts/reference/` and re-point its two gates; ship the container in the tarball in place
-   of the arms; the container check (every export has an entry, every bullet a source and one tag, links
-   resolve); CLAUDE.md's docs section and the `cairn-pass` docs step become container-first; re-point
-   engine-consult (a "facts consulted" line), site-implementer, cairn-implementer; amend extend-1 and
-   extend-2's docs deliverables to container entries; the `cairn-fact` dotfiles command (`fact`, `gap`) and
-   its skill; the `gate-tier.mjs` classifier (the runner half landed in dotfiles 2026-09-15, unpushed; the
-   ROADMAP Now entry has the tier table). The 14 drift bullets are the first corrections to make.
-3. **extend-1, then extend-2** (docs as container entries; extend-1's "Available since" reads 0.97.0 and
-   its advisory rules promote at 0.98.0, per `launch.json`).
-4. **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's tools section added
-   to the pre-cut pass). No release before this; every consumer pin bump holds, cairn.pub's included.
-5. **The site round:** aksailingclub-org upgraded and finished, ecxc-ski and 907-life upgraded and
-   polished, each as a model cairn site on the new best practices; every site pass hunts holes into
-   `docs/internal/facts/gaps.md` and files facts with `cairn-fact`; then one improvement release, then the
-   public docs extended from the container, then beta.
+After both: **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's
+tools section added to the pre-cut pass). No release before this. Then **the site round:**
+aksailingclub-org, ecxc-ski, and 907-life upgraded as model cairn sites, each pass filing
+container bullets via `site-docs/<site>-<pass>`; then one improvement release, the public docs
+rebuilt from the container, then beta.
 
-Held for the week of 2026-09-21: Go tool pass A at its Task 3 boundary on `cairn-tool-a` (draft PR #60).
-Morning items still open: the three dependency tripwires, `blueprint-audit`, the motion post-mortem.
-Spend on the night: about 5.5M subagent tokens for the motion pass across six launches, plus about 2.5M
-for the facts harvest, tightening, and fold.
+Held for the week of 2026-09-21: Go tool pass A at `cairn-tool-a` Task 3 (draft PR #60).
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1-7, chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, and
-  the admin motion pass all MERGED; the docs-to-facts pass and extend-1/extend-2 next (above),
-  then ONE release cut. ROADMAP's audit-remediation entry is the canonical routing record; the
-  chassis quality bar equals the engine's (Geoff, 2026-09-01).
-- **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only, under
+- **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
-- **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 as a product for any operator on Linux, macOS, and
-  Windows (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, APPROVED 2026-09-14).
+- **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 for any operator on Linux, macOS, and Windows
+  (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, APPROVED 2026-09-14).
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.
 
 ## Open decisions
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026).
-- TypeScript 7 stays held until `svelte-check --tsgo` runs green; `tsgo.yml` checks weekly.
+- TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
 
 ## Active watches
 
 - A monthly Cloudflare capability-review routine (`trig_01GnFPkfx7EjrWKAuTBrXVdx`) reads
   `ROADMAP.md`'s "Platform watch: Cloudflare" section and emails a ranked report.
-- `install.test.mjs`'s concurrent-poll test flaked once in a 30x local loop (2026-08-29).
-  Trigger: its next CI failure gets the same mock-timer deflake as the grace-window tests.
+- `install.test.mjs`'s concurrent-poll test flaked once in a 30x local loop (2026-08-29); its
+  next CI failure gets the same mock-timer deflake as the grace-window tests.
 - A consumer `guard.rejected` record with `detail: 'mismatch'`, `witness: 'field'` can be the
   known double-mint residual, not a new mechanism; the discriminator names any genuinely new one.
-- Three ASC staging harvest docs are folded into cairn, slated for deletion in the ASC repo.
-  Trigger: the ASC `email-announce` branch settles.
-
-Everything else, every prior pass, release, and archived checkpoint, is in
-[`docs/HISTORY.md`](HISTORY.md).
+- Three ASC staging harvest docs are folded into cairn, slated for deletion in the ASC repo once
+  the ASC `email-announce` branch settles.

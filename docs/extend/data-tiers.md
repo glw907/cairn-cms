@@ -26,7 +26,7 @@ the equivalent small index for stored assets, is covered below.
 ## D1: auth state and small operational records
 
 D1 holds what an admin request must look up in milliseconds. Nothing that belongs in an
-editor-readable git history goes there. Five tables across four migrations, each migration beyond
+editor-readable git history goes there. Five tables across five migrations, each migration beyond
 the first opt-in. The baseline auth store (`0000_auth.sql`) holds `editor`, `magic_token`, and
 `session` (the allowlist, single-use sign-in tokens, and live sessions), always present once a
 site wires `AUTH_DB`. A token and a session id are both looked up by their SHA-256 hash, never the

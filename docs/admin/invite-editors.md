@@ -33,7 +33,8 @@ The same `/admin/editors` page lists everyone who can currently sign in. Next to
 role. On a site with only owner and editor, it reads **Make owner** or **Make editor** and moves
 them between the two; if your site declares roles beyond that pair, you'll see a dropdown and a
 **Change** button letting you pick among all of them instead. Your own row has both controls
-turned off, so you can't remove or demote yourself from this screen.
+turned off on this screen, so you can't remove or demote yourself here by accident; the
+last-owner rule is what actually stops a lockout, on this screen or off it.
 
 ## You know it worked when
 

@@ -78,7 +78,7 @@ and nothing cairn adds touches the mail your organization already sends.*
 **If you don't personally control this domain's DNS,** stop here and talk to whoever does, an
 agency, a previous developer, an IT contact, before going further. A domain already set up under
 someone else's Cloudflare account can't be connected here at all; the tool tells you exactly that,
-and names the one fix, asking that person to release it. Guessing or forcing past this only risks
+and names the one fix, asking that person to remove the domain from it. Guessing or forcing past this only risks
 your organization's existing mail.
 
 ### You know it worked when

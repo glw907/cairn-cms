@@ -38,8 +38,9 @@ const posts = defineConcept({
 ```
 
 `dir` is the directory of markdown files this concept reads. `label` names it in the admin nav
-and the create button ("New Posts"); always set `singular` too ("New post"), since it has no
-default that reads naturally for a plural label. `routing` is one of three shorthands:
+and the create button ("New Posts"); always set `singular` too ("New post"), since when omitted
+it defaults to the plural `label` itself, which reads awkwardly ("New Posts" instead of
+"New post"). `routing` is one of three shorthands:
 `'feed'` (dated, publicly routable, appears in feeds and the sitemap, like a blog post),
 `'page'` (routable but undated, like a static page; the default when `routing` is omitted), or
 `'embedded'` (never publicly routable, reachable only by another entry's reference or

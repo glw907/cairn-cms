@@ -20,8 +20,15 @@ extend-1/extend-2 (below). CI on `main` is green.
 ("Docs-to-facts pass, five tasks, 2026-09-15"). ROADMAP's audit-remediation entry is the canonical
 routing record for this track; every slice through docs-to-facts is MERGED.
 
-**Next: extend-1, then extend-2** (plans `docs/superpowers/plans/2026-09-14-extend-1-pass.md`
-and `-extend-2-pass.md`, worktrees off `main`, per-task `cairn-implementer` chain). Their docs
+**extend-1 is IN FLIGHT (launched 2026-09-16 08:30 AKDT)** on
+`docs/superpowers/plans/2026-09-14-extend-1-pass.md`: workflow mode through
+`pass-execute-chains.js`, chain A (tasks 1 to 6) in `.claude/worktrees/extend-1`, chain B (tasks 7,
+8a, 8b) in `.claude/worktrees/extend-1-site`, both off this commit; ceiling 6.7M, checkpoint after
+task 4; the per-task gate is chosen by `scripts/checks/gate-tier.mjs`, serialized on
+`cairn-run-gate`'s machine lock. Resume prompt if the session is lost: "Resume the extend-1 pass
+(plan above); read STATUS for the task ledger, check both worktrees' `git log`, and relaunch the
+workflow with `resumeFromRunId` if the run id is recorded here, else from the first unaccepted
+task." **Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
 deliverables now file container bullets in `docs/internal/facts/extend.md` instead of editing
 the frozen `docs/extend/` pages; reference pages still update per task. extend-1's "Available
 since" reads `0.97.0`, advisory rules promote at `0.98.0` (`launch.json`).

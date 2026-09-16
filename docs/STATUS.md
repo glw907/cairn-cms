@@ -22,11 +22,11 @@ plus one (chain B), 2026-09-15").
 
 **Next, in order (Geoff, 2026-09-15):**
 
-1. **Adversarial review of the facts container** (`docs/internal/facts/`, landed `b9282369`: 727 facts, 641
-   verified, 14 drift, 31 candidates): three fresh-context `claude-opus-5` reviewers with disjoint lenses
-   (structure and mechanics; evolution feasibility from container through the site round to public docs,
-   and what a facts-only record loses; charter and per-pass cost), graded against the goal of docs kept
-   light while cairn is finalized yet collecting what public docs will need. Findings fold into item 2.
+1. **Adversarial review of the facts container: DONE 2026-09-15.** Three fresh-context `claude-opus-5`
+   reads (structure, evolution, charter) at `docs/internal/record/2026-09-15-facts-container-review/`.
+   All three overturn item 2 as written: seven gates and the shipped `docsAnchor` values read the arms,
+   the container carries no fenced code, 116 facts source only to an arm page, and a naive `check:facts`
+   rejects about 260 bullets today. Item 2 is re-planned from these findings (decision pending, Geoff).
 2. **The docs-to-facts pass** (plan it; small): remove the admin, editors, extend, and why-cairn arms and
    the docs README from the tree and the tarball; MOVE `docs/reference/` into the container at
    `docs/internal/facts/reference/` and re-point its two gates; ship the container in the tarball in place

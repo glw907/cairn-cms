@@ -27,15 +27,11 @@ plus one (chain B), 2026-09-15").
    All three overturn item 2 as written: seven gates and the shipped `docsAnchor` values read the arms,
    the container carries no fenced code, 116 facts source only to an arm page, and a naive `check:facts`
    rejects about 260 bullets today. Item 2 is re-planned from these findings (decision pending, Geoff).
-2. **The docs-to-facts pass** (plan it; small): remove the admin, editors, extend, and why-cairn arms and
-   the docs README from the tree and the tarball; MOVE `docs/reference/` into the container at
-   `docs/internal/facts/reference/` and re-point its two gates; ship the container in the tarball in place
-   of the arms; the container check (every export has an entry, every bullet a source and one tag, links
-   resolve); CLAUDE.md's docs section and the `cairn-pass` docs step become container-first; re-point
-   engine-consult (a "facts consulted" line), site-implementer, cairn-implementer; amend extend-1 and
-   extend-2's docs deliverables to container entries; the `cairn-fact` dotfiles command (`fact`, `gap`) and
-   its skill; the `gate-tier.mjs` classifier (the runner half landed in dotfiles 2026-09-15, unpushed; the
-   ROADMAP Now entry has the tier table). The 14 drift bullets are the first corrections to make.
+2. **The docs-to-facts pass, RESHAPED and APPROVED (Geoff, 2026-09-15):** plan
+   `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`, five tasks on worktree `docs-to-facts`,
+   per-task chain. The arms stay and freeze, the reference arm stays maintained, the container is
+   normalized and gated (`check:facts`), `gaps.md` folds into the friction log, the `cairn-fact` CLI is
+   deferred, the gate-tier classifier lands. Task ledger: none started.
 3. **extend-1, then extend-2** (docs as container entries; extend-1's "Available since" reads 0.97.0 and
    its advisory rules promote at 0.98.0, per `launch.json`).
 4. **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's tools section added

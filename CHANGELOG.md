@@ -4,6 +4,14 @@
 
 ### Added
 
+- A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
+  built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
+  and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches, case-insensitively
+  and on the whole key. A site that wants structured logs in the same shape as cairn's own writes
+  `createLogger<MySiteEvent>()` instead of a bespoke `console` wrapper. `Consumers must:` nothing
+  to change; a site that wants structured logs imports `createLogger` from
+  `@glw907/cairn-cms/log`.
+
 - `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
   `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
   computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still

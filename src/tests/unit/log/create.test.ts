@@ -1,0 +1,110 @@
+// createLogger is the generic factory the /log subpath exports, and the engine's own `log`
+// instance in src/lib/log/emit.ts is built from it. These tests prove the contract a consumer
+// site can rely on: the record shape, the envelope-key order, and whole-key redaction, plus the
+// compile-time proof that CAIRN_LOG_EVENTS and CairnLogEvent stay in lockstep.
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { createLogger, REDACTED_LOG_KEYS } from '../../../lib/log/create.js';
+import { CAIRN_LOG_EVENTS } from '../../../lib/log/events-list.js';
+import type { CairnLogEvent } from '../../../lib/log/events.js';
+
+type TestEvent = 'widget.created' | 'widget.deleted';
+
+describe('createLogger', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('refuses an event outside its own union at compile time', () => {
+    const logger = createLogger<TestEvent>();
+    // @ts-expect-error an event string outside the TestEvent union must not type-check
+    logger.info('not.a.member');
+    expect(true).toBe(true);
+  });
+
+  it('writes info records through console.log', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes warn records through console.warn', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.warn('widget.created');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes error records through console.error', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.error('widget.created');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('places level, event, and timestamp last, in that order, even when fields carries those keys', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { level: 'bogus', event: 'bogus', timestamp: 'bogus', id: '1' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    const keys = Object.keys(record);
+    expect(keys.slice(-3)).toEqual(['level', 'event', 'timestamp']);
+    expect(record.level).toBe('info');
+    expect(record.event).toBe('widget.created');
+    expect(record.id).toBe('1');
+  });
+
+  it('redacts a field named token, case-insensitively', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { Token: 'raw-value' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.Token).toBe('<redacted>');
+  });
+
+  it('redacts sessionId and session_id', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { sessionId: 'abc', session_id: 'def' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.sessionId).toBe('<redacted>');
+    expect(record.session_id).toBe('<redacted>');
+  });
+
+  it('leaves tokens, tokenLength, and hasSession untouched, since redaction matches a whole key only', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { tokens: ['a'], tokenLength: 3, hasSession: true });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.tokens).toEqual(['a']);
+    expect(record.tokenLength).toBe(3);
+    expect(record.hasSession).toBe(true);
+  });
+
+  it('exposes REDACTED_LOG_KEYS as the documented list', () => {
+    expect(REDACTED_LOG_KEYS).toEqual([
+      'token',
+      'secret',
+      'password',
+      'cookie',
+      'authorization',
+      'session_id',
+      'sessionId',
+      'apiKey',
+      'privateKey',
+    ]);
+  });
+
+  it('lists auth.link.requested in CAIRN_LOG_EVENTS', () => {
+    expect(CAIRN_LOG_EVENTS).toContain('auth.link.requested');
+  });
+
+  it('keeps CairnLogEvent and CAIRN_LOG_EVENTS in lockstep at compile time', () => {
+    // The type-level assertion in events-list.ts fails `npm run check` if a member is added to
+    // either side without the other; this runtime check proves the array is non-empty and
+    // assignable to the union at the value level too.
+    const sample: CairnLogEvent = CAIRN_LOG_EVENTS[0];
+    expect(typeof sample).toBe('string');
+    expect(CAIRN_LOG_EVENTS.length).toBeGreaterThan(0);
+  });
+});

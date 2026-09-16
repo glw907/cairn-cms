@@ -261,9 +261,8 @@ how-to: [`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md). Record
 editor's email, never a token or session id, so a log is safe to read and paste.
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
-call, and updates the reference table in the same pass. The logger is internal (exported from
-no package subpath), so its API is free to grow; the event names are the public-observable
-contract.
+call, and updates the reference table in the same pass. `createLogger` is public from the `/log`
+subpath; `docs/reference/log.md` states its narrowed promise.
 
 ## Durable gotcha (Cloudflare email)
 

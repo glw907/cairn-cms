@@ -1,7 +1,9 @@
 # Log events
 
 cairn emits structured diagnostic events through `console`, which Cloudflare Workers Logs ingests
-and indexes when a site sets `observability.enabled = true`. Each record carries an envelope
+and indexes when a site sets `observability.enabled = true`. A site that wants its own logs in the
+same shape imports [`createLogger`](./log.md) from `@glw907/cairn-cms/log`; this page documents
+cairn's own vocabulary and fields. Each record carries an envelope
 (`level`, `event`, `timestamp`) plus the event-specific fields listed below. The `event` name is a
 stable contract, so renaming one is a breaking change. Records carry an editor's email for
 attribution. The one exception is `audit.sink.write_failed`, whose `actor` field carries whatever

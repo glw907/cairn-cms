@@ -171,6 +171,10 @@
       "types": "./dist/ambient.d.ts",
       "default": "./dist/ambient.js"
     },
+    "./log": {
+      "types": "./dist/log/public.d.ts",
+      "default": "./dist/log/public.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {

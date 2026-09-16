@@ -61,6 +61,15 @@ conductor-inserted correction tasks (6a-fix, 7-fix, 10-fix, 11-fix).
    combination, from one to two, since every other rule still runs under `'default'` alone and the
    reduced-motion pass runs beside it rather than replacing it.
 
+**Two ritual findings from the close, for the next pass with a visual verifier.** The
+`capture-surfaces` script waits only for `toBeVisible`, which passes at opacity 0, so both verify
+capture sets shot every transient surface (zen, drawer overlay, delete dialog, command palette)
+mid-transition; the verifier settled the resting-state read with a live probe after a 1500ms
+settle, and a settle wait or `reducedMotion` emulation in the capture script would make the pairs
+self-sufficient. The four reviewers' blocking findings, nine across them with one duplicate, went
+to one fix dispatch, which cleared them in a single round; a list that wide is the accretion
+signal, and the next ritual should split a second fix verdict rather than re-dispatch it whole.
+
 **The live admin smoke is skipped, with the reason recorded here rather than omitted.** The pass
 runs unattended, `docs/internal/admin-smoke-test.md` is an interactive walk-through, and the
 motion it would exercise is proved instead by the two zen layout-count assertions, the sixty new

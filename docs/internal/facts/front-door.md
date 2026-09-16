@@ -24,7 +24,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `create-cairn-site` creates the GitHub App, the repository, the Cloudflare bindings, and deploys,
   in one run. Source: `packages/create-cairn-site/` (chapter2.mjs GitHub App and Cloudflare
   provisioning flow, referenced in docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md).
-  [candidate: sourced to the page only, not traced to code]
+  [verified]
 - The admin is also a UI toolkit: a developer's own screen, member roster, event calendar, or
   reservation form mounts inside the same admin, sharing cairn's components and sign-in.
   Source: docs/internal/what-cairn-is-and-is-not.md, "An admin skeleton a developer extends... A
@@ -35,7 +35,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - cairn has no abstraction layer that lets a developer swap Cloudflare for another host later; no
   second `BackendProvider` implementation ships with cairn today besides GitHub. Source:
   `grep -rn "BackendProvider" src/lib` (single GitHub implementation; extend seam documented at
-  docs/extend/sign-in-through-your-organization.md#a-backend-other-than-github). [candidate: sourced to the page only, not traced to code]
+  docs/extend/sign-in-through-your-organization.md#a-backend-other-than-github). [verified]
 - cairn is pre-1.0; seams still move, and an Extension-tier seam moved across two separate minor
   releases inside the tier meant to stay frozen. Source: docs/internal/what-cairn-is-and-is-not.md,
   "two Extension-tier breaks have shipped inside 0.x minors (0.86.0, 0.94.0)". [candidate: sourced to the page only, not traced to code]
@@ -201,5 +201,4 @@ docs/why-cairn.md, the page most exposed to an evaluator):
 ## Provenance
 
 Harvested 2026-09-15 from docs/why-cairn.md, README.md, docs/README.md, and CLAUDE.md. No
-separate tightening pass ran on this arm: 42 facts, 37 verified, 5 candidate, 0 docs-drift, 0
-vendor, 0 external, 0 rejected.
+separate tightening pass ran on this arm.

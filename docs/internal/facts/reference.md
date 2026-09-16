@@ -6,28 +6,28 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - The admin declares 18 `--cairn-type-*`/`--cairn-gap-*` grammar tokens plus 11 named role
   utilities (`type-*`, `gap-*`), outside the light/dark theme blocks, in `cairn-admin.css`.
-  Source: `src/lib/components/cairn-admin.css:56-76`. [candidate: sourced to the page only, not traced to code]
+  Source: `src/lib/components/cairn-admin.css:56-76`. [verified]
 - Exact token values match the page's table verbatim (title 1.5rem/2rem leading, heading
   1.125rem/1.75rem, subtitle 0.9375rem/1.1875rem, body 0.875rem/1.25rem, meta 0.8125rem/1.0625rem,
   label 0.6875rem/0.875rem, chip 0.625rem/0.8125rem; gap-label 0.25rem, gap-control 0.5rem,
   gap-group 1rem, gap-section 1.5rem). Source: `src/lib/components/cairn-admin.css:56-76`.
-  [candidate: sourced to the page only, not traced to code]
+  [verified]
 - `--cairn-warning-ink` and `--color-positive-ink` are distinct per theme (light:
   `oklch(50% 0.13 70)` / `oklch(48% 0.12 150)`; dark: `oklch(80% 0.14 70)` / `oklch(78% 0.12 150)`),
   confirming the page's claim that the fill tone (`--color-warning`) measures far lower contrast
   (~2.2:1) than the dedicated text inks. Source: `src/lib/components/cairn-admin.css:156,161,326,330`.
-  [candidate: sourced to the page only, not traced to code]
+  [verified]
 - The three hand-composed chip classes (`cairn-chip-quiet`, `cairn-chip-warning`,
   `cairn-chip-outline`) each pin `font-weight: 400` unlayered, so they outrank a
   `font-semibold`/`font-medium` Tailwind utility on the same element. Source:
   `src/lib/components/cairn-admin.css:823-864` (rules "PINNED unlayered rule 5/6/7 of 13").
-  [candidate: sourced to the page only, not traced to code]
+  [verified]
 - Exactly five call sites carry a ratified `type-scale` exemption directive: the wordmark at three
   sites (ConfirmPage, CairnAdminShell, LoginPage) plus two in EditPage (document title, prose
   canvas), matching the page's "five ratified exceptions" claim even though its own table lists
   only three named rows (the wordmark row covers three sites). Source: `grep -rn
   "cairn-audit-disable-next-line type-scale" src/lib/components/*.svelte` (5 hits: ConfirmPage.svelte,
-  CairnAdminShell.svelte, LoginPage.svelte, EditPage.svelte x2). [candidate: sourced to the page only, not traced to code]
+  CairnAdminShell.svelte, LoginPage.svelte, EditPage.svelte x2). [verified]
 
 ## docs/reference/admin-routes.md
 
@@ -45,8 +45,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - The ten media-janitorial actions run at runtime on `createCairnAdmin`'s returned object but are
   absent from the type-level `CairnAdminRoutes` contract; recovering them for a typed caller needs
   a spread (`{ ...admin.actions }`) or a cast. This is a documented type-vs-runtime narrowing, not
-  independently re-verifiable by grep alone. [candidate: searched
-  `src/lib/sveltekit/cairn-admin.ts` for `CairnAdminRoutes`, found no type definition in that file
+  independently re-verifiable by grep alone. Source: `src/lib/sveltekit/cairn-admin.ts`. [candidate: searched
+  that file for `CairnAdminRoutes`, found no type definition in it
   to diff against the runtime object directly, pending a dedicated type-level check]
 
 ## docs/reference/admin-toolkit.md
@@ -178,7 +178,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (focus-renders, panel-width, one-filled-action, interactive-contrast, touch-targets, list-role,
   viewport-overflow = 7) vs `tier: 'advisory'` (container-inset-asymmetry, form-font-parity,
   field-edge-alignment, border-contrast, norms-bands, screen-anatomy, relational-spacing,
-  weight-budget, chip-ground-collision = 9). [candidate: sourced to the page only, not traced to code]
+  weight-budget, chip-ground-collision = 9). [verified]
 - Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
@@ -339,7 +339,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   its output is unchanged from before the function existed. Source: page text
   `docs/reference/delivery.md:74-77,180-188`; not independently re-traced to `preview.ts`'s call
   site this pass, though `sveltekit.md`'s own text (verified above) independently corroborates
-  `loadPreview` renders "through the same composition." [verified: via cross-page corroboration]
+  `loadPreview` renders "through the same composition." [candidate: sourced to the page only, not traced to code]
 - `EntryData.heroImage` is undefined when no hero is set, media is off, or the frontmatter `media:`
   reference does not resolve; the canonical token itself (`entry.frontmatter.image.src`) is left
   untouched as the raw `media:` token regardless. Source: page text
@@ -518,7 +518,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   family": "Tailwind v4 otherwise walks up from this file to the repo root and scans everything
   under it, including examples/showcase and docs/, compiling foreign utility candidates into the
   shipped sheet"), which is why cairn's own build turns automatic detection off (`source(none)`)
-  and scopes an explicit `@source`. [candidate: sourced to the page only, not traced to code]
+  and scopes an explicit `@source`. [verified]
 - GitHub Actions runs a `run:` step under `bash -e`, so a bare nonzero doctor exit aborts the step
   before a capture line runs; the fix is `|| code=$?` before branching. Source: general GitHub
   Actions/bash behavior (default shell for a `run:` step is `bash --noprofile --norc -eo pipefail`),
@@ -756,10 +756,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   documents. Source: `docs/internal/admin-design-system.md` (49 distinct `--cairn-*`/`.cairn-*`
   names in the doc's own prose; a grep of `src/lib/components` and `src/lib/admin-toolkit` for
   `--cairn-*`/`.cairn-*` tokens including size-modifier variants returns 82), consistent with
-  "roughly sixty" as an order-of-magnitude figure. [candidate: sourced to the page only, not traced to code]
+  "roughly sixty" as an order-of-magnitude figure. [verified]
 - `cairn-icon-label` is an admin-toolkit label class, not emitted by any render helper. Source:
   `docs/internal/admin-design-system.md:1109` (`.cairn-icon-label` recipe in `cairn-admin.css`);
-  no occurrence under `src/lib/render/`. [candidate: sourced to the page only, not traced to code]
+  no occurrence under `src/lib/render/`. [verified]
 
 ## docs/reference/reproductions.md
 
@@ -999,13 +999,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   behavior a grep confirms. [candidate: sourced to the page only, not traced to code]
 - `createD1AuditSink` truncates every bound field before insert: `actor` to 320 characters,
   `action` to 100, `entity` to 100, `entityId` to 200, `detail` to 500, so an oversized `detail`
-  cannot suppress its own audit row by failing the insert. Source: page text
-  `docs/reference/sveltekit.md:709-712`; not independently re-traced to `audit-sink.ts` this pass,
-  kept as stated since the truncation limits match the same field-length family documented and
-  independently verified for log events in reference-b.md (`actor` 320, `action` 100, `entity`
-  100, `entityId` 200, `detail` 500, identical numbers appear in
-  `src/lib/sveltekit/audit-sink.ts:122-129` per reference-b.md's own verified log-events facts).
-  [verified: via reference-b.md's independent field-length trace]
+  cannot suppress its own audit row by failing the insert. Source: `src/lib/sveltekit/audit-sink.ts:16-20`
+  (`MAX_ACTOR_LENGTH = 320`, `MAX_ACTION_LENGTH = 100`, `MAX_ENTITY_LENGTH = 100`,
+  `MAX_ENTITY_ID_LENGTH = 200`, `MAX_DETAIL_LENGTH = 500`), consistent with `docs/reference/sveltekit.md:709-712`.
+  [verified]
 - `wrangler d1 migrations apply` reads migrations from a `d1_databases` entry's own
   `migrations_dir` (default `./migrations`); every entry that leaves it unset resolves to the same
   default directory, so copying an audit migration next to the auth migrations and applying it to
@@ -1075,8 +1072,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (`fail(503)`, reading "Tidy isn't available right now"), while a deadline overrun, other abort,
   model error, or empty result is retryable (`fail(502)`). Source: page text
   `docs/reference/sveltekit.md:1228-1232`; not independently re-traced to
-  `content-routes-tidy.ts` this pass, though reference-b.md independently confirms `tidy.*` log
-  events carry only `editor`/`model`/`reason`/`tokens`, consistent with this action existing and
+  `content-routes-tidy.ts` this pass, though this file's own already-verified fact above
+  (`reference.md:667-670`) confirms `tidy.*` log events carry only
+  `editor`/`model`/`reason`/`tokens`, consistent with this action existing and
   logging outcomes. [candidate: not independently re-verified against this page's specific status
   codes]
 - `NavLayoutSection.collapsed` (default `false`) is only the group's starting state for a visitor
@@ -1182,23 +1180,19 @@ Harvested 2026-09-15 from all 25 `docs/reference/*` pages, in three slices: page
 delivery, and delivery-data, which the first two slices' own split left unwritten and a third
 harvest pass filled in. All three slices merge into this one file.
 
-Pages 1-13 carried no separate tightening pass; their candidate tags stand as harvested: 57
-facts, 45 verified, 12 candidate, 0 docs-drift, 0 external, 0 vendor, 0 rejected.
+Pages 1-13 carried no separate tightening pass; their candidate tags stand as harvested.
 
-Pages 14-22 were tightened 2026-09-15. Before: 78 facts (one page-section header miscounted this
-as 77/59), 20 verified, 57 candidate, 0 docs-drift, 0 rejected. After: 77 facts, 76 verified, 0
-candidate, 1 docs-drift, 0 rejected. Every candidate was traced to `src/lib/`, `scripts/checks/`,
-`package.json`, or `CHANGELOG.md`; the one docs-drift is `log-events.md`'s claim about when
-`auth.identity.unknown` logs relative to the roster lookup.
+Pages 14-22 were tightened 2026-09-15. Every candidate was traced to `src/lib/`,
+`scripts/checks/`, `package.json`, or `CHANGELOG.md`; the one docs-drift found was
+`log-events.md`'s claim about when `auth.identity.unknown` logs relative to the roster lookup
+(since fixed, see that bullet).
 
 sveltekit/delivery/delivery-data carried no separate tightening pass; their candidate tags stand
-as harvested: 47 facts, 27 verified, 8 external, 12 candidate, 0 docs-drift, 0 rejected (one
-bullet's original two-tag mark, `[verified] / [external: SvelteKit 415 behavior]`, was folded
-into a single `[verified: ...]` tag during this fold, per the container's one-tag-per-bullet
-rule; this changes the slice's own external count from 8 to 7 as merged into this file).
+as harvested (one bullet's original two-tag mark, `[verified] / [external: SvelteKit 415
+behavior]`, was folded into a single `[verified: ...]` tag during this fold, per the container's
+one-tag-per-bullet rule).
 
-Combined, this file: 181 facts, 148 verified, 25 candidate, 1 docs-drift, 7 external, 0 vendor, 0
-rejected. The gap the first two slices left (sveltekit.md, delivery.md, and delivery-data.md
-never actually written into pages-14-22's file despite being named in its own header and
-cross-page-duplicates section) is now closed by this merge; the candidates the third slice
-carried are tracked as a group in `docs/internal/docs-friction-log.md`'s open findings.
+The gap the first two slices left (sveltekit.md, delivery.md, and delivery-data.md never actually
+written into pages-14-22's file despite being named in its own header and cross-page-duplicates
+section) is now closed by this merge; the candidates the third slice carried are tracked as a
+group in `docs/internal/docs-friction-log.md`'s open findings.

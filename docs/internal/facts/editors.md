@@ -109,7 +109,3 @@ Harvested 2026-09-15 from docs/editors/*. Agent-facing; never shipped; not regis
 
 Harvested 2026-09-15 from docs/editors/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
 resolved by grep and targeted reads across `src/lib/components/*.svelte` and their imports).
-
-Before tightening: 83 facts, ~43 verified, ~40 candidate (one line split verified/candidate
-across two clauses), 0 docs-drift, 0 rejected.
-After tightening: 83 facts, 79 verified, 0 candidate, 4 docs-drift, 0 rejected.

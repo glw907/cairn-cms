@@ -120,8 +120,9 @@ this.
 
 **What it means:** the `reason` field on the log event names it directly: `too_large` and
 `unsupported_type` mean exactly what they say, and the fix is a different file. `session_expired`
-means sign in again. `media_disabled`, `binding_missing`, and anything else in that field point
-at your site's own configuration, not the file; that needs a developer, and
+means sign in again. `media_disabled`, `binding_missing`, `length_required`, `csrf`,
+`access_denied`, `hash_collision`, and anything else in that field point at your site's own
+configuration, not the file; that needs a developer, and
 [Debug your site](../extend/debug-your-site.md) is where they'd start.
 
 **The log event:** `media.upload_failed`.

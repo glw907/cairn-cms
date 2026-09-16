@@ -17,7 +17,7 @@ Every fact is one bullet:
 ```
 
 A bullet ends with exactly one status tag, always the last thing on the bullet (never at the
-start, never a second bracket anywhere else in the bullet). A qualifier, when a tag carries one,
+start, never a second bracket outside a code span or a quoted snippet). A qualifier, when a tag carries one,
 uses the colon form only: `[tag: qualifier text]`, never a space (`[tag qualifier text]` is not
 valid). A fact with a compound story (partly confirmed, partly not) still gets one tag, with the
 nuance folded into that tag's own qualifier text (`[verified: the core claim traces to X; a
@@ -69,18 +69,34 @@ bullet under either heading carries no `Source:`/tag requirement.
 ## How this container grows
 
 The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
-are frozen for the finalization window: a pass that changes a public behavior files the fact
-bullet here (and updates `docs/reference/` when the change touches a reference page, which stays
-maintained per pass), but does not rewrite the frozen arm's own prose. The docs rebuild that
-follows the site round rewrites the narrative arms from this container, once. The one sanctioned
-exception is a one-line fix a page's own gate demands (a transcript floor, an editor quote, a
-snippet); anything larger stays frozen and the drift is recorded here as a `[docs-drift]` bullet
-instead.
+are frozen against rewrites, open to fixes, for the finalization window. A pass that changes a
+public behavior files the container bullet and updates the reference page; no pass rewrites the
+admin, editors, extend, or why-cairn narrative wholesale, since the docs rebuild after the site
+round does that from this container, once.
 
-A site pass that hits a hole in the facts (something it needed that wasn't recorded, or was
-recorded wrong) files the hole into `docs/internal/docs-friction-log.md`'s open findings with the
-site, pass, date, and engine version, rather than guessing or silently working around it; that
-log's own header carries the entry shape and the triage rule. This container used to keep its own
+But a deficiency a site pass DISCOVERS on a frozen page (a missing step, a missing worked
+example, a wrong warning, a stale command) is fixed on the page the next site will read, in the
+same pass, gated by that page's existing gates, with the fact bullet filed alongside as the
+sourced record. Such a fix is agent-facing, not register-graded: it carries the source, the
+engine version, and the why, in whatever shape holds the most information (a sourced bullet, a
+fenced command, a table); Vale's error tier still runs, but no register grade, no prose reviewer,
+no Google-style polish. The docs rebuild after the site round makes the human-facing page from it.
+
+**Cross-repo path.** A site-pass agent never edits the cairn-cms checkout directly; it records
+each deficiency in its report under "Engine docs fixes", and the site pass's conductor batches
+them into one `cairn-implementer` dispatch on `site-docs/<site>-<pass>` off cairn-cms `main`,
+merged by PR before the site pass closes.
+
+**`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
+outside the freeze**, maintained every pass like the reference arm.
+
+The friction log holds only what a site pass could not fix on the spot (a capability gap, not a
+page deficiency): something it needed that wasn't recorded, or was recorded wrong, filed into
+`docs/internal/docs-friction-log.md`'s open findings with the site, pass, date, and engine
+version, rather than guessing or silently working around it; that log's own header carries the
+entry shape and the triage rule. A consuming pass's engine-consult step reads the container arms
+it builds on AND the open friction entries before its plan is written, so a hole one site pass
+could not close is in front of the next site's planner. This container used to keep its own
 separate intake file (`gaps.md`); it folded into the friction log at the 2026-09-15 tightening
 pass so a hole in the facts is triaged the same way as every other docs finding, not a second
 backlog.
@@ -92,8 +108,7 @@ facts here is a manual, reviewed step, the same as editing any other doc.
 
 ## The gate
 
-A `check:facts` gate is planned for the docs-to-facts pass, walking every file here to enforce
-the grammar above: a source, exactly one vocabulary tag in colon form at the end of the bullet,
-and every `path:line` pointer resolved against the real file. Once it lands it prints per-file
-counts by tag on success, replacing what used to be a hand-maintained index table in this README;
-until then, this grammar is enforced by review alone.
+`npm run check:facts` (`scripts/checks/check-facts.mjs`) walks every file here and enforces the
+grammar above: a source, exactly one vocabulary tag in colon form at the end of the bullet, and
+every `path:line` pointer resolved against the real file. It prints per-file counts by tag on
+success, replacing what used to be a hand-maintained index table in this README.

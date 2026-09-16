@@ -22,19 +22,6 @@ every open finding was verified against the code and then either shipped, filed 
 with its trigger, or found already resolved and pruned. Git history holds the full record of both
 clearings.
 
-## Live findings
-
-None open. The 2026-09-07 charter audit's five findings (record
-`docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the same day
-(Geoff accepted the routing): the two charter sentences rewritten (`what-cairn-is-and-is-not.md`,
-`CLAUDE.md`: the concept SET is the site's and the seams are disclosed, not enforced, until 1.0);
-the email-sender and backend "bring your own" doors and the auth-store widening promoted whole to
-`ROADMAP.md`'s identity-seam entry; the upgrade contract left on the 1.0 path where it already sits. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
-section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified
-shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
-`fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS`
-all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
-
 ## Tombstones (decided, do not resurface)
 
 - **Point-of-typing writing coach.** KILLED 2026-06-26. The help-shell adversarial review discarded it
@@ -87,7 +74,17 @@ The identity-seam pass's own two findings, discovered and shipped in the same pa
 Task 4), are cleared already; the internals-C whole-log triage (2026-09-05) cleared the two
 entries this section previously carried: the `check:snippets` stub finding promoted whole to
 `ROADMAP.md`'s Later tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction
-folded into `ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
+folded into `ROADMAP.md`'s existing polish-slice bullet. The 2026-09-07 charter audit's five
+findings (record `docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the
+same day (Geoff accepted the routing): the two charter sentences rewritten
+(`what-cairn-is-and-is-not.md`, `CLAUDE.md`: the concept SET is the site's and the seams are
+disclosed, not enforced, until 1.0); the email-sender and backend "bring your own" doors and the
+auth-store widening promoted whole to `ROADMAP.md`'s identity-seam entry; the upgrade contract
+left on the 1.0 path where it already sits. The internals-pass whole-log triage (2026-09-03)
+cleared four earlier entries: the ASC CSRF 403 entry deleted (every named mechanism verified
+shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
+`fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all
+promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
 ## Clearings
 

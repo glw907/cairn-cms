@@ -60,8 +60,8 @@ Select **Delete** from an image's details. If nothing on your site currently use
 you'll get a plain confirmation. If something does use it, deleting would break how that
 appears, so you're shown exactly what would break and asked to type the image's address
 to confirm you understand before it lets you continue. Deleting removes the picture
-itself, not just its entry in the library. Nobody can put it back for you afterward, so
-keep your own copy of anything you might want again.
+itself, not just its entry in the library. Every version stays in git history, so a
+developer can bring it back for you later if you need it again.
 
 ## Deleting several images at once
 

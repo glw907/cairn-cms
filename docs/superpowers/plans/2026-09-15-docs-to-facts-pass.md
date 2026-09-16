@@ -44,7 +44,11 @@ the per-task gate tier is chosen from the diff.
   after the site round does that from the container. But a deficiency a site pass DISCOVERS (a
   missing step, a missing worked example, a wrong warning, a stale command) is fixed on the page
   the next site will read, in the same pass, gated by that page's existing gates, with the fact
-  bullet filed alongside as the sourced record. The friction log holds only what the site pass
+  bullet filed alongside as the sourced record. **Such a fix is agent-facing, not
+  register-graded (Geoff, 2026-09-15):** it carries the source, the engine version, and the why,
+  in whatever shape holds the most information (a sourced bullet, a fenced command, a table);
+  Vale's error tier still runs, but no register grade, no prose reviewer, no Google-style polish.
+  The rewrite after the round makes the human-facing page from it. The friction log holds only what the site pass
   could not fix (a capability gap). A consuming pass's engine-consult step reads the container
   arms it builds on AND the open friction entries before its plan is written, so a hole site one
   could not close is in front of site two's planner. No page-level banner; the rule is recorded

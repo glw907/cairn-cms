@@ -133,7 +133,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   browser stub fails at build time (no such export), while a bare side-effect import passes the
   build and throws only at runtime when executed in a browser. Source: page text; the pattern
   (browser stub with module-level throw, `worker`/`default` resolving the real module) is the
-  same mechanism used by `/cloudflare` (see below), both stated identically. [verified via
+  same mechanism used by `/cloudflare` (see below), both stated identically. [verified: via
   cross-page consistency with cloudflare.md's identical mechanism description]
 - `tokensMatch('', '')` is deliberately `false`, so an unset expected value can never match an
   unset submitted one. Source: `src/lib/auth/crypto.ts:118` (function `tokensMatch`), consistent
@@ -162,7 +162,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   predicate inside the same `WHERE`/statement as the mutation), so two concurrent calls against
   the last-owner row cannot both succeed. Source: `src/lib/auth/store.ts:383-425,496-533`
   (functions `deleteEditor`, `removeOwnerIfNotLast`, `setEditorRole`, `demoteOwnerIfNotLast`
-  present and structured as described). [verified structurally; exact WHERE-clause atomicity not
+  present and structured as described). [verified: structurally; exact WHERE-clause atomicity not
   independently re-derived from SQL text in this harvest]
 - `deleteEditor`/`setEditorRole` distinguish `'not-found'` from `'last-owner'` (their `WHERE`
   matches any row), while `removeOwnerIfNotLast`/`demoteOwnerIfNotLast` report `'not-eligible'`
@@ -188,7 +188,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/audit/rules/rendered/touch-targets.ts:81-110`. [verified]
 - `form-font-parity` is registered provisionally at advisory tier though its intended tier is
   error, pending a CI re-check confirming the rendered suite is green on the CI runner. Source:
-  page text; consistent with the tier grep above showing it currently `advisory`. [verified tier
+  page text; consistent with the tier grep above showing it currently `advisory`. [verified: tier
   only; the "intended error, pending CI confirmation" framing is documentation of intent, not a
   grep-verifiable fact]
 - The `norms` subcommand reads only the manifest inside the installed package (no config, no
@@ -202,7 +202,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `cairn-manifest` reuses the `cairnManifest()` Vite plugin's own options (globs, config module,
   manifest path) rather than taking its own flags, so the regenerated manifest is guaranteed to
   match what a build verifies against. Source: page text plus `src/lib/vite/internal.ts` doc
-  comments referencing shared option resolution. [verified structurally]
+  comments referencing shared option resolution. [verified: structurally]
 - Only `publishedAt` survives a rebuild across entries: the command reads existing stamps from
   the file about to be overwritten, merges them into the new manifest, and drops any stamp whose
   entry the corpus no longer holds. On a corrupt existing file, it warns to stderr and writes the
@@ -223,7 +223,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   the written local-R2 key is `media/<hash[0:2]>/<hash>.<ext>` (content-addressed, matching what
   the media route reads). Source: `src/lib/media-seed/assemble.ts:118-122` (delivery URL builder)
   plus page text for the write-side key shape (not independently re-derived from the write
-  function in this harvest). [verified for the URL builder; candidate for the exact write-key
+  function in this harvest). [verified: for the URL builder; candidate for the exact write-key
   format string]
 - A manifest row missing `slug`, `hash`, or `ext` is silently dropped rather than failing the
   run; the same tolerance applies elsewhere in the manifest reader. Source: page text; consistent
@@ -239,7 +239,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   timeout/throw, non-200, unparseable body, `success: false`, hostname/action mismatch) returns
   `false`, never throws, so a future refactor can't flip it open by accident. `opts.ip` must come
   from `CF-Connecting-IP`, never a forwardable header. Source: page text; the max-token-length
-  constant and 5-second timeout are independently confirmed below. [verified for the two
+  constant and 5-second timeout are independently confirmed below. [verified: for the two
   confirmed constants; the full fail-closed branch enumeration is stated in the doc comment style
   consistent with this codebase's conventions but not individually re-traced per branch]
 - `MAX_TOKEN_LENGTH` is exactly `2048` characters and the fetch timeout is exactly `5000`ms
@@ -255,7 +255,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   predecessor `checkRateLimit` returned. Source: `src/lib/cloudflare/rate-limit.ts:9-46` (types
   and function present matching this shape); the "predecessor `checkRateLimit`" claim is
   documentation of history, consistent with this repo's retire-and-replace pattern elsewhere.
-  [verified for the current shape; the predecessor-name claim not independently checked against
+  [verified: for the current shape; the predecessor-name claim not independently checked against
   a deleted file]
 
 ## docs/reference/components.md
@@ -319,7 +319,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `/admin`-prefixed `home`, a missing `owner` key, or an `owner` mapped to non-owner capability;
   `owner` is the one reserved name because the last-owner guard and bootstrap owner both anchor
   on it. Source: page text, consistent with the owner-anchoring behavior independently confirmed
-  in auth-store.md's owner-count guards (`resolveOwnerLevelRoles` derivation). [verified by
+  in auth-store.md's owner-count guards (`resolveOwnerLevelRoles` derivation). [verified: by
   cross-reference; the exact throw conditions in `defineRoles`'s implementation were not
   individually re-traced in this harvest]
 
@@ -342,7 +342,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   its output is unchanged from before the function existed. Source: page text
   `docs/reference/delivery.md:74-77,180-188`; not independently re-traced to `preview.ts`'s call
   site this pass, though `sveltekit.md`'s own text (verified above) independently corroborates
-  `loadPreview` renders "through the same composition." [verified via cross-page corroboration]
+  `loadPreview` renders "through the same composition." [verified: via cross-page corroboration]
 - `EntryData.heroImage` is undefined when no hero is set, media is off, or the frontmatter `media:`
   reference does not resolve; the canonical token itself (`entry.frontmatter.image.src`) is left
   untouched as the raw `media:` token regardless. Source: page text
@@ -384,7 +384,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   so a lookup that bypasses it (a hand-rolled `site.byPermalink` call) would serve a body the
   enumerator never listed. Source: page text `docs/reference/delivery-data.md:266-272`,
   corroborated by the verified `markdownLoad`/`isNoindex` fact above
-  (`src/lib/delivery/public-routes.ts:225-256`). [verified via cross-reference]
+  (`src/lib/delivery/public-routes.ts:225-256`). [verified: via cross-reference]
 - `buildNewlyPublished` is pure and node-safe: it performs no I/O, reads no clock, and the engine
   sends nothing over the network itself; a consumer wiring announce-on-publish must persist the
   prior deployed manifest itself, since the engine keeps no cross-deploy state. Renaming a
@@ -584,7 +584,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
   fields; renaming an `event` name is a breaking change. Source: `docs/reference/log-events.md:3-6`.
-  [verified via preview.ts/log call sites using literal event-name strings, e.g. `preview.refused`]
+  [verified: via preview.ts/log call sites using literal event-name strings, e.g. `preview.refused`]
 - The only event whose `actor` field is not necessarily an editor's email is
   `audit.sink.write_failed`, since a caller can invoke `createD1AuditSink` directly with its own
   domain events. Source: `src/lib/sveltekit/admin-action.ts:33-38` (`AdminActionAuditRecord` doc:
@@ -979,7 +979,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (`/admin/posts/[id]`); a declared `target` is used exactly as given, never normalized. Source:
   page text `docs/reference/sveltekit.md:386-388`, consistent with `section-action.ts`'s identical
   group-dropping rule for its own default target (`:794-799` of the same page, describing the
-  shared derivation). [verified via cross-reference with createSectionAction's documented identical rule]
+  shared derivation). [verified: via cross-reference with createSectionAction's documented identical rule]
 - The unmatched case for `requireAccess` (the map has no rule at all for `target`) refuses every
   session including the owner, unlike `canReach`'s own owner bypass, because the helper's contract
   treats "the map has no opinion" as a misconfiguration made loud, not an access decision. Source:
@@ -991,7 +991,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   refuse every action on the documented database-less default instead of hardening it. Source:
   page text `docs/reference/sveltekit.md:518-521`; the empty-map zero-config claim is consistent
   with `requireAccess`'s unmatched-refuses-everyone behavior above but the "database-less default"
-  framing itself was not independently traced to a specific line this pass. [verified via
+  framing itself was not independently traced to a specific line this pass. [verified: via
   consistency with the unmatched-case rule above, not a separate independent trace]
 - `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly rather than making the
   parameter optional, because an optional parameter would make the shortest call silently drop the
@@ -1008,7 +1008,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   independently verified for log events in reference-b.md (`actor` 320, `action` 100, `entity`
   100, `entityId` 200, `detail` 500, identical numbers appear in
   `src/lib/sveltekit/audit-sink.ts:122-129` per reference-b.md's own verified log-events facts).
-  [verified via reference-b.md's independent field-length trace]
+  [verified: via reference-b.md's independent field-length trace]
 - `wrangler d1 migrations apply` reads migrations from a `d1_databases` entry's own
   `migrations_dir` (default `./migrations`); every entry that leaves it unset resolves to the same
   default directory, so copying an audit migration next to the auth migrations and applying it to

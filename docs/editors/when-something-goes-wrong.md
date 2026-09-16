@@ -71,7 +71,7 @@ create this entry at. Choose a different title or address.
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- Quoted verbatim from the editor's own refusal text; rewriting the contraction would misquote it. -->
-**"'X' is not in your tag list. Add it to your vocabulary first."**
+**"X" is not in your tag list. Add it to your vocabulary first.**
 <!-- vale Microsoft.Contractions = YES -->
 You tried to save a
 tag that isn't in your site's shared tag list yet. See
@@ -147,8 +147,8 @@ then try again.
 an uploaded picture's file can be. Export or save a smaller copy of the picture, then try
 again.
 
-**"The upload could not be completed. Please try again."** Something else interrupted
-the upload, most often a connection problem. Try again.
+**"The upload could not reach the server. Check your connection and try again."**
+Something else interrupted the upload, most often a connection problem. Try again.
 <!-- vale Microsoft.Contractions = YES -->
 
 ## Using Tidy

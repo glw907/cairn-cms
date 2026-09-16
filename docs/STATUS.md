@@ -27,11 +27,17 @@ plus one (chain B), 2026-09-15").
    All three overturn item 2 as written: seven gates and the shipped `docsAnchor` values read the arms,
    the container carries no fenced code, 116 facts source only to an arm page, and a naive `check:facts`
    rejects about 260 bullets today. Item 2 is re-planned from these findings (decision pending, Geoff).
-2. **The docs-to-facts pass, RESHAPED and APPROVED (Geoff, 2026-09-15):** plan
-   `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`, five tasks on worktree `docs-to-facts`,
-   per-task chain. The arms stay and freeze, the reference arm stays maintained, the container is
-   normalized and gated (`check:facts`), `gaps.md` folds into the friction log, the `cairn-fact` CLI is
-   deferred, the gate-tier classifier lands. Task ledger: none started.
+2. **The docs-to-facts pass, IN FLIGHT on worktree `docs-to-facts`** (plan
+   `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`; the plan's overturned section carries
+   four mid-pass rulings: freeze-against-rewrites with discovered-deficiency fixes, agent-facing not
+   register-graded; the cross-repo path via "Engine docs fixes" batched on `site-docs/<site>-<pass>`;
+   migration-notes and upgrade-cairn outside the freeze). Ledger: task 4 (dotfiles, commit `fc1a877`
+   unpushed) ACCEPTED; task 5 (gate-tier, `7babaea4`) ACCEPTED; task 3 (governance, `5801bd0d`)
+   under review, with an out-of-scope CLAUDE.md compression to verify; task 1 (container) in its
+   fix round after a `fix` verdict (21 wrong retags, one erased drift, README freeze text); task 2
+   (`check:facts`) implementing. Spend about 1.5M subagent tokens at the 1.5M ceiling; the close
+   (simplifier, full gate, friction triage, HISTORY, PR) remains. Conductor slip to record at close:
+   commit `bb2e2dc3` swept task 1's in-progress edits under a plan-amendment message.
 3. **extend-1, then extend-2** (docs as container entries; extend-1's "Available since" reads 0.97.0 and
    its advisory rules promote at 0.98.0, per `launch.json`).
 4. **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's tools section added

@@ -28,7 +28,7 @@ task 4; the per-task gate is chosen by `scripts/checks/gate-tier.mjs`, serialize
 `cairn-run-gate`'s machine lock. Resume prompt if the session is lost: "Resume the extend-1 pass
 (plan above); read STATUS for the task ledger, check both worktrees' `git log`, and relaunch the
 workflow from the built script `extend-1-run.js` in the launching session's scratchpad with
-`resumeFromRunId: wf_335b0ff8-684`, or rebuild it from `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json`
+`resumeFromRunId: wf_335b0ff8-684` (chain A; chain B was split into its own run `wf_6d659e3c-3fc` from `extend-1-runB.js` after task 7's escalate: the site sheet defeated the engine's responsive variants by same-layer source order, ruled fixed by a superset `@source` line over the engine's dist, the engine-owned sources-file form deferred to the checkpoint question), or rebuild it from `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json`
 and start from the first unaccepted task." **Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
 deliverables now file container bullets in `docs/internal/facts/extend.md` instead of editing
 the frozen `docs/extend/` pages; reference pages still update per task. extend-1's "Available

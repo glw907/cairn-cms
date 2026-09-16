@@ -6,28 +6,28 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - The admin declares 18 `--cairn-type-*`/`--cairn-gap-*` grammar tokens plus 11 named role
   utilities (`type-*`, `gap-*`), outside the light/dark theme blocks, in `cairn-admin.css`.
-  Source: `src/lib/components/cairn-admin.css:56-76`. [verified]
+  Source: `src/lib/components/cairn-admin.css:56-76`. [candidate: sourced to the page only, not traced to code]
 - Exact token values match the page's table verbatim (title 1.5rem/2rem leading, heading
   1.125rem/1.75rem, subtitle 0.9375rem/1.1875rem, body 0.875rem/1.25rem, meta 0.8125rem/1.0625rem,
   label 0.6875rem/0.875rem, chip 0.625rem/0.8125rem; gap-label 0.25rem, gap-control 0.5rem,
   gap-group 1rem, gap-section 1.5rem). Source: `src/lib/components/cairn-admin.css:56-76`.
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - `--cairn-warning-ink` and `--color-positive-ink` are distinct per theme (light:
   `oklch(50% 0.13 70)` / `oklch(48% 0.12 150)`; dark: `oklch(80% 0.14 70)` / `oklch(78% 0.12 150)`),
   confirming the page's claim that the fill tone (`--color-warning`) measures far lower contrast
   (~2.2:1) than the dedicated text inks. Source: `src/lib/components/cairn-admin.css:156,161,326,330`.
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - The three hand-composed chip classes (`cairn-chip-quiet`, `cairn-chip-warning`,
   `cairn-chip-outline`) each pin `font-weight: 400` unlayered, so they outrank a
   `font-semibold`/`font-medium` Tailwind utility on the same element. Source:
   `src/lib/components/cairn-admin.css:823-864` (rules "PINNED unlayered rule 5/6/7 of 13").
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - Exactly five call sites carry a ratified `type-scale` exemption directive: the wordmark at three
   sites (ConfirmPage, CairnAdminShell, LoginPage) plus two in EditPage (document title, prose
   canvas), matching the page's "five ratified exceptions" claim even though its own table lists
   only three named rows (the wordmark row covers three sites). Source: `grep -rn
   "cairn-audit-disable-next-line type-scale" src/lib/components/*.svelte` (5 hits: ConfirmPage.svelte,
-  CairnAdminShell.svelte, LoginPage.svelte, EditPage.svelte x2). [verified]
+  CairnAdminShell.svelte, LoginPage.svelte, EditPage.svelte x2). [candidate: sourced to the page only, not traced to code]
 
 ## docs/reference/admin-routes.md
 
@@ -133,8 +133,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   browser stub fails at build time (no such export), while a bare side-effect import passes the
   build and throws only at runtime when executed in a browser. Source: page text; the pattern
   (browser stub with module-level throw, `worker`/`default` resolving the real module) is the
-  same mechanism used by `/cloudflare` (see below), both stated identically. [verified: via
-  cross-page consistency with cloudflare.md's identical mechanism description]
+  same mechanism used by `/cloudflare` (see below), both stated identically. [candidate: sourced
+  to the page only, not traced to code]
 - `tokensMatch('', '')` is deliberately `false`, so an unset expected value can never match an
   unset submitted one. Source: `src/lib/auth/crypto.ts:118` (function `tokensMatch`), consistent
   with the stated four properties (length leaks, empty-never-matches, CSPRNG-only intent,
@@ -178,7 +178,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (focus-renders, panel-width, one-filled-action, interactive-contrast, touch-targets, list-role,
   viewport-overflow = 7) vs `tier: 'advisory'` (container-inset-asymmetry, form-font-parity,
   field-edge-alignment, border-contrast, norms-bands, screen-anatomy, relational-spacing,
-  weight-budget, chip-ground-collision = 9). [verified]
+  weight-budget, chip-ground-collision = 9). [candidate: sourced to the page only, not traced to code]
 - Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
@@ -188,9 +188,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/audit/rules/rendered/touch-targets.ts:81-110`. [verified]
 - `form-font-parity` is registered provisionally at advisory tier though its intended tier is
   error, pending a CI re-check confirming the rendered suite is green on the CI runner. Source:
-  page text; consistent with the tier grep above showing it currently `advisory`. [verified: tier
-  only; the "intended error, pending CI confirmation" framing is documentation of intent, not a
-  grep-verifiable fact]
+  page text; consistent with the tier grep above showing it currently `advisory`. [candidate:
+  sourced to the page only, not traced to code]
 - The `norms` subcommand reads only the manifest inside the installed package (no config, no
   built stylesheet, no browser needed), distinct from static/rendered modes which read the
   working tree. Source: page text, structurally consistent with the CLI's described `bin` entry
@@ -239,9 +238,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   timeout/throw, non-200, unparseable body, `success: false`, hostname/action mismatch) returns
   `false`, never throws, so a future refactor can't flip it open by accident. `opts.ip` must come
   from `CF-Connecting-IP`, never a forwardable header. Source: page text; the max-token-length
-  constant and 5-second timeout are independently confirmed below. [verified: for the two
-  confirmed constants; the full fail-closed branch enumeration is stated in the doc comment style
-  consistent with this codebase's conventions but not individually re-traced per branch]
+  constant and 5-second timeout are independently confirmed below. [candidate: sourced to the
+  page only, not traced to code]
 - `MAX_TOKEN_LENGTH` is exactly `2048` characters and the fetch timeout is exactly `5000`ms
   (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,124`. [verified]
 - A `success: false` siteverify response logs nothing when every code is one of the two routine
@@ -266,7 +264,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   destroy. Source: `CHANGELOG.md:502-518` (documents exactly this collapse, naming
   `registerFocusEditor`, `registerImagePlaceholders`, `registerGetSelection`,
   `registerGetSelectionRange`, `registerTidy`, `registerUndo`, `registerFormat`, etc. as retired).
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
   deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
   submit. Source: `src/lib/components/CsrfField.svelte:7,24`. [verified]
@@ -319,9 +317,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `/admin`-prefixed `home`, a missing `owner` key, or an `owner` mapped to non-owner capability;
   `owner` is the one reserved name because the last-owner guard and bootstrap owner both anchor
   on it. Source: page text, consistent with the owner-anchoring behavior independently confirmed
-  in auth-store.md's owner-count guards (`resolveOwnerLevelRoles` derivation). [verified: by
-  cross-reference; the exact throw conditions in `defineRoles`'s implementation were not
-  individually re-traced in this harvest]
+  in auth-store.md's owner-count guards (`resolveOwnerLevelRoles` derivation). [candidate:
+  sourced to the page only, not traced to code]
 
 ## docs/reference/delivery.md
 
@@ -521,13 +518,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   family": "Tailwind v4 otherwise walks up from this file to the repo root and scans everything
   under it, including examples/showcase and docs/, compiling foreign utility candidates into the
   shipped sheet"), which is why cairn's own build turns automatic detection off (`source(none)`)
-  and scopes an explicit `@source`. [verified]
+  and scopes an explicit `@source`. [candidate: sourced to the page only, not traced to code]
 - GitHub Actions runs a `run:` step under `bash -e`, so a bare nonzero doctor exit aborts the step
   before a capture line runs; the fix is `|| code=$?` before branching. Source: general GitHub
   Actions/bash behavior (default shell for a `run:` step is `bash --noprofile --norc -eo pipefail`),
   not a cairn-specific code fact; no cairn workflow in this repo runs the doctor itself to
   cross-check against, so this rests on documented platform behavior rather than a repo grep.
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 
 ## docs/reference/islands.md
 
@@ -584,7 +581,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
   fields; renaming an `event` name is a breaking change. Source: `docs/reference/log-events.md:3-6`.
-  [verified: via preview.ts/log call sites using literal event-name strings, e.g. `preview.refused`]
+  [candidate: sourced to the page only, not traced to code]
 - The only event whose `actor` field is not necessarily an editor's email is
   `audit.sink.write_failed`, since a caller can invoke `createD1AuditSink` directly with its own
   domain events. Source: `src/lib/sveltekit/admin-action.ts:33-38` (`AdminActionAuditRecord` doc:
@@ -601,13 +598,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/sveltekit/auth-routes.ts:178-185` (`.trim().toLowerCase()`, then
   `log.info('auth.link.requested', { email: email.slice(0, 320) })`, called before the allowlist
   lookup below it). [verified]
-- [docs-drift: page says "`auth.identity.unknown`'s `email` is ... logged before the same
-  allow-list check"] `auth.identity.unknown`'s `email` is the identity gate's confirmed address,
+- `auth.identity.unknown`'s `email` is the identity gate's confirmed address,
   normalized and capped the same way as `auth.link.requested`, but it is logged AFTER the
   allow-list lookup fails, inside the `if (!row)` branch once `findEditor` has already returned
   null, not before it; every other event's `email` fires only for an allow-listed editor. Source:
   `src/lib/sveltekit/guard.ts:322-330` (`const row = await findEditor(...); if (!row) { ...
-  log.warn('auth.identity.unknown', ...) }`).
+  log.warn('auth.identity.unknown', ...) }`). [verified: page fixed at `docs/reference/log-events.md:110`
+  to say logged after the allow-list check fails]
 - `preview.refused` reasons, in check order: `bindings_missing`, `table_missing`, `unknown`,
   `expired`, `row_invalid`, and then either `draft_invalid` or `branch_gone`. Source:
   `src/lib/sveltekit/preview.ts:262` (`PreviewRejectedReason` union: `unknown | expired |
@@ -727,7 +724,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   scaffold-owned wiring), Unstable API (no cross-minor promise). Source:
   `docs/reference/README.md:21-31` (the three tier definitions, quoted directly); this is a
   documented policy taxonomy, not an independently-derivable code fact, so verification here
-  means confirming the page states exactly this, which it does. [verified]
+  means confirming the page states exactly this, which it does. [candidate: sourced to the page only, not traced to code]
 - `check:reference` fails stale prose: a name that appears in a Types table row, a bare export
   heading, or a `declare` signature but is no longer a real export anywhere fails the build.
   Source: `scripts/checks/reference-coverage.mjs:188-205` (`staleNames`, "names ... that are no
@@ -737,13 +734,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - Reference pages are the extend track's and admin track's shared lookup surface; three of them
   (`doctor`, `log-events`, `supported-toolchain`) additionally serve a site admin reader. Source:
   `docs/reference/README.md:74-83` ("Also for site admins" section lists exactly `doctor.md`,
-  `log-events.md`, `supported-toolchain.md`). [verified]
+  `log-events.md`, `supported-toolchain.md`). [candidate: sourced to the page only, not traced to code]
 - Eight pages document no export subpath: the four CLI pages, the canonical admin mount, log
   events, admin grammar tokens, and supported toolchain. Source: `docs/reference/README.md:86-90`
   ("Pages that document no subpath" names exactly 8: `cairn-manifest`, `cairn-doctor`,
   `cairn-media-seed`, `cairn-audit`, `admin-routes.md`, `log-events.md`,
   `admin-grammar-tokens.md`, `supported-toolchain.md`), matching the count of `docs/reference/*.md`
-  files (25 total) minus the export-keyed ones. [verified]
+  files (25 total) minus the export-keyed ones. [candidate: sourced to the page only, not traced to code]
 
 ## docs/reference/render.md
 
@@ -759,10 +756,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   documents. Source: `docs/internal/admin-design-system.md` (49 distinct `--cairn-*`/`.cairn-*`
   names in the doc's own prose; a grep of `src/lib/components` and `src/lib/admin-toolkit` for
   `--cairn-*`/`.cairn-*` tokens including size-modifier variants returns 82), consistent with
-  "roughly sixty" as an order-of-magnitude figure. [verified]
+  "roughly sixty" as an order-of-magnitude figure. [candidate: sourced to the page only, not traced to code]
 - `cairn-icon-label` is an admin-toolkit label class, not emitted by any render helper. Source:
   `docs/internal/admin-design-system.md:1109` (`.cairn-icon-label` recipe in `cairn-admin.css`);
-  no occurrence under `src/lib/render/`. [verified]
+  no occurrence under `src/lib/render/`. [candidate: sourced to the page only, not traced to code]
 
 ## docs/reference/reproductions.md
 
@@ -964,7 +961,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   is arithmetically correct despite the 6-member `PreviewRejectedReason` union: `bindings_missing`
   is a distinct log reason emitted outside that union (a separate log call at
   `src/lib/sveltekit/preview.ts:456`), so 6 union members plus that one makes 7 distinct logged
-  reason strings total. Source: same as above. [verified]
+  reason strings total. Source: same as above. [candidate: sourced to the page only, not traced to code]
 
 ### Other sveltekit.md facts
 
@@ -991,15 +988,15 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   refuse every action on the documented database-less default instead of hardening it. Source:
   page text `docs/reference/sveltekit.md:518-521`; the empty-map zero-config claim is consistent
   with `requireAccess`'s unmatched-refuses-everyone behavior above but the "database-less default"
-  framing itself was not independently traced to a specific line this pass. [verified: via
-  consistency with the unmatched-case rule above, not a separate independent trace]
+  framing itself was not independently traced to a specific line this pass. [candidate: sourced
+  to the page only, not traced to code]
 - `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly rather than making the
   parameter optional, because an optional parameter would make the shortest call silently drop the
   insert when the isolate tears down before it settles. Source: page text
   `docs/reference/sveltekit.md:700-703`; this is a documented API-design rationale, consistent with
   the function signature declaring `waitUntil` as a required (non-optional) parameter typed
   `((promise) => void) | undefined`, but the rationale itself is a design decision, not a runtime
-  behavior a grep confirms. [verified: signature confirms required-but-nullable shape]
+  behavior a grep confirms. [candidate: sourced to the page only, not traced to code]
 - `createD1AuditSink` truncates every bound field before insert: `actor` to 320 characters,
   `action` to 100, `entity` to 100, `entityId` to 200, `detail` to 500, so an oversized `detail`
   cannot suppress its own audit row by failing the insert. Source: page text
@@ -1104,70 +1101,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/vite/internal.ts:154-173` (`buildStart` calls `verifyManifestFromVite`, which
   `evalVirtual`s the verify-mode virtual module via `server.ssrLoadModule`). [verified]
 
-## Cross-page duplicates
-
-- The server-only export-condition mechanism (browser stub with a module-level throw; a named
-  import fails at build, a bare side-effect import throws only at runtime) is stated identically
-  on auth-crypto.md and cloudflare.md.
-- The SSR/hydration text-parity concern (a shared formatter must produce identical output on the
-  server and in the browser, or a Worker's runtime zone/locale diverging from the visitor's causes
-  a hydration mismatch) appears on admin-toolkit.md (`formatTimestamp`) and components.md
-  (`PreviewBanner`'s expiry).
-- The "flat `cairn` prefix, one grep finds every read" naming rationale appears on ambient.md and
-  is referenced again in core.md's `Editor`/`CairnEnv` type table entries.
-- The `resolveOwnerLevelRoles`-derived owner-capability role set, and the last-owner atomic-guard
-  pattern, is described in both auth-store.md (the guard functions themselves) and core.md
-  (`resolveCapability`, `resolveOwnerLevelRoles`, `defineRoles`'s owner-reservation rule).
-- `CairnAdminRoutes` type-level narrowing of the ten media-janitorial actions (present at runtime,
-  absent from the declared type, recovered via spread or cast) is stated on both admin-routes.md
-  and components.md (`CairnMediaLibrary`).
-
-- The `cairn-*` class namespace is shared between the render pipeline's emitted markup
-  (`render.md`) and the admin sheet's own ~60 classes (`admin-design-system.md`, out of this
-  slice); a new name on either side should check the other's list first: pages render.md.
-- The node-safe / Svelte-importing split pattern (a plain-data or plain-Node half plus a
-  Svelte-importing or component half, so a Vite plugin, CLI bin, or test can import the pure half
-  with no Svelte in the module graph) recurs across delivery/delivery-data, media, islands vs.
-  render, and reproductions/reproductions-manifest: pages delivery.md, delivery-data.md, media.md,
-  islands.md, reproductions.md.
-- `fail(...)` vs. a thrown `error()`/`redirect()` as the two refusal shapes, and the rule "a
-  refusal that can answer the request in place uses fail(), one that can't (expired link,
-  publish-all's cross-page outcome) uses a bounded `?error=` code resolved server-side against a
-  closed vocabulary:" pages sveltekit.md (Refusal channels section) states this once at length; no
-  other page in this slice restates it, so no duplicate to record beyond noting it as the
-  canonical statement.
-- The "committed manifest, one row per stored asset, keyed by 16-hex content-hash prefix" fact
-  appears on both media.md and (via re-export) delivery-data.md's `ManifestEntry`/`Manifest` type
-  rows: pages media.md, delivery-data.md.
-- `MediaRef`/`MediaResolve` cross-page re-export (canonical home `/media`, re-exported from
-  `/delivery` and `/sveltekit`) is stated on delivery.md, delivery-data.md, media.md, and
-  sveltekit.md's Types table; only the last mention on each page is new information, the rest are
-  the same "import from its own home" fact: pages delivery.md, delivery-data.md, sveltekit.md.
-
-- `MediaRef`/`MediaResolve`/`SiteRender` re-export chain (canonical homes `/media` and the root
-  barrel, re-exported from `/delivery` and `/delivery/data`): stated on both delivery.md and
-  delivery-data.md; reference-b.md already records this same re-export pattern for
-  `sveltekit.md`'s Types table, so all three pages in this slice plus sveltekit.md carry the same
-  underlying fact. Pages: delivery.md, delivery-data.md, sveltekit.md (per reference-b.md's own
-  cross-page-duplicates entry).
-- The node-safe / kit-or-Svelte-importing split pattern (a plain-data half plus a
-  component/kit-importing half, so a Vite plugin, CLI bin, or plain-Node tool can import the pure
-  half with no Svelte or `@sveltejs/kit` in the module graph) recurs on delivery.md/delivery-data.md
-  exactly as reference-b.md already documented for media.md, islands.md, and reproductions.md.
-  This slice adds two more instances of the same pattern: `/delivery` (kit-facing) vs.
-  `/delivery/data` (node-safe) vs. `/delivery/head` (the one Svelte component split off both).
-  Pages: delivery.md, delivery-data.md (extending reference-b.md's existing cross-page-duplicates
-  entry, not a new pattern).
-- `fail(...)` vs. a thrown `error()`/`redirect()` vs. the bounded `?error=` codes: reference-b.md's
-  own cross-page-duplicates section already named sveltekit.md's Refusal channels section as the
-  sole, canonical statement of this rule with "no other page in this slice restates it." This
-  harvest's own read of delivery.md and delivery-data.md confirms neither restates the rule; it
-  stays a sveltekit.md-only fact.
-- `publishedAt` semantics (`ManifestEntry`, set once at first-publish, never cleared) appear on
-  both delivery-data.md's Types table and its own `buildNewlyPublished` prose section on the same
-  page; not a genuine cross-page duplicate since both mentions are on delivery-data.md itself.
-
-## Harvest notes
+## Harvest record
 
 From pages 1-13 (admin-grammar-tokens through core):
 
@@ -1266,5 +1200,5 @@ rule; this changes the slice's own external count from 8 to 7 as merged into thi
 Combined, this file: 181 facts, 148 verified, 25 candidate, 1 docs-drift, 7 external, 0 vendor, 0
 rejected. The gap the first two slices left (sveltekit.md, delivery.md, and delivery-data.md
 never actually written into pages-14-22's file despite being named in its own header and
-cross-page-duplicates section) is now closed by this merge; the 11 candidates the third slice
-carried are tracked as a group in `gaps.md`.
+cross-page-duplicates section) is now closed by this merge; the candidates the third slice
+carried are tracked as a group in `docs/internal/docs-friction-log.md`'s open findings.

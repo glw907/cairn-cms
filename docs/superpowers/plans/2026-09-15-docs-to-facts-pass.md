@@ -48,7 +48,13 @@ the per-task gate tier is chosen from the diff.
   register-graded (Geoff, 2026-09-15):** it carries the source, the engine version, and the why,
   in whatever shape holds the most information (a sourced bullet, a fenced command, a table);
   Vale's error tier still runs, but no register grade, no prose reviewer, no Google-style polish.
-  The rewrite after the round makes the human-facing page from it. The friction log holds only what the site pass
+  The rewrite after the round makes the human-facing page from it. **Cross-repo path (conductor
+  ruling at task 4's review):** a site-pass agent never edits the cairn-cms checkout; it records
+  each deficiency in its report under "Engine docs fixes", and the site pass's conductor batches
+  them into one `cairn-implementer` dispatch on `site-docs/<site>-<pass>` off cairn-cms `main`,
+  merged by PR before the site pass closes. **`docs/extend/migration-notes.md` and
+  `docs/extend/upgrade-cairn.md` are per-version records, outside the freeze**, maintained every
+  pass like the reference arm. The friction log holds only what the site pass
   could not fix (a capability gap). A consuming pass's engine-consult step reads the container
   arms it builds on AND the open friction entries before its plan is written, so a hole site one
   could not close is in front of site two's planner. No page-level banner; the rule is recorded

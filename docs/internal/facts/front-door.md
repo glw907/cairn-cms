@@ -7,7 +7,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - cairn is two things at once: an editor-first, git-backed CMS, and a SvelteKit toolkit a
   developer extends for their own organization. Source: docs/internal/what-cairn-is-and-is-not.md,
   "cairn is a lean, opinionated CMS that makes a non-technical author productive editing raw
-  markdown on a SvelteKit + Cloudflare site". [verified]
+  markdown on a SvelteKit + Cloudflare site". [candidate: sourced to the page only, not traced to code]
 - With the zero-config default, an editor signs in from an emailed link, no GitHub account, no
   password. Source: `src/lib/auth-channel/`, `src/lib/env.ts` (AUTH_DB binding backs the magic-link
   session store); CLAUDE.md, "magic-link". [verified]
@@ -16,7 +16,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   slice; referenced by docs/why-cairn.md:20). [candidate: not opened this pass, cross-referenced
   only]
 - The live preview renders through the exact function the public site uses. Source: CLAUDE.md,
-  "the one renderer the editor preview and every public page call". [verified]
+  "the one renderer the editor preview and every public page call". [candidate: sourced to the page only, not traced to code]
 - A save holds on a per-entry branch; a deliberate publish copies it to the main branch with the
   editor as commit author. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in
   editor (spec §7.4). The committer is left to the App."; `src/lib/github/repo.ts:262`,
@@ -24,32 +24,32 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `create-cairn-site` creates the GitHub App, the repository, the Cloudflare bindings, and deploys,
   in one run. Source: `packages/create-cairn-site/` (chapter2.mjs GitHub App and Cloudflare
   provisioning flow, referenced in docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md).
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - The admin is also a UI toolkit: a developer's own screen, member roster, event calendar, or
   reservation form mounts inside the same admin, sharing cairn's components and sign-in.
   Source: docs/internal/what-cairn-is-and-is-not.md, "An admin skeleton a developer extends... A
-  developer builds those extras on cairn's seams". [verified]
+  developer builds those extras on cairn's seams". [candidate: sourced to the page only, not traced to code]
 - Every production cairn site the author runs is hosted on Cloudflare. Source: docs/why-cairn.md:40
   (owner brief, first-person claim; not independently verifiable from code). [candidate: owner
   claim, no code source]
 - cairn has no abstraction layer that lets a developer swap Cloudflare for another host later; no
   second `BackendProvider` implementation ships with cairn today besides GitHub. Source:
   `grep -rn "BackendProvider" src/lib` (single GitHub implementation; extend seam documented at
-  docs/extend/sign-in-through-your-organization.md#a-backend-other-than-github). [verified]
+  docs/extend/sign-in-through-your-organization.md#a-backend-other-than-github). [candidate: sourced to the page only, not traced to code]
 - cairn is pre-1.0; seams still move, and an Extension-tier seam moved across two separate minor
   releases inside the tier meant to stay frozen. Source: docs/internal/what-cairn-is-and-is-not.md,
-  "two Extension-tier breaks have shipped inside 0.x minors (0.86.0, 0.94.0)". [verified]
+  "two Extension-tier breaks have shipped inside 0.x minors (0.86.0, 0.94.0)". [candidate: sourced to the page only, not traced to code]
 - The zero-config identity model has exactly two roles: owner and editor. Source:
   docs/internal/what-cairn-is-and-is-not.md, "cairn never names or models a domain actor; it only
-  ever knows owner/editor." [verified]
+  ever knows owner/editor." [candidate: sourced to the page only, not traced to code]
 - cairn is a CMS and an admin toolkit, not a platform; it manages markdown content and the admin
   frame and stops there deliberately. Source: docs/internal/what-cairn-is-and-is-not.md, "cairn
   owns its core job, managing markdown content and the editor/admin frame, and little else."
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - `create-cairn-site` still requires a GitHub account, a Cloudflare account, and a paid Cloudflare
   plan from the first deploy. Source: docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md,
   citing docs/admin/before-you-start.md:29 and :53 on the Workers Paid requirement for Email
-  Sending. [verified]
+  Sending. [candidate: sourced to the page only, not traced to code]
 - Every publish is a git commit, so content lives in a repository the organization needs a GitHub
   account to reach, even though editors never see it directly. Source:
   `src/lib/github/repo.ts:262`, commit-per-publish mechanics. [verified]
@@ -61,20 +61,20 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - Content is a fixed set of concepts the site declares via `defineConcept`, Posts and Pages
   available out of the box, with no open-ended collection model. Source:
   docs/internal/what-cairn-is-and-is-not.md, "Content is markdown in git, in one fixed concept
-  shape (`defineConcept`)... never an open-ended collection model." [verified]
+  shape (`defineConcept`)... never an open-ended collection model." [candidate: sourced to the page only, not traced to code]
 - The admin is built in DaisyUI and Tailwind, the idiom a developer's own screens extend it in.
   Source: docs/internal/what-cairn-is-and-is-not.md, "An admin skeleton a developer extends, built
-  with DaisyUI + Tailwind"; CLAUDE.md, "cairn owns ... built with DaisyUI + Tailwind". [verified]
+  with DaisyUI + Tailwind"; CLAUDE.md, "cairn owns ... built with DaisyUI + Tailwind". [candidate: sourced to the page only, not traced to code]
 - `create-cairn-site` scaffolds a complete starter called Waymark; a second template, Topo, is
   planned but not shipped. Source: README.md:58-60 (page's own claim); no `Topo` package or
   directory found in this repo (`find . -iname "*topo*"` in this slice returned nothing under
   packages/ or examples/). [candidate: not independently located in code, page-only claim]
 - cairn is pre-1.0 and runs in production on two sites today, ecxc.ski and 907.life. Source:
   CLAUDE.md credentials section, "a single installation on glw907 covering ecxc-ski and 907-life."
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - The published version, unpublished window, and next action live in `docs/STATUS.md`. Source:
   CLAUDE.md, "How to run this project", "The published version, the unpublished window, and the
-  next action live in `docs/STATUS.md`." [verified]
+  next action live in `docs/STATUS.md`." [candidate: sourced to the page only, not traced to code]
 
 ## docs/README.md
 - cairn publishes through a GitHub App. Source: `src/lib/github/repo.ts:262` (App-attributed
@@ -150,14 +150,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   little else; everything a site needs beyond that (functionality, actors, auth, data, domain
   logic) belongs to the developer, served through a thin seam, not a built-in feature. Source:
   docs/internal/what-cairn-is-and-is-not.md, "## The one boundary that governs everything".
-  [verified]
+  [candidate: sourced to the page only, not traced to code]
 - cairn's defaults (owner/editor roles, magic-link) are floors, not ceilings: a developer can
   replace admin auth with their own framework, and cairn then mints no session and reads an
   owner/editor identity through a defined hand-off. Source: same file, "The defaults are floors,
-  not ceilings." [verified]
+  not ceilings." [candidate: sourced to the page only, not traced to code]
 - cairn never names or models a domain actor beyond owner/editor; a site's own domain (members,
   customers, assets, dues, a directory) is the developer's to build. Source: same file, "A site's
-  domain is the site's." [verified]
+  domain is the site's." [candidate: sourced to the page only, not traced to code]
 - The seams form a narrow, versioned public surface across kind-based export subpaths, held by a
   public-surface snapshot gate plus gated Extension-API/Scaffold-API stability tiers; until 1.0 the
   gate detects and discloses a break rather than preventing one. Source: same file, "The contract
@@ -174,20 +174,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   consumer product," citing `docs/reference/cairn-audit.md`. [candidate: the 28-rule count was not
   independently recounted against `docs/reference/cairn-audit.md` this slice]
 
-## Cross-page duplicates
-- "cairn is two things at once/built as one: an editor-first, git-backed CMS, and a SvelteKit
-  toolkit a developer extends for their own organization": docs/why-cairn.md, README.md,
-  docs/README.md (near-identical wording on all three).
-- "A save holds on a per-entry branch; publishing copies it to main with the editor as commit
-  author (the App as committer), and the site deploys the way any push already does": README.md,
-  docs/README.md, docs/why-cairn.md.
-- "The admin is also a UI toolkit... reads as one product... not a second app bolted beside the
-  CMS": docs/why-cairn.md, README.md, docs/README.md.
-- "cairn commits fully to SvelteKit, Cloudflare, and GitHub, with no layer trying to hide any of
-  the three": docs/why-cairn.md, README.md.
-- "cairn is pre-1.0": docs/why-cairn.md, README.md, docs/internal/what-cairn-is-and-is-not.md.
-
-## Harvest notes
+## Harvest record
 Decisions/opinions found, not harvested as facts:
 - "None of these choices is reversible piece by piece" (docs/why-cairn.md:49) is a design stance,
   covered instead by the concrete no-second-`BackendProvider` fact above.

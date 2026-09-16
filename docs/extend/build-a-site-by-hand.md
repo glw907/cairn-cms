@@ -662,12 +662,12 @@ It checks the bindings, the auth store, the GitHub App, and more, and names what
 for most of what it covers. [Is it working?](../admin/is-it-working.md) explains every condition
 it can report.
 
-One gap to know about: the `config.csrf-disable-missing` check reads `svelte.config.js` looking
-for the `csrf`/`checkOrigin` pair, and this scaffold carries no such file, since that wiring lives
-in `vite.config.ts` instead, from Milestone 2 earlier. On this tree the check reports a skip, not
-a pass, and a skip reads no differently from clean in the doctor's summary line. Confirm the
-double-submit CSRF handoff yourself: the `csrf: { checkOrigin: false }` key in your
-`vite.config.ts`, and `createAuthGuard()` wired into `hooks.server.ts`.
+One thing to know about: the `config.csrf-disable-missing` check reads both `svelte.config.js`
+and `vite.config.ts` for the `csrf`/`checkOrigin` pair, precisely because a bare `sv create`
+scaffold has no `svelte.config.js` and wires `checkOrigin: false` in `vite.config.ts` instead,
+from Milestone 2 earlier. On this tree the check finds the disable there and `createAuthGuard()`
+wired into `hooks.server.ts`, so it reports a real pass, not a skip; it reports a skip only when
+neither config file exists at all.
 
 **You know it worked when:** signing in at `/admin/login` on the deployed site sends you a real
 email, and a save-then-publish round trip lands a real commit on your GitHub repo.

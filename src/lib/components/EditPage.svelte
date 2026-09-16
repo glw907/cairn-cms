@@ -465,12 +465,13 @@ persistent "?" carries Markdown help).
   // The wait is a fixed timer rather than a `transitionend` listener: the class removal that
   // starts the fade and the effect that would attach the listener both run inside the same
   // reactive flush, which can race the browser's own transition-start bookkeeping and drop the
-  // event under load, where a timer cannot be dropped. The margin is a generous multiple of the
-  // exit duration and delay tokens above, not the CSS transition itself, so a JS scheduling
-  // delay never truncates the fade a reader actually sees, and it stays at or below 300ms so no
-  // wait is perceptible as a pause. A reduced-motion reader gets no fade in either direction and
-  // unmounts at once instead of waiting out a timer with nothing to show.
-  const CHIP_EXIT_WAIT_MS = 300;
+  // event under load, where a timer cannot be dropped. The margin sits just past the exit
+  // duration token above (110ms), not the CSS transition itself, so a JS scheduling delay never
+  // truncates the fade a reader actually sees, while keeping the chip's own dead-click tail
+  // (mitigated separately by `pointer-events: none` on the exiting chip, see the style block
+  // below) as short as the fade allows. A reduced-motion reader gets no fade in either direction
+  // and unmounts at once instead of waiting out a timer with nothing to show.
+  const CHIP_EXIT_WAIT_MS = 200;
   let chipMounted = $state(false);
   $effect(() => {
     if (prefs.zen) {
@@ -2658,10 +2659,12 @@ persistent "?" carries Markdown help).
      once rather than waiting out a fade timer with nothing to show. */
   .cairn-zen-chip {
     opacity: 0;
+    pointer-events: none;
     transition: opacity var(--cairn-dur-quick) var(--cairn-ease-exit);
   }
   .cairn-zen-chip.zen-active {
     opacity: 1;
+    pointer-events: auto;
   }
   @starting-style {
     .cairn-zen-chip.zen-active {

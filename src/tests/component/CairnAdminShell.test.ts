@@ -6,6 +6,8 @@ import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
+import { beforeNavigateCallbacks } from './_app-navigation.js';
+import type { BeforeNavigate } from '@sveltejs/kit';
 // The compiled sheet carries the real .modal-box sizing and the utility layer (outline-hidden,
 // :focus-visible) the palette-inset and focus tests below measure against; the source partial
 // these other tests import has neither.
@@ -785,6 +787,19 @@ describe('CairnAdminShell', () => {
     expect(content().classList.contains('xl:ml-56')).toBe(true);
   });
 
+  it('withholds data-cairn-frame-ready until one animation frame after mount, so the first paint never carries it', async () => {
+    // The frame-offset transition (cairn-admin.css) is gated on this attribute so a restored
+    // localStorage preference cannot animate the very frame that first paints it: absent
+    // immediately after mount, present only once a frame has actually elapsed.
+    const screen = await render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+      zen: false,
+    });
+    const content = () => screen.container.querySelector('.drawer-content')!;
+    expect(content().hasAttribute('data-cairn-frame-ready')).toBe(false);
+    await expect.poll(() => content().hasAttribute('data-cairn-frame-ready')).toBe(true);
+  });
+
   it('marks the drawer content zen-used only after zen first turns on, and keeps the mark after exiting', async () => {
     // The chrome regions' entrance fade (cairn-admin.css) keys off this attribute so it never
     // plays on a page's first paint, only on the return from zen; a page that never enters zen
@@ -802,6 +817,36 @@ describe('CairnAdminShell', () => {
     // Exiting zen leaves the mark in place, since the fade is for the return trip.
     await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: false });
     expect(content().hasAttribute('data-cairn-zen-used')).toBe(true);
+  });
+
+  it('clears the zen-used mark on a genuine navigation once zen is off, so a client-side nav to a new document carries no stale fade', async () => {
+    // The shell is a shared layout: a SvelteKit client-side navigation (list -> edit) reuses this
+    // same mounted instance rather than remounting it, so without a navigation-scoped reset the
+    // mark set by an earlier document's zen session would carry into a document that never used
+    // zen, fading in its chrome on an ordinary first mount. `beforeNavigate` is what SvelteKit
+    // fires only on a genuine navigation, unlike an effect keyed off the shell's own `data` prop.
+    const countBefore = beforeNavigateCallbacks.length;
+    const screen = await render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+      zen: false,
+    });
+    expect(beforeNavigateCallbacks.length).toBe(countBefore + 1);
+    const guard = beforeNavigateCallbacks[beforeNavigateCallbacks.length - 1];
+    const content = () => screen.container.querySelector('.drawer-content')!;
+    const navigation = {} as unknown as BeforeNavigate;
+
+    await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: true });
+    await expect.poll(() => content().hasAttribute('data-cairn-zen-used')).toBe(true);
+
+    // A navigation that lands while zen is still active never clears the mark out from under an
+    // active session.
+    guard(navigation);
+    expect(content().hasAttribute('data-cairn-zen-used')).toBe(true);
+
+    // Exiting zen, then navigating, clears it: the next document mounts with no inherited mark.
+    await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: false });
+    guard(navigation);
+    await expect.poll(() => content().hasAttribute('data-cairn-zen-used')).toBe(false);
   });
 
   it('lays out the shell as nested drawer regions, not merely styled parts', async () => {

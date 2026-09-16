@@ -280,34 +280,60 @@ interface FrameOffsetProperty {
   declValue: string;
 }
 
-/** The properties the frame-offset declaring rule transitions, from every CSS-family scope. */
-function frameOffsetProperties(ctx: StaticRuleContext): FrameOffsetProperty[] {
-  const out: FrameOffsetProperty[] = [];
-  for (const scope of cssScopeRules(ctx)) {
-    if (!isFrameOffsetSelector(scope.rule.selector)) continue;
-    for (const decl of scope.rule.declarations) {
-      if (!isTransitionListProperty(decl.property)) continue;
-      for (const name of propertyNamesIn(decl.value)) {
-        out.push({ name, declProperty: decl.property, declValue: decl.value });
-      }
+/** The properties one frame-offset declaring CSS rule transitions. */
+function propertiesOf(scope: { rule: { declarations: { property: string; value: string }[] } }): FrameOffsetProperty[] {
+  const declared: FrameOffsetProperty[] = [];
+  for (const decl of scope.rule.declarations) {
+    if (!isTransitionListProperty(decl.property)) continue;
+    for (const name of propertyNamesIn(decl.value)) {
+      declared.push({ name, declProperty: decl.property, declValue: decl.value });
     }
   }
-  return out;
+  return declared;
 }
 
 /**
  * The frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may
- * transition `margin-left`, and only the first such element in a file (one screen) earns the
- * allowance. A second layout property on the declaring rule is never exempt, and a second
- * carrying element loses the allowance entirely, both convicted the same as an ordinary finding.
+ * transition `margin-left`, and only the first such element across the run's files (one screen)
+ * earns the allowance. A second layout property on the declaring rule is never exempt, and a
+ * second carrying element loses the allowance entirely, both convicted the same as an ordinary
+ * finding. The declaring rule and the carrying element are read from independent surfaces (a
+ * shell's own component markup and its packaged CSS file are typically not the same file), so
+ * the carrying search runs across every file the run parses, not just the one the declaring rule
+ * came from.
+ *
+ * The allowance itself depends on finding a real carrying node anywhere in the run: a bound or
+ * interpolated `data-cairn-motion` value, an attribute applied through a spread, or a carrying
+ * component outside `ctx.files` all leave the carrying set empty. When that happens, nothing has
+ * earned the exception, so every declared property, including `margin-left`, is convicted at the
+ * declaring CSS rule's own position rather than silently passing.
  */
 function checkFrameOffset(ctx: StaticRuleContext): Finding[] {
-  const declared = frameOffsetProperties(ctx);
-  if (declared.length === 0) return [];
   const findings: Finding[] = [];
-  for (const file of ctx.files) {
-    const carrying = file.nodes.filter(carriesFrameOffset);
-    for (const [index, node] of carrying.entries()) {
+  const carrying = ctx.files.flatMap((file) =>
+    file.nodes.filter(carriesFrameOffset).map((node) => ({ file, node }))
+  );
+
+  for (const scope of cssScopeRules(ctx)) {
+    if (!isFrameOffsetSelector(scope.rule.selector)) continue;
+    const declared = propertiesOf(scope);
+    if (declared.length === 0) continue;
+
+    if (carrying.length === 0) {
+      for (const property of declared) {
+        const verdict = classifyProperty(property.name);
+        if (verdict === 'ok') continue;
+        findings.push({
+          ruleId: 'motion-property',
+          tier: 'error',
+          ...cssRulePosition(scope),
+          message: propertyMessage(property.declProperty, property.declValue, property.name, verdict),
+        });
+      }
+      continue;
+    }
+
+    for (const [index, { file, node }] of carrying.entries()) {
       const isFirstOnScreen = index === 0;
       for (const property of declared) {
         if (isFirstOnScreen && property.name === FRAME_OFFSET_PROPERTY) continue;

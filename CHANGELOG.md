@@ -427,7 +427,10 @@
   Consumers must: an existing `cairn-audit-disable-next-line motion-band` directive that covered a
   finding inside the old band and outside the new one now silences nothing, which `cairn-audit`
   reports as a dead suppression at error tier that cannot itself be suppressed; delete the directive
-  on upgrade.
+  on upgrade. `reduced-motion`'s own guard condition now also recognizes the bare boolean
+  `@media (prefers-reduced-motion)` form, CSS's own equivalent to `(prefers-reduced-motion: reduce)`,
+  alongside the named `reduce` value it already accepted. Consumers must: nothing; a site already
+  guarding with either form keeps passing, and this only widens which spellings a guard can take.
 
 - The rest of the admin's own shipped motion moves onto the `--cairn-dur-*`/`--cairn-ease-*`
   tokens: the edit page's feedback strip, the `MarkdownEditor` fold chevron and unfold flash, the
@@ -453,13 +456,19 @@
 - Zen mode gains its motion: the persistent frame's margin now transitions, entering at 240ms on
   the entrance curve and leaving one band faster at 150ms on the exit curve, through the same
   `data-cairn-motion="frame-offset"` allowance a consumer's own admin screen can claim on one
-  element per screen. The topbar band, the document title, the editor footer strip, and the
-  mobile action bar each fade at 110ms rather than disappearing without transition, and only on
-  the return from zen: a fresh page load carries no fade, since the shell marks the drawer content
-  zen-used only once zen first turns on. The floating zen chip's entrance carries a 110ms delay so
-  it never leaps into a still-focused editor; its exit now plays for real, at 110ms on the exit
-  curve with no delay, since the chip stays mounted through its own fade instead of vanishing with
-  the rest of the chrome. The editor card's own box is unchanged and does not transition.
+  element per screen, and only after one animation frame has elapsed since mount, so a zen
+  preference restored from localStorage snaps into place at first paint instead of animating it.
+  The topbar band, the document title, the editor footer strip, and the mobile action bar each
+  fade in at 110ms on the return from zen; the departure is instant, since each region leaves the
+  DOM outright rather than animating out of it. Neither fade plays on a plain page load, since the
+  shell marks the drawer content zen-used only once zen first turns on, and clears the mark again
+  on the next navigation (unless zen is still active), so a client-side navigation to a different
+  document never inherits the mark from an earlier one in the same session. The floating zen
+  chip's entrance carries a 110ms delay so it never leaps into a still-focused editor; its exit now
+  plays for real, at 110ms on the exit curve with no delay, since the chip stays mounted through
+  its own fade (with `pointer-events: none` for its duration, so its vacated corner never blocks a
+  click on the chrome returning underneath it) instead of vanishing with the rest of the chrome.
+  The editor card's own box is unchanged and does not transition.
 
 - `npm run check:invisible-craft` now runs `motion-property`, `motion-vocabulary`, and
   `motion-hover-gate` beside its existing `gap-scale`, `token-colors`, and `motion-band`, over a

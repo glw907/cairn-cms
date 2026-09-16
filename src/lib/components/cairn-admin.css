@@ -116,17 +116,25 @@
      shift/entrance pair; leaving it (the margin's return) takes the faster base/exit pair one band
      down, since the trip back is the one the waiting reader wants first. The reduced-motion floor
      below already zeroes transition-duration and transition-delay on every descendant of both
-     theme roots, so this pair snaps under reduced motion with no dedicated guard of its own. */
-  [data-cairn-motion="frame-offset"] {
+     theme roots, so this pair snaps under reduced motion with no dedicated guard of its own.
+     Both rules also require data-cairn-frame-ready, a marker the shell sets one animation frame
+     after mount: a reader whose zen preference restores from localStorage carries an SSR/first-
+     paint frame at the non-zen margin that then snaps to the zen margin the instant hydration's
+     effects flush, and with no such gate that snap animated too, a 224px slide during hydration
+     the spec's own case table rules must snap instead. Deferring the marker past first paint means
+     the transition only ever plays for a toggle a reader actually triggers after mount. */
+  [data-cairn-motion="frame-offset"][data-cairn-frame-ready] {
     transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
   }
-  [data-cairn-motion="frame-offset"][data-cairn-frame-open] {
+  [data-cairn-motion="frame-offset"][data-cairn-frame-open][data-cairn-frame-ready] {
     transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
   }
 
   /* The chrome-region entrance fade, scoped off a page's first paint. data-cairn-zen-used lives
      on the same drawer content element the frame offset above keys on, set by the shell the
-     first time zen turns on and left in place until the next navigation. Nesting the rule under
+     first time zen turns on and cleared again on the next navigation (unless zen is still active),
+     so a client-side navigation to a fresh document never inherits the mark from an earlier one in
+     the same SPA session. Nesting the rule under
      that attribute, rather than under mount alone, is what keeps a fresh page load from ever
      seeing this fade: @starting-style only ever matches a chrome region's first style
      resolution, and every admin page mounts these regions once at load regardless of whether
@@ -330,12 +338,12 @@
   --default-transition-duration: var(--cairn-dur-base);
   --default-transition-timing-function: var(--cairn-ease-standard);
 
-  /* See the light root for the full rationale: the same frame-offset exception, unchanged by
-     color scheme. */
-  [data-cairn-motion="frame-offset"] {
+  /* See the light root for the full rationale: the same frame-offset exception, gated the same
+     way behind data-cairn-frame-ready, unchanged by color scheme. */
+  [data-cairn-motion="frame-offset"][data-cairn-frame-ready] {
     transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
   }
-  [data-cairn-motion="frame-offset"][data-cairn-frame-open] {
+  [data-cairn-motion="frame-offset"][data-cairn-frame-open][data-cairn-frame-ready] {
     transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
   }
 

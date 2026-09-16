@@ -298,7 +298,7 @@ describe('motion-property: the frame-offset exception', () => {
     expect(findings[0].message).toContain('margin-left');
   });
 
-  it('never grants the allowance to a bound or interpolated attribute value', () => {
+  it('never grants the allowance to a bound or interpolated attribute value, and convicts margin-left instead', () => {
     const source = ['<script>', '  let mode = $state(\'frame-offset\');', '</script>', '<div data-cairn-motion={mode}></div>'].join(
       '\n'
     );
@@ -308,7 +308,9 @@ describe('motion-property: the frame-offset exception', () => {
       config: CONFIG,
       cssFiles: [cssFile(FRAME_OFFSET_RULE)],
     });
-    expect(findings).toEqual([]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('margin-left');
+    expect(findings[0].file).toBe('src/lib/components/cairn-admin.css');
   });
 });
 

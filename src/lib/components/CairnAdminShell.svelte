@@ -15,6 +15,7 @@ discriminant, not the fields, gates the chrome).
 -->
 <script lang="ts">
   import { onMount, setContext, tick, untrack, type Component, type Snippet } from 'svelte';
+  import { beforeNavigate } from '$app/navigation';
   import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
@@ -537,13 +538,43 @@ discriminant, not the fields, gates the chrome).
   let topbar = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(topbar);
 
-  // Whether zen has been entered at least once since this shell mounted. Absent (false) at a
-  // page's first paint, so the chrome regions' entrance fade below never plays on a plain load;
-  // true from the first `topbar.zen` flip onward, so the fade plays only on the return trip out
-  // of zen, which is the one that fired it before this flag existed.
+  // Whether zen has been entered at least once since this shell mounted OR since the most recent
+  // navigation, whichever is more recent. Absent (false) at a page's first paint, so the chrome
+  // regions' entrance fade below never plays on a plain load; true from the first `topbar.zen`
+  // flip onward, so the fade plays only on the return trip out of zen. A SvelteKit client-side
+  // navigation reuses this same mounted shell instance (the layout never remounts), so without the
+  // reset below the flag would stay true for the rest of the SPA session once a reader used zen
+  // anywhere: navigating list -> edit would then fade in the document title, footer strip, and
+  // mobile action bar on an ordinary first mount of that document, which is not a return from zen.
+  // `beforeNavigate` fires only on a genuine SvelteKit navigation, unlike an effect keyed on the
+  // shell's own `data` prop (which also re-fires on a same-route data refresh, and in this
+  // component's own test harness on every rerender regardless of route), so it is what clears the
+  // flag unless zen is active right now, in which case a navigation that happens to land mid-zen
+  // never clears it out from under an active session.
   let zenUsed = $state(false);
   $effect(() => {
     if (topbar.zen) zenUsed = true;
+  });
+  beforeNavigate(() => {
+    if (!topbar.zen) zenUsed = false;
+  });
+
+  // Whether the frame's first paint has already happened, so the frame-offset transition
+  // (cairn-admin.css) can be gated off it: `createEditorPreferences`-style localStorage-restored
+  // state (here, zen's own persisted flag reaching the shell through `topbar.zen`) flips inside an
+  // effect AFTER the first render, so a reader who left zen on carries an SSR/first-paint frame at
+  // its non-zen margin that then snaps to its zen margin the instant hydration's effects flush.
+  // With the transition rule unconditional, that snap became a 224px animated slide during
+  // hydration, which the spec's own case table rules must snap instead (first paint is never
+  // animated). One deferred animation frame after mount is enough separation from that first
+  // paint for the browser to have already committed it, so a user-driven toggle after this point
+  // is the only thing the transition ever plays for.
+  let frameReady = $state(false);
+  onMount(() => {
+    const raf = requestAnimationFrame(() => {
+      frameReady = true;
+    });
+    return () => cancelAnimationFrame(raf);
   });
 
   // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
@@ -710,6 +741,7 @@ discriminant, not the fields, gates the chrome).
       class:xl:ml-56={isDeskRoute && !topbar.zen}
       data-cairn-motion="frame-offset"
       data-cairn-frame-open={!topbar.zen || undefined}
+      data-cairn-frame-ready={frameReady || undefined}
       data-cairn-zen-used={zenUsed || undefined}
       inert={isDrawerOverlay}
     >

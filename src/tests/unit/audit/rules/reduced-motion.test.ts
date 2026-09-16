@@ -68,6 +68,23 @@ describe('reduced-motion', () => {
     ).toBe(true);
   });
 
+  // The bare boolean form, `@media (prefers-reduced-motion)` with no value, is CSS's own equivalent
+  // to `(prefers-reduced-motion: reduce)`: it must count as a valid guard, not fall through to the
+  // inverse-gate exclusion, which only names `no-preference` specifically.
+  it('passes a selector covered by the bare boolean prefers-reduced-motion form', () => {
+    const findings = check(
+      component(
+        [
+          '.card { transition: color 200ms ease; }',
+          '@media (prefers-reduced-motion) {',
+          '  .card { transition: none; }',
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
   // cairn-admin.css's own shipped guard is a blanket universal-descendant selector, not a selector
   // named by text, and .cairn-caret's own `transition` shorthand is the shorthand-counts-as-longhand
   // case: the floor declares only `transition-duration`.

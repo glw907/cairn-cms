@@ -10,10 +10,13 @@ import type { CompiledSheet } from '../../sheet.js';
 
 const MOTION_PROPERTY =
   /^(transition|transition-property|transition-duration|transition-timing-function|transition-delay|animation|animation-duration|animation-delay|animation-timing-function)$/;
-// Matches only the `reduce` form of the media feature. `(prefers-reduced-motion: no-preference)`
-// is the inverse gate: a rule inside it runs ONLY when the visitor has NOT asked for reduced
-// motion, so it guards nothing a reduced-motion visitor would see, and must never count as one.
-const REDUCED_MOTION_CONDITION = /prefers-reduced-motion:\s*reduce\b/;
+// Matches the `reduce` form of the media feature and CSS's bare boolean form, which the spec
+// defines as equivalent to `reduce`: `@media (prefers-reduced-motion)` with no value at all.
+// Excludes only `(prefers-reduced-motion: no-preference)`, the inverse gate: a rule inside it runs
+// ONLY when the visitor has NOT asked for reduced motion, so it guards nothing a reduced-motion
+// visitor would see, and must never count as one. The negative lookahead is what lets the bare
+// form match while still excluding the inverse gate, since the bare form names no value to require.
+const REDUCED_MOTION_CONDITION = /prefers-reduced-motion(?!\s*:\s*no-preference)/;
 
 /** Whether a declaration's property is one that gives an element motion. */
 export function isMotionProperty(property: string): boolean {

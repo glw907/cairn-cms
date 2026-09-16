@@ -104,7 +104,12 @@ const AXIS_CONTEXT_OPTIONS: Record<EmulationAxis, { reducedMotion?: 'reduce' }> 
  * what keeps its context and page-load count identical to a run with no axis concept at all.
  */
 function neededAxes(rules: RenderedRule[]): EmulationAxis[] {
-  const axes = new Set<EmulationAxis>();
+  // 'default' is seeded unconditionally, not only discovered from a rule with no axes of its own:
+  // the allowlist selector probe (below, in the main loop) is scoped to `axis === 'default'`, so a
+  // `--rule`-scoped run whose only selected rule declares a non-default axis (motion-reduced-delay,
+  // say) must still open a default-axis pass, or the probe never runs and every allowlist entry
+  // reports dead or stale against a run that never actually looked.
+  const axes = new Set<EmulationAxis>(['default']);
   for (const rule of rules) for (const axis of rule.axes ?? ['default']) axes.add(axis);
   return [...axes];
 }
@@ -309,11 +314,13 @@ export async function runRendered(
     if (allSettledOnLogin) throw redirectTrapRefusal(loginIdentity);
   }
 
+  const ranRuleIds = new Set(rules.map((rule) => rule.id));
   const { findings, suppressed } = resolveRenderedFindings(
     raw,
     visits,
     config.renderedAllowlist,
-    new Map(rules.map((rule) => [rule.id, rule.tier]))
+    new Map(rules.map((rule) => [rule.id, rule.tier])),
+    ranRuleIds
   );
   const byPosition = (a: Finding, b: Finding) => (a.file === b.file ? 0 : a.file.localeCompare(b.file));
   return {

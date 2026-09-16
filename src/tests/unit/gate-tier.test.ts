@@ -34,6 +34,10 @@ describe('classifyPath', () => {
     expect(classifyPath('src/lib/components/cairn-admin.css')).toBe('admin-visual');
   });
 
+  it('classifies a shared admin-toolkit component as admin-visual', () => {
+    expect(classifyPath('src/lib/admin-toolkit/OfficeList.svelte')).toBe('admin-visual');
+  });
+
   it('classifies the render seam, theme/chassis CSS, a public route, and a snapshot as full', () => {
     expect(classifyPath('src/lib/render/markdown.ts')).toBe('full');
     expect(classifyPath('examples/showcase/src/chassis/tokens.css')).toBe('full');
@@ -42,13 +46,11 @@ describe('classifyPath', () => {
     expect(classifyPath('examples/showcase/e2e/site-visual.spec.ts-snapshots/home-320.png')).toBe('full');
   });
 
-  it('classifies a component a public page imports (showcase src/lib) as full', () => {
-    expect(classifyPath('examples/showcase/src/lib/PostCard.svelte')).toBe('full');
-  });
-
-  it('returns null for a path none of the five triggers names', () => {
+  it('returns null for a path none of the five triggers names, including a showcase src/lib path (the directory does not exist; a public-page component there would fall to the caller-side full default)', () => {
     expect(classifyPath('package.json')).toBeNull();
     expect(classifyPath('.github/workflows/test.yml')).toBeNull();
+    expect(classifyPath('examples/showcase/src/lib/PostCard.svelte')).toBeNull();
+    expect(classifyPath('templates/waymark/src/hooks.server.ts')).toBeNull();
   });
 });
 
@@ -100,6 +102,13 @@ describe('resolveTier', () => {
 
   it('treats an unclassified path as full in the overall resolution', () => {
     expect(resolveTier(['package.json'])).toEqual({ tier: 'full', decidingPaths: ['package.json'] });
+  });
+
+  it('treats an unclassified showcase src/lib path as full too, with no dedicated rule for it', () => {
+    expect(resolveTier(['examples/showcase/src/lib/PostCard.svelte'])).toEqual({
+      tier: 'full',
+      decidingPaths: ['examples/showcase/src/lib/PostCard.svelte'],
+    });
   });
 });
 
@@ -165,6 +174,30 @@ describe('TIER_ORDER and TIER_GATES', () => {
   it('names all five tiers, ascending severity, each with its own gate string', () => {
     expect(TIER_ORDER).toEqual(['docs', 'scripts', 'engine', 'admin-visual', 'full']);
     for (const tier of TIER_ORDER) expect(typeof TIER_GATES[tier]).toBe('string');
+  });
+
+  it('scripts and engine share the identical gate string', () => {
+    expect(TIER_GATES.scripts).toBe(TIER_GATES.engine);
+  });
+
+  it('every tier above docs is a strict superset of the tier below it', () => {
+    expect(TIER_GATES.scripts.startsWith(TIER_GATES.docs)).toBe(true);
+    expect(TIER_GATES.scripts.length).toBeGreaterThan(TIER_GATES.docs.length);
+    expect(TIER_GATES['admin-visual'].startsWith(TIER_GATES.scripts)).toBe(true);
+    expect(TIER_GATES['admin-visual'].length).toBeGreaterThan(TIER_GATES.scripts.length);
+    expect(TIER_GATES.full.startsWith(TIER_GATES['admin-visual'])).toBe(true);
+    expect(TIER_GATES.full.length).toBeGreaterThan(TIER_GATES['admin-visual'].length);
+  });
+
+  it('the docs gate names every docs-tier check, including check:reference:signatures', () => {
+    expect(TIER_GATES.docs).toBe(
+      'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts',
+    );
+  });
+
+  it('the full gate runs the admin-visual spec once inside the admin-visual string, then the whole showcase suite', () => {
+    expect(TIER_GATES.full).toContain('test:e2e -- admin-visual.spec.ts && npm run check:comments');
+    expect(TIER_GATES.full.endsWith('npm --prefix examples/showcase run test:e2e')).toBe(true);
   });
 });
 

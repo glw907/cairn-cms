@@ -13,22 +13,37 @@ git itself fails, so the caller falls back to a fixed gate string.
 
 ## The five tiers
 
-A path is checked against these five triggers in order; the classifier's own `classifyPath`
-returns the first one a path matches. A diff with paths in more than one tier resolves to the
-highest tier present, named by `TIER_ORDER` (ascending): `docs`, `scripts`, `engine`,
-`admin-visual`, `full`.
+The classifier's own `classifyPath` checks a path against these five triggers HIGHEST TIER FIRST
+(`full`, then `admin-visual`, `engine`, `scripts`, `docs` last) and returns the first one it
+matches: `full`'s triggers name specific, narrow paths that a broader `src/lib/**` or `docs/**`
+rule would otherwise swallow, so they have to be tried before the broader tiers get a chance.
+`TIER_ORDER`'s own list is the opposite direction, ASCENDING (`docs`, `scripts`, `engine`,
+`admin-visual`, `full`), and is used only to rank a diff with paths in more than one tier: the
+diff resolves to the highest tier present.
+
+Each tier's gate string is a strict superset of every tier below it: `scripts`/`engine` add
+`check && test` on top of the `docs` string, `admin-visual` adds the admin-visual spec run on top
+of that, and `full` adds the remaining CI-only checks plus the whole showcase e2e suite on top of
+`admin-visual`.
 
 | Tier | Trigger (glob, matched per changed path) | Gate string |
 | --- | --- | --- |
-| `docs` | `docs/**`, any `*.md`, `CHANGELOG.md` | `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:facts` |
-| `scripts` | `scripts/**`, `src/tests/**`, any `*.test.ts`/`*.spec.ts` | `npm run check && npm test` |
-| `engine` | `src/lib/**/*.ts`, excluding `src/lib/components/**` | `npm run check && npm test` |
-| `admin-visual` | `src/lib/components/**` (Svelte components and `cairn-admin.css`) | `npm run check && npm test && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts` |
-| `full` | `src/lib/render/**` (the render seam), `examples/showcase/src/chassis/**` and `examples/showcase/src/theme/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), `examples/showcase/src/lib/**/*.svelte` (a component a public page imports), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | the repo's full gate string: `npm run check && npm test && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e` |
+| `docs` | `docs/**`, any `*.md`, `CHANGELOG.md` | `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts` |
+| `scripts` | `scripts/**`, `src/tests/**`, any `*.test.ts`/`*.spec.ts` | docs string + `&& npm run check && npm test` |
+| `engine` | `src/lib/**/*.ts`, excluding `src/lib/components/**` and `src/lib/admin-toolkit/**` | same string as `scripts` |
+| `admin-visual` | `src/lib/components/**` (Svelte components and `cairn-admin.css`) or `src/lib/admin-toolkit/**` (the shared admin-table components) | scripts/engine string + `&& npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts` |
+| `full` | `src/lib/render/**` (the render seam), `examples/showcase/src/chassis/**` and `examples/showcase/src/theme/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e` |
 
-A path outside all five globs (a repo-root config file, a GitHub Actions workflow, anything not
-named above) resolves to `full`: it is exactly the case the table does not cover, and an
-unnecessary full run costs time, while a missed full-tier path costs a broken release.
+A public-page component that is not under one of `full`'s own named directories (for example a
+theme component under `examples/showcase/src/theme/**`, or a route file under
+`examples/showcase/src/routes/(site)/**`) is already caught by those existing `full` triggers;
+there is no separate "component a public page imports" rule, since `examples/showcase` carries no
+`src/lib/**` directory today.
+
+A path outside all five globs (a repo-root config file, a GitHub Actions workflow, a
+`templates/waymark/**` file, anything not named above) resolves to `full`: it is exactly the case
+the table does not cover, and an unnecessary full run costs time, while a missed full-tier path
+costs a broken release.
 
 ## The paint floor and the pin
 
@@ -39,7 +54,12 @@ lower. It never lowers an already-higher tier (`engine` under `--paint yes` neve
 
 `--pin <tier>` overrides the computed tier entirely, in either direction, and reports as `pin`
 rather than `computed`. A plan task pins a tier when its diff cannot size the change itself (for
-example, a token value a later pass will wire into a component that does not exist yet).
+example, a token value a later pass will wire into a component that does not exist yet). `--pin`
+beats the paint floor: `--pin docs --paint yes` still runs the `docs` gate, since a pin is a
+deliberate override, not another input the floor ranks against. `--pin docs` is the standing
+escape hatch for a comment-only workflow edit (a `.github/workflows/**` file, which otherwise
+defaults to `full` as an unrecognized path) that a task's own review has confirmed changes no
+behavior.
 
 ## Verified against the showcase Playwright config (2026-09-15)
 

@@ -11,14 +11,17 @@
 // stdout gets a shell-safe empty string rather than a bogus gate command; the runner's own prompt
 // falls back to the plan's gate string in that case.
 //
-// Five tiers, in ascending severity (TIER_ORDER): a path is classified against docs, scripts,
-// engine, admin-visual, and full in that order and the FIRST one it matches wins, since each is
-// strictly narrower than the ones below it (docs/scripts/engine name only their own tree; full's
-// triggers are the ones a narrower rule would otherwise miss). A diff with paths in more than one
-// tier resolves to the highest tier present. A path this classifier does not recognize (a repo-root
-// config file, a workflow file, anything outside the five named trees) is conservative-defaulted to
-// full: an unclassified path is exactly the case the table does not cover, and a missed full-tier
-// path costs a broken release while an unnecessary full run only costs time.
+// Five tiers. classifyPath checks a path against them in DESCENDING severity, full first, then
+// admin-visual, engine, scripts, and docs last, returning the first match: full's triggers name
+// specific, narrow paths (the render seam, theme/chassis CSS, a public route, a snapshot file)
+// that a broader src/lib/** or docs/** rule would otherwise swallow, so they have to be tried
+// before the broader tiers get a chance. TIER_ORDER, by contrast, lists the five tiers ASCENDING
+// (docs first, full last) and is used only for ranking: resolveTier takes the highest-ranked tier
+// any path in a diff classifies to, and the paint floor compares against it the same way. A path
+// this classifier does not recognize (a repo-root config file, a workflow file, anything outside
+// the five named trees) is conservative-defaulted to full: an unclassified path is exactly the
+// case the table does not cover, and a missed full-tier path costs a broken release while an
+// unnecessary full run only costs time.
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,18 +29,25 @@ import { repoRoot } from '../repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 
+// The five gate strings are cumulative, each a strict superset of every tier below it, built by
+// concatenation rather than five independent literals so the superset relationship cannot drift.
+const DOCS_GATE =
+  'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts';
+const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test`;
+const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
+const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
+
 /**
- * The gate string for every tier, in the exact wording ROADMAP.md:296 and the plan table give.
+ * The gate string for every tier. `scripts` and `engine` run the identical string (both are
+ * "prove the code and its tests"); each tier's string is a superset of the one below it.
  * @type {Record<string, string>}
  */
 export const TIER_GATES = {
-  docs: 'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:facts',
-  scripts: 'npm run check && npm test',
-  engine: 'npm run check && npm test',
-  'admin-visual':
-    'npm run check && npm test && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts',
-  full:
-    'npm run check && npm test && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e',
+  docs: DOCS_GATE,
+  scripts: SCRIPTS_GATE,
+  engine: SCRIPTS_GATE,
+  'admin-visual': ADMIN_VISUAL_GATE,
+  full: FULL_GATE,
 };
 
 /** Tier names, ascending severity; `resolveTier` and the paint floor both rank against this. */
@@ -58,12 +68,11 @@ export function classifyPath(path) {
     path.startsWith('examples/showcase/src/theme/') ||
     path.startsWith('examples/showcase/src/routes/(site)/') ||
     path.includes('-snapshots/') ||
-    /\.(png|jpe?g|webp)$/.test(path) ||
-    (path.startsWith('examples/showcase/src/lib/') && path.endsWith('.svelte'))
+    /\.(png|jpe?g|webp)$/.test(path)
   ) {
     return 'full';
   }
-  if (path.startsWith('src/lib/components/')) {
+  if (path.startsWith('src/lib/components/') || path.startsWith('src/lib/admin-toolkit/')) {
     return 'admin-visual';
   }
   if (path.startsWith('src/lib/') && path.endsWith('.ts')) {

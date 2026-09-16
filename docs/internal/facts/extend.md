@@ -46,7 +46,7 @@ Harvested 2026-09-15 from docs/extend/*, tightened the same day. Agent-facing; n
 - One bad island (unregistered directive name, a prop that fails to parse, a component that throws on mount) is isolated: the static fallback stays in place for that boundary, and every other island still mounts. Source: `src/lib/islands/index.ts` `mountIsland` (per-node try/catch restoring `fallback` on mount failure; unknown directive name skipped via `if (!Comp) continue`). [verified]
 - `unmount` runs with `outro: false` so teardown is synchronous and deterministic on navigation. Source: `src/lib/islands/index.ts` `teardown()` (`unmount(instance, { outro: false })`). [verified]
 - An empty islands registry keeps the `@glw907/cairn-cms/islands` dynamic import out of a static site's bundle entirely. Source: page's root-layout example (`if (!islands || Object.keys(islands).length === 0) return;` before dynamic import) plus `islands/index.ts` module comment ("A site imports this dynamically, gated on a non-empty registry, so a static site never ships it"). [verified]
-- The edit page's preview frame is sandboxed and never runs scripts, so it always shows the static fallback, never the mounted island component; verify a live island on the deployed page or `npm run preview`. Source: `src/lib/components/EditPage.svelte:2076` (`<iframe sandbox="" ... srcdoc={previewDoc}>`). [verified]
+- The edit page's preview frame is sandboxed and never runs scripts, so it always shows the static fallback, never the mounted island component; verify a live island on the deployed page or `npm run preview`. Source: `src/lib/components/EditPage.svelte:2116` (`<iframe sandbox="" ... srcdoc={previewDoc}>`). [verified]
 
 ## docs/extend/add-cairn-to-a-sveltekit-app.md
 

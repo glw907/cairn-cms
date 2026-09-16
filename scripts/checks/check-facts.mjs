@@ -30,14 +30,17 @@
 // directories). A pointer whose basename is not unique fails rather than guessing.
 //
 // A pointer that carries a quoted anchor (a backtick-quoted snippet in parens right after the
-// pointer) is checked against the WHOLE resolved file's text, not only the cited line: this
+// pointer) is checked against a WINDOW around the cited line range, not the exact line: this
 // container's own anchors are frequently a paraphrase or an elided quote of a multi-line block
-// (an ellipsis `...` standing in for omitted code, a citation one line off from the token it
-// names), not a verbatim single-line substring, so per-line exact matching produces false
-// positives against real, reviewed facts. Checking that every identifier-shaped token (3+ word
-// characters) the anchor names appears somewhere in the file is a weaker proof than per-line
-// verification, but it is the level this container's authored style actually supports, and it
-// still catches an anchor naming a symbol the file does not carry at all.
+// (an ellipsis `...` standing in for omitted code), and an occasional citation lands a few lines
+// off the token it names, so per-line exact matching produces false positives against real,
+// reviewed facts. The window is the cited range expanded by 10 lines on each side (clamped to the
+// file); checking that every identifier-shaped token (3+ word characters) the anchor names
+// appears somewhere in that window is a weaker proof than per-line verification, but it is the
+// level this container's authored style actually supports, and it still catches an anchor naming
+// a symbol nowhere near the cited line (measured against every anchored pointer in the real
+// container: a whole-file check passed all of them, a window this size caught the two whose
+// citation had drifted a full function away).
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,6 +57,9 @@ export const TAG_VOCABULARY = ['verified', 'docs-drift', 'external', 'vendor', '
 
 const TAG_RE = new RegExp('\\[(' + TAG_VOCABULARY.join('|') + ')\\b[^\\]]*\\]', 'g');
 const ANY_BRACKET_TAG_RE = /\[([a-zA-Z-]+)(:[^\]]*)?\]/g;
+
+/** Lines on each side of a pointer's cited range an anchor's tokens may fall within. */
+const ANCHOR_WINDOW = 10;
 
 const EXCLUDED_DIRS = new Set([
   'node_modules',
@@ -157,7 +163,8 @@ export function checkTag(bulletText) {
   if (masked.slice(end).trim().length > 0) {
     return { ok: false, reason: 'the status tag is not the last thing on the bullet' };
   }
-  const [tagName, qualifier] = [match[1], match[0].slice(1 + match[1].length, -1)];
+  const tagName = match[1];
+  const qualifier = match[0].slice(1 + tagName.length, -1);
   if (qualifier.length > 0 && !qualifier.startsWith(':')) {
     return { ok: false, reason: `tag "[${tagName}...]" uses a space qualifier; use the colon form "[${tagName}: ...]"` };
   }
@@ -202,9 +209,12 @@ export function buildBasenameIndex(root) {
 }
 
 /**
- * Resolve a `Source:` pointer's path against the repo root: a literal path first, then, when
- * the path carries no directory of its own, a unique basename match. Returns `null` when neither
- * resolves (missing entirely, or a bare filename with zero or more than one match).
+ * Resolve a `Source:` pointer's path against the repo root: a literal path first, then, ONLY
+ * when the pointer names no directory of its own (a bare filename), a unique basename match. A
+ * pointer that does carry a directory and does not exist there fails outright rather than
+ * falling back: the basename fallback exists for the container's bare-filename shorthand ("the
+ * file just named above, in the same directory"), not to rescue a stale, fully-qualified path
+ * whose basename happens to have relocated elsewhere in the repo under a same-named file.
  * @param {string} pointerPath
  * @param {string} root
  * @param {Map<string, string[]>} basenameIndex
@@ -212,8 +222,8 @@ export function buildBasenameIndex(root) {
  */
 export function resolvePointerPath(pointerPath, root, basenameIndex) {
   if (existsSync(join(root, pointerPath))) return pointerPath;
-  const basename = pointerPath.split('/').pop() ?? pointerPath;
-  const matches = basenameIndex.get(basename);
+  if (pointerPath.includes('/')) return null;
+  const matches = basenameIndex.get(pointerPath);
   if (matches && matches.length === 1) return matches[0];
   return null;
 }
@@ -276,6 +286,47 @@ function emptyCounts() {
 }
 
 /**
+ * The lines a pointer's anchor is allowed to match against: the cited range expanded by
+ * `ANCHOR_WINDOW` lines on each side, clamped to the file.
+ * @param {number[]} citedLines
+ * @param {number} fileLineCount
+ * @returns {[number, number]} A 1-indexed, inclusive `[start, end]` pair.
+ */
+function anchorWindow(citedLines, fileLineCount) {
+  const start = Math.max(1, Math.min(...citedLines) - ANCHOR_WINDOW);
+  const end = Math.min(fileLineCount, Math.max(...citedLines) + ANCHOR_WINDOW);
+  return [start, end];
+}
+
+/**
+ * Validate one `Source:` pointer: its path resolves, every cited line is in range, and, when it
+ * carries an anchor, every anchor token appears within the anchor window. Returns the one defect
+ * string this pointer produces, or `null` when it is clean.
+ * @param {Pointer} pointer
+ * @param {string} root
+ * @param {Map<string, string[]>} basenameIndex
+ * @returns {string | null}
+ */
+function validatePointer(pointer, root, basenameIndex) {
+  const resolved = resolvePointerPath(pointer.path, root, basenameIndex);
+  if (!resolved) return `unresolved path "${pointer.path}"`;
+
+  const fileLines = readFileSync(join(root, resolved), 'utf8').split('\n');
+  const citedLines = expandLineSpec(pointer.lineSpec);
+  const outOfRange = citedLines.some((n) => n < 1 || n > fileLines.length);
+  if (outOfRange) {
+    return `"${pointer.path}:${pointer.lineSpec}" is out of range (file has ${fileLines.length} lines)`;
+  }
+
+  if (!pointer.anchor) return null;
+  const [windowStart, windowEnd] = anchorWindow(citedLines, fileLines.length);
+  const window = fileLines.slice(windowStart - 1, windowEnd).join('\n');
+  const missing = anchorTokens(pointer.anchor).filter((t) => !window.includes(t));
+  if (missing.length === 0) return null;
+  return `anchor for "${pointer.path}:${pointer.lineSpec}" names ${JSON.stringify(missing)}, not found within ${ANCHOR_WINDOW} lines of the cited range`;
+}
+
+/**
  * Validate one bullet's grammar and, for a `[verified]`/`[docs-drift]`/etc. bullet, every
  * `Source:` pointer it carries. Returns the defects found (empty when the bullet is clean) and,
  * when the tag itself was valid, the tag name for the caller's running count.
@@ -297,29 +348,8 @@ export function validateBullet(bullet, root, basenameIndex) {
   if (sourceIdx !== -1) {
     const sourceField = bullet.text.slice(sourceIdx);
     for (const pointer of extractPointers(sourceField)) {
-      const resolved = resolvePointerPath(pointer.path, root, basenameIndex);
-      if (!resolved) {
-        defects.push(`unresolved path "${pointer.path}"`);
-        continue;
-      }
-      const fileText = readFileSync(join(root, resolved), 'utf8');
-      const fileLineCount = fileText.split('\n').length;
-      const lines = expandLineSpec(pointer.lineSpec);
-      const outOfRange = lines.filter((n) => n < 1 || n > fileLineCount);
-      if (outOfRange.length > 0) {
-        defects.push(
-          `"${pointer.path}:${pointer.lineSpec}" is out of range (file has ${fileLineCount} lines)`,
-        );
-        continue;
-      }
-      if (pointer.anchor) {
-        const missing = anchorTokens(pointer.anchor).filter((t) => !fileText.includes(t));
-        if (missing.length > 0) {
-          defects.push(
-            `anchor for "${pointer.path}:${pointer.lineSpec}" names ${JSON.stringify(missing)}, not found in the file`,
-          );
-        }
-      }
+      const defect = validatePointer(pointer, root, basenameIndex);
+      if (defect) defects.push(defect);
     }
   }
 
@@ -336,6 +366,18 @@ export function factsFiles(factsDir) {
   return readdirSync(factsDir)
     .filter((name) => name.endsWith('.md') && name !== 'README.md')
     .sort();
+}
+
+/**
+ * A tag-count record as one line: `verified 66, candidate 12` (a zero-count tag is omitted).
+ * @param {TagCounts} counts
+ * @returns {string}
+ */
+function formatCounts(counts) {
+  return Object.entries(counts)
+    .filter(([, n]) => n > 0)
+    .map(([tag, n]) => `${tag} ${n}`)
+    .join(', ');
 }
 
 function main() {
@@ -357,12 +399,7 @@ function main() {
         allDefects.push(`docs/internal/facts/${file}:${bullet.line}: ${defect}`);
       }
     }
-    report.push(`  ${file}: ${bullets.length} facts (${
-      Object.entries(counts)
-        .filter(([, n]) => n > 0)
-        .map(([tag, n]) => `${tag} ${n}`)
-        .join(', ')
-    })`);
+    report.push(`  ${file}: ${bullets.length} facts (${formatCounts(counts)})`);
   }
 
   if (allDefects.length === 0) {

@@ -133,6 +133,14 @@ describe('resolvePointerPath and buildBasenameIndex, against the check-facts fix
   it('returns null for a path that resolves nowhere', () => {
     expect(resolvePointerPath('does-not-exist.ts', FIXTURES_DIR, index)).toBeNull();
   });
+
+  it('resolves a bare filename via a unique basename match in a nested directory', () => {
+    expect(resolvePointerPath('only-here.ts', FIXTURES_DIR, index)).toBe('nested/only-here.ts');
+  });
+
+  it('does not fall back for a pointer that carries a directory, even if its basename is unique elsewhere', () => {
+    expect(resolvePointerPath('wrong-dir/only-here.ts', FIXTURES_DIR, index)).toBeNull();
+  });
 });
 
 describe('validateBullet, against the check-facts fixtures', () => {
@@ -163,7 +171,7 @@ describe('validateBullet, against the check-facts fixtures', () => {
       [expect.stringContaining('colon form')],
       [expect.stringContaining('unresolved path')],
       [expect.stringContaining('out of range')],
-      [expect.stringContaining('not found in the file')],
+      [expect.stringContaining('not found within')],
     ]);
   });
 
@@ -176,6 +184,25 @@ describe('validateBullet, against the check-facts fixtures', () => {
     // main() filters it out before checking; this asserts the filter itself finds it, proving
     // the section-skip rule fires on a bullet that would otherwise fail every other rule too.
     expect(skipped[0].text).toContain('missing its Source field entirely');
+  });
+});
+
+describe('the anchor window, against the check-facts fixtures', () => {
+  const index = buildBasenameIndex(FIXTURES_DIR);
+
+  it('accepts an anchor token within 10 lines of the cited line', () => {
+    const bullet = extractBullets(
+      '## x\n- A claim. Source: `windowed.ts:15` (`NEARBY_TOKEN`). [verified]',
+    )[0];
+    expect(validateBullet(bullet, FIXTURES_DIR, index).defects).toEqual([]);
+  });
+
+  it('rejects an anchor token more than 10 lines from the cited line', () => {
+    const bullet = extractBullets(
+      '## x\n- A claim. Source: `windowed.ts:15` (`FAR_AWAY_TOKEN`). [verified]',
+    )[0];
+    const { defects } = validateBullet(bullet, FIXTURES_DIR, index);
+    expect(defects).toEqual([expect.stringContaining('not found within 10 lines')]);
   });
 });
 

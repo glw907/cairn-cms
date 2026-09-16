@@ -21,11 +21,14 @@ start, never a second bracket outside a code span or a quoted snippet). A qualif
 uses the colon form only: `[tag: qualifier text]`, never a space (`[tag qualifier text]` is not
 valid). A fact with a compound story (partly confirmed, partly not) still gets one tag, with the
 nuance folded into that tag's own qualifier text (`[verified: the core claim traces to X; a
-secondary detail was not independently re-checked]`) rather than a second bracket.
+secondary detail was not independently re-checked]`) rather than a second bracket. A markdown
+link (`[text](url)`) inside a bullet's own prose trips the same rule, since its `[text]` reads as
+a stray bracket outside any code span; write the link as a bare URL or a code span instead.
 
-A `Source:` naming a code path resolves as `path:line` or `path:line-line`; a `Source:` naming
-only a doc page or a symbol with no line is also accepted, but see the `[verified]` entry below
-for what that means for the tag.
+A `Source:` naming a code path resolves as `path:line` or `path:line-line`; a comma-separated list
+of either form (`path:22,63` or `path:22-24,63`) names more than one line or range in the same
+file. A `Source:` naming only a doc page or a symbol with no line is also accepted, but see the
+`[verified]` entry below for what that means for the tag.
 
 Two non-fact headings exist per file, both skipped by the gate: `## Harvest record` (the
 cross-page-duplicate index, the "not harvested as a fact" notes, and the per-slice harvest

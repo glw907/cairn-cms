@@ -13,7 +13,7 @@ plan-approval gate is closed; execution needs no further read.
 **Where it runs:** worktree `.claude/worktrees/docs-to-facts`, branch `docs-to-facts` off `main`
 at `c5ec36d8` or later. PR to `main` at close.
 
-**Token ceiling:** 1.5M subagent tokens. **Checkpoint interval:** every task (STATUS written at
+**Token ceiling:** 2.5M subagent tokens (raised from 1.5M by Geoff at the checkpoint, 2026-09-15). **Checkpoint interval:** every task (STATUS written at
 each boundary; the pass is short enough that the default four would mean no checkpoint).
 
 **Engine consultation:** no engine asks (this is the engine).

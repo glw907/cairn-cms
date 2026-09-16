@@ -95,12 +95,7 @@ export function classifyPath(path) {
  */
 export function resolveTier(paths) {
   const classified = paths.map((path) => ({ path, tier: classifyPath(path) ?? 'full' }));
-  let rank = -1;
-  for (const c of classified) {
-    const r = TIER_ORDER.indexOf(c.tier);
-    if (r > rank) rank = r;
-  }
-  const tier = TIER_ORDER[rank];
+  const tier = TIER_ORDER[Math.max(...classified.map((c) => TIER_ORDER.indexOf(c.tier)))];
   return { tier, decidingPaths: classified.filter((c) => c.tier === tier).map((c) => c.path) };
 }
 
@@ -142,9 +137,17 @@ export function parseArgs(argv) {
   let paint = 'no';
   let pin = null;
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--range') range = argv[++i] ?? null;
-    else if (argv[i] === '--paint') paint = argv[++i] === 'yes' ? 'yes' : 'no';
-    else if (argv[i] === '--pin') pin = argv[++i] ?? null;
+    switch (argv[i]) {
+      case '--range':
+        range = argv[++i] ?? null;
+        break;
+      case '--paint':
+        paint = argv[++i] === 'yes' ? 'yes' : 'no';
+        break;
+      case '--pin':
+        pin = argv[++i] ?? null;
+        break;
+    }
   }
   return { range, paint, pin };
 }
@@ -162,32 +165,29 @@ export function changedPaths(range) {
   return result.stdout.split('\n').filter((line) => line.length > 0);
 }
 
+/**
+ * Report a refusal on stderr and set the failing exit code, leaving stdout empty so a caller that
+ * captures only stdout gets a shell-safe empty string.
+ * @param {string} message
+ */
+function fail(message) {
+  console.error(message);
+  process.exitCode = 1;
+}
+
 function main() {
   const { range, paint, pin } = parseArgs(process.argv.slice(2));
-  if (!range) {
-    console.error('gate-tier: --range <base>..HEAD is required');
-    process.exitCode = 1;
-    return;
-  }
+  if (!range) return fail('gate-tier: --range <base>..HEAD is required');
+
   const paths = changedPaths(range);
-  if (paths === null) {
-    console.error(`gate-tier: git diff failed for range "${range}"`);
-    process.exitCode = 1;
-    return;
-  }
-  if (paths.length === 0) {
-    console.error(`gate-tier: range "${range}" carries no changed paths`);
-    process.exitCode = 1;
-    return;
-  }
+  if (paths === null) return fail(`gate-tier: git diff failed for range "${range}"`);
+  if (paths.length === 0) return fail(`gate-tier: range "${range}" carries no changed paths`);
 
   let decision;
   try {
     decision = decideGate(paths, { paint, pin });
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
-    process.exitCode = 1;
-    return;
+    return fail(err instanceof Error ? err.message : String(err));
   }
 
   const pathsLine = decision.decidingPaths.length

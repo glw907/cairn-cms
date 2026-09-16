@@ -245,3 +245,49 @@ reviewer can reproduce the choice.
       2 done and item 3 (extend-1) as the immediate next action; the `docs-rebuild-not-edit`
       memory refreshed with the freeze rule.
 - [ ] PR to `main`, CI green, merge. Then the pre-bake for the clear.
+
+## Post-mortem (fold agent, 2026-09-15)
+
+**What was built.** All five tasks landed on `docs-to-facts`, one per-task chain, one
+`diff-reviewer` read each. Task 1 normalized the container to the gate-ready grammar: the tag
+vocabulary collapsed to the colon-qualifier form, ~52 space-qualified tags rewritten, the
+out-of-vocabulary tags and the double-bracket bullet resolved, the 14 `[docs-drift]` bullets
+corrected to 1 (the remaining one exceeds a sentence and is named in the container), the drifted
+line pointers fixed, the non-fact sections folded under `## Harvest record`, the hand-maintained
+index table removed, `gaps.md` deleted with its entries moved to the friction log. Task 2 added
+`scripts/checks/check-facts.mjs`, wired into `npm run check`, with a good/bad fixture pair and a
+unit test; it walks every bullet outside a `## Harvest record` section and enforces source, tag
+vocabulary, and pointer resolution (path, line range, and quoted-anchor text). Task 3 rewrote
+CLAUDE.md's docs section to state the container-first order (reference maintained and gated;
+narrative arms frozen with the discovered-deficiency exception, agent-facing not
+register-graded; the cross-repo `site-docs/<site>-<pass>` path; migration-notes and
+upgrade-cairn outside the freeze), amended both extend plans' docs deliverables, and updated
+ROADMAP and CHANGELOG. Task 4 (dotfiles, outside this repo) carried the same rule into
+`cairn-pass`, `engine-consult`, `cairn-implementer`, and `site-implementer`. Task 5 added
+`scripts/checks/gate-tier.mjs`, its unit tests, and `docs/internal/pass-gate-tiers.md`, verified
+against the last five merged passes and the showcase's actual Playwright project name.
+
+**Evidence.** Close-ritual full gate (`check`, `test`, `check:comments`, `check:snippets`,
+`check:transcripts`, `check:symbols`, `check:surface`, `check:facts`, `check:docs`,
+`check:vale`, `check:reference`, `check:reference:signatures`) exit 0: 387 unit/integration
+test files (5243 tests) and 81 component test files (1404 tests), all passed. `check:facts`
+final container counts: `admin.md` 86 (verified 66, docs-drift 1, vendor 7, candidate 12),
+`editors.md` 83 (verified 81, candidate 2), `extend.md` 335 (verified 209, external 26,
+candidate 99, rejected 1), `front-door.md` 42 (verified 22, candidate 20), `reference.md` 181
+(verified 135, external 7, candidate 39).
+
+**Decisions locked (all recorded above in "What the review overturned").** The arms stay in the
+tree and the tarball; `docs/reference/` stays maintained and gated; the container is not
+shipped; no `cairn-fact` CLI this pass; the arms are frozen against rewrites with the
+discovered-deficiency exception, agent-facing not register-graded; the cross-repo path batches
+site-agent doc fixes on `site-docs/<site>-<pass>`; migration-notes and upgrade-cairn stay
+outside the freeze.
+
+**The slip.** A conductor `git commit -a` (`bb2e2dc3`) swept task 1's in-progress edits under a
+plan-amendment message, and three more index races followed in the shared worktree before the
+rest of the pass adopted stage-by-path discipline. Confirms the standing rule: one executor per
+worktree, or strict stage-by-path for every writer, and the conductor itself never uses `-a`.
+
+**Spend and scores.** About 2.1M subagent tokens against a 2.5M ceiling (raised from 1.5M at
+the checkpoint). Attended-time score: 0 planning misses, 1 execution sitting (the ceiling
+raise); Geoff's four planning-time rulings on the reshape count as planning, not misses.

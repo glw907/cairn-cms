@@ -7,6 +7,57 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Docs-to-facts pass, five tasks, 2026-09-15
+
+Branch `docs-to-facts`; plan at `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`;
+review record at `docs/internal/record/2026-09-15-facts-container-review/`. This pass gates the
+facts container instead of deleting the three narrative arms, the shape the three-lens
+adversarial review overturned before execution.
+
+**What landed.** Task 1 normalized every `docs/internal/facts/*.md` bullet to the colon-qualifier
+tag grammar, retagged the page-only-sourced bullets `[candidate]`, resolved the 14
+`[docs-drift]` bullets to 1 (the remainder is named in the container, a one-sentence fix would
+not suffice), fixed the drifted line pointers, folded the non-fact sections under
+`## Harvest record`, and deleted `gaps.md` into the friction log. Task 2 shipped
+`scripts/checks/check-facts.mjs`, wired into `npm run check`, walking every bullet outside a
+`## Harvest record` section for a source, exactly one vocabulary tag, and a resolvable
+`path:line` pointer (with quoted-anchor text re-read against the cited line). Task 3 rewrote
+CLAUDE.md's docs section container-first (reference arm maintained and gated; the three
+narrative arms and why-cairn frozen against rewrites, open to a same-pass discovered-deficiency
+fix that is agent-facing, not register-graded; the cross-repo `site-docs/<site>-<pass>` batching
+path; migration-notes and upgrade-cairn outside the freeze), amended both extend plans' docs
+deliverables to file container bullets instead of editing frozen pages, and updated ROADMAP and
+CHANGELOG. Task 4 (dotfiles) carried the same rule into `cairn-pass`, `engine-consult`,
+`cairn-implementer`, and `site-implementer`. Task 5 shipped `scripts/checks/gate-tier.mjs`
+(the `docs`/`scripts`/`engine`/`admin-visual`/`full` classifier the pass-execute runner calls),
+its unit tests, and `docs/internal/pass-gate-tiers.md`.
+
+**What the gate and reviews caught.** T1's retag script missed `.css` as a code path and
+demoted 21 already-verified bullets to `[candidate]`, caught in the fix round. T3's implementer
+compressed six CLAUDE.md sections outside its own scope to clear the workstation
+claude-context-budget hook, dropping thirteen facts in the process; all thirteen restored in
+the fix round (CLAUDE.md now sits about 6377 tokens over the 6000 budget, filed to ROADMAP's
+Next tier rather than compressed again under this pass). T5 found the showcase's Playwright
+config has no named projects, so the `admin-visual` gate string runs the spec file directly, not
+a `--project` flag; the doc page and the gate string both record this. T2's first anchor check
+compared a bullet's quoted snippet against a whole file, which never failed; a 10-line window
+around the cited line replaced it and caught two real drifted pointers in the fixture pass.
+
+**What a later pass would be wrong to rediscover.** The container's shape holds even though the
+review overturned the plan's original premise: the arms stay in the tree and the tarball
+(seven check scripts and about 25 shipped `docsAnchor` values read them), `docs/reference/`
+stays the maintained catalog, and the container is a gate, not a second source of truth. A
+`git commit -a` from the conductor (`bb2e2dc3`) swept an implementer's in-progress edits under
+an unrelated plan-amendment commit message, and three more index races followed before the pass
+settled into strict stage-by-path discipline; the standing rule holds, one executor per
+worktree or stage-by-path for every writer, and the conductor itself never runs `-a`.
+
+**Evidence.** Close-ritual full gate green: 387 unit/integration test files (5243 tests), 81
+component test files (1404 tests), `check:facts`, `check:docs`, `check:vale`, `check:reference`,
+`check:reference:signatures` all exit 0. Spend about 2.1M subagent tokens against a 2.5M
+ceiling (raised from 1.5M at the checkpoint); 0 planning misses, 1 execution sitting (the
+ceiling raise) against the attended-time score.
+
 ## Admin motion language pass, nine tasks (chain A) plus one (chain B), 2026-09-15
 
 Branch `admin-motion` (chain A) with `admin-motion-8` (chain B, task 8 alone) merged into it; plan

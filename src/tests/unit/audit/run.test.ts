@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadConfig } from '../../../lib/audit/config.js';
+import { DEFAULT_SHEET_CANDIDATES, loadConfig } from '../../../lib/audit/config.js';
 import { runStatic, selectRules } from '../../../lib/audit/run.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
@@ -57,10 +57,11 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
-  // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, and the motion
-  // pass's motion-property, motion-hover-gate, and motion-vocabulary are the modules that have
-  // registered since, without touching run.ts.
-  it('carries the fifteen static rules registered since Task 7', () => {
+  // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, the motion
+  // pass's motion-property, motion-hover-gate, and motion-vocabulary, and the extend pass's
+  // log-event-grammar and log-secret-field are the modules that have registered since, without
+  // touching run.ts.
+  it('carries the seventeen static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -81,12 +82,24 @@ describe('the static rule registry', () => {
         'stripe-trim-parity',
         'unlayered-font-clobber',
         'list-role',
+        'log-event-grammar',
+        'log-secret-field',
       ].sort(),
     );
   });
 
   it('hands back a fresh array each call', () => {
     expect(staticRules()).not.toBe(staticRules());
+  });
+
+  // New consumer-facing findings enter at advisory tier for one minor, and never scoped to the
+  // admin frame: a log call is not confined to an admin surface.
+  it('registers log-event-grammar and log-secret-field at advisory tier, not adminOnly', () => {
+    const byId = new Map(staticRules().map((rule) => [rule.id, rule]));
+    for (const id of ['log-event-grammar', 'log-secret-field']) {
+      expect(byId.get(id)?.tier).toBe('advisory');
+      expect(byId.get(id)?.adminOnly).toBeUndefined();
+    }
   });
 });
 
@@ -114,8 +127,10 @@ describe('runStatic', () => {
     const report = runStatic(loadConfig(root), [probeRule(seen)]);
     // Task 3's own `src/lib/components` fixture (a `src/lib/components` root, no `adminOnly`
     // declaration on this probe) joins the two roots already here, since the probe resolves
-    // over `static.scope`, not `static.adminScope`.
-    expect(report.filesScanned).toBe(3);
+    // over `static.scope`, not `static.adminScope`. Task 2's `sources` walk (default scope
+    // `src`) finds the same three `.svelte` fixtures again as plain text, which is why the total
+    // is six rather than three: `filesScanned` sums both walks, never deduplicating them.
+    expect(report.filesScanned).toBe(6);
     expect(seen).toHaveLength(1);
     expect(seen[0].files.map((f) => f.file).sort()).toEqual([
       'src/lib/admin-toolkit/FieldLabel.svelte',
@@ -143,10 +158,12 @@ describe('runStatic', () => {
     // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full fifteen-rule registry. The new
+    // default (no rules override) run wires up the full seventeen-rule registry. The new
     // `src/lib/components/PublicWidget.svelte` fixture carries no class and no CSS, so it trips
-    // nothing beyond the two no-uncompiled-class findings the tree already carried.
-    expect(report.ruleIds).toHaveLength(15);
+    // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
+    // fixture components carries a log call, so log-event-grammar and log-secret-field raise
+    // nothing here either.
+    expect(report.ruleIds).toHaveLength(17);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });
@@ -175,6 +192,24 @@ describe('runStatic', () => {
     const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-bare-'));
     try {
       expect(() => runStatic(loadConfig(bare))).toThrow(/cairn-admin\.css/);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+  });
+
+  // Locks the existing sheet-error contract this task's Files section names, no code moved: a
+  // config naming a missing sheet throws with that path in the message, and a config that
+  // names no sheet at all still resolves to a candidate, only failing later, at read time.
+  it('locks the named-sheet hard error: a named missing sheet throws with its own path, a silent config resolves a candidate first', () => {
+    const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-locking-'));
+    try {
+      const configPath = join(bare, 'named-missing-sheet.json');
+      writeFileSync(configPath, JSON.stringify({ sheet: 'build/does-not-exist.css' }));
+      expect(() => runStatic(loadConfig(bare, configPath))).toThrow(/build\/does-not-exist\.css/);
+
+      const silentConfig = loadConfig(bare);
+      expect(silentConfig.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[0]]);
+      expect(() => runStatic(silentConfig)).toThrow(/cairn-admin\.css/);
     } finally {
       rmSync(bare, { recursive: true, force: true });
     }
@@ -347,9 +382,11 @@ describe('static.adminScope', () => {
       mkdirSync(join(bare, 'src/lib/admin-toolkit'), { recursive: true });
       writeFileSync(join(bare, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
       writeFileSync(join(bare, 'src/lib/admin-toolkit/Field.svelte'), '<div></div>\n');
-      // No src/routes/admin: the default admin root this tree does not have.
+      // No src/routes/admin: the default admin root this tree does not have. The `sources`
+      // walk (default scope `src`) finds the same fixture again as plain text, so the total is
+      // two rather than one.
       const report = runStatic(loadConfig(bare));
-      expect(report.filesScanned).toBe(1);
+      expect(report.filesScanned).toBe(2);
     } finally {
       rmSync(bare, { recursive: true, force: true });
     }

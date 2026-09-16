@@ -17,8 +17,9 @@ component usually measure" as data instead of inference from a screenshot.
 ## Tier map
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
-running dev server, both themes) runs thirty-two rules across two modes: fifteen static, all
-error tier, and seventeen rendered, seven error and ten advisory. Full descriptions live in
+running dev server, both themes) runs thirty-four rules across two modes: seventeen static,
+fifteen error tier and two advisory, and seventeen rendered, seven error and ten advisory. Full
+descriptions live in
 [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
 (the installed package's copy, reached from where this skill lives once `cairn-doctor --fix`
 installs it at `.claude/skills/cairn-admin-screens/`).
@@ -27,6 +28,9 @@ installs it at `.claude/skills/cairn-admin-screens/`).
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
 `motion-property`, `motion-vocabulary`, `motion-hover-gate`, `reduced-motion`,
 `stripe-trim-parity`, `unlayered-font-clobber`, `list-role`.
+
+**Static, advisory tier** (promoted to error tier in `0.98.0`): `log-event-grammar`,
+`log-secret-field`.
 
 **Rendered, error tier:** `one-filled-action`, `focus-renders`, `interactive-contrast`,
 `touch-targets`, `viewport-overflow`, `panel-width`, `list-role`.

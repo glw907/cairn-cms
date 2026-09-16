@@ -12,6 +12,15 @@
   to change; a site that wants structured logs imports `createLogger` from
   `@glw907/cairn-cms/log`.
 
+- `cairn-audit`'s static mode gains `log-event-grammar` and `log-secret-field`, two advisory
+  rules over `.ts`/`.svelte` source text (`static.sourceScope`, default `src`): a name heuristic
+  over `<ident>.info/.warn/.error(<string>)` calls that flags a first-argument literal colliding
+  with a `CairnLogEvent` name or not reading as `area[.subject].verb_phrase`, and a second rule
+  over the same calls' fields argument that flags a key whole-matching `REDACTED_LOG_KEYS`, for
+  the case where the same secret value also lands in the message string, where redaction never
+  runs. Both are registered at advisory tier for one minor and promote to error tier in `0.98.0`.
+  No consumer action.
+
 - `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
   `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
   computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still

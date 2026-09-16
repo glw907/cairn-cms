@@ -36,6 +36,14 @@ export interface CssSource {
   source: string;
 }
 
+/**
+ * One `.ts` or `.svelte` file `config.sourceScope` names, read as plain text rather than parsed
+ * markup: the substrate the source-text-family static rules (`log-event-grammar`,
+ * `log-secret-field`) scan. Same shape as `CssSource` on purpose, so both are suppressible by
+ * `cairn-audit-disable-next-line` the same way every other rule's source is.
+ */
+export type SourceFile = CssSource;
+
 /** Everything a static rule may read, assembled once per run. */
 export interface StaticRuleContext {
   files: ParsedComponent[];
@@ -47,6 +55,13 @@ export interface StaticRuleContext {
    * rules default it to an empty list when a caller omits it.
    */
   cssFiles?: CssSource[];
+  /**
+   * Every `.ts` and `.svelte` file under `config.sourceScope`, read as plain text. Optional: a
+   * rule that never reads it (every markup- and CSS-family rule) keeps its existing fixture
+   * contexts unchanged; the source-text-family rules default it to an empty list when a caller
+   * omits it.
+   */
+  sources?: SourceFile[];
 }
 
 /** A static rule: an id, a tier, and a pure check over the run's context. */

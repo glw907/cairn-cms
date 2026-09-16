@@ -11,7 +11,7 @@ import { CONFIG_FILE } from './config.js';
 import type { Dirent } from 'node:fs';
 import type { AuditConfig } from './config.js';
 import type { ParsedComponent } from './markup.js';
-import type { AuditReport, CssSource, Finding, StaticRule } from './types.js';
+import type { AuditReport, CssSource, Finding, SourceFile, StaticRule } from './types.js';
 
 /** Every `.svelte` file under a directory, recursively, as paths relative to the audited root. */
 function componentPaths(root: string, dir: string): string[] {
@@ -59,6 +59,47 @@ function loadCssFiles(config: AuditConfig): CssSource[] {
     file: path,
     source: readFileSync(resolve(config.root, path), 'utf8'),
   }));
+}
+
+/** Every `.ts` and `.svelte` file under a directory, recursively, as paths relative to the audited root. */
+function sourceFilePaths(root: string, dir: string): string[] {
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(resolve(root, dir), { withFileTypes: true });
+  } catch {
+    // A scan-scope path a given tree does not have. The default scope spans the library and a
+    // consumer site, so an absent directory is the normal case rather than a misconfiguration.
+    return [];
+  }
+  return entries.flatMap((entry) => {
+    const relPath = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) return sourceFilePaths(root, relPath);
+    return entry.name.endsWith('.ts') || entry.name.endsWith('.svelte') ? [relPath] : [];
+  });
+}
+
+/**
+ * Every `.ts`/`.svelte` file under `config.sourceScope`, read once for the whole run: the
+ * substrate the source-text-family static rules scan. Named the same existence rule as
+ * `parseScope`: a configured scope path the tree does not have throws, since honoring a typo as
+ * an empty scan would silently narrow the two rules that read this list to nothing.
+ */
+function loadSources(config: AuditConfig): SourceFile[] {
+  const seen = new Set<string>();
+  const sources: SourceFile[] = [];
+  for (const dir of config.sourceScope) {
+    if (config.sourceScopeFromConfig && !existsSync(resolve(config.root, dir))) {
+      throw new Error(
+        `${dir}: the configured source scan scope does not exist (${CONFIG_FILE}, static.sourceScope)`
+      );
+    }
+    for (const path of sourceFilePaths(config.root, dir)) {
+      if (seen.has(path)) continue;
+      seen.add(path);
+      sources.push({ file: path, source: readFileSync(resolve(config.root, path), 'utf8') });
+    }
+  }
+  return sources;
 }
 
 /** Whether a root-relative path lies inside one of the given root directories. */
@@ -122,6 +163,7 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   const adminFiles = parseScope(config, config.adminScope, config.adminScopeFromConfig, 'static.adminScope');
   const cssFiles = loadCssFiles(config);
   const adminCssFiles = cssFiles.filter((cssFile) => isUnderRoots(cssFile.file, config.adminScope));
+  const sources = loadSources(config);
   if (files.length === 0 && cssFiles.length === 0) {
     throw new Error(
       `the static scan matched no files under ${config.staticScope.join(', ')}. Name the scan scope in ${CONFIG_FILE} (static.scope).`
@@ -129,13 +171,17 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   }
   const raised = rules.flatMap((rule) =>
     rule.adminOnly
-      ? rule.check({ files: adminFiles, sheet, config, cssFiles: adminCssFiles })
-      : rule.check({ files, sheet, config, cssFiles })
+      ? rule.check({ files: adminFiles, sheet, config, cssFiles: adminCssFiles, sources })
+      : rule.check({ files, sheet, config, cssFiles, sources })
   );
   // A file `adminScope` and `staticScope` both cover (the two roots overlap by default) is
-  // deduplicated by path so its suppression directives resolve once, never once per scope.
+  // deduplicated by path so its suppression directives resolve once, never once per scope. The
+  // source-text walk is spread first, so a component both it and the markup parse cover keeps
+  // its parsed `nodes`: a source-text entry never carries `nodes`, and losing them would degrade
+  // that file's suppression resolution from "next AST node" to "next non-blank line" for every
+  // markup rule, not only the two new ones.
   const suppressionSources = new Map<string, ParsedComponent | CssSource>();
-  for (const file of [...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
+  for (const file of [...sources, ...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
   // A `--rule`-scoped run passes a narrowed `rules`, so a directive naming a rule outside that
   // selection is judged against the ids this run actually executed, not the full registry, which
   // is what keeps a scoped run from reporting every ordinary out-of-scope directive as dead.
@@ -144,7 +190,7 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   return {
     findings: [...split.findings].sort(byPosition),
     suppressed: [...split.suppressed].sort(byPosition),
-    filesScanned: files.length,
+    filesScanned: files.length + sources.length,
     ruleIds: rules.map((rule) => rule.id),
   };
 }

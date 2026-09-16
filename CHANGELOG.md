@@ -318,6 +318,20 @@
   crosses them. The paint rides the button's existing `transition-colors`, so it resolves to the
   theme's `base` default like the same element's hover paint; no new CSS rule is added.
 
+- The showcase compiles its own site admin stylesheet and audits against it, alongside the
+  packaged one: `src/admin.css` is a four-line Tailwind v4 entry (no DaisyUI plugin, utilities
+  only) scoped to `src/routes/admin` with `@tailwindcss/cli`, compiled to `.cairn/admin.css`.
+  `cairn-audit.config.json` names both sheets, so `no-uncompiled-class` and the rest of the static
+  registry see every class a site route actually writes, not only the ones the packaged toolkit
+  compiles. New scripts: `build:admin-css`, `check:cairn` (compiles then audits), and
+  `check:cairn:rendered`; `precheck`/`prebuild`/`predev` compile the sheet ahead of `check`,
+  `build`, and `dev` so a stale `.cairn/` never ships. CI runs `check:cairn` after the showcase's
+  own `check`. The admin layout imports the compiled file so `@tailwindcss/vite` passes it through
+  as a hashed, route-split asset; `e2e/admin-sheet.spec.ts` proves that at the ritual against a
+  branch-point baseline, once the ritual writes the fixture (the spec stays inert until then). The
+  new `@tailwindcss/cli` devDependency was surveyed against the pinned `tailwindcss`/`@tailwindcss/vite`
+  major and matches at `4.3.3`. No consumer action.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

@@ -36,6 +36,7 @@ import {
 import { capturePageIdentity, captureSsrIdentity, identitiesMatch, waitForHydrationSettle } from './rendered/identity.js';
 import { applyState, ensurePageHelpers, probeSelectors } from './rendered/page-surface.js';
 import type {
+  EmulationAxis,
   InteractionState,
   PageIdentity,
   RenderedDeps,
@@ -48,6 +49,7 @@ import type {
 
 export type {
   CairnAuditPageHelpers,
+  EmulationAxis,
   InteractionState,
   PageIdentity,
   PlaywrightModule,
@@ -79,6 +81,38 @@ const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
   light: 'cairn-admin',
   dark: 'cairn-admin-dark',
 };
+
+/**
+ * The `newContext` options each emulation axis opens with. `'default'` adds nothing, so a context
+ * opened under it is byte-identical to what `runRendered` opened before this axis existed.
+ */
+const AXIS_CONTEXT_OPTIONS: Record<EmulationAxis, { reducedMotion?: 'reduce' }> = {
+  default: {},
+  'reduced-motion': { reducedMotion: 'reduce' },
+};
+
+// Measured, not assumed: on the Chromium build this axis was built and tested against, CDP's
+// `Emulation.setEmulatedMedia` with a `features` array covering `hover` and `pointer` was silently
+// ignored (no error, no effect on `matchMedia` reads). That is why this axis reaches motion only
+// through Playwright's own `reducedMotion` context option rather than a raw CDP features array, and
+// why a touch-modality axis (`hasTouch`) is threaded through `newContext` rather than attempted here.
+
+/**
+ * The emulation axes the registered rules actually need, `'default'` always included since a rule
+ * declaring none still runs under it (the same default {@link RenderedRule.axes} itself
+ * documents). A registry with no axis-declaring rule resolves to `['default']` alone, which is
+ * what keeps its context and page-load count identical to a run with no axis concept at all.
+ */
+function neededAxes(rules: RenderedRule[]): EmulationAxis[] {
+  // 'default' is seeded unconditionally, not only discovered from a rule with no axes of its own:
+  // the allowlist selector probe (below, in the main loop) is scoped to `axis === 'default'`, so a
+  // `--rule`-scoped run whose only selected rule declares a non-default axis (motion-reduced-delay,
+  // say) must still open a default-axis pass, or the probe never runs and every allowlist entry
+  // reports dead or stale against a run that never actually looked.
+  const axes = new Set<EmulationAxis>(['default']);
+  for (const rule of rules) for (const axis of rule.axes ?? ['default']) axes.add(axis);
+  return [...axes];
+}
 
 /**
  * The refusal `runRendered` throws when every configured page besides {@link LOGIN_PAGE_PATH}
@@ -129,6 +163,7 @@ export async function runRendered(
   const baseUrl = await resolveBaseUrl(deps.isReachable ?? defaultIsReachable);
   const { chromium } = await loadPlaywrightModule(deps.loadPlaywright ?? defaultLoadPlaywright);
   const states = neededStates(rules);
+  const axes = neededAxes(rules);
   const themes: Theme[] = ['light', 'dark'];
 
   const visits: RenderedPageVisit[] = pages.map((page) => ({
@@ -158,89 +193,98 @@ export async function runRendered(
         const perPageIdentities = settledIdentities.get(pagePath) ?? [];
         perPageIdentities.push(ssrIdentity);
         settledIdentities.set(pagePath, perPageIdentities);
-        const context = await browser.newContext({ colorScheme: theme });
-        await context.addCookies(cookies);
-        // The settled identity that disagreed with `ssrIdentity`, null while the guard is content.
-        // Held rather than reported inline so the finding is raised after the context closes.
-        let mismatchedIdentity: PageIdentity | null = null;
-        try {
-          for (const state of states) {
-            const page = await context.newPage();
-            try {
-              const response = await page.goto(`${baseUrl}${pagePath}`, { waitUntil: 'load', timeout: 45_000 });
-              const status = response?.status();
-              if (status === undefined || status < 200 || status >= 300) {
-                throw new Error(
-                  `${pagePath}: rendered ${status ?? 'no response'} (expected 2xx) under ${theme}, ` +
-                    `state=${state}. A non-2xx response also covers a configured page that names no real route.`
-                );
-              }
-              const reached = await applyState(state, page);
-              if (!reached) {
-                // Recorded, never swallowed: the rules that read only this state did not run here,
-                // so this page's findings are a subset and the allowlist's dead verdict has to know
-                // it before accusing a live entry.
-                visit?.statesUnreached?.add(state);
-                continue;
-              }
-              await ensurePageHelpers(page);
 
-              if (state === 'rest') {
-                // The page-identity guard checks once per (page, theme), on the state every page
-                // reaches: a settle window, then a re-capture compared against the SSR baseline. A
-                // mismatch means this page hydrated into chrome that is not the route it was asked
-                // for, so no rule below this point may run against it.
-                await page.evaluate(waitForHydrationSettle);
-                const hydratedIdentity = await page.evaluate(capturePageIdentity);
-                if (!identitiesMatch(ssrIdentity, hydratedIdentity)) {
-                  mismatchedIdentity = hydratedIdentity;
-                  break;
+        for (const axis of axes) {
+          const context = await browser.newContext({ colorScheme: theme, ...AXIS_CONTEXT_OPTIONS[axis] });
+          await context.addCookies(cookies);
+          // The settled identity that disagreed with `ssrIdentity`, null while the guard is content.
+          // Held rather than reported inline so the finding is raised after the context closes.
+          let mismatchedIdentity: PageIdentity | null = null;
+          try {
+            for (const state of states) {
+              const page = await context.newPage();
+              try {
+                const response = await page.goto(`${baseUrl}${pagePath}`, { waitUntil: 'load', timeout: 45_000 });
+                const status = response?.status();
+                if (status === undefined || status < 200 || status >= 300) {
+                  throw new Error(
+                    `${pagePath}: rendered ${status ?? 'no response'} (expected 2xx) under ${theme}, ` +
+                      `state=${state}. A non-2xx response also covers a configured page that names no real route.`
+                  );
                 }
-              }
-
-              if (relevantAllowlist.length > 0 && visit) {
-                const present = await page.evaluate(probeSelectors, relevantAllowlist.map((entry) => entry.selector));
-                visit.selectorsUnprobeable ??= new Set<string>();
-                relevantAllowlist.forEach((entry, index) => {
-                  if (present[index] === 'matched') visit.selectorsSeen.add(entry.selector);
-                  else if (present[index] === 'unprobeable') visit.selectorsUnprobeable?.add(entry.selector);
-                });
-              }
-
-              for (const rule of rules) {
-                if (!(rule.states ?? ['rest']).includes(state)) continue;
-                // A rule that throws reports at its OWN tier rather than aborting the run with exit
-                // 2. An advisory rule taking the whole process down on a substrate condition (a
-                // pruned manifest in a consumer install) is the leak a fail-closed exit criterion
-                // forbids, and an error-tier rule still gates through the finding it raises here.
-                let found: RenderedFinding[];
-                try {
-                  found = await rule.check({ page, pagePath, theme, state, config });
-                } catch (err) {
-                  found = [
-                    {
-                      ruleId: rule.id,
-                      tier: rule.tier,
-                      selector: 'html',
-                      message: `the rule threw while checking this page: ${err instanceof Error ? err.message : String(err)}`,
-                    },
-                  ];
+                const reached = await applyState(state, page);
+                if (!reached) {
+                  // Recorded, never swallowed: the rules that read only this state did not run here,
+                  // so this page's findings are a subset and the allowlist's dead verdict has to know
+                  // it before accusing a live entry.
+                  visit?.statesUnreached?.add(state);
+                  continue;
                 }
-                for (const f of found) raw.push({ ...f, page: pagePath, theme, state });
+                await ensurePageHelpers(page);
+
+                if (state === 'rest') {
+                  // The page-identity guard checks once per (page, theme, axis), on the state every
+                  // page reaches: a settle window, then a re-capture compared against the SSR
+                  // baseline. A mismatch means this page hydrated into chrome that is not the route
+                  // it was asked for, so no rule below this point may run against it.
+                  await page.evaluate(waitForHydrationSettle);
+                  const hydratedIdentity = await page.evaluate(capturePageIdentity);
+                  if (!identitiesMatch(ssrIdentity, hydratedIdentity)) {
+                    mismatchedIdentity = hydratedIdentity;
+                    break;
+                  }
+                }
+
+                // Allowlist selector probing stays scoped to the default axis: `RenderedPageVisit`
+                // stays the shape `findings.ts` already reads, unchanged, and every page still
+                // reaches a default-axis pass (a rule with no axis of its own always needs it), so
+                // scoping the probe there keeps its meaning exactly what it was before an axis
+                // existed at all, rather than accumulating a second dimension of noise into one Set.
+                if (axis === 'default' && relevantAllowlist.length > 0 && visit) {
+                  const present = await page.evaluate(probeSelectors, relevantAllowlist.map((entry) => entry.selector));
+                  visit.selectorsUnprobeable ??= new Set<string>();
+                  relevantAllowlist.forEach((entry, index) => {
+                    if (present[index] === 'matched') visit.selectorsSeen.add(entry.selector);
+                    else if (present[index] === 'unprobeable') visit.selectorsUnprobeable?.add(entry.selector);
+                  });
+                }
+
+                for (const rule of rules) {
+                  if (!(rule.states ?? ['rest']).includes(state)) continue;
+                  if (!(rule.axes ?? ['default']).includes(axis)) continue;
+                  // A rule that throws reports at its OWN tier rather than aborting the run with exit
+                  // 2. An advisory rule taking the whole process down on a substrate condition (a
+                  // pruned manifest in a consumer install) is the leak a fail-closed exit criterion
+                  // forbids, and an error-tier rule still gates through the finding it raises here.
+                  let found: RenderedFinding[];
+                  try {
+                    found = await rule.check({ page, pagePath, theme, state, axis, config });
+                  } catch (err) {
+                    found = [
+                      {
+                        ruleId: rule.id,
+                        tier: rule.tier,
+                        selector: 'html',
+                        message: `the rule threw while checking this page: ${err instanceof Error ? err.message : String(err)}`,
+                      },
+                    ];
+                  }
+                  for (const f of found) raw.push({ ...f, page: pagePath, theme, state, axis });
+                }
+              } finally {
+                await page.close();
               }
-            } finally {
-              await page.close();
             }
+          } finally {
+            await context.close();
           }
-        } finally {
-          await context.close();
-        }
-        if (mismatchedIdentity) {
-          identityFindings.push(pageIdentityMismatchFinding(pagePath, theme, ssrIdentity, mismatchedIdentity));
-          // A page the guard refused was never actually probed, so its allowlist entries cannot be
-          // told stale from dead: {@link identityRefusedFinding} withholds that verdict instead of
-          // accusing a live entry of staleness on a run that never really looked.
-          if (visit) visit.identityRefused = true;
+          if (mismatchedIdentity) {
+            identityFindings.push(pageIdentityMismatchFinding(pagePath, theme, ssrIdentity, mismatchedIdentity));
+            // A page the guard refused was never actually probed, so its allowlist entries cannot be
+            // told stale from dead: {@link identityRefusedFinding} withholds that verdict instead of
+            // accusing a live entry of staleness on a run that never really looked.
+            if (visit) visit.identityRefused = true;
+          }
         }
       }
       // Surfaced once per page, after both themes ran, rather than once per theme: the state is
@@ -270,11 +314,13 @@ export async function runRendered(
     if (allSettledOnLogin) throw redirectTrapRefusal(loginIdentity);
   }
 
+  const ranRuleIds = new Set(rules.map((rule) => rule.id));
   const { findings, suppressed } = resolveRenderedFindings(
     raw,
     visits,
     config.renderedAllowlist,
-    new Map(rules.map((rule) => [rule.id, rule.tier]))
+    new Map(rules.map((rule) => [rule.id, rule.tier])),
+    ranRuleIds
   );
   const byPosition = (a: Finding, b: Finding) => (a.file === b.file ? 0 : a.file.localeCompare(b.file));
   return {

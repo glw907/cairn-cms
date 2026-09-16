@@ -23,9 +23,11 @@ import { parseSheet } from '../../lib/audit/sheet.js';
 const SNAPSHOT_PATH = new URL('./fixtures/admin-sheet-inventory.txt', import.meta.url);
 
 let liveClasses: Set<string>;
+let liveCss: string;
 
 beforeAll(async () => {
-  const sheet = parseSheet(await buildAdminCss());
+  liveCss = await buildAdminCss();
+  const sheet = parseSheet(liveCss);
   liveClasses = new Set(sheet.rules.flatMap((rule) => rule.classNames));
 }, 60_000);
 
@@ -95,5 +97,64 @@ describe('shipped admin sheet class inventory', () => {
     for (const name of restored) {
       expect(liveClasses.has(name), `expected the built sheet to carry .${name}`).toBe(true);
     }
+  });
+});
+
+// The motion token vocabulary: five durations and three curves, the closed set cairn-audit's
+// motion-band rule enforces, declared on both admin theme roots so a component under either
+// scheme reads the same values. The two theme-root blocks are found by their opening selector and
+// their assertion runs against the SLICE up to the next top-level closing brace, so a token
+// declared in one root does not silently satisfy the assertion for the other. lightningcss's
+// printer normalizes number serialization (110ms becomes .11s, a leading zero on a cubic-bezier
+// term drops), so the expected values below are the built sheet's actual normalized form of the
+// authored --cairn-dur-*/--cairn-ease-* values, not their as-typed source text.
+describe('the admin motion token set', () => {
+  const TOKENS: Record<string, string> = {
+    '--cairn-dur-instant': '70ms',
+    '--cairn-dur-quick': '.11s',
+    '--cairn-dur-base': '.15s',
+    '--cairn-dur-shift': '.24s',
+    '--cairn-dur-settle': '.4s',
+    '--cairn-ease-standard': 'cubic-bezier(.2, 0, .38, .9)',
+    '--cairn-ease-entrance': 'cubic-bezier(0, 0, .38, .9)',
+    '--cairn-ease-exit': 'cubic-bezier(.2, 0, 1, .9)',
+  };
+
+  function themeRootBlock(selector: string): string {
+    const start = liveCss.indexOf(selector);
+    expect(start, `expected to find the ${selector} theme root`).toBeGreaterThan(-1);
+    const open = liveCss.indexOf('{', start);
+    let depth = 0;
+    for (let i = open; i < liveCss.length; i++) {
+      if (liveCss[i] === '{') depth++;
+      else if (liveCss[i] === '}' && --depth === 0) return liveCss.slice(open + 1, i);
+    }
+    throw new Error(`unterminated ${selector} block`);
+  }
+
+  it('declares all eight token names with their exact values on the light theme root', () => {
+    const block = themeRootBlock('[data-theme="cairn-admin"] {');
+    for (const [name, value] of Object.entries(TOKENS)) {
+      expect(block, `expected ${name} in the light root`).toContain(`${name}: ${value}`);
+    }
+  });
+
+  it('declares all eight token names with their exact values on the dark theme root', () => {
+    const block = themeRootBlock('[data-theme="cairn-admin-dark"] {');
+    for (const [name, value] of Object.entries(TOKENS)) {
+      expect(block, `expected ${name} in the dark root`).toContain(`${name}: ${value}`);
+    }
+  });
+
+  it("declares the reduced-motion block's two delay declarations by name", () => {
+    // The blanket block is the LAST prefers-reduced-motion: reduce block in the sheet; several
+    // DaisyUI components (.skeleton, .motion-reduce\:animate-none) author their own earlier ones.
+    const start = liveCss.lastIndexOf('@media (prefers-reduced-motion: reduce)');
+    expect(start, 'expected the blanket reduced-motion block').toBeGreaterThan(-1);
+    const end = liveCss.indexOf('}', liveCss.indexOf('}', start) + 1);
+    const block = liveCss.slice(start, end);
+    expect(block).toContain('[data-theme="cairn-admin"] *');
+    expect(block).toContain('transition-delay: 0s !important');
+    expect(block).toContain('animation-delay: 0s !important');
   });
 });

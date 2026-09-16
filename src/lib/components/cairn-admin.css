@@ -80,6 +80,77 @@
    of use, so this fully overrides the host's theme with no @plugin and no host build step. */
 [data-theme='cairn-admin'] {
   color-scheme: light;
+  /* The motion vocabulary: five durations and three curves, read from @carbon/motion 11.52.0.
+     This is the closed set cairn-audit's motion-band rule enforces; a component needing a sixth
+     duration or a fourth curve is wrong. Identical on both theme roots, since motion timing does
+     not vary by color scheme. */
+  --cairn-dur-instant: 70ms;
+  --cairn-dur-quick: 110ms;
+  --cairn-dur-base: 150ms;
+  --cairn-dur-shift: 240ms;
+  --cairn-dur-settle: 400ms;
+  --cairn-ease-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
+  --cairn-ease-entrance: cubic-bezier(0, 0, 0.38, 0.9);
+  --cairn-ease-exit: cubic-bezier(0.2, 0, 1, 0.9);
+  /* Repoints Tailwind's own transition defaults at the token set above. This rule is unlayered
+     (cairn-admin.css imports with no `layer(...)`), so it outranks Tailwind's `@layer theme`
+     declaration of the same two properties regardless of specificity; every unmarked
+     transition-* utility under this root now animates on the base duration and the standard
+     curve instead of Tailwind's stock 150ms/ease-in-out pair. The duration value is unchanged
+     (Tailwind's own default already matches --cairn-dur-base); the curve is the real change. */
+  --default-transition-duration: var(--cairn-dur-base);
+  --default-transition-timing-function: var(--cairn-ease-standard);
+
+  /* The frame offset, the persistent-frame case of the motion language's one documented
+     allowance: an element carrying data-cairn-motion="frame-offset" may transition margin-left
+     and nothing else (cairn-audit's motion-property rule keys the exception on the attribute
+     plus the property, not on this selector, so a consumer claims the same allowance in its own
+     sheet with no theme-root prelude required). Nested under the theme root rather than authored
+     as its own top-level rule, so it never adds a new entry to check:custom-surface's pinned
+     unlayered-rule set, which is already full. The shell's own lg:ml-56/xl:ml-56 toggles choose
+     the margin value; the sibling data-cairn-frame-open marker (present once that margin is
+     restored) is what this pair keys its direction off, rather than the ml-56 classes themselves:
+     cairn-audit's class-join scan resolves every class a component uses, so a compound selector
+     naming lg:ml-56/xl:ml-56 here would rewrite what that scan finds for those classes everywhere,
+     not just on this element. Entering the offset (the margin closing to zero) takes the slower
+     shift/entrance pair; leaving it (the margin's return) takes the faster base/exit pair one band
+     down, since the trip back is the one the waiting reader wants first. The reduced-motion floor
+     below already zeroes transition-duration and transition-delay on every descendant of both
+     theme roots, so this pair snaps under reduced motion with no dedicated guard of its own.
+     Both rules also require data-cairn-frame-ready, a marker the shell sets one animation frame
+     after mount: a reader whose zen preference restores from localStorage carries an SSR/first-
+     paint frame at the non-zen margin that then snaps to the zen margin the instant hydration's
+     effects flush, and with no such gate that snap animated too, a 224px slide during hydration
+     the spec's own case table rules must snap instead. Deferring the marker past first paint means
+     the transition only ever plays for a toggle a reader actually triggers after mount. */
+  [data-cairn-motion="frame-offset"][data-cairn-frame-ready] {
+    transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
+  }
+  [data-cairn-motion="frame-offset"][data-cairn-frame-open][data-cairn-frame-ready] {
+    transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
+  }
+
+  /* The chrome-region entrance fade, scoped off a page's first paint. data-cairn-zen-used lives
+     on the same drawer content element the frame offset above keys on, set by the shell the
+     first time zen turns on and cleared again on the next navigation (unless zen is still active),
+     so a client-side navigation to a fresh document never inherits the mark from an earlier one in
+     the same SPA session. Nesting the rule under
+     that attribute, rather than under mount alone, is what keeps a fresh page load from ever
+     seeing this fade: @starting-style only ever matches a chrome region's first style
+     resolution, and every admin page mounts these regions once at load regardless of whether
+     zen was ever used, so a plain mount-driven rule fades in on every load. Keying under
+     data-cairn-zen-used restricts both the transition and its @starting-style entrance to a
+     chrome region remounting after a return from zen, which is the one case the fade is for.
+     Nested under the theme root rather than authored as its own top-level rule, so it never adds
+     a new entry to check:custom-surface's pinned unlayered-rule set, the same reasoning the
+     frame offset above documents. */
+  [data-cairn-zen-used] .cairn-chrome-fade {
+    transition: opacity var(--cairn-dur-quick) var(--cairn-ease-standard);
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
   --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Bricolage Grotesque Variable', var(--font-body);
   --font-editor: 'iA Writer Mono', ui-monospace, monospace;
@@ -254,6 +325,37 @@
    >= 4.5:1 contrast on the dark bases. The polish pass tunes these values against the reference. */
 [data-theme='cairn-admin-dark'] {
   color-scheme: dark;
+  /* See the light root for the full rationale: the same closed token set and the same
+     unlayered override, unchanged by color scheme. */
+  --cairn-dur-instant: 70ms;
+  --cairn-dur-quick: 110ms;
+  --cairn-dur-base: 150ms;
+  --cairn-dur-shift: 240ms;
+  --cairn-dur-settle: 400ms;
+  --cairn-ease-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
+  --cairn-ease-entrance: cubic-bezier(0, 0, 0.38, 0.9);
+  --cairn-ease-exit: cubic-bezier(0.2, 0, 1, 0.9);
+  --default-transition-duration: var(--cairn-dur-base);
+  --default-transition-timing-function: var(--cairn-ease-standard);
+
+  /* See the light root for the full rationale: the same frame-offset exception, gated the same
+     way behind data-cairn-frame-ready, unchanged by color scheme. */
+  [data-cairn-motion="frame-offset"][data-cairn-frame-ready] {
+    transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
+  }
+  [data-cairn-motion="frame-offset"][data-cairn-frame-open][data-cairn-frame-ready] {
+    transition: margin-left var(--cairn-dur-base) var(--cairn-ease-exit);
+  }
+
+  /* See the light root for the full rationale: the same first-paint-scoped chrome fade,
+     unchanged by color scheme. */
+  [data-cairn-zen-used] .cairn-chrome-fade {
+    transition: opacity var(--cairn-dur-quick) var(--cairn-ease-standard);
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
   --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Bricolage Grotesque Variable', var(--font-body);
   --font-editor: 'iA Writer Mono', ui-monospace, monospace;
@@ -542,7 +644,7 @@
     display: none;
   }
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-caret {
-    transition: rotate 150ms ease;
+    transition: rotate var(--cairn-dur-quick) var(--cairn-ease-standard);
   }
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) details[open] > summary .cairn-caret {
     rotate: 90deg;
@@ -1121,5 +1223,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    /* The two delays: 0.01ms above keeps a duration-based transitionend/animationend firing, but
+       a nonzero delay still holds an entrance off past the point a reduced-motion author expects
+       it to have already happened, so the delay half of the pair snaps to zero rather than to the
+       0.01ms idiom. */
+    transition-delay: 0s !important;
+    animation-delay: 0s !important;
   }
 }

@@ -13,8 +13,11 @@ import {
   loadNormsManifest,
   parseArgs,
   queryNorms,
+  renderedRules,
   runRendered,
   runStatic,
+  selectRules,
+  staticRules,
   unknownTermMessage,
   USAGE,
 } from './index.js';
@@ -57,10 +60,15 @@ async function main(): Promise<void> {
       return;
     }
     const config = loadConfig(process.cwd(), args.config);
+    // `--rule` narrows either mode's registry to the named ids, in registry order; `selectRules`
+    // throws naming the known ids when one does not match, which the catch below turns into the
+    // same exit-2 shape as any other bad argument.
     // Rendered mode drives a browser against an already-running server and throws on every shape of
     // silent-green (no rules, no pages, no server, no Playwright, a non-2xx page), so a failure to
     // start reaches the catch below and exits 2 rather than printing an empty, reassuring report.
-    const report = args.rendered ? await runRendered(config) : runStatic(config);
+    const report = args.rendered
+      ? await runRendered(config, selectRules(renderedRules(), args.rule))
+      : runStatic(config, selectRules(staticRules(), args.rule));
     console.log(formatReport(report));
     process.exitCode = exitCodeFor(report);
   } catch (err) {

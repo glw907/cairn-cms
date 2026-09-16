@@ -1,7 +1,7 @@
 // cairn-audit's barrel: the runner, the report, the config, and the two substrates behind one
 // import path for the bin and its tests. The audit is internal (no public package subpath), so this
 // stays free to combine those modules; it carries no logic of its own.
-export { runStatic } from './run.js';
+export { runStatic, selectRules } from './run.js';
 export { formatReport, exitCodeFor } from './report.js';
 export {
   CONFIG_FILE,

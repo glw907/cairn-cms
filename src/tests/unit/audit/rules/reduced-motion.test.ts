@@ -47,6 +47,93 @@ describe('reduced-motion', () => {
     expect(check(component('.card { transition: none; }'))).toEqual([]);
   });
 
+  // The inverse-gate bug: `(prefers-reduced-motion: no-preference)` runs ONLY when the visitor has
+  // NOT asked for reduced motion, so a rule inside it guards nothing a reduced-motion visitor would
+  // see. Before the fix, `isReducedMotionGuarded` matched it too, so it registered `.card` as
+  // guarded and this outer, genuinely unguarded `.card` rule went unflagged.
+  it('still flags a selector whose only nearby guard-shaped rule is inside no-preference, the inverse gate', () => {
+    const findings = check(
+      component(
+        [
+          '.card { transition: color 200ms ease; }',
+          '@media (prefers-reduced-motion: no-preference) {',
+          '  .card { transition-duration: 400ms; }',
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(
+      findings.some((f) => f.ruleId === 'reduced-motion' && f.message.includes('.card')),
+      'expected the outer .card rule to still be flagged as unguarded'
+    ).toBe(true);
+  });
+
+  // The bare boolean form, `@media (prefers-reduced-motion)` with no value, is CSS's own equivalent
+  // to `(prefers-reduced-motion: reduce)`: it must count as a valid guard, not fall through to the
+  // inverse-gate exclusion, which only names `no-preference` specifically.
+  it('passes a selector covered by the bare boolean prefers-reduced-motion form', () => {
+    const findings = check(
+      component(
+        [
+          '.card { transition: color 200ms ease; }',
+          '@media (prefers-reduced-motion) {',
+          '  .card { transition: none; }',
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // cairn-admin.css's own shipped guard is a blanket universal-descendant selector, not a selector
+  // named by text, and .cairn-caret's own `transition` shorthand is the shorthand-counts-as-longhand
+  // case: the floor declares only `transition-duration`.
+  it('discharges a rule under a blanket floor that zeroes the transition-duration longhand its shorthand implies', () => {
+    const findings = check(
+      component(
+        [
+          '.cairn-caret { transition: rotate 150ms ease; }',
+          '@media (prefers-reduced-motion: reduce) {',
+          "  [data-theme='cairn-admin'] * { transition-duration: 0.01ms; }",
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it('discharges a rule declaring the longhand directly under the same blanket floor', () => {
+    const findings = check(
+      component(
+        [
+          '.cairn-caret { transition-duration: 150ms; }',
+          '@media (prefers-reduced-motion: reduce) {',
+          "  [data-theme='cairn-admin'] * { transition-duration: 0.01ms; }",
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // The floor's own longhand never proves it zeroes a property the longhand doesn't cover, so a
+  // rule declaring only transition-timing-function still owes its own guarded sibling.
+  it('still flags a rule declaring only transition-timing-function under a blanket floor that never touches it', () => {
+    const findings = check(
+      component(
+        [
+          '.cairn-caret { transition-timing-function: ease; }',
+          '@media (prefers-reduced-motion: reduce) {',
+          "  [data-theme='cairn-admin'] * { transition-duration: 0.01ms; }",
+          '}',
+        ].join('\n')
+      )
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].ruleId).toBe('reduced-motion');
+    expect(findings[0].message).toContain('.cairn-caret');
+  });
+
   it('is suppressed by a directive naming the rule, and counted', () => {
     const file = parseComponent(
       'Fixture.svelte',

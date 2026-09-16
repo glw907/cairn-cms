@@ -47,6 +47,7 @@ bg-[color-mix(in_oklab,var(--color-base-content)_1.5%,transparent)]
 bg-[color-mix(in_oklab,var(--color-base-content)_6%,transparent)]
 bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)]
 bg-[color-mix(in_oklab,var(--color-primary)_10%,transparent)]
+bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)]
 bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)]
 bg-[var(--cairn-card-border)]
 bg-[var(--cairn-code-chip)]
@@ -94,6 +95,7 @@ border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border)
 border-[color-mix(in_oklab,var(--cairn-warning-ink)_30%,var(--cairn-card-border))]
 border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))]
 border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))]
+border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)]
 border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)]
 border-[var(--cairn-card-border)]
 border-[var(--cairn-card-border)]/70
@@ -137,6 +139,7 @@ cairn-caret
 cairn-chip-outline
 cairn-chip-quiet
 cairn-chip-warning
+cairn-chrome-fade
 cairn-doc-title
 cairn-doc-title-dim
 cairn-field-stacked
@@ -199,7 +202,7 @@ dropdown-open
 dropdown-right
 dropdown-start
 dropdown-top
-duration-[250ms]
+duration-(--cairn-dur-base)
 fieldset
 fieldset-legend
 filter
@@ -624,10 +627,12 @@ sm:bottom-0
 sm:col-start-4
 sm:flex
 sm:flex-none
+sm:flex-nowrap
 sm:flex-row
 sm:font-medium
 sm:gap-2
 sm:gap-3
+sm:gap-3.5
 sm:grid-cols-[1fr_1fr_auto_auto]
 sm:grid-cols-[1fr_auto_auto_auto]
 sm:grid-cols-2
@@ -637,6 +642,7 @@ sm:inline
 sm:inline-flex
 sm:inset-x-auto
 sm:items-baseline
+sm:items-center
 sm:items-end
 sm:items-start
 sm:justify-between
@@ -779,8 +785,7 @@ tracking-tight
 tracking-wide
 transform
 transition
-transition-[width]
-transition-all
+transition-[opacity,translate]
 transition-colors
 transition-opacity
 transition-shadow

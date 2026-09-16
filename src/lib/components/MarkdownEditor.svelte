@@ -524,10 +524,13 @@ Swapping the editor stays a one-file change.
         '.cm-cairn-media-placeholder-bar::-webkit-progress-bar': {
           backgroundColor: 'transparent',
         },
+        // The fill snaps to each progress tick rather than easing: `width` is a layout property
+        // the admin's motion language does not transition, and the widget is recreated on every
+        // tick anyway (PlaceholderWidget.eq() in editor-placeholder.ts), so no previous value
+        // survives for a transition to run from.
         '.cm-cairn-media-placeholder-bar::-webkit-progress-value': {
           backgroundColor: 'var(--color-accent)',
           borderRadius: '0.15em',
-          transition: 'width 200ms ease',
         },
         '.cm-cairn-media-placeholder-bar::-moz-progress-bar': {
           backgroundColor: 'var(--color-accent)',
@@ -579,9 +582,9 @@ Swapping the editor stays a one-file change.
           width: '11px',
           height: '11px',
           // Empty at rest; the gutter-cell hover, the folded state, and the caret-active state each
-          // force it on. A 150ms fade in and out, and a 150ms rotate for the folded turn.
+          // force it on. A quick fade in and out, and a quick rotate for the folded turn.
           opacity: '0',
-          transition: 'opacity 150ms ease, transform 150ms ease',
+          transition: 'opacity var(--cairn-dur-quick) var(--cairn-ease-standard), transform var(--cairn-dur-quick) var(--cairn-ease-standard)',
         },
         // Reveal on gutter-cell hover, on the folded and caret-active states, and on keyboard focus
         // so a focused control shows its glyph, not just the ring.
@@ -611,7 +614,6 @@ Swapping the editor stays a one-file change.
         '@media (prefers-reduced-motion: reduce)': {
           '.cm-cairn-fold-btn svg': { transition: 'none' },
           '.cm-cairn-fold-flash': { transition: 'none' },
-          '.cm-cairn-media-placeholder-bar::-webkit-progress-value': { transition: 'none' },
         },
         // The folded-row wash: a soft accent tint, square and full-row, returning as a STATE signal
         // so folded spots read in a scan. The rails are inset box-shadows on the same line element
@@ -651,7 +653,7 @@ Swapping the editor stays a one-file change.
         // after the animation. The transition runs as the field clears the class.
         '.cm-cairn-fold-flash': {
           backgroundColor: 'color-mix(in oklab, var(--color-accent) 12%, transparent)',
-          transition: 'background-color 250ms ease',
+          transition: 'background-color var(--cairn-dur-base) var(--cairn-ease-standard)',
         },
         // Focus mode's dim ink, on the lines editor-modes marks outside the caret's paragraph.
         // Last on purpose: a dimmed line's spans (markers, tokens, directive labels) all drop to

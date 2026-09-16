@@ -6,12 +6,19 @@ puts it on the project's path.
 ```bash
 npx cairn-audit                          # run the static rules over the admin surfaces
 npx cairn-audit --rendered               # run the rendered rules against a running admin
+npx cairn-audit --rule motion-reduced-delay --rendered  # run only the named rule
 npx cairn-audit norms <selector-or-role> # look up a measured norm
 npx cairn-audit --help                   # print usage and exit
 ```
 
 The static audit reads the working directory. The `norms` subcommand reads only the manifest inside
 the installed package, so it needs no config, no built stylesheet, and no browser.
+
+Pass `--rule <id>` to narrow a run to one or more registered rule ids, instead of the full static or
+rendered registry. Repeat the flag for more than one id: `--rule viewport-overflow --rule
+panel-width`. An id that names no registered rule exits nonzero with a message listing the known
+ids, so a typo never runs a silently narrower audit than the one you asked for. `--rule` on its own,
+without `--rendered`, scopes the static run the same way.
 
 A build agent points at these mechanical checks rather than holding their formulas in working
 memory. The packaged `cairn-admin-screens` skill names them by rule id and defers to the audit for
@@ -21,7 +28,7 @@ freshness-checks the skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 28
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 32
 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
 so conformance to cairn's design system is exactly the product being audited, not apparatus that
 measures the engine from outside.
@@ -63,7 +70,8 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Twelve rules run, all error tier.
+Fifteen rules run, all error tier. (`motion-reduced-delay`, the rendered counterpart to the two
+vocabulary rules below, is advisory; see [The rules](#the-rules) under Rendered mode.)
 
 | ID | What it checks |
 |---|---|
@@ -74,7 +82,10 @@ Twelve rules run, all error tier.
 | `token-colors` | No raw hex, `rgb()`, or named-color literal, and no pure achromatic, a color function whose chroma or saturation is exactly zero. `transparent` and `currentColor` are excluded: neither names a color the palette could have supplied. A file listed in `static.paletteFiles` is exempt, since writing literal values down is what a palette declaration site is for |
 | `grammar-boundary` | CSS never redeclares a grammar token. A site re-tunes the palette tokens freely; a grammar token names structure and holds across both themes |
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
-| `motion-band` | Every transition or animation duration lands in the admin's `150ms` to `250ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
+| `motion-band` | Every transition or animation duration lands in the admin's `70ms` to `400ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
+| `motion-property` | A transition or animation names only a property on the [motion allowlist](../internal/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. DaisyUI's own component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
+| `motion-vocabulary` | A transition or animation names its duration and easing with a `--cairn-dur-*` and `--cairn-ease-*` token rather than a literal value. The same DaisyUI and Tailwind exemption applies |
+| `motion-hover-gate` | A hand-authored `:hover` selector that declares a transition or animation, on its own or through the rule pairing it with `:focus-visible`, sits inside `@media (hover: hover)`. It does not reach a vendor component's own `:hover` rule |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
 | `stripe-trim-parity` | A striped row's `:nth-child` background pattern, or a `.table-zebra`-style class, never co-occurs with an unconditioned first/last-child padding trim on the same row class in the same source: the trim clips the stripe fill on an even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`). Applies to any row component, not only the admin's own tables |
 | `unlayered-font-clobber` | A scoped `<style>` block never declares `font-family`, `font-size`, `font-weight`, or the `font` shorthand outside an `@layer` on an element that also carries a font-affecting utility class (a `text-*` size or a `font-*` weight/family). Under the no-Preflight admin, a Svelte scoped style carries no layer of its own while Tailwind utilities sit in `@layer utilities`, so cascade layer precedence, not specificity, decides the winner; the finding names that mechanism and points at moving the typography onto the ancestor the control inherits from. Applies to any component, not only the admin's own |
@@ -84,6 +95,23 @@ Twelve rules run, all error tier.
 check every run gets for free, and the rendered mode is the only one that sees a descendant-selector
 change. A consumer that runs `cairn-audit` without `--rendered` gets the static half alone, so full
 `list-role` coverage needs both modes run.
+
+### What the motion rules don't cover
+
+The three static motion rules read a component's own scoped `<style>` block and its class join,
+and each carries a limit worth knowing before you rely on it:
+
+- **A vendor DaisyUI class, or the six Tailwind transition utilities, is exempt on the class-join
+  half.** `motion-property` and `motion-vocabulary` don't convict `.btn`, `.modal`, `.drawer`,
+  `.collapse`, and DaisyUI's other component classes, or `transition`, `transition-all`,
+  `transition-colors`, `transition-opacity`, `transition-shadow`, `transition-transform`, even
+  where the vendor's own sheet disagrees with the language (see [the design system's eleven
+  vendor disagreements](../internal/admin-design-system.md#the-daisyui-decision-eleven-vendor-disagreements)).
+  An arbitrary form such as `transition-[color]` isn't exempt.
+- **The frame-offset allowance only recognizes a literal attribute value.** A bound or
+  interpolated `data-cairn-motion` value reads as absent and claims no allowance.
+- **The allowance is one element per screen, in document order.** A screen is one component
+  file; the first carrying element passes and a second is convicted.
 
 ### Suppressing a finding
 
@@ -131,6 +159,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | Key | Default | What it names |
 |---|---|---|
 | `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
+| `static.adminScope` | `src/routes/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those two defaults |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
 | `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css"]` |
@@ -222,7 +251,7 @@ landmark. The run then throws and exits 2 rather than reporting clean, naming
 
 ### The rules
 
-Sixteen rules run. The first seven are error tier and exit the command nonzero.
+Seventeen rules run. The first seven are error tier and exit the command nonzero.
 
 | ID | What it checks |
 |---|---|
@@ -234,7 +263,7 @@ Sixteen rules run. The first seven are error tier and exit the command nonzero.
 | `panel-width` | An ExpandableRow summary row or expanded panel doesn't clip its own content at 390 or 320, the hole `viewport-overflow` declines on purpose: that rule's own document-scroll gate reads clean when a table wrapper absorbs a wide row by scrolling, and its scroll-container skip exempts everything under any non-`visible` ancestor, whether or not that ancestor actually offers a scrollbar. Runs under two interaction states, `rest` and `row-expanded`: ExpandableRow only renders its panel row while expanded, so the harness clicks the first summary trigger it finds before measuring the panel half, the same way `viewport-overflow` opens a menu before it measures one; a page with no ExpandableRow can't reach `row-expanded`, which the harness records rather than silently measuring as `rest`. A row or panel is flagged only when some element inside it overflows its own box while no ancestor between it and the table wrapper is genuinely reachable, styled `overflow-x: auto`/`scroll` and currently overflowing; an `overflow-x: hidden` ancestor never counts, and neither does an `auto` one that never actually grows past its own width. The same test exempts a deliberately scrollable AdminTable (the wrap itself scrolls) and a deliberately scrollable descendant living inside the panel. Also exempt: a native `input`/`textarea` (the UA scrolls its own value internally, invisible to the computed-style test). A `select` isn't in that exemption, since it carries no caret and doesn't scroll its own displayed value, and the `scrollWidth`/`clientWidth` measurement this rule runs on otherwise only sees the overflow a `select[multiple]` listbox lays out as real child boxes; a closed single-value `select`'s truncated label never grows its own `scrollWidth` in Chromium no matter how clipped it is, so that shape gets its own painted-text measurement instead, the same paint-not-parse approach the color rules take: the selected option's own text, painted on a canvas with the select's own computed font, against the box's own available width (its `clientWidth` less its own horizontal padding, so a themed select's arrow allowance is already accounted for). An element carrying `text-overflow: ellipsis` with a clipping `overflow-x` is exempt too (the house truncation idiom). That exemption is a design-language call, not an accessibility clearance: it reads as safe only when the full value is reachable elsewhere (a `title` attribute, an expanded detail view), since at the 320 reflow floor a silently truncated value with no such fallback is still a defect |
 | `list-role` | The rendered counterpart to the preceding static `list-role` rule, closing the gap that rule's own coverage note names: a descendant selector scoped to the LIST's own class, daisyUI's `.menu :where(li)` or breadcrumbs' `> li`, rather than the item's own. This rule reads each item's actual computed `display` in a live browser instead of a class-token lookup, so it catches the item regardless of which selector produced the change; the message names the descendant selector as the likely, not the asserted, cause, since the check measures only the computed value. A list already carrying an explicit role is exempt, the same carve-out the static rule gives it, and a changed item that itself already carries an explicit role, a menu-divider's `role="separator"`, is never recommended `role="listitem"`. Findings recommend `role="listitem"` on each affected item alongside `role="list"` on the list: HTML-AAM maps a bare `li` to role listitem by its parent relationship, which the display change already disrupts, so the explicit role is a defensive fix rather than reliance on that mapping alone. Runs under two interaction states, `rest` and `menu-open`, so it reaches the admin's dialog- and popover-only lists (DeleteDialog, EntryPicker, ComponentInsertDialog, the command palette's results); the check stays data-dependent even there, since an empty list reads clean regardless of what its CSS would do to a populated one |
 
-The other nine are advisory. They report and never change the exit code, because each one measures a
+The other ten are advisory. They report and never change the exit code, because each one measures a
 compositional question that a legitimately novel component can answer differently on purpose.
 
 | ID | What it checks |
@@ -248,6 +277,7 @@ compositional question that a legitimately novel component can answer differentl
 | `form-font-parity` | Every rendered `input`, `select`, `textarea`, and `button` inside the theme root's own subtree computes the same first `font-family` as that root. String equality on the first family, so a control either loaded the reset or it didn't; this is the UA reset layer's own regression tripwire, catching a consumer whose sheet never reached the page. Scoped to the `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` subtree (falling back to `body`, then the document root, on a page with no theme wrapper), so a control outside the admin theme is never compared against a face it never inherited. A control that opts into its own face on purpose is exempt: `font-mono`, `font-serif`, `font-sans`, an arbitrary `font-[family-name:...]` class, or Tailwind 4's `font-(family-name:--x)` shorthand, any of them with or without a variant prefix (`md:font-mono`). A finding may still be an exemption miss for a font utility the net doesn't yet recognize; the message says so and names the allowlist as the escape hatch. **Registered provisionally at advisory**: the intended tier is error, promoted only once a CI re-check confirms the rendered suite is green against cairn's own admin and showcase on the CI runner |
 | `field-edge-alignment` | Within a grid or flex-column container, two or more form controls (`.input`/`.select`/`.textarea`) rendering in the same visual column must share a left edge within 1.5px. The staircase detector: an `inline`-register field whose label width varies row to row pushes its control's left edge with it, a shape a consumer's own corpus surfaced at a 1440px viewport. Advisory, since "same column" is read from rendered geometry rather than a DOM contract, a heuristic over arbitrary layouts |
 | `container-inset-asymmetry` | A `.card-shell`, `.list`, or `.modal-box` container whose rendered content sits more than 24px closer to one side than the other. The phantom-gutter detector, catching a one-sided padding or margin utility and, the case a consumer's corpus actually surfaced, an unreset user-agent default: a bare `<ul class="list">` keeping the 40px bullet indent read as a 40px left inset against a 0px right one. Advisory: the threshold is judged, and a deliberately asymmetric layout is a real composition this rule can't tell from a defect |
+| `motion-reduced-delay` | Under a reduced-motion emulation, no admin-owned selector computes a nonzero `transition-delay` or `animation-delay`. A delay that survives reduced motion makes an interface merely late rather than either moving or snapping. Advisory because the harness's element-to-element differential carries no join key across the emulation axis: `signature(el)` names a class of elements rather than one element, so a finding names the class and the page rather than a single offending line |
 
 Every rule that compares two colors resolves them by painting each one on a canvas in the page and
 reading the sRGB bytes back, rather than parsing color syntax. A themed admin computes to whatever

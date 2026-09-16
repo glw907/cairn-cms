@@ -21,6 +21,15 @@ export type Theme = 'light' | 'dark';
  */
 export type InteractionState = 'rest' | 'menu-open' | 'focus-visible' | 'row-expanded';
 
+/**
+ * An emulated browser condition a rendered rule may opt into, layered above the theme context. A
+ * rule that declares no axis runs under `'default'` alone (the runner's own default, the same shape
+ * {@link RenderedRule.states} defaults to `['rest']`), so a registry with no axis-declaring rule
+ * opens exactly the contexts it opens today. `'reduced-motion'` is `motion-reduced-delay`'s own
+ * axis; a later pass's rendered hover half is expected to add a touch-modality axis here.
+ */
+export type EmulationAxis = 'default' | 'reduced-motion';
+
 // The structural slice of Playwright's API this module drives. Typed narrowly rather than imported
 // from the `playwright` package: Playwright is a dynamic import from whichever tree this file
 // executes in, so its exact installed version and type shape are not guaranteed, the same reasoning
@@ -56,8 +65,19 @@ export interface RenderedBrowser {
    * never runs the page's own scripts, so `evaluate` reads back whatever the server actually sent,
    * with no race against hydration. Playwright still serves `evaluate` through its own runtime
    * binding regardless of the flag, so a page opened this way is otherwise ordinary.
+   *
+   * `reducedMotion` and `hasTouch` are the two emulation options {@link EmulationAxis} threads
+   * through: `reducedMotion: 'reduce'` is what makes a real reduced-motion media block apply so
+   * `motion-reduced-delay` reads a computed style under the same condition a reader who asked for
+   * less motion actually gets. `hasTouch` carries no rule yet; it is here because a later pass's
+   * rendered hover half needs the same axis mechanism to request it.
    */
-  newContext(options?: { colorScheme?: Theme; javaScriptEnabled?: boolean }): Promise<RenderedContext>;
+  newContext(options?: {
+    colorScheme?: Theme;
+    javaScriptEnabled?: boolean;
+    reducedMotion?: 'reduce' | 'no-preference';
+    hasTouch?: boolean;
+  }): Promise<RenderedContext>;
   close(): Promise<void>;
 }
 
@@ -73,6 +93,14 @@ export interface RenderedRuleContext {
   pagePath: string;
   theme: Theme;
   state: InteractionState;
+  /**
+   * The emulation axis this context was opened under; see {@link RenderedRule.axes}. Optional so
+   * every rendered rule's own fixture suite, which builds this shape by hand against a bare
+   * Playwright page and predates the axis, keeps compiling unchanged; `runRendered` itself always
+   * sets it, and a rule that reads it treats an absent value as `'default'`, the same default
+   * `axes` itself carries.
+   */
+  axis?: EmulationAxis;
   config: AuditConfig;
 }
 
@@ -119,14 +147,26 @@ export interface RenderedRule {
    * never mentions the field costs the run nothing beyond the rest-state pass every rule shares.
    */
   states?: InteractionState[];
+  /**
+   * Emulation axes this rule reads from. Defaults to `['default']` when omitted, the same opt-in
+   * shape {@link states} uses, so a registry with no axis-declaring rule opens exactly the contexts
+   * it opens today.
+   */
+  axes?: EmulationAxis[];
   check(ctx: RenderedRuleContext): Promise<RenderedFinding[]>;
 }
 
-/** A `RenderedFinding` resolved with the page, theme, and state it was raised under. */
+/** A `RenderedFinding` resolved with the page, theme, state, and axis it was raised under. */
 export interface ResolvedRenderedFinding extends RenderedFinding {
   page: string;
   theme: Theme;
   state: InteractionState;
+  /**
+   * Optional for the same reason {@link RenderedRuleContext.axis} is: every existing rendered
+   * fixture suite builds this shape by hand and predates the axis. `runRendered` always sets it;
+   * an absent value reads as `'default'`.
+   */
+  axis?: EmulationAxis;
 }
 
 /** One page's worth of allowlist bookkeeping: which named selectors were actually seen there. */
@@ -210,6 +250,29 @@ export interface CairnAuditPageHelpers {
   paintLayers(el: Element): PaintLayer[];
   /** The color the browser paints where nothing in the document ever paints, as a CSS string. */
   canvasColor(): string;
+  /**
+   * Every stylesheet rule whose selector matches `el` (or, when `pseudoElement` is `'::before'` or
+   * `'::after'`, matches `el` under that pseudo-element) and which declares `property` at all,
+   * walked across the page's CSSOM. Six node shapes are descended into looking for a matching leaf:
+   * an ordinary style rule, `CSSNestedDeclarations` (bare declarations trailing a nested rule,
+   * matched against the nearest enclosing style rule's own selector), `CSSSupportsRule`,
+   * `CSSContainerRule`, `CSSLayerBlockRule`, and `@starting-style`'s `CSSStartingStyleRule`. A
+   * `@media` block is deliberately never descended into: this walker exists to locate the rule
+   * behind a FIRING element, and every rule gated behind `prefers-reduced-motion` lives inside one,
+   * so a firing element's authoring rule is never there. A cross-origin or otherwise
+   * opaque stylesheet throws reading its own `cssRules`; that sheet is skipped rather than aborting
+   * the walk over every other sheet on the page.
+   *
+   * This is a locator, not a detector: it reports what is authored, leaving whether the computed
+   * value is actually nonzero to the caller. Order is walk order and carries no ranking meaning
+   * beyond "found first"; a caller that wants the true winning rule under cascade and specificity
+   * inspects every returned match itself.
+   */
+  findAuthoredRules(
+    el: Element,
+    pseudoElement: '' | '::before' | '::after',
+    property: string
+  ): { selector: string; file: string; value: string }[];
 }
 
 declare global {

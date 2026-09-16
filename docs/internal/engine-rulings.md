@@ -5835,3 +5835,103 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `docs/extend/migration-notes.md` carries the replacement composition as a `svelte` fence with
   no `overflow-x-auto` and an `overflow-hidden` clip on the outer card wrapper, and with
   `AdminTable`'s required `rowCount` and `header` props supplied.
+
+## motion-frame-offset-attribute: the frame offset, decision 3  (accept, 2026-09-15, admin motion)
+
+- **Verdict:** accept. Decision 3, quoted: "**The frame offset, whose first instance is zen
+  mode:** the industry default, shadcn's shape. A transition on the content column's
+  `margin-left` at the shift token on Carbon's productive entrance curve, exiting one band faster
+  on the exit curve, snapping under reduced motion. It is the one documented exception to the
+  property allowlist, enforced by the `data-cairn-motion="frame-offset"` attribute the moving
+  element carries. Amended 2026-09-13: the decision as first ruled named zen mode and said
+  'enforced by selector', and the amendment gives the case a neutral name and a borrowable key.
+  Zen mode keeps its feature name in the admin."
+  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Decisions (Geoff,
+  2026-09-13)", decision 3, 2026-09-13.)
+- **Reopens on:** a second page-level mode change needing a layout-property allowance the
+  attribute key cannot express, or the shell dropping `data-cairn-motion="frame-offset"` from its
+  drawer content element.
+- **Shape:** `motion-property`'s exception reads `data-cairn-motion="frame-offset"` plus
+  `margin-left` alone, one carrying element per screen, keyed on the attribute plus the property
+  rather than on a file or a selector.
+- **Record:** `src/lib/audit/rules/static/motion-property.ts`; `src/lib/components/cairn-admin.css`,
+  the rule declared on `[data-cairn-motion="frame-offset"]` inside the two admin theme roots; the
+  shell's drawer content element, which carries the attribute.
+- **Verified:** the rule's own four-case fixture (the carrying element passes, an element without
+  the attribute transitioning `margin-left` fails, a second layout property on the carrying
+  element fails on that property, and a second carrying element on the same screen fails), and
+  `src/tests/unit/admin-sheet-inventory.test.ts` asserting the built sheet's rule selector.
+
+## motion-conform-to-daisyui-conventions: DaisyUI conform-to-conventions, decision 4  (accept, 2026-09-15, admin motion)
+
+- **Verdict:** accept. Decision 4, quoted: "**Conform to conventions:** DaisyUI's component
+  timings stay the vendor's own vocabulary. No unlayered override of the four components
+  (`.modal`, `.drawer`, `.collapse`, `.btn`). cairn's rules enforce authored code. The audit
+  treats a DaisyUI component class as a vendor contribution, checked for the properties it
+  animates rather than its durations."
+  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Decisions (Geoff,
+  2026-09-13)", decision 4, 2026-09-13.)
+- **Reopens on:** the admin adopting `modal-bottom` at narrow widths, which makes the declined
+  `.modal-box` scale override warranted (the travel becomes the viewport rather than roughly
+  10px); or a DaisyUI major that changes which classes carry the eleven recorded disagreements.
+- **Shape:** no admin rule authors an unlayered override of `.modal`, `.drawer`, `.collapse`, or
+  `.btn`. `motion-property` and `motion-vocabulary` exempt DaisyUI's own component classes and
+  Tailwind's `transition*` utilities on their class-join half, checked instead for the properties
+  they animate; the eleven vendor disagreements are recorded in
+  `docs/internal/admin-design-system.md`'s Motion section rather than fixed.
+- **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
+  disagreements"; `src/lib/audit/rules/static/motion-property.ts` and
+  `src/lib/audit/rules/static/motion-vocabulary.ts`, both carrying the DaisyUI class-name
+  exemption.
+- **Verified:** the vendor-exemption fixtures in `motion-property` and `motion-vocabulary`'s own
+  test suites, asserting a DaisyUI component class produces no finding while the same property on
+  a cairn-authored class still does.
+
+## motion-tooltip-menu-hover-guards-dropped: dropping the `.tooltip`/`.menu` hover guards  (decline, 2026-09-15, admin motion)
+
+- **Verdict:** decline. Revision 1 proposed two pinned unlayered `@media (hover: hover)` guards on
+  DaisyUI's `.tooltip` and `.menu`. Geoff ruled against them (2026-09-13), an application of
+  decision 4's conform-to-conventions position: "Two escalations went to Geoff and came back as
+  rulings, both applications of decision 4's conform-to-conventions position. No unlayered
+  override of a DaisyUI internal, and a vendor timing stays the vendor's vocabulary. 1. **The two
+  `@media (hover: hover)` guards on `.tooltip` and `.menu` are dropped.** Both components are
+  recorded as vendor disagreements instead, and the touch-tooltip visibility defect (long-press
+  opens and sticks) is filed to the borrowable-patterns borrow-1 pass beside the rendered
+  hover-gate half, carrying the review's finding that a transition guard does not fix a
+  visibility rule."
+  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Revision 2
+  (2026-09-13)", 2026-09-13.)
+- **Reopens on:** the borrow-1 pass taking up the `.tooltip` touch defect and the rendered half of
+  `motion-hover-gate`, per the follow-ups this pass files to ROADMAP's "Borrowable patterns" tier.
+- **Shape:** no rule targeting `.tooltip` or `.menu` ships; `motion-hover-gate` governs
+  cairn's own authored rules only and does not reach a vendor component. The two components are
+  recorded as vendor disagreements 6 and 7 in `docs/internal/admin-design-system.md`'s Motion
+  section.
+- **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
+  disagreements", items 6 and 7; `ROADMAP.md`, "Borrowable patterns".
+- **Verified:** no unlayered `@media (hover: hover)` guard on `.tooltip` or `.menu` appears in
+  `custom-surface-budget.json`; its one `.menu` entry is the pre-existing focus-visible rule, and
+  `motion-hover-gate`'s own fixtures cover cairn-authored rules alone.
+
+## motion-drawer-persistent-scoping-dropped: dropping the drawer's `isPersistentSidebar` scoping  (decline, 2026-09-15, admin motion)
+
+- **Verdict:** decline. Revision 1 proposed scoping DaisyUI's drawer transition away from
+  `isPersistentSidebar` widths. Geoff ruled against it (2026-09-13): "2. **The drawer scoping to
+  `isPersistentSidebar` is dropped.** The persistent drawer's vendor transition is recorded as a
+  fifth vendor disagreement. The frame offset exception stands as decided."
+  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Revision 2
+  (2026-09-13)", 2026-09-13.) The only form the scoping could take was a rule targeting
+  `.drawer-side`, an unlayered override of `.drawer`, which decision 4 forbids.
+- **Reopens on:** the resize stopper's working form (a universal descendant rule costing one
+  `unlayeredAllowlist` entry) being taken up, per ROADMAP's Later tier entry, which would also
+  suppress the drawer's transition at the breakpoint flip as a side effect.
+- **Shape:** no rule targets `.drawer-side` to suppress its transition at `lg` or `xl`. The
+  vendor transition runs at every breakpoint flip, dragged or scripted, recorded as vendor
+  disagreement 5 in `docs/internal/admin-design-system.md`'s Motion section, which states the
+  shipped sheet does not honor the furniture rule at the flip as a named limitation.
+- **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
+  disagreements", item 5, and its Limitations; `ROADMAP.md`, the resize stopper entry in the
+  Later tier.
+- **Verified:** the two `.drawer-side` entries in `custom-surface-budget.json` are the
+  pre-existing `.lg\:drawer-open` and `.xl\:drawer-open` persistent-sidebar rules; neither
+  suppresses the vendor drawer transition, so no breakpoint-flip scoping rule ships.

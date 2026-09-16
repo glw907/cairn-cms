@@ -1,7 +1,9 @@
 // cairn-audit's motion-band rule, graduated from check:invisible-craft: every transition/animation
-// duration a component's own CSS declares lands in the admin's 150-250ms band (fast enough to feel
-// responsive, slow enough to read as motion rather than a flicker), and `transition: all` never
-// ships (it re-animates every property a future edit adds, including ones that should snap). A
+// duration a component's own CSS declares lands in the admin's 70-400ms band, the span the token
+// set's five durations cover, and `transition: all` never ships (it re-animates every property a
+// future edit adds, including ones that should snap). motion-band is the one owner of
+// `transition: all` and the `transition-all` utility class it compiles from, so any other rule
+// that sees the same declaration defers to `motion-band` by id rather than re-reporting it. A
 // declaration inside a `prefers-reduced-motion: reduce` guard is exempt: that guard's whole job is
 // to collapse a transition toward zero for a reduced-motion reader, so a near-instant duration
 // there is the fix this rule polices FOR, never a violation of it.
@@ -11,8 +13,8 @@ import type { Finding, StaticRule } from '../../types.js';
 
 const ALL_PROPERTY = /^(transition|transition-property)$/;
 const DURATION = /(-?\d+(?:\.\d+)?)(m?s)\b/g;
-const BAND_MIN_MS = 150;
-const BAND_MAX_MS = 250;
+const BAND_MIN_MS = 70;
+const BAND_MAX_MS = 400;
 
 /** Every duration a value names, in milliseconds. */
 function durationsIn(value: string): number[] {
@@ -43,7 +45,7 @@ export const motionBand: StaticRule = {
             ruleId: 'motion-band',
             tier: 'error',
             ...cssRulePosition(scope),
-            message: `"${decl.property}: ${decl.value}" transitions "all", which re-animates every property a future edit adds`,
+            message: `"${decl.property}: ${decl.value}" transitions "all", which re-animates every property a future edit adds; name the properties an entrance under @starting-style needs, never delete the transition, since deleting it deletes the entrance`,
           });
         }
         if (!isMotionProperty(decl.property)) continue;

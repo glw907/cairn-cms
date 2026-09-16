@@ -1002,3 +1002,164 @@ proof and leaving those five widths' baselines untouched.
   and Add button running past the 320px viewport edge (dark scheme also shows the overflow as an
   unthemed white strip); the after pair shows both inputs and the Add button fitting inside the
   320px viewport with no overflow.
+
+## Admin motion
+
+### Task 1: the token set, the theme defaults, and the two shipped bugs
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-1/before/` and
+  `~/.cache/cairn-admin-motion/task-1/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. Adding the `--cairn-dur-*`/`--cairn-ease-*` tokens and repointing
+  `--default-transition-duration`/`--default-transition-timing-function` changes the default
+  easing curve a `transition-*` utility resolves at rest, not any resting frame's own paint; a
+  resting frame carries no curve. The two new reduced-motion delay declarations likewise change
+  nothing at rest. No task's own screen (`signups`, `styleguide`) exercises a transition mid-shot.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests, the
+  full `admin-signups-*` set) passed 28 of 28 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-1/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-1/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-1/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the token addition and
+  the default-transition repoint leak nothing onto a resting frame.
+
+### Task 6a: the admin migrated onto the language
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-6a/before/` and
+  `~/.cache/cairn-admin-motion/task-6a/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. The preview pane's removed width transition and the upload fill's removed
+  width transition are both mid-shot changes: a resting-state screenshot of `signups` or
+  `styleguide` never catches either pane or fill in motion, so removing the transition changes
+  nothing a still capture can see. Every other change this task makes (the token migrations on the
+  feedback strip, the fold chevron, the unfold flash, `HelpHome`'s hover pairs, and the disclosure
+  caret) repoints a duration or a curve, which a resting frame also carries no evidence of.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests)
+  passed 28 of 28 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-6a/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-6a/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-6a/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the migration leaks
+  nothing onto a resting frame.
+
+### Task 6b: the dropzone's drag-over state
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-6b/before/` and
+  `~/.cache/cairn-admin-motion/task-6b/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. The hero field's empty-state dropzone does not render on `signups` or
+  `styleguide`, and the drag-over paint is drag-triggered besides, so no resting-state screenshot
+  of either surface exercises the new state.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (28 tests)
+  passed 28 of 28 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-6b/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-6b/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-6b/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the new drag-over state
+  leaks nothing onto a resting frame.
+
+### Task 7: zen
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-7/before/` and
+  `~/.cache/cairn-admin-motion/task-7/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. Zen is not a resting state on either captured surface: the frame-offset
+  transition, the chrome fade, and the zen chip's entrance all paint only while zen is toggled on
+  the edit page, which neither `signups` nor `styleguide` ever enters. A resting-state screenshot
+  carries no evidence of any of the three.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (30 tests,
+  the 28 existing plus the two new zen layout-count assertions) passed 30 of 30 with no failures,
+  so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-7/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-7/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-7/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving zen's motion leaks
+  nothing onto a resting frame.
+
+### Task 7-fix: zen's chrome fade scoped off first paint, and the chip's exit made real
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-7-fix/before/` (a symlink to
+  `~/.cache/cairn-admin-motion/task-7/after/`, task 7's own after set at the same parent commit,
+  since no capture happened between the two) and `~/.cache/cairn-admin-motion/task-7-fix/after/`,
+  both `node examples/showcase/scripts/capture-surfaces.mjs --only signups,styleguide`, `signups`
+  and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: none. This fix scopes an existing entrance fade off first paint (a mount-time
+  attribute) and rebuilds the zen chip's exit mechanics (a transition timing fix and a lifecycle
+  change); neither `signups` nor `styleguide` ever enters zen or triggers the chrome fade, so
+  their resting frames carry no evidence of either change.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (the same 30
+  tests) passed 30 of 30 with no failures, so none moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after.
+- READ ME: `~/.cache/cairn-admin-motion/task-7-fix/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-7-fix/after/full/signups-light-320.png`; the dark-scheme pair
+  at the same width; `~/.cache/cairn-admin-motion/task-7-fix/before/full/styleguide-light-1440.png`
+  and its after-set counterpart. All three pairs are pixel-identical, proving the fade-scoping and
+  chip-lifecycle change leaks nothing onto a resting frame.
+
+### Task 10: the engine's tree wired, and the visual suite
+
+- **Before/after:** `~/.cache/cairn-admin-motion/task-10/before/` and
+  `~/.cache/cairn-admin-motion/task-10/after/`, both `node examples/showcase/scripts/capture-surfaces.mjs
+  --only signups,styleguide`, `signups` and `styleguide`, both schemes, 320/390/768/1440/2560.
+- INTENDED MOVES: six brand-new admin surfaces, 60 files (6 surfaces x 5 widths x 2 schemes),
+  added to `examples/showcase/e2e/admin-visual.spec.ts`, none of which the suite has rendered
+  before: the edit page in zen, the drawer open as an overlay, the persistent sidebar, a dialog
+  open (`DeleteDialog`), the command palette open, and the media library with a selection. No
+  existing baseline moves: wiring `static.adminScope` and the three motion rule ids into
+  `check-invisible-craft.mjs` touches no rendered admin markup, and `signups`/`styleguide` are
+  resting-state captures that never open the drawer, a dialog, the palette, or zen.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts` (90 tests,
+  the 30 existing plus the 60 new) passed 89 of 90 with one flaky retry (a keyboard-chord timing
+  race on `admin edit page zen — dark — 768px`, unrelated to any moved baseline) and no failures,
+  so no existing baseline moved.
+- TILE DIFF: `magick compare -metric AE` on every tile in both captured surfaces, both schemes, all
+  five widths (10 `signups` tiles, 92 `styleguide` tiles across its multi-tile widths): AE 0 on
+  every one of the 102 tiles, before against after. The 60 new surfaces carry no `TILE DIFF` row:
+  each is a first render with no before to compare against.
+- READ ME: `~/.cache/cairn-admin-motion/task-10/before/full/signups-light-320.png` and
+  `~/.cache/cairn-admin-motion/task-10/after/full/signups-light-320.png`; the dark-scheme pair at
+  the same width; `~/.cache/cairn-admin-motion/task-10/before/full/styleguide-light-1440.png` and
+  its after-set counterpart. All three pairs are pixel-identical, proving the gate wiring and the
+  new spec file leak nothing onto a resting frame. The 60 new baselines themselves live at
+  `examples/showcase/e2e/admin-visual.spec.ts-snapshots/admin-{edit-zen,drawer-overlay,
+  sidebar-persistent,delete-dialog,command-palette,media-selected}-{light,dark}-{320,390,768,1440,
+  2560}-linux.png`.
+
+### Task 10 fix round: the media-selected bar's narrow-width overflow
+
+- **Before/after:** no `capture-surfaces.mjs` pair; `CairnMediaLibrary.svelte` is not
+  `cairn-admin.css` or `CairnAdminShell.svelte`, so it does not carry `signups`/`styleguide` reach.
+  The only rendered surface it can move is `media-selected`, proved directly through the visual
+  suite's own before/after screenshots.
+- INTENDED MOVES: `media-selected 320 light`, `media-selected 320 dark`, `media-selected 390
+  light`, `media-selected 390 dark`: the pass-end visual verifier found the sticky "Selection
+  actions" bar's single-row layout collapsing at 320/390px, wrapping button text one word per
+  line and pushing "Delete 1" past the viewport edge (320 also overflowed the document). The fix
+  splits the bar into two flex rows below the `sm` breakpoint (count/scope, then the action
+  buttons) so no row is squeezed; at `sm` and up it stays the original single row.
+- MOVED BASELINES: an unmodified `CI=1 npx playwright test e2e/admin-visual.spec.ts -g "admin
+  media selected"` against the rebuilt dist failed exactly these 4 of 10: `admin media selected —
+  light — 320px`, `admin media selected — dark — 320px`, `admin media selected — light — 390px`,
+  `admin media selected — dark — 390px`. The other 6 (768/1440/2560, both schemes) passed
+  unchanged.
+- TILE DIFF: none captured; `media-selected` is a first-render surface from Task 10 with no
+  `capture-surfaces.mjs` tile set, so the fix is proved by the moved-baseline failure/regen pair
+  above and the full-page reads below, matching Task 10's own new-surface convention.
+- READ ME: `examples/showcase/e2e/admin-visual.spec.ts-snapshots/admin-media-selected-light-320-linux.png`
+  and `admin-media-selected-dark-390-linux.png`, the two regenerated baselines read after
+  regeneration: the selection bar now stacks into two rows at both widths, "Delete 1" sits fully
+  inside the viewport, and no button text wraps mid-word.

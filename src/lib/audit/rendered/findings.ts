@@ -231,6 +231,13 @@ export function pageIdentityMismatchFinding(pagePath: string, theme: Theme, ssr:
  * moment its selector churned, which is the one path by which a non-gating rule could reach the
  * exit code.
  *
+ * `ranRuleIds`, when given, is the rule id set the run actually executed (a `--rule`-scoped run
+ * covers only some of the registry), the same shape the static runner's `applySuppressions`
+ * reads. An unspent entry naming a rule outside that set is skipped rather than judged: the run
+ * never executed that rule, so neither stale nor dead is a claim this resolver can stand behind.
+ * Defaults to `ruleTiers`'s own keys, so a caller that only ever built `ruleTiers` from the rules
+ * it ran (the ordinary case) needs no second argument.
+ *
  * This is a pure function over already-collected data, so the allowlist contract is testable
  * without a browser.
  */
@@ -238,7 +245,8 @@ export function resolveRenderedFindings(
   raw: ResolvedRenderedFinding[],
   visits: RenderedPageVisit[],
   allowlist: RenderedAllowlistEntry[],
-  ruleTiers: Map<string, Tier> = new Map()
+  ruleTiers: Map<string, Tier> = new Map(),
+  ranRuleIds: Set<string> = new Set(ruleTiers.keys())
 ): { findings: Finding[]; suppressed: Finding[] } {
   const findings: Finding[] = [];
   const suppressed: Finding[] = [];
@@ -257,6 +265,7 @@ export function resolveRenderedFindings(
   }
   for (const entry of allowlist) {
     if (spent.has(entry)) continue;
+    if (entry.rule !== undefined && !ranRuleIds.has(entry.rule)) continue;
     const visit = visits.find((candidate) => candidate.page === entry.page);
     if (visit?.identityRefused) {
       findings.push(identityRefusedFinding(entry));

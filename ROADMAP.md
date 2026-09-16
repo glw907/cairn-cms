@@ -281,6 +281,18 @@ The original decision framing, for the record:
 
 ## Now
 
+- **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
+  and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
+  pass.** The unscoped run (`cairn-audit --rendered`, no `--rule`) had never actually run in CI
+  before that dispatch; all 200 findings are this one rule, on `/admin/editors`, `/admin/media`,
+  `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, example `div.flex-none: renders 405px
+  wide against a 390px viewport`. Hypothesis: the off-canvas drawer's transformed layer is being
+  measured (405px against a 390px viewport), since the admin-visual suite is green at those same
+  widths, so the defect may be the rule's transform handling rather than the actual layout. Next
+  step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
+  the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
+  hypothesis.
+
 - **A per-task gate tier chosen from the diff at gate time, before the next pass (Geoff,
   2026-09-15).** The overnight motion run showed the clock cost of a pass is the gate: the full
   string runs the showcase's whole browser suite, 25 to 35 minutes, and a task with a fix round
@@ -974,6 +986,16 @@ the named human gates only):**
   `docs/superpowers/specs/2026-09-12-extend-design.md` after step 2.
   Site migration waits until ALL the extend work has landed (extend-1, the docs rewrite,
   extend-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
+  **Filed from the admin motion language pass (2026-09-15), four follow-ups for extend-1's gates
+  layer:** (1) the rendered half of `motion-hover-gate`, triggered by a consumer's hand-authored
+  `:hover` rule the static half cannot see because the motion sits on a descendant selector or a
+  base rule the class join does not resolve; (2) the DaisyUI `.tooltip` touch defect (long-press
+  opens and sticks), whose fix the review found is gating the tooltip's **visibility**, not its
+  transition, a behavioral override of a vendor component extend-1 decides on its own terms; (3)
+  the same follow-up for DaisyUI `.menu`; (4) the `.modal-box` scale override's reopen trigger,
+  carried as a `WATCH:` comment beside the recipe in `docs/internal/admin-design-system.md`'s
+  Motion section rather than filed here, since the trigger (the admin adopting `modal-bottom` at
+  narrow widths) is a markup change a future pass makes rather than an external event.
 
 - **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after extend-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
@@ -2188,6 +2210,22 @@ the named human gates only):**
   to pass. Pin the local Playwright Chromium build and font set to the runner's, or run the e2e
   in a matching container, so local baselines are canonical again. Chore, not a pass; the gotcha
   is recorded in `CLAUDE.md`.
+
+- **The resize stopper (cut from the admin motion language pass, 2026-09-15).** The published
+  motion language's resize backstop, suppressing motion while a resize or drag is in progress, is
+  cut from that pass: its specified form is a no-op, since a class on the bare `data-theme`
+  element never matches the admin sheet's `:where([data-theme]) .thing` scoped rules and
+  `transition-*`/`animation-*` properties don't inherit, so even a matching rule on that one
+  element would suppress nothing on the drawer or the sidebar. Its working form is a universal
+  descendant rule in the reduced-motion block's own shape, which is unlayered and costs one
+  `unlayeredAllowlist` entry, a budget cost the motion pass declined everywhere else; the
+  components layer measured 19 selectors against a `componentsLayerCap` of 19 at that pass's
+  head, so the specified form had no room either. What holds the resize case meanwhile: every
+  layout property in the admin is on the motion language's named-error list, so a resize snaps
+  structurally, and the one residue is DaisyUI's own drawer transition running at the breakpoint
+  flip (recorded as a vendor disagreement, not fixed). **Trigger:** a pass willing to spend one
+  `unlayeredAllowlist` entry to suppress the drawer's transition at the breakpoint flip, or a
+  `componentsLayerCap` increase that gives the layered form room.
 
 - **The second-menu editing question (chassis-B2 harvest, engine consultation candidate).**
   `/admin/nav`'s `createNavRoutes` binds to one menu (`menus.primary`); chassis-B2 moved the

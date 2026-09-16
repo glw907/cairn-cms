@@ -333,6 +333,41 @@ The release step sets the version number at the cut and renames this section to 
 
   The packaged admin sheet also drops `gap-0` and `overflow-x-auto`: `OfficeList.svelte` was the
   engine's only user of each.
+- **`cairn-audit` gains three error-tier static rules and one advisory rendered rule for
+  motion.** `motion-property`, `motion-vocabulary`, and `motion-hover-gate` join the static
+  rules; `motion-reduced-delay` joins the rendered ones. A custom admin screen that transitions a
+  layout property, writes `transition-all`, writes a literal duration or easing, or declares an
+  ungated hand-authored `:hover` transition now fails `npx cairn-audit`. Move onto the
+  `--cairn-dur-*`/`--cairn-ease-*` tokens, or suppress with a reason. One layout property is
+  allowed, and only by the frame-offset key: an element carrying `data-cairn-motion="frame-offset"`,
+  at most one per screen, may transition `margin-left`.
+- **`motion-band`'s band widens from `150ms` to `250ms` to `70ms` to `400ms`, and it no longer
+  reports a call site that references a token.** A site relying on the narrow band loses that
+  check; `motion-vocabulary` is what replaces it. An existing `cairn-audit-disable-next-line
+  motion-band` directive that covered a finding inside the old band and outside the new one now
+  silences nothing, which `cairn-audit` reports as a dead suppression at error tier that cannot
+  itself be suppressed: delete the directive on upgrade. The motion predicate also widens, so a
+  `transition-delay` reaches `motion-band`'s band check and a rule declaring only
+  `transition-timing-function` now owes a reduced-motion sibling under `reduced-motion`.
+- **The admin sheet sets `--default-transition-duration` and
+  `--default-transition-timing-function` to cairn tokens on the admin root.** A bare `transition`
+  utility on a custom screen changes curve from Tailwind's `cubic-bezier(0.4, 0, 0.2, 1)` to
+  Carbon's productive standard `cubic-bezier(0.2, 0, 0.38, 0.9)`. The duration is unchanged at
+  `150ms`.
+- **The admin's reduced-motion block now zeroes `transition-delay` and `animation-delay`.** A
+  custom screen that relied on a delay surviving a reduced-motion preference loses it, which is
+  the fix.
+- **The edit page's preview pane no longer animates its width when the split changes.** The
+  resize snaps.
+- **The upload progress fill no longer transitions its `width`, and no motion replaces it.** The
+  fill snaps to each new value. The native `<progress>` element is unchanged and keeps its
+  implicit `progressbar` role and its `value`/`max` mapping, so nothing changes for assistive
+  technology. The reduced-motion pin on `::-webkit-progress-value` goes with the transition it
+  pinned.
+- **Three utility classes leave the packaged admin sheet, because their last call sites go:**
+  `transition-all`, `transition-[width]`, and `duration-[250ms]`. A site whose own markup carries
+  any of the three was relying on the engine's sheet to compile it; add the class to that site's
+  own Tailwind content or restate the declaration.
 
 ### The four sites' upgrade order
 

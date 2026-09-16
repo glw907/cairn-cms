@@ -217,10 +217,17 @@ function suppressionFinding(directive: Directive, message: string): Finding {
  * its finding, because the intent is unambiguous and the defect is the missing reason; reporting the
  * finding as well would bury the one line the author has to fix. A directive naming no rule silences
  * nothing, because there is nothing to match.
+ *
+ * `ranRuleIds`, when given, is the rule id set the run actually executed (a `--rule`-scoped run
+ * covers only some of the registry). A directive naming a rule outside that set is skipped rather
+ * than judged: the run never executed that rule, so neither "matched" nor "dead" is a claim this
+ * split can stand behind. Omit it, or pass the full registry, for the unscoped case, where every
+ * directive is judged the way it always was.
  */
 export function applySuppressions(
   findings: Finding[],
-  sources: SuppressionSource[]
+  sources: SuppressionSource[],
+  ranRuleIds?: Set<string>
 ): SuppressionSplit {
   const silenced = new Set<Finding>();
   const reported: Finding[] = [];
@@ -235,6 +242,7 @@ export function applySuppressions(
       if (directive.reason === null) {
         reported.push(suppressionFinding(directive, givesNoReason(ruleId)));
       }
+      if (ranRuleIds && !ranRuleIds.has(ruleId)) continue;
       const range = targetRange(directive, source);
       const matched = own.filter(
         (finding) =>

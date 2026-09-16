@@ -30,15 +30,19 @@ function componentPaths(root: string, dir: string): string[] {
   });
 }
 
-function parseAll(config: AuditConfig): ParsedComponent[] {
+/**
+ * Every component under one scope's directories, parsed once. Shared by `static.scope` and
+ * `static.adminScope`, which carry the identical existence rule: a configured path the tree does
+ * not have throws, since honoring a misspelled one as an empty scan is the silent green the spec
+ * rejected the ESLint route over, while a default path a given tree does not have is skipped,
+ * since the default spans the library and a consumer site.
+ */
+function parseScope(config: AuditConfig, dirs: string[], fromConfig: boolean, key: string): ParsedComponent[] {
   const seen = new Set<string>();
   const files: ParsedComponent[] = [];
-  for (const dir of config.staticScope) {
-    // A configured scan path is a promise the tree holds that directory. Honoring a misspelled one
-    // as an empty scan is the silent green the spec rejected the ESLint route over: nothing was
-    // audited and the exit code says everything passed.
-    if (config.staticScopeFromConfig && !existsSync(resolve(config.root, dir))) {
-      throw new Error(`${dir}: the configured static scan scope does not exist (${CONFIG_FILE}, static.scope)`);
+  for (const dir of dirs) {
+    if (fromConfig && !existsSync(resolve(config.root, dir))) {
+      throw new Error(`${dir}: the configured static scan scope does not exist (${CONFIG_FILE}, ${key})`);
     }
     for (const path of componentPaths(config.root, dir)) {
       if (seen.has(path)) continue;
@@ -55,6 +59,11 @@ function loadCssFiles(config: AuditConfig): CssSource[] {
     file: path,
     source: readFileSync(resolve(config.root, path), 'utf8'),
   }));
+}
+
+/** Whether a root-relative path lies inside one of the given root directories. */
+function isUnderRoots(path: string, roots: string[]): boolean {
+  return roots.some((root) => path === root || path.startsWith(`${root}/`));
 }
 
 function byPosition(a: Finding, b: Finding): number {
@@ -83,20 +92,55 @@ function loadSheetSources(config: AuditConfig): string {
 }
 
 /**
+ * Narrow a rule registry to the ids `--rule` named, in registry order regardless of the order
+ * `ids` lists them. Undefined or empty `ids` returns `rules` unchanged, the whole registry a
+ * caller ran before `--rule` existed. Generic over both rule shapes (static and rendered) since
+ * the narrowing logic is identical: an id that matches no registered rule throws, naming every
+ * known id, since silently running a smaller registry than the one asked for is the ambiguity
+ * `--rule` exists to remove.
+ */
+export function selectRules<T extends { id: string }>(rules: T[], ids: string[] | undefined): T[] {
+  if (ids === undefined || ids.length === 0) return rules;
+  const known = rules.map((rule) => rule.id);
+  const unknown = ids.filter((id) => !known.includes(id));
+  if (unknown.length > 0) {
+    throw new Error(
+      `unknown --rule id${unknown.length > 1 ? 's' : ''} ${unknown.join(', ')}. Known rule ids: ${known.join(', ')}`
+    );
+  }
+  const wanted = new Set(ids);
+  return rules.filter((rule) => wanted.has(rule.id));
+}
+
+/**
  * Run the static audit. `rules` defaults to the shipped registry and is injectable so a test can
  * drive the pipeline with a rule of its own.
  */
 export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules()): AuditReport {
   const sheet = parseSheet(loadSheetSources(config));
-  const files = parseAll(config);
+  const files = parseScope(config, config.staticScope, config.staticScopeFromConfig, 'static.scope');
+  const adminFiles = parseScope(config, config.adminScope, config.adminScopeFromConfig, 'static.adminScope');
   const cssFiles = loadCssFiles(config);
+  const adminCssFiles = cssFiles.filter((cssFile) => isUnderRoots(cssFile.file, config.adminScope));
   if (files.length === 0 && cssFiles.length === 0) {
     throw new Error(
       `the static scan matched no files under ${config.staticScope.join(', ')}. Name the scan scope in ${CONFIG_FILE} (static.scope).`
     );
   }
-  const raised = rules.flatMap((rule) => rule.check({ files, sheet, config, cssFiles }));
-  const split = applySuppressions(raised, [...files, ...cssFiles]);
+  const raised = rules.flatMap((rule) =>
+    rule.adminOnly
+      ? rule.check({ files: adminFiles, sheet, config, cssFiles: adminCssFiles })
+      : rule.check({ files, sheet, config, cssFiles })
+  );
+  // A file `adminScope` and `staticScope` both cover (the two roots overlap by default) is
+  // deduplicated by path so its suppression directives resolve once, never once per scope.
+  const suppressionSources = new Map<string, ParsedComponent | CssSource>();
+  for (const file of [...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
+  // A `--rule`-scoped run passes a narrowed `rules`, so a directive naming a rule outside that
+  // selection is judged against the ids this run actually executed, not the full registry, which
+  // is what keeps a scoped run from reporting every ordinary out-of-scope directive as dead.
+  const ranRuleIds = new Set(rules.map((rule) => rule.id));
+  const split = applySuppressions(raised, [...suppressionSources.values()], ranRuleIds);
   return {
     findings: [...split.findings].sort(byPosition),
     suppressed: [...split.suppressed].sort(byPosition),

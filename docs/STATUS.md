@@ -20,16 +20,30 @@ extend-1/extend-2 (below). CI on `main` is green.
 ("Docs-to-facts pass, five tasks, 2026-09-15"). ROADMAP's audit-remediation entry is the canonical
 routing record for this track; every slice through docs-to-facts is MERGED.
 
-**extend-1 is IN FLIGHT (launched 2026-09-16 08:30 AKDT)** on
-`docs/superpowers/plans/2026-09-14-extend-1-pass.md`: workflow mode through
-`pass-execute-chains.js`, chain A (tasks 1 to 6) in `.claude/worktrees/extend-1`, chain B (tasks 7,
-8a, 8b) in `.claude/worktrees/extend-1-site`, both off this commit; ceiling 6.7M, checkpoint after
-task 4; the per-task gate is chosen by `scripts/checks/gate-tier.mjs`, serialized on
-`cairn-run-gate`'s machine lock. Resume prompt if the session is lost: "Resume the extend-1 pass
-(plan above); read STATUS for the task ledger, check both worktrees' `git log`, and relaunch the
-workflow from the built script `extend-1-run.js` in the launching session's scratchpad with
-`resumeFromRunId: wf_335b0ff8-684` (chain A; chain B was split into its own run `wf_6d659e3c-3fc` from `extend-1-runB.js` after task 7's escalate: the site sheet defeated the engine's responsive variants by same-layer source order, ruled fixed by a superset `@source` line over the engine's dist, the engine-owned sources-file form deferred to the checkpoint question). Task 1 ACCEPTED (26e6474d). Task 2 committed (71afa1ae) then escalated: the source-text walk let directive strings in test files raise error-tier suppression findings; ruled that a source-text carrier supplies suppressions but never produces a `suppression` finding, plus the missing count test; chain A resumed with that fix round. Task 7's superset fix is verified (620ab312, fbcc31b2); its second escalate was a runner artifact (the gate-tier probe quoted stderr; patched in the scratch runner, dotfiles copy owed) plus a criteria flaw, assertion (b) now content-keyed instead of href-counted; fix round 2 running in `extend-1-runB.js` (run `wf_6d659e3c-3fc`). Chain A was relaunched 2026-09-19 as run `wf_8ac1e589-a7a` from `extend-1-runA2.js` (a first relaunch, `wf_b36b69f7-75b`, did no work: a relayed status question displaced the task) over tasks 2 to 6 only, since the resume re-dispatched the accepted task 1 instead of replaying it. Or rebuild it from `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json`
-and start from the first unaccepted task." **Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
+**extend-1 is IN FLIGHT, HELD on an unstable link (2026-09-19 14:55 AKDT)** on
+`docs/superpowers/plans/2026-09-14-extend-1-pass.md`, workflow mode through
+`pass-execute-chains.js`. Worktrees: chain A `.claude/worktrees/extend-1` (branch `extend-1`), chain B
+`.claude/worktrees/extend-1-site` (branch `extend-1-site`), both off `22bc19b5`, both clean. Ceiling
+6.7M; about 3.2M spent, of which about 0.9M went to three network drops, one usage-limit kill, and one
+relayed-question misfire. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
+`cairn-run-gate`'s machine lock.
+
+Task ledger: **1 accepted** (`26e6474d`). **2** committed (`71afa1ae`) plus its fix commit
+(`dc92b34b`, the ruling that a source-text carrier supplies suppressions but never produces a
+`suppression` finding, plus the reference-count test), awaiting gate and review. **7** committed
+(`b911cb98`, `620ab312`, `fbcc31b2`, `8211bb8e`: the seam, the superset `@source` fix for the
+same-layer ordering defect, the ten signups baselines, the content-keyed proof), awaiting review.
+**3, 4, 5, 6, 8a, 8b** not started. Rulings taken so far are in this file's history and the plan.
+
+Resume, from a session inside `cairn-cms` on a stable connection: the built scripts live in the
+launching session's scratchpad (`extend-1-runA2.js`, run `wf_8ac1e589-a7a`, tasks 2 to 6;
+`extend-1-runB.js`, run `wf_6d659e3c-3fc`, tasks 7, 8a, 8b), so from that session issue
+`Workflow({scriptPath, resumeFromRunId})` for each; from a new session, rebuild both from
+`~/.cache/cairn-overnight-2026-09-14/extend-1-args.json` with the rulings above folded into the
+task 2 and task 7 notes, and start each chain at its first unreviewed task. Arm the guards per
+`~/.claude/docs/unattended-work-guards.md`. Then the pass-end ritual in the plan.
+
+**Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
 deliverables now file container bullets in `docs/internal/facts/extend.md` instead of editing
 the frozen `docs/extend/` pages; reference pages still update per task. extend-1's "Available
 since" reads `0.97.0`, advisory rules promote at `0.98.0` (`launch.json`).

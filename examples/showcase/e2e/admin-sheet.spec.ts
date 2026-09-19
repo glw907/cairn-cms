@@ -42,11 +42,19 @@ interface ComputedStyleSnapshot {
 interface AdminSheetBaseline {
   /** SHA-256 of each public page's concatenated stylesheet bodies, in document order. */
   publicDigests: Record<string, string>;
-  /** Each admin page's stylesheet `<link>` hrefs, in document order. */
-  adminStylesheets: Record<string, string[]>;
+  /**
+   * Each admin page's concatenated stylesheet bodies, in document order, captured before the
+   * site sheet existed. Stored as content, never as a hashed href, since a Vite content hash
+   * changes whenever any unrelated CSS or route moves and would make an href-keyed baseline
+   * fail for reasons unconnected to this seam.
+   */
+  adminSheetContent: Record<string, string>;
   /** Each admin page's `ComputedStyleSnapshot`, read at `WIDE_VIEWPORT`. */
   computedStyle: Record<string, ComputedStyleSnapshot>;
 }
+
+/** The chosen utility's compiled declaration, present only where the site sheet is loaded. */
+const UTILITY_DECLARATION = /\.pt-14\s*\{[^}]*padding-top/;
 
 function loadFixture(): AdminSheetBaseline {
   return JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')) as AdminSheetBaseline;
@@ -64,12 +72,18 @@ function stylesheetHrefs(html: string): string[] {
   return hrefs;
 }
 
-/** SHA-256 of a page's stylesheets, concatenated by content in document order. */
-async function pageStylesheetDigest(request: APIRequestContext, path: string): Promise<string> {
+/** A page's stylesheets, concatenated by content in document order. */
+async function pageStylesheetContent(request: APIRequestContext, path: string): Promise<string> {
   const html = await (await request.get(path)).text();
   const hrefs = stylesheetHrefs(html);
   const bodies = await Promise.all(hrefs.map(async (href) => (await request.get(href)).text()));
-  return createHash('sha256').update(bodies.join('')).digest('hex');
+  return bodies.join('');
+}
+
+/** SHA-256 of a page's stylesheets, concatenated by content in document order. */
+async function pageStylesheetDigest(request: APIRequestContext, path: string): Promise<string> {
+  const content = await pageStylesheetContent(request, path);
+  return createHash('sha256').update(content).digest('hex');
 }
 
 /** `getComputedStyle().display` of a locator's first match. */
@@ -117,20 +131,16 @@ test.describe('the site admin sheet seam', () => {
   });
 
   for (const path of ADMIN_PAGES) {
-    test(`${path} carries exactly one added stylesheet, the compiled site sheet`, async ({
+    test(`${path} carries the compiled site sheet's utility, absent from the baseline`, async ({
       request,
     }) => {
       test.skip(!fixtureExists, 'the baseline fixture is written by the post-merge ritual');
       const fixture = loadFixture();
-      const html = await (await request.get(path)).text();
-      const hrefs = stylesheetHrefs(html);
-      const before = fixture.adminStylesheets[path];
-      const removed = before.filter((href) => !hrefs.includes(href));
-      const added = hrefs.filter((href) => !before.includes(href));
-      expect(removed, `${path} lost a stylesheet the baseline had`).toEqual([]);
-      expect(added, `${path} added stylesheet count`).toHaveLength(1);
-      const addedBody = await (await request.get(added[0])).text();
-      expect(addedBody, `${path} added sheet body`).toMatch(/\.pt-14\s*\{[^}]*padding-top/);
+      const content = await pageStylesheetContent(request, path);
+      expect(content, `${path} stylesheet content`).toMatch(UTILITY_DECLARATION);
+      expect(fixture.adminSheetContent[path], `${path} baseline stylesheet content`).not.toMatch(
+        UTILITY_DECLARATION,
+      );
     });
 
     test(`${path} keeps the engine's own rendered properties unchanged`, async ({ page }) => {

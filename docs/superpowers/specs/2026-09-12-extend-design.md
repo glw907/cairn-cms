@@ -39,7 +39,8 @@ that changed the design's shape, with the lens that forced each:
    Revision 1's entry activated the DaisyUI plugin, which re-emits complete component definitions
    into a higher layer than the engine's own overrides, so one `.btn` on a custom screen would
    restyle every engine screen. And a Vite-compiled entry has no stable path for the audit to
-   name. The shape below is the engine's own proven four-line entry plus a standalone compile.
+   name. The shape below is the engine's own proven five-line entry plus a standalone compile
+   (the *Amended 2026-09-16* note below this section names the fifth line and why).
 6. **The package writes only files it created and stamped** (charter 5, mechanics 15, risk 4).
    The install refreshes the guidance tree, keeping a `.orig` beside anything it overwrites that
    differs. The `check:cairn` script, the audit config, the CI workflow, and the `CLAUDE.md`

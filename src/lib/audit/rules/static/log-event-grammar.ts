@@ -24,7 +24,15 @@ const CALL = /([A-Za-z_$][\w$]*)\.(info|warn|error)\(/g;
 // The header's past-tense-or-adjective closing segments this rule recognizes as grammar
 // conforming when the last segment does not simply end in "ed": the state adjectives among
 // CAIRN_LOG_EVENTS's own members that name a detected condition rather than an occurrence.
-const STATE_ADJECTIVES = new Set(['unknown', 'invalid', 'unreachable', 'missing', 'absent']);
+const STATE_ADJECTIVES = new Set([
+  'unknown',
+  'invalid',
+  'unreachable',
+  'missing',
+  'absent',
+  'empty',
+  'unavailable',
+]);
 
 const RESERVED = new Set(CAIRN_LOG_EVENTS.map((event) => event.toLowerCase()));
 

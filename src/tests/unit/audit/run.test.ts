@@ -1,13 +1,37 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { DEFAULT_SHEET_CANDIDATES, loadConfig } from '../../../lib/audit/config.js';
 import { runStatic, selectRules } from '../../../lib/audit/run.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
+import { renderedRules } from '../../../lib/audit/rules/rendered/index.js';
 import { noUncompiledClass } from '../../../lib/audit/rules/static/no-uncompiled-class.js';
 import type { AuditReport, Finding, StaticRule, StaticRuleContext } from '../../../lib/audit/types.js';
+
+const CAIRN_AUDIT_REFERENCE = fileURLToPath(
+  new URL('../../../../docs/reference/cairn-audit.md', import.meta.url)
+);
+
+/** The small set of number words `docs/reference/cairn-audit.md` spells out in its rule-count sentences. */
+const NUMBER_WORDS: Record<string, number> = {
+  two: 2,
+  fifteen: 15,
+  seventeen: 17,
+  'thirty-four': 34,
+};
+
+/** A rule count as the reference page writes it, digits or one of `NUMBER_WORDS`. */
+function parseRuleCount(text: string): number {
+  const digits = /^\d+$/.exec(text);
+  if (digits) return Number(digits[0]);
+  const word = text.toLowerCase();
+  const known = NUMBER_WORDS[word];
+  if (known === undefined) throw new Error(`unrecognized rule count "${text}" in the reference page`);
+  return known;
+}
 
 let root: string;
 
@@ -100,6 +124,20 @@ describe('the static rule registry', () => {
       expect(byId.get(id)?.tier).toBe('advisory');
       expect(byId.get(id)?.adminOnly).toBeUndefined();
     }
+  });
+
+  // Locks the reference page's two rule-count sentences to the registries they describe, so a
+  // future rule addition or removal fails this test until docs/reference/cairn-audit.md's own
+  // numbers are updated to match.
+  it('states the same total and static rule counts docs/reference/cairn-audit.md carries', () => {
+    const doc = readFileSync(CAIRN_AUDIT_REFERENCE, 'utf8');
+    const totalMatch = /All\s+([A-Za-z0-9-]+)\s+registered rules/.exec(doc);
+    const staticRunMatch = /^([A-Za-z]+) rules run:/m.exec(doc);
+    if (!totalMatch || !staticRunMatch) {
+      throw new Error('could not find both rule-count sentences in docs/reference/cairn-audit.md');
+    }
+    expect(parseRuleCount(totalMatch[1])).toBe(staticRules().length + renderedRules().length);
+    expect(parseRuleCount(staticRunMatch[1])).toBe(staticRules().length);
   });
 });
 
@@ -293,6 +331,51 @@ describe('runStatic', () => {
     it('raises no dead-suppression finding for a directive naming a rule the scope excluded', () => {
       const report = runStatic(loadConfig(scopedRoot), selectRules(staticRules(), ['gap-scale']));
       expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
+    });
+  });
+
+  // The source-text walk reads raw text, not parsed syntax, so a `//` sequence sitting inside a
+  // backtick fixture string, and the marker text named in a doc comment describing the feature,
+  // both read as comment spans containing the directive marker. Neither is a real directive: a
+  // source-text carrier entry silences a matching finding when a real directive precedes one, but
+  // never raises a `suppression` finding of its own, which is what keeps a tree that tests or
+  // documents its own suppressions from reading as an error-tier false positive.
+  describe('a source-text carrier that merely mentions the directive marker', () => {
+    let mentionRoot: string;
+
+    beforeAll(() => {
+      mentionRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-mentions-'));
+      mkdirSync(join(mentionRoot, 'dist/components'), { recursive: true });
+      mkdirSync(join(mentionRoot, 'src/lib/components'), { recursive: true });
+      mkdirSync(join(mentionRoot, 'src/lib'), { recursive: true });
+      writeFileSync(join(mentionRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
+      writeFileSync(join(mentionRoot, 'src/lib/components/Fixture.svelte'), '<div class="card"></div>\n');
+      writeFileSync(
+        join(mentionRoot, 'src/lib/mentions.ts'),
+        [
+          "// a fixture string a test builds for a rule under test, containing what reads as a comment once this file is itself scanned as plain text",
+          "const FIXTURE = `// cairn-audit-disable-next-line log-event-grammar -- inside a fixture string, never a real directive\\nlog.info('x')`;",
+          '',
+          '/**',
+          ' * A caller silences a finding by writing cairn-audit-disable-next-line above the call.',
+          ' */',
+          'export const NOTE = true;',
+          '',
+          "// cairn-audit-disable-next-line log-event-grammar -- a real directive, one line above the offender it silences",
+          "log.info('Signup failed');",
+          '',
+        ].join('\n')
+      );
+    });
+
+    afterAll(() => {
+      rmSync(mentionRoot, { recursive: true, force: true });
+    });
+
+    it('raises no suppression finding for either mention, while the real directive still silences its offender', () => {
+      const report = runStatic(loadConfig(mentionRoot));
+      expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
+      expect(report.suppressed.map((f) => f.ruleId)).toContain('log-event-grammar');
     });
   });
 });

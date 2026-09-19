@@ -176,12 +176,15 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   );
   // A file `adminScope` and `staticScope` both cover (the two roots overlap by default) is
   // deduplicated by path so its suppression directives resolve once, never once per scope. The
-  // source-text walk is spread first, so a component both it and the markup parse cover keeps
-  // its parsed `nodes`: a source-text entry never carries `nodes`, and losing them would degrade
-  // that file's suppression resolution from "next AST node" to "next non-blank line" for every
-  // markup rule, not only the two new ones.
-  const suppressionSources = new Map<string, ParsedComponent | CssSource>();
-  for (const file of [...sources, ...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
+  // source-text walk is inserted first and the markup/CSS walks overwrite it by path, so a
+  // component both it and the markup parse cover keeps its parsed `nodes` and its ordinary
+  // directive judgment; a source-text entry never carries `nodes`, and is marked
+  // `suppressionsOnly` so a directive found only by the plain-text walk can still silence a
+  // matching finding without itself being judged reasonless or dead (raw source text cannot
+  // tell a real directive from a mention of one in a string, a fixture, or a doc comment).
+  const suppressionSources = new Map<string, ParsedComponent | CssSource | (SourceFile & { suppressionsOnly: true })>();
+  for (const file of sources) suppressionSources.set(file.file, { ...file, suppressionsOnly: true });
+  for (const file of [...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
   // A `--rule`-scoped run passes a narrowed `rules`, so a directive naming a rule outside that
   // selection is judged against the ids this run actually executed, not the full registry, which
   // is what keeps a scoped run from reporting every ordinary out-of-scope directive as dead.

@@ -346,6 +346,16 @@
   server, killing it when the dev server exits, so the admin sheet stays compiled during local
   development. No consumer action.
 
+- `create-site.yml`, the CI proof of a real `create-cairn-site` run, now asserts the scaffolded
+  site carries `.github/workflows/check.yml` and runs `npm run check:cairn` after its build step.
+  The tool's own printed hand-over text names both, so a reader who never opens the workflow file
+  still learns what checks their site on every push. The transcripts fixtures predate this change
+  and are not re-captured this pass (the capture harness needs a live GitHub App and repository
+  creation outside this repo); `packages/create-cairn-site/test/fixtures/transcripts/README.md`
+  carries a dated staleness note, and `check:transcripts` stays green either way since it checks
+  the docs pages' quoted blocks against the fixtures, not against the current scaffold. No
+  consumer action.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

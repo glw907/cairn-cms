@@ -24,7 +24,7 @@ interface Span {
 }
 
 /** One `{ key ... }` field name, positioned at its own key text. */
-interface PropertyKey {
+interface FieldKey {
   name: string;
   start: number;
   end: number;
@@ -87,8 +87,8 @@ function splitArgs(source: string, openIndex: number): Span[] | null {
 }
 
 /** The property keys one `{ ... }` object literal declares at its own top level. */
-function objectLiteralKeys(source: string, brace: Span): PropertyKey[] {
-  const keys: PropertyKey[] = [];
+function objectLiteralKeys(source: string, brace: Span): FieldKey[] {
+  const keys: FieldKey[] = [];
   let depth = 0;
   let segStart = brace.start + 1;
   const flush = (end: number): void => {

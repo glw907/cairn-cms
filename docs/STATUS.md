@@ -30,14 +30,15 @@ relayed-question misfire. Per-task gates come from `scripts/checks/gate-tier.mjs
 
 Task ledger: **1 accepted** (`26e6474d`). **2** committed (`71afa1ae`) plus its fix commit
 (`dc92b34b`, the ruling that a source-text carrier supplies suppressions but never produces a
-`suppression` finding, plus the reference-count test), awaiting gate and review. **7** committed
+`suppression` finding, plus the reference-count test), awaiting gate and review. **7 ACCEPTED by the conductor**
 (`b911cb98`, `620ab312`, `fbcc31b2`, `8211bb8e`: the seam, the superset `@source` fix for the
-same-layer ordering defect, the ten signups baselines, the content-keyed proof), awaiting review.
+same-layer ordering defect, the ten signups baselines, the content-keyed proof; the reviewer
+verified every criterion and escalated only on the plan's stale (b) text, amended 2026-09-19).
 **3, 4, 5, 6, 8a, 8b** not started. Rulings taken so far are in this file's history and the plan.
 
 Resume, from a session inside `cairn-cms` on a stable connection: the built scripts live in the
 launching session's scratchpad (`extend-1-runA2.js`, run `wf_8ac1e589-a7a`, tasks 2 to 6;
-`extend-1-runB.js`, run `wf_6d659e3c-3fc`, tasks 7, 8a, 8b), so from that session issue
+`extend-1-runB2.js`, tasks 8a and 8b), so from that session issue
 `Workflow({scriptPath, resumeFromRunId})` for each; from a new session, rebuild both from
 `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json` with the rulings above folded into the
 task 2 and task 7 notes, and start each chain at its first unreviewed task. Arm the guards per

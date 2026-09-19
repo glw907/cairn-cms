@@ -660,8 +660,12 @@ runs.
   for the three admin pages also snapshots `getComputedStyle` over the properties the rendered
   rules read; and asserts three things against `e2e/fixtures/admin-sheet-baseline.json`, the
   branch-point capture the ritual writes: (a) the `/` and `/posts` digests equal the fixture's,
-  so nothing leaked onto a public page; (b) each admin page's stylesheet list differs from the
-  fixture's by exactly one added sheet, whose body contains the chosen utility's declaration; (c)
+  so nothing leaked onto a public page; (b) each admin page's concatenated stylesheet content
+  contains the chosen utility's declaration and the fixture's stored content for that page does
+  not (amended 2026-09-19: the authored form counted hashed stylesheet hrefs against the
+  branch-point fixture, which Vite content hashes and this pass's own engine CSS changes make
+  fail for reasons unrelated to a leak; the fixture stores `adminSheetContent`, the concatenated
+  bodies per admin page, and no per-sheet cardinality is asserted); (c)
   the `getComputedStyle` snapshot over the engine-owned properties is unchanged from the fixture on
   all three admin pages. The fixture is the "without" side; there is no second build.
 - Consumed by task 8a (the bake), by the ritual (the proof run), and by extend-2's snippets.

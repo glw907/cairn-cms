@@ -38,7 +38,7 @@ verified every criterion and escalated only on the plan's stale (b) text, amende
 
 Resume, from a session inside `cairn-cms` on a stable connection: the built scripts live in the
 launching session's scratchpad (`extend-1-runA2.js`, run `wf_8ac1e589-a7a`, tasks 2 to 6;
-`extend-1-runB2.js`, tasks 8a and 8b), so from that session issue
+`extend-1-runB2.js`, run `wf_749581cb-fc0`, tasks 8a and 8b), so from that session issue
 `Workflow({scriptPath, resumeFromRunId})` for each; from a new session, rebuild both from
 `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json` with the rulings above folded into the
 task 2 and task 7 notes, and start each chain at its first unreviewed task. Arm the guards per

@@ -337,6 +337,15 @@
   precedes its own variant. The new `@tailwindcss/cli` devDependency was surveyed against the
   pinned `tailwindcss`/`@tailwindcss/vite` major and matches at `4.3.3`. No consumer action.
 
+- The `create-cairn-site` scaffold now bakes a GitHub Actions workflow
+  (`.github/workflows/check.yml`) into every new site: it installs, then runs `npm run check` and
+  `npm run check:cairn` on `ubuntu-latest` with Node 22, with a commented step for
+  `npx cairn-guidance check` marked for a later cairn version. The manifest's default permissions
+  gain `workflows: write` so the App's first push can carry that file. The scaffold's own
+  `scripts/dev.mjs` shim now also spawns `@tailwindcss/cli` in `--watch` mode beside the vite dev
+  server, killing it when the dev server exits, so the admin sheet stays compiled during local
+  development. No consumer action.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

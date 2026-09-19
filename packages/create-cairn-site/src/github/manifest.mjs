@@ -58,6 +58,7 @@ export function buildManifest({ appName, ownerType, loopbackUrl }) {
     default_permissions: {
       contents: 'write',
       administration: 'write',
+      workflows: 'write',
       ...(ownerType === 'org' ? { members: 'read' } : {}),
     },
     default_events: [],

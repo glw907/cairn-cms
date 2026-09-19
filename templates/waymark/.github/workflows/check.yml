@@ -1,0 +1,24 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # The scaffold ships neither .nvmrc nor an engines field, so this pins the version
+          # directly rather than reading it from the tree it checks out.
+          node-version: 22
+      # The scaffold ships no lockfile (the bake deletes it), so this installs from
+      # package.json rather than npm ci.
+      - run: npm install
+      # svelte-check's precheck compiles the admin stylesheet before type-checking.
+      - run: npm run check
+      - run: npm run check:cairn
+      # Enabled by a later cairn version, once the scaffold carries cairn-guidance:
+      # - run: npx cairn-guidance check

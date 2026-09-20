@@ -15,17 +15,25 @@ window holds for one cut, after extend-2. CI on `main` is green.
 
 **extend-2 is IN FLIGHT (launched 2026-09-20)**, one `pass-execute-chains` workflow over two
 worktrees: chain A (`.claude/worktrees/extend-2`, tasks 1a, 1b, 2, 3a, 3b, 3c, 4) and chain B
-(`.claude/worktrees/extend-2-skills`, tasks 5, 6, 7). **Checkpoint (2026-09-20 12:10):** chain B
-is DONE, 5 (one comment-only fix round), 6, and 7 ACCEPTED. Chain A halted at 1a on a second `fix`
-whose one blocking finding was a false MANIFEST sentence in `docs/reference/guidance.md`, marked
-comment-only; the conductor ruled accept-after-fix, a direct `cairn-implementer` dispatch is
-landing it, and chain A then relaunches from 1b (1b, 2, 3a, 3b, 3c, 4) as a second workflow run.
-First run `wf_0d3513c9-bdb` spent 1.87M subagent tokens over four tasks, and Geoff raised the
-ceiling to 6.5M (2026-09-20; same scope, the 80 percent flag now 5.2M). Rulings taken: the
+(`.claude/worktrees/extend-2-skills`, tasks 5, 6, 7). **Checkpoint (2026-09-20 15:40):** ACCEPTED: 1a (after a conductor-ruled
+comment-only third round, `dc419c43`), 1b, 2, 3a, 3b, 5, 6, 7. **3c ESCALATED** and ruled: its
+grep criterion binds the `@source` line in `src/admin.css` only (the plan carries the ruling); a
+direct `cairn-implementer` dispatch is squashing its three commits to one and fixing two
+comment-only findings, then a `diff-reviewer` read. **Task 4 is next**, dispatched directly (no
+third workflow run), then the ritual. Spend: 1.87M (run 1) plus 2.18M (run 2, `wf_c9530051-ac2`)
+plus about 0.1M direct, 4.15M of the 6.5M ceiling Geoff set 2026-09-20 (flag at 5.2M). Rulings taken: the
 gate per task is `gate-tier.mjs`'s computed string plus the checks the task's criteria name; a
 `package.json` touch computes the `full` tier, whose local e2e is green when its only failures
 are the 20 CI-canonical baseline files from `4de378ec`; the unknown-exclusion case prints the
-`@source not` line from a constant, with no sixth packaged snippet. **Owed at the ritual, one
+`@source not` line from a constant, with no sixth packaged snippet. **Owed at the ritual, chain A:** the fragment's `../docs/reference/*.md` links resolve in the
+tarball but break once installed to `.claude/cairn/CLAUDE.md` (rewrite at install or link by
+package path); `claude/snippets/check.yml` ships the `cairn-guidance check` step per the showcase
+workflow, verify it is enabled after 3b; `examples/showcase/.gitignore` now ignores
+`.claude/agent-memory/` beside seven tracked memory files; `VERSION` stamped from the caret-stripped
+spec reads stale on day one when npm resolves a newer patch; no facts bullet for the scaffold's
+third CI step; stray backslash escapes in `bake-template.mjs`'s JSDoc. **Follow-up to file at the
+close:** `cairn-audit.config.json`'s `sheet` entry still names `dist/components/cairn-admin.css`.
+**Owed at the ritual, one
 chain-B fold task:** `skills/cairn-consult/references/the-standard.md` carries a dated spec
 citation inside shipped markdown (the byte-identical copy criterion conflicts with the
 no-process-citations constraint; strip the HTML comment and relax the diff to the body);

@@ -15,14 +15,24 @@ and the three-lens plan review runs on it.
 > no browser, so it takes its own lock and never queues behind another session's browser gate;
 > set `gateLane: "light"` in the runner's args; corrected 2026-09-20 after pass A queued for
 > hours without it). On exit 75, re-issue the same command unchanged until it prints
-> `gate exit:`; never poll a log file. Tasks 3 and 17 are the two tasks that also run the Node
-> gate, and that Node half runs in the default heavy lane.
-> **Do not run `scripts/checks/gate-tier.mjs` for a `tool/`-only diff.** That classifier carries
-> no `tool/**` rule and every tier it can print is an npm gate string, so its answer would be
-> wrong for this module. Do not set `gateTier` in the runner's args either, since a pin is still
-> a tier token from that same npm table; instead each task's `notes` tells the implementer to
-> skip the classifier and run the gate string above unchanged. Adding a `tool/**` rule to the
-> classifier is filed as a chore, not a task in this plan.
+> `gate exit:`; never poll a log file. Tasks 3 and 17 are the two tasks that also run a Node suite.
+> Task 3 ran in Pass A. **Task 17's gate is one string in the light lane**, Go half and Node half
+> together, because the Node half is one package's own suite and launches no browser.
+> **Do not run `scripts/checks/gate-tier.mjs` for a `tool/`-only diff, and pin `gateTier` on every
+> task, which is the only thing that stops it.** The classifier carries no `tool/**` rule:
+> `classifyPath` returns `null` for every path under `tool/`, and an unclassified path is
+> conservative-defaulted to the `full` tier, whose gate string is this repo's whole npm gate. Left
+> unpinned, `~/.claude/workflows/pass-execute.js` sends its own probe agent to run the classifier
+> over the task's diff, resolves that npm string, and then flags the implementer's `make -C tool
+> check` as a **blocking MISMATCH** to the reviewer. A pin short-circuits that: `resolveGate`
+> returns the task's own declared gate string unchanged as soon as `t.gateTier` is set, and never
+> runs the classifier. So every B1 and B2 task is dispatched with **`gateTier: "docs"`**, a pin used
+> only to stop the classifier and never as a claim about what the diff contains, together with a
+> `notes` line: "this repo's gate-tier classifier carries no `tool/**` rule; do not run it; run the
+> Gate command unchanged and report gateTier: pin". That `notes` line is load-bearing, because the
+> implementer's own prompt still tells it to run the classifier with `--pin docs`, which would print
+> the npm docs gate string. Adding a `tool/**` rule to the classifier is filed as a chore, not a
+> task in this plan.
 > Invoke `go-conventions` before writing any Go file and `golang-spf13-cobra` before any
 > `cmd/cairn` file. Invoke `vps-conventions` only for the one systemd unit in Task 24's
 > verification paragraph, which is Geoff's own installation of that task's documented unit; the
@@ -109,36 +119,31 @@ after polish-C merges, before Task 1 dispatches, and corrected in this file in p
 | Pass | Tasks | Token ceiling | Checkpoint interval |
 |---|---|---|---|
 | `cairn-tool-A` | 11 | 8M | every four tasks |
-| `cairn-tool-B1` | 8 (11b, 12 to 17, 17b) | 8M | every four tasks |
+| `cairn-tool-B1` | 9 (11b-i, 11b-ii, 12 to 17, 17b) | 8M | every four tasks |
 | `cairn-tool-B2` | 9 (18, 19a, 19b, 20 to 25) | 10M | every four tasks |
 
 **Pass B was split into B1 and B2 (Geoff, 2026-09-20, ruling 2 of three taken that day).** B1 is
 the opening refactor task plus the checks and the logs; B2 is the CLI surface, the cut, the
 release, the scheduled run, and the close. Each carries its own ceiling, checkpoint interval,
 segments, and close. The `cairn-tool-B` row above is retired; its fourteen tasks are the
-seventeen items of the two rows that replace it, Task 19 having split into 19a and 19b and each
-pass having gained a close task.
+eighteen items of the two rows that replace it, Task 19 having split into 19a and 19b, Task 11b
+into 11b-i and 11b-ii at the three-lens review of 2026-09-20, and each pass having gained a close
+task.
 
-**How the B1 and B2 ceilings were sized, and what is unreviewed about them.** These two numbers
-are the conductor's sizing of 2026-09-20. **Geoff has not reviewed them**, and the B1 session
-names them in its first status note so he can challenge them there. Pass A measured about 0.6M
-subagent tokens per task including its fix round, and about 2.4M for its close (the simplifier,
-seven architecture reads, a four-task fold, and the ritual). B1 runs seven build tasks and
-touches about five packages at its close, so 8M. B2 runs eight build tasks, of which the cobra
-tree is the largest in the plan, plus release work, and B1's merge is already behind it, so 10M.
-The original plan priced all of Pass B at 10M for fourteen tasks; the split prices the same work
-at 18M across seventeen, plus the audit amendments folded in below. That increase is real, it is
-stated rather than absorbed, and it is Geoff's to challenge.
+**How the B1 and B2 ceilings were sized, and what Geoff accepted.** The two numbers are the
+conductor's sizing of 2026-09-20. **Ceilings accepted by Geoff, 2026-09-20**: B1 8M, B2 10M. Pass A
+measured about 0.6M subagent tokens per task including its fix round, and about 2.4M for its close
+(the simplifier, seven architecture reads, a four-task fold, and the ritual). B1 runs eight build
+tasks and touches about five packages at its close, so 8M. B2 runs eight build tasks, of which the
+cobra tree is the largest in the plan, plus release work, and B1's merge is already behind it, so
+10M. The original plan priced all of Pass B at 10M for fourteen tasks; the split prices the same
+work at 18M across eighteen, plus the audit amendments folded in below. That increase is real and
+is stated rather than absorbed.
 
-**How the ceilings were sized.** The repo's comparable is polish-C: 15 tasks, mostly docs and
-renames, at a 9M ceiling, which is roughly 600k per task including the implementer, the
-`diff-reviewer` read, the gate, and the conductor's own turns. Go tasks buy less prose per task
-and more code, so the per-task unit does not fall: each one writes a package plus a table-driven
-test suite, and several iterate against a three-platform CI matrix whose red legs cost a
-re-dispatch rather than an edit. Pass A additionally carries the fixture-corpus extraction, which
-touches the Node tree and runs a second gate. So the unit stays at roughly 650k. Pass A has ten
-token-spending tasks, because Task 10 is Geoff's attended sitting, which is 6.5M. Pass B has
-fourteen, which is 9.1M. The ceilings are 8M and 10M, the headroom being CI-matrix re-dispatches.
+**Retired history, kept only so the two numbers can be traced.** The pre-split sizing paragraph
+priced Pass B as one fourteen-task pass at roughly 650k per task, comparing against polish-C's 15
+tasks at a 9M ceiling and arriving at 9.1M for fourteen. It is superseded by the table's two rows
+and by the paragraph above. Do not size a task or a pass against it.
 
 **What the 2026-09-14 ruling added to the counts.** Pass A gained Task 9, the secret provider
 seam and the `cairn auth set` command. Pass B gained Task 23, the release artifacts and the
@@ -154,12 +159,22 @@ question. Check that flag only at a segment boundary.
 
 **Execution mode.** All three passes are at or above six tasks, so all three run through
 `pass-execute.js` with `cairn-implementer` as the executor. This header is the opt-in. The
-Workflow tool refuses a `~/.claude/workflows` scriptPath, so copy
-`~/.claude/workflows/pass-execute.js` into the session scratchpad and run it from there. The Go
-gate is `make check` inside `tool/`, not the repo's npm gate, and `cairn-implementer` has the npm
-gate baked in, so every task below states its gate explicitly and the workflow's gate string is
-`make -C tool check`, with `gateLane: "light"` in the runner's args and no `gateTier` (see the
-blockquote at the top of this file for why).
+Workflow tool refuses a `~/.claude/workflows` scriptPath, so **copy
+`~/.claude/workflows/pass-execute.js` into the session scratchpad first** and run it from there. The
+Go gate is `make check` inside `tool/`, not the repo's npm gate, and `cairn-implementer` has the npm
+gate baked in, so every task below states its gate explicitly.
+
+**The conductor's runner args, stated so a launch does not derive them.**
+
+- `repo`: the worktree the pass runs in, `.claude/worktrees/cairn-tool-a` for B1 and B2's own
+  worktree off `main` for B2.
+- `gate`: `"make -C tool check"`. Task 17 overrides it with its own two-command string.
+- `gateLane`: `"light"`, at the args level, so every task inherits it.
+- `implementer`: `"cairn-implementer"`.
+- `maxFix`: `1`. A second `fix` verdict is the conductor's decision, not another round.
+- No `parallel`: no task in either pass is independent of another, so the runner stays sequential.
+- Per task: `gateTier: "docs"` and the `notes` line, both per the blockquote at the top of this
+  file. The pin exists only to stop the classifier; it describes nothing about the diff.
 
 **Arm `/loop` at launch.** Start `/loop` with no interval as soon as the first workflow is
 running, in both B1 and B2 (`~/.claude/docs/unattended-work-guards.md`). A network drop left Pass
@@ -174,9 +189,10 @@ seven tasks, which is what this step exists to stop.
 
 - Pass A segments after Task 3, Task 6, and Task 9.
 - Pass B1 segments after Task 13 and after Task 17, and its close (Task 17b) is its own segment.
-  Three tasks in the first segment rather than four, because Task 11b is the largest refactor in
-  B1 and touches four packages. Task 17b stands alone because the merge inside it is irreversible.
-  The checkpoints land after Task 14 and after Task 17b.
+  Four tasks in each of the first two segments, since splitting Task 11b into 11b-i and 11b-ii at
+  the three-lens review made the first segment four. Task 17b stands alone because the merge inside
+  it is irreversible. The checkpoints land after Task 13 and after Task 17, on the same two
+  boundaries.
 - Pass B2 segments after Task 19b, after Task 21, and after Task 24, with Task 25 as its own
   closing segment. Two tasks in the second segment rather than three, because Task 22 pushes the
   `tool/v1.0.0` tag and an irreversible task opens a segment rather than sitting inside one. The
@@ -184,8 +200,9 @@ seven tasks, which is what this step exists to stop.
 
 **Task independence.** No two tasks in either B1 or B2 are independent of each other, so
 `pass-execute.js` runs in its sequential default and nothing is marked parallel. The contended
-resources, named so a later reader does not re-derive them: in B1 every check task appends to the
-literal slice in `tool/internal/health/health.go`, which Task 12 creates; in B2 Tasks 19a, 19b,
+resources, named so a later reader does not re-derive them: in B1, Tasks 11b-i and 11b-ii share
+`tool/cmd/cairn/probe_token.go` and every check task appends to the literal slice in
+`tool/internal/health/health.go`, which Task 12 creates; in B2 Tasks 19a, 19b,
 20, and 21 all edit `tool/cmd/cairn/root.go` and `tool/cmd/cairn/main.go`. The cross-pass
 ordering constraints are in "Rollback and halt semantics" below and hold unchanged.
 
@@ -247,8 +264,9 @@ finding `go-architecture-reader` would otherwise file at both closes.
 | The site record: typed non-secret fields plus the opaque ordered tail | 4 | The HUD's adopt dialog and detail view | The version 0 fixture round-trips byte-equal including key order after trailing-whitespace normalization, secrets included, and the typed struct has no field for any secret. |
 | Checks as pure functions over a site record | 12 | The HUD's per-site refresh | Every `Check` satisfies `Run(ctx, record.Record, Clients, Options) spine.Outcome`; a test runs a slice holding the whole `All` set plus a deliberately stateful stub twice against a recorded `RoundTripper` and asserts identical reports, which goes red on the stub. |
 | `health.Run` pure over its inputs, including an injected clock, options, and acknowledgements | 12 | 2.0's generation-counted refresh | The same record, clients, options, and acknowledgements with a fixed `now` produce a byte-identical report across two calls in one process. |
+| `Options.OnCheck`, the per-check callback `health.Run` fires as each check settles | 12 | The HUD's per-site refresh, which paints a check's result the moment it lands rather than at the end of a sweep | A three-check run fires the callback three times, once per check id, in completion order, and a nil callback runs the sweep unchanged. |
 | `ExitCode` over a slice of reports | 21 | The multi-site sweep's exit | The table covers a one-element slice, which is 1.0's only health caller, a zero-report call with `expectSites` mismatched, which is `sites`' only caller, and a three-element slice with mixed outcomes, which is 2.0's. |
-| The pure render seam: `Render(RenderInput) Frame`, no I/O, no program | 20 | The HUD's screen render | A golden sweep over fixture, width, and profile, plus a test asserting the package imports neither `os` nor any terminal package outside its profile detection file. |
+| The pure render seam: `Render(RenderInput) Frame`, no I/O, no program | 20 | The HUD's screen render | A golden sweep over fixture, width, and profile, plus a test asserting the package imports none of `os`, `golang.org/x/term`, or a color-profile detection package, each forbidden by name as Task 20 states them, outside its profile-detection file. |
 | The condition-to-remedy anchor map, re-homed out of `ui` | 20 | The HUD's detail view | Every anchor `Anchor` returns resolves to an actual heading in `docs/admin/is-it-working.md`, read at test time, and a second test covers the no-anchor branch. |
 | `logs.Query`, `logs.Entry`, `logs.Fetch` shaped for both a printed list and a scrolling view | 17 | The HUD's scrolling log screen | `Fetch` returns entries newest-first, with `Entry.Fields` an ordered slice (never a map, whose iteration order would make any golden over it nondeterministic) whose values are unparsed `json.RawMessage`, so no renderer choice is baked into the fetch. |
 | `spine.Discover`, `spine.Adopt`, `spine.AlreadyAdopted` as plain functions | 18 | The HUD's adopt dialog | `Discover` never writes, and adopting the same candidate twice yields one record. |
@@ -358,8 +376,8 @@ Carried from the 2026-08-20 plan, edited for the two-pass shape.
   having run. 401 and 403 are unknown with distinct reasons, never failing, except in the `creds`
   check, where a revoked or invalid credential is the thing being measured.
 - Account ids, zone ids, worker names, repository slugs, build UUIDs, and full commit SHAs are
-  verbose-only everywhere. `adopt --list` is implicitly verbose and says so on stderr. Nothing
-  else prints them without `--verbose`.
+  verbose-only everywhere. `adopt list` and `logs` are each implicitly verbose and each
+  says so on stderr. Nothing else prints them without `--verbose`.
 - Status is never color alone. Every state carries a distinct glyph, and a word wherever the
   output width allows one.
 - Comment prose follows Go Doc Comments through `go-conventions`. No em dash in comments, gated
@@ -398,13 +416,13 @@ measured 2026-09-14 against `main` at `f1c72dbf`, re-verified 2026-09-14 against
 | 9 | The `step: '...'` literal set | A naive grep over `packages/create-cairn-site/src` yields **25** distinct literals across eight non-test files, not the old plan's 18 (corrected by conductor ruling 2026-09-20: 'installed' is written through a computed local at `github/chapter.mjs:330`). **19** are record steps; six are not (`install`, `manifest`, `one`, `two`, `domain-account`, `domain-zone`). Task 8's grep must scope to the record write sites | Task 8 | Verified 2026-09-14 post-polish-C |
 | 10 | `packages/create-cairn-site/src/cloudflare/api.mjs` | `throwIfTokenInvalid` at `:247`, `throwMapped` at `:268`, `throwBuildsMapped` at `:350`, `OPERATION_CODES` at `:54`, `EMAIL_OPERATION_CODES` at `:63`. **The old plan's `buildsError` does not exist under that name**; the function is `throwBuildsMapped`. The file sets no client timeout and retries a GET once on `Retry-After` at `:30-34`, `:112`, `:217` | Tasks 6, 15 | Verified 2026-09-14 post-polish-C |
 | 11 | `packages/create-cairn-site/src/cloudflare/hostname.mjs` | `confirmHostname` exported at `:185`; the DNS diagnosis returning `hostname-records-absent` or `hostname-resolver-lagging` at `:148-160` | Task 13 | Verified 2026-09-14 post-polish-C |
-| 12 | `packages/create-cairn-site/src/cloudflare/zone.mjs:193` | `export async function checkDelegation({ record, api, resolveNs = systemResolveNs })`, four states at `:209` and `:213` | Task 13 | Verified 2026-09-14 post-polish-C (changed) |
-| 13 | `src/lib/diagnostics/conditions.ts` | 262 lines; the condition id vocabulary the checks declare against. It carries no id for Serving, Delegation, Deploy, Behind, Engine, or an error count, which is why those checks declare `ConditionNone` | Tasks 8, 12, 13, 20 | Verified 2026-09-14 post-polish-C |
+| 12 | `packages/create-cairn-site/src/cloudflare/zone.mjs:193` | `export async function checkDelegation({ record, api, resolveNs = systemResolveNs })`, four states at `:209` and `:213` | Task 13 | Re-verified 2026-09-20 at HEAD: all three anchors still correct |
+| 13 | `src/lib/diagnostics/conditions.ts` | 262 lines; the condition id vocabulary the checks declare against. It carries no id for Serving, Delegation, Deploy, Behind, Engine, or an error count, which is why those checks declare `ConditionNone`. **It carries exactly one `edge.` id, `edge.https-not-forced`; there is no `edge.hsts-off`** (re-verified 2026-09-20 at HEAD), which is why Task 14's HSTS half declares `ConditionNone` too | Tasks 8, 12, 13, 20 | Verified 2026-09-14 post-polish-C |
 | 14 | `src/lib/log/events.ts` | 98 lines; polish-C Tasks 10 and 11 renamed eight event strings in this union | Tasks 17, 21 | Verified 2026-09-14 post-polish-C (changed) |
 | 15 | `docs/reference/log-events.md` | 111 lines; the engine's event table, which `logs --event` completion and the tool's own event reference both read. Fourteen or more events carry an editor email, which is why Task 17's fixture is synthesized rather than captured | Tasks 17, 21 | Verified 2026-09-14 post-polish-C |
 | 16 | `docs/admin/is-it-working.md` | Headings present today include `## Force HTTPS at the edge` (`:164`), `## Turn on observability` (`:256`), `## Onboard the sending domain` (`:216`), `## Install the GitHub App` (`:413`). No heading covers Serving, Delegation, Deploy, Behind, Engine, or an error count | Task 20 remedy map | Verified 2026-09-14 post-polish-C |
 | 17 | `docs/admin/troubleshooting.md` | Exists; polish-C Tasks 10 and 11 edited it wherever it names a renamed event | Task 24 | Verified 2026-09-14 post-polish-C |
-| 18 | `scripts/checks/check-package-files.mjs` | 421 lines; asserts nothing about top-level paths today, which is why Task 1 adds the `tool/` assertion | Task 1 | Verified 2026-09-14 post-polish-C |
+| 18 | `scripts/checks/check-package-files.mjs` | 445 lines, measured at HEAD on 2026-09-20 (it read 421 before Pass A's Task 1 added the `tool/` assertion); asserts nothing about top-level paths today, which is why Task 1 adds the `tool/` assertion | Task 1 | Verified 2026-09-14 post-polish-C |
 | 19 | `package.json` `files` allowlist | Task 1 changes nothing in it; the new assertion proves that | Task 1 | Verified 2026-09-14 post-polish-C |
 | 20 | The Node workflows needing `paths-ignore: ['tool/**']` | **Eight workflows exist today**, not the old plan's five. `publish.yml` is release-triggered (`on: release: types: [published]` plus `workflow_dispatch`), `tsgo.yml` is scheduled, and `norms.yml` is `workflow_call` and `workflow_dispatch` only, so none of the three needs `paths-ignore`. The five `push` and `pull_request` workflows do: `create-site.yml`, `design.yml`, `e2e.yml`, `scaffold.yml`, `test.yml` | Task 1 | Verified 2026-09-14 post-polish-C |
 | 21 | `CHANGELOG.md` `## Unreleased` and its `Consumers must:` lines | The engine check reads these through GitHub. The `0.97.0` cut moves the whole window into a version section, and polish-C Task 14 rewrites the consumer list | Task 16 | Verified 2026-09-14 post-polish-C |
@@ -1015,26 +1033,39 @@ Task 9's grep test already enforces.
 
 ## Pass `cairn-tool-B1`: the opening refactor, the checks, and the logs
 
-Eight tasks: the opening refactor (Task 11b), the six check-and-logs tasks (Tasks 12 to 17), and
-the close (Task 17b). The pass ends with every 1.0 check written and tested, no CLI over them, and
-Pass A plus B1 merged to `main` through PR #60.
+Nine tasks: the opening refactor in two halves (Tasks 11b-i and 11b-ii), the six check-and-logs
+tasks (Tasks 12 to 17), and the close (Task 17b). The pass ends with every 1.0 check written and
+tested, no CLI over them, and Pass A plus B1 merged to `main` through PR #60.
 
-**Ceiling 8M, checkpoint every four tasks** (after Task 14 and after Task 17b). Both numbers are
-the conductor's sizing of 2026-09-20, and Geoff has not reviewed them; the B1 session names them
-in its first status note.
+**Ceiling 8M, checkpoint every four tasks** (after Task 13 and after Task 17). **Ceilings accepted
+by Geoff, 2026-09-20.** The mechanics review of 2026-09-20 estimates B1's real spend at 9 to 9.5M
+against that 8M ceiling, so **the 80 percent flag at 6.4M is the expected decision point rather
+than an unlikely one**; the conductor plans for it landing at a segment boundary and writes STATUS
+with a combined question there instead of treating it as an overrun surprise.
 
-**Segments.** Tasks 11b, 12, 13 | Tasks 14, 15, 16, 17 | Task 17b. Every boundary sits on a commit
-the gate proved green. Task 17b stands alone because the merge inside it is irreversible.
+**Segments.** Tasks 11b-i, 11b-ii, 12, 13 | Tasks 14, 15, 16, 17 | Task 17b. Every boundary sits on
+a commit the gate proved green. The two checkpoints fall on the first two boundaries. Task 17b
+stands alone because the merge inside it is irreversible.
 
-**Execution mode.** `pass-execute.js` with `cairn-implementer`, sequential. No task in this pass is
-independent of another: Tasks 13 through 17 all append to the literal slice in
-`tool/internal/health/health.go`, which is the contended file, and Task 12 creates it.
+**Execution mode.** `pass-execute.js` with `cairn-implementer`, sequential, with the conductor's args
+as the plan header states them (`gate: "make -C tool check"`, `gateLane: "light"`, `maxFix: 1`, no
+`parallel`, and per task `gateTier: "docs"` plus the classifier-skip `notes` line). No task in this
+pass is independent of another: Tasks 11b-i and 11b-ii share `tool/cmd/cairn/probe_token.go`, and
+Tasks 13 through 17 all append to the literal slice in `tool/internal/health/health.go`, which is
+the other contended file and which Task 12 creates.
+
+**CI-leg confirmation belongs to the conductor at a segment boundary, never to a task's own gate.**
+No task in this pass waits on a CI leg: a task's gate is the local `make -C tool check` string and
+nothing else, because a task that blocks on a three-platform matrix turns every dispatch into a
+poll. The conductor confirms the three `tool` legs green at the segment's final commit, before it
+launches the next segment, and Task 17b's merge criteria carry the only never-merge-over-red rule.
 
 **Branch.** The existing worktree `.claude/worktrees/cairn-tool-a` on branch `cairn-tool-a`. Not a
 fresh branch off `main`, because `main` carries no `tool/` tree until Task 17b merges it.
 
 **Gate.** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` for every task; Task 17 also
-runs the Node gate, in the default heavy lane. Skip `scripts/checks/gate-tier.mjs`.
+runs the Node gate, as one string in the same light lane, since the Node half it runs launches no
+browser. Skip `scripts/checks/gate-tier.mjs` by pinning `gateTier`, per the header's blockquote.
 
 **Geoff's three rulings of 2026-09-20 apply across both B1 and B2** and are recorded in the tasks
 that read them rather than only here. Ruling 1, one TTY predicate, lands entirely in B2: Task 19a's
@@ -1043,30 +1074,39 @@ narrowed grep test and Task 20's profile-detection file, which is also where `lo
 split. Ruling 3, the grammar cleanup, lands in B2's Tasks 18, 19a, and 22. The full text of all
 three is in the "Conductor rulings recorded here" list under Self-review.
 
-### Task 11b: the opening refactor over the packages Pass A accepted
+**Outside the brief, recorded for the owner rather than taken here.** One item, and it is not a task
+in this plan; it is a question for Geoff at a checkpoint or after the pass.
 
-The first task of B1, before any check is built on these packages. Every item here came out of
-Pass A's seven `go-architecture-reader` reads or its fold reviews, and each is cheaper now than
-after six check tasks depend on the current signatures. No behavior changes except where a
-criterion says so. Invoke `go-conventions` before writing any Go file.
+- **An `edge.hsts-off` condition id in the engine's conditions vocabulary.** Task 14's HSTS half
+  wants one and `src/lib/diagnostics/conditions.ts` has none (re-verified 2026-09-20 at HEAD: the
+  file carries `edge.https-not-forced` and no other `edge.` id). B1 does not add a condition id to
+  the engine; the HSTS half declares `spine.ConditionNone` instead.
 
-**Deliverable count: five groups** (the threaded context, the `providers` deduplication, severity
-in `spine`, `record`'s single-source rewrite, and the carried nits), plus one decision to record.
-They are one task because each one edits the same four packages and a separate task per group
-would pay the same fix rounds four times over.
+### Task 11b-i: the opening refactor, `providers` half
+
+**Task 11b was split into 11b-i and 11b-ii at the three-lens review of 2026-09-20, along disjoint
+Files.** 11b-i owns `tool/internal/providers` and the two `cmd/cairn` files that call it; 11b-ii
+owns `spine`, `record`, `store`, `secrets`, `hygiene`, and the verdict-algebra deletion. **11b-i
+lands first**, because 11b-ii's one reason-to-outcome translation reads the `reasonForStatus` this
+half consolidates. The two halves keep the original task's criterion numbers, 1 to 14 here and 15 to
+31 in 11b-ii, so a cross-reference elsewhere in this plan still resolves.
+
+**The contended file is `tool/cmd/cairn/probe_token.go`**, which 11b-i edits for the context
+parameter and 11b-ii edits to delete the verdict algebra. `tool/cmd/cairn/env.go` is touched by both
+too, by 11b-i for the context parameter and by 11b-ii for the accessor split. Neither half is
+independent of the other and the runner stays sequential.
+
+Every item here came out of Pass A's seven `go-architecture-reader` reads. No behavior changes
+except where a criterion says so. Invoke `go-conventions` before writing any Go file.
+
+**Deliverable count: two groups** (the threaded context and the `providers` deduplication).
 
 **Files:**
 - Modify: `tool/internal/providers/transport.go`, `cloudflare.go`, `github.go`, `npm.go`,
   `probe.go`, `errors.go`, `cred.go`, and every `_test.go` beside them
-- Modify: `tool/internal/spine/outcome.go`, `outcome_test.go`
-- Create: `tool/internal/record/parse.go`, `marshal.go`
-- Modify: `tool/internal/record/record.go`, `record_test.go`
-- Modify: `tool/internal/store/store.go`, `store_test.go`, `perm_windows_test.go`
-- Modify: `tool/internal/secrets/secrets.go`, `keyring.go`
-- Create: `tool/internal/hygiene/severity_test.go` (the one-severity-table assertion, beside the
-  existing `buildtags_test.go` and `identicalfiles_test.go`)
-- Modify: `tool/cmd/cairn/env.go`, `env_test.go`, `probe_token.go`, `probe_token_test.go`
-- Modify: `.github/workflows/tool.yml` or `tool/Makefile`, for the Windows-leg decision below
+- Delete or empty: `tool/internal/providers/missing_test.go`, whose only two tests
+  (`TestMissing` and `TestMissingZeroValue`) criterion 12 deletes. `missing.go` itself stays.
+- Modify: `tool/cmd/cairn/probe_token.go`, `probe_token_test.go`, `env.go`, `env_test.go`
 
 **Acceptance, the threaded context:**
 1. Every exported method on `providers.Cloudflare`, `providers.GitHub`, `providers.NPM`, and
@@ -1098,12 +1138,26 @@ would pay the same fix rounds four times over.
    `github-authentication-token-expiration` off the response rather than building its own request.
    `TokenExpiry`'s behavior is unchanged, including the zero-time-no-error case for an absent
    header, proven by its existing table.
-8. One `reasonForStatus` function replaces the two hand-synced status switches that exist today:
-   the status arm of `classifyReason` (`errors.go`) and the whole of `classifyGitHubReason`
+8. **One `reasonForStatus` function replaces the two hand-synced status switches** that exist
+   today: the status arm of `classifyReason` (`errors.go`) and the whole of `classifyGitHubReason`
    (`github.go`). Both call sites read the same function, so a status the two disagreed about
-   becomes impossible. Every existing corpus-backed and direct classification test passes
-   unchanged, and one new test asserts a given status classifies identically through the
-   Cloudflare and GitHub paths.
+   becomes impossible.
+   - **`reasonForStatus` takes the response headers, not the status alone.** A 403 is ambiguous on
+     its status: GitHub returns 403 both for a rate limit and for a missing permission, and the
+     headers are the only discriminator. A 403 carrying `x-ratelimit-remaining: 0`, or a
+     `retry-after` header, classifies as rate-limited and **never as a revoked or unauthorized
+     credential**, because misreading a rate limit as a revoked token would make the `creds` check
+     in Task 12 report a fault the operator cannot fix. A 403 carrying neither header classifies as
+     a permission or credential reason as it does today.
+   - A table test covers GitHub's two 403 shapes as **separate rows**, one rate-limit response with
+     `x-ratelimit-remaining: 0` and one permission response with no rate-limit headers, and asserts
+     the two classify differently. A `retry-after`-bearing 403 is a third row.
+   - Every existing corpus-backed and direct classification test passes unchanged.
+   - One new test asserts that **for a status whose classification depends on the status alone**
+     (that is, every status but the header-discriminated 403), the Cloudflare and GitHub paths
+     return the same `Reason`. The criterion is stated this way rather than as "classifies
+     identically through both paths" because the 403 rows deliberately differ by header, and a
+     blanket identity claim would be false the moment the header discrimination lands.
 9. `NPMError` gains a `Reason` field populated through the same function, so a registry failure
    classifies like the other two providers rather than carrying a bare status.
 10. `newClient` takes its `http.RoundTripper` as a parameter. The four constructors stop reaching
@@ -1116,27 +1170,67 @@ would pay the same fix rounds four times over.
 12. The two dead wire fields go: `resultInfo.Page`, which `getPaginated` never reads because it
     appends `page=N` itself, and `v4Error.Message`, which no code path reads. The two vacuous
     `Missing` tests (`TestMissing` and `TestMissingZeroValue`, which assert only that a struct
-    literal holds what was just assigned to it) are deleted rather than rewritten.
+    literal holds what was just assigned to it) are deleted rather than rewritten, which empties
+    `missing_test.go`; delete the file rather than leave a package-clause-only file behind.
 13. `APIError` and `GitHubError` satisfy one small interface exposing the classified `Reason` and
     the HTTP status, so `cmd/cairn` has one verdict function instead of `cloudflareVerdict` and
     `githubVerdict`. A test asserts both error types satisfy it and that the one verdict function
     produces the same level for each of the two today, which is what keeps `probe-token`'s output
-    unchanged.
+    unchanged. The private severity algebra behind that level (`reasonLevel`, `precedenceRank`,
+    `combineLevel`) is 11b-ii's to delete, not this half's: here the two verdict functions become
+    one and the algebra it calls is untouched.
 14. A nil `Resolver` passed to `NewProbe` means `net.DefaultResolver` rather than a nil-pointer
     panic on first lookup. A test covers the nil case.
+
+**Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit. The three CI legs are
+the conductor's to confirm at the segment boundary, not this task's to wait on.
+
+### Task 11b-ii: the opening refactor, `spine`, `record`, and the carried nits
+
+The second half of the split Task 11b, over the packages 11b-i does not touch plus the two
+`cmd/cairn` files it shares with 11b-i. It runs after 11b-i, because criterion 16's one
+reason-to-outcome translation reads the `reasonForStatus` 11b-i consolidated. Invoke
+`go-conventions` before writing any Go file.
+
+**Deliverable count: three groups** (severity in `spine`, `record`'s single-source rewrite, and the
+carried nits), plus one decision to record.
+
+**Files:**
+- Modify: `tool/internal/spine/outcome.go`, `outcome_test.go`
+- Create: `tool/internal/record/parse.go`, `marshal.go`
+- Modify: `tool/internal/record/record.go`, `record_test.go`
+- Modify: `tool/internal/store/store.go`, `store_test.go`, `perm_windows_test.go`
+- Modify: `tool/internal/secrets/secrets.go`, `keyring.go`
+- Create: `tool/internal/hygiene/severity_test.go` (the one-severity-table assertion and the
+  one-reason-to-outcome-translation assertion, beside the existing `buildtags_test.go` and
+  `identicalfiles_test.go`)
+- Modify: `tool/cmd/cairn/env.go`, `env_test.go`, `probe_token.go`, `probe_token_test.go`
+- Modify: `.github/workflows/tool.yml` or `tool/Makefile`, for the Windows-leg decision below
 
 **Acceptance, severity in `spine`:**
 15. `spine.State`'s iota is `Unknown=0`, `OK=1`, `Failing=2`, which is not severity order, so
     ranking on the raw value is wrong. `State.Severity()` returns a rank in which Failing outranks
     Unknown and Unknown outranks OK, with a table test over all three states and over every
     pairing.
-16. One translation from `providers.Reason` to `spine.Outcome` exists, in `spine`. Today `spine`
-    has `APIReason` and `cmd/cairn` has `reasonLevel`, which is the second translation; after this
-    task there is one.
-17. **A test asserts exactly one severity table exists anywhere under `tool/`.** It belongs in
-    `tool/internal/hygiene`, beside `TestNoBuildTags` and `TestGOOSPairsAreByteIdentical`, because
-    no single package's own tests can see the whole module. It goes red if a second ordering of
-    the three states, or of the exit levels, appears in any package.
+16. **One translation from `providers.Reason` to `spine.Outcome` exists, in `spine`, and it has a
+    name.** Today `spine` has `APIReason` and `cmd/cairn` has `reasonLevel`, which is the second
+    translation; after this task there is one, and it is a named exported function rather than a
+    switch inlined at a call site, so the assertion in criterion 17 has something to name.
+    - **A rate-limited reason maps to `Unknown`, never to `Failing`.** A rate limit is the tool
+      being throttled, not the site being broken: a check that reported Failing on a 429 would page
+      an operator for a condition on this side of the wire. A table row covers it, beside the
+      revoked, expired, unauthorized, not-found, and timeout reasons.
+17. **Two hygiene assertions, both in `tool/internal/hygiene`,** beside `TestNoBuildTags` and
+    `TestGOOSPairsAreByteIdentical`, because no single package's own tests can see the whole
+    module.
+    - **Exactly one severity table exists anywhere under `tool/`.** It goes red if a second
+      ordering of the three states, or of the exit levels, appears in any package.
+    - **Exactly one reason-to-outcome translation exists anywhere under `tool/`,** and it is the
+      function criterion 16 names. Enforce it the same way the severity table is enforced: either
+      extend the one-table test in `hygiene` to cover it, or add a grep assertion there that no
+      file outside `spine` switches on a `providers.Reason` value. The mechanism is the
+      implementer's choice; the assertion existing is not, because a translation with no enforcing
+      test is the exact shape of the duplicate this criterion removes.
 18. `probe-token`'s private `verdict`, `reasonLevel`, `precedenceRank`, and `combineLevel`
     (`tool/cmd/cairn/probe_token.go`) are deleted in favor of the `spine` function. `probe-token`
     exits with the same code on the same inputs, proven by its existing exit-code tests passing
@@ -1177,6 +1271,8 @@ here because this task already opens each file):
     when the reparse-point refusal is broken.
 27. The `providers` package doc (in `cred.go`) drops "as later tasks add them", a process citation
     the Pass A comment sweep's four patterns did not match, and describes the package as it stands.
+    This is the one `providers` file 11b-ii touches, and it is a comment-only edit, so it cannot
+    collide with 11b-i's code changes in that package.
 28. `secrets.ResolveError.Error()` stops formatting the wrapped provider error with `%v`. A
     backend that tainted its own error text would otherwise reach any caller that prints the
     error. The display path is already safe; this makes the error string safe too. A test with a
@@ -1190,12 +1286,15 @@ here because this task already opens each file):
 **Acceptance, the Windows-leg decision to record:**
 31. `make test` runs `go test ./...` with no `-v`, so a skipped test is invisible in the log and
     the junction test's proof rests on an unreferenced CI job log. Decide here whether the Windows
-    leg runs the `store` package verbosely, and record the decision and its reason in the task
-    report either way. If it does, the change is one line in the Makefile or the workflow and the
-    task report pastes the Windows leg's per-test output for `store`.
+    leg runs the `store` package verbosely. **The task report names the decision and, where the
+    change was taken, the diff line that carries it**, so a reader does not have to infer the
+    decision from the absence of a change. If it does run verbosely, the change is one line in the
+    Makefile or the workflow and the task report pastes the Windows leg's per-test output for
+    `store`.
 
-**Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`, and the Windows leg green in
-CI. Commit.
+**Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit. The three CI legs,
+including the Windows leg this task's decision concerns, are the conductor's to confirm at the
+segment boundary, not this task's to wait on.
 
 ### Task 12: `health` skeleton, the check contract, and the `creds` check
 
@@ -1206,15 +1305,16 @@ Invoke `go-conventions` before writing any Go file.
   `options.go`, `options_test.go`, `ack.go`, `ack_test.go`, `check_creds.go`,
   `check_creds_test.go`, `health_test.go`
 - Modify: `tool/internal/spine/outcome.go`, `outcome_test.go` (the ordered `Fields` beside
-  `Detail`; Task 11b already opens this file, so 11b runs first)
+  `Detail`; Task 11b-ii already opens this file, so 11b-ii runs first)
 
 **Produces:** `type Clients struct{ CF *providers.Cloudflare; GH *providers.GitHub; NPM
 *providers.NPM; Probe *providers.Probe; HaveCF, HaveGH, HaveBuilds bool; CFFrom, GHFrom string }`,
 where the two `From` fields name the provider each credential resolved through. `type Check
 interface{ ID() string; Condition() spine.Condition; Needs() Tier; Run(ctx, record.Record,
 Clients, Options) spine.Outcome }` with `Tier` one of `TierNone`, `TierCF`, `TierGH`,
-`TierBoth`. `type Options struct{ ErrorThreshold int; LogWindow time.Duration }`, the tunables
-the CLI exposes as flags, passed to every check so no threshold is a literal inside a check.
+`TierBoth`. `type Options struct{ ErrorThreshold int; LogWindow time.Duration; OnCheck func(CheckResult) }`,
+the tunables the CLI exposes as flags plus one optional per-check callback, passed to every run so no
+threshold is a literal inside a check.
 `Condition()` may return `spine.ConditionNone`; `Run` records it and the remedy line is omitted.
 `type Report struct{ SchemaVersion int; Site string; Domain string; Checks []CheckResult;
 Degraded bool; Acknowledged []string }`. `type CheckResult struct{ ID string; Condition
@@ -1222,12 +1322,22 @@ spine.Condition; Outcome spine.Outcome; CheckedAt time.Time; Tier Tier; Acknowle
 AckExpires time.Time }`. `type Ack struct{ CheckID string; Expires time.Time }` and `type Acks
 []Ack` with `func (a Acks) Match(id string, now time.Time) (Ack, bool)`. `func (r Report)
 JSON(verbose bool) ([]byte, error)`. `func Run(ctx, r record.Record, c Clients, checks []Check,
-now func() time.Time, o Options, acks Acks) Report`. `var All []Check`, a literal slice whose
+now func() time.Time, o Options, acks Acks) (Report, error)`. `var All []Check`, a literal slice whose
 first member is the `creds` check and which Tasks 13 through 17 append to.
 
 **Acceptance:**
-- **`spine.Outcome` gains an ordered `Fields`, and `Detail` stays.** `Fields` is a slice of
-  key-value pairs in the shape of `record.ExtraField`, so a renderer or the 2.0 HUD's detail view
+- **`spine.Outcome` gains an ordered `Fields`, and `Detail` stays.** `Fields` is a slice of a **new
+  type declared in `spine`**, with the same shape as `record.ExtraField` (an ordered key plus a
+  `json.RawMessage` value) and **not `record.ExtraField` itself**: `spine` imports `providers` and
+  nothing else internal today (verified 2026-09-20 at HEAD), and the architecture's downward order
+  gives it no `record` dependency, so reusing that type would add one for a two-field struct. A test
+  asserts no file under `tool/internal/spine` imports `tool/internal/record`.
+  **A renderer never prints one of these fields through a redacting `String()`.**
+  `record.ExtraField.String()` deliberately prints `<N byte(s), redacted>` because a record's
+  opaque tail can hold a secret; an outcome field is check output that Task 12's non-verbose filter
+  already governs, so the new type carries no such method and a test asserts a rendered field shows
+  its value. Copying `ExtraField` wholesale would have imported the redaction with it. So a renderer
+  or the 2.0 HUD's detail view
   reads named fields rather than re-parsing a pre-formatted string, and a golden over it is
   deterministic in a way a map could not be. Every check in Tasks 13 to 17 that carries structured
   data puts it in `Fields`; `Detail` keeps the one-line human note. A test asserts the field order
@@ -1253,8 +1363,25 @@ first member is the `creds` check and which Tasks 13 through 17 append to.
   entry has no effect and the report names it as expired. A table covers an unexpired ack over a
   Failing check, an expired one, and an ack for a check id that does not exist, which is
   reported rather than dropped.
-- `Options` carries no default inside a check. A test asserts the zero `Options` is rejected by
-  `Run` with an error naming the field, so a caller cannot silently get a threshold of zero.
+- **`Run` returns `(Report, error)`, and the zero `Options` rejection is that error.** `Options`
+  carries no default inside a check. A test asserts `Run` called with a zero `Options` returns a
+  non-nil error naming the field and a zero `Report`, so a caller cannot silently get a threshold of
+  zero. Every other mention of `Run`'s signature in this plan, the seams table included, states the
+  same two results; a criterion elsewhere that reads `Run` as returning a bare `Report` is stale and
+  this one governs.
+- **`Options` carries an optional per-check callback, `OnCheck`.** It is called once per check as
+  that check settles, in completion order, with the settled `CheckResult`. `nil` means no callback
+  and is the default every non-interactive caller passes. A test with a three-check slice asserts
+  the callback fires exactly three times, once per check, with each id appearing once, and a second
+  test asserts a nil callback runs the sweep unchanged. Task 21's `--verbose` one-line-per-check
+  stderr output reads through this callback rather than wrapping `Run`, which is why the callback is
+  a parameter of the pure function rather than a printing decision inside it.
+- **Partial results survive a cancelled or expired context.** When the run's context expires or is
+  cancelled mid-sweep, `Run` still returns a `Report` carrying every check that had already
+  settled, with its real outcome, and marks every remaining check Unknown with a not-run reason
+  rather than dropping it from the report. A test cancels the context after the first of three
+  checks settles and asserts the report holds one settled result and two Unknowns with that reason.
+  An operator whose run hit the deadline needs to know which checks answered before it did.
 - The `creds` check is the first member of `All`, declares `TierNone`, and always runs. It calls
   `providers.Cloudflare.VerifyToken` and `providers.GitHub.TokenExpiry`, which are its 1.0
   callers. An invalid or revoked credential on either side is Failing with
@@ -1268,7 +1395,12 @@ first member is the `creds` check and which Tasks 13 through 17 append to.
   this check, nothing fails before a token minted at the shortest acceptable expiry lapses, and
   the lapse then surfaces only as a scattering of per-tier unknowns.
 - `Run` skips a check whose tier's client is absent, records Unknown with `reason.cred-missing`,
-  sets `Degraded`, and never calls `Run` on it.
+  sets `Degraded`, and never calls `Run` on it. **That is the whole of the exit-state disambiguation
+  at report level:** an Unknown whose reason is a missing, unconfigured credential is exactly the
+  Unknown that sets `Degraded`, and Task 21 reads `Degraded` to route it to WARNING while excluding
+  it from the UNKNOWN trigger. A transport or other Unknown never sets `Degraded`. A test asserts
+  `Degraded` is set for a cred-missing skip and clear for a report whose only Unknown is a timeout,
+  which is what makes Task 21's table decidable from the report alone.
 - A panicking check is recovered into Unknown with `reason.not-run`. The recovered value is never
   placed in the report or in an error string verbatim: the report records the check id and the
   panic value's type only. A test panics with a sentinel-bearing value and asserts the sentinel
@@ -1320,9 +1452,17 @@ Invoke `go-conventions` before writing any Go file.
 - Modify: `tool/internal/health/health.go` (append to `All`)
 
 **Acceptance:**
-- HTTPS-forced reads the zone's `always_use_https` and HSTS settings. Either one off is Failing
-  with condition `edge.https-not-forced` or `edge.hsts-off`, both of which exist in
-  `conditions.ts`.
+- HTTPS-forced reads the zone's `always_use_https` and HSTS settings. Either one off is Failing.
+  **The two halves declare different conditions, because the engine's vocabulary has an id for only
+  one of them.** `always_use_https` off declares `edge.https-not-forced`, which
+  `src/lib/diagnostics/conditions.ts` carries. **HSTS off declares `spine.ConditionNone`: there is no
+  `edge.hsts-off` id, re-verified 2026-09-20 at HEAD, where `edge.https-not-forced` is the file's
+  only `edge.` id.** Do not add a condition id to the engine in this task or this pass: a condition
+  id is engine surface with a drift test and a remedy anchor behind it, and adding one from a tool
+  pass would land it with neither. The HSTS half carries a `ReasonCode` and a detail line instead.
+  An `edge.hsts-off` id in the engine is recorded under this pass's "outside the brief" notes as a
+  question for the owner. A test asserts each half's declared condition, so the asymmetry is
+  deliberate rather than a later reader's puzzle.
 - Email runs two halves in order. Credential-free first: `_dmarc.<domain>` TXT must exist and
   its `p=` must not be `none`, with the policy quoted in the detail on a Failing; the SPF TXT on
   the sending subdomain must include Cloudflare's Email Sending include; the DKIM selector TXTs
@@ -1345,8 +1485,13 @@ Invoke `go-conventions` before writing any Go file.
 - Modify: `tool/internal/health/health.go` (append to `All`)
 
 **Produces:** `type DeployDetail struct{ WorkerExists, BuildsConnected, PushToDeploy bool;
-LastBuild BuildState; LastBuildSHA, MainSHA string; LastBuildAt time.Time; Behind bool }`,
-carried in the outcome's ordered `Fields`. `BuildState` is one of `BuildOK`, `BuildFailed`,
+LastBuild BuildState; LastBuildSHA, MainSHA string; LastBuildAt time.Time; Behind bool }`, the
+check's own internal value, **flattened into named entries on the outcome's ordered `Fields` rather
+than carried as one struct**: `Fields` holds a key and a `json.RawMessage` per value, so a struct
+placed in one entry would render as one opaque blob and Task 12's per-field non-verbose filter could
+not reach inside it. The keys are enumerated here so the filter and the goldens have a fixed set:
+`workerExists`, `buildsConnected`, `pushToDeploy`, `lastBuild`, `lastBuildSHA`, `mainSHA`,
+`lastBuildAt`, and `behind`, in that order. `BuildState` is one of `BuildOK`, `BuildFailed`,
 `BuildRunning`, `BuildNone`.
 
 **Acceptance:**
@@ -1360,9 +1505,10 @@ carried in the outcome's ordered `Fields`. `BuildState` is one of `BuildOK`, `Bu
   `reason.park.builds-running`. OK with `MainSHA == LastBuildSHA` is OK. OK with differing SHAs
   is OK with `Behind: true`, because Behind is a state of this cell and not a separate check.
 - The check declares `spine.ConditionNone`, per the spec's table marking it new.
-- The build id, the repository slug, and the full SHAs in `DeployDetail` are verbose-only, which
-  Task 12's filter enforces. A test asserts a non-verbose render of a Failing deploy carries the
-  build state and the 7-character SHAs and nothing else from this struct.
+- The build id, the repository slug, and the full SHAs are verbose-only, which
+  Task 12's filter enforces per field. A test asserts a non-verbose render of a Failing deploy
+  carries the build state and the 7-character SHAs and none of the eight entries' verbose-only
+  values, and a second test asserts the eight keys appear in the order the Produces block lists.
 - If Task 10 found no read-level Builds permission group, the Builds half is gated at runtime on
   `Clients.HaveBuilds`, which is false in that case, and the check degrades to worker-exists plus
   Behind with an Unknown carrying `reason.cred-missing` for the Builds half. No build tag is
@@ -1459,13 +1605,23 @@ dataset.
   reaches the check through `Options.LogWindow`. The clamp value is a named constant with the
   observed window in its doc comment, and the comment says an operator on a plan with a longer
   retention can raise it, which is the honest form of a measurement taken on one account.
+- **`cairn logs` output carries editor emails, so `logs` is implicitly verbose and says so.**
+  Fourteen or more engine events carry an editor's email per reconciliation row 15, and
+  `Entry.Fields` is verbatim JSON, so the printed output holds personal data whatever the operator
+  passed. `logs` therefore prints **the same not-safe-to-paste stderr notice `adopt list` gets** and
+  is named in the global constraint beside it, rather than hiding fields behind `--verbose` and
+  shipping a log reader that omits the field an operator opened it for. A test asserts the stderr
+  notice on a `logs` run and that it goes to stderr, so `--json` on stdout stays machine-readable.
+  Task 20's `tool/docs/reference/json-output.md` marks the log payload as carrying personal data.
 - Event names are read against the engine's union per reconciliation row 14, after polish-C's
   renames, not before.
 - Re-run Task 12's purity assertion over the now-complete `All` and record the run in the task
   report.
-- Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` plus `npm test -w
-  packages/create-cairn-site` in the default heavy lane. This is the second of the two tasks whose
-  gate includes the Node gate. Commit.
+- Gate: one string in the light lane,
+  `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check && npm test -w packages/create-cairn-site'`.
+  The Node half is this one package's suite and launches no browser, so it belongs in the light lane
+  with the Go half rather than queueing behind another session's browser gate. This is the second of
+  the two tasks whose gate includes a Node suite. Commit.
 
 ### Task 17b: Pass B1 close, and the merge of PR #60
 
@@ -1476,6 +1632,8 @@ this task is its own segment.
 **The close:**
 - Run `make -C tool check` on a clean clone in CI, all three legs green.
 - Run `code-simplifier` over `tool/`.
+- Confirm the three `tool` CI legs green at the pass's final commit before anything below runs.
+  This is the conductor's confirmation, the one no task's own gate waits on.
 - Dispatch `go-architecture-reader` once per touched Go package: `health`, `logs`, `spine`,
   `record`, `providers`, and `store`. Six dispatches, never batched. The seams table
   pre-adjudicates every callerless export, so a finding naming one of those is answered by the
@@ -1487,26 +1645,47 @@ this task is its own segment.
   plus an execution-sitting count.
 
 **The merge, as acceptance criteria:**
-1. Merge `main` into `cairn-tool-a` before touching the PR. Expect conflicts in `CHANGELOG.md`,
-   `docs/STATUS.md`, and `ROADMAP.md`: extend-1 merged as PR #66 on 2026-09-20, extend-2 is in
-   flight, and all three passes write those same three files. **Keep every pass's entries.** A
-   resolution that drops another pass's changelog line, STATUS line, or roadmap item is a failed
-   resolution, not a merge preference. Read the merged result of each of the three files and
+1. Merge `main` into `cairn-tool-a` before touching the PR. **The conflict set is measured, not
+   predicted** (2026-09-20, at 59 commits of `main` ahead of the merge base): the files both sides
+   have touched are `CHANGELOG.md`, `ROADMAP.md`, `CLAUDE.md`,
+   `.github/workflows/create-site.yml`, and `.github/workflows/test.yml`, and `git merge-tree`
+   reports a content conflict in `CHANGELOG.md` today. **`docs/STATUS.md` is not in the set: this
+   branch has never touched it** (`git diff --name-only $(git merge-base HEAD origin/main) HEAD`),
+   so a resolution there would be inventing one. Re-measure with that command and `git merge-tree`
+   before merging, since `main` moves under extend-2. **Keep every pass's entries.** A
+   resolution that drops another pass's changelog line or roadmap item is a failed
+   resolution, not a merge preference. Read the merged result of each conflicted file and
    confirm each pass's entries are present before proceeding.
 2. Retitle PR #60 so its title covers Pass A and Pass B1, not only Pass A's module skeleton.
 3. Take PR #60 out of draft.
-4. Wait for every check green at the final SHA: the three `make check` legs (ubuntu, macos,
-   windows) and the Node suite. **Never merge over a red check.** A red leg is a stop, and the fix
+4. **Wait for the real green set at the final SHA, enumerated rather than counted.** Eight checks
+   are expected, and the reason is the branch's own diff: PR #60 touches
+   `packages/create-cairn-site/**`, `scripts/checks/**`, `src/tests/**`, and `.github/workflows/**`
+   beside `tool/**`, and every Node workflow filters on `paths-ignore: ['tool/**']` rather than on a
+   `tool/`-only allowlist, so each one fires on those non-`tool/` paths. Verified 2026-09-20 in
+   `.github/workflows/`:
+   - `tool`, three legs (`make check (ubuntu-latest)`, `(macos-latest)`, `(windows-latest)`)
+   - `test`
+   - `create-site`
+   - `design`
+   - `scaffold`
+   - `e2e`
+
+   The three workflows that do not fire, also verified: `publish.yml` (release-triggered),
+   `tsgo.yml` (scheduled), and `norms.yml` (`workflow_call` and `workflow_dispatch` only).
+   Re-read the run list at the final SHA rather than trusting this enumeration, since `main` may add
+   a workflow; the enumeration is what tells you whether a check is missing rather than merely slow.
+   **Never merge over a red check.** A red leg is a stop, and the fix
    is a commit on the branch followed by another wait, not an override.
 5. Merge the PR.
 6. Confirm `main` carries `tool/` after the merge, by reading the merged tree rather than assuming
    the merge implies it. `main` carried no `tool/` tree before this task, verified 2026-09-20.
 7. **Coordinate with the extend-2 conductor.** Two conductors never both run a close, a merge, or
    a release on one branch, and a merge into `main` while another pass is merging into `main` is
-   the contended moment. If extend-2 is mid close on those same three files, wait for its commit,
-   verify it, then merge. One sentence to Geoff beats a race.
-8. The task report records the final SHA, the check results at that SHA, the merge commit, and the
-   three files' resolutions.
+   the contended moment. If extend-2 is mid close on any file in the measured conflict set, wait for
+   its commit, verify it, then merge. One sentence to Geoff beats a race.
+8. The task report records the final SHA, every check's name and result at that SHA, the merge
+   commit, and each conflicted file's resolution with the entries it kept from each pass.
 
 ---
 
@@ -1519,8 +1698,8 @@ verification is Geoff's four production sites, his installed binary, and his sys
 unattended firing.
 
 **Ceiling 10M, checkpoint every four tasks** (after Task 20 and after Task 24). Both numbers are
-the conductor's sizing of 2026-09-20, and Geoff has not reviewed them; the B2 session names them in
-its first status note. Splitting Task 19 into 19a and 19b redistributes that task's work rather
+the conductor's sizing of 2026-09-20. **Ceilings accepted by Geoff, 2026-09-20.** Splitting Task 19
+into 19a and 19b redistributes that task's work rather
 than adding any, so the ceiling is unchanged by the split.
 
 **Segments.** Tasks 18, 19a, 19b | Tasks 20, 21 | Tasks 22, 23, 24 | Task 25. Every boundary sits
@@ -1528,17 +1707,26 @@ on a commit the gate proved green. The second segment carries two tasks rather t
 Task 22 pushes the `tool/v1.0.0` tag, and an irreversible task opens a segment rather than sitting
 inside one.
 
-**Execution mode.** `pass-execute.js` with `cairn-implementer`, sequential. No task in this pass is
+**Execution mode.** `pass-execute.js` with `cairn-implementer`, sequential, with the conductor's args
+as the plan header states them (`gate: "make -C tool check"`, `gateLane: "light"`, `maxFix: 1`, no
+`parallel`, and per task `gateTier: "docs"` plus the classifier-skip `notes` line). No task in this
+pass is
 independent of another: Tasks 19a, 19b, 20, and 21 all edit `tool/cmd/cairn/root.go` and
 `tool/cmd/cairn/main.go`, which are the contended files; Task 18's functions are what 19a's
 `adopt` command calls; and Tasks 22, 23, and 24 are a strict chain, since the release fires on the
 tag and the scheduled run is proved against an installed binary.
 
+**CI-leg confirmation belongs to the conductor at a segment boundary, never to a task's own gate**,
+the same rule B1 runs. The exceptions are the two tasks whose deliverable *is* a CI result: Task 22's
+tag push, which waits on green by its own criterion, and Task 23's release job, which fires on that
+tag. Everywhere else a task's gate is the local string and the conductor confirms the three `tool`
+legs at the segment's final commit.
+
 **Branch.** Its own feature worktree off `main`, after Task 17b's merge has landed. This is the
 ordinary case.
 
 **Gate.** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` for every task. Skip
-`scripts/checks/gate-tier.mjs`.
+`scripts/checks/gate-tier.mjs` by pinning `gateTier`, per the header's blockquote.
 
 **Geoff's ruling 3 of 2026-09-20, the full grammar cleanup, governs this pass** and is restated in
 the tasks that implement it: `cairn sites list` with bare `cairn sites` as an alias; `adopt list`
@@ -1628,8 +1816,21 @@ defined once, in `ExitCode`.
 3. **`auth unset <name>` is added,** deleting the keyring entry for one of the three variable
    names so a rotated token's stale entry can be cleared. It accepts only the three names, it
    never prints a value, and unsetting a name the keyring does not hold is success with a message
-   saying so rather than an error. A table covers a present entry, an absent entry, and a name
-   outside the three.
+   saying so rather than an error.
+   - **The keyring write and delete share the read path's deadline.** A keyring backend can hang, on
+     a locked login keyring or an unresponsive D-Bus service, and a `set` or `unset` that hangs
+     forever is worse than one that fails: the operator has no output and no exit code. So the write
+     and the delete derive their context from the same deadline `secrets`' read path already uses,
+     and a test with a stub backend that blocks asserts each returns by the deadline with a non-zero
+     exit rather than hanging.
+   - **A backend that cannot be reached is a distinct non-zero outcome, separate from not-found, and
+     it names the environment-variable fallback.** Not-found is success with a message, per above;
+     unavailable is a failure whose message says the keyring could not be reached and that the
+     variable can be set in the environment instead, because that is the one thing the operator can
+     do next. Conflating the two would tell an operator with a locked keyring that their credential
+     was already gone.
+   - A table covers four rows: a present entry, an absent entry, an unavailable backend, and a name
+     outside the known set.
 4. The cobra shape follows `go-conventions` and `golang-spf13-cobra`: `SilenceUsage: true`, flags
    in a struct rather than loose variables, `RunE` returning an error, and `main` as the only
    place that prints an error and calls `os.Exit`. Every write to standard output and standard
@@ -1648,7 +1849,12 @@ defined once, in `ExitCode`.
    a usage error naming both.
 7. **`signal.NotifyContext` covers SIGINT and SIGTERM on the root context,** and a cancelled run
    exits UNKNOWN. A test sends the signal to a command blocked on a stub client and asserts the
-   exit code and that the command returns rather than being killed. This also fixes Ctrl-C during
+   exit code and that the command returns rather than being killed. **That test guards on
+   `runtime.GOOS` rather than on a build tag**, because `go-conventions` forbids build tags and the
+   GOOS-suffix mechanism would put one assertion in three files. Windows has no SIGTERM and delivers
+   SIGINT differently, so on Windows the same behavior is proved by **cancelling the root context
+   directly** and asserting the command returns with the same code. Exit 3 is asserted on both
+   paths, so no platform is left proving the behavior only by omission. This also fixes Ctrl-C during
    an echo-off credential prompt leaving the terminal's echo off, because the prompt's restore now
    runs on the cancellation path; a test asserts the restore function is called when the context
    cancels mid-prompt.
@@ -1690,19 +1896,30 @@ defined once, in `ExitCode`.
     whether the sites are healthy, which is what UNKNOWN means. A test covers all three.
 15. `sites list --verbose` prints the registry directory it read and the `store.Source` that chose
     it. This is `Source`'s 1.0 caller, which is why `Source` stays exported.
-16. A report carrying `degraded: true` exits WARNING, which is 1, with no flag to ask for it. The
+16. **`sites list` ignores the resolved acknowledgement-file path when it lists the registry
+    directory.** Task 19b's `--ack-file` default puts `acknowledgements.json` inside that same
+    directory, so the listing walks past it. `store.List` already skips a filename stem that fails
+    `record.ValidateSiteID`, which covers the default name, but the check is on the **resolved
+    path** rather than on that name, so an operator who passes `--ack-file` pointing at a
+    differently named file inside the registry directory does not see it reported as a malformed
+    record and counted toward UNKNOWN. A test puts an ack file with a site-id-shaped stem in the
+    registry directory, passes it as `--ack-file`, and asserts the listing reports the real sites
+    only and exits OK.
+17. A report carrying `degraded: true` exits WARNING, which is 1, with no flag to ask for it. The
     spec's `--require-credentials` is dropped: a scheduled routine alerts on any non-zero exit, and
     WARNING is what a human reads at a prompt. Task 21 holds the mapping.
-17. `--timeout` caps the whole run. A test with a stub client that blocks asserts the command
+18. `--timeout` caps the whole run. A test with a stub client that blocks asserts the command
     returns by the deadline with UNKNOWN rather than hanging. This is the cap every scheduler
     example in Task 24 inherits, which is why it lives in the binary rather than in one platform's
     unit file.
-18. `health` requires a site argument and errors with a usage-free message naming `cairn sites
+19. `health` requires a site argument and errors with a usage-free message naming `cairn sites
     list` when the argument is missing. The multi-site sweep is 2.0.
-19. `adopt list` prints candidates as JSON, preceded by a stderr line saying the output is not
-    safe to paste. It is the one implicitly verbose command, per the global constraint, and the
-    stderr line says so. `adopt --worker X` adopts without a prompt.
-20. No command reads an environment variable except through `loadEnv`, and no command reads the
+20. `adopt list` prints candidates as JSON, preceded by a stderr line saying the output is not
+    safe to paste. It is one of the **two** implicitly verbose commands, per the global constraint;
+    `logs` is the other, because its entries carry editor emails, and Task 17 gives it the same
+    notice. A test asserts both commands emit that line and that no other command does.
+    `adopt --worker X` adopts without a prompt.
+21. No command reads an environment variable except through `loadEnv`, and no command reads the
     keyring except through `secrets`. `TestOSGetenvOnlyInEnvGo` still passes over the grown
     package. This holds because Task 9 created the chokepoint before any command needed it.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
@@ -1743,7 +1960,10 @@ The second half of the split Task 19. **Deliverable count: three groups**, seven
    1's one-TTY-check promise, since no second predicate is introduced. The documented form is
    `printf %s "$v" | cairn auth set NAME`, stated in `tool/docs/credentials.md` beside the caution
    that a value typed at an interactive prompt can reach shell history and a value in a pipeline
-   can reach a process listing. A trailing newline is stripped; an empty value is an error; the
+   can reach a process listing. **A trailing `\r\n` is stripped as well as a trailing `\n`**, since
+   Windows is a product platform and a value piped from a PowerShell or `cmd` pipeline arrives with
+   the carriage return; a credential stored with a stray `\r` fails every request with no visible
+   cause. A test proves it on a CRLF fixture as well as an LF one. An empty value is an error; the
    value never appears in output. A test drives both paths with a fake prompt that returns the
    no-terminal error and a stdin buffer.
 5. **The prompt reads from an injectable stream,** so the echo-off path is testable without a pty
@@ -1760,8 +1980,13 @@ The second half of the split Task 19. **Deliverable count: three groups**, seven
    `health`'s and `logs`'s positional argument, reading through the `store` function Task 19a
    moved; and a flag completion for `logs --event` over the engine's event vocabulary.
    Reconciliation row 15 already assumes the `--event` completion exists and no task produced it,
-   which is the hole this closes. The event completion reads the vocabulary at build time from the
-   same source the drift test reads, so it cannot list an event the engine does not emit. Tests
+   which is the hole this closes. **The vocabulary is a Go literal slice in the tool**, not a value
+   read from the engine's TypeScript at build time: `go-conventions` forbids code generation, the
+   module builds with no repository present (Task 1's criterion), and a `go install` build reaches no
+   `src/lib` tree at all. The existing drift test from reconciliation row 14 is what keeps the slice
+   honest: **it asserts at test time that the literal matches the union in
+   `src/lib/log/events.ts`**, so an engine-side rename fails the Go suite and the completion cannot
+   list an event the engine does not emit. Tests
    call each completion function directly against a fixture registry and a fixture vocabulary and
    assert the candidate lists, with the no-registry and no-match cases covered.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
@@ -1858,7 +2083,7 @@ with the ASCII tier `+ ! ? ~`.
     against the exit code for all four values.
 13. The view then carries a "do this next" line with the worst failing check's id, its condition
     id when it has one, and its remedy anchor when `Anchor` returns one. "Worst" is
-    `spine.State.Severity()` from Task 11b, the module's one severity order, not a local
+    `spine.State.Severity()` from Task 11b-ii, the module's one severity order, not a local
     comparison. When `Anchor` returns false the line names the check and says no remedy page
     covers it yet. A test asserts that branch for the Deploy check, which is one of the six check
     families `docs/admin/is-it-working.md` has no heading for per reconciliation row 16.
@@ -1876,7 +2101,10 @@ with the ASCII tier `+ ! ? ~`.
     and the doc states that a field is only ever added within a version, never removed or retyped.
     A golden covers each payload from a fixture, so a shape change is a visible diff rather than a
     silent break for whatever script reads it. A test asserts the doc names every field the golden
-    contains, so the doc cannot drift from the output.
+    contains, so the doc cannot drift from the output. **The `logs` section marks the log payload as
+    carrying personal data**, naming the editor email the engine's events write, so a reader piping
+    it somewhere knows what they are moving; Task 17 carries the matching stderr notice on the
+    command itself.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
 
 ### Task 21: The monitoring exit codes, the error surface, and the scrubbing chokepoint
@@ -1913,7 +2141,7 @@ every write runs the scrub last.
   unrelated transport unknown. An unknown outranks a warning because an unknown hides a possible
   fault while a warning is a disclosed and accepted one. The table covers one row per pairing.
   The ordering agrees with `spine.State.Severity()` where the two overlap, and a test asserts that
-  agreement, so the module still holds one severity order per Task 11b's hygiene test.
+  agreement, so the module still holds one severity order per Task 11b-ii's hygiene test.
 - **A usage error exits UNKNOWN, which is 3.** An unknown flag, a missing required argument, a
   malformed flag value, and an unknown subcommand all exit 3. This is stated in the task and in
   `exit-codes.md` as the monitoring convention chosen over `sysexits.h` on purpose: an operator's
@@ -1931,8 +2159,17 @@ every write runs the scrub last.
 - **`SetFlagErrorFunc` appends a hint** naming the command's own help: "run 'cairn X --help'",
   with X the command path the error came from. A test asserts the hint names the subcommand rather
   than the root for a subcommand's flag error.
-- **`auth probe` returns a typed coded error that `main` maps,** so there is one exit path. Today
-  the probe command takes an `exit func(int)` and calls it itself, which is a second path. After
+- **There are exactly two ways a process exit code is decided, and they cannot collide.**
+  `ExitCode(reports, listErrs, expectSites)` decides the code for a run that produced a report.
+  Everything that produced no report is a **typed error that `main` maps to a code**: a cancelled
+  run, a usage error, `auth probe`'s typed coded error, and a tool fault. The two paths cannot
+  disagree because `ExitCode` has no notion of any of them: its inputs are reports, list errors, and
+  an expected count, and none of the four can be expressed in those. A test asserts each of the four
+  typed errors reaches its code through `main` without `ExitCode` being called, and the table in
+  `exit-codes.md` states the split so a reader does not go looking for cancellation in `ExitCode`'s
+  table.
+- **`auth probe` returns a typed coded error that `main` maps,** which is one of those four. Today
+  the probe command takes an `exit func(int)` and calls it itself, which is a third path. After
   this task `main` is the only caller of `os.Exit`, and **the writer grep extends to `os.Exit`**:
   the test that allows `os.Stdout` and `os.Stderr` only in `main.go` also allows `os.Exit` only
   there. Falsify by adding an `os.Exit` to another file, confirm the failure names it, remove it.
@@ -1942,9 +2179,17 @@ every write runs the scrub last.
   command, and a scheduler's cap (systemd's `RuntimeMaxSec`, Task Scheduler's `/ET`) should sit
   above `--timeout` with headroom rather than below it, since a scheduler that kills the process
   first produces no exit code the routine can read. The doc states the arithmetic with the numbers
-  rather than the rule alone.
+  rather than the rule alone. **A test asserts the arithmetic closes**: the sum over the checks of
+  each check's published maximum request count, times the 15 s per-request timeout, fits within the
+  default `--timeout`. The per-check counts the test reads are the ones `exit-codes.md` publishes, so
+  the doc and the test cannot drift, and a later check that adds requests fails the test rather than
+  silently making the default unreachable. **If the arithmetic does not fit at the default of 120
+  seconds, this task states the default it chooses instead and why**, rather than shipping a default
+  a full sweep cannot finish inside.
 - **Under `--verbose` only, one stderr line per check as it completes,** naming the check id and
-  its outcome, so a run that takes a while is visibly progressing rather than apparently hung. It
+  its outcome, so a run that takes a while is visibly progressing rather than apparently hung. **It
+  reads through Task 12's `Options.OnCheck` callback**, which is why that callback is a parameter of
+  the pure `health.Run` rather than a print inside it; without `--verbose` the callback is nil. It
   is stderr so it never mixes into `--json` on stdout. A test asserts the lines appear under
   `--verbose`, that there are none without it, and that stdout is unaffected either way.
 - `render.Verdict` is this function's return value widened to a type, and Task 20's verdict line
@@ -1952,6 +2197,23 @@ every write runs the scrub last.
   status and the exit code are one decision.
 - `ErrExpectSites` is mapped here and nowhere else. Task 19a returns the sentinel; this function
   is the one definition of the code it becomes.
+- **The two kinds of Unknown are disambiguated, and the report carries the discriminator.** An
+  Unknown whose reason is a missing, unconfigured credential maps to **WARNING through `Degraded`**
+  and is **excluded from the UNKNOWN trigger**: the operator has not configured a credential, which
+  is a disclosed and accepted gap, and paging them with UNKNOWN every morning for it is what makes a
+  routine ignorable. A **transport or any other Unknown still triggers UNKNOWN**, because that one
+  hides a possible fault. `Degraded` is the discriminator and Task 12 sets it on exactly the
+  cred-missing skip, so this function reads the report rather than re-deriving reasons. **A table
+  covers three rows: a cred-missing Unknown alone, which is WARNING; a transport Unknown alone,
+  which is UNKNOWN; and both together, which is UNKNOWN**, since precedence puts UNKNOWN above
+  WARNING. This is the same intent as the `degraded: true` WARNING rule above and as Task 19a's
+  criterion 17, and the wording in all three says `Degraded` rather than "an absent credential", so
+  no reader has to decide whether the two sentences describe one rule or two.
+- **An acknowledgement softens Failing only, never Unknown.** An unexpired acknowledgement on a
+  Failing check moves that check from CRITICAL to WARNING. It has no effect on an Unknown: an
+  acknowledgement is an operator saying "I know this is broken and I accept it for now", which they
+  cannot say about a check that did not run. A table row covers an acknowledgement naming a check
+  that came back Unknown and asserts the code is unchanged.
 - A table test covers each code including every precedence pairing, the empty-state-directory
   case, an acknowledged failing check and the same check with an expired acknowledgement, and a
   report whose `creds` check is Failing on `reason.cred-expiring`, which is CRITICAL rather than
@@ -1959,6 +2221,22 @@ every write runs the scrub last.
 - `main` wraps `os.Stdout` and `os.Stderr` in the scrubbing writer before any command runs, and
   registers all three credentials including the absent ones. `logx` is imported by `cmd/cairn`
   alone, per the architecture's downward order.
+- **`main` recovers a panic, prints one scrubbed line through the same chokepoint, and exits 3.** A
+  Go panic's default output is a stack trace written straight to the real `os.Stderr`, bypassing the
+  scrubbing writer entirely, so a panic in a credential-carrying frame could print a token in a
+  scheduler's log. Task 12 already recovers a panicking check; this covers everything outside a
+  check. The printed line names the panic value's type and the command, never the value verbatim.
+  A test panics with a sentinel-bearing value from a stub command and asserts exit 3, the sentinel
+  absent from both streams, and no stack trace.
+- **The scrubber ignores an empty credential and any credential shorter than a stated minimum
+  length.** An empty registered value would make every write match everywhere, and a very short one
+  would redact unrelated text: a two-character credential turns ordinary output into
+  `<redacted>`-riddled noise, which is a worse failure than a missed redaction because it destroys
+  the output an operator is reading. The minimum is a named constant with its reason in its doc
+  comment, and a value below it is registered but never matched, with that skip recorded once on
+  stderr under `--verbose` so it is not silent. Two tests: **an absent-credential run's output is
+  byte-identical to a no-credential run**, and **a short sentinel does not redact unrelated text**
+  that happens to contain it.
 - Scrub test: a log line embedding a credential's plaintext is emitted with `<redacted>` in its
   place.
 - The sentinel byte-level test: a record fixture with sentinel secrets passes through `sites list
@@ -2010,16 +2288,27 @@ verify against. A scheduled run written first could not be proved.
 - **A man page is either added or declined on the record.** Cobra's `doc` generator produces one
   from the tree at no authoring cost, so the decision is whether to ship and install it. Decide in
   this task, implement or record the decision in `tool/CHANGELOG.md` and the task report, and if
-  declined state the condition that would reopen it (a packager asking for one).
+  declined state the condition that would reopen it (a packager asking for one). **The task report
+  names the decision and, where the man page was taken, the diff line that adds it**, so the
+  decision is readable without inferring it from the absence of a change.
 - `make -C tool install` builds and installs to `~/.local/bin/cairn` with mode 0755, matching
   poplar's Makefile, and `cairn --version` on the installed binary prints `1.0.0` plus the
   commit. That is the local path, and it is how this pass's own verification binary lands. The
   product's install paths are `go install` and the release binaries, which Task 23 proves.
-- The installed binary prints a `+dirty` suffix when built from a modified tree. Falsify once:
+- The installed binary prints a **`-dirty`** suffix when built from a modified tree. The suffix is
+  `git describe`'s own, and `tool/Makefile` calls `git describe --tags --match 'tool/v*' --dirty
+  --always` (verified 2026-09-20 at HEAD), which appends `-dirty` with a hyphen. Earlier drafts of
+  this plan wrote `+dirty`, which no command produces. Falsify once:
   touch a source file, run `make -C tool install`, confirm the suffix, restore, reinstall,
   confirm it is gone. The task report records `go version` and the `GOOS/GOARCH` it built for.
 - The tag is `tool/v1.0.0` on this task's commit, pushed after CI is green on all three legs. The
-  tag prefix is the spec's. No npm publish happens, and `package.json` is untouched. If Task 23,
+  tag prefix is the spec's. **The tag push is irreversible, and it makes B2's merge mode a hard
+  constraint.** A published tag is what `go install github.com/glw907/cairn-cms/tool/cmd/cairn@v1.0.0`
+  resolves, so the commit it names must stay reachable from `main` forever; a squash or a rebase at
+  Task 25 would rewrite that commit and leave the tag pointing at an object no branch contains, which
+  breaks `go install` for every operator and cannot be fixed without moving a published tag. So
+  **Task 25 merges B2's PR as a true merge commit, never a squash and never a rebase**, and carries
+  the assertion that proves it. No npm publish happens, and `package.json` is untouched. If Task 23,
   Task 24, or Task 25 changes code under `tool/`, the close records that the binary was
   reinstalled, and a `tool/v1.0.1` tag is cut only if the change is behavioral.
 - `tool/CHANGELOG.md` opens with the `1.0.0` entry, listing the registry, the checks, the
@@ -2062,7 +2351,13 @@ deliverable list was already at four, and because a release nobody can install i
   `build` target uses, plus a `SHA256SUMS` file covering all six. The task report pastes the
   release's file list and the checksum file.
 - **Build-provenance attestation covers the release artifacts,** through GitHub's own attestation
-  action on the release job, and `tool/README.md` carries the one command that verifies it. The
+  action on the release job, and `tool/README.md` carries the one command that verifies it.
+  **The release job's `permissions` block gains `id-token: write` and `attestations: write` beside
+  the `contents: write` it already carries** (verified 2026-09-20: `.github/workflows/tool.yml`'s
+  `release` job declares `contents: write` alone). Attestation mints a Sigstore identity token and
+  writes an attestation to the repository's attestations store, so both are required and the step
+  fails with a permissions error without them. Falsify the block once: remove one of the two,
+  confirm the step fails naming the permission, restore it. The
   reason is stated in the README: a `SHA256SUMS` file published in the same release as the
   binaries it covers proves integrity, not authenticity, because whoever could replace a binary
   could replace the checksum beside it. Attestation binds the artifact to the workflow and the
@@ -2201,9 +2496,15 @@ by Tasks 19a, 19b, and 21.
   set` writes one to the OS keyring by the same ruling, and `cairn auth unset` removes one. Do
   not amend anything he declined; report it as an open item instead. The 2026-09-20 addendum at
   the spec's end is append-only and is not rewritten by this task.
-- Merge this pass by PR off `main` the way Task 17b merged B1, with the same never-merge-over-red
-  rule and the same coordination check against any other pass mid close on `CHANGELOG.md`,
-  `docs/STATUS.md`, or `ROADMAP.md`.
+- **Merge this pass by PR off `main` as a true merge commit: no squash, no rebase.** Task 22 pushed
+  `tool/v1.0.0` on a commit of this branch, and `go install ...@v1.0.0` resolves that tag, so the
+  commit has to stay reachable from `main`. A squash or rebase merge would rewrite it and orphan the
+  tag. Use `gh pr merge --merge`, and **assert afterwards that `git merge-base --is-ancestor
+  tool/v1.0.0 origin/main` succeeds**, recording the command and its exit status in the pass report.
+  A failure here is a stop, not a note: it means the published install path is broken. Otherwise the
+  merge follows Task 17b's, with the same never-merge-over-red rule, the same measure-then-resolve
+  step for the conflict set, and the same coordination check against any other pass mid close on
+  `CHANGELOG.md`, `docs/STATUS.md`, or `ROADMAP.md`.
 - If the simplifier changed code under `tool/`, reinstall the binary and record whether a
   `tool/v1.0.1` tag was warranted. If a `tool/v1.0.1` tag is cut, the release job fires again and
   its artifacts are checked the way Task 23 checked the first set.
@@ -2269,10 +2570,12 @@ Five orderings are load-bearing, and a resume must respect them:
   response shape both come out of the probe run. Task 15 dispatched first would guess at the
   Builds capability, and Task 17 would synthesize its fixture from documentation rather than from
   a real response's key set.
-- **Task 11b before every task in B1 and B2.** It threads `context.Context` through every exported
-  `providers` method, which is a signature break across every check and every command. Taken after
-  the checks exist, the same break costs six more files and six more fix rounds. It also lands
-  `State.Severity()`, which Task 20's "worst failing check" line and Task 21's precedence table
+- **Task 11b-i, then Task 11b-ii, then every other task in B1 and B2.** 11b-i threads
+  `context.Context` through every exported `providers` method, which is a signature break across
+  every check and every command. Taken after the checks exist, the same break costs six more files
+  and six more fix rounds. 11b-ii reads 11b-i's consolidated `reasonForStatus` for its one
+  reason-to-outcome translation, so the order between the two halves is load-bearing too, and it
+  lands `State.Severity()`, which Task 20's "worst failing check" line and Task 21's precedence table
   both read.
 - **Task 17b before every task in B2.** B2 runs on a worktree off `main`, and `main` carries no
   `tool/` tree until Task 17b merges PR #60. B2 dispatched first would have nothing to branch from.
@@ -2281,8 +2584,10 @@ State at each halt point, so a resuming session knows what it has. After Task 3 
 exists and the Node suite still passes. After Task 5 the registry reads and writes records. After
 Task 8 the vocabulary is complete and no check exists. After Task 9 a credential resolves
 through either provider and `cairn auth set` writes one. After Task 11 Pass A is closed and the
-module is green on three platforms, unmerged. After Task 11b the four accepted packages carry a
-threaded context, one severity order, and a single-source `record`, with no check yet written.
+module is green on three platforms, unmerged. After Task 11b-i `providers` carries a threaded
+context and one copy of each shared helper. After Task 11b-ii the four accepted packages also carry
+one severity order, one reason-to-outcome translation, and a single-source `record`, with no check
+yet written.
 After Task 17 every check exists with no CLI over them. After Task 17b Pass A and Pass B1 are on
 `main` and `main` carries `tool/`. After Task 19b every action is reachable from the shell with raw
 output. After Task 21 the exit-code contract holds and every output path is scrubbed. After Task 22
@@ -2311,8 +2616,8 @@ splits at a segment boundary and the new pass takes the next number.
 ## Self-review
 
 **Spec coverage.** Repo home, gates, and version stamping: Task 1. The 1.0 ADR and conventions
-wiring: Task 2. The corpus: Task 3. `record`: Tasks 4 and 11b. `store`: Tasks 5 and 11b.
-`providers`: Tasks 6, 7, and 11b. `spine`: Tasks 8, 11b, and 18. Credentials: Tasks 9, 10, 12,
+wiring: Task 2. The corpus: Task 3. `record`: Tasks 4 and 11b-ii. `store`: Tasks 5 and 11b-ii.
+`providers`: Tasks 6, 7, and 11b-i. `spine`: Tasks 8, 11b-ii, and 18. Credentials: Tasks 9, 10, 12,
 19a, 19b, and 21. `health` and every check in
 the spec's table, plus the `creds` check the spec's table does not name: Tasks 12 through 17.
 `logs`: Task 17. Adopt: Tasks 18 and 19a. `cmd` and exit codes: Tasks 19a, 19b, and 21. The render
@@ -2329,9 +2634,9 @@ addendum at the spec's end, written 2026-09-20.
 9, 10, 19a, and 21. `secrets.Provider` is the only credential source, consumed by Task 9's
 `loadEnv` and by nothing else. `spine.Outcome`, `spine.ReasonCode`, `spine.State`, and
 `spine.Condition` are
-consumed by Tasks 12 through 17, 20, and 21; `spine.State.Severity()` is produced by Task 11b and
+consumed by Tasks 12 through 17, 20, and 21; `spine.State.Severity()` is produced by Task 11b-ii and
 is the module's one severity order, enforced by a `hygiene` test. `context.Context` is threaded
-through every `providers` method by Task 11b and is a parameter of every call in Tasks 12 through
+through every `providers` method by Task 11b-i and is a parameter of every call in Tasks 12 through
 21. `health.Report`, `health.Clients`, and `health.Tier` are consumed by Tasks
 19a, 20, and 21. `record.Record` is consumed by Tasks 5, 12, and 18. `store.Entry` is consumed by
 Tasks 19a and 20, and `store.Source` by Task 19a. `render.StatusState` is produced by Task 20 and
@@ -2342,13 +2647,13 @@ populated by Task 19a's
 12, read by Tasks 17 and 21, and populated by Tasks 19a's and 19b's flags. `internal/version` is
 consumed by Tasks 7, 22, and 23.
 
-**Pass sizing.** Pass B's fourteen tasks were split into B1's eight and B2's nine on 2026-09-20
+**Pass sizing.** Pass B's fourteen tasks were split into B1's nine and B2's nine on 2026-09-20
 (Geoff, ruling 2), which is the pass split this section's earlier draft proposed and held in
-reserve. The proposal's own trigger fired: the 2026-09-20 CLI audit added eleven deliverables to
+reserve; the three-lens review then split Task 11b along disjoint Files, making B1 nine. The proposal's own trigger fired: the 2026-09-20 CLI audit added eleven deliverables to
 Task 19 alone, so Task 19 became 19a and 19b, and that was the third task split, one past the
 point at which this workstation's rule says to split the pass rather than the tasks. B1 and B2 each
-sit at eight or nine tasks against segments of two to four, which is the shape the segment rule
-wants. The accumulation is stated rather than absorbed: B1 gained Task 11b, entirely from Pass A's
+sit at nine tasks against segments of one to four, which is the shape the segment rule
+wants. The accumulation is stated rather than absorbed: B1 gained Task 11b, split at the three-lens review into 11b-i and 11b-ii along disjoint Files, entirely from Pass A's
 architecture reads and fold reviews, and B2 gained a task from the 19a/19b split plus amendments to
 six of its eight existing tasks. Nothing here was added by adjacency; every item traces to a
 2026-09-20 ruling, audit, or architecture read, and the "Declined or recorded" section holds what
@@ -2419,7 +2724,7 @@ here as well as in the tasks that read them, so a reader who starts at either en
    non-empty) and `--color=auto|always|never` override it; `TERM=dumb` and a non-TTY mean no color.
    The ban on a TUI launch gate stays, and bare `cairn` still prints help unconditionally.
    `loadEnv` is the only code that reads the environment, so it carries `NO_COLOR` and `TERM`.
-   Read by Task 11b (criterion set for the nits is unaffected), Task 19a (criterion 12, the
+   Read by Task 11b-ii (its carried-nits criteria are unaffected), Task 19a (criterion 12, the
    narrowed grep test), and Task 20 (criteria 1 and 2).
 15. **Pass B splits into B1 and B2,** each with its own ceiling, checkpoint interval, segments, and
    close, both through `pass-execute.js` with the header as the opt-in. Read by the two pass
@@ -2442,13 +2747,17 @@ Task 9's seam (a file backend, `pass`, or 1Password through its CLI), resolution
 package channel and the npm shim, a cloud routine once a hosted spine exists, and `cairncheck`,
 which joins only when a rule the spec names needs a custom analyzer.
 
-**Two seams 1.0 ships that 2.0 depends on, named in the hand-forward as dependencies rather than
-as scope.** `spine.State.Severity()` (Task 11b) is the one severity order the HUD's worst-first
+**Three seams 1.0 ships that 2.0 depends on, named in the hand-forward as dependencies rather than
+as scope.** `spine.State.Severity()` (Task 11b-ii) is the one severity order the HUD's worst-first
 summary line and its status-glyph precedence both read; a second ordering appearing anywhere under
 `tool/` fails a `hygiene` test, which is what keeps that promise. The `context.Context` threaded
-through every exported `providers` method (Task 11b) is the HUD's only cancellation lever, because
+through every exported `providers` method (Task 11b-i) is the HUD's only cancellation lever, because
 bubbletea gives a `Cmd` no per-Cmd cancellation, so a stale generation's in-flight requests can be
-stopped only through a context the sweep owns. A HUD plan reads both as given, not as work.
+stopped only through a context the sweep owns. `health.Options.OnCheck` (Task 12), the optional
+callback `health.Run` fires as each check settles, is how the HUD paints a per-site refresh
+incrementally instead of waiting for the whole sweep; 1.0's own reader is Task 21's `--verbose`
+one-line-per-check output, so the seam ships exercised rather than dead. A HUD plan reads all three
+as given, not as work.
 
 **The spec's own corrections a HUD plan must make first** are the dated 2026-09-20 addendum at the
 end of `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`. It is append-only

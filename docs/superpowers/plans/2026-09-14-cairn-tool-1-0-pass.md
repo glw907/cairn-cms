@@ -562,7 +562,9 @@ error` for a bare LDH name with no scheme, userinfo, port, path, query, or IP li
   `perm_darwin.go`, `perm_windows.go`, `perm_windows_test.go`, `store_test.go`
 
 **Produces:** `func Dir(env func(string) string, config func() (string, error), home string)
-(string, Source)` with `Source` one of `SourceEnv`, `SourceUserConfig`, `SourceLegacyPOSIX`. The
+(string, Source, error)` (error return added by the 2026-09-19 conductor ruling, for the case
+where `config` fails and no legacy directory exists) with `Source` one of `SourceEnv`,
+`SourceUserConfig`, `SourceLegacyPOSIX`. The
 `config` parameter is `os.UserConfigDir` in production and a stub in tests, which is what keeps
 the resolution table testable on one platform. `type Store struct`.
 `type Entry struct{ ID string; Record record.Record }`, where `ID` is the filename stem and never

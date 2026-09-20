@@ -24,31 +24,42 @@ func (rt fixtureRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	}, nil
 }
 
-// TestClassifyReason covers every Reason value's mapping rule, including the two the task names
-// explicitly: a 403 with code 10000 classifies as ReasonForbidden, and a 401 as ReasonUnauthorized,
-// regardless of the accompanying code, since neither status carries a code-specific override.
+// TestClassifyReason covers every Reason value's mapping rule this package can produce (all but
+// ReasonBuildsNotConnected, which classifyReason never produces per its own doc comment), including
+// the cases the task names explicitly: a 403 with code 10000 classifies as ReasonForbidden, and a
+// 401 as ReasonUnauthorized, regardless of the accompanying code, since neither status carries a
+// code-specific override; a 400 with code 6003 also classifies as ReasonUnauthorized, the second
+// half of the Node client's throwIfTokenInvalid; and the four codes that classify from any
+// position in errs are each proven from a non-zero position, behind an unrelated warning entry,
+// matching the Node client's errors.some(...) rather than an errors[0]-only check.
 func TestClassifyReason(t *testing.T) {
+	warning := v4Error{Code: 1000, Message: "an unrelated warning ahead of the real error"}
 	tests := []struct {
-		name         string
-		status, code int
-		want         Reason
+		name   string
+		status int
+		errs   []v4Error
+		want   Reason
 	}{
-		{"401 classifies as unauthorized", http.StatusUnauthorized, 10000, ReasonUnauthorized},
-		{"403 with code 10000 classifies as forbidden", http.StatusForbidden, 10000, ReasonForbidden},
-		{"404 classifies as not found", http.StatusNotFound, 7003, ReasonNotFound},
-		{"429 classifies as rate limited", http.StatusTooManyRequests, 0, ReasonRateLimited},
-		{"503 classifies as rate limited", http.StatusServiceUnavailable, 0, ReasonRateLimited},
-		{"code 8000008 classifies as builds app not authorized", http.StatusNotFound, 8000008, ReasonBuildsAppNotAuthorized},
-		{"code 8000012 classifies as builds repo not selected", http.StatusNotFound, 8000012, ReasonBuildsRepoNotSelected},
-		{"code 10203 classifies as sender not configured", http.StatusForbidden, 10203, ReasonSenderNotConfigured},
-		{"code 10204 classifies as sender not configured", http.StatusForbidden, 10204, ReasonSenderNotConfigured},
-		{"code 12000 classifies as builds not connected", http.StatusNotFound, 12000, ReasonBuildsNotConnected},
-		{"an unmapped status and code classifies as unknown", http.StatusTeapot, 0, ReasonUnknown},
+		{"401 classifies as unauthorized", http.StatusUnauthorized, []v4Error{{Code: 10000}}, ReasonUnauthorized},
+		{"403 with code 10000 classifies as forbidden", http.StatusForbidden, []v4Error{{Code: 10000}}, ReasonForbidden},
+		{"404 classifies as not found", http.StatusNotFound, []v4Error{{Code: 7003}}, ReasonNotFound},
+		{"429 classifies as rate limited", http.StatusTooManyRequests, nil, ReasonRateLimited},
+		{"503 classifies as rate limited", http.StatusServiceUnavailable, nil, ReasonRateLimited},
+		{"400 with code 6003 classifies as unauthorized", http.StatusBadRequest, []v4Error{{Code: 6003}}, ReasonUnauthorized},
+		{"code 8000008 classifies as builds app not authorized", http.StatusNotFound, []v4Error{{Code: 8000008}}, ReasonBuildsAppNotAuthorized},
+		{"code 8000012 classifies as builds repo not selected", http.StatusNotFound, []v4Error{{Code: 8000012}}, ReasonBuildsRepoNotSelected},
+		{"code 10203 classifies as sender not configured", http.StatusForbidden, []v4Error{{Code: 10203}}, ReasonSenderNotConfigured},
+		{"code 10204 classifies as sender not configured", http.StatusForbidden, []v4Error{{Code: 10204}}, ReasonSenderNotConfigured},
+		{"code 8000008 in a non-zero position, behind a warning, still classifies", http.StatusNotFound, []v4Error{warning, {Code: 8000008}}, ReasonBuildsAppNotAuthorized},
+		{"code 8000012 in a non-zero position, behind a warning, still classifies", http.StatusNotFound, []v4Error{warning, {Code: 8000012}}, ReasonBuildsRepoNotSelected},
+		{"code 10203 in a non-zero position, behind a warning, still classifies", http.StatusForbidden, []v4Error{warning, {Code: 10203}}, ReasonSenderNotConfigured},
+		{"code 10204 in a non-zero position, behind a warning, still classifies", http.StatusForbidden, []v4Error{warning, {Code: 10204}}, ReasonSenderNotConfigured},
+		{"an unmapped status and code classifies as unknown", http.StatusTeapot, nil, ReasonUnknown},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := classifyReason(tt.status, tt.code); got != tt.want {
-				t.Errorf("classifyReason(%d, %d) = %v, want %v", tt.status, tt.code, got, tt.want)
+			if got := classifyReason(tt.status, tt.errs); got != tt.want {
+				t.Errorf("classifyReason(%d, %v) = %v, want %v", tt.status, tt.errs, got, tt.want)
 			}
 		})
 	}
@@ -57,10 +68,12 @@ func TestClassifyReason(t *testing.T) {
 // TestReasonMappingFromCorpusFixtures drives the classification end to end, over a client whose
 // RoundTripper serves a real captured fixture, for every Reason the fixture corpus carries a
 // live-captured body for. The corpus's own rule (packages/create-cairn-site/fixtures/README.md:
-// "every body here is a real captured API response") is why this is not all nine Reason values:
-// the corpus never captured a plain 401, a generic 403, a rate limit, or an unconnected Builds
-// worker, and inventing one to fill the gap would violate that rule, so those four are covered
-// only by TestClassifyReason's direct unit table above, not by a corpus fixture.
+// "every body here is a real captured API response") is why this is not all of classifyReason's
+// producible Reason values: the corpus never captured a plain 401, a generic 403, a rate limit,
+// or a 400/6003 token-invalid body, and inventing one to fill the gap would violate that rule, so
+// those are covered only by TestClassifyReason's direct unit table above, not by a corpus
+// fixture. ReasonBuildsNotConnected is absent from both this table and the direct table:
+// classifyReason never produces it (see that constant's own doc comment).
 func TestReasonMappingFromCorpusFixtures(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -74,10 +87,13 @@ func TestReasonMappingFromCorpusFixtures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			status, body := Corpus(t, "cloudflare", tt.fixture)
+			status, body, err := Corpus("cloudflare", tt.fixture)
+			if err != nil {
+				t.Fatal(err)
+			}
 			cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
 
-			_, err := cf.VerifyToken()
+			_, err = cf.VerifyToken()
 
 			var apiErr *APIError
 			if !errors.As(err, &apiErr) {
@@ -119,5 +135,46 @@ func TestNewCloudflareRefusesMismatchedHost(t *testing.T) {
 	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: http.StatusOK, body: []byte(`{}`)})
 	if cf.client.host != cloudflareHost {
 		t.Errorf("client.host = %q, want %q", cf.client.host, cloudflareHost)
+	}
+}
+
+// pagedRoundTripper serves a fixed body per "page" query parameter value, standing in for a
+// Cloudflare list route that paginates over more than one page.
+type pagedRoundTripper struct {
+	pages map[string][]byte
+}
+
+func (rt pagedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	body, ok := rt.pages[req.URL.Query().Get("page")]
+	if !ok {
+		body = []byte(`{"success":false,"errors":[{"code":9999,"message":"unexpected page requested"}]}`)
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewReader(body)),
+		Header:     make(http.Header),
+		Request:    req,
+	}, nil
+}
+
+// TestListWorkersFollowsPagination asserts getPaginated (routed through ListWorkers) reads a
+// second page when the first page's result_info reports more than one total_pages, and stops
+// once it reaches the last page, concatenating both pages' results.
+func TestListWorkersFollowsPagination(t *testing.T) {
+	rt := pagedRoundTripper{pages: map[string][]byte{
+		"1": []byte(`{"success":true,"errors":[],"result":[{"id":"one","tag":"t1"}],"result_info":{"page":1,"total_pages":2}}`),
+		"2": []byte(`{"success":true,"errors":[],"result":[{"id":"two","tag":"t2"}],"result_info":{"page":2,"total_pages":2}}`),
+	}}
+	cf := NewCloudflare("acct123", Credential{}, rt)
+
+	workers, err := cf.ListWorkers()
+	if err != nil {
+		t.Fatalf("ListWorkers: %v", err)
+	}
+	if len(workers) != 2 {
+		t.Fatalf("ListWorkers: got %d workers, want 2", len(workers))
+	}
+	if workers[0].Name != "one" || workers[1].Name != "two" {
+		t.Errorf("ListWorkers: got %+v, want [one two]", workers)
 	}
 }

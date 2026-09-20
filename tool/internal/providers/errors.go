@@ -18,6 +18,12 @@ const (
 	ReasonUnauthorized Reason = iota
 	ReasonForbidden
 	ReasonNotFound
+	// ReasonBuildsNotConnected is never produced by classifyReason: a live probe confirmed
+	// GET /accounts/{id}/builds/workers/{tag}/triggers answers 200 with an empty trigger list
+	// for an unconnected worker, not a 404 with a distinct code. The caller that walks
+	// BuildsConnections is the one that assigns this Reason itself when the returned list is
+	// empty, so the constant stays for that caller even though this package never returns it as
+	// part of an *APIError.
 	ReasonBuildsNotConnected
 	ReasonBuildsRepoNotSelected
 	ReasonBuildsAppNotAuthorized
@@ -65,22 +71,30 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("cloudflare: %s (status %d, code %d)", e.Reason, e.Status, e.Code)
 }
 
-// classifyReason maps an HTTP status and a v4 envelope's first error code onto a Reason, the way
-// throwMapped and throwBuildsMapped do for the Node CLI: a handful of codes are specific enough
-// to classify on their own regardless of status (the two Builds authorization refusals, the two
-// Email Sending sender-readiness codes, and the Builds per-worker triggers route's 404), and
-// everything else falls back to the HTTP status family, which is how a plain unauthenticated or
-// underscoped request classifies.
-func classifyReason(status, code int) Reason {
-	switch code {
-	case 8000008:
-		return ReasonBuildsAppNotAuthorized
-	case 8000012:
-		return ReasonBuildsRepoNotSelected
-	case 10203, 10204:
-		return ReasonSenderNotConfigured
-	case 12000:
-		return ReasonBuildsNotConnected
+// classifyReason maps an HTTP status and a v4 envelope's errors onto a Reason, the way
+// throwMapped and throwBuildsMapped do for the Node CLI. Four codes are specific enough to
+// classify on their own regardless of status or position: the two Builds authorization refusals
+// and the two Email Sending sender-readiness codes are matched against every entry of errs, not
+// just the first, the same way the Node client's errors.some(...) does (api.mjs:335-349), since a
+// warning ahead of the refusal must not make the row fall through to the status-only fallback.
+// HTTP 400 with code 6003 also classifies as ReasonUnauthorized, the second half of the Node
+// client's throwIfTokenInvalid (api.mjs:247-249: 400/6003 and 401/10000 both mean the token
+// itself is unusable). There is no code for ReasonBuildsNotConnected here (see that constant's
+// own doc comment); everything else falls back to the HTTP status family, which is how a plain
+// unauthenticated or underscoped request classifies.
+func classifyReason(status int, errs []v4Error) Reason {
+	for _, e := range errs {
+		switch e.Code {
+		case 8000008:
+			return ReasonBuildsAppNotAuthorized
+		case 8000012:
+			return ReasonBuildsRepoNotSelected
+		case 10203, 10204:
+			return ReasonSenderNotConfigured
+		}
+	}
+	if status == http.StatusBadRequest && len(errs) > 0 && errs[0].Code == 6003 {
+		return ReasonUnauthorized
 	}
 	switch status {
 	case http.StatusUnauthorized:

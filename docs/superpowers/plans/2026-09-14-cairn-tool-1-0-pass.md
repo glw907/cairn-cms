@@ -638,10 +638,16 @@ exists, and methods `VerifyToken`, `ListWorkers`, `WorkerDomains`, `BuildsConnec
 (`ReasonUnauthorized`, `ReasonForbidden`, `ReasonNotFound`, `ReasonBuildsNotConnected`,
 `ReasonBuildsRepoNotSelected`, `ReasonBuildsAppNotAuthorized`, `ReasonSenderNotConfigured`,
 `ReasonRateLimited`, `ReasonUnknown`) mapped from the v4 envelope the way `throwMapped` and
-`throwBuildsMapped` do. `func RepoRoot(t testing.TB) string`, the walk-up to the directory
-holding `package.json` with `"name": "@glw907/cairn-cms"`, used by `Corpus` and by every
-cross-tree drift test. `func Corpus(t testing.TB, provider, name string) (status int, body
-[]byte)` resolving the fixture path through `RepoRoot`.
+`throwBuildsMapped` do. `ReasonBuildsNotConnected` is never produced by `classifyReason`: a live
+probe on 2026-09-19 confirmed the Builds triggers route answers 200 with an empty list for an
+unconnected worker, not a distinct error code, so the Deploy check (Task 15) assigns this Reason
+itself when `BuildsConnections` returns an empty list (conductor ruling 2026-09-19). `func
+RepoRoot() (string, error)`, the walk-up to the directory holding `package.json` with `"name":
+"@glw907/cairn-cms"`, used by `Corpus` and by every cross-tree drift test; it takes no
+`testing.TB` and this file imports no `testing`, so `corpus.go` never links `testing` into the
+shipped binary (conductor ruling 2026-09-19). `func Corpus(provider, name string) (status int,
+body []byte, err error)` resolving the fixture path through `RepoRoot`, with callers in tests
+handling the error themselves.
 
 **Acceptance:**
 - Every client sets an explicit `http.Client.Timeout`, and every request carries a context
@@ -655,8 +661,23 @@ cross-tree drift test. `func Corpus(t testing.TB, provider, name string) (status
 - Redirect test: an `httptest` server 302s to a second server; the client returns the 302
   unfollowed and the second server records zero requests.
 - Host-pin test: a request built for `evil.api.cloudflare.com` is refused before send.
-- Every `Reason` has a corpus-backed test mapping a real body to it. The 403 with code 10000
-  maps to `ReasonForbidden`, and a 401 to `ReasonUnauthorized`.
+- A Retry-After longer than a request's own remaining context deadline is not waited out: `Do`
+  returns the rate-limited response unretried at once instead of sleeping past the deadline.
+- Every `Reason` `classifyReason` can produce has a corpus-backed test mapping a real captured
+  body to it, except `ReasonUnauthorized` (plain 401), `ReasonForbidden` (generic 403),
+  `ReasonRateLimited`, and the 400/6003 token-invalid shape, which the fixture corpus carries no
+  body for; those are covered instead by a direct `classifyReason` unit table, since the corpus
+  forbids invented bodies (accepted as satisfying this criterion, conductor ruling 2026-09-19).
+  `ReasonBuildsNotConnected` is covered by neither table, since `classifyReason` never produces
+  it (conductor ruling 2026-09-19; see its own Produces entry above). The 403 with code 10000
+  maps to `ReasonForbidden`, and a 401 to `ReasonUnauthorized`. The two Builds authorization
+  refusals and the two Email Sending sender-readiness codes classify from any position in the
+  envelope's `errors` array, not just the first, matching the Node client's `errors.some(...)`
+  (api.mjs:335-349); a test proves each from a non-zero position, behind an unrelated warning
+  entry.
+- `ListWorkers`, `WorkerDomains`, `ZoneSettings`, and `EmailSendingSubdomains` follow every page
+  of a list route's `result_info`, through one shared paginating GET helper; a test drives a
+  two-page response. `ZoneByName` stays single-page, since it filters by name.
 - Credential leak test: `fmt.Sprintf("%v %+v %#v %s", c, c, c, c)` and `json.Marshal(c)` contain
   no plaintext.
 - `Corpus` names the extraction trigger in its failure message when the repo root is not found.
@@ -1034,7 +1055,11 @@ carried in `Outcome.Detail` as JSON. `BuildState` is one of `BuildOK`, `BuildFai
 
 **Acceptance:**
 - Worker absent is Failing. Builds not connected is Failing with
-  `reason.api.builds-not-connected`, the 907-life outage shape, tested against the corpus body.
+  `reason.api.builds-not-connected`, the 907-life outage shape: `BuildsConnections` returning an
+  empty trigger list with no error, not a distinct API error code (a live probe on 2026-09-19
+  found no such code; conductor ruling 2026-09-19). Tested with a handcrafted empty-list
+  response, since the fixture corpus carries no captured body for this condition (conductor
+  ruling 2026-09-19), not against the corpus body.
   A failed last build is Failing with the build id in the detail. Running is Unknown with
   `reason.park.builds-running`. OK with `MainSHA == LastBuildSHA` is OK. OK with differing SHAs
   is OK with `Behind: true`, because Behind is a state of this cell and not a separate check.

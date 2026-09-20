@@ -49,6 +49,12 @@ func newClient(host string, cred Credential) *client {
 // unparseable); a second such response is returned to the caller unretried. Every other method,
 // and a second 429 or 503, is returned as-is. A redirect response is likewise returned unfollowed,
 // per the CheckRedirect set in newClient.
+//
+// When the advised wait is longer than req's own remaining context deadline, Do does not sleep
+// at all: the wait would only spend the request's whole remaining budget waiting, then fail on
+// the deadline anyway, indistinguishable from a hang to a caller watching the clock. The
+// rate-limited response is returned unretried instead, the same shape as a second 429 or 503, so
+// the caller's own classification (ReasonRateLimited) still applies with no wasted wait.
 func (c *client) Do(req *http.Request) (*http.Response, error) {
 	if req.URL.Host != c.host {
 		return nil, fmt.Errorf("providers: refusing request to host %q, client is pinned to %q", req.URL.Host, c.host)
@@ -64,6 +70,10 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	wait := parseRetryAfter(resp.Header.Get("Retry-After"))
+	if deadline, ok := req.Context().Deadline(); ok && wait > time.Until(deadline) {
+		return resp, nil
+	}
+
 	_ = resp.Body.Close()
 	timer := time.NewTimer(wait)
 	defer timer.Stop()

@@ -208,6 +208,62 @@ func TestDoDoesNotRetryNonGET(t *testing.T) {
 	}
 }
 
+// TestDoDoesNotWaitPastRequestBudget asserts a Retry-After longer than a request's own remaining
+// context deadline does not surface as a context error: Do must return the rate-limited response
+// unretried at once, rather than sleeping past the deadline and returning a bare "context
+// deadline exceeded" that hides the real 429 or 503 from the caller's classification.
+func TestDoDoesNotWaitPastRequestBudget(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Retry-After", "3600")
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer srv.Close()
+
+	u, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := newClient(u.Host, Credential{})
+	c.httpClient.Transport = http.DefaultTransport
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan struct {
+		resp *http.Response
+		err  error
+	}, 1)
+	go func() {
+		resp, doErr := c.Do(req)
+		done <- struct {
+			resp *http.Response
+			err  error
+		}{resp, doErr}
+	}()
+
+	select {
+	case result := <-done:
+		if result.err != nil {
+			t.Fatalf("Do: %v, want the rate-limited response returned unretried", result.err)
+		}
+		defer func() { _ = result.resp.Body.Close() }()
+		if result.resp.StatusCode != http.StatusTooManyRequests {
+			t.Errorf("StatusCode = %d, want %d", result.resp.StatusCode, http.StatusTooManyRequests)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Do: did not return within 2s; an hour-long Retry-After must not be waited out")
+	}
+	if got := hits.Load(); got != 1 {
+		t.Errorf("server saw %d requests, want exactly 1 (no retry when Retry-After exceeds the budget)", got)
+	}
+}
+
 // TestCredentialAppliesAuthorizationHeader and its sibling below cover cred.go's apply, which has
 // no dedicated test file of its own per this task's file list.
 func TestCredentialAppliesAuthorizationHeader(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // cloudflareHost is the only host a Cloudflare client will ever send a request to. There is no
@@ -41,23 +42,69 @@ type v4Error struct {
 	Message string `json:"message"`
 }
 
+// resultInfo is a v4 list route's pagination metadata, present on the envelope's "result_info"
+// field whenever the route paginates. A route that never paginates (or that returned only one
+// page) leaves this nil, which getPaginated reads as "no further pages."
+type resultInfo struct {
+	Page       int `json:"page"`
+	TotalPages int `json:"total_pages"`
+}
+
 // v4Envelope is the Cloudflare API v4 response shape every route below returns.
 type v4Envelope struct {
-	Success bool            `json:"success"`
-	Errors  []v4Error       `json:"errors"`
-	Result  json.RawMessage `json:"result"`
+	Success    bool            `json:"success"`
+	Errors     []v4Error       `json:"errors"`
+	Result     json.RawMessage `json:"result"`
+	ResultInfo *resultInfo     `json:"result_info"`
 }
+
+// maxPaginatedPages bounds getPaginated's page walk defensively, so a route that keeps
+// reporting more pages than it actually has cannot loop forever; a real account's Workers,
+// zone settings, and Email Sending subdomains stay far below this in practice.
+const maxPaginatedPages = 100
 
 // get performs a GET against path (resolved against cloudflareBase) and decodes a successful
 // envelope's result into out.
 func (cf *Cloudflare) get(path string, out any) error {
+	return cf.getPage(path, out, nil)
+}
+
+// getPage performs a GET like get, additionally decoding the envelope's "result_info" into info
+// when info is non-nil, the seam getPaginated uses to walk every page of a list route.
+func (cf *Cloudflare) getPage(path string, out any, info *resultInfo) error {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cloudflareBase+path, nil)
 	if err != nil {
 		return fmt.Errorf("providers: build request for %s: %w", path, err)
 	}
-	return cf.do(req, out)
+	return cf.do(req, out, info)
+}
+
+// getPaginated walks every page of a v4 list route via its "result_info", appending "page=N" to
+// path, and returns the concatenated result arrays, the way the Node client's listPaginated
+// does (api.mjs). A route that returns no result_info at all, or only one page, stops after the
+// first request. Type parameter T is one page's element type, so a caller reads a typed slice
+// straight out rather than a []any it would have to re-decode.
+func getPaginated[T any](cf *Cloudflare, path string) ([]T, error) {
+	sep := "?"
+	if strings.Contains(path, "?") {
+		sep = "&"
+	}
+	var results []T
+	for page := 1; page <= maxPaginatedPages; page++ {
+		var items []T
+		var info resultInfo
+		pagePath := fmt.Sprintf("%s%spage=%d", path, sep, page)
+		if err := cf.getPage(pagePath, &items, &info); err != nil {
+			return nil, err
+		}
+		results = append(results, items...)
+		if info.TotalPages == 0 || page >= info.TotalPages {
+			break
+		}
+	}
+	return results, nil
 }
 
 // post performs a POST against path with body marshaled as JSON, decoding a successful
@@ -74,14 +121,15 @@ func (cf *Cloudflare) post(path string, body, out any) error {
 		return fmt.Errorf("providers: build request for %s: %w", path, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	return cf.do(req, out)
+	return cf.do(req, out, nil)
 }
 
-// do sends req and either decodes a successful envelope's result into out, or returns an
-// *APIError classified by classifyReason. A non-2xx status always yields an *APIError even when
-// the body is not valid JSON (a raw-text 429 from Cloudflare's edge, rather than its app layer,
-// carries no code), since the status alone still classifies via the fallback branch.
-func (cf *Cloudflare) do(req *http.Request, out any) error {
+// do sends req and either decodes a successful envelope's result into out (and its
+// "result_info" into info, when info is non-nil), or returns an *APIError classified by
+// classifyReason. A non-2xx status always yields an *APIError even when the body is not valid
+// JSON (a raw-text 429 from Cloudflare's edge, rather than its app layer, carries no code),
+// since the status alone still classifies via the fallback branch.
+func (cf *Cloudflare) do(req *http.Request, out any, info *resultInfo) error {
 	resp, err := cf.client.Do(req)
 	if err != nil {
 		return err
@@ -97,14 +145,21 @@ func (cf *Cloudflare) do(req *http.Request, out any) error {
 	envErr := json.Unmarshal(data, &env)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 || (envErr == nil && !env.Success) {
-		code := 0
-		if envErr == nil && len(env.Errors) > 0 {
-			code = env.Errors[0].Code
+		var errs []v4Error
+		if envErr == nil {
+			errs = env.Errors
 		}
-		return &APIError{Status: resp.StatusCode, Code: code, Reason: classifyReason(resp.StatusCode, code)}
+		code := 0
+		if len(errs) > 0 {
+			code = errs[0].Code
+		}
+		return &APIError{Status: resp.StatusCode, Code: code, Reason: classifyReason(resp.StatusCode, errs)}
 	}
 	if envErr != nil {
 		return fmt.Errorf("providers: parse response body: %w", envErr)
+	}
+	if info != nil && env.ResultInfo != nil {
+		*info = *env.ResultInfo
 	}
 	if out == nil || len(env.Result) == 0 {
 		return nil
@@ -133,14 +188,11 @@ type Worker struct {
 	Tag  string `json:"tag"`
 }
 
-// ListWorkers returns every Worker script in this client's account.
+// ListWorkers returns every Worker script in this client's account, following every page of the
+// route's result_info.
 func (cf *Cloudflare) ListWorkers() ([]Worker, error) {
-	var workers []Worker
 	path := fmt.Sprintf("/accounts/%s/workers/scripts", cf.accountID)
-	if err := cf.get(path, &workers); err != nil {
-		return nil, err
-	}
-	return workers, nil
+	return getPaginated[Worker](cf, path)
 }
 
 // WorkerDomain is one custom domain attached to a Worker.
@@ -150,14 +202,11 @@ type WorkerDomain struct {
 	ZoneID   string `json:"zone_id"`
 }
 
-// WorkerDomains returns every custom domain attached to a Worker in this client's account.
+// WorkerDomains returns every custom domain attached to a Worker in this client's account,
+// following every page of the route's result_info.
 func (cf *Cloudflare) WorkerDomains() ([]WorkerDomain, error) {
-	var domains []WorkerDomain
 	path := fmt.Sprintf("/accounts/%s/workers/domains", cf.accountID)
-	if err := cf.get(path, &domains); err != nil {
-		return nil, err
-	}
-	return domains, nil
+	return getPaginated[WorkerDomain](cf, path)
 }
 
 // RepoConnection names the GitHub repository a BuildTrigger deploys from.
@@ -175,8 +224,9 @@ type BuildTrigger struct {
 // BuildsConnections returns workerTag's Builds triggers, each carrying its repo connection.
 // Cloudflare has no dedicated connections-list route
 // (docs/internal/record/2026-08-13-t5-task8-live-e2e.md: "there is no connections list route at
-// all"); triggers embed the connection instead, and a worker Cloudflare has never registered for
-// Builds 404s here with the code classifyReason maps to ReasonBuildsNotConnected.
+// all"); triggers embed the connection instead. A worker Cloudflare has never registered for
+// Builds returns a 200 with an empty slice and no error, confirmed by a live probe; treating an
+// empty list as the builds-not-connected condition is the caller's job, not this method's.
 func (cf *Cloudflare) BuildsConnections(workerTag string) ([]BuildTrigger, error) {
 	var triggers []BuildTrigger
 	path := fmt.Sprintf("/accounts/%s/builds/workers/%s/triggers", cf.accountID, workerTag)
@@ -235,14 +285,11 @@ type ZoneSetting struct {
 }
 
 // ZoneSettings returns every setting Cloudflare reports for zoneID, including
-// "always_use_https", the HTTPS-forced check's signal.
+// "always_use_https", the HTTPS-forced check's signal, following every page of the route's
+// result_info.
 func (cf *Cloudflare) ZoneSettings(zoneID string) ([]ZoneSetting, error) {
-	var settings []ZoneSetting
 	path := fmt.Sprintf("/zones/%s/settings", zoneID)
-	if err := cf.get(path, &settings); err != nil {
-		return nil, err
-	}
-	return settings, nil
+	return getPaginated[ZoneSetting](cf, path)
 }
 
 // SendingSubdomain is one Email Sending subdomain Cloudflare has onboarded for a zone.
@@ -251,14 +298,11 @@ type SendingSubdomain struct {
 	Enabled bool   `json:"enabled"`
 }
 
-// EmailSendingSubdomains returns every Email Sending subdomain onboarded for zoneID.
+// EmailSendingSubdomains returns every Email Sending subdomain onboarded for zoneID, following
+// every page of the route's result_info.
 func (cf *Cloudflare) EmailSendingSubdomains(zoneID string) ([]SendingSubdomain, error) {
-	var subdomains []SendingSubdomain
 	path := fmt.Sprintf("/zones/%s/email/sending/subdomains", zoneID)
-	if err := cf.get(path, &subdomains); err != nil {
-		return nil, err
-	}
-	return subdomains, nil
+	return getPaginated[SendingSubdomain](cf, path)
 }
 
 // ObservabilityResult is the count Task 21's error-rate query reads: how many log events

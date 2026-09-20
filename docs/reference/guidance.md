@@ -62,6 +62,56 @@ stale or missing, for a site that wants the gate.
 The recommendation block names the DaisyUI skill install, a free DaisyUI documentation MCP server,
 and Blueprint as the paid option, none of it gated.
 
+## What ships under `claude/`
+
+The package's `claude/` directory, added to `files` alongside `skills/`, carries every file
+`install` copies beyond the packaged skills:
+
+- **`claude/CLAUDE.md`** is the fragment `install` writes to `.claude/cairn/CLAUDE.md`. It opens
+  by naming itself and the tree it lives under as engine-owned, then carries the boundary in two
+  quoted paragraphs, the named atoms with their reference pages, the gates and how to run them,
+  the DaisyUI-first rule, the `Stop` hook snippet with its one-line why, the DaisyUI tooling
+  recommendation, and where the docs are. It stays under 1,500 words.
+- **`claude/agents/cairn-extension-reviewer.md`** is the read-only review agent `install` writes
+  to `.claude/agents/`. Its frontmatter carries only `name`, `description`, and
+  `tools: Read, Grep, Glob`, no `Bash`, no model pin, so it runs on the consumer's own default
+  model and can only read a diff, never change or run anything. It checks a change against the
+  boundary and the atoms, asks whether a new component could be a stock DaisyUI component
+  instead, and whether an action with more than two outcomes uses the `outcome` grammar, then
+  returns accept, fix, or escalate with `file:line` findings.
+- **`claude/snippets/check-cairn.json`** carries the seven `package.json` script entries a site
+  needs for the admin stylesheet build and the `check:cairn`/`check:cairn:rendered` gates,
+  printed by `check` under its `check:cairn script` item when the site has none.
+- **`claude/snippets/cairn-audit.config.json`** is the audit's own config, naming the compiled
+  admin stylesheet, printed under `check`'s `cairn-audit.config.json` item when the site has none.
+- **`claude/snippets/check.yml`** is a starting CI workflow running `npm run check` and
+  `npm run check:cairn` on push and pull request, printed under `check`'s CI workflow item when
+  the site has none.
+- **`claude/snippets/settings-hook.json`** is the `Stop` hook block quoted in the fragment
+  above, for a site that wants to paste it straight into `.claude/settings.json` rather than
+  copying it out of the fragment's prose.
+- **`claude/snippets/claude-md-import.txt`** carries the one import line
+  (`@.claude/cairn/CLAUDE.md`) a site's root `CLAUDE.md` needs, printed by `check`'s import-line
+  item when it is absent.
+
+## The three skills
+
+`install` copies every directory the package ships under `skills/` into `.claude/skills/`:
+
+- **`cairn-admin-screens`** teaches an agent the register cairn's own admin holds itself to
+  before touching anything under `/admin`, admin-toolkit components, or `cairn-admin.css`,
+  pointing at `cairn-audit`'s mechanical checks rather than restating their formulas.
+- **`cairn-extend`** is the recipe router: given what a developer is building, it opens with
+  whether a DaisyUI component or template already covers it, then names the atom, the seam, the
+  showcase exemplar file, and the fact bullet that records the pattern for each case, and closes
+  with a pre-flight checklist reference.
+- **`cairn-consult`** is the site-side half of `engine-consult`: it triggers when a developer has
+  worked around the engine twice, or wants something the seams do not reach, and writes a
+  consultation brief in the four-field format (what the pass builds, the engine edge it presses,
+  evidence for the any-site case, the site's fallback if declined) filed at the installed
+  package's `bugs.url` when it is reachable, or handed to the developer to send by whatever
+  channel they have when it is not.
+
 ## The `.claude/` exclusion from the Tailwind build
 
 The installed skills' own reference files quote utility class names verbatim as worked examples,

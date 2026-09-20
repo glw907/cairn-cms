@@ -15,6 +15,12 @@
   by default, and `--strict` exits 1 when the guidance tree is stale or missing. See
   [The `cairn-guidance` CLI](docs/reference/guidance.md). No consumer action.
 
+- The package now ships a `claude/` directory: the `CLAUDE.md` fragment, the read-only
+  `cairn-extension-reviewer` agent (`tools: Read, Grep, Glob` only), and the gate-wiring
+  snippets `cairn-guidance check` prints when a site is missing them (`check-cairn.json`,
+  `cairn-audit.config.json`, `check.yml`, `settings-hook.json`, `claude-md-import.txt`). See
+  [The `cairn-guidance` CLI](docs/reference/guidance.md). No consumer action.
+
 - A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
   built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
   and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A

@@ -13,6 +13,7 @@ import {
   installGuidance,
   isContained,
   readPackagedSkills,
+  readPackagedSnippets,
   resolveInstalledVersion,
   resolveSourceRoot,
   walkPackagedTree,
@@ -92,6 +93,13 @@ describe('readPackagedSkills (real filesystem)', () => {
   });
 });
 
+describe('readPackagedSnippets (real filesystem)', () => {
+  it('degrades to an empty map when claude/snippets/ is not shipped yet', async () => {
+    const snippets = await readPackagedSnippets();
+    expect(snippets).toEqual({});
+  });
+});
+
 describe('isContained', () => {
   it('accepts a destination under .claude', () => {
     expect(isContained('/site', '.claude/skills/foo/SKILL.md')).toBe(true);
@@ -112,6 +120,7 @@ describe('flattenGuidanceTree', () => {
     agents: { 'cairn-extension-reviewer.md': 'agent' },
     fragment: 'fragment text',
     version: '1.2.3',
+    snippets: {},
   };
 
   it('maps every packaged tree to its destination under .claude', () => {
@@ -130,6 +139,7 @@ describe('installGuidance', () => {
       agents: { 'cairn-extension-reviewer.md': 'agent v1' },
       fragment: 'fragment v1',
       version: '1.0.0',
+      snippets: {},
       ...overrides,
     };
   }

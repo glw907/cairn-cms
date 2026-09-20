@@ -24,7 +24,7 @@ export const SOURCE_EXCLUSION_LINE = '@source not "./.claude";';
 // looked at, including these, when it identifies neither.
 const SOURCE_CSS_CANDIDATES = ['src/admin.css', 'src/theme/admin.css'];
 
-/** One reported line's verdict; `missing`/`stale`/`not-excluded` are what `--strict` can fail on. */
+/** One reported line's verdict; `stale` and `missing` are what `--strict` can fail on. */
 export type TreeStatus = 'fresh' | 'stale' | 'missing';
 export type SourceExclusionStatus = 'excluded' | 'not-excluded' | 'unknown';
 
@@ -122,6 +122,12 @@ export interface GuidanceCheckReport {
   orig: ReportLine & { paths: string[] };
 }
 
+/** Append a packaged snippet's body under a not-present detail line, when the package ships one. */
+function withSnippet(detail: string, snippetKey: string, snippets: Record<string, string>): string {
+  const body = snippets[snippetKey];
+  return body === undefined ? detail : `${detail}\n${body}`;
+}
+
 /** Run every judgment against a consumer's cwd (through `readFile`) for a resolved source. */
 export async function runGuidanceCheck(
   readFile: ReadFile,
@@ -171,19 +177,19 @@ export async function runGuidanceCheck(
       present: checkCairnPresent,
       detail: checkCairnPresent
         ? 'package.json declares a check:cairn script'
-        : 'package.json has no check:cairn script; see the snippet below',
+        : withSnippet('package.json has no check:cairn script; see the snippet below', 'check-cairn.json', packaged.snippets),
     },
     auditConfig: {
       present: auditConfigPresent,
       detail: auditConfigPresent
         ? 'cairn-audit.config.json is present'
-        : 'cairn-audit.config.json is missing; see the snippet below',
+        : withSnippet('cairn-audit.config.json is missing; see the snippet below', 'cairn-audit.config.json', packaged.snippets),
     },
     ciWorkflow: {
       present: ciWorkflowPresent,
       detail: ciWorkflowPresent
         ? '.github/workflows/check.yml is present'
-        : '.github/workflows/check.yml is missing; see the snippet below',
+        : withSnippet('.github/workflows/check.yml is missing; see the snippet below', 'check.yml', packaged.snippets),
     },
     sourceExclusion: {
       status: sourceExclusion.status,
@@ -192,7 +198,7 @@ export async function runGuidanceCheck(
           ? '.claude/ is excluded from the Tailwind build'
           : sourceExclusion.status === 'not-excluded'
             ? `.claude/ is not excluded from the Tailwind build; add ${SOURCE_EXCLUSION_LINE} (Tailwind 4.1 or later)`
-            : `could not identify the Tailwind entry; checked ${sourceExclusion.checked.join(', ')}`,
+            : `could not identify the Tailwind entry; checked ${sourceExclusion.checked.join(', ')}; add ${SOURCE_EXCLUSION_LINE} to your Tailwind entry CSS once you find it (Tailwind 4.1 or later)`,
     },
     orig: {
       paths: origPaths,

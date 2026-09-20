@@ -18,6 +18,11 @@ const source: GuidanceSource = {
   agents: { 'cairn-extension-reviewer.md': 'agent' },
   fragment: 'fragment text',
   version: '1.0.0',
+  snippets: {
+    'check-cairn.json': '{"scripts":{"check:cairn":"cairn-audit"}}',
+    'cairn-audit.config.json': '{}',
+    'check.yml': 'name: check\n',
+  },
 };
 
 function readFileFrom(files: Record<string, string>): ReadFile {
@@ -97,7 +102,7 @@ describe('judgeCheckCairnScript', () => {
 });
 
 describe('runGuidanceCheck', () => {
-  it('reports seven lines: fresh tree, present import line, and the gate wiring present', async () => {
+  it('on a fresh tree with snippets present reports seven green lines', async () => {
     const packaged = flattenGuidanceTree(source);
     const files: Record<string, string> = {
       ...packaged,
@@ -116,11 +121,28 @@ describe('runGuidanceCheck', () => {
     expect(report.ciWorkflow.present).toBe(true);
     expect(report.sourceExclusion.status).toBe('excluded');
     expect(report.orig.paths).toEqual([]);
+    // Every item is present, so none of the not-present snippet bodies appear.
+    expect(formatCheckReport(report)).not.toContain(source.snippets['check-cairn.json']);
   });
 
   it('prints the exact import line when CLAUDE.md is missing it', async () => {
     const report = await runGuidanceCheck(readFileFrom({}), source);
     expect(report.importLine.detail).toContain(IMPORT_LINE);
+  });
+
+  it('prints the packaged snippet body under check:cairn, cairn-audit.config.json, and the CI workflow when each is missing', async () => {
+    const report = await runGuidanceCheck(readFileFrom({}), source);
+    expect(report.checkCairnScript.detail).toContain(source.snippets['check-cairn.json']);
+    expect(report.auditConfig.detail).toContain(source.snippets['cairn-audit.config.json']);
+    expect(report.ciWorkflow.detail).toContain(source.snippets['check.yml']);
+  });
+
+  it('prints the exclusion line with placement guidance when no Tailwind entry can be identified', async () => {
+    const report = await runGuidanceCheck(readFileFrom({}), source);
+    expect(report.sourceExclusion.status).toBe('unknown');
+    expect(report.sourceExclusion.detail).toContain(SOURCE_EXCLUSION_LINE);
+    expect(report.sourceExclusion.detail).toContain('.gitignore');
+    expect(report.sourceExclusion.detail).toContain('src/admin.css');
   });
 
   it('reports every present .orig file', async () => {

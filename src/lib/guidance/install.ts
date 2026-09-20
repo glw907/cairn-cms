@@ -1,5 +1,5 @@
 // cairn-guidance: the install primitives. Generalizes doctor/check-skill.ts's tree-hash approach
-// (the one prior consumer, the admin-screens skill, task 1b retires) over a list of packaged
+// (the one prior consumer, the admin-screens skill, which this replaces) over a list of packaged
 // trees instead of one: every directory under `skills/`, the review agent under `claude/agents/`,
 // and the `claude/CLAUDE.md` fragment. The containment and `.orig` rules here are the write-side
 // twin of doctor/bin.ts's `readFileUnderCwd`.
@@ -133,6 +133,16 @@ export async function readPackagedFragment(): Promise<string | null> {
   }
 }
 
+/**
+ * The packaged `check` snippets, keyed by filename under `claude/snippets/`. `check.ts` prints
+ *  one of these bodies under any not-present item it names. Degrades to `{}`, the same as
+ *  `readPackagedAgents`, when the directory does not exist yet.
+ */
+export async function readPackagedSnippets(): Promise<Record<string, string>> {
+  const { files } = await walkPackagedTree(resolveSourceRoot('claude/snippets'));
+  return files;
+}
+
 /** Every packaged tree cairn-guidance installs, resolved against the installed package. */
 export interface GuidanceSource {
   /** Skill directory name, resolved under `skills/`, mapped to its own relative path to content. */
@@ -143,16 +153,19 @@ export interface GuidanceSource {
   fragment: string;
   /** The installed package's own version. */
   version: string;
+  /** The packaged `check` snippets, keyed by filename under `claude/snippets/`. */
+  snippets: Record<string, string>;
 }
 
 /** Read every packaged tree off the real filesystem, resolved against the installed package. */
 export async function readGuidanceSource(): Promise<GuidanceSource> {
-  const [skills, agents, fragment] = await Promise.all([
+  const [skills, agents, fragment, snippets] = await Promise.all([
     readPackagedSkills(),
     readPackagedAgents(),
     readPackagedFragment(),
+    readPackagedSnippets(),
   ]);
-  return { skills, agents, fragment: fragment ?? '', version: resolveInstalledVersion() };
+  return { skills, agents, fragment: fragment ?? '', version: resolveInstalledVersion(), snippets };
 }
 
 /**

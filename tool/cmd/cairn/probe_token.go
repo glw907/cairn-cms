@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -54,8 +55,12 @@ func defaultRegistryDir() (string, error) {
 // captured exit function without touching a real credential, disk location, or network call.
 func buildProbeTokenCmd(env func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) *cobra.Command {
 	return &cobra.Command{
-		Use:           "probe-token",
-		Short:         "Verify the three credential values against Cloudflare and GitHub",
+		Use:   "probe-token",
+		Short: "Verify the three credential values against Cloudflare and GitHub",
+		Long: "Verify the three credential values against Cloudflare and GitHub.\n\n" +
+			"probe-token's whole output is identifiers (endpoints, statuses, and repository " +
+			"names), so it is implicitly verbose the same way adopt --list is; there is no " +
+			"--verbose flag.",
 		Hidden:        true,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
@@ -123,14 +128,54 @@ func reasonLevel(r providers.Reason) int {
 	}
 }
 
-// objectKeys reports the sorted top-level key set of data, decoded as a JSON object, or nil when
-// data does not decode as one (an array, a bare string, or invalid JSON). probe-token prints
-// these names, never the values, as the shape a later fixture is synthesized from.
-func objectKeys(data []byte) []string {
-	var m map[string]json.RawMessage
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil
+// markerArray and markerNotJSON label a recordedBody whose top-level shape is not a plain
+// object: an empty marker means recordBody found an object.
+const (
+	markerArray   = "(array)"
+	markerNotJSON = "(not JSON)"
+)
+
+// recordedBody captures a single 200 response body's shape by key names only, never its values,
+// the shape Task 17 synthesizes its query mock from. keys holds the top-level object's own key
+// names, or an array's first element's key names when marker is markerArray. resultKeys holds
+// the "result" field's own key names, when the top level is an object carrying one: a Cloudflare
+// v4 envelope's own four keys (success, errors, result, result_info) carry none of its payload's
+// shape, so probe-token prints this alongside the envelope's own keys.
+type recordedBody struct {
+	marker     string
+	keys       []string
+	resultKeys []string
+}
+
+// recordBody classifies data's top-level JSON shape into a recordedBody.
+func recordBody(data []byte) recordedBody {
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(data, &obj); err == nil {
+		rb := recordedBody{keys: sortedKeys(obj)}
+		if result, ok := obj["result"]; ok {
+			var resultObj map[string]json.RawMessage
+			if err := json.Unmarshal(result, &resultObj); err == nil {
+				rb.resultKeys = sortedKeys(resultObj)
+			}
+		}
+		return rb
 	}
+	var arr []json.RawMessage
+	if err := json.Unmarshal(data, &arr); err == nil {
+		rb := recordedBody{marker: markerArray}
+		if len(arr) > 0 {
+			var first map[string]json.RawMessage
+			if err := json.Unmarshal(arr[0], &first); err == nil {
+				rb.keys = sortedKeys(first)
+			}
+		}
+		return rb
+	}
+	return recordedBody{marker: markerNotJSON}
+}
+
+// sortedKeys returns m's keys, sorted.
+func sortedKeys(m map[string]json.RawMessage) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -139,11 +184,63 @@ func objectKeys(data []byte) []string {
 	return keys
 }
 
-// printEndpoint writes one probed endpoint's line, and its top-level key set on a 200, to out.
-func printEndpoint(out io.Writer, endpoint string, v verdict, keys []string) {
+// recordingRoundTripper wraps another RoundTripper, recording every 200 JSON response's
+// top-level key shape against the request's method and path before handing the provider a fresh
+// copy of the identical body. It keeps key names only: the response bytes are dropped as soon as
+// recordBody has classified them, never written to a file or held past this run.
+type recordingRoundTripper struct {
+	next     http.RoundTripper
+	recorded map[string]recordedBody
+}
+
+// newRecordingRoundTripper returns a recordingRoundTripper delegating every request to next.
+func newRecordingRoundTripper(next http.RoundTripper) *recordingRoundTripper {
+	return &recordingRoundTripper{next: next, recorded: map[string]recordedBody{}}
+}
+
+// RoundTrip implements http.RoundTripper.
+func (rt *recordingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := rt.next.RoundTrip(req)
+	if err != nil || resp == nil || resp.StatusCode != http.StatusOK || resp.Body == nil {
+		return resp, err
+	}
+	data, readErr := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if readErr != nil {
+		return nil, readErr
+	}
+	rt.recorded[req.Method+" "+req.URL.Path] = recordBody(data)
+	resp.Body = io.NopCloser(bytes.NewReader(data))
+	return resp, nil
+}
+
+// lookup returns the recorded body shape for a method/path pair, or a zero recordedBody when
+// nothing was recorded (a non-200 status, or a path this run never reached).
+func (rt *recordingRoundTripper) lookup(method, path string) recordedBody {
+	return rt.recorded[method+" "+path]
+}
+
+// printEndpoint writes one probed endpoint's line, and its recorded body shape on a 200, to out.
+func printEndpoint(out io.Writer, endpoint string, v verdict, rb recordedBody) {
 	_, _ = fmt.Fprintf(out, "  %-32s %3d  %s\n", endpoint, v.status, v.reason)
-	if v.level == exitOK && len(keys) > 0 {
-		_, _ = fmt.Fprintf(out, "      keys: %v\n", keys)
+	if v.level != exitOK {
+		return
+	}
+	switch rb.marker {
+	case markerNotJSON:
+		_, _ = fmt.Fprintln(out, "      body: (not JSON)")
+	case markerArray:
+		_, _ = fmt.Fprintln(out, "      body: (array)")
+		if len(rb.keys) > 0 {
+			_, _ = fmt.Fprintf(out, "      keys (first element): %v\n", rb.keys)
+		}
+	default:
+		if len(rb.keys) > 0 {
+			_, _ = fmt.Fprintf(out, "      keys: %v\n", rb.keys)
+		}
+		if len(rb.resultKeys) > 0 {
+			_, _ = fmt.Fprintf(out, "      result: %v\n", rb.resultKeys)
+		}
 	}
 }
 
@@ -180,9 +277,12 @@ func discoverSites(dir string) ([]registrySite, error) {
 func runProbeToken(cmd *cobra.Command, env func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) error {
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
+	_, _ = fmt.Fprintln(errOut, "probe-token: output is identifiers only; it is implicitly verbose")
 
 	resolved, missing := loadEnv(env, p)
 	printCredentialSources(out, resolved)
+
+	rec := newRecordingRoundTripper(rt)
 
 	worst := exitOK
 	raise := func(level int) {
@@ -193,7 +293,7 @@ func runProbeToken(cmd *cobra.Command, env func(string) string, p secrets.Provid
 		_, _ = fmt.Fprintln(out, "Cloudflare: skipped, a credential is missing")
 		raise(exitUnknown)
 	} else {
-		raise(probeCloudflare(out, providers.NewCloudflare(resolved.AccountID, resolved.CFToken, rt)))
+		raise(probeCloudflare(out, providers.NewCloudflare(resolved.AccountID, resolved.CFToken, rec), resolved.AccountID, rec))
 	}
 
 	if isMissing(missing, "CAIRN_GH_READ_TOKEN") {
@@ -202,13 +302,17 @@ func runProbeToken(cmd *cobra.Command, env func(string) string, p secrets.Provid
 	} else {
 		dir, err := registryDir()
 		if err != nil {
-			return err
+			_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
+			raise(exitUnknown)
+		} else {
+			sites, err := discoverSites(dir)
+			if err != nil {
+				_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
+				raise(exitUnknown)
+			} else {
+				raise(probeGitHub(out, errOut, providers.NewGitHub(resolved.GHToken, rec), rec, sites))
+			}
 		}
-		sites, err := discoverSites(dir)
-		if err != nil {
-			return err
-		}
-		raise(probeGitHub(out, errOut, providers.NewGitHub(resolved.GHToken, rt), sites))
 	}
 
 	exit(worst)
@@ -242,12 +346,12 @@ func printCredentialSources(out io.Writer, e Env) {
 // uses with no per-site zone or worker to target, and returns the worst exit level among them.
 // Zone-scoped endpoints (settings, DNS, Email Sending) need a zone id no registry record carries
 // before Task 18's adopt exists; tool/docs/credentials.md records those as verified separately.
-func probeCloudflare(out io.Writer, cf *providers.Cloudflare) int {
+func probeCloudflare(out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) int {
 	_, _ = fmt.Fprintln(out, "Cloudflare:")
 	worst := exitOK
 
-	run := func(endpoint string, call func() ([]byte, error)) {
-		data, err := call()
+	run := func(endpoint, method, path string, call func() error) {
+		err := call()
 		var v verdict
 		if err != nil {
 			v = cloudflareVerdict(err)
@@ -255,33 +359,24 @@ func probeCloudflare(out io.Writer, cf *providers.Cloudflare) int {
 			v = okVerdict()
 		}
 		worst = combineLevel(worst, v.level)
-		printEndpoint(out, endpoint, v, objectKeys(data))
+		printEndpoint(out, endpoint, v, rec.lookup(method, path))
 	}
 
-	run("user/tokens/verify", func() ([]byte, error) {
-		id, err := cf.VerifyToken()
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(map[string]string{"id": id})
+	run("user/tokens/verify", http.MethodGet, "/client/v4/user/tokens/verify", func() error {
+		_, err := cf.VerifyToken()
+		return err
 	})
-	run("accounts/{id}/workers/scripts", func() ([]byte, error) {
-		workers, err := cf.ListWorkers()
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(workers)
+	run("accounts/{id}/workers/scripts", http.MethodGet, "/client/v4/accounts/"+accountID+"/workers/scripts", func() error {
+		_, err := cf.ListWorkers()
+		return err
 	})
-	run("accounts/{id}/workers/domains", func() ([]byte, error) {
-		domains, err := cf.WorkerDomains()
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(domains)
+	run("accounts/{id}/workers/domains", http.MethodGet, "/client/v4/accounts/"+accountID+"/workers/domains", func() error {
+		_, err := cf.WorkerDomains()
+		return err
 	})
-	run("accounts/{id}/workers/observability/telemetry/query", func() ([]byte, error) {
+	run("accounts/{id}/workers/observability/telemetry/query", http.MethodPost, "/client/v4/accounts/"+accountID+"/workers/observability/telemetry/query", func() error {
 		now := time.Now()
-		result, err := cf.ObservabilityQuery(map[string]any{
+		_, err := cf.ObservabilityQuery(map[string]any{
 			"queryId": "cairn-probe-token",
 			"timeframe": map[string]any{
 				"from": now.Add(-time.Hour).UnixMilli(),
@@ -291,10 +386,7 @@ func probeCloudflare(out io.Writer, cf *providers.Cloudflare) int {
 			"limit":      1,
 			"parameters": map[string]any{"datasets": []string{}},
 		})
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(result)
+		return err
 	})
 
 	return worst
@@ -307,7 +399,7 @@ func probeCloudflare(out io.Writer, cf *providers.Cloudflare) int {
 // public or private. It warns on errOut when every probed repository is public, since a public
 // repository proves nothing about a fine-grained token's own permissions. It returns the worst
 // exit level among every check.
-func probeGitHub(out, errOut io.Writer, gh *providers.GitHub, sites []registrySite) int {
+func probeGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) int {
 	_, _ = fmt.Fprintln(out, "GitHub:")
 	worst := exitOK
 	raise := func(level int) {
@@ -322,37 +414,50 @@ func probeGitHub(out, errOut io.Writer, gh *providers.GitHub, sites []registrySi
 	}
 	var repos []repoLine
 
+	probeRepo := func(owner, repo string) repoLine {
+		private, ownErr := gh.RepoOwnership(owner, repo)
+		v := okVerdict()
+		if ownErr != nil {
+			v = githubVerdict(ownErr)
+		}
+		raise(v.level)
+		path := fmt.Sprintf("/repos/%s/%s", owner, repo)
+		printEndpoint(out, fmt.Sprintf("repos (%s/%s)", owner, repo), v, rec.lookup(http.MethodGet, path))
+		return repoLine{label: fmt.Sprintf("%s/%s", owner, repo), v: v, private: private, known: ownErr == nil}
+	}
+
 	for _, s := range sites {
-		sha, shaErr := gh.HeadSHA(s.owner, s.repo, "main")
+		_, shaErr := gh.HeadSHA(s.owner, s.repo, "main")
 		shaVerdict := okVerdict()
 		if shaErr != nil {
 			shaVerdict = githubVerdict(shaErr)
 		}
 		raise(shaVerdict.level)
-		printEndpoint(out, fmt.Sprintf("commits/main (%s/%s)", s.owner, s.repo), shaVerdict, objectKeys([]byte(fmt.Sprintf(`{"sha":%q}`, sha))))
+		shaPath := fmt.Sprintf("/repos/%s/%s/commits/main", s.owner, s.repo)
+		printEndpoint(out, fmt.Sprintf("commits/main (%s/%s)", s.owner, s.repo), shaVerdict, rec.lookup(http.MethodGet, shaPath))
 
-		content, contentErr := gh.FileAtRef(s.owner, s.repo, "package.json", "main")
+		_, contentErr := gh.FileAtRef(s.owner, s.repo, "package.json", "main")
 		contentVerdict := okVerdict()
 		if contentErr != nil {
 			contentVerdict = githubVerdict(contentErr)
 		}
 		raise(contentVerdict.level)
-		printEndpoint(out, fmt.Sprintf("contents/package.json (%s/%s)", s.owner, s.repo), contentVerdict, objectKeys(content))
+		contentPath := fmt.Sprintf("/repos/%s/%s/contents/package.json", s.owner, s.repo)
+		printEndpoint(out, fmt.Sprintf("contents/package.json (%s/%s)", s.owner, s.repo), contentVerdict, rec.lookup(http.MethodGet, contentPath))
 
-		private, _, ownErr := gh.RepoOwnership(s.owner, s.repo)
-		repos = append(repos, repoLine{label: fmt.Sprintf("%s/%s", s.owner, s.repo), v: contentVerdict, private: private, known: ownErr == nil})
+		repos = append(repos, probeRepo(s.owner, s.repo))
 	}
 
-	content, contentErr := gh.FileAtRef(engineOwner, engineRepo, "CHANGELOG.md", "main")
+	_, contentErr := gh.FileAtRef(engineOwner, engineRepo, "CHANGELOG.md", "main")
 	engineVerdict := okVerdict()
 	if contentErr != nil {
 		engineVerdict = githubVerdict(contentErr)
 	}
 	raise(engineVerdict.level)
-	printEndpoint(out, fmt.Sprintf("contents/CHANGELOG.md (%s/%s)", engineOwner, engineRepo), engineVerdict, objectKeys(content))
+	enginePath := fmt.Sprintf("/repos/%s/%s/contents/CHANGELOG.md", engineOwner, engineRepo)
+	printEndpoint(out, fmt.Sprintf("contents/CHANGELOG.md (%s/%s)", engineOwner, engineRepo), engineVerdict, rec.lookup(http.MethodGet, enginePath))
 
-	enginePrivate, _, engineOwnErr := gh.RepoOwnership(engineOwner, engineRepo)
-	repos = append(repos, repoLine{label: fmt.Sprintf("%s/%s", engineOwner, engineRepo), v: engineVerdict, private: enginePrivate, known: engineOwnErr == nil})
+	repos = append(repos, probeRepo(engineOwner, engineRepo))
 
 	_, _ = fmt.Fprintln(out, "Repositories:")
 	// allPublic tracks whether every repository this run confirmed is public, the condition

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -207,21 +208,12 @@ func TestRepoOwnershipReportsPrivateAndKeys(t *testing.T) {
 	body := []byte(`{"id":1,"full_name":"glw907/xcathletes-org","private":true}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	private, keys, err := gh.RepoOwnership("glw907", "xcathletes-org")
+	private, err := gh.RepoOwnership("glw907", "xcathletes-org")
 	if err != nil {
 		t.Fatalf("RepoOwnership: %v", err)
 	}
 	if !private {
 		t.Error("private = false, want true")
-	}
-	want := []string{"full_name", "id", "private"}
-	if len(keys) != len(want) {
-		t.Fatalf("keys = %v, want %v", keys, want)
-	}
-	for i, k := range want {
-		if keys[i] != k {
-			t.Errorf("keys[%d] = %q, want %q", i, keys[i], k)
-		}
 	}
 }
 
@@ -229,7 +221,7 @@ func TestRepoOwnershipReportsPublicRepo(t *testing.T) {
 	body := []byte(`{"id":2,"full_name":"glw907/cairn-cms","private":false}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	private, _, err := gh.RepoOwnership("glw907", "cairn-cms")
+	private, err := gh.RepoOwnership("glw907", "cairn-cms")
 	if err != nil {
 		t.Fatalf("RepoOwnership: %v", err)
 	}
@@ -245,8 +237,24 @@ func TestRepoOwnershipClassifiesNotFound(t *testing.T) {
 	}
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: status, body: body})
 
-	_, _, err = gh.RepoOwnership("glw907", "a-private-repo-this-token-cannot-see")
+	_, err = gh.RepoOwnership("glw907", "a-private-repo-this-token-cannot-see")
 	assertGitHubReason(t, err, status, ReasonNotFound)
+}
+
+// TestRepoOwnershipMissingPrivateField covers github.go:185's guard: a repos response with no
+// "private" field at all reports a plain error naming the missing field, not a raw JSON decode
+// error over a nil RawMessage.
+func TestRepoOwnershipMissingPrivateField(t *testing.T) {
+	body := []byte(`{"id":1,"full_name":"glw907/cairn-cms"}`)
+	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	_, err := gh.RepoOwnership("glw907", "cairn-cms")
+	if err == nil {
+		t.Fatal("RepoOwnership: want an error for a response with no private field")
+	}
+	if !strings.Contains(err.Error(), "no private field") {
+		t.Errorf("err = %v, want it to name the missing private field", err)
+	}
 }
 
 func TestTokenExpiryParsesHeader(t *testing.T) {

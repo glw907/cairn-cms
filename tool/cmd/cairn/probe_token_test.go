@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -10,7 +11,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 )
@@ -307,5 +310,156 @@ func TestProbeTokenNoWarningWhenARepositoryIsPrivate(t *testing.T) {
 	}
 	if strings.Contains(errOut.String(), "unconfirmed") {
 		t.Errorf("stderr = %q, want no warning since one repository is confirmed private", errOut.String())
+	}
+}
+
+func TestProbeTokenExitUnknownWhenRegistryDirUnresolvable(t *testing.T) {
+	env := testEnv()
+	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutesForEngine())
+
+	var code int
+	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) {
+		return "", errors.New("boom")
+	}, func(c int) { code = c })
+	cmd.SetOut(&bytes.Buffer{})
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("RunE: %v", err)
+	}
+	if code != exitUnknown {
+		t.Errorf("exit code = %d, want exitUnknown (%d) when the registry directory cannot be resolved", code, exitUnknown)
+	}
+	if !strings.Contains(errOut.String(), "boom") {
+		t.Errorf("stderr = %q, want the registry-dir error reason", errOut.String())
+	}
+}
+
+func TestProbeTokenExitUnknownWhenRegistryUnreadable(t *testing.T) {
+	env := testEnv()
+	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutesForEngine())
+	// A registry directory that does not exist makes store.Open fail inside discoverSites,
+	// rather than the registryDir callback itself.
+	missing := t.TempDir() + "/missing"
+
+	var code int
+	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) {
+		return missing, nil
+	}, func(c int) { code = c })
+	cmd.SetOut(&bytes.Buffer{})
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("RunE: %v", err)
+	}
+	if code != exitUnknown {
+		t.Errorf("exit code = %d, want exitUnknown (%d) when the registry cannot be opened", code, exitUnknown)
+	}
+	if !strings.Contains(errOut.String(), "probe-token:") {
+		t.Errorf("stderr = %q, want a probe-token reason line", errOut.String())
+	}
+}
+
+// fixedRoundTripper answers every request with the same fixed status and body, standing in for
+// a real HTTP round trip in the recordingRoundTripper tests below.
+type fixedRoundTripper struct {
+	status int
+	body   []byte
+}
+
+func (rt fixedRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: rt.status,
+		Body:       io.NopCloser(bytes.NewReader(rt.body)),
+		Header:     make(http.Header),
+	}, nil
+}
+
+// TestRecordingRoundTripperObjectBody covers an object body: the recorder records its top-level
+// key names, and the wrapped GitHub client still decodes the identical body it hands on.
+func TestRecordingRoundTripperObjectBody(t *testing.T) {
+	body := []byte(`{"sha":"abc123","url":"https://example.test"}`)
+	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
+	gh := providers.NewGitHub(providers.Credential{}, rec)
+
+	sha, err := gh.HeadSHA("glw907", "ecxc-ski", "main")
+	if err != nil {
+		t.Fatalf("HeadSHA: %v", err)
+	}
+	if sha != "abc123" {
+		t.Errorf("sha = %q, want the value decoded from the handed-on body", sha)
+	}
+
+	rb := rec.lookup(http.MethodGet, "/repos/glw907/ecxc-ski/commits/main")
+	want := []string{"sha", "url"}
+	if len(rb.keys) != len(want) || rb.keys[0] != want[0] || rb.keys[1] != want[1] {
+		t.Errorf("keys = %v, want %v", rb.keys, want)
+	}
+	if rb.marker != "" {
+		t.Errorf("marker = %q, want empty for an object body", rb.marker)
+	}
+}
+
+// TestRecordingRoundTripperArrayBody covers an array-of-objects body: the recorder records the
+// array marker plus the first element's key names, and the wrapped GitHub client still decodes
+// the identical body it hands on.
+func TestRecordingRoundTripperArrayBody(t *testing.T) {
+	body := []byte(`[{"commit":{"committer":{"date":"2026-09-10T12:00:00Z"}}}]`)
+	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
+	gh := providers.NewGitHub(providers.Credential{}, rec)
+
+	when, err := gh.LatestBotCommit("glw907", "ecxc-ski", "main")
+	if err != nil {
+		t.Fatalf("LatestBotCommit: %v", err)
+	}
+	want := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	if !when.Equal(want) {
+		t.Errorf("when = %v, want the value decoded from the handed-on body: %v", when, want)
+	}
+
+	rb := rec.lookup(http.MethodGet, "/repos/glw907/ecxc-ski/commits")
+	if rb.marker != markerArray {
+		t.Errorf("marker = %q, want %q", rb.marker, markerArray)
+	}
+	if len(rb.keys) != 1 || rb.keys[0] != "commit" {
+		t.Errorf("keys = %v, want [commit] (the first element's own keys)", rb.keys)
+	}
+}
+
+// TestRecordingRoundTripperNotJSONBody covers a 200 whose body is not JSON at all: the recorder
+// records markerNotJSON rather than panicking or misclassifying it as an object or array.
+func TestRecordingRoundTripperNotJSONBody(t *testing.T) {
+	body := []byte("not json at all")
+	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
+	gh := providers.NewGitHub(providers.Credential{}, rec)
+
+	if _, err := gh.HeadSHA("glw907", "ecxc-ski", "main"); err == nil {
+		t.Error("HeadSHA: want a decode error over a non-JSON body")
+	}
+
+	rb := rec.lookup(http.MethodGet, "/repos/glw907/ecxc-ski/commits/main")
+	if rb.marker != markerNotJSON {
+		t.Errorf("marker = %q, want %q", rb.marker, markerNotJSON)
+	}
+}
+
+// TestRecordingRoundTripperRecordsCloudflareEnvelopeResultKeys covers the Cloudflare v4
+// envelope: the recorder additionally records the "result" field's own key names, since the
+// envelope's own four keys (success, errors, result, result_info) carry none of its shape.
+func TestRecordingRoundTripperRecordsCloudflareEnvelopeResultKeys(t *testing.T) {
+	body := []byte(`{"success":true,"errors":[],"result":{"count":5,"run":"abc"}}`)
+	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, rec)
+
+	if _, err := cf.ObservabilityQuery(map[string]any{"queryId": "x"}); err != nil {
+		t.Fatalf("ObservabilityQuery: %v", err)
+	}
+
+	rb := rec.lookup(http.MethodPost, "/client/v4/accounts/acct123/workers/observability/telemetry/query")
+	want := []string{"count", "run"}
+	if len(rb.resultKeys) != len(want) || rb.resultKeys[0] != want[0] || rb.resultKeys[1] != want[1] {
+		t.Errorf("resultKeys = %v, want %v", rb.resultKeys, want)
 	}
 }

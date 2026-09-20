@@ -134,9 +134,10 @@ serves a public repository's contents and commits with no token at all, so
 a 200 from `cairn probe-token` on a public repository proves only that the
 token is not actively rejected, not that its Contents permission is doing
 any work. `probe-token` reports each probed repository's visibility (the
-repos endpoint's own `private` field, read alongside the contents check)
-and prints a warning on stderr when every probed repository came back
-public, since that run has confirmed nothing about the token's own scope.
+repos endpoint's own `private` field, read from its own `repos` check for
+that repository) and prints a warning on stderr when every probed
+repository came back public, since that run has confirmed nothing about
+the token's own scope.
 An operator whose registry names at least one private repository gets a
 real confirmation the first time `probe-token` reaches it.
 
@@ -165,16 +166,27 @@ this product's storage path). `cairn probe-token` reached the following
 endpoints against the live tokens, with `xcathletes-org` private and the
 other four public:
 
-| Endpoint | Status | Reason |
-|---|---|---|
-| `user/tokens/verify` | 200 | ok |
-| `accounts/{id}/workers/scripts` | 200 | ok |
-| `accounts/{id}/workers/domains` | 200 | ok |
-| `accounts/{id}/workers/observability/telemetry/query` | 200 | ok |
-| `commits/main` (each of the four site repositories) | 200 | ok |
-| `contents/package.json` (each of the four site repositories) | 200 | ok |
-| `contents/CHANGELOG.md` (`glw907/cairn-cms`) | 200 | ok |
-| repos (each of the five repositories) | 200 | ok |
+| Endpoint | Status | Reason | Top-level keys |
+|---|---|---|---|
+| `user/tokens/verify` | 200 | ok | `errors`, `messages`, `result`, `success` (`result`: `id`, `status`) |
+| `accounts/{id}/workers/scripts` | 200 | ok | `errors`, `messages`, `result`, `success` |
+| `accounts/{id}/workers/domains` | 200 | ok | `errors`, `messages`, `result`, `result_info`, `success` |
+| `accounts/{id}/workers/observability/telemetry/query` | 200 | ok | `errors`, `messages`, `result`, `success` (`result`: `events`, `run`, `statistics`) |
+| `commits/main` (each of the four site repositories) | 200 | ok | `author`, `comments_url`, `commit`, `committer`, `files`, `html_url`, `node_id`, `parents`, `sha`, `stats`, `url` |
+| `contents/package.json` (each of the four site repositories) | 200 | ok | `_links`, `content`, `download_url`, `encoding`, `git_url`, `html_url`, `name`, `path`, `sha`, `size`, `type`, `url` |
+| `contents/CHANGELOG.md` (`glw907/cairn-cms`) | 200 | ok | same key set as `contents/package.json` |
+| `repos` (each of the five repositories) | 200 | ok | the full GitHub repository object, including `private` and `visibility` |
+
+`probe-token` prints these key sets itself, by names only, through a
+recording `http.RoundTripper` that reads each 200 response body once,
+records its top-level key names (and, for the Cloudflare v4 envelope, the
+`result` field's own key names, since the envelope's own four keys carry
+none of its shape), and hands the provider an identical fresh body; no
+response body is written to a file or to this document. Every probed
+repository line also reports public or private (`aksailingclub-org`,
+`ecxc-ski`, `907-life`, and `cairn-cms` public; `xcathletes-org` private),
+which is why this run's GitHub scope counts as confirmed rather than
+merely not-rejected.
 
 The zone-scoped Zone Settings endpoints
 (`zones/{id}/settings/always_use_https`,
@@ -205,9 +217,10 @@ boundary directly: every window fully inside 7 days returned events, and
 every window at 8 days or older returned none, with no error from the API
 in either case, so the boundary is observed from the data rather than
 stated by Cloudflare. **This is the account plan's own retention window,
-not a fixed cairn constant.** Task 17 clamps `logs --since` to it; an
-operator on a different Cloudflare plan reads their own boundary the same
-way, since the API returns no retention value directly.
+not a fixed cairn constant.** Task 17 clamps `logs --since` to **7 days**,
+the last value this run confirmed still returns events; an operator on a
+different Cloudflare plan reads their own boundary the same way, since the
+API returns no retention value directly.
 
 ### GitHub token expiry
 

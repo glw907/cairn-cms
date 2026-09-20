@@ -853,9 +853,10 @@ here so Pass B never waits on him.
   root)
 - Modify: `tool/docs/credentials.md` (the permission groups a token needs, the endpoints the
   probe reached, and the retention window it observed)
-- Modify: `~/.claude/docs/cloudflare-estate-inventory.md` (permission-group names and ids,
-  resource scoping, and the probe results, values-free). This one is Geoff's own workstation
-  record and is not a product artifact.
+- Modify: `~/.claude/docs/cloudflare-estate-inventory.md` (permission-group names and resource
+  scoping, and the probe results, values-free; permission-group ids are not recorded, since
+  listing them needs token-management scope neither token carries, added by conductor ruling
+  2026-09-20). This one is Geoff's own workstation record and is not a product artifact.
 
 **Produces:** the `probe-token` command, reading its three values through Task 9's `loadEnv` and
 reporting which provider answered for each. It reads no environment variable directly, which
@@ -884,6 +885,11 @@ Task 9's grep test already enforces.
   and prints one line per repository with the status and reason. It exits non-zero if any of them
   is not 200. A test covers a registry of two records and asserts two repository lines plus the
   engine line, with no list of repositories compiled into the binary.
+- **Public repositories prove nothing about scope.** A GitHub fine-grained token reads any
+  public repository with no permissions at all, so `probe-token` marks each repository line
+  public or private (the repos endpoint's own `private` field) and warns on stderr when every
+  probed repository comes back public, since that run has confirmed nothing about the token's
+  own scope (added by conductor ruling 2026-09-19).
 - **Verification data.** Geoff mints both tokens for his own five repositories, which
   reconciliation row 30 names, and the probe prints a 200 for `commits/main` and
   `contents/package.json` on the four site repositories and for `contents/CHANGELOG.md` on

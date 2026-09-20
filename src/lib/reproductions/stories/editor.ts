@@ -47,18 +47,6 @@ function glyph(inner: string): string {
 }
 
 /**
- * A label turned into a stable id fragment (lowercased, non-word runs collapsed to a hyphen), for
- * the hand-built tooltip markup below: every real Tooltip instance mints its own id off
- * `$props.id()`, which a raw-HTML story cannot call, so this is the story's own deterministic
- * stand-in.
- * @param label - the tooltip's own text
- * @returns a lowercase, hyphenated id fragment
- */
-function tooltipIdFor(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-/**
  * The `aria-describedby` attribute plus the sibling bubble markup Tooltip.svelte renders at rest
  * (hidden, never shown, since this story never fires a hover or focus): a hand-typed duplicate of
  * that component's own DOM shape, since a raw-HTML story cannot mount a real component. Known
@@ -66,11 +54,14 @@ function tooltipIdFor(label: string): string {
  * out of the rendering at rest with no style of this story's own, but Tooltip's scoped `<style>`
  * still never reaches this hand-typed span (no Svelte scoping class to match), and a future change
  * to Tooltip's own markup or class names has nothing that keeps this copy in sync automatically.
+ * The id is derived from the label rather than minted off `$props.id()` the way a real instance
+ * does, since a raw-HTML story cannot call that and needs a deterministic id anyway.
  * @param label - the tooltip's own text
  * @returns the `aria-describedby` attribute and the bubble span's markup, as a pair
  */
 function tooltipParts(label: string): { describedBy: string; bubble: string } {
-  const id = `${tooltipIdFor(label)}-tooltip`;
+  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const id = `${slug}-tooltip`;
   return {
     describedBy: `aria-describedby="${id}"`,
     bubble: `<span id="${id}" role="tooltip" popover="manual">${label}</span>`,

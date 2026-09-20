@@ -13,8 +13,11 @@ import type { AuditConfig } from './config.js';
 import type { ParsedComponent } from './markup.js';
 import type { AuditReport, CssSource, Finding, SourceFile, StaticRule } from './types.js';
 
-/** Every `.svelte` file under a directory, recursively, as paths relative to the audited root. */
-function componentPaths(root: string, dir: string): string[] {
+/**
+ * Every file under a directory carrying one of the given extensions, recursively, as paths
+ * relative to the audited root.
+ */
+function filePaths(root: string, dir: string, extensions: readonly string[]): string[] {
   let entries: Dirent[];
   try {
     entries = readdirSync(resolve(root, dir), { withFileTypes: true });
@@ -25,32 +28,48 @@ function componentPaths(root: string, dir: string): string[] {
   }
   return entries.flatMap((entry) => {
     const relPath = `${dir}/${entry.name}`;
-    if (entry.isDirectory()) return componentPaths(root, relPath);
-    return entry.name.endsWith('.svelte') ? [relPath] : [];
+    if (entry.isDirectory()) return filePaths(root, relPath, extensions);
+    return extensions.some((extension) => entry.name.endsWith(extension)) ? [relPath] : [];
   });
 }
 
 /**
- * Every component under one scope's directories, parsed once. Shared by `static.scope` and
- * `static.adminScope`, which carry the identical existence rule: a configured path the tree does
- * not have throws, since honoring a misspelled one as an empty scan is the silent green the spec
- * rejected the ESLint route over, while a default path a given tree does not have is skipped,
- * since the default spans the library and a consumer site.
+ * Every matching file under one scope's directories, read once and deduplicated by path. Each
+ * scope carries the identical existence rule: a configured path the tree does not have throws,
+ * since honoring a misspelled one as an empty scan is the silent green the spec rejected the
+ * ESLint route over, while a default path a given tree does not have is skipped, since the
+ * default spans the library and a consumer site. `missingScope` builds that error's own message,
+ * which names the config key the caller's scope came from.
  */
-function parseScope(config: AuditConfig, dirs: string[], fromConfig: boolean, key: string): ParsedComponent[] {
+function readScope(
+  config: AuditConfig,
+  dirs: string[],
+  fromConfig: boolean,
+  extensions: readonly string[],
+  missingScope: (dir: string) => string
+): SourceFile[] {
   const seen = new Set<string>();
-  const files: ParsedComponent[] = [];
+  const files: SourceFile[] = [];
   for (const dir of dirs) {
-    if (fromConfig && !existsSync(resolve(config.root, dir))) {
-      throw new Error(`${dir}: the configured static scan scope does not exist (${CONFIG_FILE}, ${key})`);
-    }
-    for (const path of componentPaths(config.root, dir)) {
+    if (fromConfig && !existsSync(resolve(config.root, dir))) throw new Error(missingScope(dir));
+    for (const path of filePaths(config.root, dir, extensions)) {
       if (seen.has(path)) continue;
       seen.add(path);
-      files.push(parseComponent(path, readFileSync(resolve(config.root, path), 'utf8')));
+      files.push({ file: path, source: readFileSync(resolve(config.root, path), 'utf8') });
     }
   }
   return files;
+}
+
+/** Every component under one scope's directories, parsed once. Shared by `static.scope` and `static.adminScope`. */
+function parseScope(config: AuditConfig, dirs: string[], fromConfig: boolean, key: string): ParsedComponent[] {
+  return readScope(
+    config,
+    dirs,
+    fromConfig,
+    ['.svelte'],
+    (dir) => `${dir}: the configured static scan scope does not exist (${CONFIG_FILE}, ${key})`
+  ).map((file) => parseComponent(file.file, file.source));
 }
 
 /** The standalone CSS files `config.staticCssFiles` names, read once for the whole run. */
@@ -61,45 +80,18 @@ function loadCssFiles(config: AuditConfig): CssSource[] {
   }));
 }
 
-/** Every `.ts` and `.svelte` file under a directory, recursively, as paths relative to the audited root. */
-function sourceFilePaths(root: string, dir: string): string[] {
-  let entries: Dirent[];
-  try {
-    entries = readdirSync(resolve(root, dir), { withFileTypes: true });
-  } catch {
-    // A scan-scope path a given tree does not have. The default scope spans the library and a
-    // consumer site, so an absent directory is the normal case rather than a misconfiguration.
-    return [];
-  }
-  return entries.flatMap((entry) => {
-    const relPath = `${dir}/${entry.name}`;
-    if (entry.isDirectory()) return sourceFilePaths(root, relPath);
-    return entry.name.endsWith('.ts') || entry.name.endsWith('.svelte') ? [relPath] : [];
-  });
-}
-
 /**
  * Every `.ts`/`.svelte` file under `config.sourceScope`, read once for the whole run: the
- * substrate the source-text-family static rules scan. Named the same existence rule as
- * `parseScope`: a configured scope path the tree does not have throws, since honoring a typo as
- * an empty scan would silently narrow the two rules that read this list to nothing.
+ * substrate the source-text-family static rules scan.
  */
 function loadSources(config: AuditConfig): SourceFile[] {
-  const seen = new Set<string>();
-  const sources: SourceFile[] = [];
-  for (const dir of config.sourceScope) {
-    if (config.sourceScopeFromConfig && !existsSync(resolve(config.root, dir))) {
-      throw new Error(
-        `${dir}: the configured source scan scope does not exist (${CONFIG_FILE}, static.sourceScope)`
-      );
-    }
-    for (const path of sourceFilePaths(config.root, dir)) {
-      if (seen.has(path)) continue;
-      seen.add(path);
-      sources.push({ file: path, source: readFileSync(resolve(config.root, path), 'utf8') });
-    }
-  }
-  return sources;
+  return readScope(
+    config,
+    config.sourceScope,
+    config.sourceScopeFromConfig,
+    ['.ts', '.svelte'],
+    (dir) => `${dir}: the configured source scan scope does not exist (${CONFIG_FILE}, static.sourceScope)`
+  );
 }
 
 /** Whether a root-relative path lies inside one of the given root directories. */

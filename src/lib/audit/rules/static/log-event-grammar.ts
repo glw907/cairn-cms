@@ -19,7 +19,7 @@ import type { Finding, SourceFile, StaticRule } from '../../types.js';
 // consumer-facing findings out of advisory tier.
 const PROMOTION_VERSION = '0.98.0';
 
-const CALL = /([A-Za-z_$][\w$]*)\.(info|warn|error)\(/g;
+const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
 
 // The header's past-tense-or-adjective closing segments this rule recognizes as grammar
 // conforming when the last segment does not simply end in "ed": the state adjectives among
@@ -51,7 +51,7 @@ function isGrammarConforming(value: string): boolean {
   const segments = value.split('.');
   if (segments.length < 2 || !segments.every(isSnakeCaseSegment)) return false;
   const last = segments[segments.length - 1];
-  return last.endsWith('ed') || last === 'failed' || last === 'refused' || STATE_ADJECTIVES.has(last);
+  return last.endsWith('ed') || STATE_ADJECTIVES.has(last);
 }
 
 /** The first argument's literal content and span, when it is a plain single- or double-quoted string. */

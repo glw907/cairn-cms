@@ -1613,29 +1613,29 @@ persistent "?" carries Markdown help).
              Publish reads as its peer. With nothing new to publish it guards rather than hides,
              on the figure-control pattern this repo already owns: aria-disabled (never the native
              attribute, so the control stays focusable and its reason reaches assistive technology),
-             the cairn-btn-guarded marker so the title tooltip survives DaisyUI's pointer-events
+             the cairn-btn-guarded marker so the tooltip survives DaisyUI's pointer-events
              kill, and a not-allowed cursor rather than .btn-disabled. DaisyUI's own [aria-disabled]
              rule supplies the dimming, so no opacity utility rides on top (a second dimming would
              halve the focus ring on this still-focusable control). Native disabled is reserved for
              busy (mid-submit), the one case the guidance sanctions, and aria-disabled is emitted
              only while guarded so the two never contradict. onPublishClick cancels a guarded click's
-             own submit, since aria-disabled alone blocks nothing. The title tooltip itself is now
-             Tooltip: see the wrapping component below. -->
+             own submit, since aria-disabled alone blocks nothing. The guard reason reaches a mouse
+             and a keyboard user through the wrapping Tooltip, never a native title attribute. -->
         <Tooltip text={publishGuardReason ?? ''}>
-        <button
-          bind:this={publishButton}
-          type="submit"
-          form="cairn-edit-form"
-          formaction={publishFormAction}
-          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
-          class:cursor-not-allowed={!publishActionable}
-          aria-disabled={publishActionable ? undefined : true}
-          aria-label={publishGuardName}
-          disabled={busy}
-          onclick={onPublishClick}
-        >
-          {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
-        </button>
+          <button
+            bind:this={publishButton}
+            type="submit"
+            form="cairn-edit-form"
+            formaction={publishFormAction}
+            class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
+            class:cursor-not-allowed={!publishActionable}
+            aria-disabled={publishActionable ? undefined : true}
+            aria-label={publishGuardName}
+            disabled={busy}
+            onclick={onPublishClick}
+          >
+            {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+          </button>
         </Tooltip>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
@@ -1910,20 +1910,20 @@ persistent "?" carries Markdown help).
                  control stays focusable and its reason reaches assistive technology; editBlock()
                  early-returns so the dead click is inert. cairn-btn-guarded and cursor-not-allowed
                  give the dimmed look (the Figure control's pattern below), never .btn-disabled, which
-                 sets pointer-events: none and would suppress the title tooltip a mouse user reads for
-                 the why. The title tooltip itself is now Tooltip: see the wrapping component below. -->
+                 sets pointer-events: none and would suppress the tooltip a mouse user reads for the
+                 why. That reason text is the wrapping Tooltip's, never a native title attribute. -->
             <Tooltip text={editBlockLabel}>
-            <button
-              type="button"
-              class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-              class:cursor-not-allowed={editBlockUnavailable}
-              aria-haspopup="dialog"
-              aria-label={editBlockLabel}
-              aria-disabled={editBlockUnavailable}
-              onclick={editBlock}
-            >
-              <SquarePenIcon class="h-4 w-4" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
+                class:cursor-not-allowed={editBlockUnavailable}
+                aria-haspopup="dialog"
+                aria-label={editBlockLabel}
+                aria-disabled={editBlockUnavailable}
+                onclick={editBlock}
+              >
+                <SquarePenIcon class="h-4 w-4" aria-hidden="true" />
+              </button>
             </Tooltip>
           {/if}
           <Tooltip text="Web link (Ctrl+K)">
@@ -2005,21 +2005,21 @@ persistent "?" carries Markdown help).
                background raise in cairn-admin.css for this ghost variant), like Publish; no opacity
                utility rides on top, since a second dimming here is what read as a rendering gap
                (audit finding 7). cursor-not-allowed still names the non-interactive state, and never
-               .btn-disabled, which sets pointer-events: none and would suppress the title tooltip a
-               mouse user reads for the why. The title tooltip itself is now Tooltip: see the
-               wrapping component below. -->
+               .btn-disabled, which sets pointer-events: none and would suppress the tooltip a mouse
+               user reads for the why. That reason text is the wrapping Tooltip's, never a native
+               title attribute. -->
           <Tooltip text={figureEditor.figureLabel}>
-          <button
-            type="button"
-            class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-            class:cursor-not-allowed={!figureEditor.figureAvailable}
-            aria-haspopup="dialog"
-            aria-label={figureEditor.figureLabel}
-            aria-disabled={!figureEditor.figureAvailable}
-            onclick={openFigure}
-          >
-            <ImageIcon class="h-4 w-4" aria-hidden="true" />
-          </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
+              class:cursor-not-allowed={!figureEditor.figureAvailable}
+              aria-haspopup="dialog"
+              aria-label={figureEditor.figureLabel}
+              aria-disabled={!figureEditor.figureAvailable}
+              onclick={openFigure}
+            >
+              <ImageIcon class="h-4 w-4" aria-hidden="true" />
+            </button>
           </Tooltip>
         {/snippet}
         {#snippet moreExtra(closeMenu: () => void)}
@@ -2386,20 +2386,20 @@ persistent "?" carries Markdown help).
     inert={!narrow}
   >
     <Tooltip text={publishGuardReason ?? ''}>
-    <button
-      bind:this={publishButton}
-      type="submit"
-      form="cairn-edit-form"
-      formaction={publishFormAction}
-      class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
-      class:cursor-not-allowed={!publishActionable}
-      aria-disabled={publishActionable ? undefined : true}
-      aria-label={publishGuardName}
-      disabled={busy}
-      onclick={onPublishClick}
-    >
-      {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
-    </button>
+      <button
+        bind:this={publishButton}
+        type="submit"
+        form="cairn-edit-form"
+        formaction={publishFormAction}
+        class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
+        class:cursor-not-allowed={!publishActionable}
+        aria-disabled={publishActionable ? undefined : true}
+        aria-label={publishGuardName}
+        disabled={busy}
+        onclick={onPublishClick}
+      >
+        {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+      </button>
     </Tooltip>
     <button type="submit" form="cairn-edit-form" class="btn btn-primary tracking-small-semibold min-h-11 flex-1" disabled={busy || (!dirty && !data.isNew)}>
       {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}

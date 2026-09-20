@@ -14,7 +14,7 @@ import type { Finding, SourceFile, StaticRule } from '../../types.js';
 // consumer-facing findings out of advisory tier.
 const PROMOTION_VERSION = '0.98.0';
 
-const CALL = /([A-Za-z_$][\w$]*)\.(info|warn|error)\(/g;
+const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
 
 const REDACTED = new Set(REDACTED_LOG_KEYS.map((key) => key.toLowerCase()));
 

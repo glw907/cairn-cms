@@ -41,12 +41,16 @@ legs at `25548463`. Task 10's attended half was Geoff's 2026-09-19 mint of both 
 (`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; dotfiles registry and estate
 inventory carry them). **Task 11 close IN PROGRESS (2026-09-20 03:34):** `code-simplifier` landed (`85c2acac`, CI green);
 all seven `go-architecture-reader` reports are in (six sound with nits, `cmd/cairn` workmanlike, no
-credential leak found anywhere). The adjudicated fold runs as `wf_d3f65134-680` (`tool-a-fold.js`),
-three sequential tasks: record (type renames to `record.GitHub`/`GitHubRepo`/`Cloudflare`, key-set
-drift guard); store, spine, version (a Windows junction hole in `Load`, exported mutable slices to
-functions); secrets and cmd/cairn (`secrets.Env` disagreed with the live env provider on an empty
-variable; dropped `Resolve` errors) plus a module-wide sweep of process citations out of Go
-comments. Then the ritual; PR #60 goes ready for review; the MERGE waits for Geoff.
+credential leak found anywhere). The adjudicated fold's first run (`wf_d3f65134-680`) died at about 04:00 on a network drop
+(`EAI_AGAIN`) and the session sat unwoken until Geoff's 09:16 message, about five hours lost. Its
+record task had already committed and pushed `7beb2014` (renames to
+`record.GitHub`/`GitHubRepo`/`Cloudflare`, key-set drift guard; CI green on all three legs) but
+never reported, so a direct `diff-reviewer` dispatch is reading that commit. The remaining two fold
+tasks relaunched 2026-09-20 09:17 as `wf_8a02451b-4bf` (`tool-a-fold2.js`): store, spine, version
+(a Windows junction hole in `Load`, exported mutable slices to functions); then secrets and
+cmd/cairn (`secrets.Env` disagreed with the live env provider on an empty variable; dropped
+`Resolve` errors) plus a module-wide sweep of process citations out of Go comments. Then the
+ritual; PR #60 goes ready for review; the MERGE waits for Geoff.
 **Left the pass, to be filed as a Pass B opening task:** the `providers` deduplication, `record`'s
 table-driven rewrite and file split, and the `cmd/cairn` logic moves (verdict algebra onto
 `spine.State`, `discoverSites` into `store`, the typed exit error), the last three into Tasks 19

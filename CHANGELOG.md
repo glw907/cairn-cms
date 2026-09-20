@@ -1662,8 +1662,8 @@
   to each, instead of the one hard-coded `cairn-admin-screens` path; the tier-map comparison
   against the rule registries still runs for that skill alone, and skips with a notice, exiting 0,
   when the packaged dist build the registries read is absent. `check:docs` now also resolves every
-  relative link and anchor under `skills/**/*.md` and `claude/**/*.md`, the two trees a later task
-  in this pass ships into the tarball. No consumer action.
+  relative link and anchor under `skills/**/*.md` and `claude/**/*.md`, the two trees that ship
+  in the tarball. No consumer action.
 
 ### Documentation
 

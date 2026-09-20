@@ -368,15 +368,19 @@
   over the three-property cap. No consumer action.
 
 - `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
-  `selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string }` and
-  `batchBar?: Snippet<[{ count: number; clear: () => void }]>`. With `selection` set, `AdminTable`
-  renders the reserved header `<th>` and its own select-all checkbox (`aria-label` from
-  `selection.label`, indeterminate against `rowCount` on a partial `selection.ids`); a caller
-  renders each row's own checkbox `<td>` inside `children`, bound to the same `Set`. With
-  `selection.ids` non-empty, `batchBar` renders above the table inside a `role="toolbar"` region,
-  receiving the selected count and a `clear` callback that empties the selection through
-  `selection.onchange`. `emptyColspan` counts the reserved selection column itself while
-  `selection` is set. No consumer action.
+  `selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void; label:
+  string }` and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`. With `selection` set,
+  `AdminTable` renders the reserved header `<th>` and its own checkbox, indeterminate against
+  `rowCount` on a partial `selection.ids`; a caller renders each row's own checkbox `<td>` inside
+  `children`, reading the same id set. Because the header checkbox can only empty a selection, it
+  carries `aria-disabled="true"` while rows exist and nothing is selected, and its `aria-label`
+  reads "Clear selection" once something is. The batch region renders whenever `selection` is set,
+  as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` element with
+  the count, so the live region exists before the count it announces changes; `batchBar` renders
+  inside it while the set is non-empty, receiving the selected count and a `clear` callback that
+  empties the selection through `selection.onchange` and returns focus to the header checkbox.
+  `emptyColspan` counts the reserved selection column itself while `selection` is set. No consumer
+  action.
 
 - The showcase's two exemplar routes, the custom admin screen (`admin/signups`) and the public
   form with a domain action (`members/login`), rewrite their diagnostic output onto `createLogger`

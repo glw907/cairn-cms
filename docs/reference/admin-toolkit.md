@@ -346,7 +346,7 @@ let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyCol
   rowCount: number;
   empty?: Snippet;
   emptyColspan?: number;
-  selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string };
+  selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void; label: string };
   batchBar?: Snippet<[{ count: number; clear: () => void }]>;
 };
 ```
@@ -372,23 +372,37 @@ component can't reach inside a snippet's own markup to add truncation there itse
 `overflow-x: auto` is the horizontal-scroll fallback for a table wider than its viewport.
 
 **Batch selection.** `selection` reserves the leading column: `AdminTable` renders that column's
-header `<th>` and its own select-all checkbox (`aria-label` from `selection.label`, indeterminate
-against `rowCount` on a partial `selection.ids`), and a caller renders each row's own checkbox
-`<td>`, inside `children`, bound to the same `Set`. `AdminTable` never holds the full set of
-selectable row ids (rows stay caller-rendered), so the header checkbox can only empty the
-selection through `selection.onchange`, never build one; a caller wanting a select-all affordance
-supplies it itself. `batchBar` renders preceding the table, inside a `role="toolbar"` region, only
+header `<th>` and its own checkbox, checked when every row is selected and indeterminate on a
+partial `selection.ids`, and a caller renders each row's own checkbox `<td>`, inside `children`,
+reading the same id set. `AdminTable` never holds the full set of selectable row ids (rows stay
+caller-rendered), so the header checkbox can only empty the selection through `selection.onchange`,
+never build one. It follows that the checkbox carries `aria-disabled="true"` while rows exist and
+nothing is selected, and that its `aria-label` reads "Clear selection" once something is, rather
+than `selection.label`, which names it only in the empty state. `aria-disabled` rather than the
+native attribute, because a natively disabled input cannot hold focus and this is the element
+`clear` hands focus back to; the component restates daisyUI's own disabled dimming for it. A caller
+wanting a select-all affordance supplies it itself. Select-all over caller-rendered rows stays
+open until a second engine screen adopts the pattern and shows what the contract should be.
+
+The batch region renders preceding the table whenever `selection` is set: a `role="group"` whose
+label is `Batch actions`, carrying a visually hidden `role="status"` element with the selected count. The
+region exists before the count changes, which is what makes the announcement land; a live region
+mounted at the same moment its text appears announces nothing. `batchBar` renders inside that region
 while `selection.ids` is non-empty, and receives the selected count and a `clear` callback that
-empties the selection the same way. Both props are additive: a caller passing neither gets the same
-table as before. Whether a row's own per-column actions stay active while a selection is open is
-the caller's own call, not this component's. Carbon's own data table takes the same position, for
-the same reason: only the caller knows which actions a partial selection makes unsafe.
+empties the selection through `selection.onchange` and returns focus to the header checkbox. Both
+props are additive: a caller passing neither gets the same table as before. Whether a row's own
+per-column actions stay active while a selection is open is the caller's own call, not this
+component's. Carbon's own data table takes the same position, for the same reason: only the caller
+knows which actions a partial selection makes unsafe.
 
-**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`, `checkbox-sm`,
-every one already compiled into the packaged `cairn-admin.css`.
+`selection.onchange` receives a new set on every change; `AdminTable` never mutates the set it is
+given. Store the new set in `$state`, or pass a `SvelteSet` from `svelte/reactivity` if your screen
+prefers a mutable reactive set of its own.
 
-**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`,
-`checkbox-sm`.
+**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`, every one already
+compiled into the packaged `cairn-admin.css`.
+
+**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`.
 
 ```svelte
 <AdminTable {density} zebra rowCount={rows.length}>
@@ -427,7 +441,7 @@ that does is reinventing a register `AdminTable` already carries.
         <td>
           <input
             type="checkbox"
-            class="checkbox checkbox-sm"
+            class="checkbox"
             aria-label={`Select ${row.household}`}
             checked={selectedIds.has(row.id)}
             onchange={(event) => {
@@ -448,10 +462,12 @@ that does is reinventing a register `AdminTable` already carries.
 </AdminTable>
 ```
 
-**The batch-actions recipe.** `selection.ids` is the caller's own `Set`, reassigned on every
-change (never mutated in place) the same way `MediaOrphanTools`' own selection state is; `onchange`
-is where a caller stores the new `Set`. A caller wanting a select-all control adds it to `batchBar`
-itself, since `AdminTable` can't build one without the full row-id list.
+**The batch-actions recipe.** `selection.ids` is the caller's own set, reassigned on every change
+(never mutated in place) the same way `MediaOrphanTools`' own selection state is; `onchange` is
+where a caller stores the new set. A caller wanting a select-all control adds it to `batchBar`
+itself, since `AdminTable` can't build one without the full row-id list. `batchBar` words its own
+visible count; the component's own status region carries the count for assistive technology, so a
+caller doesn't add a second live region of its own.
 
 ### `ListToolbar`
 

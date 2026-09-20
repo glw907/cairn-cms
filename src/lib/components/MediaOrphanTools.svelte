@@ -53,7 +53,9 @@ restores there on close.
   // Never mutated in place; every change reassigns (the reactive-Set rule the rest of the screen follows).
   let orphanKeys = $state(new Set<string>());
   // The section-level select-all checkbox, set to indeterminate in an effect when some-but-not-all rows
-  // are selected (a property, not an attribute, so it is driven imperatively).
+  // are selected. The effect is this screen's own bookkeeping, not a requirement: Svelte 5 sets
+  // `indeterminate` as a DOM property from an attribute position too (AdminTable's header checkbox
+  // does exactly that), so a future edit here can drop the effect.
   let orphanSelectAll = $state<HTMLInputElement | null>(null);
   // The purge confirm: a nested phase inside the result surface, gated by typing the selected count.
   let orphanPurging = $state(false);
@@ -70,7 +72,8 @@ restores there on close.
   // at least one byte is selected. The one legitimate disable, a visible typed destructive confirm.
   const orphanConfirmMatches = $derived(orphanSelectedCount > 0 && confirmGateMatches(orphanConfirmInput, orphanSelectedCount));
   // The select-all is checked when every byte is selected, indeterminate on a strict subset. Driven
-  // imperatively because `indeterminate` is a DOM property with no HTML attribute.
+  // imperatively here because both flags are computed from two derived counts this screen already
+  // holds, not because `indeterminate` needs an effect.
   $effect(() => {
     if (!orphanSelectAll) return;
     const n = orphanSelectedCount;

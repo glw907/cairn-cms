@@ -71,7 +71,14 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/components/CairnAdminShell.svelte:76`, `src/lib/components/MediaPicker.svelte:65`.
   [verified]
 - `AdminTable`'s `emptyColspan` defaults to `100`, relying on HTML's own `colspan` clamp to the
-  real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:81`. [verified]
+  real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:96`. [verified]
+- `AdminTable`'s `selection` prop takes a `ReadonlySet<string>` and an `onchange` receiving a
+  `ReadonlySet<string>`; the component never mutates the set it is given. Its header checkbox
+  carries `aria-disabled="true"` while rows exist and nothing is selected, and its `aria-label`
+  reads "Clear selection" once something is. The batch region renders whenever `selection` is set,
+  as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
+  `clear` returns focus to the header checkbox. Source:
+  `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
 - `StatusChip`'s `outline` register hairline is `color-mix(in oklab, currentColor 55%,
   transparent)`; cairn's five named call sites (ConceptList, EditPage, CairnAdminShell,
   ReferenceField, MediaCaptureCard, ManageEditors) all clear the 3:1 border-contrast floor, but a

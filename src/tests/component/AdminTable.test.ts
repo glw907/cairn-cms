@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import AdminTable from '../../lib/admin-toolkit/AdminTable.svelte';
+import AdminTableSelectionHarness from './_AdminTableSelectionHarness.svelte';
 import baselineHtml from './fixtures/admin-table-baseline.html?raw';
 
 /** A snippet with no render-time params, e.g. a header row or a fixed body. */
@@ -143,7 +144,7 @@ describe('AdminTable', () => {
     expect(normalizeRenderedHtml(screen.container.innerHTML)).toBe(normalizeRenderedHtml(baselineHtml));
   });
 
-  it('renders no batch bar while the selection set is empty', async () => {
+  it('renders the batch region with an empty-count status while the selection set is empty', async () => {
     const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
@@ -151,10 +152,15 @@ describe('AdminTable', () => {
       selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
       batchBar: batchBarSnippet(),
     });
-    expect(screen.container.querySelector('[role="toolbar"]')).toBeNull();
+    // The region and its live status exist before the count ever changes; only the caller's own
+    // batch actions wait for a non-empty set.
+    const region = screen.container.querySelector('[role="group"]');
+    expect(region?.getAttribute('aria-label')).toBe('Batch actions');
+    expect(region?.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+    expect(screen.container.querySelector('[data-testid="batch-clear"]')).toBeNull();
   });
 
-  it('renders the batch bar with the selected count while the set is non-empty, and clear empties it through onchange', async () => {
+  it('renders the batch actions with the selected count while the set is non-empty, and clear empties it through onchange', async () => {
     const onchange = vi.fn();
     const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
@@ -163,24 +169,75 @@ describe('AdminTable', () => {
       selection: { ids: new Set(['alvarez', 'diallo']), onchange, label: 'Select households' },
       batchBar: batchBarSnippet(),
     });
-    const bar = screen.container.querySelector('[role="toolbar"]');
-    expect(bar).not.toBeNull();
-    expect(bar!.querySelector('[data-testid="batch-count"]')?.textContent).toBe('2');
-    (bar!.querySelector('[data-testid="batch-clear"]') as HTMLButtonElement).click();
+    const region = screen.container.querySelector('[role="group"]');
+    expect(region).not.toBeNull();
+    expect(region!.querySelector('[role="status"]')?.textContent).toBe('2 selected');
+    expect(region!.querySelector('[data-testid="batch-count"]')?.textContent).toBe('2');
+    (region!.querySelector('[data-testid="batch-clear"]') as HTMLButtonElement).click();
     expect(onchange).toHaveBeenCalledTimes(1);
     expect(onchange).toHaveBeenCalledWith(new Set());
   });
 
-  it('renders the header checkbox as indeterminate on a partial selection, with the aria-label from selection.label', async () => {
-    const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
-      children: staticSnippet('<tr><td>Alvarez</td><td>Diallo</td></tr>'),
-      rowCount: 2,
-      selection: { ids: new Set(['alvarez']), onchange: vi.fn(), label: 'Select households' },
+  it('flips the header checkbox through empty, partial, and full as a caller stores each new set', async () => {
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [
+        { id: 'alvarez', household: 'Alvarez' },
+        { id: 'diallo', household: 'Diallo' },
+      ],
     });
-    const checkbox = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
-    expect(checkbox.indeterminate).toBe(true);
-    expect(checkbox.checked).toBe(false);
-    expect(checkbox.getAttribute('aria-label')).toBe('Select households');
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    const rowBoxes = screen.container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]');
+
+    // Empty: nothing to clear, so the checkbox is inert and names the selection it would make. It
+    // stays focusable, which is what lets `clear` hand focus back to it.
+    expect(header.checked).toBe(false);
+    expect(header.indeterminate).toBe(false);
+    expect(header.getAttribute('aria-disabled')).toBe('true');
+    expect(header.disabled).toBe(false);
+    expect(header.getAttribute('aria-label')).toBe('Select households');
+
+    await screen.getByLabelText('Select Alvarez').click();
+    expect(header.indeterminate).toBe(true);
+    expect(header.checked).toBe(false);
+    expect(header.getAttribute('aria-disabled')).toBeNull();
+    expect(header.getAttribute('aria-label')).toBe('Clear selection');
+
+    await screen.getByLabelText('Select Diallo').click();
+    expect(header.indeterminate).toBe(false);
+    expect(header.checked).toBe(true);
+    expect(rowBoxes.length).toBe(2);
+  });
+
+  it('empties the selection from the batch bar clear and lands focus on the header checkbox', async () => {
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [
+        { id: 'alvarez', household: 'Alvarez' },
+        { id: 'diallo', household: 'Diallo' },
+      ],
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    await screen.getByLabelText('Select Alvarez').click();
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('1 selected');
+
+    await screen.getByTestId('batch-clear').click();
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+    expect(screen.container.querySelector('[data-testid="batch-clear"]')).toBeNull();
+    expect(document.activeElement).toBe(header);
+  });
+
+  it('clears the selection from the header checkbox itself', async () => {
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [{ id: 'alvarez', household: 'Alvarez' }],
+    });
+    await screen.getByLabelText('Select Alvarez').click();
+    await screen.getByLabelText('Clear selection').click();
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+    // Ticking the inert checkbox again does nothing, since there is no id set here to select from.
+    // Dispatched rather than driven through the locator, which refuses to click an element it reads
+    // as not enabled, while a real pointer on an aria-disabled input does fire change.
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    header.click();
+    expect(header.checked).toBe(false);
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
   });
 });

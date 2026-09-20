@@ -6041,11 +6041,23 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   caller-rendered. No existing prop changes; a caller passing neither prop sees no behavior
   change, which the committed branch-point fixture
   (`src/tests/component/fixtures/admin-table-baseline.html`) proves rather than asserts.
+- **The header checkbox's own shape (extend-1 review round, 2026-09-20):** because it can only
+  empty a selection, it carries `aria-disabled="true"` while rows exist and nothing is selected, and
+  its `aria-label` reads "Clear selection" once something is. `aria-disabled` rather than the native
+  attribute is load-bearing and measured, not a preference: with `disabled`, focus returned to the
+  checkbox after `clear` lands on `document.body` instead, since the clear is exactly what makes the
+  control disabled. The component restates daisyUI's own `:disabled` dimming for the
+  `[aria-disabled]` state, which daisyUI does not style. The batch region is a `role="group"` named
+  "Batch actions" (never the selection label) carrying a visually hidden `role="status"` count, and
+  it renders whenever `selection` is set rather than only while the set is non-empty, so the live
+  region exists before the count it announces changes. Select-all over caller-rendered rows stays
+  open until a second screen adopts the pattern.
 - **Reopens on:** a second engine screen or a production site adopting the props in a shape this
   row's fixture does not already cover.
-- **Shape:** `selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string }`
-  and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`; the header checkbox and its
-  indeterminate state are `AdminTable`'s own; each row's checkbox `<td>` stays the caller's.
+- **Shape:** `selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void;
+  label: string }` and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`; the header
+  checkbox, its indeterminate state, and the batch region are `AdminTable`'s own; each row's
+  checkbox `<td>` stays the caller's.
 - **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Batch actions on
   `AdminTable` is engine work riding along, not an atom."
 - **Verified:** `src/tests/component/AdminTable.test.ts`'s extended cases (the no-`selection`

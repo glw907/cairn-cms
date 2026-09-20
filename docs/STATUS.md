@@ -13,7 +13,15 @@ window holds for one cut, after extend-2. CI on `main` is green.
 
 ## Immediate next action
 
-**Execute the extend-2 pass**, plan `docs/superpowers/plans/2026-09-14-extend-2-pass.md`, in a
+**extend-2 is IN FLIGHT (launched 2026-09-20)**, one `pass-execute-chains` workflow over two
+worktrees: chain A (`.claude/worktrees/extend-2`, tasks 1a, 1b, 2, 3a, 3b, 3c, 4) and chain B
+(`.claude/worktrees/extend-2-skills`, tasks 5, 6, 7). Ledger: none accepted yet. Task 3c is the
+2026-09-19 amendment written out as a plan section at dispatch; the 5.4M ceiling is unchanged, so
+the tenth task draws on the re-dispatch reserve. The gate per task is `gate-tier.mjs`'s computed
+string plus the checks each task's acceptance criteria name. A cold session checks both worktrees
+for a live executor before touching either.
+
+The pass: plan `docs/superpowers/plans/2026-09-14-extend-2-pass.md`, in a
 worktree off `main`, workflow mode through `pass-execute-chains.js`. Its 2026-09-19 amendment adds
 one task, an engine-owned Tailwind sources file, so a site's own `admin.css` never names the
 engine's `dist` path to hold the utilities-layer superset extend-1's seam needs. Its docs

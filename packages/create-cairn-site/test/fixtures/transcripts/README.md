@@ -169,6 +169,17 @@ is never edited. `docs/admin/is-it-working.md` elides that one line from its quo
 number. `check:transcripts` compares the quoted block against this fixture, not against the
 current doctor's check count, so it stays green either way.
 
+## Staleness note (2026-09-20, guidance bake)
+
+The scaffold now ships `.claude/` guidance baked in at create time (every packaged skill, the
+review agent, and `.claude/cairn/CLAUDE.md`/`VERSION`/`MANIFEST`), and its own
+`.github/workflows/check.yml` gained a third step, `npx cairn-guidance check` under
+`continue-on-error`. `01-create-cairn-site.txt`'s hand-over text predates both and shows
+neither the guidance sentence nor the workflow's third step. Re-capturing needs a live GitHub
+App and repository creation, a harness outside this repo, so this fixture stays as recorded.
+`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
+the current scaffold's behavior, so it stays green either way.
+
 ## Identifiers
 
 Kept verbatim by ruling. The worker, both databases, the bucket, the App, and the repository

@@ -27,6 +27,13 @@
   `CLAUDE.md` importing the fragment. The scaffold's own Tailwind entry excludes `.claude/` from
   its source scan, and `.claude/agent-memory/` is gitignored. No consumer action.
 
+- The scaffold's own `.github/workflows/check.yml` now runs `npx cairn-guidance check` under
+  `continue-on-error`, on top of `npm run check` and `npm run check:cairn`, so a stale or missing
+  guidance tree surfaces in CI without ever failing the job. `create-site.yml` now asserts a
+  freshly scaffolded site's `.claude/` holds exactly the installed guidance paths plus `VERSION`
+  and `MANIFEST`, that `VERSION` matches the installed package version, and that
+  `.claude/agent-memory` and `.claude/worktrees` are absent. No consumer action.
+
 - A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
   built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
   and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A

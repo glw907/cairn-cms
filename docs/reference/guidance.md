@@ -84,9 +84,9 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   printed by `check` under its `check:cairn script` item when the site has none.
 - **`claude/snippets/cairn-audit.config.json`** is the audit's own config, naming the compiled
   admin stylesheet, printed under `check`'s `cairn-audit.config.json` item when the site has none.
-- **`claude/snippets/check.yml`** is a starting CI workflow running `npm run check` and
-  `npm run check:cairn` on push and pull request, printed under `check`'s CI workflow item when
-  the site has none.
+- **`claude/snippets/check.yml`** is a starting CI workflow running `npm run check`,
+  `npm run check:cairn`, and `npx cairn-guidance check` (under `continue-on-error`) on push and
+  pull request, printed under `check`'s CI workflow item when the site has none.
 - **`claude/snippets/settings-hook.json`** is the `Stop` hook block quoted in the fragment
   above, for a site that wants to paste it straight into `.claude/settings.json` rather than
   copying it out of the fragment's prose.

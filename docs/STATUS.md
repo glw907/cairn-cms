@@ -34,17 +34,17 @@ the engine's `dist` path) is one small extend-2 task; the docs-infra currency pa
 written and queues after the one cut, before the site round. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
 `cairn-run-gate`'s machine lock.
 
-Task ledger (2026-09-19 19:20): **1, 2, 7, 8a, 8b ACCEPTED**; chain B is complete on `extend-1-site` (six commits,
-pushed, awaiting its CI read at the ritual). **3** committed (`f926830f`, `db0de8ca`) and on a third, conductor-ruled fix round on Opus:
-the bubble is placed with a popover plus CSS anchor positioning (the toolbar's recipe), since fixed
-positioning is displaced inside DaisyUI's transformed modal box. **4, 5, 6** queued behind it in chain A
-run `wf_32d77f80-9f9` from `extend-1-runA4.js`, whose task 6 notes carry the execution record items. Fold items for the
-ritual: 8b's `check:cairn` step in `create-site.yml` runs before the build rather than after, and
-the two facts bullets 8b filed could name task 7's `cairn-audit.config.json` and the two transcript
-fixtures. Rulings taken so far are in this file's history and the plan.
+Task ledger (2026-09-19 evening): **1, 2, 3, 4, 5, 7, 8a, 8b ACCEPTED**. Task 3 took three review
+rounds on the bubble's placement (ruled: a popover plus CSS anchor positioning, with the anchor
+name appended to a trigger's own). **6** (the ledger, roadmap, and record) running as a one-task
+run from `extend-1-runA5.js`. Then the pass-end ritual: merge `extend-1-site` into `extend-1`,
+the post-merge seam proof, simplifier, reviewer fan-out, PR, CI regen, verifier, records, merge.
+Fold items for the ritual: 8b's `check:cairn` step in `create-site.yml` runs before the build
+rather than after, and its two facts bullets could name task 7's `cairn-audit.config.json` and
+the two transcript fixtures.
 
 Resume, from a session inside `cairn-cms` on a stable connection: the built scripts live in the
-launching session's scratchpad (`extend-1-runA4.js`, run `wf_32d77f80-9f9`, tasks 3 to 6), so from that session issue
+launching session's scratchpad (`extend-1-runA5.js`, task 6), so from that session issue
 `Workflow({scriptPath, resumeFromRunId})` for each; from a new session, rebuild both from
 `~/.cache/cairn-overnight-2026-09-14/extend-1-args.json` with the rulings above folded into the
 task 2 and task 7 notes, and start each chain at its first unreviewed task. Arm the guards per

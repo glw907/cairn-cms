@@ -24,11 +24,14 @@ routing record for this track; every slice through docs-to-facts is MERGED.
 `docs/superpowers/plans/2026-09-14-extend-1-pass.md`, workflow mode through
 `pass-execute-chains.js`. Worktrees: chain A `.claude/worktrees/extend-1` (branch `extend-1`), chain B
 `.claude/worktrees/extend-1-site` (branch `extend-1-site`), both off `22bc19b5`, both clean. Ceiling
-6.7M; about 3.2M spent, of which about 0.9M went to three network drops, one usage-limit kill, and one
-relayed-question misfire. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
+6.7M; **checkpoint 2026-09-19 19:20: about 5.6M spent (84 percent)**, of which about 1.0M went to
+three network drops, one usage-limit kill, one relayed-question misfire, and one redundant
+re-dispatch; task 3 ran three review rounds. Tasks 4, 5, 6 and the ritual are priced at about 3.0M.
+The combined checkpoint question to Geoff is open: raise the ceiling to finish, or cut after task 3
+(task 4 is the plan's designated cut candidate) and carry 4 to 6 forward. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
 `cairn-run-gate`'s machine lock.
 
-Task ledger: **1, 2, 7, 8a, 8b ACCEPTED**; chain B is complete on `extend-1-site` (six commits,
+Task ledger (2026-09-19 19:20): **1, 2, 7, 8a, 8b ACCEPTED**; chain B is complete on `extend-1-site` (six commits,
 pushed, awaiting its CI read at the ritual). **3** committed (`f926830f`, `db0de8ca`) and on a third, conductor-ruled fix round on Opus:
 the bubble is placed with a popover plus CSS anchor positioning (the toolbar's recipe), since fixed
 positioning is displaced inside DaisyUI's transformed modal box. **4, 5, 6** queued behind it in chain A

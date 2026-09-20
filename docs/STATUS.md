@@ -64,12 +64,22 @@ container bullets via `site-docs/<site>-<pass>`; then one improvement release, t
 rebuilt from the container, then beta.
 
 **Go tool pass A is IN FLIGHT beside extend-1 (Geoff, 2026-09-19 21:00)** on `cairn-tool-a` (draft PR
-#60, `main` merged in at `60541de3`), a separate session. Tasks 1 to 3 committed; segment 2 (tasks 4,
-5, 6) runs as `wf_3b8fa836-ff2` from that session's scratchpad `tool-a-seg2.js`; segment 3 (7, 8, 9)
-follows from `tool-a-seg3.js`; both are built from
-`~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with the args embedded in a copy of
-`~/.claude/workflows/pass-execute-chains.js`. Gate `make -C tool check`. Stops at Task 10 (Geoff's
-attended credential sitting). Ceiling 8M.
+#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-19 23:10): **1, 2, 3, 4
+ACCEPTED** (4 after one ruled fix round); **5** committed (`8e64bda6`) and on a ruled fix round, then
+**6**, as run `wf_6215e2cb-979` (`tool-a-seg2c.js`); **7, 8, 9** queued (`tool-a-seg3.js`); **10**
+queued (`tool-a-seg4.js`), its attended half DONE: Geoff minted both read tokens 2026-09-19, stored
+as `CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`, verified by curl, recorded in
+the dotfiles registry and the estate inventory. Then the Task 11 close. Spend about 1.2M of 8M.
+Scripts live in that session's scratchpad, built from
+`~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with args embedded in a copy of
+`~/.claude/workflows/pass-execute-chains.js` patched with a `noClassifier` flag. Rulings taken:
+`make -C tool check` is the gate and `gate-tier.mjs` is skipped, because it has no `tool/` rule and
+routes a Go-only diff to the full Node gate (file a `tool/**` rule at the close); `record.Marshal`
+appends a non-zero typed key absent at parse time; `store.Dir` resolves env, then the legacy
+`~/.config/cairn/sites` when it exists, then `os.UserConfigDir`, since the Node CLI still writes
+the legacy path; the Cloudflare read token needs SEVEN groups (Zone Settings: Read added); a
+public repository proves nothing about a GitHub token's scope, so `probe-token` marks
+visibility.
 
 ## Parallel tracks
 

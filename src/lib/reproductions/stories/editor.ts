@@ -47,15 +47,47 @@ function glyph(inner: string): string {
 }
 
 /**
+ * A label turned into a stable id fragment (lowercased, non-word runs collapsed to a hyphen), for
+ * the hand-built tooltip markup below: every real Tooltip instance mints its own id off
+ * `$props.id()`, which a raw-HTML story cannot call, so this is the story's own deterministic
+ * stand-in.
+ * @param label - the tooltip's own text
+ * @returns a lowercase, hyphenated id fragment
+ */
+function tooltipIdFor(label: string): string {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * The `aria-describedby` attribute plus the sibling bubble markup Tooltip.svelte renders at rest
+ * (hidden, never shown, since this story never fires a hover or focus): a hand-typed duplicate of
+ * that component's own DOM shape, since a raw-HTML story cannot mount a real component. Known
+ * cost, not accidental drift-bait: Tooltip's own scoped `<style>` never reaches this hand-typed
+ * span (no Svelte scoping class to match), so the resting-hidden look is pinned here with an
+ * inline style instead, and a future change to Tooltip's own markup or class names has nothing
+ * that keeps this copy in sync automatically.
+ * @param label - the tooltip's own text
+ * @returns the `aria-describedby` attribute and the bubble span's markup, as a pair
+ */
+function tooltipParts(label: string): { describedBy: string; bubble: string } {
+  const id = `${tooltipIdFor(label)}-tooltip`;
+  return {
+    describedBy: `aria-describedby="${id}"`,
+    bubble: `<span id="${id}" role="tooltip" style="position:absolute;opacity:0;visibility:hidden;pointer-events:none;">${label}</span>`,
+  };
+}
+
+/**
  * One host insert control that opens a dialog, in the icon-button shape `EditPage` gives its own.
- * @param label - the control's accessible name and tooltip
+ * @param label - the control's accessible name and Tooltip text
  * @param inner - the icon's shapes
- * @returns one button's markup
+ * @returns one button's markup, followed by its Tooltip bubble
  */
 function insertButton(label: string, inner: string): string {
+  const { describedBy, bubble } = tooltipParts(label);
   return (
     '<button type="button" class="btn btn-sm btn-ghost btn-square" aria-haspopup="dialog" ' +
-    `aria-label="${label}" title="${label}">${glyph(inner)}</button>`
+    `aria-label="${label}" ${describedBy}>${glyph(inner)}</button>${bubble}`
   );
 }
 
@@ -63,19 +95,25 @@ function insertButton(label: string, inner: string): string {
  * One host insert control at rest in its unavailable state, the way `EditPage` guards a control
  * whose target the caret has not reached: `aria-disabled` rather than the native attribute, so it
  * stays focusable, and the dimmed look from `cairn-btn-guarded` plus `cursor-not-allowed`, never
- * `btn-disabled`, whose `pointer-events: none` would suppress the title tooltip a mouse user reads
- * for the why.
- * @param label - the control's accessible name and tooltip, naming what the caret must reach
+ * `btn-disabled`, whose `pointer-events: none` would suppress the Tooltip a mouse user reads for
+ * the why.
+ * @param label - the control's accessible name and Tooltip text, naming what the caret must reach
  * @param inner - the icon's shapes
- * @returns one button's markup
+ * @returns one button's markup, followed by its Tooltip bubble
  */
 function guardedButton(label: string, inner: string): string {
+  const { describedBy, bubble } = tooltipParts(label);
   return (
     '<button type="button" class="btn btn-sm btn-ghost btn-square cairn-btn-guarded cursor-not-allowed" ' +
-    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}" title="${label}">` +
-    `${glyph(inner)}</button>`
+    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}" ${describedBy}>` +
+    `${glyph(inner)}</button>${bubble}`
   );
 }
+
+/** The standalone Tidy control's own Tooltip parts, computed once since it is written by hand
+ *  below (unlike `insertButton`/`guardedButton`, its own icon-plus-text markup does not route
+ *  through either helper). */
+const tidyTooltip = tooltipParts('Tidy: a light copy-edit you review before accepting');
 
 /**
  * The Insert group's contents, which the toolbar takes from its host rather than wiring itself.
@@ -117,13 +155,12 @@ const insertControls = createRawSnippet(() => ({
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
         '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
     ) +
-    '<button type="button" class="btn btn-sm btn-ghost gap-1.5" aria-label="Tidy" ' +
-    'title="Tidy: a light copy-edit you review before accepting">' +
+    `<button type="button" class="btn btn-sm btn-ghost gap-1.5" aria-label="Tidy" ${tidyTooltip.describedBy}>` +
     glyph(
       '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>' +
         '<path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
     ) +
-    'Tidy</button>' +
+    `Tidy</button>${tidyTooltip.bubble}` +
     // The figure control, at rest: always rendered, and unavailable until the caret sits on a media
     // image.
     guardedButton(

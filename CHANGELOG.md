@@ -335,6 +335,20 @@
   crosses them. The paint rides the button's existing `transition-colors`, so it resolves to the
   theme's `base` default like the same element's hover paint; no new CSS rule is added.
 
+- `Tooltip` (`/admin-toolkit`), the replacement for a native `title` attribute on an icon-only
+  action control: a native `title` never shows on `:focus-visible` and never shows on a touch
+  tap. Wraps the given trigger unchanged (`aria-describedby` on the trigger's own rendered root
+  element, a wrapper that renders no box of its own), shows on hover and on `:focus-visible`,
+  hides on Escape without moving focus off the trigger, and shows on a coarse-pointer tap (read
+  from the triggering event's own `pointerType`) and hides on the next tap outside. An empty
+  `text` opts out entirely, for a caller whose reason is conditional. Every native `title` on an
+  admin action control across the engine's own components now routes through it. `cairn-audit`'s
+  `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces an
+  advisory finding naming the class retired (it stays compiled, since its own pointer-events
+  restore still has a real consumer) and promotes to error tier in `0.98.0`. Consumers must:
+  nothing, unless your admin copied the `cairn-btn-guarded` marker class from the engine's markup;
+  no production site has.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

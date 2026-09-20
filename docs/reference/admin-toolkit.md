@@ -192,7 +192,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, EmptyState, ExpandableRow, MediaPicker, Tooltip } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -839,6 +839,55 @@ which render only once the library holds more than one top-level content type.
 </script>
 
 <MediaPicker entries={data.assets} onselect={(selection) => (chosen = selection.ref)} />
+```
+
+### `Tooltip`
+
+Available since `0.97.0`.
+
+Stability tier: Extension API.
+
+```ts
+let { text, id, children }: {
+  text: string;
+  id?: string;
+  children: Snippet;
+};
+```
+
+The replacement for a native `title` attribute on an icon-only action control. A native `title`
+never reaches a keyboard user (no `:focus-visible` trigger, no Escape dismissal) and never reaches
+a touch user (no hover at all), so a control whose only accessible name comes from `aria-label`
+still leaves a sighted mouse user's own "why" undiscoverable on every other input mode. `Tooltip`
+wraps the given trigger unchanged, in a wrapper that renders no box of its own (`display:
+contents`), and sets `aria-describedby` on the trigger's own rendered root element.
+
+Shows on hover and on `:focus-visible` (a keyboard Tab, never a mouse click that merely focuses the
+trigger); hides on Escape without moving focus off the trigger. A coarse pointer (a real
+touchscreen tap, read from the triggering `PointerEvent`'s own `pointerType`) shows the bubble on
+tap and hides on the next tap outside. `text` accepts an empty string to opt out entirely (no
+`aria-describedby`, no bubble, every mechanic a no-op), for a caller whose reason is conditional,
+such as a guarded button's own explanation that is present only while guarded. `id` names the
+bubble element; omit it to use `$props.id()`'s own generated id.
+
+`children` renders the trigger control (a button or a link) unchanged: this component adds only
+`aria-describedby`, never a class, a label, or a click handler. The trigger keeps whatever else it
+already carries, including a caller's own `aria-label` and `disabled`/`aria-disabled` state.
+
+**daisyUI assembly:** none; the bubble is this component's own scoped `<style>`, with a literal
+fallback preceding every `--cairn-*`/daisyUI custom-property read, since `admin-toolkit` promises
+no compiled-admin-CSS ancestor.
+
+```svelte
+<script lang="ts">
+  import { Tooltip } from '@glw907/cairn-cms/admin-toolkit';
+</script>
+
+<Tooltip text="Insert block">
+  <button type="button" class="btn btn-sm btn-ghost btn-square" aria-label="Insert block">
+    <svg aria-hidden="true"><!-- glyph --></svg>
+  </button>
+</Tooltip>
 ```
 
 ---

@@ -368,6 +368,10 @@ The release step sets the version number at the cut and renames this section to 
   `transition-all`, `transition-[width]`, and `duration-[250ms]`. A site whose own markup carries
   any of the three was relying on the engine's sheet to compile it; add the class to that site's
   own Tailwind content or restate the declaration.
+- **A native `title` on an admin action control is replaced by `admin-toolkit`'s `Tooltip`.** No
+  action, unless your own admin copied the `cairn-btn-guarded` marker class from the engine's own
+  markup; no production site has. `cairn-audit`'s `stock-default-hazards` rule now names that
+  class retired at advisory tier, promoting to error tier in `0.98.0`.
 
 ### The four sites' upgrade order
 

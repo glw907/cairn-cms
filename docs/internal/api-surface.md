@@ -144,6 +144,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ToolbarDisclosureAriaHaspopup`: "menu" | "listbox" | "dialog" | "grid" | "tree" | "true"
 - `ToolbarDisclosurePanelAttrs`: { id: string; hidden: true | undefined }
 - `ToolbarDisclosureTriggerAttrs`: { aria-expanded: boolean; aria-controls: string; aria-haspopup: ToolbarDisclosureAriaHaspopup | undefined; onclick: (event: MouseEvent) => void }
+- `Tooltip`: Component<Props, {}, "">
 
 ## `/ambient`
 

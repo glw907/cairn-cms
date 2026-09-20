@@ -80,6 +80,11 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   descriptions in cairn-audit.md; not independently re-measured. [candidate: numeric contrast
   ratios (2.4:1, 2.97:1) are stated in the page and consistent with the audit's own documented
   floors, but no automated re-measurement was run in this harvest]
+- `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
+  coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
+  touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
+  no bubble, every hover/focus/tap mechanic a no-op). Source:
+  `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
 
 ## docs/reference/ambient.md
 
@@ -573,7 +578,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   and Svelte's default `{expr}` binding rendering as text. [verified]
 - The edit page's preview frame is sandboxed (`sandbox=""`), so scripts never run there and the
   island runtime never mounts in the preview; verify a live island on the deployed page. Source:
-  `src/lib/components/EditPage.svelte:2116` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
+  `src/lib/components/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 

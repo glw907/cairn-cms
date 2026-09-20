@@ -391,6 +391,17 @@ alongside the component recipes above and below it.
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
+- **Tooltip on an icon-only action control (`admin-toolkit`'s `Tooltip`).** The replacement for a
+  native `title` attribute, which never reaches a keyboard user (no `:focus-visible` trigger, no
+  Escape dismissal) and never reaches a touch user (no hover at all). Wrap the trigger: `<Tooltip
+  text="Insert block"><button aria-label="Insert block">...</button></Tooltip>`. Shows on hover and
+  on `:focus-visible`, hides on Escape without moving focus off the trigger, and shows on a
+  coarse-pointer tap (read from the triggering event's own `pointerType`, never `matchMedia`,
+  since a hybrid device can carry both a mouse and a touchscreen). A guarded control (the
+  `cairn-btn-guarded` pattern below) passes its guard reason as `text`, empty when unguarded:
+  `Tooltip` treats an empty string as opt-out, never an empty bubble. Every engine screen sweeps its
+  own icon-only `title` onto this component; a new one does the same rather than reaching for
+  `title` again.
 - **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
   Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
   and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
@@ -565,7 +576,7 @@ alongside the component recipes above and below it.
   `disabled` is honest here, since the control truly cannot be activated again until the round trip
   resolves. A control refused with a reason instead (Publish with nothing new to publish, the Figure
   button off the caret below) keeps `aria-disabled` plus the `cairn-btn-guarded` marker: the control
-  stays perceivable and its title tooltip keeps naming the reason, which native `disabled` would strip
+  stays perceivable and its Tooltip keeps naming the reason, which native `disabled` would strip
   from the accessibility tree and which DaisyUI 5.6's `[aria-disabled="true"]` `pointer-events: none`
   rule would also silence without the marker's unlayered restore. The two shapes are not
   interchangeable: a wait resolves on its own and needs no reason attached, while a refusal needs its
@@ -865,8 +876,8 @@ alongside the component recipes above and below it.
   button uses `aria-disabled` (not the native `disabled`) with a stateful `aria-label`, dimmed by the
   same guarded-button pattern as Publish above (`cairn-btn-guarded`, the `not-allowed` cursor, no
   `opacity` utility layered on top): DaisyUI 5.6 added `[aria-disabled="true"]` to the `.btn` disabled
-  selector with `pointer-events: none`, which would kill the title tooltip naming why the control is
-  off, so a guarded button that must keep its tooltip carries the `cairn-btn-guarded` marker; an
+  selector with `pointer-events: none`, which would kill the Tooltip naming why the control is
+  off, so a guarded button that must keep its Tooltip carries the `cairn-btn-guarded` marker; an
   unlayered rule in `cairn-admin.css` restores `pointer-events` for it (the click handler already
   guards inertness). The form carries a caption field (with the hint that the caption is shown to
   everyone and is not the alt text), an alt-status row that names the image's alt state distinct from

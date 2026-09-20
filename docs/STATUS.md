@@ -64,13 +64,13 @@ container bullets via `site-docs/<site>-<pass>`; then one improvement release, t
 rebuilt from the container, then beta.
 
 **Go tool pass A is IN FLIGHT beside extend-1 (Geoff, 2026-09-19 21:00)** on `cairn-tool-a` (draft PR
-#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-20 02:47): **1 to 9
-ACCEPTED** (4 to 8 each after one fix round; 9 clean); **10** committed (`eaa24f42`) and on a ruled
-fix round as run `wf_e5459cea-fec` (`tool-a-seg4b.js`): `probe-token` must print key sets from the
-real response body through a recording RoundTripper, then re-run the live probe. Its attended half
-is DONE: Geoff minted both read tokens 2026-09-19, stored as `CAIRN_CF_READ_TOKEN`,
-`CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`, verified by curl, recorded in the dotfiles registry
-and the estate inventory. Then the Task 11 close. Spend about 3.9M of 8M.
+#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-20 03:12): **1 to 10
+ACCEPTED** (4 to 8 and 10 each after one fix round; 9 clean); PR #60 green on all three `make check`
+legs at `25548463`. Task 10's attended half was Geoff's 2026-09-19 mint of both read tokens
+(`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; dotfiles registry and estate
+inventory carry them). **Task 11 close IN PROGRESS:** `code-simplifier` over `tool/`, then seven
+`go-architecture-reader` dispatches (record, store, providers, spine, secrets, version, cmd/cairn),
+one fold dispatch, the ritual. PR #60 then goes ready for review; the MERGE waits for Geoff. Spend about 4.2M of 8M.
 Scripts live in that session's scratchpad, built from
 `~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with args embedded in a copy of
 `~/.claude/workflows/pass-execute-chains.js` patched with a `noClassifier` flag. Rulings taken:

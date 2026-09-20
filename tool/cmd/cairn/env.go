@@ -50,10 +50,11 @@ func credentialNames(cs []credentialVar) []string {
 // resolution holds one variable's resolved value and the line a caller
 // prints for it: the provider name on success, "<provider>: error" when
 // the provider itself failed, or empty when nothing resolved it (auth list
-// and probe-token both turn an empty display into "not set"). credential
-// holds the same value wrapped in providers.Credential when the variable
-// is secret, so a typed accessor never has to know which of the three
-// variables it is reading.
+// and probe-token both turn an empty display into "not set"). value is
+// empty for a secret variable; credential holds that value wrapped in
+// providers.Credential instead, so a typed accessor never has to know
+// which of the three variables it is reading, and the resolved secret
+// never sits in a plain string field.
 type resolution struct {
 	name       string
 	value      string
@@ -67,7 +68,8 @@ type env struct {
 }
 
 // value returns name's resolved value, or empty when name was not
-// resolved or is not one of the variables loadEnv handles.
+// resolved, is not one of the variables loadEnv handles, or is a secret
+// variable (whose value reads through credential instead).
 func (e env) value(name string) string {
 	for _, r := range e.resolutions {
 		if r.name == name {
@@ -143,9 +145,11 @@ func loadEnv(envFn func(string) string, p ...secrets.Provider) (env, []providers
 		case from == "":
 			missing = append(missing, providers.Missing{Var: cv.name})
 		default:
-			r.value, r.display = v, from
+			r.display = from
 			if cv.secret {
 				r.credential = providers.NewCredential(v)
+			} else {
+				r.value = v
 			}
 		}
 		out.resolutions = append(out.resolutions, r)

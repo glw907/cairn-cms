@@ -923,24 +923,51 @@ wraps the given trigger unchanged, in a wrapper that renders no box of its own (
 contents`), and sets `aria-describedby` on the trigger's own rendered root element.
 
 Shows on hover and on `:focus-visible` (a keyboard Tab, never a mouse click that merely focuses the
-trigger); hides on Escape without moving focus off the trigger. A coarse pointer (a real
-touchscreen tap, read from the triggering `PointerEvent`'s own `pointerType`) shows the bubble on
-tap and hides on the next tap outside. `text` accepts an empty string to opt out entirely (no
-`aria-describedby`, no bubble, every mechanic a no-op), for a caller whose reason is conditional,
-such as a guarded button's own explanation that is present only while guarded. `id` names the
-bubble element; omit it to use `$props.id()`'s own generated id.
+trigger); hides on Escape without moving focus off the trigger. A pointer that reports no hover, a
+touchscreen or a pen, read from the triggering `PointerEvent`'s own `pointerType`, shows the bubble
+on tap and hides on the next tap outside. Activating an enabled trigger, by tap, click, or keyboard,
+also hides the bubble, so nothing is left over whatever the activation opened. A trigger marked
+`aria-disabled="true"` activates nothing, so its bubble stays. `text` accepts an empty string to opt
+out entirely (no `aria-describedby`, no bubble, every mechanic a no-op), for a caller whose reason is
+conditional, such as a guarded button's own explanation that is present only while guarded. `id`
+names the bubble element; omit it to use `$props.id()`'s own generated id.
 
 `children` renders the trigger control (a button or a link) unchanged: this component adds only
-`aria-describedby` and an `anchor-name`, never a class, a label, or a click handler. The trigger
-keeps whatever else it already carries, including a caller's own `aria-label`,
+`aria-describedby` and an `anchor-name` to the first element the snippet renders, never a class, a
+label, or a click handler. The snippet must render exactly one element, never bare text: the first
+element is the trigger, and a snippet with none gets a development-mode warning and no tooltip
+mechanics. The trigger keeps whatever else it already carries, including a caller's own `aria-label`,
 `disabled`/`aria-disabled` state, and an inline `anchor-name` of its own, which the component
 appends to rather than replaces, so a trigger that also anchors its own popover menu keeps that
-menu's anchor resolvable.
+menu's anchor resolvable. The `anchor-name` is written as an inline style property, so a trigger
+whose own `style` attribute comes from a reactive expression loses it whenever Svelte rewrites that
+attribute; the component re-appends it on the next open, and a class avoids the round trip.
+
+**Name versus description.** When `text` is already the trigger's accessible name, its `aria-label`
+or its rendered text, the component sets no `aria-describedby`: a screen reader would read the same
+words twice, once as the name and once as the description. When `text` says more than the name, a
+guard reason on a control labelled with its action for one, the description is set and resolves
+after hydration, when the component's own effect has run. The bubble renders either way, so a test
+that asserts a reason reads the bubble rather than the description.
 
 The bubble is a manual popover placed by CSS anchor positioning above the trigger, flipping below
 it when the top edge has no room. Because a popover renders in the top layer, the bubble survives a
 transformed, scaled, or `overflow: hidden` ancestor, such as an open daisyUI modal's own box, which
-displaces or clips a bubble positioned any other way.
+displaces or clips a bubble positioned any other way. Anchor positioning is a requirement, not an
+enhancement: a browser without it renders no bubble at all, and `aria-describedby` carries the text
+on its own.
+
+The bubble takes pointer events and bridges the gap to its trigger, so a pointer can travel in and
+read it without dismissing it (WCAG 1.4.13, Content on Hover or Focus). Escape is listened for on
+the `document`, so the key works wherever focus sits, and the listener neither calls
+`preventDefault()` nor stops propagation: an enclosing dialog still closes on the same press, which
+is the chosen behavior, since cairn treats dismissing the bubble and closing the dialog as one
+intent.
+
+**Where the wrapper can sit.** The wrapper is a `<span>` with `display: contents`, so it cannot sit
+where only `<td>`, `<th>`, or `<li>` are valid children. Wrap the control inside the cell, not the
+cell itself. A natively `disabled` control receives no pointer events in some browsers, so a reason
+that must reach a mouse user takes the `aria-disabled` guarded shape instead.
 
 **daisyUI assembly:** none; the bubble is this component's own scoped `<style>`, with a literal
 fallback preceding every `--cairn-*`/daisyUI custom-property read, since `admin-toolkit` promises

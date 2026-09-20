@@ -132,14 +132,16 @@ function previewSrcdoc(screen: { container: HTMLElement }) {
   return screen.container.querySelector('iframe[title="Page preview"]')?.getAttribute('srcdoc') ?? '';
 }
 
-/** A control's Tooltip text, resolved through its own `aria-describedby` (the native `title`
- *  attribute this control used to carry retired in favor of the Tooltip primitive; see
- *  Tooltip.svelte). Empty string when the control carries no `aria-describedby` at all, matching
- *  a native `title` that was never set. */
-function tooltipText(container: HTMLElement, control: Element): string {
-  const describedBy = control.getAttribute('aria-describedby');
-  if (!describedBy) return '';
-  return container.querySelector(`#${describedBy}`)?.textContent?.trim() ?? '';
+/** A control's Tooltip bubble text, read from the bubble Tooltip renders as the trigger's own next
+ *  sibling (the native `title` attribute this control used to carry retired in favor of the Tooltip
+ *  primitive; see Tooltip.svelte). Read from the bubble rather than through `aria-describedby`,
+ *  since Tooltip deliberately sets no description when the bubble only repeats the trigger's own
+ *  accessible name, which is the shape every guarded control here carries. Empty string when the
+ *  control has no Tooltip bubble at all, matching a native `title` that was never set. */
+function tooltipText(control: Element): string {
+  const bubble = control.nextElementSibling;
+  if (!bubble || bubble.getAttribute('role') !== 'tooltip') return '';
+  return bubble.textContent?.trim() ?? '';
 }
 
 describe('EditPage', () => {
@@ -3083,7 +3085,7 @@ describe('EditPage', () => {
       expect(control.getAttribute('aria-disabled')).toBe('true');
       expect(control.disabled).toBe(false);
       expect(control.getAttribute('aria-label')).toBe('Place the cursor in a component to edit it');
-      expect(tooltipText(screen.container, control)).toBe('Place the cursor in a component to edit it');
+      expect(tooltipText(control)).toBe('Place the cursor in a component to edit it');
     });
 
     it('keeps the unavailable Edit block focusable and announced through aria-disabled', async () => {
@@ -3121,7 +3123,7 @@ describe('EditPage', () => {
       const control = editControl(screen)!;
       expect(control.getAttribute('aria-label')).not.toBe('Edit the component at the cursor');
       expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this component');
-      expect(tooltipText(screen.container, control)).toBe('Switch to Write to edit this component');
+      expect(tooltipText(control)).toBe('Switch to Write to edit this component');
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
@@ -3819,7 +3821,7 @@ describe('EditPage', () => {
       expect(button.getAttribute('aria-disabled')).toBe('true');
       // The reason survives as a Tooltip (the cairn-btn-guarded seam restores the pointer-events
       // DaisyUI's own [aria-disabled] selector would otherwise strip).
-      expect(tooltipText(screen.container, button)).toBe('Place the cursor on an image to add a figure');
+      expect(tooltipText(button)).toBe('Place the cursor on an image to add a figure');
       const style = getComputedStyle(button);
       // The control itself is not additionally faded on top of daisyUI's own disabled treatment (a
       // second, compounding dim is what read as a rendering gap).
@@ -3852,7 +3854,7 @@ describe('EditPage', () => {
       const control = figureControl()!;
       expect(control.getAttribute('aria-label')).not.toBe('Place the cursor on an image to add a figure');
       expect(control.getAttribute('aria-label')).toBe('Switch to Write to wrap this image in a figure');
-      expect(tooltipText(screen.container, control)).toBe('Switch to Write to wrap this image in a figure');
+      expect(tooltipText(control)).toBe('Switch to Write to wrap this image in a figure');
     });
   });
 });

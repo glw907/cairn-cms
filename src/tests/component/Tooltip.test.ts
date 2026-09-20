@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import { createRawSnippet, tick } from 'svelte';
@@ -189,5 +189,111 @@ describe('Tooltip', () => {
     document.body.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
     await tick();
     expect(isVisible(bubble)).toBe(false);
+  });
+
+  it('stays open while the pointer travels from the trigger into the bubble', async () => {
+    // WCAG 1.4.13's hoverable bullet: the gap between trigger and bubble belongs to the bubble
+    // (its own ::before hit area), so a pointer moving in to read the text never dismisses it.
+    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const button = screen.container.querySelector('button')!;
+    const bubble = bubbleOf(screen.container);
+    // Room above the trigger, which otherwise sits flush against the viewport's top edge where the
+    // bubble flips below it and the pointer path reverses.
+    screen.container.style.marginTop = '120px';
+
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+
+    await userEvent.hover(bubble);
+    expect(isVisible(bubble)).toBe(true);
+  });
+
+  it('hides on Escape with focus elsewhere, without moving focus', async () => {
+    // The Escape listener is on the document, not the wrapper: a hover-shown bubble leaves focus
+    // wherever it already was, so a wrapper-scoped listener never sees the key press.
+    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const button = screen.container.querySelector('button')!;
+    const bubble = bubbleOf(screen.container);
+    const elsewhere = document.createElement('button');
+    elsewhere.type = 'button';
+    elsewhere.textContent = 'Elsewhere';
+    document.body.appendChild(elsewhere);
+    elsewhere.focus();
+
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+
+    await userEvent.keyboard('{Escape}');
+    expect(isVisible(bubble)).toBe(false);
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
+  });
+
+  it('sets no aria-describedby when the bubble text is already the trigger accessible name', async () => {
+    const named = createRawSnippet(() => ({
+      render: () => '<button type="button" aria-label="Insert block"><span aria-hidden="true">+</span></button>',
+    }));
+    const screen = await render(Tooltip, { text: 'Insert block', children: named });
+    const button = screen.container.querySelector('button')!;
+    expect(button.getAttribute('aria-describedby')).toBeNull();
+  });
+
+  it('describes the trigger when the bubble text says more than its accessible name', async () => {
+    const named = createRawSnippet(() => ({
+      render: () => '<button type="button" aria-label="Insert block"><span aria-hidden="true">+</span></button>',
+    }));
+    const screen = await render(Tooltip, { text: 'Insert a component at the cursor', children: named });
+    const button = screen.container.querySelector('button')!;
+    expect(button.getAttribute('aria-describedby')).toBe(bubbleOf(screen.container).id);
+    await expect.element(button).toHaveAccessibleDescription('Insert a component at the cursor');
+  });
+
+  it('hides once the trigger reports its own menu open through aria-expanded', async () => {
+    // EditorToolbar's More-formatting trigger anchors a popover menu of its own; a bubble left
+    // open would hang over that menu. The attribute is watched, so a menu opened by keyboard,
+    // pointer, or a caller's own state change all hide the bubble.
+    const menuTrigger = createRawSnippet(() => ({
+      render: () => '<button type="button" aria-expanded="false">More formatting</button>',
+    }));
+    const screen = await render(Tooltip, { text: 'More formatting options', children: menuTrigger });
+    const button = screen.container.querySelector('button')!;
+    const bubble = bubbleOf(screen.container);
+
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+
+    button.setAttribute('aria-expanded', 'true');
+    await vi.waitUntil(() => !isVisible(bubble));
+    expect(isVisible(bubble)).toBe(false);
+  });
+
+  it('hides when an enabled trigger is activated, and stays for an aria-disabled one', async () => {
+    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const button = screen.container.querySelector('button')!;
+    const bubble = bubbleOf(screen.container);
+
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+    await userEvent.click(button);
+    expect(isVisible(bubble)).toBe(false);
+
+    const guarded = createRawSnippet(() => ({
+      render: () => '<button type="button" aria-disabled="true">Edit block</button>',
+    }));
+    const guardedScreen = await render(Tooltip, {
+      text: 'Place the cursor in a component to edit it',
+      children: guarded,
+    });
+    const guardedButton = guardedScreen.container.querySelector('button')!;
+    const guardedBubble = bubbleOf(guardedScreen.container);
+
+    await userEvent.hover(guardedButton);
+    expect(isVisible(guardedBubble)).toBe(true);
+    // Dispatched rather than driven through userEvent: the driver refuses to click an element it
+    // reads as not enabled, while a real pointer on an aria-disabled control does fire a click,
+    // which is the whole reason the guarded shape uses aria-disabled over the native attribute.
+    guardedButton.click();
+    await tick();
+    expect(isVisible(guardedBubble)).toBe(true);
   });
 });

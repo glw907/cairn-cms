@@ -181,14 +181,37 @@ function isTransitionListProperty(property: string): boolean {
 }
 
 /**
+ * One `transition` value's own comma-separated entries, split at the top level only. A comma
+ * inside parentheses belongs to a function's argument list, never to the transition list: both
+ * `var(--cairn-dur-base, 150ms)` (a custom property with a literal fallback, the discipline every
+ * `admin-toolkit` component follows) and `cubic-bezier(0.2, 0, 1, 0.9)` carry one, and a naive
+ * comma split reads each fragment as another transitioned property.
+ */
+function topLevelEntries(value: string): string[] {
+  const entries: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    else if (ch === ',' && depth === 0) {
+      entries.push(value.slice(start, i));
+      start = i + 1;
+    }
+  }
+  entries.push(value.slice(start));
+  return entries;
+}
+
+/**
  * The transitioned property names a `transition`/`transition-property` value lists, `all` and
  * `none` both cleared: `all` is motion-band's own construct (never re-reported here), and `none`
  * names no property at all, the CSS idiom for disabling every transition on a rule rather than a
  * property named "none".
  */
 function propertyNamesIn(value: string): string[] {
-  const names = value
-    .split(',')
+  const names = topLevelEntries(value)
     .map((part) => part.trim().split(/\s+/)[0])
     .filter((name) => name.length > 0);
   return names.length === 1 && (names[0] === 'all' || names[0] === 'none') ? [] : names;
@@ -209,8 +232,7 @@ interface TransitionEntry {
  * both cleared for the same reason `propertyNamesIn` clears them.
  */
 function transitionEntriesIn(value: string): TransitionEntry[] {
-  const entries = value
-    .split(',')
+  const entries = topLevelEntries(value)
     .map((part) => part.trim().split(/\s+/).filter((word) => word.length > 0))
     .filter((words) => words.length > 0)
     .map((words) => ({ name: words[0], hasAllowDiscrete: words.includes(ALLOW_DISCRETE_KEYWORD) }));

@@ -90,6 +90,16 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `anchor-name` is a comma list and three swept admin triggers anchor a popover menu of their own;
   replacing it would drop those menus to the UA's centered popover fallback. Source:
   `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
+- `Tooltip` sets no `aria-describedby` when its `text` already equals the trigger's accessible name
+  (its `aria-label`, else its trimmed text content), since a screen reader would read the same words
+  as the name and again as the description; the bubble still renders, so a test asserting a reason
+  reads the bubble rather than the description. It also owns all three WCAG 1.4.13 bullets itself:
+  a `document`-level Escape listener (non-capturing, no `preventDefault`, so an enclosing dialog
+  still closes on the same press), a bubble that takes pointer events with a `::before` hit area
+  bridging the gap to the trigger, and no timer. Activating an enabled trigger hides the bubble;
+  a trigger marked `aria-disabled="true"` keeps it. Anchor positioning is a requirement, not an
+  enhancement: under `@supports not (anchor-name: --x)` the bubble is not rendered at all. Source:
+  `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
 
 ## docs/reference/ambient.md
 
@@ -181,6 +191,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   function bodies at lines noted above; outcome unions confirmed present. [verified]
 
 ## docs/reference/cairn-audit.md
+
+- `motion-property` splits a `transition` value's entries at the top level only, so a comma inside
+  `var()` or `cubic-bezier()` reads as a function argument, not as another transitioned property.
+  Source: `src/lib/audit/rules/static/motion-property.ts` (`topLevelEntries`). [verified]
 
 - Exactly 28 rules are registered: 12 static (all error tier) plus 16 rendered (7 error-tier, 9
   advisory-tier). Source: `grep -c "id: '" src/lib/audit/rules/static/*.ts` = 12,

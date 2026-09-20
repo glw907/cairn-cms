@@ -5978,8 +5978,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 ## tooltip-primitive: `Tooltip` in `/admin-toolkit`, replacing native `title` on an action control  (accept, 2026-09-19, extend-1)
 
 - **Verdict:** accept, on ASC's evidence: native `title` on action controls across ten admin
-  route files in a production site's own admin, never shown on keyboard focus or a touch tap,
-  never dismissable (WCAG 1.4.13). `Tooltip` wraps the given trigger unchanged, shows on hover
+  route files in a production site's own admin, never shown on keyboard focus or a touch tap. Those
+  two are the real failures; `title` itself is exempt from WCAG 1.4.13 (Content on Hover or Focus),
+  which excludes user-agent presentation an author does not control. Authoring the bubble is what
+  brings all three of 1.4.13's bullets into scope, and all three are now the component's own:
+  dismissible (a `document`-level Escape listener, non-capturing and propagating, so an enclosing
+  dialog still closes on the same press), hoverable (the bubble takes pointer events and a
+  `::before` hit area bridges the gap to the trigger), and persistent (nothing hides it on a
+  timer). `Tooltip` wraps the given trigger unchanged, shows on hover
   and `:focus-visible`, hides on Escape without moving focus off the trigger, and shows on a
   coarse-pointer tap and hides on the next tap outside; its styles are scoped in the component
   with literal fallbacks, per `StatusChip.svelte`'s own precedent. Every native `title` on an
@@ -5987,6 +5993,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   its four sites; its rule restores `pointer-events` on an `aria-disabled` control and supplies
   the ghost button's resting fill, which `Tooltip` does not replace, so `stock-default-hazards`
   names the class retired at advisory tier rather than removing it.
+- **Why not DaisyUI's own `.tooltip`:** four reasons, each independent. The class is not in the
+  scaffold's compiled theme, so a site would carry it only by editing its own safelist. It is
+  CSS-only: the text lives in a `data-tip` attribute painted through a pseudo-element, so no
+  element exists for `aria-describedby` to point at and no key dismisses it. It is
+  `position: absolute` inside an `inline-block` wrapper, so any `overflow: hidden` ancestor clips
+  it, which the top-layer popover this component uses cannot be. And its own touch defect is
+  already filed: a long press opens the bubble and strands it (row
+  `motion-tooltip-menu-hover-guards-dropped`).
 - **Reopens on:** a later pass removing `cairn-btn-guarded` from the sheet (its own budget edit),
   or the placement mechanism (a popover anchored by CSS anchor positioning, with the trigger's
   own anchor name appended rather than replaced when a trigger already anchors its own popover
@@ -5999,6 +6013,24 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `docs/internal/admin-design-system.md`, the tooltip recipe.
 - **Verified:** `src/tests/component/Tooltip.test.ts` (hover, `:focus-visible`, Escape, coarse
   pointer, `aria-describedby`); `stock-default-hazards`'s own fixture for the new arm.
+
+## status-chip-title-legend: keeping `title={legend}` on `StatusChip`  (accept, 2026-09-20, extend-1)
+
+- **Verdict:** accept, as the one sanctioned native `title` left on an engine component after the
+  `Tooltip` sweep. `StatusChip` is not an action control: the `title` carries the register's own
+  legend, and the chip already pairs it with an `sr-only` legend in its own markup, so assistive
+  technology reads the legend whether or not the `title` ever shows. The residual is a mouse-only
+  sighted user on a touch device, who sees the chip and its visible label but never the legend,
+  which is a smaller loss than wrapping every chip in a popover the chip's own label already
+  explains.
+- **Reopens on:** the chip's `sr-only` legend leaving the markup, which would make the `title` the
+  only path to the legend, or a screen pairing the chip with a reason a reader must act on.
+- **Shape:** `title={legend}` stays on `StatusChip.svelte`'s own root span beside its `sr-only`
+  legend; no `Tooltip` wraps a chip.
+- **Record:** `docs/reference/admin-toolkit.md`, the `StatusChip` section;
+  `src/lib/admin-toolkit/StatusChip.svelte`.
+- **Verified:** `src/tests/component/StatusChip.test.ts` asserts the `sr-only` legend text beside
+  the visible label, which is the assertion this row's reasoning rests on.
 
 ## batch-actions-additive: an optional `selection` prop and `batchBar` snippet on `AdminTable`  (accept, 2026-09-19, extend-1)
 

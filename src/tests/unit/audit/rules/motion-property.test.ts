@@ -325,6 +325,21 @@ describe('motion-property: display and overlay under allow-discrete', () => {
     expect(findings).toEqual([]);
   });
 
+  it('reads a comma inside var() and cubic-bezier() as an argument, never another transitioned property', () => {
+    // The shape every admin-toolkit component authors: a token read with a literal fallback, and a
+    // named curve token whose own fallback is a four-argument cubic-bezier. A naive comma split
+    // reads each fragment as another property and reports both an over-cap count and a list of
+    // nonsense property names.
+    const findings = check([
+      component(
+        '<div class="mover"></div>',
+        '.mover { transition: opacity var(--cairn-dur-base, 150ms) var(--cairn-ease-entrance, cubic-bezier(0, 0, 0.38, 0.9)),' +
+          ' display var(--cairn-dur-base, 150ms) allow-discrete, overlay var(--cairn-dur-base, 150ms) allow-discrete; }'
+      ),
+    ]);
+    expect(findings).toEqual([]);
+  });
+
   it('still errors a display transition with no allow-discrete', () => {
     const findings = check([component('<div class="mover"></div>', '.mover { transition: display 120ms; }')]);
     expect(findings).toHaveLength(1);

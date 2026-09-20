@@ -406,6 +406,30 @@ alongside the component recipes above and below it.
   `Tooltip` treats an empty string as opt-out, never an empty bubble. Every engine screen sweeps its
   own icon-only `title` onto this component; a new one does the same rather than reaching for
   `title` again.
+  - **Name versus description.** When the bubble text is already the trigger's own accessible name
+    (its `aria-label`, or its rendered text when it has no label), `Tooltip` sets no
+    `aria-describedby`: the name carries the words, and a description repeating them has a screen
+    reader read the same sentence twice. When the text says more than the name, as a guard reason
+    on a control labelled with its action does, the description is set. Both branches still render
+    the bubble, which is what a sighted mouse user reads. So a screen's own assertion about a
+    reason reads the bubble, never the description.
+  - **Motion.** Enter on `--cairn-dur-base` and `--cairn-ease-entrance`, exit one band down on
+    `--cairn-dur-quick` and `--cairn-ease-exit`, the Motion section's own enter/exit asymmetry for
+    a surface that leaves and does not stay nearby. A hover-shown bubble additionally carries a
+    75ms `transition-delay`, inside `@media (prefers-reduced-motion: no-preference)`, so a pointer
+    crossing a dense toolbar row does not flash a bubble on every trigger it passes. The delay is a
+    paint delay on the fade, never a delay on the open state, and a reduced-motion reader waits for
+    nothing.
+  - **All three WCAG 1.4.13 bullets are the component's own**, because it authors the bubble
+    rather than leaving it to the user agent's `title` presentation. Dismissible: a
+    `document`-level Escape listener, non-capturing and propagating, so an enclosing dialog still
+    closes on the same press. Hoverable: the bubble takes pointer events and a `::before` hit area
+    bridges the gap between trigger and bubble, so a pointer can travel in and read it. Persistent:
+    nothing hides the bubble on a timer.
+  - **Where the wrapper can sit.** The wrapper is a `<span>` with `display: contents`, so it
+    cannot sit where only `<td>`, `<th>`, or `<li>` are valid children. Wrap the control inside the
+    cell, never the cell itself. A natively `disabled` control receives no pointer events in some
+    browsers, so a reason that must reach a mouse user takes the `aria-disabled` guarded shape.
 - **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
   Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
   and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/

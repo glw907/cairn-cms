@@ -339,9 +339,20 @@
   action control: a native `title` never shows on `:focus-visible` and never shows on a touch
   tap. Wraps the given trigger unchanged (`aria-describedby` on the trigger's own rendered root
   element, a wrapper that renders no box of its own), shows on hover and on `:focus-visible`,
-  hides on Escape without moving focus off the trigger, and shows on a coarse-pointer tap (read
-  from the triggering event's own `pointerType`) and hides on the next tap outside. An empty
-  `text` opts out entirely, for a caller whose reason is conditional. Every native `title` on an
+  hides on Escape without moving focus off the trigger, and shows on a tap from any pointer that
+  reports no hover (read from the triggering event's own `pointerType`) and hides on the next tap
+  outside. An empty `text` opts out entirely, for a caller whose reason is conditional. The bubble
+  is hoverable, as WCAG 1.4.13 requires: it takes pointer events and bridges the gap to its trigger,
+  so a pointer can travel in and read it. Escape is listened for on the `document`, so the key works
+  wherever focus sits, and it neither calls `preventDefault()` nor stops propagation, so an enclosing dialog
+  still closes on the same press. `aria-describedby` is set only when the bubble text says more than
+  the trigger's own accessible name, since a description repeating the name is read twice; the
+  bubble renders either way. Activating an enabled trigger hides the bubble, while a trigger marked
+  `aria-disabled="true"` keeps it. The bubble's fade runs on the motion tokens, entering on
+  `--cairn-dur-base`/`--cairn-ease-entrance` and leaving one band down on
+  `--cairn-dur-quick`/`--cairn-ease-exit`, with a 75ms open delay for a hover-shown bubble inside a
+  `prefers-reduced-motion: no-preference` guard, and its text sits on the `--cairn-type-label`
+  scale. Every native `title` on an
   admin action control across the engine's own components now routes through it. `cairn-audit`'s
   `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces a
   finding naming the class retired, reported at advisory tier until `0.98.0` promotes the finding
@@ -351,7 +362,10 @@
   no production site has. `motion-property`'s allowlist gains a conditional arm for Tooltip's own
   popover exit fade: `display` and `overlay` pass when the same transition entry carries
   `allow-discrete`, the CSS idiom that defers the discrete top-layer flip until the paired paint
-  transition finishes. No consumer action.
+  transition finishes. The same rule now splits a transition list at the top level only, so a comma
+  inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned
+  property; a token read with a literal fallback no longer reports as a list of nonsense properties
+  over the three-property cap. No consumer action.
 
 - `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
   `selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string }` and

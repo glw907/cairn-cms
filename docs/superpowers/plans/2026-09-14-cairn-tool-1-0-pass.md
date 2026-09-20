@@ -1811,11 +1811,12 @@ final SHA's `store` package prints ok on that leg, so the test cannot silently s
 ran, one per touched package (`record`, `store`, `providers`, `spine`, `secrets`, `version`,
 `cmd/cairn`): six came back "sound with nits" and `cmd/cairn` came back "workmanlike," with no
 path found on which a credential reaches argv, a log, an error string, or stdout. Four fold
-tasks followed: `7beb2014` (record renames and a key-set drift guard), `8ea19e9b` and
-`8dd326d9` (the store path checks, spine slices exposed as functions rather than vars, the
-version constant, and the junction proof), and `a7a709de` and `81e4d9fa` (the single
-`secrets.Env`, surfaced `Resolve` errors, one credential table, and a module-wide sweep of
-process citations out of Go comments).
+tasks followed. The first, `7beb2014`, is the record renames and a key-set drift guard. The
+second, `8ea19e9b`, is the store path checks, the spine slices exposed as functions rather than
+vars, and the version constant. The third, `8dd326d9`, is the junction proof of the Windows
+reparse-point rejection, which took three pushes against the Windows CI leg. The fourth,
+`a7a709de` with its review fix `81e4d9fa`, is the single `secrets.Env`, the surfaced `Resolve`
+errors, one credential table, and a module-wide sweep of process citations out of Go comments.
 
 **Known residual from the fold.** The drift guard `7beb2014` added has a known gap: its parse
 side is four hand-maintained mirror slices, so a key added only to `Parse`'s switch still passes
@@ -1823,11 +1824,11 @@ the guard undetected. The single-source rewrite that closes this gap is filed to
 opening task.
 
 **What left the pass, and its destination.** The `providers` package's remaining duplication,
-threading `context.Context` through every `providers` method, `State.Severity()` in `spine`,
-and `record`'s single-source rewrite and three-file split all move to Pass B1's opening task.
-`probe-token`'s private-verdict algebra, `discoverSites` moving into `store`, a typed exit
-error, and a dependencies struct for the command constructors move to Tasks 19 and 21 of the
-re-cut. The decision record for all of this is
+threading `context.Context` through every `providers` method, `State.Severity()` in `spine`
+with the deletion of `probe-token`'s private verdict algebra in its favor, and `record`'s
+single-source rewrite and three-file split all move to Pass B1's opening task.
+`discoverSites` moving into `store`, a typed exit error, and a dependencies struct for the
+command constructors move to Tasks 19 and 21 of the re-cut. The decision record for all of this is
 `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md` on `main`: the re-cut of
 Pass B into B1 and B2 is authored by the B1 session from that brief, pre-approved by Geoff
 within the brief's bounds, and PR #60's merge belongs to B1's close.
@@ -1854,8 +1855,9 @@ within the brief's bounds, and PR #60's merge belongs to B1's close.
 **Both budgets.**
 
 Tokens: about 6.7M subagent tokens against the 8M ceiling (84 percent), the conductor's own
-turns uncounted. Of that: about 4.2M on Tasks 4 to 10 (every task from 4 to 8 and Task 10 took
-one fix round; Task 9 took none); about 0.2M the simplifier; about 0.55M the seven architecture
+turns uncounted. Of that: about 4.2M on Tasks 4 to 10 (Tasks 4 and 5 each took a
+conductor-ruled fix round and then one further reviewer fix inside it; Tasks 6, 8, and 10 took
+one ruled round each; Task 7 took one ordinary reviewer fix; Task 9 took none); about 0.2M the simplifier; about 0.55M the seven architecture
 reads; about 1.4M the fold; and about 0.3M on two research audits (CLI practice; bubbletea v2
 readiness) that are planning for Pass B rather than close work. The 80 percent checkpoint was
 crossed during the close, and the conductor said so and recommended finishing.

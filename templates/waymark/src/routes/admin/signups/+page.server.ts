@@ -13,7 +13,7 @@ import type { PageServerLoad, Actions, RequestEvent } from './$types';
 import { createSectionAction, requireAccess } from '@glw907/cairn-cms/sveltekit';
 import { error, fail } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
-import { log } from '../../../lib/log.js';
+import { log } from '$lib/log.js';
 
 /** A signup row, the developer's own table shape, read from APP_DB. */
 interface SignupRow {

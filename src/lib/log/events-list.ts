@@ -4,8 +4,11 @@
 // form of its own.
 import type { CairnLogEvent } from './events.js';
 
-/** Every CairnLogEvent member. */
-export const CAIRN_LOG_EVENTS = [
+/**
+ * Every CairnLogEvent member. Frozen, since the array is public and a push would corrupt the
+ * vocabulary two gates parse by shape.
+ */
+export const CAIRN_LOG_EVENTS = Object.freeze([
   'auth.link.requested',
   'auth.link.refused',
   'auth.link.send_failed',
@@ -85,11 +88,14 @@ export const CAIRN_LOG_EVENTS = [
   'auth.channel.rate_limited',
   'auth.channel.rate_limit_absent',
   'auth.channel.rate_limit_failed',
-] as const satisfies readonly CairnLogEvent[];
+] as const satisfies readonly CairnLogEvent[]);
 
 // A member on the union with no counterpart in the array fails here: CairnLogEvent would not
 // extend the array's own element type, so npm run check catches a union addition the array
-// missed, and the array's own `satisfies` clause above catches the opposite drift.
+// missed, and the array's own `satisfies` clause above catches the opposite drift. The assertion
+// has to stay written out on the union itself, never routed through a generic helper: a
+// conditional type over a naked type parameter distributes across the union, so each member would
+// be tested on its own, every test would pass, and a missing member would go unnoticed.
 type AssertUnionCoveredByArray = CairnLogEvent extends (typeof CAIRN_LOG_EVENTS)[number] ? true : never;
 const assertUnionCoveredByArray: AssertUnionCoveredByArray = true;
 void assertUnionCoveredByArray;

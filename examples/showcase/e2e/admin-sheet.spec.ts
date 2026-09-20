@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 // build did not have, and (c) the engine's own rendered properties on those admin pages are
 // unchanged from the baseline. (a) is keyed on sheet identity rather than a whole-bundle
 // digest: the site's own Tailwind compile (`@tailwindcss/vite`) scans every route under `src`,
-// so a utility class written on an admin page (`.pt-14`, this spec's proof utility) can land in
+// so a utility class written on an admin page (`.scroll-mt-14`, this spec's proof utility) can land in
 // the public bundle too by the site's own build, which a whole-bundle digest cannot distinguish
 // from the site admin sheet leaking onto a public page. (b) and (c) still compare against the
 // baseline fixture, captured once at this pass's branch point by the post-merge ritual; there is
@@ -57,8 +57,12 @@ interface AdminSheetBaseline {
   computedStyle: Record<string, ComputedStyleSnapshot>;
 }
 
-/** The chosen utility's compiled declaration, present only where the site sheet is loaded. */
-const UTILITY_DECLARATION = /\.pt-14\s*\{[^}]*padding-top/;
+/**
+ * The chosen utility's compiled declaration, present only where the site sheet is loaded. The
+ * utility is deliberately inert: `scroll-margin-top` on a status paragraph nothing scrolls to
+ * changes no rendered pixel, so the proof costs the admin's visual baselines nothing.
+ */
+const UTILITY_DECLARATION = /\.scroll-mt-14\s*\{[^}]*scroll-margin-top/;
 
 function loadFixture(): AdminSheetBaseline {
   return JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')) as AdminSheetBaseline;

@@ -1,11 +1,18 @@
 // cairn-audit's log-secret-field rule: the same `<ident>.info(`, `.warn(`, `.error(` name
-// heuristic log-event-grammar reads, this time over each call's second, fields argument. A
-// property whose key normalizes (lowercased, compared whole, never a substring) to a member of
-// `REDACTED_LOG_KEYS` (`src/lib/log/create.js`) already has its VALUE replaced at runtime, so
-// this rule is not catching an unredacted field: it is catching the case redaction cannot reach,
-// a caller who also writes the same secret's value directly into the message string, where no
-// redaction ever runs. `tokenCount` and `tokens` are not a match, since the comparison is against
-// the whole key, exactly as the runtime's own redaction works.
+// heuristic log-event-grammar reads, this time over each call's second, fields argument. It is a
+// name-awareness advisory and nothing more. A property whose key matches a member of
+// `REDACTED_LOG_KEYS` (`src/lib/log/create.js`) already has its VALUE replaced at runtime, so the
+// finding never means a secret leaked. It means a secret-shaped key reached a log call, which is
+// worth a developer's attention for two reasons the runtime cannot cover: the same value is often
+// written into the message string beside the field, where no redaction runs, and a field named for
+// a secret usually wants a count or a boolean instead of the value at all.
+//
+// Matching mirrors the runtime: the key is lowercased, its `-` and `_` separators are stripped, and
+// the result is compared whole, so `apiKey` and `x-api-key` resolve the same way they do in
+// `create.ts`. `tokenCount` and `tokens` are not a match, since the comparison is against the whole
+// key. Only the fields object's own top-level keys are read: the runtime redacts three levels deep,
+// and matching that here would mean parsing nested object literals out of source text, which is out
+// of scope for a heuristic this advisory.
 import { REDACTED_LOG_KEYS } from '../../../log/create.js';
 import { lineAt } from '../../markup.js';
 import type { Finding, SourceFile, StaticRule } from '../../types.js';
@@ -16,7 +23,15 @@ const PROMOTION_VERSION = '0.98.0';
 
 const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
 
-const REDACTED = new Set(REDACTED_LOG_KEYS.map((key) => key.toLowerCase()));
+/**
+ * The runtime's own comparison form (`src/lib/log/create.ts`, `normalizeKey`), restated here rather
+ * than imported: `create.ts` exports the key list, not the normalizer.
+ */
+function normalizeKey(key: string): string {
+  return key.toLowerCase().replace(/[-_]/g, '');
+}
+
+const REDACTED = new Set(REDACTED_LOG_KEYS.map(normalizeKey));
 
 interface Span {
   start: number;
@@ -154,7 +169,7 @@ function findingsFor(file: SourceFile): Finding[] {
     const { start, end } = trimSpan(file.source, fieldsArg);
     if (file.source[start] !== '{' || file.source[end - 1] !== '}') continue; // not an object literal
     for (const key of objectLiteralKeys(file.source, { start, end })) {
-      if (!REDACTED.has(key.name.toLowerCase())) continue;
+      if (!REDACTED.has(normalizeKey(key.name))) continue;
       findings.push({
         ruleId: 'log-secret-field',
         tier: 'advisory',
@@ -163,10 +178,12 @@ function findingsFor(file: SourceFile): Finding[] {
         start: key.start,
         end: key.end,
         message:
-          `the field "${key.name}" matches cairn's own REDACTED_LOG_KEYS list; the runtime ` +
-          `already replaces its value with <redacted> in the record, and this rule exists for ` +
-          `the case where the same secret value is also written directly into the message ` +
-          `string, which redaction never reaches. Findings here stay advisory until ${PROMOTION_VERSION}`,
+          `the field "${key.name}" matches cairn's own REDACTED_LOG_KEYS list, so the runtime ` +
+          `already replaces its value with <redacted>: nothing leaked here. This is a ` +
+          `name-awareness notice, for the two things redaction cannot do, namely scrub the same ` +
+          `value out of the message string beside the field and turn a secret-shaped field into ` +
+          `the count or boolean it usually wants to be. Findings here stay advisory until ` +
+          `${PROMOTION_VERSION}`,
       });
     }
   }

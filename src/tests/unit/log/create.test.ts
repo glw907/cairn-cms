@@ -74,25 +74,112 @@ describe('createLogger', () => {
   it('leaves tokens, tokenLength, and hasSession untouched, since redaction matches a whole key only', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const logger = createLogger<TestEvent>();
-    logger.info('widget.created', { tokens: ['a'], tokenLength: 3, hasSession: true });
+    logger.info('widget.created', { tokens: 2, tokenLength: 3, hasSession: true });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
-    expect(record.tokens).toEqual(['a']);
+    expect(record.tokens).toBe(2);
     expect(record.tokenLength).toBe(3);
     expect(record.hasSession).toBe(true);
   });
 
-  it('exposes REDACTED_LOG_KEYS as the documented list', () => {
+  it('exposes REDACTED_LOG_KEYS as the documented list, one spelling per name', () => {
     expect(REDACTED_LOG_KEYS).toEqual([
       'token',
       'secret',
       'password',
       'cookie',
+      'set-cookie',
       'authorization',
+      'bearer',
+      'jwt',
       'session_id',
-      'sessionId',
-      'apiKey',
-      'privateKey',
+      'session_token',
+      'access_token',
+      'refresh_token',
+      'auth_token',
+      'api_key',
+      'private_key',
+      'client_secret',
+      'webhook_secret',
     ]);
+  });
+
+  it('matches a key in any separator spelling, since both sides normalize', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', {
+      'x-api-key': 'raw',
+      apiKey: 'raw',
+      'session-id': 'raw',
+      SetCookie: 'raw',
+      accessToken: 'raw',
+    });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.apiKey).toBe('<redacted>');
+    expect(record['session-id']).toBe('<redacted>');
+    expect(record.SetCookie).toBe('<redacted>');
+    expect(record.accessToken).toBe('<redacted>');
+    // `x-api-key` normalizes to `xapikey`, not `apikey`, so a prefixed header name is not a match:
+    // the comparison is against the whole key even after separators are stripped.
+    expect(record['x-api-key']).toBe('raw');
+  });
+
+  it('redacts a secret nested one level down, inside a headers bag', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { headers: { authorization: 'Bearer abc', accept: 'json' } });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.headers).toEqual({ authorization: '<redacted>', accept: 'json' });
+  });
+
+  it('redacts a secret inside an array of objects', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { rows: [{ id: '1', token: 'abc' }] });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.rows).toEqual([{ id: '1', token: '<redacted>' }]);
+  });
+
+  it('leaves a key deeper than the three-level cap as written', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { a: { b: { c: { token: 'abc' } } } });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    // Levels one through three are walked; this token sits at level four, the documented cap.
+    expect(record.a).toEqual({ b: { c: { token: 'abc' } } });
+  });
+
+  it('survives a cycle in the fields, marking the repeat rather than recursing', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    const node: Record<string, unknown> = { name: 'root' };
+    node.self = node;
+    logger.info('widget.created', { node });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.node).toEqual({ name: 'root', self: '<cycle>' });
+  });
+
+  it('keeps an own __proto__ field in the record rather than dropping it', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', JSON.parse('{"__proto__": "posted"}') as Record<string, unknown>);
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(Object.prototype.hasOwnProperty.call(record, '__proto__')).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(record, '__proto__')?.value).toBe('posted');
+  });
+
+  it('unions a site own redactKeys with the defaults rather than replacing them', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>({ redactKeys: ['memberNumber'] });
+    logger.info('widget.created', { memberNumber: '4471', token: 'abc', household: 'Alvarez' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.memberNumber).toBe('<redacted>');
+    expect(record.token).toBe('<redacted>');
+    expect(record.household).toBe('Alvarez');
+  });
+
+  it('freezes both public arrays, so a push throws rather than corrupting the list', () => {
+    expect(() => (REDACTED_LOG_KEYS as string[]).push('extra')).toThrow(TypeError);
+    expect(() => (CAIRN_LOG_EVENTS as unknown as string[]).push('extra')).toThrow(TypeError);
   });
 
   it('lists auth.link.requested in CAIRN_LOG_EVENTS', () => {

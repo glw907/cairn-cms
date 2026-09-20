@@ -28,10 +28,24 @@ describe('log-secret-field', () => {
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('"token"');
     expect(findings[0].message).toContain('already replaces its value with <redacted>');
+    // The message says plainly that nothing leaked: the rule is a name-awareness notice.
+    expect(findings[0].message).toContain('nothing leaked here');
   });
 
   it('passes tokenCount and tokens, neither of which whole-matches a redacted key', () => {
     expect(check(fixture('secret-safe.ts'))).toEqual([]);
+  });
+
+  it('normalizes separators the way the runtime does, so apiKey matches api_key', () => {
+    const source: SourceFile = {
+      file: 'Fixture.ts',
+      source: "log.info('x.y.z', { apiKey: value, 'set-cookie': header, xApiKey: other });",
+    };
+    const findings = check(source);
+    // `xApiKey` normalizes to `xapikey`, not `apikey`, so a prefixed name is not a whole-key match.
+    expect(findings.map((finding) => finding.message)).toHaveLength(2);
+    expect(findings[0].message).toContain('"apiKey"');
+    expect(findings[1].message).toContain('"set-cookie"');
   });
 
   it('ends every message with the promotion version', () => {

@@ -197,6 +197,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   owner-capability rows, so the two cases can't be told apart). Source: `src/lib/auth/store.ts`
   function bodies at lines noted above; outcome unions confirmed present. [verified]
 
+- `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
+  reference `'<cycle>'`, and leaves a key at level four or deeper as written. Both sides of the key
+  comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
+  spells each name once. `createLogger(options?: { redactKeys?: readonly string[] })` unions a site's
+  own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and `CAIRN_LOG_EVENTS` are
+  both frozen. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
+
 ## docs/reference/cairn-audit.md
 
 - `motion-property` splits a `transition` value's entries at the top level only, so a comma inside

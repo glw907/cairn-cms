@@ -13,7 +13,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { memberChannel } from '../../../members/channel.js';
-import { log } from '../../../lib/log.js';
+import { log } from '$lib/log.js';
 
 export const prerender = false;
 

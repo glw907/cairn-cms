@@ -13,6 +13,12 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **`createLogger` (`/log`) takes an optional options bag.** Nothing to change: a
+  `createLogger<MyEvent>()` call is unaffected. `createLogger<MyEvent>({ redactKeys: ['memberNumber']
+  })` adds your own field names to the redaction, unioned with `REDACTED_LOG_KEYS` rather than
+  replacing it. Redaction also recurses three levels into plain objects and arrays now, so a record
+  that nested a secret inside a headers bag or a row array starts reading `<redacted>` where it used
+  to carry the value.
 - **`cairn-manifest` now exits 2 on an unrecognized command-line flag** instead of silently
   ignoring it, and all four engine bins (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`,
   `cairn-manifest`) now answer `--help`. A CI job piping `cairn-manifest`'s output no longer risks

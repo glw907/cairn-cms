@@ -1,6 +1,6 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,7 +10,6 @@ import { fileURLToPath } from 'node:url';
 // no second build in this repo to diff against.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PATH = resolve(__dirname, 'fixtures/admin-sheet-baseline.json');
-const fixtureExists = existsSync(FIXTURE_PATH);
 
 const ADMIN_PAGES = ['/admin/posts', '/admin/media', '/admin/settings'] as const;
 const PUBLIC_PAGES = ['/', '/posts'] as const;
@@ -122,7 +121,6 @@ async function pageComputedStyle(page: Page, path: string): Promise<ComputedStyl
 
 test.describe('the site admin sheet seam', () => {
   test('public pages carry no site admin sheet', async ({ request }) => {
-    test.skip(!fixtureExists, 'the baseline fixture is written by the post-merge ritual');
     const fixture = loadFixture();
     for (const path of PUBLIC_PAGES) {
       const digest = await pageStylesheetDigest(request, path);
@@ -134,7 +132,6 @@ test.describe('the site admin sheet seam', () => {
     test(`${path} carries the compiled site sheet's utility, absent from the baseline`, async ({
       request,
     }) => {
-      test.skip(!fixtureExists, 'the baseline fixture is written by the post-merge ritual');
       const fixture = loadFixture();
       const content = await pageStylesheetContent(request, path);
       expect(content, `${path} stylesheet content`).toMatch(UTILITY_DECLARATION);
@@ -144,7 +141,6 @@ test.describe('the site admin sheet seam', () => {
     });
 
     test(`${path} keeps the engine's own rendered properties unchanged`, async ({ page }) => {
-      test.skip(!fixtureExists, 'the baseline fixture is written by the post-merge ritual');
       const fixture = loadFixture();
       const computed = await pageComputedStyle(page, path);
       expect(computed, `${path} engine-owned computed style`).toEqual(fixture.computedStyle[path]);

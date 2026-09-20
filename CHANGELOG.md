@@ -1674,6 +1674,16 @@
   `references/preflight.md`, the checklist to run before calling extension work done. No
   consumer action.
 
+- A new packaged skill, `cairn-consult`, fires on the same trigger `cairn-extend`'s pre-flight
+  names: a second workaround, or wanting something the documented seams do not reach at all. It
+  writes a consultation brief in the four-field format (what the pass builds, the engine edge it
+  presses, evidence for the any-site case, the site's fallback if declined) under
+  `references/brief-template.md`, tests each item against `references/the-standard.md` (a
+  verbatim copy of the engine's own consultation standard), and files it against the installed
+  package's `bugs.url` when that URL is reachable; when it is not, the skill says so plainly and
+  hands over the brief as the deliverable instead, never claiming a filing that did not happen.
+  No consumer action.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

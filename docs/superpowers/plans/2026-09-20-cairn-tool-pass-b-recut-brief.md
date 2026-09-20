@@ -30,6 +30,35 @@ brief is outside the pre-approval and goes back to Geoff as one combined questio
    Hidden `probe-token` becomes `auth probe`, and `auth unset` is added so a rotated token's
    stale keyring entry can be cleared. `health <site>` and `adopt` keep their shape.
 
+## Who authors the re-cut (Geoff, 2026-09-20 12:04)
+
+"Stop after the ritual and hand the re-cut to B1." Pass A's session closes at its ritual and does
+NOT author the re-cut. The fresh B1 session's FIRST step is plan authorship, in this order:
+
+1. One agent re-cuts `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` from this brief
+   into Pass B1 and Pass B2 (each with its own ceiling, checkpoint interval, segments, and close),
+   and appends the dated addendum to the 2026-08-20 spec. Pre-approved by Geoff, within this
+   brief's bounds (above).
+2. The three-lens plan review (contract-and-criteria, mechanics-and-feasibility, domain-risk) in
+   parallel, then one fold dispatch.
+3. **A factual pre-flight before each segment launches** (the `cairn-pass` skill's execution
+   discipline, added 2026-09-20): one cheap agent lists every checkable claim the segment's tasks
+   make about existing code and checks each at HEAD. Pass A paid a full fix round for five such
+   claims in seven tasks.
+4. Then execute B1.
+
+Two mechanics changed on 2026-09-20 and both apply to B1 and B2:
+
+- **The Go gate takes the light lane.** Every `tool/`-only gate is
+  `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. It has its own lock and a 3G cap,
+  so it no longer queues behind another session's browser gate, which cost Pass A roughly two to
+  three hours. Tasks that also run the Node gate (Task 17) use the default heavy lane for that
+  half. Keep skipping `scripts/checks/gate-tier.mjs` for `tool/`-only diffs until it gains a
+  `tool/**` rule (filed at Pass A's close).
+- **Arm `/loop` at launch.** A network drop left Pass A's conductor unwoken for five hours. Start
+  `/loop` with no interval as soon as the first workflow is running
+  (`~/.claude/docs/unattended-work-guards.md`).
+
 ## Branch topology and the merge (Geoff, 2026-09-20 10:09)
 
 Geoff first authorized merging PR #60, then moved it: "extend-2 will be running for a while. You

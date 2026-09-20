@@ -1,6 +1,6 @@
 ---
 name: cairn-consult
-description: Use when you have worked around a cairn engine behavior twice, or want something the documented seams do not reach at all. Writes a consultation brief instead of a third hand-roll, and either files it against the engine repo or hands you the brief to send yourself.
+description: Write a consultation brief when you have worked around a cairn engine behavior twice, or want something the documented seams do not reach at all. Load instead of a third hand-roll; either files the brief against the engine repo or hands it to you to send yourself.
 ---
 
 # cairn consult
@@ -44,6 +44,6 @@ This skill never claims an issue was filed unless the filing call itself returne
 
 ## After filing (or not)
 
-The engine's own `engine-consult` skill and `engine-triage` agent do the triage on the far side;
-nothing here waits on a verdict. If a verdict comes back and changes what you build, that is a
-normal update to the site's own plan, not a reason to reopen this skill.
+The engine's maintainers weigh the brief against the standard in `references/the-standard.md` on
+the far side; nothing here waits on a verdict. If a verdict comes back and changes what you
+build, that is a normal update to the site's own plan, not a reason to reopen this skill.

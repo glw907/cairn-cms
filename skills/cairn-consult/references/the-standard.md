@@ -1,9 +1,5 @@
 ## The standard
 
-<!-- Quoted verbatim from cairn-cms/docs/superpowers/specs/2026-08-26-engine-consultation-design.md,
-"The standard (codified; extends the 2026-08-26 triage test)". Do not edit here; the spec
-is the source. Section references ("the audit, below", "section 4") are the spec's own. -->
-
 An item reaches the engine only when:
 
 - the site **cannot legally reach or patch the surface** (engine-owned CSS, an unexported

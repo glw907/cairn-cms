@@ -5,10 +5,8 @@ description: Build or change anything in a cairn site that touches /admin, a for
 
 # cairn extend
 
-This skill teaches an agent building on top of a cairn site (never editing the engine itself)
-where to reach for an existing seam instead of hand-rolling one. Load it before writing a custom
-admin screen, a new login channel, a form action with more than two outcomes, or any code that
-imports from `@glw907/cairn-cms`.
+This skill teaches an agent building on top of a cairn site where to reach for an existing seam
+instead of hand-rolling one. It never edits the engine itself.
 
 ## The DaisyUI question
 
@@ -22,9 +20,11 @@ already diverges from stock DaisyUI, and why.
 ## The router
 
 Each row names a pattern, the atom that builds it, the seam it lives behind, a worked example in
-the engine's own `examples/showcase`, and the fact and ruling that back the choice. There is no
-recipe-page column yet: the narrative docs rebuild adds one once `docs/extend/`'s per-pattern
-pages exist to link to.
+the engine's own `examples/showcase`, and the fact and ruling that back the choice. The
+`docs/internal/facts/extend.md`, `docs/internal/engine-rulings.md`, and
+`docs/internal/admin-design-system.md` paths this skill and its references cite live in the
+cairn-cms source repository (https://github.com/glw907/cairn-cms), not in the installed package;
+look them up there.
 
 | Building | Atom | Seam | Exemplar |
 |---|---|---|---|

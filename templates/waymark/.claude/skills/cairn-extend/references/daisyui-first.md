@@ -21,9 +21,8 @@ stays. Ruling: `status-chip-title-legend`.
 DaisyUI adds `pointer-events: none` to `.btn[aria-disabled="true"]`, which kills a tooltip on a
 control that must stay perceivable but refused (Publish with nothing to publish, a disabled
 Figure button). `cairn-btn-guarded` restores `pointer-events` and supplies the ghost button's
-resting fill. The class stays compiled and stays on every existing call site; no ruling slug
-names it on its own, so treat `docs/internal/admin-design-system.md`'s busy-idiom section as the
-record until one does.
+resting fill. The class stays compiled and stays on every existing call site. Ruling:
+`polish-busy-idiom`.
 
 ## Toast
 
@@ -51,8 +50,8 @@ disappear into the row. Ruling: `audit-admin-statuschip`.
 ## Segmented-control contrast
 
 For the join-style pickers (a facet, `Pagination`, the editor's Write/Preview capsule), a
-lightened `.btn-active` fill on the dark theme measures under 1.5:1 against an unselected
-sibling, so cairn pins a hairline ring on top of it. No ruling slug names this one on its own;
+lightened `.btn-active` fill on the dark theme measures 1.14:1 against an unselected sibling, so
+cairn pins a hairline ring on top of it. No ruling slug names this one on its own;
 `docs/internal/admin-design-system.md` carries the measured number.
 
 ## Open opportunity, not yet built

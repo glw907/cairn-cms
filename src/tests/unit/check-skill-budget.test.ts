@@ -127,8 +127,9 @@ describe('distRulesAvailable', () => {
     expect(distRulesAvailable(dir)).toBe(false);
   });
 
-  // The unit suite must pass without a prior `npm run package`, per doctor-bin.test.ts:193-196's
-  // precedent, so this only runs (via skipIf) when a build has already produced the dist file.
+  // The unit suite must pass without a prior `npm run package`, following the same
+  // skip-until-built pattern as doctor-bin.test.ts's "packaged bin" suite, so this only runs
+  // (via skipIf) when a build has already produced the dist file.
   it.skipIf(!distRulesAvailable(ROOT))('is true for the real repo root after npm run package', () => {
     expect(distRulesAvailable(ROOT)).toBe(true);
   });

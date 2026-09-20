@@ -5,8 +5,8 @@
 //
 // Scope is the published docs (`docs/`, minus the historical `docs/superpowers/` plan and spec records)
 // plus the root-level public docs, plus every packaged skill's Markdown (`skills/**/*.md`) and the
-// packaged Claude Code guidance tree (`claude/**/*.md`, shipped by a later task in this pass; scanned
-// when present). Both ship in the tarball, so a dead link inside them is as real as one in `docs/`.
+// packaged Claude Code guidance tree (`claude/**/*.md`, scanned when present). Both ship in the
+// tarball, so a dead link inside them is as real as one in `docs/`.
 // External links (http, mailto, and the like) are not fetched, and a
 // `cairn:` content link is skipped because it is an author's in-post token, not a doc target. Links
 // inside fenced or inline code are ignored, since those are examples, not navigation.
@@ -33,8 +33,7 @@ function walkMarkdown(dir, skip, out) {
   return out;
 }
 
-// A root-relative directory scanned whole when it exists, empty otherwise (`claude/` does not
-// exist until a later task in this pass ships it).
+// A root-relative directory scanned whole when it exists, empty otherwise.
 /**
  * @param {string} root
  * @param {string} dirName

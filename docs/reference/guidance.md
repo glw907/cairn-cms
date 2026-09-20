@@ -102,7 +102,7 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   before touching anything under `/admin`, admin-toolkit components, or `cairn-admin.css`,
   pointing at `cairn-audit`'s mechanical checks rather than restating their formulas.
 - **`cairn-extend`** is the recipe router: given what a developer is building, it opens with
-  whether a DaisyUI component or template already covers it, then names the atom, the seam, the
+  whether a stock DaisyUI component already covers it, then names the atom, the seam, the
   showcase exemplar file, and the fact bullet that records the pattern for each case, and closes
   with a pre-flight checklist reference.
 - **`cairn-consult`** is the site-side half of `engine-consult`: it triggers when a developer has

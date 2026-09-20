@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { actions } from './+page.server.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { actions, load } from './+page.server.js';
 
 const CSRF_TOKEN = 'showcase-csrf-token';
 
@@ -50,6 +50,41 @@ describe('the signups screen actions', () => {
     expect(result).toMatchObject({
       status: 403,
       data: { error: 'You do not have access to this action.' },
+    });
+  });
+});
+
+describe('the signups screen load, a missing APP_DB binding', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('emits admin.signups.misconfigured through the site logger rather than a direct console.error call', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const event = {
+      route: { id: '/admin/signups' },
+      locals: {
+        cairnEditor: {
+          email: 'owner@showcase.test',
+          displayName: 'Owner',
+          role: 'owner',
+          capability: 'owner',
+        },
+        cairnAccess: { '/admin/signups': ['owner'] },
+      },
+      platform: { env: {} },
+    };
+    await expect(load(event as unknown as Parameters<typeof load>[0])).rejects.toThrow();
+
+    // A direct console error call with the event name and its fields as two separate arguments
+    // is what the old code did; createLogger's sink merges everything into one record object, so
+    // a single-argument call proves the route went through the logger instead.
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0]).toHaveLength(1);
+    expect(errorSpy.mock.calls[0][0]).toMatchObject({
+      level: 'error',
+      event: 'admin.signups.misconfigured',
+      reason: 'db_not_bound',
     });
   });
 });

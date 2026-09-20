@@ -1,11 +1,19 @@
+// Archetype: the public form with a domain action.
+// Atoms: memberChannel (createAuthChannel), createLogger.
+// Recipe: docs/extend/add-a-second-audience.md (the docs rewrite writes it).
+//
 // The showcase's member login route, the separate request/confirm/logout routes
 // (docs/extend/add-a-second-audience.md) folded onto one page as two named form actions,
 // since this fixture needs no route beyond it. Both actions pass the raw SvelteKit `RequestEvent`
 // straight to `memberChannel.actions.*`: it satisfies the actions' own `CairnEvent` constraint
-// structurally, and the factory owns every cookie, origin, and challenge check itself.
+// structurally, and the factory owns every cookie, origin, and challenge check itself. The
+// request action consumes the engine's ChannelRequestOutcome and the confirm action its
+// ChannelConfirmOutcome, and each returns a two-outcome ActionData of its own; both switch on
+// outcome, never on a boolean, which is the lesson this route stands for.
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { memberChannel } from '../../../members/channel.js';
+import { log } from '../../../lib/log.js';
 
 export const prerender = false;
 
@@ -29,6 +37,7 @@ export const actions: Actions = {
     const form = await event.request.clone().formData();
     const contact = String(form.get('contact') ?? '');
     const result = await memberChannel.actions.request(event);
+    log.info('members.login.requested', { outcome: result.outcome });
     if (result.outcome !== 'sent') {
       return fail(400, { contact, requestError: result.outcome });
     }

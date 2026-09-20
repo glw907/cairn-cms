@@ -361,6 +361,14 @@
   `selection.onchange`. `emptyColspan` counts the reserved selection column itself while
   `selection` is set. No consumer action.
 
+- The showcase's two exemplar routes, the custom admin screen (`admin/signups`) and the public
+  form with a domain action (`members/login`), rewrite their diagnostic output onto `createLogger`
+  through one site-owned logger (`examples/showcase/src/lib/log.ts`). The signups load emits
+  `admin.signups.misconfigured` with `reason: 'db_not_bound'` in place of a bare `console.error`
+  call, and the login request action emits `members.login.requested` with `{ outcome }` from the
+  engine's own `ChannelRequestOutcome`, never the posted contact. Each route's header names its
+  archetype, the atoms it composes, and the recipe page it illustrates. No consumer action.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

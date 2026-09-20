@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"testing"
@@ -24,7 +25,7 @@ const packument = `{
 func TestLatestReadsDistTag(t *testing.T) {
 	n := NewNPM(fixtureRoundTripper{status: http.StatusOK, body: []byte(packument)})
 
-	latest, err := n.Latest("@glw907/cairn-cms")
+	latest, err := n.Latest(context.Background(), "@glw907/cairn-cms")
 	if err != nil {
 		t.Fatalf("Latest: %v", err)
 	}
@@ -39,7 +40,7 @@ func TestLatestReadsDistTag(t *testing.T) {
 func TestVersionsPreservesPublishOrder(t *testing.T) {
 	n := NewNPM(fixtureRoundTripper{status: http.StatusOK, body: []byte(packument)})
 
-	versions, err := n.Versions("@glw907/cairn-cms")
+	versions, err := n.Versions(context.Background(), "@glw907/cairn-cms")
 	if err != nil {
 		t.Fatalf("Versions: %v", err)
 	}
@@ -57,7 +58,7 @@ func TestVersionsPreservesPublishOrder(t *testing.T) {
 func TestNPMErrorOnNotFound(t *testing.T) {
 	n := NewNPM(fixtureRoundTripper{status: http.StatusNotFound, body: []byte(`{"error":"Not found"}`)})
 
-	_, err := n.Latest("@glw907/does-not-exist")
+	_, err := n.Latest(context.Background(), "@glw907/does-not-exist")
 	var npmErr *NPMError
 	if !errors.As(err, &npmErr) {
 		t.Fatalf("err = %v (%T), want *NPMError", err, err)
@@ -75,7 +76,7 @@ func TestNewNPMSendsNoAuthorizationHeader(t *testing.T) {
 	})
 	n := NewNPM(rt)
 
-	if _, err := n.Latest("@glw907/cairn-cms"); err != nil {
+	if _, err := n.Latest(context.Background(), "@glw907/cairn-cms"); err != nil {
 		t.Fatalf("Latest: %v", err)
 	}
 	if gotAuth != "" {

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 )
 
@@ -27,14 +26,15 @@ type NPM struct {
 
 // NewNPM returns an NPM client sending every request through rt.
 func NewNPM(rt http.RoundTripper) *NPM {
-	c := newClient(npmHost, Credential{})
-	c.httpClient.Transport = rt
-	return &NPM{client: c}
+	return &NPM{client: newClient(npmHost, Credential{}, rt)}
 }
 
-// NPMError reports a registry call that did not return 2xx.
+// NPMError reports a registry call that did not return 2xx. Reason classifies it the same way
+// classifyReason and reasonForStatus classify the other two providers' failures, rather than
+// carrying a bare status.
 type NPMError struct {
 	Status int
+	Reason Reason
 }
 
 // Error implements the error interface.
@@ -42,48 +42,38 @@ func (e *NPMError) Error() string {
 	return fmt.Sprintf("npm: unexpected status %d", e.Status)
 }
 
-// get performs a GET against path (resolved against npmBase) and returns the raw status and
-// body, with no classification, the same shape github.go's get uses so the shared
-// transport-policy test (probe_test.go) can drive both through one table.
-func (n *NPM) get(path string) (int, []byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, npmBase+path, nil)
-	if err != nil {
-		return 0, nil, fmt.Errorf("providers: build request for %s: %w", path, err)
+// npmHeader is the Accept and User-Agent pair every npm request in this file sends.
+func npmHeader() http.Header {
+	return http.Header{
+		"Accept":     {"application/json"},
+		"User-Agent": {userAgent()},
 	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", userAgent())
+}
 
-	resp, err := n.client.Do(req)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, nil, fmt.Errorf("providers: read response body: %w", err)
-	}
-	return resp.StatusCode, data, nil
+// get performs a GET against path (resolved against npmBase) through the one raw GET helper
+// transport.go shares with github.go, and returns the raw status, response headers, and body,
+// with no classification, the same shape github.go's get uses so the shared transport-policy
+// test (probe_test.go) can drive both through one table.
+func (n *NPM) get(ctx context.Context, path string) (int, http.Header, []byte, error) {
+	return n.client.rawGet(ctx, npmBase+path, npmHeader())
 }
 
 // packument fetches name's packument (the registry's per-package metadata document) and returns
 // it with distTags and versions still opaque: Latest and Versions each pick the field they need.
-func (n *NPM) packument(name string) ([]byte, error) {
-	status, data, err := n.get("/" + name)
+func (n *NPM) packument(ctx context.Context, name string) ([]byte, error) {
+	status, header, data, err := n.get(ctx, "/"+name)
 	if err != nil {
 		return nil, err
 	}
 	if status < 200 || status >= 300 {
-		return nil, &NPMError{Status: status}
+		return nil, &NPMError{Status: status, Reason: reasonForStatus(status, header)}
 	}
 	return data, nil
 }
 
 // Latest returns the version name's "latest" dist-tag points at.
-func (n *NPM) Latest(name string) (string, error) {
-	data, err := n.packument(name)
+func (n *NPM) Latest(ctx context.Context, name string) (string, error) {
+	data, err := n.packument(ctx, name)
 	if err != nil {
 		return "", err
 	}
@@ -103,8 +93,8 @@ func (n *NPM) Latest(name string) (string, error) {
 // map-typed decode would lose it (Go randomizes map iteration), so this walks the JSON token
 // stream directly rather than unmarshaling into a map. 2.0's engine detail view reads this order
 // to list which versions a site skipped; 1.0's Engine check needs only Latest.
-func (n *NPM) Versions(name string) ([]string, error) {
-	data, err := n.packument(name)
+func (n *NPM) Versions(ctx context.Context, name string) ([]string, error) {
+	data, err := n.packument(ctx, name)
 	if err != nil {
 		return nil, err
 	}

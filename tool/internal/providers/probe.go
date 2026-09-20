@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"time"
 )
 
 // Resolver is the DNS lookup surface Probe depends on, satisfied by *net.Resolver in production
@@ -30,8 +29,11 @@ type Probe struct {
 }
 
 // NewProbe returns a Probe sending every HTTP request through rt and every DNS lookup through
-// resolver.
+// resolver. A nil resolver defaults to net.DefaultResolver.
 func NewProbe(rt http.RoundTripper, resolver Resolver) *Probe {
+	if resolver == nil {
+		resolver = net.DefaultResolver
+	}
 	return &Probe{
 		resolver:  resolver,
 		following: &http.Client{Timeout: requestTimeout, Transport: rt},
@@ -47,31 +49,31 @@ func NewProbe(rt http.RoundTripper, resolver Resolver) *Probe {
 
 // Get performs a GET against rawURL, following redirects, the behavior a check wants when it
 // only cares about the page a domain finally serves.
-func (p *Probe) Get(rawURL string) (*http.Response, error) {
-	return p.do(p.following, rawURL)
+func (p *Probe) Get(ctx context.Context, rawURL string) (*http.Response, error) {
+	return p.do(ctx, p.following, rawURL)
 }
 
 // GetNoFollow performs a GET against rawURL and returns a redirect response unfollowed, the
 // behavior the hostname and delegation checks want when the redirect itself, and its Location,
 // is the thing under test.
-func (p *Probe) GetNoFollow(rawURL string) (*http.Response, error) {
-	return p.do(p.noFollow, rawURL)
+func (p *Probe) GetNoFollow(ctx context.Context, rawURL string) (*http.Response, error) {
+	return p.do(ctx, p.noFollow, rawURL)
 }
 
 // do sends a GET through hc, applying the same timeout and single-retry-on-rate-limit policy
-// transport.go's client.Do applies for every other provider. It cannot share that type: Get and
-// GetNoFollow need two different redirect policies on the same Probe, while every other client
-// in this package refuses every redirect unconditionally.
-func (p *Probe) do(hc *http.Client, rawURL string) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+// transport.go's doWithRetry applies for every other provider. It cannot share client.Do: Get
+// and GetNoFollow need two different redirect policies on the same Probe, while every other
+// client in this package refuses every redirect unconditionally.
+func (p *Probe) do(ctx context.Context, hc *http.Client, rawURL string) (*http.Response, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("providers: build request for %s: %w", rawURL, err)
 	}
 	req.Header.Set("User-Agent", userAgent())
 
-	resp, err := doRetrying(hc, req)
+	resp, err := doWithRetry(hc, req)
 	if err != nil {
 		return nil, err
 	}
@@ -84,53 +86,23 @@ func (p *Probe) do(hc *http.Client, rawURL string) (*http.Response, error) {
 	return resp, nil
 }
 
-// doRetrying sends req via hc and, for a GET that comes back 429 or 503, waits out Retry-After
-// (or defaultRetryAfter) and retries exactly once, mirroring transport.go's client.Do. It
-// duplicates that method's retry half rather than calling it, since client.Do also pins a host
-// and applies a Credential, neither of which Probe has.
-func doRetrying(hc *http.Client, req *http.Request) (*http.Response, error) {
-	resp, err := hc.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if req.Method != http.MethodGet || !isRetryableStatus(resp.StatusCode) {
-		return resp, nil
-	}
-
-	wait := parseRetryAfter(resp.Header.Get("Retry-After"))
-	if deadline, ok := req.Context().Deadline(); ok && wait > time.Until(deadline) {
-		return resp, nil
-	}
-
-	_ = resp.Body.Close()
-	timer := time.NewTimer(wait)
-	defer timer.Stop()
-	select {
-	case <-req.Context().Done():
-		return nil, req.Context().Err()
-	case <-timer.C:
-	}
-
-	return hc.Do(req.Clone(req.Context()))
-}
-
 // LookupTXT resolves name's TXT records, bounded by the package's shared request timeout.
-func (p *Probe) LookupTXT(name string) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+func (p *Probe) LookupTXT(ctx context.Context, name string) ([]string, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
-	return p.resolver.LookupTXT(ctx, name)
+	return p.resolver.LookupTXT(reqCtx, name)
 }
 
 // LookupNS resolves name's NS records, bounded by the package's shared request timeout.
-func (p *Probe) LookupNS(name string) ([]*net.NS, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+func (p *Probe) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
-	return p.resolver.LookupNS(ctx, name)
+	return p.resolver.LookupNS(reqCtx, name)
 }
 
 // LookupA resolves name's IPv4 addresses, bounded by the package's shared request timeout.
-func (p *Probe) LookupA(name string) ([]net.IP, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+func (p *Probe) LookupA(ctx context.Context, name string) ([]net.IP, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
-	return p.resolver.LookupIP(ctx, "ip4", name)
+	return p.resolver.LookupIP(reqCtx, "ip4", name)
 }

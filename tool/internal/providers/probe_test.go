@@ -33,7 +33,7 @@ func TestProbeSendsNoAuthorizationHeader(t *testing.T) {
 	defer srv.Close()
 
 	p := NewProbe(http.DefaultTransport, &fakeResolver{})
-	resp, err := p.Get(srv.URL)
+	resp, err := p.Get(context.Background(), srv.URL)
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestGetFollowsRedirectChain(t *testing.T) {
 	defer redirecting.Close()
 
 	p := NewProbe(http.DefaultTransport, &fakeResolver{})
-	resp, err := p.Get(redirecting.URL)
+	resp, err := p.Get(context.Background(), redirecting.URL)
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestGetNoFollowReturnsRedirectUnfollowed(t *testing.T) {
 	defer redirecting.Close()
 
 	p := NewProbe(http.DefaultTransport, &fakeResolver{})
-	resp, err := p.GetNoFollow(redirecting.URL)
+	resp, err := p.GetNoFollow(context.Background(), redirecting.URL)
 	if err != nil {
 		t.Fatalf("GetNoFollow: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestProbeLookupTXT(t *testing.T) {
 	r := &fakeResolver{txt: []string{"v=spf1 -all"}}
 	p := NewProbe(http.DefaultTransport, r)
 
-	got, err := p.LookupTXT("example.com")
+	got, err := p.LookupTXT(context.Background(), "example.com")
 	if err != nil {
 		t.Fatalf("LookupTXT: %v", err)
 	}
@@ -154,7 +154,7 @@ func TestProbeLookupNS(t *testing.T) {
 	r := &fakeResolver{ns: want}
 	p := NewProbe(http.DefaultTransport, r)
 
-	got, err := p.LookupNS("example.com")
+	got, err := p.LookupNS(context.Background(), "example.com")
 	if err != nil {
 		t.Fatalf("LookupNS: %v", err)
 	}
@@ -168,12 +168,21 @@ func TestProbeLookupA(t *testing.T) {
 	r := &fakeResolver{ips: []net.IP{want}}
 	p := NewProbe(http.DefaultTransport, r)
 
-	got, err := p.LookupA("example.com")
+	got, err := p.LookupA(context.Background(), "example.com")
 	if err != nil {
 		t.Fatalf("LookupA: %v", err)
 	}
 	if len(got) != 1 || !got[0].Equal(want) {
 		t.Errorf("LookupA = %v, want [%v]", got, want)
+	}
+}
+
+// TestNewProbeNilResolverDefaultsToNetDefaultResolver asserts a nil Resolver means
+// net.DefaultResolver rather than a nil-pointer panic on first lookup.
+func TestNewProbeNilResolverDefaultsToNetDefaultResolver(t *testing.T) {
+	p := NewProbe(http.DefaultTransport, nil)
+	if p.resolver != net.DefaultResolver {
+		t.Errorf("resolver = %v, want net.DefaultResolver for a nil Resolver", p.resolver)
 	}
 }
 
@@ -194,9 +203,9 @@ func (rt rewriteHostTransport) RoundTrip(req *http.Request) (*http.Response, err
 }
 
 // TestSharedTimeoutPolicy is the "one shared table test" the task names for the timeout half: it
-// drives GitHub's and NPM's shared *client type, and Probe's own doRetrying, through a handler
+// drives GitHub's and NPM's shared *client type, and Probe's own doWithRetry, through a handler
 // that outlives a short caller-supplied deadline, and asserts every one returns rather than
-// hanging. It calls the unexported client.Do and doRetrying directly with a request built on a
+// hanging. It calls the unexported client.Do and doWithRetry directly with a request built on a
 // short local context, the same way transport_test.go's own TestDoReturnsOnContextDeadline
 // proves this for Cloudflare's client, since routing through the exported GitHub and Probe
 // methods would mean waiting out the real 15-second requestTimeout those methods hardcode.
@@ -244,7 +253,7 @@ func TestSharedTimeoutPolicy(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			resp, err := doRetrying(&http.Client{Transport: http.DefaultTransport}, req)
+			resp, err := doWithRetry(&http.Client{Transport: http.DefaultTransport}, req)
 			if resp != nil {
 				_ = resp.Body.Close()
 			}
@@ -307,7 +316,7 @@ func TestSharedRetryPolicy(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			resp, err := doRetrying(&http.Client{Transport: http.DefaultTransport}, req)
+			resp, err := doWithRetry(&http.Client{Transport: http.DefaultTransport}, req)
 			if resp != nil {
 				_ = resp.Body.Close()
 			}

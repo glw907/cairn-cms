@@ -16,9 +16,19 @@ import (
 // TestNewClientSetsExplicitTimeout guards against silently reverting to the Node client's
 // no-timeout behavior: newClient must always set a positive http.Client.Timeout.
 func TestNewClientSetsExplicitTimeout(t *testing.T) {
-	c := newClient("example.com", Credential{})
+	c := newClient("example.com", Credential{}, http.DefaultTransport)
 	if c.httpClient.Timeout <= 0 {
 		t.Fatalf("newClient: httpClient.Timeout = %v, want a positive explicit timeout", c.httpClient.Timeout)
+	}
+}
+
+// TestNewClientNilRoundTripperDefaultsToDefaultTransport asserts a nil RoundTripper still means
+// http.DefaultTransport, the same default http.Client itself applies to a nil Transport, rather
+// than a client that can never dial.
+func TestNewClientNilRoundTripperDefaultsToDefaultTransport(t *testing.T) {
+	c := newClient("example.com", Credential{}, nil)
+	if c.httpClient.Transport != http.DefaultTransport {
+		t.Errorf("httpClient.Transport = %v, want http.DefaultTransport for a nil RoundTripper", c.httpClient.Transport)
 	}
 }
 
@@ -36,8 +46,7 @@ func TestDoReturnsOnContextDeadline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := newClient(u.Host, Credential{})
-	c.httpClient.Transport = http.DefaultTransport
+	c := newClient(u.Host, Credential{}, http.DefaultTransport)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
@@ -81,8 +90,7 @@ func TestDoDoesNotFollowRedirects(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := newClient(u.Host, Credential{})
-	c.httpClient.Transport = http.DefaultTransport
+	c := newClient(u.Host, Credential{}, http.DefaultTransport)
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, first.URL, nil)
 	if err != nil {
@@ -106,7 +114,7 @@ func TestDoDoesNotFollowRedirects(t *testing.T) {
 // pinned to is refused before any dial, so no code path can accidentally point a Cloudflare
 // client at an attacker-controlled host.
 func TestDoRefusesMismatchedHost(t *testing.T) {
-	c := newClient("api.cloudflare.com", Credential{})
+	c := newClient("api.cloudflare.com", Credential{}, http.DefaultTransport)
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://evil.api.cloudflare.com/foo", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -152,8 +160,7 @@ func TestDoRetriesRateLimitedGET(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			c := newClient(u.Host, Credential{})
-			c.httpClient.Transport = http.DefaultTransport
+			c := newClient(u.Host, Credential{}, http.DefaultTransport)
 
 			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL, nil)
 			if err != nil {
@@ -190,8 +197,7 @@ func TestDoDoesNotRetryNonGET(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := newClient(u.Host, Credential{})
-	c.httpClient.Transport = http.DefaultTransport
+	c := newClient(u.Host, Credential{}, http.DefaultTransport)
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL, nil)
 	if err != nil {
@@ -225,8 +231,7 @@ func TestDoDoesNotWaitPastRequestBudget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := newClient(u.Host, Credential{})
-	c.httpClient.Transport = http.DefaultTransport
+	c := newClient(u.Host, Credential{}, http.DefaultTransport)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()

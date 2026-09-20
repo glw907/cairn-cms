@@ -1,7 +1,9 @@
 package providers
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,15 +29,19 @@ type client struct {
 	httpClient *http.Client
 }
 
-// newClient returns a client pinned to host, applying cred to every outgoing request. A caller
-// sets httpClient.Transport afterward to inject a test seam; a nil Transport already defaults to
-// http.DefaultTransport.
-func newClient(host string, cred Credential) *client {
+// newClient returns a client pinned to host, applying cred to every outgoing request and sending
+// every request through rt. A nil rt defaults to http.DefaultTransport, the same default
+// http.Client itself applies.
+func newClient(host string, cred Credential, rt http.RoundTripper) *client {
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
 	return &client{
 		host: host,
 		cred: cred,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout:   requestTimeout,
+			Transport: rt,
 			CheckRedirect: func(*http.Request, []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
@@ -44,24 +50,60 @@ func newClient(host string, cred Credential) *client {
 }
 
 // Do refuses req before dialing when its URL host does not match the client's pinned host,
-// applies the client's credential, and sends it. A GET that comes back 429 or 503 is retried
-// exactly once, after waiting out Retry-After (or defaultRetryAfter when the header is absent or
-// unparseable); a second such response is returned to the caller unretried. Every other method,
-// and a second 429 or 503, is returned as-is. A redirect response is likewise returned unfollowed,
-// per the CheckRedirect set in newClient.
-//
-// When the advised wait is longer than req's own remaining context deadline, Do does not sleep
-// at all: the wait would only spend the request's whole remaining budget waiting, then fail on
-// the deadline anyway, indistinguishable from a hang to a caller watching the clock. The
-// rate-limited response is returned unretried instead, the same shape as a second 429 or 503, so
-// the caller's own classification (ReasonRateLimited) still applies with no wasted wait.
+// applies the client's credential, and sends it through doWithRetry. A redirect response is
+// returned unfollowed, per the CheckRedirect set in newClient.
 func (c *client) Do(req *http.Request) (*http.Response, error) {
 	if req.URL.Host != c.host {
 		return nil, fmt.Errorf("providers: refusing request to host %q, client is pinned to %q", req.URL.Host, c.host)
 	}
 	c.cred.apply(req)
+	return doWithRetry(c.httpClient, req)
+}
 
-	resp, err := c.httpClient.Do(req)
+// rawGet performs a GET against url through c, setting header on the request, and returns the
+// raw status, response headers, and body with no classification: a caller like GitHub.getJSON or
+// NPM's packument turns a non-2xx status into its own typed error, and TokenExpiry reads a
+// header straight off the response rather than building a second request just to read one.
+func (c *client) rawGet(ctx context.Context, url string, header http.Header) (status int, respHeader http.Header, body []byte, err error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, url, nil)
+	if err != nil {
+		return 0, nil, nil, fmt.Errorf("providers: build request for %s: %w", url, err)
+	}
+	for k, vs := range header {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return 0, nil, nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, nil, nil, fmt.Errorf("providers: read response body: %w", err)
+	}
+	return resp.StatusCode, resp.Header, data, nil
+}
+
+// doWithRetry sends req via hc and, for a GET that comes back 429 or 503, waits out Retry-After
+// (or defaultRetryAfter when the header is absent or unparseable) and retries exactly once; a
+// second such response is returned to the caller unretried. Every other method, and a second 429
+// or 503, is returned as-is. It is the one retry implementation every client in this package
+// shares: client.Do calls it after pinning the host and applying a credential, and Probe.do calls
+// it directly, since Probe carries neither.
+//
+// When the advised wait is longer than req's own remaining context deadline, doWithRetry does not
+// sleep at all: the wait would only spend the request's whole remaining budget waiting, then fail
+// on the deadline anyway, indistinguishable from a hang to a caller watching the clock. The
+// rate-limited response is returned unretried instead, the same shape as a second 429 or 503, so
+// the caller's own classification (ReasonRateLimited) still applies with no wasted wait.
+func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
+	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +125,11 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	case <-timer.C:
 	}
 
-	retryReq := req.Clone(req.Context())
-	c.cred.apply(retryReq)
-	return c.httpClient.Do(retryReq)
+	return hc.Do(req.Clone(req.Context()))
 }
 
-// isRetryableStatus reports whether status is one of the two rate-limit shapes Do retries once.
+// isRetryableStatus reports whether status is one of the two rate-limit shapes doWithRetry
+// retries once.
 func isRetryableStatus(status int) bool {
 	return status == http.StatusTooManyRequests || status == http.StatusServiceUnavailable
 }

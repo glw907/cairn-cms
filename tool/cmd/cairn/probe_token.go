@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -276,6 +277,10 @@ func discoverSites(dir string) ([]registrySite, error) {
 // runProbeToken is buildProbeTokenCmd's RunE body, split out so it reads as plain sequential
 // steps rather than a closure body.
 func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) error {
+	ctx := cmd.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 	_, _ = fmt.Fprintln(errOut, "probe-token: output is identifiers only; it is implicitly verbose")
@@ -294,14 +299,14 @@ func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Prov
 		_, _ = fmt.Fprintln(out, "Cloudflare: skipped, a credential is missing")
 		raise(exitUnknown)
 	} else {
-		raise(probeCloudflare(out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
+		raise(probeCloudflare(ctx, out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
 	}
 
 	if isMissing(missing, "CAIRN_GH_READ_TOKEN") {
 		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
 		raise(exitUnknown)
 	} else {
-		raise(probeRegistryGitHub(out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, registryDir))
+		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, registryDir))
 	}
 
 	exit(worst)
@@ -311,7 +316,7 @@ func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Prov
 // probeRegistryGitHub discovers the registry's sites and hands them to probeGitHub, reporting
 // exitUnknown when the registry cannot be located or read at all: the credential is unjudged
 // either way, so the run reports that it could not observe rather than that the token is wrong.
-func probeRegistryGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, registryDir func() (string, error)) int {
+func probeRegistryGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, registryDir func() (string, error)) int {
 	dir, err := registryDir()
 	if err != nil {
 		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
@@ -322,7 +327,7 @@ func probeRegistryGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recor
 		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
 		return exitUnknown
 	}
-	return probeGitHub(out, errOut, gh, rec, sites)
+	return probeGitHub(ctx, out, errOut, gh, rec, sites)
 }
 
 // isMissing reports whether missing names the variable name.
@@ -343,7 +348,7 @@ func printCredentialSources(out io.Writer, e env) {
 // per-site zone or worker to target, and returns the worst exit level among them. Zone-scoped
 // endpoints (settings, DNS, Email Sending) need a zone id no registry record carries before the
 // adopt command exists; tool/docs/credentials.md records those as verified separately.
-func probeCloudflare(out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) int {
+func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) int {
 	_, _ = fmt.Fprintln(out, "Cloudflare:")
 	worst := exitOK
 
@@ -354,20 +359,20 @@ func probeCloudflare(out io.Writer, cf *providers.Cloudflare, accountID string, 
 	}
 
 	run("user/tokens/verify", http.MethodGet, "/client/v4/user/tokens/verify", func() error {
-		_, err := cf.VerifyToken()
+		_, err := cf.VerifyToken(ctx)
 		return err
 	})
 	run("accounts/{id}/workers/scripts", http.MethodGet, "/client/v4/accounts/"+accountID+"/workers/scripts", func() error {
-		_, err := cf.ListWorkers()
+		_, err := cf.ListWorkers(ctx)
 		return err
 	})
 	run("accounts/{id}/workers/domains", http.MethodGet, "/client/v4/accounts/"+accountID+"/workers/domains", func() error {
-		_, err := cf.WorkerDomains()
+		_, err := cf.WorkerDomains(ctx)
 		return err
 	})
 	run("accounts/{id}/workers/observability/telemetry/query", http.MethodPost, "/client/v4/accounts/"+accountID+"/workers/observability/telemetry/query", func() error {
 		now := time.Now()
-		_, err := cf.ObservabilityQuery(map[string]any{
+		_, err := cf.ObservabilityQuery(ctx, map[string]any{
 			"queryId": "cairn-probe-token",
 			"timeframe": map[string]any{
 				"from": now.Add(-time.Hour).UnixMilli(),
@@ -390,7 +395,7 @@ func probeCloudflare(out io.Writer, cf *providers.Cloudflare, accountID string, 
 // public or private. It warns on errOut when every probed repository is public, since a public
 // repository proves nothing about a fine-grained token's own permissions. It returns the worst
 // exit level among every check.
-func probeGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) int {
+func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) int {
 	_, _ = fmt.Fprintln(out, "GitHub:")
 	worst := exitOK
 	raise := func(level int) {
@@ -415,22 +420,22 @@ func probeGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoun
 	}
 
 	probeRepo := func(owner, repo string) repoLine {
-		private, ownErr := gh.RepoOwnership(owner, repo)
+		private, ownErr := gh.RepoOwnership(ctx, owner, repo)
 		v := report("repos", owner, repo, fmt.Sprintf("/repos/%s/%s", owner, repo), ownErr)
 		return repoLine{label: owner + "/" + repo, v: v, private: private, known: ownErr == nil}
 	}
 
 	for _, s := range sites {
-		_, shaErr := gh.HeadSHA(s.owner, s.repo, "main")
+		_, shaErr := gh.HeadSHA(ctx, s.owner, s.repo, "main")
 		report("commits/main", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/commits/main", s.owner, s.repo), shaErr)
 
-		_, contentErr := gh.FileAtRef(s.owner, s.repo, "package.json", "main")
+		_, contentErr := gh.FileAtRef(ctx, s.owner, s.repo, "package.json", "main")
 		report("contents/package.json", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/contents/package.json", s.owner, s.repo), contentErr)
 
 		repos = append(repos, probeRepo(s.owner, s.repo))
 	}
 
-	_, engineErr := gh.FileAtRef(engineOwner, engineRepo, "CHANGELOG.md", "main")
+	_, engineErr := gh.FileAtRef(ctx, engineOwner, engineRepo, "CHANGELOG.md", "main")
 	report("contents/CHANGELOG.md", engineOwner, engineRepo, fmt.Sprintf("/repos/%s/%s/contents/CHANGELOG.md", engineOwner, engineRepo), engineErr)
 
 	repos = append(repos, probeRepo(engineOwner, engineRepo))

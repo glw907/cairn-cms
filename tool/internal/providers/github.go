@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -45,9 +44,7 @@ type GitHub struct {
 // rt. A zero Credential sends no Authorization header, which is how the probe verifies an
 // anonymous rate limit before a real token is minted.
 func NewGitHub(cred Credential, rt http.RoundTripper) *GitHub {
-	c := newClient(githubHost, cred)
-	c.httpClient.Transport = rt
-	return &GitHub{client: c}
+	return &GitHub{client: newClient(githubHost, cred, rt)}
 }
 
 // GitHubError reports a GitHub REST call that did not return 2xx. Reason is what a health check
@@ -63,55 +60,33 @@ func (e *GitHubError) Error() string {
 	return fmt.Sprintf("github: %s (status %d)", e.Reason, e.Status)
 }
 
-// classifyGitHubReason maps a GitHub REST status to a Reason, reusing the enum errors.go already
-// declares for Cloudflare: 401, 403, and 404 mean the same thing on both APIs, and GitHub has no
-// code-specific overrides the way Cloudflare's v4 envelope does.
-func classifyGitHubReason(status int) Reason {
-	switch status {
-	case http.StatusUnauthorized:
-		return ReasonUnauthorized
-	case http.StatusForbidden:
-		return ReasonForbidden
-	case http.StatusNotFound:
-		return ReasonNotFound
-	case http.StatusTooManyRequests, http.StatusServiceUnavailable:
-		return ReasonRateLimited
-	default:
-		return ReasonUnknown
+// ClassifiedReason implements ProviderError.
+func (e *GitHubError) ClassifiedReason() Reason { return e.Reason }
+
+// HTTPStatus implements ProviderError.
+func (e *GitHubError) HTTPStatus() int { return e.Status }
+
+// githubHeader is the Accept and User-Agent pair every GitHub request in this file sends.
+func githubHeader() http.Header {
+	return http.Header{
+		"Accept":     {"application/vnd.github+json"},
+		"User-Agent": {userAgent()},
 	}
 }
 
-// get performs a GET against path (resolved against githubBase) and returns the raw status and
-// body, with no classification: getJSON is the caller that turns a non-2xx status into a
-// *GitHubError, and the shared transport-policy test (probe_test.go) calls get directly so it
-// can drive a raw status through the same retry and timeout policy every provider shares.
-func (gh *GitHub) get(path string) (int, []byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, githubBase+path, nil)
-	if err != nil {
-		return 0, nil, fmt.Errorf("providers: build request for %s: %w", path, err)
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", userAgent())
-
-	resp, err := gh.client.Do(req)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, nil, fmt.Errorf("providers: read response body: %w", err)
-	}
-	return resp.StatusCode, data, nil
+// get performs a GET against path (resolved against githubBase) through the one raw GET helper
+// transport.go shares with npm.go, and returns the raw status, response headers, and body, with
+// no classification: getJSON is the caller that turns a non-2xx status into a *GitHubError, and
+// the shared transport-policy test (probe_test.go) calls client.Do directly so it can drive a raw
+// status through the same retry and timeout policy every provider shares.
+func (gh *GitHub) get(ctx context.Context, path string) (int, http.Header, []byte, error) {
+	return gh.client.rawGet(ctx, githubBase+path, githubHeader())
 }
 
 // getJSON performs a GET like get, decoding a 2xx body into out, or returning a *GitHubError
-// classified by classifyGitHubReason for anything else.
-func (gh *GitHub) getJSON(path string, out any) error {
-	status, data, err := gh.get(path)
+// classified by reasonForStatus for anything else.
+func (gh *GitHub) getJSON(ctx context.Context, path string, out any) error {
+	status, header, data, err := gh.get(ctx, path)
 	if err != nil {
 		return err
 	}
@@ -120,7 +95,7 @@ func (gh *GitHub) getJSON(path string, out any) error {
 			Message string `json:"message"`
 		}
 		_ = json.Unmarshal(data, &body)
-		return &GitHubError{Status: status, Message: body.Message, Reason: classifyGitHubReason(status)}
+		return &GitHubError{Status: status, Message: body.Message, Reason: reasonForStatus(status, header)}
 	}
 	if out == nil {
 		return nil
@@ -133,12 +108,12 @@ func (gh *GitHub) getJSON(path string, out any) error {
 
 // HeadSHA returns the commit sha ref currently resolves to (typically "main"), via GET
 // /repos/{owner}/{repo}/commits/{ref}.
-func (gh *GitHub) HeadSHA(owner, repo, ref string) (string, error) {
+func (gh *GitHub) HeadSHA(ctx context.Context, owner, repo, ref string) (string, error) {
 	var commit struct {
 		SHA string `json:"sha"`
 	}
 	path := fmt.Sprintf("/repos/%s/%s/commits/%s", owner, repo, ref)
-	if err := gh.getJSON(path, &commit); err != nil {
+	if err := gh.getJSON(ctx, path, &commit); err != nil {
 		return "", err
 	}
 	return commit.SHA, nil
@@ -146,13 +121,13 @@ func (gh *GitHub) HeadSHA(owner, repo, ref string) (string, error) {
 
 // FileAtRef returns the raw bytes of path in owner/repo as of ref, decoding the Contents API's
 // base64 envelope.
-func (gh *GitHub) FileAtRef(owner, repo, path, ref string) ([]byte, error) {
+func (gh *GitHub) FileAtRef(ctx context.Context, owner, repo, path, ref string) ([]byte, error) {
 	var result struct {
 		Content  string `json:"content"`
 		Encoding string `json:"encoding"`
 	}
 	apiPath := fmt.Sprintf("/repos/%s/%s/contents/%s?ref=%s", owner, repo, path, url.QueryEscape(ref))
-	if err := gh.getJSON(apiPath, &result); err != nil {
+	if err := gh.getJSON(ctx, apiPath, &result); err != nil {
 		return nil, err
 	}
 	if result.Encoding != "base64" {
@@ -169,10 +144,10 @@ func (gh *GitHub) FileAtRef(owner, repo, path, ref string) ([]byte, error) {
 // repository answers this route with no token at all, so a 200 here proves nothing about a
 // token's own permissions; probe-token uses the result to warn an operator whose verification
 // set carries no private repository that the token's scope stays unconfirmed.
-func (gh *GitHub) RepoOwnership(owner, repo string) (private bool, err error) {
+func (gh *GitHub) RepoOwnership(ctx context.Context, owner, repo string) (private bool, err error) {
 	var raw map[string]json.RawMessage
 	path := fmt.Sprintf("/repos/%s/%s", owner, repo)
-	if err := gh.getJSON(path, &raw); err != nil {
+	if err := gh.getJSON(ctx, path, &raw); err != nil {
 		return false, err
 	}
 	rawPrivate, ok := raw["private"]
@@ -198,7 +173,7 @@ type Branch struct {
 // checks read a site repository, which the spec expects to carry at most a handful of open
 // "cairn/*" branches at once, so a single page is sufficient; a repository with more branches
 // than that is a 2.0 concern.
-func (gh *GitHub) Branches(owner, repo string) ([]Branch, error) {
+func (gh *GitHub) Branches(ctx context.Context, owner, repo string) ([]Branch, error) {
 	var refs []struct {
 		Name   string `json:"name"`
 		Commit struct {
@@ -206,7 +181,7 @@ func (gh *GitHub) Branches(owner, repo string) ([]Branch, error) {
 		} `json:"commit"`
 	}
 	path := fmt.Sprintf("/repos/%s/%s/branches?per_page=100", owner, repo)
-	if err := gh.getJSON(path, &refs); err != nil {
+	if err := gh.getJSON(ctx, path, &refs); err != nil {
 		return nil, err
 	}
 
@@ -223,7 +198,7 @@ func (gh *GitHub) Branches(owner, repo string) ([]Branch, error) {
 			} `json:"commit"`
 		}
 		commitPath := fmt.Sprintf("/repos/%s/%s/commits/%s", owner, repo, ref.Commit.SHA)
-		if err := gh.getJSON(commitPath, &commit); err != nil {
+		if err := gh.getJSON(ctx, commitPath, &commit); err != nil {
 			return nil, err
 		}
 		var login string
@@ -238,7 +213,7 @@ func (gh *GitHub) Branches(owner, repo string) ([]Branch, error) {
 // LatestBotCommit returns the commit date of the newest commit botLogin committed on branch, or
 // the zero time with no error when it has none. The engine sets the committer to the App and the
 // author to the editor, so this filters by committer rather than author.
-func (gh *GitHub) LatestBotCommit(owner, repo, branch string) (time.Time, error) {
+func (gh *GitHub) LatestBotCommit(ctx context.Context, owner, repo, branch string) (time.Time, error) {
 	var commits []struct {
 		Commit struct {
 			Committer struct {
@@ -247,7 +222,7 @@ func (gh *GitHub) LatestBotCommit(owner, repo, branch string) (time.Time, error)
 		} `json:"commit"`
 	}
 	path := fmt.Sprintf("/repos/%s/%s/commits?sha=%s&committer=%s&per_page=1", owner, repo, url.QueryEscape(branch), url.QueryEscape(botLogin))
-	if err := gh.getJSON(path, &commits); err != nil {
+	if err := gh.getJSON(ctx, path, &commits); err != nil {
 		return time.Time{}, err
 	}
 	if len(commits) == 0 {
@@ -260,29 +235,19 @@ func (gh *GitHub) LatestBotCommit(owner, repo, branch string) (time.Time, error)
 // zero time with no error when it is absent: an unauthenticated client, a classic PAT, and an
 // OAuth token all omit it, which is indistinguishable from a fine-grained PAT that never expires,
 // so the creds check reads a zero TokenExpiry as unknown rather than as "not expiring".
-func (gh *GitHub) TokenExpiry() (time.Time, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, githubBase+"/rate_limit", nil)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("providers: build request for /rate_limit: %w", err)
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", userAgent())
-
-	resp, err := gh.client.Do(req)
+func (gh *GitHub) TokenExpiry(ctx context.Context) (time.Time, error) {
+	_, header, _, err := gh.client.rawGet(ctx, githubBase+"/rate_limit", githubHeader())
 	if err != nil {
 		return time.Time{}, err
 	}
-	defer func() { _ = resp.Body.Close() }()
 
-	header := resp.Header.Get(githubExpiryHeader)
-	if header == "" {
+	value := header.Get(githubExpiryHeader)
+	if value == "" {
 		return time.Time{}, nil
 	}
-	t, err := time.Parse(githubExpiryLayout, header)
+	t, err := time.Parse(githubExpiryLayout, value)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("providers: parse %s header %q: %w", githubExpiryHeader, header, err)
+		return time.Time{}, fmt.Errorf("providers: parse %s header %q: %w", githubExpiryHeader, value, err)
 	}
 	return t, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -390,7 +391,7 @@ func TestRecordingRoundTripperObjectBody(t *testing.T) {
 	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
 	gh := providers.NewGitHub(providers.Credential{}, rec)
 
-	sha, err := gh.HeadSHA("glw907", "ecxc-ski", "main")
+	sha, err := gh.HeadSHA(context.Background(), "glw907", "ecxc-ski", "main")
 	if err != nil {
 		t.Fatalf("HeadSHA: %v", err)
 	}
@@ -416,7 +417,7 @@ func TestRecordingRoundTripperArrayBody(t *testing.T) {
 	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
 	gh := providers.NewGitHub(providers.Credential{}, rec)
 
-	when, err := gh.LatestBotCommit("glw907", "ecxc-ski", "main")
+	when, err := gh.LatestBotCommit(context.Background(), "glw907", "ecxc-ski", "main")
 	if err != nil {
 		t.Fatalf("LatestBotCommit: %v", err)
 	}
@@ -441,7 +442,7 @@ func TestRecordingRoundTripperNotJSONBody(t *testing.T) {
 	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
 	gh := providers.NewGitHub(providers.Credential{}, rec)
 
-	if _, err := gh.HeadSHA("glw907", "ecxc-ski", "main"); err == nil {
+	if _, err := gh.HeadSHA(context.Background(), "glw907", "ecxc-ski", "main"); err == nil {
 		t.Error("HeadSHA: want a decode error over a non-JSON body")
 	}
 
@@ -459,7 +460,7 @@ func TestRecordingRoundTripperRecordsCloudflareEnvelopeResultKeys(t *testing.T) 
 	rec := newRecordingRoundTripper(fixedRoundTripper{status: http.StatusOK, body: body})
 	cf := providers.NewCloudflare("acct123", providers.Credential{}, rec)
 
-	if _, err := cf.ObservabilityQuery(map[string]any{"queryId": "x"}); err != nil {
+	if _, err := cf.ObservabilityQuery(context.Background(), map[string]any{"queryId": "x"}); err != nil {
 		t.Fatalf("ObservabilityQuery: %v", err)
 	}
 

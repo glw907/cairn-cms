@@ -1,19 +1,16 @@
 package providers
 
-import (
-	"fmt"
-	"net/http"
-)
+import "net/http"
 
-// Reason classifies why a Cloudflare v4 API call failed, past the raw HTTP status, so a health
-// check can render one stable, translatable message instead of branching on Cloudflare's own
-// numeric codes. The set mirrors the conditions
+// Reason classifies why a provider API call failed, past the raw HTTP status, so a health check
+// can render one stable, translatable message instead of branching on a provider's own numeric
+// codes. The set mirrors the conditions
 // packages/create-cairn-site/src/cloudflare/api.mjs already catalogues for the Node CLI
 // (throwMapped, throwBuildsMapped), and ReasonUnknown is the catch-all no health check should
 // ever treat as a specific, actionable condition.
 type Reason int
 
-// The Reason values a Cloudflare call classifies to.
+// The Reason values a provider call classifies to.
 const (
 	ReasonUnauthorized Reason = iota
 	ReasonForbidden
@@ -56,45 +53,28 @@ func (r Reason) String() string {
 	}
 }
 
-// APIError reports a Cloudflare v4 API call that did not succeed: a non-2xx status, or a 2xx
-// whose envelope carries "success": false. Status and Code carry the raw HTTP status and the
-// envelope's first error code (0 when the body carried none, or was not JSON at all), for a
-// caller that wants to log the specifics; Reason is what a health check branches on.
-type APIError struct {
-	Status int
-	Code   int
-	Reason Reason
+// ProviderError is satisfied by APIError and GitHubError, the two response failures a caller
+// outside this package (cmd/cairn's probe-token verdict) classifies uniformly, through one
+// function, without branching on which provider produced the failure.
+type ProviderError interface {
+	error
+	// ClassifiedReason returns the Reason the failing response classified to.
+	ClassifiedReason() Reason
+	// HTTPStatus returns the raw HTTP status the failing response carried.
+	HTTPStatus() int
 }
 
-// Error implements the error interface.
-func (e *APIError) Error() string {
-	return fmt.Sprintf("cloudflare: %s (status %d, code %d)", e.Reason, e.Status, e.Code)
-}
-
-// classifyReason maps an HTTP status and a v4 envelope's errors onto a Reason, the way
-// throwMapped and throwBuildsMapped do for the Node CLI. Four codes are specific enough to
-// classify on their own regardless of status or position: the two Builds authorization refusals
-// and the two Email Sending sender-readiness codes are matched against every entry of errs, not
-// just the first, the same way the Node client's errors.some(...) does (api.mjs:335-349), since a
-// warning ahead of the refusal must not make the row fall through to the status-only fallback.
-// HTTP 400 with code 6003 also classifies as ReasonUnauthorized, the second half of the Node
-// client's throwIfTokenInvalid (api.mjs:247-249: 400/6003 and 401/10000 both mean the token
-// itself is unusable). There is no code for ReasonBuildsNotConnected here (see that constant's
-// own doc comment); everything else falls back to the HTTP status family, which is how a plain
-// unauthenticated or underscoped request classifies.
-func classifyReason(status int, errs []v4Error) Reason {
-	for _, e := range errs {
-		switch e.Code {
-		case 8000008:
-			return ReasonBuildsAppNotAuthorized
-		case 8000012:
-			return ReasonBuildsRepoNotSelected
-		case 10203, 10204:
-			return ReasonSenderNotConfigured
-		}
-	}
-	if status == http.StatusBadRequest && len(errs) > 0 && errs[0].Code == 6003 {
-		return ReasonUnauthorized
+// reasonForStatus classifies an HTTP status into a Reason, using header to disambiguate a 403:
+// GitHub returns 403 both for a rate limit and for a missing permission, and the status alone
+// cannot tell them apart. A 403 carrying an exhausted primary rate limit
+// (x-ratelimit-remaining: 0), or a Retry-After header, classifies as rate-limited and never as a
+// forbidden credential, because misreading a rate limit as a forbidden credential would report a
+// fault an operator cannot fix. A 403 carrying neither header classifies as forbidden, as it does
+// today. Every other status classifies from the status alone, matching classifyGitHubReason's
+// former table and the status arm of classifyReason.
+func reasonForStatus(status int, header http.Header) Reason {
+	if status == http.StatusForbidden && rateLimitedHeaders(header) {
+		return ReasonRateLimited
 	}
 	switch status {
 	case http.StatusUnauthorized:
@@ -108,4 +88,16 @@ func classifyReason(status int, errs []v4Error) Reason {
 	default:
 		return ReasonUnknown
 	}
+}
+
+// rateLimitedHeaders reports whether header carries either signal GitHub sets on a rate-limited
+// 403: an exhausted primary rate limit, or a secondary rate limit's advisory wait.
+func rateLimitedHeaders(header http.Header) bool {
+	if header == nil {
+		return false
+	}
+	if header.Get("x-ratelimit-remaining") == "0" {
+		return true
+	}
+	return header.Get("Retry-After") != ""
 }

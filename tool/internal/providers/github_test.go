@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -32,12 +33,12 @@ func TestGitHubReasonMappingFromCorpusFixtures(t *testing.T) {
 
 		t.Run(tt.name+"/commits main", func(t *testing.T) {
 			gh := NewGitHub(Credential{}, rt)
-			_, err := gh.HeadSHA("glw907", "ecxc-ski", "main")
+			_, err := gh.HeadSHA(context.Background(), "glw907", "ecxc-ski", "main")
 			assertGitHubReason(t, err, status, tt.want)
 		})
 		t.Run(tt.name+"/contents package.json", func(t *testing.T) {
 			gh := NewGitHub(Credential{}, rt)
-			_, err := gh.FileAtRef("glw907", "ecxc-ski", "package.json", "main")
+			_, err := gh.FileAtRef(context.Background(), "glw907", "ecxc-ski", "package.json", "main")
 			assertGitHubReason(t, err, status, tt.want)
 		})
 	}
@@ -69,7 +70,7 @@ func TestHeadSHADecodesSuccess(t *testing.T) {
 	body := []byte(`{"sha":"a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	sha, err := gh.HeadSHA("glw907", "ecxc-ski", "main")
+	sha, err := gh.HeadSHA(context.Background(), "glw907", "ecxc-ski", "main")
 	if err != nil {
 		t.Fatalf("HeadSHA: %v", err)
 	}
@@ -82,7 +83,7 @@ func TestFileAtRefDecodesSuccess(t *testing.T) {
 	body := []byte(`{"content":"eyJuYW1lIjoiZWN4Yy1za2kifQ==\n","encoding":"base64"}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	content, err := gh.FileAtRef("glw907", "ecxc-ski", "package.json", "main")
+	content, err := gh.FileAtRef(context.Background(), "glw907", "ecxc-ski", "package.json", "main")
 	if err != nil {
 		t.Fatalf("FileAtRef: %v", err)
 	}
@@ -119,7 +120,7 @@ func TestBranchesJoinsCommitDateAndAuthor(t *testing.T) {
 	}
 	gh := NewGitHub(Credential{}, rt)
 
-	branches, err := gh.Branches("glw907", "ecxc-ski")
+	branches, err := gh.Branches(context.Background(), "glw907", "ecxc-ski")
 	if err != nil {
 		t.Fatalf("Branches: %v", err)
 	}
@@ -135,7 +136,7 @@ func TestBranchesJoinsCommitDateAndAuthor(t *testing.T) {
 func TestLatestBotCommitReturnsZeroTimeWhenNone(t *testing.T) {
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: []byte(`[]`)})
 
-	when, err := gh.LatestBotCommit("glw907", "ecxc-ski", "main")
+	when, err := gh.LatestBotCommit(context.Background(), "glw907", "ecxc-ski", "main")
 	if err != nil {
 		t.Fatalf("LatestBotCommit: %v", err)
 	}
@@ -156,7 +157,7 @@ func TestLatestBotCommitReturnsNewestDate(t *testing.T) {
 	})
 	gh := NewGitHub(Credential{}, rt)
 
-	when, err := gh.LatestBotCommit("glw907", "ecxc-ski", "main")
+	when, err := gh.LatestBotCommit(context.Background(), "glw907", "ecxc-ski", "main")
 	if err != nil {
 		t.Fatalf("LatestBotCommit: %v", err)
 	}
@@ -195,7 +196,7 @@ func (rt headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 func TestTokenExpiryReturnsZeroTimeWhenHeaderAbsent(t *testing.T) {
 	gh := NewGitHub(Credential{}, headerRoundTripper{status: http.StatusOK})
 
-	when, err := gh.TokenExpiry()
+	when, err := gh.TokenExpiry(context.Background())
 	if err != nil {
 		t.Fatalf("TokenExpiry: %v", err)
 	}
@@ -208,7 +209,7 @@ func TestRepoOwnershipReportsPrivateAndKeys(t *testing.T) {
 	body := []byte(`{"id":1,"full_name":"glw907/xcathletes-org","private":true}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	private, err := gh.RepoOwnership("glw907", "xcathletes-org")
+	private, err := gh.RepoOwnership(context.Background(), "glw907", "xcathletes-org")
 	if err != nil {
 		t.Fatalf("RepoOwnership: %v", err)
 	}
@@ -221,7 +222,7 @@ func TestRepoOwnershipReportsPublicRepo(t *testing.T) {
 	body := []byte(`{"id":2,"full_name":"glw907/cairn-cms","private":false}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	private, err := gh.RepoOwnership("glw907", "cairn-cms")
+	private, err := gh.RepoOwnership(context.Background(), "glw907", "cairn-cms")
 	if err != nil {
 		t.Fatalf("RepoOwnership: %v", err)
 	}
@@ -237,7 +238,7 @@ func TestRepoOwnershipClassifiesNotFound(t *testing.T) {
 	}
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: status, body: body})
 
-	_, err = gh.RepoOwnership("glw907", "a-private-repo-this-token-cannot-see")
+	_, err = gh.RepoOwnership(context.Background(), "glw907", "a-private-repo-this-token-cannot-see")
 	assertGitHubReason(t, err, status, ReasonNotFound)
 }
 
@@ -248,7 +249,7 @@ func TestRepoOwnershipMissingPrivateField(t *testing.T) {
 	body := []byte(`{"id":1,"full_name":"glw907/cairn-cms"}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	_, err := gh.RepoOwnership("glw907", "cairn-cms")
+	_, err := gh.RepoOwnership(context.Background(), "glw907", "cairn-cms")
 	if err == nil {
 		t.Fatal("RepoOwnership: want an error for a response with no private field")
 	}
@@ -262,7 +263,7 @@ func TestTokenExpiryParsesHeader(t *testing.T) {
 	h.Set(githubExpiryHeader, "2027-01-01 00:00:00 UTC")
 	gh := NewGitHub(Credential{}, headerRoundTripper{status: http.StatusOK, header: h})
 
-	when, err := gh.TokenExpiry()
+	when, err := gh.TokenExpiry(context.Background())
 	if err != nil {
 		t.Fatalf("TokenExpiry: %v", err)
 	}

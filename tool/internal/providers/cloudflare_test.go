@@ -2,6 +2,7 @@ package providers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -33,7 +34,7 @@ func (rt fixtureRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 // position in errs are each proven from a non-zero position, behind an unrelated warning entry,
 // matching the Node client's errors.some(...) rather than an errors[0]-only check.
 func TestClassifyReason(t *testing.T) {
-	warning := v4Error{Code: 1000, Message: "an unrelated warning ahead of the real error"}
+	warning := v4Error{Code: 1000}
 	tests := []struct {
 		name   string
 		status int
@@ -58,7 +59,7 @@ func TestClassifyReason(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := classifyReason(tt.status, tt.errs); got != tt.want {
+			if got := classifyReason(tt.status, tt.errs, http.Header{}); got != tt.want {
 				t.Errorf("classifyReason(%d, %v) = %v, want %v", tt.status, tt.errs, got, tt.want)
 			}
 		})
@@ -93,7 +94,7 @@ func TestReasonMappingFromCorpusFixtures(t *testing.T) {
 			}
 			cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
 
-			_, err = cf.VerifyToken()
+			_, err = cf.VerifyToken(context.Background())
 
 			var apiErr *APIError
 			if !errors.As(err, &apiErr) {
@@ -119,7 +120,7 @@ func TestVerifyTokenDecodesSuccess(t *testing.T) {
 	body := []byte(`{"success":true,"errors":[],"result":{"id":"00000000000000000000000000000001","status":"active"}}`)
 	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	id, err := cf.VerifyToken()
+	id, err := cf.VerifyToken(context.Background())
 	if err != nil {
 		t.Fatalf("VerifyToken: %v", err)
 	}
@@ -167,7 +168,7 @@ func TestListWorkersFollowsPagination(t *testing.T) {
 	}}
 	cf := NewCloudflare("acct123", Credential{}, rt)
 
-	workers, err := cf.ListWorkers()
+	workers, err := cf.ListWorkers(context.Background())
 	if err != nil {
 		t.Fatalf("ListWorkers: %v", err)
 	}

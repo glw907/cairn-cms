@@ -343,9 +343,10 @@
   from the triggering event's own `pointerType`) and hides on the next tap outside. An empty
   `text` opts out entirely, for a caller whose reason is conditional. Every native `title` on an
   admin action control across the engine's own components now routes through it. `cairn-audit`'s
-  `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces an
-  advisory finding naming the class retired (it stays compiled, since its own pointer-events
-  restore still has a real consumer) and promotes to error tier in `0.98.0`. Consumers must:
+  `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces a
+  finding naming the class retired, reported at advisory tier until `0.98.0` promotes the finding
+  to error; the class itself stays compiled until a later release removes it, since its own
+  pointer-events restore still has a real consumer. Consumers must:
   nothing, unless your admin copied the `cairn-btn-guarded` marker class from the engine's markup;
   no production site has.
 

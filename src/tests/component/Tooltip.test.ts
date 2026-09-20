@@ -14,8 +14,10 @@ function bubbleOf(container: HTMLElement): HTMLElement {
   return container.querySelector('[role="tooltip"]')!;
 }
 
+/** Shown means the bubble's own popover is open: a closed popover is not rendered at all, so its
+ *  open state, not a computed style, is what "the user can see this" means here. */
 function isVisible(bubble: HTMLElement): boolean {
-  return getComputedStyle(bubble).visibility === 'visible';
+  return bubble.matches(':popover-open');
 }
 
 describe('Tooltip', () => {
@@ -82,6 +84,9 @@ describe('Tooltip', () => {
     const secondButton = second.container.querySelector('button')!;
     const firstBubble = bubbleOf(first.container);
     const secondBubble = bubbleOf(second.container);
+    // Room above the first trigger, which otherwise sits flush against the viewport's top edge
+    // where the bubble legitimately flips below it (position-try-fallbacks: flip-block).
+    first.container.style.marginTop = '120px';
 
     await userEvent.hover(firstButton);
     await userEvent.hover(secondButton);
@@ -103,6 +108,38 @@ describe('Tooltip', () => {
     // means the two bubble tops differ too, ruling out the collapse-to-one-spot failure (both
     // bubbles landing at the same fixed coordinate) this test exists to catch.
     expect(firstBubbleRect.top).not.toBe(secondBubbleRect.top);
+  });
+
+  it('places the bubble correctly inside a transformed, clipping ancestor', async () => {
+    // The open-modal shape: DaisyUI's `.modal[open] > .modal-box` carries both a `translate` and a
+    // `scale`, either of which establishes a containing block for fixed-position descendants, and
+    // an `overflow: hidden` that clips anything leaving its box. A bubble positioned by writing
+    // viewport coordinates onto a fixed box lands displaced by that ancestor's own offset inside
+    // such a box; a top-layer popover does not.
+    const screen = await render(Tooltip, { text: 'Tidy this entry', children: trigger });
+    const wrapper = screen.container.querySelector('.cairn-tooltip')!;
+    const box = document.createElement('div');
+    box.setAttribute(
+      'style',
+      'translate: 0; scale: 1; overflow: hidden; margin: 80px 0 0 140px; width: 320px; height: 160px;'
+    );
+    screen.container.appendChild(box);
+    box.appendChild(wrapper);
+
+    const button = box.querySelector('button')!;
+    const bubble = bubbleOf(screen.container);
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+
+    const triggerRect = button.getBoundingClientRect();
+    const bubbleRect = bubble.getBoundingClientRect();
+    expect(bubbleRect.bottom).toBeLessThanOrEqual(triggerRect.top);
+    expect(bubbleRect.right).toBeGreaterThan(triggerRect.left);
+    expect(bubbleRect.left).toBeLessThan(triggerRect.right);
+    // The bubble renders in the top layer, so it keeps a real box even where its DOM ancestor's
+    // own `overflow: hidden` would have clipped it away.
+    expect(bubbleRect.width).toBeGreaterThan(0);
+    expect(bubbleRect.height).toBeGreaterThan(0);
   });
 
   it('shows on a coarse-pointer tap and hides on the next tap outside', async () => {

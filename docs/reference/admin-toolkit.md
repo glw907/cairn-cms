@@ -871,8 +871,14 @@ such as a guarded button's own explanation that is present only while guarded. `
 bubble element; omit it to use `$props.id()`'s own generated id.
 
 `children` renders the trigger control (a button or a link) unchanged: this component adds only
-`aria-describedby`, never a class, a label, or a click handler. The trigger keeps whatever else it
-already carries, including a caller's own `aria-label` and `disabled`/`aria-disabled` state.
+`aria-describedby` and an `anchor-name`, never a class, a label, or a click handler. The trigger
+keeps whatever else it already carries, including a caller's own `aria-label` and
+`disabled`/`aria-disabled` state.
+
+The bubble is a manual popover placed by CSS anchor positioning above the trigger, flipping below
+it when the top edge has no room. Because a popover renders in the top layer, the bubble survives a
+transformed, scaled, or `overflow: hidden` ancestor, such as an open daisyUI modal's own box, which
+displaces or clips a bubble positioned any other way.
 
 **daisyUI assembly:** none; the bubble is this component's own scoped `<style>`, with a literal
 fallback preceding every `--cairn-*`/daisyUI custom-property read, since `admin-toolkit` promises

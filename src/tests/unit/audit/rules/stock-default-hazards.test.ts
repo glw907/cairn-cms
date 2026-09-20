@@ -249,8 +249,8 @@ describe('stock-default-hazards: cairn\'s own admin tree', () => {
     const findings = check(...files);
     expect(findings.filter((f) => f.tier === 'error')).toEqual([]);
     // The four cairn-btn-guarded sites the Tooltip sweep left in place (EditPage's Publish x2,
-    // Edit block, Figure) are the one hazard this tree still carries, and it is advisory: the
-    // class stays compiled until its own promotion version, named in the finding's own message.
+    // Edit block, Figure) are the one hazard this tree still carries, and the finding is reported
+    // at advisory tier until the promotion version its own message names.
     expect(findings.filter((f) => f.tier === 'advisory')).toHaveLength(4);
     expect(findings.every((f) => f.message.includes('cairn-btn-guarded'))).toBe(true);
   });

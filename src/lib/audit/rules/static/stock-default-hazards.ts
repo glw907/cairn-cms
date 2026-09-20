@@ -46,8 +46,9 @@ const GUARDED_RETIREMENT_PROMOTION_VERSION = '0.98.0';
 
 const GUARDED_RETIREMENT_MESSAGE =
   'class "cairn-btn-guarded" is retired; wrap the control in Tooltip for the reason text instead ' +
-  'of a native title attribute (docs/reference/admin-toolkit.md, Tooltip). The class stays ' +
-  `compiled until ${GUARDED_RETIREMENT_PROMOTION_VERSION}`;
+  'of a native title attribute (docs/reference/admin-toolkit.md, Tooltip). Reported at advisory ' +
+  `tier until ${GUARDED_RETIREMENT_PROMOTION_VERSION} promotes the finding to error; the class ` +
+  'itself stays compiled until a later release removes it';
 
 /** The class tokens written on one element, grouped by the element's own start offset. */
 function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
@@ -134,10 +135,11 @@ export const stockDefaultHazards: StaticRule = {
           const disabled = attributes.find((attr) => attr.name === 'disabled');
           if (disabled?.hardcodedTrue) findings.push(findingAt(file, disabled, DISABLED_MESSAGE));
 
-          // The class itself is retired (advisory, one minor): the sweep it named replaces the
-          // native title attribute with Tooltip everywhere, and cairn-btn-guarded's own rule
-          // (restoring pointer-events, supplying the ghost fill) still has a real four-site
-          // consumer inside cairn's own tree, so it stays compiled rather than removed outright.
+          // The class itself is retired, reported at advisory tier for one minor: the sweep it
+          // named replaces the native title attribute with Tooltip everywhere, and
+          // cairn-btn-guarded's own rule (restoring pointer-events, supplying the ghost fill)
+          // still has a real four-site consumer inside cairn's own tree, so the class stays
+          // compiled until a later release removes it, whatever tier the finding reaches.
           const token = tokenNamed(file, elementStart, 'cairn-btn-guarded');
           if (token) {
             findings.push(findingAt(file, token, GUARDED_RETIREMENT_MESSAGE, 'advisory'));

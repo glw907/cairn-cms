@@ -397,7 +397,11 @@ alongside the component recipes above and below it.
   text="Insert block"><button aria-label="Insert block">...</button></Tooltip>`. Shows on hover and
   on `:focus-visible`, hides on Escape without moving focus off the trigger, and shows on a
   coarse-pointer tap (read from the triggering event's own `pointerType`, never `matchMedia`,
-  since a hybrid device can carry both a mouse and a touchscreen). A guarded control (the
+  since a hybrid device can carry both a mouse and a touchscreen). The bubble is a manual popover
+  placed by CSS anchor positioning, the same recipe the editor toolbar's own menus use, so it
+  renders in the top layer and no transformed, scaled, or `overflow: hidden` ancestor (an open
+  modal's box is all three) can displace or clip it; never position a tooltip bubble by writing
+  coordinates onto a fixed box. A guarded control (the
   `cairn-btn-guarded` pattern below) passes its guard reason as `text`, empty when unguarded:
   `Tooltip` treats an empty string as opt-out, never an empty bubble. Every engine screen sweeps its
   own icon-only `title` onto this component; a new one does the same rather than reaching for

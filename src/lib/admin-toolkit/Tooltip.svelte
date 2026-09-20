@@ -17,15 +17,26 @@ Escape only clears this component's own visibility state, never calls `.blur()`.
 bubble on tap and hides on the next tap outside the wrapper, mirroring a native tooltip's own
 touch fallback.
 
+The bubble is a manual popover placed by CSS anchor positioning, the same recipe the editor
+toolbar's own menus use: the trigger carries an `anchor-name` unique to this instance and the
+bubble carries the matching `position-anchor` with a `position-area` above it. A popover renders in
+the top layer, so no transformed, scaled, or `overflow: hidden` ancestor can displace or clip it,
+which a coordinate-writing scheme cannot promise (an open daisyUI modal's own box sets both a
+`translate` and an `overflow: hidden`, and any transform establishes a containing block for fixed
+descendants). Anchor positioning also tracks the trigger through scroll and resize with no
+listener of this component's own, and `position-try-fallbacks` flips the bubble below the trigger
+when there is no room above.
+
 `aria-describedby` is set imperatively on the trigger's own rendered root element (the wrapper's
 first child once the `children` snippet mounts), not spread through a snippet parameter: the sweep
 this component exists for wraps existing buttons and links unchanged, so the trigger keeps
-whatever attributes it already carries and this component adds exactly one.
+whatever attributes it already carries and this component adds exactly one. The same effect writes
+the trigger's `anchor-name`, for the same reason.
 
-The bubble text stays in the accessibility tree at all times (hidden only by an opacity/visibility
-toggle, never `hidden` or `display: none`), so a screen reader can still resolve `aria-describedby`
-on a trigger this component's own hover/focus mechanics never opened, matching how `aria-describedby`
-resolves everywhere else.
+A closed popover is not rendered at all, but an element referenced by `aria-describedby` still
+contributes its text however it is hidden (the accessible-description computation traverses into a
+hidden referenced subtree by design), so the description resolves on a trigger this component's
+own hover/focus mechanics never opened, matching how `aria-describedby` resolves everywhere else.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -41,7 +52,7 @@ resolves everywhere else.
     /** An id for the bubble element. Omit to use `$props.id()`'s own generated id. */
     id?: string;
     /** Renders the trigger control (a button or a link) unchanged; this component adds only
-     *  `aria-describedby` to its rendered root element. */
+     *  `aria-describedby` and an `anchor-name` to its rendered root element. */
     children: Snippet;
   }
 
@@ -49,6 +60,9 @@ resolves everywhere else.
 
   const generatedId = $props.id();
   const bubbleId = $derived(id ?? `${generatedId}-tooltip`);
+  // A dashed-ident anchor name unique to this instance. Non-ident characters in the generated id
+  // are collapsed, since an anchor name is a CSS identifier while an element id is not.
+  const anchorName = $derived(`--cairn-tooltip-${generatedId.replace(/[^a-zA-Z0-9_-]/g, '-')}`);
 
   let wrapperEl: HTMLElement | null = null;
   let bubbleEl: HTMLElement | null = null;
@@ -59,36 +73,32 @@ resolves everywhere else.
   const hasText = $derived(text.length > 0);
   const visible = $derived(hasText && !escaped && (hoverOn || focusOn || tapOn));
 
-  // Sets aria-describedby on the trigger's own rendered root element, never on this component's
-  // wrapper: the wrapper carries no accessible role of its own, and the description has to resolve
-  // from whichever element actually receives focus. Re-runs whenever the wrapper or the bubble id
-  // changes, and cleans up on unmount so a later Tooltip reusing the same DOM node never inherits a
-  // stale value. A no-op while `text` is empty (see the prop's own doc comment).
+  // Sets aria-describedby and the anchor name on the trigger's own rendered root element, never on
+  // this component's wrapper: the wrapper renders no box of its own, so it can be neither the
+  // element that receives focus nor an anchor (a boxless element cannot anchor anything). Re-runs
+  // whenever the wrapper, the bubble id, or the anchor name changes, and cleans up on unmount so a
+  // later Tooltip reusing the same DOM node never inherits a stale value. A no-op while `text` is
+  // empty (see the prop's own doc comment).
   $effect(() => {
     if (!hasText) return;
     const trigger = wrapperEl?.firstElementChild;
     if (!(trigger instanceof HTMLElement)) return;
     trigger.setAttribute('aria-describedby', bubbleId);
+    trigger.style.setProperty('anchor-name', anchorName);
     return () => {
       trigger.removeAttribute('aria-describedby');
+      trigger.style.removeProperty('anchor-name');
     };
   });
 
-  // Anchors the bubble to the trigger's own box rather than a CSS positioned-ancestor scheme: the
-  // wrapper renders no box of its own (`display: contents`, see the style block below), so the
-  // bubble's actual DOM parent for CSS containing-block purposes is whatever ancestor outside this
-  // component happens to be positioned, which the sweep's real call sites (EditorToolbar, EditPage)
-  // never guarantee. Reading the trigger's own `getBoundingClientRect()` and writing `left`/`top`
-  // in pixels on the fixed-positioned bubble (see the style block) ties the bubble to its own
-  // trigger regardless of what sits in between. Re-runs whenever the bubble becomes visible, since
-  // a hidden bubble's position never needs to track a trigger that might move under it while closed.
+  // Drives the popover from the derived visibility rather than from each handler, so the several
+  // input modes cannot disagree about whether the bubble is open. Both popover methods throw when
+  // the popover is already in the state they ask for, hence the guard on each.
   $effect(() => {
-    if (!visible || !bubbleEl) return;
-    const trigger = wrapperEl?.firstElementChild;
-    if (!(trigger instanceof HTMLElement)) return;
-    const rect = trigger.getBoundingClientRect();
-    bubbleEl.style.left = `${rect.left + rect.width / 2}px`;
-    bubbleEl.style.top = `${rect.top}px`;
+    if (!bubbleEl) return;
+    const open = bubbleEl.matches(':popover-open');
+    if (visible && !open) bubbleEl.showPopover();
+    else if (!visible && open) bubbleEl.hidePopover();
   });
 
   // Cleans up the outside-tap listener a coarse-pointer tap registers below; re-run whenever tapOn
@@ -162,8 +172,9 @@ resolves everywhere else.
     bind:this={bubbleEl}
     id={bubbleId}
     role="tooltip"
+    popover="manual"
     class="cairn-tooltip-bubble"
-    class:cairn-tooltip-visible={visible}
+    style="position-anchor:{anchorName}"
   >
     {text}
   </span>
@@ -183,18 +194,21 @@ resolves everywhere else.
     display: contents;
   }
 
-  /* `position: fixed` rather than `position: absolute` off a positioned trigger: the wrapper is
-     boxless (`display: contents` above), so this bubble's own CSS containing block is whichever
-     ancestor OUTSIDE this component happens to be positioned, which a real sweep site (a plain
-     `.btn` inside EditorToolbar's flex row) never guarantees. A fixed-position box's containing
-     block is the viewport regardless of what sits between, so the script's own effect writes
-     `left`/`top` in viewport pixels straight from the trigger's `getBoundingClientRect()`, and this
-     rule only supplies the gap and the centering as a transform relative to that point. */
+  /* The bubble is a manual popover, so the browser renders it in the top layer and no ancestor's
+     transform, scale, or `overflow: hidden` can displace or clip it. `position-area: top` off the
+     trigger's own `anchor-name` (written by the script's effect above) places it centered above
+     that one trigger, and `position-try-fallbacks: flip-block` moves it below when the top edge
+     has no room. `inset: auto` and `margin: 0` undo the UA popover sheet, whose `inset: 0` plus
+     `margin: auto` would otherwise stretch the bubble across the whole position area. */
   .cairn-tooltip-bubble {
     position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 20;
+    inset: auto;
+    position-area: top;
+    position-try-fallbacks: flip-block;
+    align-self: end;
+    justify-self: anchor-center;
+    margin: 0 0 0.375rem 0;
+    border: 0;
     width: max-content;
     max-width: 16rem;
     padding: 0.25rem 0.5rem;
@@ -202,11 +216,9 @@ resolves everywhere else.
     font-size: 0.75rem;
     line-height: 1.3;
     text-align: center;
-    transform: translate(-50%, calc(-100% - 0.375rem));
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 120ms ease;
+    opacity: 1;
     pointer-events: none;
+    transition: opacity 120ms ease, display 120ms allow-discrete, overlay 120ms allow-discrete;
     /* Literal fallbacks precede every custom-property read below (--cairn-shadow, --color-neutral,
        --color-neutral-content), since a consumer's own admin screen (this toolkit's other
        audience) never guarantees the cairn admin theme root is an ancestor; see StatusChip.svelte's
@@ -219,9 +231,17 @@ resolves everywhere else.
     box-shadow: var(--cairn-shadow, 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1));
   }
 
-  .cairn-tooltip-visible {
-    opacity: 1;
-    visibility: visible;
+  /* The entrance fade, keyed off the popover's own open state so the discrete display change
+     animates with it; @starting-style supplies the from value a first render otherwise has none
+     for. */
+  @starting-style {
+    .cairn-tooltip-bubble:popover-open {
+      opacity: 0;
+    }
+  }
+
+  .cairn-tooltip-bubble:not(:popover-open) {
+    opacity: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {

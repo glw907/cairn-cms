@@ -62,10 +62,10 @@ function tooltipIdFor(label: string): string {
  * The `aria-describedby` attribute plus the sibling bubble markup Tooltip.svelte renders at rest
  * (hidden, never shown, since this story never fires a hover or focus): a hand-typed duplicate of
  * that component's own DOM shape, since a raw-HTML story cannot mount a real component. Known
- * cost, not accidental drift-bait: Tooltip's own scoped `<style>` never reaches this hand-typed
- * span (no Svelte scoping class to match), so the resting-hidden look is pinned here with an
- * inline style instead, and a future change to Tooltip's own markup or class names has nothing
- * that keeps this copy in sync automatically.
+ * cost, not accidental drift-bait: the bubble is a manual popover, so the browser itself keeps it
+ * out of the rendering at rest with no style of this story's own, but Tooltip's scoped `<style>`
+ * still never reaches this hand-typed span (no Svelte scoping class to match), and a future change
+ * to Tooltip's own markup or class names has nothing that keeps this copy in sync automatically.
  * @param label - the tooltip's own text
  * @returns the `aria-describedby` attribute and the bubble span's markup, as a pair
  */
@@ -73,7 +73,7 @@ function tooltipParts(label: string): { describedBy: string; bubble: string } {
   const id = `${tooltipIdFor(label)}-tooltip`;
   return {
     describedBy: `aria-describedby="${id}"`,
-    bubble: `<span id="${id}" role="tooltip" style="position:absolute;opacity:0;visibility:hidden;pointer-events:none;">${label}</span>`,
+    bubble: `<span id="${id}" role="tooltip" popover="manual">${label}</span>`,
   };
 }
 

@@ -83,8 +83,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
   coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
   touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
-  no bubble, every hover/focus/tap mechanic a no-op). Source:
-  `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
+  no bubble, every hover/focus/tap mechanic a no-op). Its bubble is a manual popover placed by CSS
+  anchor positioning off an `anchor-name` written on the trigger, so the top layer keeps a
+  transformed, scaled, or `overflow: hidden` ancestor (an open daisyUI modal's box) from displacing
+  or clipping it. Source: `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
 
 ## docs/reference/ambient.md
 

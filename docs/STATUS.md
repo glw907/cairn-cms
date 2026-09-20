@@ -34,14 +34,16 @@ the engine's `dist` path) is one small extend-2 task; the docs-infra currency pa
 written and queues after the one cut, before the site round. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
 `cairn-run-gate`'s machine lock.
 
-Task ledger (2026-09-19 evening): **1, 2, 3, 4, 5, 7, 8a, 8b ACCEPTED**. Task 3 took three review
-rounds on the bubble's placement (ruled: a popover plus CSS anchor positioning, with the anchor
-name appended to a trigger's own). **6** (the ledger, roadmap, and record) running as a one-task
-run from `extend-1-runA5.js`. Then the pass-end ritual: merge `extend-1-site` into `extend-1`,
-the post-merge seam proof, simplifier, reviewer fan-out, PR, CI regen, verifier, records, merge.
-Fold items for the ritual: 8b's `check:cairn` step in `create-site.yml` runs before the build
-rather than after, and its two facts bullets could name task 7's `cairn-audit.config.json` and
-the two transcript fixtures.
+Task ledger (2026-09-19 night): **all nine tasks ACCEPTED**; `extend-1-site` merged into
+`extend-1` (`a231f298`); **PR #66 open** against `main`. Ritual in progress, in order: the
+code-simplifier over the pass's code (running), then the post-merge seam proof (the branch-point
+fixture on port 4273, the full gate with `check:cairn`, the rendered audit, the ten signups
+captures), the reviewer fan-out (a11y read of `Tooltip` blocking; svelte; auth on the redaction),
+the CI regen read against the union of `INTENDED MOVES:`, the visual verifier on signups and one
+tooltip surface, then HISTORY, STATUS, the record, and the merge on green CI. Fold items: 8b's
+`check:cairn` step in `create-site.yml` runs before the build rather than after; its two facts
+bullets could name task 7's `cairn-audit.config.json` and the two transcript fixtures; the
+`stylesheet-seam` ledger row is already written (task 6), so the ritual writes no second one.
 
 Resume, from a session inside `cairn-cms` on a stable connection: the built scripts live in the
 launching session's scratchpad (`extend-1-runA5.js`, task 6), so from that session issue

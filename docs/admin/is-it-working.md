@@ -23,7 +23,9 @@ This report is a real run, against a site named `cairn-capture-scratch` that `cr
 had just finished building. The shell running it carried a `CLOUDFLARE_API_TOKEN`, the credential
 **Making the Cloudflare zone checks run** explains below. That's why its three zone-derived checks
 report a real result instead of a skip. Run the same command with no token, and those three lines
-read SKIP instead, with the totals at 8 passed, 0 failed, 11 skipped:
+read SKIP instead. This capture predates the skill-install nudge's retirement (see the note
+below the block), so the no-token total it recorded, 8 passed, 0 failed, 11 skipped, is one skip
+higher than what a current bare run prints.
 
 <!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt -->
 ```
@@ -59,8 +61,9 @@ different from a SKIP, which means the check doesn't apply at all.
 
 The elided line between the mount check and the dependency floors was a skill-install nudge the
 doctor no longer prints: that install now lives in
-[`cairn-guidance`](../reference/guidance.md), and the total below still counts it since the
-underlying capture predates the move.
+[`cairn-guidance`](../reference/guidance.md). The totals in the preceding block, and the
+no-token total quoted just before it, both predate that removal and still count the retired
+line, so either total you see from a current run reads one skip lower.
 
 Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
 this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the

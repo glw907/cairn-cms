@@ -4,7 +4,10 @@
 // pass removes or renames a symbol the prose still points at. The RED output is the fix worklist.
 //
 // Scope is the published docs (`docs/`, minus the historical `docs/superpowers/` plan and spec records)
-// plus the root-level public docs. External links (http, mailto, and the like) are not fetched, and a
+// plus the root-level public docs, plus every packaged skill's Markdown (`skills/**/*.md`) and the
+// packaged Claude Code guidance tree (`claude/**/*.md`, shipped by a later task in this pass; scanned
+// when present). Both ship in the tarball, so a dead link inside them is as real as one in `docs/`.
+// External links (http, mailto, and the like) are not fetched, and a
 // `cairn:` content link is skipped because it is an author's in-post token, not a doc target. Links
 // inside fenced or inline code are ignored, since those are examples, not navigation.
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
@@ -30,12 +33,25 @@ function walkMarkdown(dir, skip, out) {
   return out;
 }
 
+// A root-relative directory scanned whole when it exists, empty otherwise (`claude/` does not
+// exist until a later task in this pass ships it).
+/**
+ * @param {string} root
+ * @param {string} dirName
+ */
+function walkIfPresent(root, dirName) {
+  const dir = join(root, dirName);
+  return existsSync(dir) ? walkMarkdown(dir, new Set(), []) : [];
+}
+
 // Every Markdown file in scope, as repo-relative paths, sorted.
 /** @param {string} root */
 export function filesInScope(root = ROOT) {
   const docs = walkMarkdown(join(root, 'docs'), new Set(['superpowers']), []);
   const rootDocs = ROOT_DOCS.map((p) => join(root, p)).filter(existsSync);
-  return [...rootDocs, ...docs].map((p) => relative(root, p)).sort();
+  const skills = walkIfPresent(root, 'skills');
+  const claude = walkIfPresent(root, 'claude');
+  return [...rootDocs, ...docs, ...skills, ...claude].map((p) => relative(root, p)).sort();
 }
 
 // Strip fenced code blocks (``` and ~~~), keeping line count stable so reported lines stay right.

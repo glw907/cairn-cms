@@ -1658,6 +1658,13 @@
 
 - The facts container (`docs/internal/facts/`) is gated by `check:facts`. No consumer action.
 
+- `check-skill-budget.mjs` now globs every `skills/*/SKILL.md` and applies the 3,500-token budget
+  to each, instead of the one hard-coded `cairn-admin-screens` path; the tier-map comparison
+  against the rule registries still runs for that skill alone, and skips with a notice, exiting 0,
+  when the packaged dist build the registries read is absent. `check:docs` now also resolves every
+  relative link and anchor under `skills/**/*.md` and `claude/**/*.md`, the two trees a later task
+  in this pass ships into the tarball. No consumer action.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

@@ -368,6 +368,43 @@
   call, and the login request action emits `members.login.requested` with `{ outcome }` from the
   engine's own `ChannelRequestOutcome`, never the posted contact. Each route's header names its
   archetype, the atoms it composes, and the recipe page it illustrates. No consumer action.
+- The showcase compiles its own site admin stylesheet and audits against it, alongside the
+  packaged one: `src/admin.css` is a five-line Tailwind v4 entry (no DaisyUI plugin, utilities
+  only) scoped to `src/routes/admin` with `@tailwindcss/cli`, compiled to `.cairn/admin.css`.
+  `cairn-audit.config.json` names both sheets, so `no-uncompiled-class` and the rest of the static
+  registry see every class a site route actually writes, not only the ones the packaged toolkit
+  compiles. New scripts: `build:admin-css`, `check:cairn` (compiles then audits), and
+  `check:cairn:rendered`; `precheck`/`prebuild`/`predev` compile the sheet ahead of `check`,
+  `build`, and `dev` so a stale `.cairn/` never ships. CI runs `check:cairn` after the showcase's
+  own `check`. The admin layout imports the compiled file so `@tailwindcss/vite` passes it through
+  as a hashed, route-split asset; `e2e/admin-sheet.spec.ts` proves that at the ritual against a
+  branch-point baseline, once the ritual writes the fixture (the spec stays inert until then). The
+  fifth line, `@source "../node_modules/@glw907/cairn-cms/dist"`, scans the engine's own dist
+  markup, because both sheets share one utilities cascade layer and the site sheet loading after
+  the engine sheet would otherwise re-emit the engine's shared base utilities ahead of their own
+  `sm:` variants and defeat them on every admin screen; the fix makes the site sheet a superset of
+  the engine's utility set in Tailwind's own emission order, so every shared base utility again
+  precedes its own variant. The new `@tailwindcss/cli` devDependency was surveyed against the
+  pinned `tailwindcss`/`@tailwindcss/vite` major and matches at `4.3.3`. No consumer action.
+
+- The `create-cairn-site` scaffold now bakes a GitHub Actions workflow
+  (`.github/workflows/check.yml`) into every new site: it installs, then runs `npm run check` and
+  `npm run check:cairn` on `ubuntu-latest` with Node 22, with a commented step for
+  `npx cairn-guidance check` marked for a later cairn version. The manifest's default permissions
+  gain `workflows: write` so the App's first push can carry that file. The scaffold's own
+  `scripts/dev.mjs` shim now also spawns `@tailwindcss/cli` in `--watch` mode beside the vite dev
+  server, killing it when the dev server exits, so the admin sheet stays compiled during local
+  development. No consumer action.
+
+- `create-site.yml`, the CI proof of a real `create-cairn-site` run, now asserts the scaffolded
+  site carries `.github/workflows/check.yml` and runs `npm run check:cairn` after its build step.
+  The tool's own printed hand-over text names both, so a reader who never opens the workflow file
+  still learns what checks their site on every push. The transcripts fixtures predate this change
+  and are not re-captured this pass (the capture harness needs a live GitHub App and repository
+  creation outside this repo); `packages/create-cairn-site/test/fixtures/transcripts/README.md`
+  carries a dated staleness note, and `check:transcripts` stays green either way since it checks
+  the docs pages' quoted blocks against the fixtures, not against the current scaffold. No
+  consumer action.
 
 ### Removed
 

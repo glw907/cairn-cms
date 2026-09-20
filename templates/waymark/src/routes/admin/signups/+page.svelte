@@ -89,7 +89,7 @@
      forms' use:enhance keeps the outcome a DOM mutation into this already-mounted region rather
      than a full-page reload. form.error is read generically: createSectionAction's own denial and
      misconfigured branches carry the same field the create action's validation failure does. -->
-<p role="status" aria-live="polite" class="type-body mt-2" id="signup-outcome">
+<p role="status" aria-live="polite" class="type-body mt-2 pt-14" id="signup-outcome">
   {#if form?.error}
     {errorMessages[form.error] ?? form.error}
   {:else if form?.created}

@@ -220,7 +220,10 @@ export function dryRunNotice({ dir }) {
  * build-time define) and that a scaffolded reader has no idea the admin they land on is a local
  * stand-in. The second fact is still load-bearing; the first is now fixed at the source, by the
  * scaffold's own `npm run dev` (a shim baked into `scripts/dev.mjs`, see bake-template.mjs),
- * so this text prints the plain command rather than teach a variable it no longer needs.
+ * so this text prints the plain command rather than teach a variable it no longer needs. It also
+ * names `npm run check:cairn`, the site's own gate baked into `.github/workflows/check.yml`
+ * (see bake-template.mjs), so a reader who never opens the workflow file still learns what runs
+ * on every push.
  * @param {{ dir: string }} options `dir` is the scaffolded directory to `cd` into
  * @returns {string} the hand-over text, ready to print as-is
  */
@@ -244,6 +247,9 @@ export function handoverText({ dir }) {
     "watch it appear on the site. The scaffold's own dev script turns the stand-in on.",
     '',
     'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
+    '',
+    'A workflow at .github/workflows/check.yml runs `npm run check:cairn` on every push, so',
+    'GitHub tells you if a change breaks the gate before it reaches your site.',
     '',
     'This scaffold is local only. Putting the site on the internet needs a GitHub repository, a',
     "Cloudflare account, and a domain you own, plus Cloudflare's Workers Paid plan from the day",

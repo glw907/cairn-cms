@@ -443,3 +443,13 @@ test('handoverText takes no platform parameter', () => {
     'handoverText\'s source must not reference a platform parameter',
   );
 });
+
+test('the hand-over block names npm run check:cairn and the workflow that runs it on push', () => {
+  const text = handoverText({ dir: 'alpine-club' });
+  assert.ok(text.includes('npm run check:cairn'), 'the hand-over block must name check:cairn');
+  assert.match(
+    text,
+    /workflow/,
+    'the hand-over block must tell the reader a workflow checks the site on every push',
+  );
+});

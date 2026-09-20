@@ -130,12 +130,18 @@ jobs:
 
             const scriptsEntries = fs.readdirSync("/tmp/ci-site/scripts");
             assert.deepEqual(scriptsEntries, ["dev.mjs"], "scripts/ must hold exactly the baked dev shim");
+
+            assert.ok(
+              fs.existsSync("/tmp/ci-site/.github/workflows/check.yml"),
+              "the scaffold must carry its own CI workflow at .github/workflows/check.yml",
+            );
           '
       - name: Install, typecheck, and build the scaffolded site
         working-directory: /tmp/ci-site
         run: |
           npm install
           npm run check
+          npm run check:cairn
           npm run build
           npm run format:check
           npm run test:unit

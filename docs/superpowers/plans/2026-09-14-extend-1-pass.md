@@ -59,8 +59,11 @@ domain-risk). Every ranked change is applied. The decisions that changed the pla
 After the `0.97.0` cut. In parallel with the rest of the Go tool pass A
 (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`), which lives under `tool/` and touches
 no file this pass touches except the three pass-close files, merged in whichever order the closes
-land. Before the docs rewrite, so the rewrite documents exports that exist. extend-2 follows the
-rewrite. Site migration waits until all three have landed (Geoff, 2026-09-13).
+land. **Resequenced 2026-09-16 (Geoff's 2026-09-15 decision in `docs/STATUS.md`):** extend-2
+follows this pass directly, then one cut, then the site round; the docs rebuild follows the round,
+not this pass. The `0.97.0` cut has not landed either: this pass ships in it, so "Available since"
+reads `0.97.0` and the advisory rules promote at `0.98.0`. Site migration waits until both extend
+passes have landed.
 
 **Architecture:** nine tasks in two chains. Chain A is engine work under `src/lib` plus the two
 showcase exemplar server routes. Chain B is the showcase's stylesheet seam and the scaffold
@@ -214,7 +217,11 @@ under `src/lib/components/`, `src/lib/audit/rules/`, `docs/reference/cairn-audit
 - **New consumer-facing audit rules and findings enter at advisory tier for one minor**, the
   promotion version stated in the message from the conductor's dispatch args.
 - **The named-sheet hard error exists** (`run.ts:67-82`). Task 2 locks it; no code moves.
-- **The stylesheet seam is utilities-only**, in the four-line form, with no `@plugin "daisyui"`.
+- **The stylesheet seam is utilities-only**, in the five-line form (amended 2026-09-16: the fourth
+  `@source` scans the site's admin routes and a fifth scans the engine's shipped `dist` markup, so the
+  site sheet is a superset of the engine's utilities in Tailwind's order; without it the site's base
+  utilities, loading later in the shared `utilities` layer, defeat the engine's responsive variants),
+  with no `@plugin "daisyui"`.
   The proving utility is a plain utility class, never a bracketed arbitrary value and never an
   inline `var(--…)`, since `check-invisible-craft` and the showcase's `retiredTokenBudget: 0`
   both scan the showcase routes.
@@ -641,7 +648,8 @@ runs.
 **Interfaces:**
 - Produces: `src/admin.css`: the three lines at `scripts/build/admin-css.input.css:10-12` (the
   layer order, the theme import, the utilities import with `source(none)`) plus
-  `@source "./routes/admin";`, the four-line form, and no `@plugin "daisyui"` line.
+  `@source "./routes/admin";` and `@source "../node_modules/@glw907/cairn-cms/dist";`, the five-line form
+  (see Ruled inputs), and no `@plugin "daisyui"` line.
 - Produces: `.cairn/admin.css`, the fixed path; `cairn-audit.config.json` with
   `sheet: ["node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css", ".cairn/admin.css"]`.
 - Produces: the gate string gains `&& npm --prefix examples/showcase run check:cairn` from this
@@ -652,15 +660,19 @@ runs.
   for the three admin pages also snapshots `getComputedStyle` over the properties the rendered
   rules read; and asserts three things against `e2e/fixtures/admin-sheet-baseline.json`, the
   branch-point capture the ritual writes: (a) the `/` and `/posts` digests equal the fixture's,
-  so nothing leaked onto a public page; (b) each admin page's stylesheet list differs from the
-  fixture's by exactly one added sheet, whose body contains the chosen utility's declaration; (c)
+  so nothing leaked onto a public page; (b) each admin page's concatenated stylesheet content
+  contains the chosen utility's declaration and the fixture's stored content for that page does
+  not (amended 2026-09-19: the authored form counted hashed stylesheet hrefs against the
+  branch-point fixture, which Vite content hashes and this pass's own engine CSS changes make
+  fail for reasons unrelated to a leak; the fixture stores `adminSheetContent`, the concatenated
+  bodies per admin page, and no per-sheet cardinality is asserted); (c)
   the `getComputedStyle` snapshot over the engine-owned properties is unchanged from the fixture on
   all three admin pages. The fixture is the "without" side; there is no second build.
 - Consumed by task 8a (the bake), by the ritual (the proof run), and by extend-2's snippets.
 
 **Decisions the plan makes:**
 - Step 2's first act, after installing the devDependency, is a probe:
-  `npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css` on the four-line entry,
+  `npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css` on the five-line entry,
   output non-empty and containing the chosen utility. `@tailwindcss/cli` publishes `4.3.3`,
   matching the pinned `tailwindcss` and `@tailwindcss/vite`. There is no fallback: a failed probe
   halts the task with the output quoted, an escalate for the conductor, because a PostCSS script

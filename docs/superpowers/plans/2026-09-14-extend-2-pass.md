@@ -1,4 +1,4 @@
-# Extend-2 Pass Implementation Plan (the guidance layer, after the docs rewrite)
+# Extend-2 Pass Implementation Plan (the guidance layer, after extend-1, before the one cut and the site round)
 
 > **For agentic workers:** execute through the `cairn-pass` skill's implementer chain
 > (`cairn-implementer` → `diff-reviewer` → gate), workflow mode via
@@ -15,6 +15,26 @@ executors read both.
 **2026-09-15 amendment (docs-to-facts pass):** the `extend` narrative arm is frozen against
 rewrites. Task 3a no longer edits `docs/extend/what-the-scaffold-wrote.md`; it files the fact(s)
 in `docs/internal/facts/extend.md` instead. The reference arm is unaffected.
+
+**2026-09-16 amendment (resequencing, Geoff's 2026-09-15 decision in `docs/STATUS.md`):** the
+docs rewrite no longer sits between extend-1 and this pass. The order is extend-1, this pass, one
+cut, the site round, then the docs rebuild from the facts container. Every sentence below that
+assumed the rewrite had landed is amended in place: the recipe pages and the tarball docs index do
+not exist when this pass runs. Task 6's router table cites the showcase exemplar file and the
+`docs/internal/facts/extend.md` bullet for each row instead of a recipe page, and task 2's
+fragment points at the tarball's `docs/reference/README.md` as where the docs are. The docs
+rebuild adds the recipe column and the docs index later, as its own change to both artifacts.
+
+**2026-09-19 amendment (Geoff's checkpoint ruling during extend-1):** this pass gains one small task,
+placed at the end of chain A before task 4's close: **the engine-owned Tailwind sources file.** The
+engine ships a CSS file on a public subpath (for example `@glw907/cairn-cms/admin-sources.css`)
+whose body is the `@source` lines for the engine's shipped admin markup, resolved relative to that
+file; a site's `src/admin.css` imports it in place of the `@source "../node_modules/@glw907/cairn-cms/dist";`
+line extend-1 shipped, so no site ever names the engine's `dist` layout, and the showcase, the
+template, and the scaffold's bake all switch to the import. The five-line form stays five lines.
+Gates: `check:package`, `check:surface`, `check:template`, the showcase's `check:cairn`, and the
+admin-visual suite unchanged. Record the seam's ordering fact (extend-1's task 7 record) in the
+reference page's sentence for the file.
 
 **Goal:** a developer using Claude Code on a cairn site gets the engine's guidance from the
 package it already has: a `CLAUDE.md` fragment, three skills, one read-only review agent, and a
@@ -58,10 +78,9 @@ changed the plan's shape:
 
 ## Where it sits
 
-After extend-1 has merged and after the docs rewrite has landed the per-pattern recipe pages and
-the tarball docs index. extend-1 runs after the `0.97.0` cut beside Go tool pass A and before the
-rewrite; this pass is third. Site migration (ASC, ecxc, 907) waits until this pass has landed
-(Geoff, 2026-09-13).
+After extend-1 has merged; second in the sequence, with no docs pass between (2026-09-16
+amendment). One cut follows this pass, then the site round (ASC, ecxc, 907, xcathletes, cairn.pub)
+upgrades onto the finished extend set, and the docs rebuild follows the round.
 
 **Architecture:** nine tasks in two chains. Chain A is engine and scaffold work: the bin, the
 doctor's retirement, the packaged `claude/` tree, the bake, the CI assertions, the docs, the
@@ -73,7 +92,7 @@ path list with the `check:docs` extension, and the two new skills. The chains sh
 relocated), Node bins under `dist/`, the `create-cairn-site` bake, Claude Code's skill, agent, and
 `CLAUDE.md` import conventions as published at dispatch.
 
-**Not in this pass:** any new doctor check; the recipe pages; the Go tool; a `settings.json`
+**Not in this pass:** any new doctor check; the recipe pages and the tarball docs index (the docs rebuild after the site round); the Go tool; a `settings.json`
 write; site adoption.
 
 ## Token ceiling
@@ -109,7 +128,7 @@ covers `skills/**` and `claude/**` after the merge. Neither chain waits on the o
 
 ### Pre-dispatch
 
-1. Confirm extend-1 and the docs rewrite have merged and CI on `main` is green.
+1. Confirm extend-1 has merged and CI on `main` is green.
 2. Confirm no live executor holds either worktree. Create both off the same commit; `npm install`
    at each root and from scratch in each `examples/showcase`.
 3. Confirm the branch carries this plan (committed on `main` at authoring). Write STATUS. Arm the
@@ -117,14 +136,13 @@ covers `skills/**` and `claude/**` after the merge. Neither chain waits on the o
 
 ## Reconciliation at dispatch
 
-Measured on `main` at `55fc7762` by the spec's mechanics review and the plan's own; two later
-passes (extend-1, the rewrite) move anchors under `docs/extend/`, `docs/reference/`,
-`package.json`, and the scaffold.
+Measured on `main` at `55fc7762` by the spec's mechanics review and the plan's own; extend-1
+moves anchors under `docs/reference/`, `package.json`, and the scaffold.
 
 | Anchor | Who moves it | Which task cares | How to relocate |
 |---|---|---|---|
-| `docs/extend/README.md` recipe index | the docs rewrite | Task 6 | No task reads this table for content: task 6 reads the index on the branch, cites every recipe page it lists, and quotes the list in its report |
-| The tarball docs index path | the docs rewrite | Task 2 | Read `package.json` `files` and the rewrite's HISTORY entry at execution; the fragment names the path it found |
+| The recipe index | does not exist yet (the docs rebuild writes it) | Task 6 | Task 6 cites the showcase exemplar file and the `docs/internal/facts/extend.md` bullet per row, and quotes the exemplar list it read |
+| The tarball docs entry point | does not exist as an index yet | Task 2 | The fragment points at `docs/reference/README.md`, shipped in the tarball per `package.json` `files`; verify the entry at execution |
 | `examples/showcase/.github/workflows/check.yml` (the commented final step) | extend-1 task 8a | Task 3b | Locate the comment by text |
 | `examples/showcase/package.json` scripts, `cairn-audit.config.json` | extend-1 task 7 | Task 2's snippets copy them | Read both whole |
 | `src/lib/doctor/check-skill.ts` (whole, 150 lines), `assemble.ts:36-51`, `:73-77`, `:206-227`, `bin.ts:47-56`, `:58-71` | untouched by extend-1 | Tasks 1a, 1b | Verify at dispatch |
@@ -138,7 +156,7 @@ passes (extend-1, the rewrite) move anchors under `docs/extend/`, `docs/referenc
 | `packages/create-cairn-site/scripts/bake-template.mjs:26-58` (`SITE_README`), `:60` (`DEV_SHIM`), `:180` (the engine spec), `:197` | extend-1 task 8a edits `DEV_SHIM` | Task 3a | Read whole |
 | `packages/create-cairn-site/template/src/chassis/tokens.css:47` and `examples/showcase/src/chassis/tokens.css:47` | untouched | Task 3a | Locate by `@import "tailwindcss"` |
 | `packages/create-cairn-site/template/gitignore` | untouched | Task 3a | Read whole |
-| `docs/extend/upgrade-cairn.md:38-42` (step 4) | the rewrite rebuilds the page | Task 4 | Locate by the doctor command |
+| `docs/extend/upgrade-cairn.md:38-42` (step 4) | extend-1 task 6 may touch the per-version record beside it | Task 4 | Locate by the doctor command |
 | `docs/internal/engine-rulings.md:4955` | rows appended elsewhere | Task 4 | Locate by slug |
 | `ROADMAP.md:940` (extend), `:1447-1452` (the DX decisions), `:1456-1460` (the no-pruning note) | extend-1 task 6 closes its half | Task 4 | Locate by heading text |
 | The gate string | unchanged unless a later pass edits `.github/workflows/`; extend-1 task 7 appends one step | Every task | Re-derive at the branch point |
@@ -347,7 +365,7 @@ the link test.
   `check:cairn:rendered`, `cairn-guidance check`); the consultation trigger pointing at
   `cairn-consult`; the DaisyUI-first rule; the `Stop` hook snippet with its one-line why; the
   DaisyUI tooling recommendation; and where the docs are (`cairn docs <query>` where the Go tool
-  is installed, else the tarball's docs index by the path task 2 finds at execution).
+  is installed, else the tarball's `docs/reference/README.md`, verified in `package.json` `files` at execution).
 - Produces: the agent with frontmatter `name: cairn-extension-reviewer`, `description`, and
   `tools: Read, Grep, Glob`, nothing else; read-only; reads a diff against the boundary, the atoms,
   and the craft bar; asks of every new component whether a DaisyUI component or template covers
@@ -552,9 +570,11 @@ the existing skill with and without `dist/`; `npm run check:docs` green; the gat
   `skills/cairn-admin-screens/SKILL.md:1-4`) trigger on building or changing anything under a
   cairn site that touches `/admin`, a form action, logging, or the engine's seams. Its body opens
   with the DaisyUI question, then a table: what you are building, the atom, the seam, the showcase
-  exemplar file, the recipe page path, and the ruling slug as the why. The recipe paths are read
-  from `docs/extend/README.md`'s recipe index on the branch at execution, every listed page cited,
-  and the report quotes the list it read. It ends with the pre-flight checklist reference.
+  exemplar file, the `docs/internal/facts/extend.md` bullet that records the pattern, and the
+  ruling slug as the why (no recipe page column: the pages do not exist until the docs rebuild,
+  which adds the column). The exemplar files are read from `examples/showcase/src/routes` on the
+  branch at execution, every header comment's Archetype and Atoms labels cited, and the report
+  quotes the list it read. It ends with the pre-flight checklist reference.
 - Produces: `references/daisyui-first.md`, the engine's own 2026-09-13 minor-bump survey's DaisyUI
   section summarized, with the rulings-ledger slugs for the cases where a documented DaisyUI defect
   is the reason a home-grown component exists.
@@ -563,8 +583,8 @@ the existing skill with and without `dist/`; `npm run check:docs` green; the gat
 - [ ] **Step 1:** write the router under 1,700 words; `node scripts/checks/check-skill-budget.mjs`.
 - [ ] **Step 2:** the two references; changelog. The gate. Commit.
 
-**Acceptance criteria:** the budget check is green; `npm run check:docs` resolves every recipe
-path the table names; the report quotes the index it read; the gate string exits 0.
+**Acceptance criteria:** the budget check is green; every exemplar path and facts bullet the
+table names exists on the branch (verified by the report's quoted list); the gate string exits 0.
 
 **Gate:** CHECK-PLUS-UNIT. **Commit:** one, `feat(skills): add cairn-extend`.
 
@@ -661,7 +681,7 @@ and 3b), `design.yml`, `norms.yml`, `tsgo.yml`, `publish.yml`.
    `Consumers must:` line telling existing sites to re-run the install. The copied consultation
    standard is filed under the same routine.
 8. Docs, HISTORY, STATUS, ROADMAP as task 4 left it; the record file. Score both budgets.
-9. Merge on green CI. Close the session. Site migration is each site's next pass.
+9. Merge on green CI. Close the session. The one cut is next (`cairn-release`, after the dependency sweep), then the site round.
 
 ## What this pass hands forward
 

@@ -30,9 +30,32 @@ improvement release; then **the docs rebuild** from the facts container, then be
 
 ## Parallel tracks
 
-- **Go `cairn` tool, 1.0, pass A is in flight** on `cairn-tool-a` (draft PR #60) in its own session,
-  which maintains that pass's task ledger here on `main`; plan `-cairn-tool-1-0-pass.md`. Its gate is
-  `make -C tool check`, and `gate-tier.mjs` needs a `tool/**` rule at that pass's close.
+- **Go `cairn` tool, 1.0, pass A is in flight** (its own session keeps the ledger below; plan
+  `-cairn-tool-1-0-pass.md`; gate `make -C tool check`; `gate-tier.mjs` needs a `tool/**` rule at
+  that pass's close).
+
+**Go tool pass A is IN FLIGHT beside extend-1 (Geoff, 2026-09-19 21:00)** on `cairn-tool-a` (draft PR
+#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-20 02:47): **1 to 9
+ACCEPTED** (4 to 8 each after one fix round; 9 clean); **10** committed (`eaa24f42`) and on a ruled
+fix round as run `wf_e5459cea-fec` (`tool-a-seg4b.js`): `probe-token` must print key sets from the
+real response body through a recording RoundTripper, then re-run the live probe. Its attended half
+is DONE: Geoff minted both read tokens 2026-09-19, stored as `CAIRN_CF_READ_TOKEN`,
+`CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`, verified by curl, recorded in the dotfiles registry
+and the estate inventory. Then the Task 11 close. Spend about 3.9M of 8M.
+Scripts live in that session's scratchpad, built from
+`~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with args embedded in a copy of
+`~/.claude/workflows/pass-execute-chains.js` patched with a `noClassifier` flag. Rulings taken:
+`make -C tool check` is the gate and `gate-tier.mjs` is skipped, because it has no `tool/` rule and
+routes a Go-only diff to the full Node gate (file a `tool/**` rule at the close); `record.Marshal`
+appends a non-zero typed key absent at parse time; `store.Dir` resolves env, then the legacy
+`~/.config/cairn/sites` when it exists, then `os.UserConfigDir`, since the Node CLI still writes
+the legacy path; the Cloudflare read token needs SEVEN groups (Zone Settings: Read added); a
+public repository proves nothing about a GitHub token's scope, so `probe-token` marks
+visibility; an unconnected worker is an EMPTY Builds trigger list, never error 12000, so the Deploy
+check assigns builds-not-connected; a direct `classifyReason` table stands in for corpus bodies the
+corpus does not carry (no invented fixtures); the `Step` enum is NINETEEN strings, since the Node
+GitHub chapter writes `installed` through a computed local the plan's row 9 missed.
+
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.

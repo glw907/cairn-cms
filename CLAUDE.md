@@ -354,9 +354,8 @@ front-door register, the no-pitch keystone); read it before writing or reviewing
 Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte
-`@component` convention. ESLint's `svelte-eslint-parser` reaches the showcase's `.svelte`
-sources; the engine's own `src/lib/components/*.svelte` stays unwired (filed to polish), relying
-on the standard and a fresh-context review instead.
+`@component` convention. ESLint's `svelte-eslint-parser` reaches both the showcase's and the engine's own `.svelte`
+sources (`src/lib/components/**/*.svelte`), gated by the same four comment rules.
 
 One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented,
 so an exported symbol keeps its minimal one-line doc even when self-evident; write-only-when-it-helps

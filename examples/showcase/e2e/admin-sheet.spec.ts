@@ -1,18 +1,25 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// The seam under proof: the site's own compiled admin sheet (.cairn/admin.css) rides alongside
-// the packaged one on every /admin route and nowhere else. The baseline fixture below is the
-// "without" side, captured once at this pass's branch point by the post-merge ritual; there is
+// The seam under proof, in three assertions: (a) no public page ever serves the site admin
+// sheet itself, (b) each admin page carries the site sheet's proof utility that the baseline
+// build did not have, and (c) the engine's own rendered properties on those admin pages are
+// unchanged from the baseline. (a) is keyed on sheet identity rather than a whole-bundle
+// digest: the site's own Tailwind compile (`@tailwindcss/vite`) scans every route under `src`,
+// so a utility class written on an admin page (`.pt-14`, this spec's proof utility) can land in
+// the public bundle too by the site's own build, which a whole-bundle digest cannot distinguish
+// from the site admin sheet leaking onto a public page. (b) and (c) still compare against the
+// baseline fixture, captured once at this pass's branch point by the post-merge ritual; there is
 // no second build in this repo to diff against.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PATH = resolve(__dirname, 'fixtures/admin-sheet-baseline.json');
 
 const ADMIN_PAGES = ['/admin/posts', '/admin/media', '/admin/settings'] as const;
-const PUBLIC_PAGES = ['/', '/posts'] as const;
+// `/posts` is a 404 on this showcase; `/archive/2` is the archive page that renders (the bare
+// `/archive` and `/archive/1` both 404, since page one of the archive is the home route).
+const PUBLIC_PAGES = ['/', '/archive/2'] as const;
 
 // A viewport wide enough to cross every `sm:` breakpoint the pages under proof rely on.
 const WIDE_VIEWPORT = { width: 1280, height: 900 };
@@ -39,8 +46,6 @@ interface ComputedStyleSnapshot {
 }
 
 interface AdminSheetBaseline {
-  /** SHA-256 of each public page's concatenated stylesheet bodies, in document order. */
-  publicDigests: Record<string, string>;
   /**
    * Each admin page's concatenated stylesheet bodies, in document order, captured before the
    * site sheet existed. Stored as content, never as a hashed href, since a Vite content hash
@@ -71,18 +76,17 @@ function stylesheetHrefs(html: string): string[] {
   return hrefs;
 }
 
-/** A page's stylesheets, concatenated by content in document order. */
-async function pageStylesheetContent(request: APIRequestContext, path: string): Promise<string> {
+/** A page's stylesheet bodies, in document order. */
+async function pageStylesheetBodies(request: APIRequestContext, path: string): Promise<string[]> {
   const html = await (await request.get(path)).text();
   const hrefs = stylesheetHrefs(html);
-  const bodies = await Promise.all(hrefs.map(async (href) => (await request.get(href)).text()));
-  return bodies.join('');
+  return Promise.all(hrefs.map(async (href) => (await request.get(href)).text()));
 }
 
-/** SHA-256 of a page's stylesheets, concatenated by content in document order. */
-async function pageStylesheetDigest(request: APIRequestContext, path: string): Promise<string> {
-  const content = await pageStylesheetContent(request, path);
-  return createHash('sha256').update(content).digest('hex');
+/** A page's stylesheets, concatenated by content in document order. */
+async function pageStylesheetContent(request: APIRequestContext, path: string): Promise<string> {
+  const bodies = await pageStylesheetBodies(request, path);
+  return bodies.join('');
 }
 
 /** `getComputedStyle().display` of a locator's first match. */
@@ -121,10 +125,14 @@ async function pageComputedStyle(page: Page, path: string): Promise<ComputedStyl
 
 test.describe('the site admin sheet seam', () => {
   test('public pages carry no site admin sheet', async ({ request }) => {
-    const fixture = loadFixture();
+    // The site admin sheet is identified at test time, not from the fixture: it is whichever
+    // stylesheet body `/admin/posts` loads that carries the proof utility's declaration.
+    const adminBodies = await pageStylesheetBodies(request, ADMIN_PAGES[0]);
+    const adminSheetBody = adminBodies.find((body) => UTILITY_DECLARATION.test(body));
+    expect(adminSheetBody, `${ADMIN_PAGES[0]} site admin sheet body`).toBeDefined();
     for (const path of PUBLIC_PAGES) {
-      const digest = await pageStylesheetDigest(request, path);
-      expect(digest, `${path} stylesheet digest`).toBe(fixture.publicDigests[path]);
+      const bodies = await pageStylesheetBodies(request, path);
+      expect(bodies, `${path} stylesheet bodies`).not.toContain(adminSheetBody);
     }
   });
 

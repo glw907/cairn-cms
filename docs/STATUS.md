@@ -15,11 +15,25 @@ window holds for one cut, after extend-2. CI on `main` is green.
 
 **extend-2 is IN FLIGHT (launched 2026-09-20)**, one `pass-execute-chains` workflow over two
 worktrees: chain A (`.claude/worktrees/extend-2`, tasks 1a, 1b, 2, 3a, 3b, 3c, 4) and chain B
-(`.claude/worktrees/extend-2-skills`, tasks 5, 6, 7). Ledger: none accepted yet. Task 3c is the
-2026-09-19 amendment written out as a plan section at dispatch; the 5.4M ceiling is unchanged, so
-the tenth task draws on the re-dispatch reserve. The gate per task is `gate-tier.mjs`'s computed
-string plus the checks each task's acceptance criteria name. A cold session checks both worktrees
-for a live executor before touching either.
+(`.claude/worktrees/extend-2-skills`, tasks 5, 6, 7). **Checkpoint (2026-09-20 12:10):** chain B
+is DONE, 5 (one comment-only fix round), 6, and 7 ACCEPTED. Chain A halted at 1a on a second `fix`
+whose one blocking finding was a false MANIFEST sentence in `docs/reference/guidance.md`, marked
+comment-only; the conductor ruled accept-after-fix, a direct `cairn-implementer` dispatch is
+landing it, and chain A then relaunches from 1b (1b, 2, 3a, 3b, 3c, 4) as a second workflow run.
+First run `wf_0d3513c9-bdb` spent 1.87M subagent tokens over four tasks, so the forecast lands
+near the 5.4M ceiling and the 80 percent flag (4.3M) will trip mid chain A. Rulings taken: the
+gate per task is `gate-tier.mjs`'s computed string plus the checks the task's criteria name; a
+`package.json` touch computes the `full` tier, whose local e2e is green when its only failures
+are the 20 CI-canonical baseline files from `4de378ec`; the unknown-exclusion case prints the
+`@source not` line from a constant, with no sixth packaged snippet. **Owed at the ritual, one
+chain-B fold task:** `skills/cairn-consult/references/the-standard.md` carries a dated spec
+citation inside shipped markdown (the byte-identical copy criterion conflicts with the
+no-process-citations constraint; strip the HTML comment and relax the diff to the body);
+`cairn-consult` names workstation-only `engine-consult` and `engine-triage`; `cairn-extend` cites
+`docs/internal/` paths that do not ship in the tarball, and `preflight.md` names siblings that
+exist only after chain A merges; `daisyui-first.md` misses the `polish-busy-idiom` slug and
+rounds 1.14:1 to "under 1.5:1". A cold session checks both worktrees for a live executor before
+touching either.
 
 The pass: plan `docs/superpowers/plans/2026-09-14-extend-2-pass.md`, in a
 worktree off `main`, workflow mode through `pass-execute-chains.js`. Its 2026-09-19 amendment adds

@@ -113,7 +113,7 @@ combined question. **Checkpoint interval:** every four tasks; written when the r
 
 | Chain | Tasks, in order | Worktree | Branch |
 |---|---|---|---|
-| A | 1a, 1b, 2, 3a, 3b, 4 | `.claude/worktrees/extend-2` | `extend-2` |
+| A | 1a, 1b, 2, 3a, 3b, 3c, 4 | `.claude/worktrees/extend-2` | `extend-2` |
 | B | 5, 6, 7 | `.claude/worktrees/extend-2-skills` | `extend-2-skills` |
 
 `extend-2` merges; `extend-2-skills` merges into it at the ritual. Chain B touches
@@ -482,9 +482,60 @@ scaffold transcript re-capture as a stretch item.
 
 ---
 
+## Task 3c: The engine-owned Tailwind sources file
+
+**Chain:** A, sixth. **Depends on:** task 3b. Written at dispatch (2026-09-20) from the 2026-09-19
+amendment above, which is the authority; this section adds no scope to it.
+
+**Deliverables: three.** The shipped CSS file on a public subpath; the showcase, the template, and
+the bake switched to the import; the reference sentence, the facts bullet, and the changelog line.
+
+**Files:** located at dispatch by text, since extend-1 wrote them.
+- Create: the sources file under `src/lib/` (name and subpath per the amendment's example,
+  `@glw907/cairn-cms/admin-sources.css`, unless the package's existing CSS exports set a different
+  naming precedent; the report states which), its packaging or unit test.
+- Modify: `package.json` (`exports`, and `files` if the build does not already carry it),
+  every `src/admin.css` that carries `@source "../node_modules/@glw907/cairn-cms/dist";` (the
+  showcase, the template, the bake's written form, `claude/snippets/*` if task 2 copied the line),
+  `templates/waymark/**` (regenerated), the reference page that documents the admin stylesheet
+  seam (one sentence for the file, carrying the seam's ordering fact from extend-1's task 7
+  record), `docs/internal/facts/extend.md` (one bullet), `CHANGELOG.md`.
+
+**Interfaces:**
+- Produces: a CSS file whose body is only the `@source` lines for the engine's shipped admin
+  markup, resolved relative to the file itself, importable by a site as one line. The five-line
+  seam form stays five lines.
+- No site file names the engine's `dist` layout after this task.
+
+**Decisions the plan makes:**
+- Global constraint 4 yields here alone: when `check:surface` reports the new subpath as drift,
+  run `npm run check:surface -- --update` and commit the regenerated snapshot in this task.
+- The extend-1 seam is unpublished, so the changelog line reads "No consumer action."
+
+**Steps:**
+- [ ] **Step 1: the failing test first.** The packed tarball carries the file at the exported
+  subpath; its `@source` paths resolve to existing directories from the file's own location; no
+  tracked `admin.css` names `cairn-cms/dist`.
+- [ ] **Step 2:** the file, the export, the three switches; `npm run emit:template`.
+- [ ] **Step 3:** the reference sentence, the facts bullet, the changelog. The gate. Commit.
+
+**Acceptance criteria:**
+- `grep -rn 'cairn-cms/dist' examples/showcase/src packages/create-cairn-site/template templates/waymark claude`
+  returns nothing.
+- `check:package`, `check:surface`, `check:template`, `check:facts`, and the showcase's
+  `check:cairn` green; the admin-visual suite unchanged
+  (`npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`), since the compiled
+  admin sheet must be byte-equivalent in effect.
+- The gate string exits 0.
+
+**Gate:** ADMIN-VISUAL (the one task in this pass whose failure mode is paint). **Commit:** one,
+`feat(admin): ship the engine-owned Tailwind sources file`.
+
+---
+
 ## Task 4: Docs, the ledger, the roadmap (chain A, last)
 
-**Chain:** A, sixth.
+**Chain:** A, seventh.
 
 **Deliverables: four.** The upgrade page's new step; the ledger Note and row; the ROADMAP closes;
 the migration note, the changelog window, and the record.

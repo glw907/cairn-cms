@@ -1164,9 +1164,9 @@ except where a criterion says so. Invoke `go-conventions` before writing any Go 
     into `c.httpClient.Transport` after the fact. A nil `RoundTripper` still means
     `http.DefaultTransport`, asserted by a test.
 11. `errors.go` keeps `Reason`, its `String`, and `reasonForStatus`, which are shared by every
-    provider; the Cloudflare-only pieces (`APIError`, `classifyReason`, `v4Error`, `resultInfo`,
-    `v4Envelope`) move beside the Cloudflare envelope they describe. A test asserts `errors.go`
-    names no Cloudflare-specific type.
+    provider; the Cloudflare-only pieces still in it (`APIError` and `classifyReason`) move into
+    `cloudflare.go`, beside `v4Error`, `resultInfo`, and `v4Envelope`, which already live there
+    (pre-flight, 2026-09-20). A test asserts `errors.go` names no Cloudflare-specific type.
 12. The two dead wire fields go: `resultInfo.Page`, which `getPaginated` never reads because it
     appends `page=N` itself, and `v4Error.Message`, which no code path reads. The two vacuous
     `Missing` tests (`TestMissing` and `TestMissingZeroValue`, which assert only that a struct

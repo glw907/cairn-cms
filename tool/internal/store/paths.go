@@ -6,6 +6,7 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -41,25 +42,33 @@ func (s Source) String() string {
 
 // Dir resolves the registry directory. Precedence: CAIRN_STATE_DIR
 // (SourceEnv) first; then, if the Node CLI's own ~/.config/cairn/sites
-// directory already exists under home, that directory (SourceLegacyPOSIX),
-// so an operator's existing records on a platform where config diverges
-// from that path (darwin, or Linux with XDG_CONFIG_HOME set) are never
-// orphaned by the switch to config; otherwise config()'s directory plus
-// "cairn/sites" (SourceUserConfig). Paths are never merged: the first
-// match wins outright.
+// directory already exists under home, that directory (SourceLegacyPOSIX);
+// otherwise config()'s directory plus "cairn/sites" (SourceUserConfig).
+// Paths are never merged: the first match wins outright.
+//
+// The legacy directory outranks config deliberately (conductor ruling
+// 2026-09-19): it is where the Node CLI (create-cairn-site) still writes
+// records today, so on a platform where config diverges from it (darwin,
+// or Linux with XDG_CONFIG_HOME set), it is the live registry, and an
+// operator's existing records must never go silently unread. An operator
+// who has both directories keeps reading the legacy one for as long as it
+// exists; removing it is how an operator moves to the config path.
 //
 // config is os.UserConfigDir in production and a stub in tests, which is
-// what keeps this resolution table testable from a single platform.
-func Dir(env func(string) string, config func() (string, error), home string) (string, Source) {
+// what keeps this resolution table testable from a single platform. Dir
+// returns an error only when config itself fails and no legacy directory
+// exists to fall back on.
+func Dir(env func(string) string, config func() (string, error), home string) (string, Source, error) {
 	if v := env("CAIRN_STATE_DIR"); v != "" {
-		return v, SourceEnv
+		return v, SourceEnv, nil
 	}
 	legacy := filepath.Join(home, ".config", "cairn", "sites")
 	if info, err := os.Stat(legacy); err == nil && info.IsDir() {
-		return legacy, SourceLegacyPOSIX
+		return legacy, SourceLegacyPOSIX, nil
 	}
-	if dir, err := config(); err == nil {
-		return filepath.Join(dir, "cairn", "sites"), SourceUserConfig
+	dir, err := config()
+	if err != nil {
+		return "", 0, fmt.Errorf("store: resolve registry directory: %w", err)
 	}
-	return legacy, SourceLegacyPOSIX
+	return filepath.Join(dir, "cairn", "sites"), SourceUserConfig, nil
 }

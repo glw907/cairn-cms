@@ -33,3 +33,9 @@ func checkSafePerm(path string, info os.FileInfo) error {
 	}
 	return checkOwner(path, info)
 }
+
+// ensureOwnerOnlyDir is a no-op on POSIX: MkdirAll's mode argument already
+// sets the owner-only bits at creation time.
+func ensureOwnerOnlyDir(_ string) error {
+	return nil
+}

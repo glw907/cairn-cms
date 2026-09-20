@@ -587,10 +587,12 @@ string) (*os.File, error)`; the Windows implementation uses `FILE_FLAG_OPEN_REPA
   Entries are sorted by `Name`, with the id as tiebreak.
 - **The registry path resolves through `os.UserConfigDir` on every platform** (Geoff,
   2026-09-14), which is a change to the spec and is listed under the knowing corrections.
-  Precedence is `$CAIRN_STATE_DIR`, then `os.UserConfigDir()` plus `cairn/sites`, then the Node
-  CLI's own `~/.config/cairn/sites` when that directory exists. First match wins, paths are never
-  merged, and the store records which source it used. The fallback is what keeps an operator's
-  existing records readable: measured on 2026-09-14, `UserConfigDir` agrees with the Node CLI on
+  Precedence is `$CAIRN_STATE_DIR`, then the Node CLI's own `~/.config/cairn/sites` when that
+  directory exists, then `os.UserConfigDir()` plus `cairn/sites` (order corrected by conductor
+  ruling 2026-09-19: the literal order left the legacy branch unreachable). First match wins,
+  paths are never merged, and the store records which source it used. The fallback is what keeps
+  an operator's existing records readable: measured on 2026-09-14, `UserConfigDir` agrees with
+  the Node CLI on
   Windows and on Linux with `XDG_CONFIG_HOME` unset, and diverges on darwin, where it returns
   `~/Library/Application Support`, and on Linux with `XDG_CONFIG_HOME` set. A table covers all
   three platforms, with and without `CAIRN_STATE_DIR`, with and without `XDG_CONFIG_HOME`, and

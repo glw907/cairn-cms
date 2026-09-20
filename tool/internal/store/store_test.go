@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -61,14 +62,14 @@ func TestListSkipsMalformedAndRetired(t *testing.T) {
 	}
 }
 
-// TestSaveThenLoadRoundTrip proves the umask-safety claim: Save's temp
-// file is created at mode 0600 and the registry directory at 0700, both
-// with zero group/other bits, so no umask can loosen or tighten either
-// beyond what Save already requested.
+// TestSaveThenLoadRoundTrip proves the umask-safety claim on POSIX: Save's
+// temp file is created at mode 0600 and the registry directory at 0700,
+// both with zero group/other bits, so no umask can loosen or tighten
+// either beyond what Save already requested. setUmask is a no-op on
+// Windows, which has no umask concept, but the test still runs there: it
+// proves a freshly saved record passes checkSafePerm and reads back, which
+// is where a Windows DACL regression would show up.
 func TestSaveThenLoadRoundTrip(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("umask has no meaning on Windows")
-	}
 	for _, mask := range []int{0o022, 0o002} {
 		t.Run(modeName(mask), func(t *testing.T) {
 			old := setUmask(mask)
@@ -96,6 +97,13 @@ func TestSaveThenLoadRoundTrip(t *testing.T) {
 				t.Errorf("Load().SchemaVersion = %d, want 1", got.SchemaVersion)
 			}
 
+			if runtime.GOOS == "windows" {
+				// NTFS has no mode bits; Windows expresses this
+				// invariant through the DACL, which Load's
+				// checkSafePerm call above already proved by not
+				// returning ErrUnsafePerms.
+				return
+			}
 			info, err := os.Stat(dir)
 			if err != nil {
 				t.Fatalf("stat directory: %v", err)
@@ -215,14 +223,17 @@ func TestOpenRefusesSymlinkedDirectory(t *testing.T) {
 
 // TestSaveVersion0Upgrade covers the schema version contract: a version 0
 // record loads as SchemaVersion == 0, Save writes schemaVersion 1, and a
-// second Load observes 1, all while the ordered tail round-trips.
+// second Load observes 1, while every secret-bearing key Marshal never
+// types (github.clientId, github.clientSecret, github.pem,
+// github.ownerType, cloudflare.apiToken) round-trips byte for byte against
+// the fixture's own bytes, not a value Marshal itself derived.
 func TestSaveVersion0Upgrade(t *testing.T) {
 	dir := t.TempDir()
-	data, err := os.ReadFile(filepath.Join("..", "record", "testdata", "v0-with-secrets.json"))
+	fixture, err := os.ReadFile(filepath.Join("testdata", "v0-with-secrets.json"))
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "site-fixture-abcdef.json"), data, 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "site-fixture-abcdef.json"), fixture, 0o600); err != nil {
 		t.Fatalf("seed fixture: %v", err)
 	}
 	if err := os.Chmod(dir, 0o700); err != nil {
@@ -241,10 +252,6 @@ func TestSaveVersion0Upgrade(t *testing.T) {
 	if r.SchemaVersion != 0 {
 		t.Fatalf("first Load().SchemaVersion = %d, want 0", r.SchemaVersion)
 	}
-	wantTail, err := r.Marshal()
-	if err != nil {
-		t.Fatalf("Marshal before Save: %v", err)
-	}
 
 	if err := s.Save("site-fixture-abcdef", r); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -262,25 +269,39 @@ func TestSaveVersion0Upgrade(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Marshal after Save: %v", err)
 	}
-	if string(got) != withVersionOne(t, string(wantTail)) {
-		t.Errorf("Save did not preserve the ordered tail byte for byte:\ngot:  %s\nwant: %s", got, withVersionOne(t, string(wantTail)))
+
+	for _, path := range [][]string{
+		{"github", "clientId"},
+		{"github", "clientSecret"},
+		{"github", "pem"},
+		{"github", "ownerType"},
+		{"cloudflare", "apiToken"},
+	} {
+		want := rawField(t, fixture, path)
+		gotVal := rawField(t, got, path)
+		if string(gotVal) != string(want) {
+			t.Errorf("path %v: got %s, want %s (an untouched key must round-trip byte for byte)", path, gotVal, want)
+		}
 	}
 }
 
-// withVersionOne re-marshals a version-0 record's bytes with schemaVersion
-// set to 1, using record.Parse plus a mutated SchemaVersion, giving the
-// test an independently derived expectation rather than trusting Save's
-// own output.
-func withVersionOne(t *testing.T, v0 string) string {
+// rawField reads the raw JSON value at the dotted path in data, without
+// decoding it into any typed field, so a test can compare an untouched
+// key's bytes independent of record.Marshal's own output on the other
+// side of the comparison.
+func rawField(t *testing.T, data []byte, path []string) json.RawMessage {
 	t.Helper()
-	r, err := record.Parse([]byte(v0))
-	if err != nil {
-		t.Fatalf("parse fixture for comparison: %v", err)
+	cur := json.RawMessage(data)
+	for _, key := range path {
+		var obj map[string]json.RawMessage
+		if err := json.Unmarshal(cur, &obj); err != nil {
+			t.Fatalf("rawField %v: unmarshal object: %v", path, err)
+		}
+		v, ok := obj[key]
+		if !ok {
+			t.Fatalf("rawField %v: missing key %q", path, key)
+		}
+		cur = v
 	}
-	r.SchemaVersion = 1
-	out, err := r.Marshal()
-	if err != nil {
-		t.Fatalf("marshal comparison record: %v", err)
-	}
-	return string(out)
+	return cur
 }

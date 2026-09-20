@@ -10,7 +10,10 @@ import (
 
 // openNoFollow creates path exclusively, refusing to follow a reparse
 // point already sitting at path. syscall.O_NOFOLLOW does not exist on
-// Windows; FILE_FLAG_OPEN_REPARSE_POINT is the platform's equivalent.
+// Windows; FILE_FLAG_OPEN_REPARSE_POINT is the platform's equivalent. The
+// fresh file otherwise inherits its parent directory's ACL, which is not
+// necessarily owner-only, so this also sets an explicit owner-only DACL
+// before returning.
 func openNoFollow(path string) (*os.File, error) {
 	pathp, err := windows.UTF16PtrFromString(path)
 	if err != nil {
@@ -28,7 +31,51 @@ func openNoFollow(path string) (*os.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("store: create %s: %w", path, err)
 	}
-	return os.NewFile(uintptr(h), path), nil
+	f := os.NewFile(uintptr(h), path)
+	if err := setOwnerOnlyDACL(path); err != nil {
+		_ = f.Close()
+		_ = os.Remove(path)
+		return nil, err
+	}
+	return f, nil
+}
+
+// ensureOwnerOnlyDir sets dir's DACL to owner-only. MkdirAll's mode
+// argument has no effect on Windows: a fresh directory inherits its
+// parent's ACL, which is not necessarily owner-only, so Save calls this
+// after creating the registry directory.
+func ensureOwnerOnlyDir(dir string) error {
+	return setOwnerOnlyDACL(dir)
+}
+
+// setOwnerOnlyDACL replaces path's DACL with a single entry granting the
+// current user full control, and marks the DACL protected so no inherited
+// entry from a parent directory survives.
+func setOwnerOnlyDACL(path string) error {
+	owner, err := currentUserSID()
+	if err != nil {
+		return err
+	}
+	acl, err := windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{{
+		AccessPermissions: windows.GENERIC_ALL,
+		AccessMode:        windows.GRANT_ACCESS,
+		Trustee: windows.TRUSTEE{
+			TrusteeForm:  windows.TRUSTEE_IS_SID,
+			TrusteeValue: windows.TrusteeValueFromSID(owner),
+		},
+	}}, nil)
+	if err != nil {
+		return fmt.Errorf("store: %s: build owner-only ACL: %w", path, err)
+	}
+	if err := windows.SetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION,
+		nil, nil, acl, nil,
+	); err != nil {
+		return fmt.Errorf("store: %s: set owner-only DACL: %w", path, err)
+	}
+	return nil
 }
 
 // checkOwner reports ErrUnsafePerms when path's owner SID does not match

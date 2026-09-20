@@ -22,6 +22,7 @@ func TestDir(t *testing.T) {
 		legacyExists bool
 		wantSource   Source
 		wantSuffix   []string // relative to home
+		wantErr      bool
 	}{
 		{
 			name:       "CAIRN_STATE_DIR set wins outright, on every platform",
@@ -93,12 +94,11 @@ func TestDir(t *testing.T) {
 			wantSuffix:   []string{".config", "cairn", "sites"},
 		},
 		{
-			name:         "config errors and no legacy directory exists: falls back to the legacy path anyway",
+			name:         "config errors and no legacy directory exists: Dir reports an error",
 			env:          noEnv,
 			configSuffix: nil,
 			legacyExists: false,
-			wantSource:   SourceLegacyPOSIX,
-			wantSuffix:   []string{".config", "cairn", "sites"},
+			wantErr:      true,
 		},
 	}
 
@@ -119,8 +119,17 @@ func TestDir(t *testing.T) {
 				return filepath.Join(append([]string{home}, tt.configSuffix...)...), nil
 			}
 
-			dir, source := Dir(tt.env, config, home)
+			dir, source, err := Dir(tt.env, config, home)
 
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("Dir() err = nil, want an error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Dir() err = %v, want nil", err)
+			}
 			if source != tt.wantSource {
 				t.Errorf("Dir() source = %v, want %v", source, tt.wantSource)
 			}

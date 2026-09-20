@@ -152,6 +152,9 @@ func (s *Store) Save(id string, r record.Record) error {
 	if err := os.MkdirAll(s.dir, 0o700); err != nil {
 		return fmt.Errorf("store: create directory: %w", err)
 	}
+	if err := ensureOwnerOnlyDir(s.dir); err != nil {
+		return fmt.Errorf("store: secure directory: %w", err)
+	}
 
 	tmpPath := filepath.Join(s.dir, fmt.Sprintf(".%s.tmp-%d-%d", id, os.Getpid(), time.Now().UnixNano()))
 	f, err := openNoFollow(tmpPath)

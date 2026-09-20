@@ -61,7 +61,13 @@ aksailingclub-org, ecxc-ski, and 907-life upgraded as model cairn sites, each pa
 container bullets via `site-docs/<site>-<pass>`; then one improvement release, the public docs
 rebuilt from the container, then beta.
 
-Held for the week of 2026-09-21: Go tool pass A at `cairn-tool-a` Task 3 (draft PR #60).
+**Go tool pass A is IN FLIGHT beside extend-1 (Geoff, 2026-09-19 21:00)** on `cairn-tool-a` (draft PR
+#60, `main` merged in at `60541de3`), a separate session. Tasks 1 to 3 committed; segment 2 (tasks 4,
+5, 6) runs as `wf_3b8fa836-ff2` from that session's scratchpad `tool-a-seg2.js`; segment 3 (7, 8, 9)
+follows from `tool-a-seg3.js`; both are built from
+`~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with the args embedded in a copy of
+`~/.claude/workflows/pass-execute-chains.js`. Gate `make -C tool check`. Stops at Task 10 (Geoff's
+attended credential sitting). Ceiling 8M.
 
 ## Parallel tracks
 

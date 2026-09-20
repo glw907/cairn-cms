@@ -122,7 +122,10 @@ describe('runGuidanceCheck', () => {
     expect(report.sourceExclusion.status).toBe('excluded');
     expect(report.orig.paths).toEqual([]);
     // Every item is present, so none of the not-present snippet bodies appear.
-    expect(formatCheckReport(report)).not.toContain(source.snippets['check-cairn.json']);
+    const formatted = formatCheckReport(report);
+    expect(formatted).not.toContain(source.snippets['check-cairn.json']);
+    expect(formatted).not.toContain(source.snippets['cairn-audit.config.json']);
+    expect(formatted).not.toContain(source.snippets['check.yml']);
   });
 
   it('prints the exact import line when CLAUDE.md is missing it', async () => {

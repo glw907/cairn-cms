@@ -94,9 +94,14 @@ describe('readPackagedSkills (real filesystem)', () => {
 });
 
 describe('readPackagedSnippets (real filesystem)', () => {
-  it('degrades to an empty map when claude/snippets/ is not shipped yet', async () => {
+  it('returns a flat map of snippet contents, empty when claude/snippets/ is not shipped', async () => {
     const snippets = await readPackagedSnippets();
-    expect(snippets).toEqual({});
+    for (const value of Object.values(snippets)) {
+      expect(typeof value).toBe('string');
+    }
+    if (!existsSync(resolveSourceRoot('claude/snippets'))) {
+      expect(snippets).toEqual({});
+    }
   });
 });
 

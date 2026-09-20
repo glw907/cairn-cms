@@ -26,7 +26,7 @@ the same directory `cairn-doctor` runs in.
 - `.claude/agents/cairn-extension-reviewer.md`
 - `.claude/cairn/CLAUDE.md`, the fragment
 - `.claude/cairn/VERSION`, stamped from the installed package's own version
-- `.claude/cairn/MANIFEST`, the full list of paths this and every prior install wrote
+- `.claude/cairn/MANIFEST`, the list of paths this install wrote
 
 Every write is contained under `.claude/`; a destination that would resolve outside it is refused
 and named rather than written. `install` never writes `.claude/settings.json`, `CLAUDE.md` at the

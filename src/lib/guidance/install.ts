@@ -135,8 +135,9 @@ export async function readPackagedFragment(): Promise<string | null> {
 
 /**
  * The packaged `check` snippets, keyed by filename under `claude/snippets/`. `check.ts` prints
- *  one of these bodies under any not-present item it names. Degrades to `{}`, the same as
- *  `readPackagedAgents`, when the directory does not exist yet.
+ *  one of these bodies under the check:cairn script, cairn-audit.config.json, or CI workflow
+ *  item when it is not present. Degrades to `{}`, the same as `readPackagedAgents`, when the
+ *  directory does not exist yet.
  */
 export async function readPackagedSnippets(): Promise<Record<string, string>> {
   const { files } = await walkPackagedTree(resolveSourceRoot('claude/snippets'));

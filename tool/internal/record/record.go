@@ -278,6 +278,10 @@ func decodeObject(data []byte) ([]string, map[string]json.RawMessage, error) {
 		return nil, nil, fmt.Errorf("record: expected a JSON object, got %v", tok)
 	}
 
+	// Non-nil on purpose, at every nesting level: a nil order is Marshal's
+	// "never parsed" sentinel, so a parsed-but-empty object must come back
+	// with an empty order rather than a nil one, or Marshal would replay the
+	// struct's own field order over it and break the byte-for-byte round trip.
 	order := []string{}
 	values := make(map[string]json.RawMessage)
 	for dec.More() {
@@ -372,19 +376,7 @@ func marshalGitHub(gh RecordGitHub) (json.RawMessage, error) {
 		"repo":           {marshal: func() (json.RawMessage, error) { return marshalGitHubRepo(gh.Repo) }, nonZero: nonZeroValue(gh.Repo)},
 		"installationId": {marshal: func() (json.RawMessage, error) { return rawOf(gh.InstallationID) }, nonZero: nonZeroValue(gh.InstallationID)},
 	}
-	replay := gh.order
-	if replay == nil {
-		replay = typedGitHubKeys
-	}
-	keys, values, err := orderedFields(replay, typedGitHubKeys, typed, gh.Extra)
-	if err != nil {
-		return nil, err
-	}
-	var buf bytes.Buffer
-	if err := writeObject(&buf, keys, values); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return marshalObject(gh.order, typedGitHubKeys, typed, gh.Extra)
 }
 
 func marshalGitHubRepo(repo RecordGitHubRepo) (json.RawMessage, error) {
@@ -394,19 +386,7 @@ func marshalGitHubRepo(repo RecordGitHubRepo) (json.RawMessage, error) {
 		"repo":          {marshal: func() (json.RawMessage, error) { return rawOf(repo.Repo) }, nonZero: nonZeroValue(repo.Repo)},
 		"defaultBranch": {marshal: func() (json.RawMessage, error) { return rawOf(repo.DefaultBranch) }, nonZero: nonZeroValue(repo.DefaultBranch)},
 	}
-	replay := repo.order
-	if replay == nil {
-		replay = typedGitHubRepoKeys
-	}
-	keys, values, err := orderedFields(replay, typedGitHubRepoKeys, typed, repo.Extra)
-	if err != nil {
-		return nil, err
-	}
-	var buf bytes.Buffer
-	if err := writeObject(&buf, keys, values); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return marshalObject(repo.order, typedGitHubRepoKeys, typed, repo.Extra)
 }
 
 func marshalCloudflare(cf RecordCloudflare) (json.RawMessage, error) {
@@ -415,11 +395,19 @@ func marshalCloudflare(cf RecordCloudflare) (json.RawMessage, error) {
 		"zoneId":     {marshal: func() (json.RawMessage, error) { return rawOf(cf.ZoneID) }, nonZero: nonZeroValue(cf.ZoneID)},
 		"workerName": {marshal: func() (json.RawMessage, error) { return rawOf(cf.WorkerName) }, nonZero: nonZeroValue(cf.WorkerName)},
 	}
-	replay := cf.order
+	return marshalObject(cf.order, typedCloudflareKeys, typed, cf.Extra)
+}
+
+// marshalObject orders a nested object's fields with orderedFields and encodes the
+// result as a compact JSON object. A nil observedOrder means the value was built
+// directly rather than by Parse, so typedOrder, the struct's own field order,
+// stands in for it.
+func marshalObject(observedOrder, typedOrder []string, typed map[string]typedField, extra []ExtraField) (json.RawMessage, error) {
+	replay := observedOrder
 	if replay == nil {
-		replay = typedCloudflareKeys
+		replay = typedOrder
 	}
-	keys, values, err := orderedFields(replay, typedCloudflareKeys, typed, cf.Extra)
+	keys, values, err := orderedFields(replay, typedOrder, typed, extra)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"slices"
@@ -87,14 +88,23 @@ func okVerdict() verdict {
 	return verdict{status: http.StatusOK, reason: "ok", level: exitOK}
 }
 
+// cloudflareVerdict reports the verdict a Cloudflare call's error carries, or okVerdict for a
+// nil err. An error this package cannot classify reports "unreachable" at exitUnknown.
 func cloudflareVerdict(err error) verdict {
+	if err == nil {
+		return okVerdict()
+	}
 	if apiErr, ok := errors.AsType[*providers.APIError](err); ok {
 		return verdict{status: apiErr.Status, reason: apiErr.Reason.String(), level: reasonLevel(apiErr.Reason)}
 	}
 	return verdict{reason: "unreachable", level: exitUnknown}
 }
 
+// githubVerdict is cloudflareVerdict's counterpart for a GitHub call's error.
 func githubVerdict(err error) verdict {
+	if err == nil {
+		return okVerdict()
+	}
 	if ghErr, ok := errors.AsType[*providers.GitHubError](err); ok {
 		return verdict{status: ghErr.Status, reason: ghErr.Reason.String(), level: reasonLevel(ghErr.Reason)}
 	}
@@ -151,11 +161,11 @@ type recordedBody struct {
 func recordBody(data []byte) recordedBody {
 	var obj map[string]json.RawMessage
 	if err := json.Unmarshal(data, &obj); err == nil {
-		rb := recordedBody{keys: sortedKeys(obj)}
+		rb := recordedBody{keys: slices.Sorted(maps.Keys(obj))}
 		if result, ok := obj["result"]; ok {
 			var resultObj map[string]json.RawMessage
 			if err := json.Unmarshal(result, &resultObj); err == nil {
-				rb.resultKeys = sortedKeys(resultObj)
+				rb.resultKeys = slices.Sorted(maps.Keys(resultObj))
 			}
 		}
 		return rb
@@ -166,22 +176,12 @@ func recordBody(data []byte) recordedBody {
 		if len(arr) > 0 {
 			var first map[string]json.RawMessage
 			if err := json.Unmarshal(arr[0], &first); err == nil {
-				rb.keys = sortedKeys(first)
+				rb.keys = slices.Sorted(maps.Keys(first))
 			}
 		}
 		return rb
 	}
 	return recordedBody{marker: markerNotJSON}
-}
-
-// sortedKeys returns m's keys, sorted.
-func sortedKeys(m map[string]json.RawMessage) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	slices.Sort(keys)
-	return keys
 }
 
 // recordingRoundTripper wraps another RoundTripper, recording every 200 JSON response's
@@ -228,9 +228,9 @@ func printEndpoint(out io.Writer, endpoint string, v verdict, rb recordedBody) {
 	}
 	switch rb.marker {
 	case markerNotJSON:
-		_, _ = fmt.Fprintln(out, "      body: (not JSON)")
+		_, _ = fmt.Fprintln(out, "      body:", markerNotJSON)
 	case markerArray:
-		_, _ = fmt.Fprintln(out, "      body: (array)")
+		_, _ = fmt.Fprintln(out, "      body:", markerArray)
 		if len(rb.keys) > 0 {
 			_, _ = fmt.Fprintf(out, "      keys (first element): %v\n", rb.keys)
 		}
@@ -300,33 +300,33 @@ func runProbeToken(cmd *cobra.Command, env func(string) string, p secrets.Provid
 		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
 		raise(exitUnknown)
 	} else {
-		dir, err := registryDir()
-		if err != nil {
-			_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
-			raise(exitUnknown)
-		} else {
-			sites, err := discoverSites(dir)
-			if err != nil {
-				_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
-				raise(exitUnknown)
-			} else {
-				raise(probeGitHub(out, errOut, providers.NewGitHub(resolved.GHToken, rec), rec, sites))
-			}
-		}
+		raise(probeRegistryGitHub(out, errOut, providers.NewGitHub(resolved.GHToken, rec), rec, registryDir))
 	}
 
 	exit(worst)
 	return nil
 }
 
-// isMissing reports whether missing names var.
-func isMissing(missing []providers.Missing, name string) bool {
-	for _, m := range missing {
-		if m.Var == name {
-			return true
-		}
+// probeRegistryGitHub discovers the registry's sites and hands them to probeGitHub, reporting
+// exitUnknown when the registry cannot be located or read at all: the credential is unjudged
+// either way, so the run reports that it could not observe rather than that the token is wrong.
+func probeRegistryGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, registryDir func() (string, error)) int {
+	dir, err := registryDir()
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
+		return exitUnknown
 	}
-	return false
+	sites, err := discoverSites(dir)
+	if err != nil {
+		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
+		return exitUnknown
+	}
+	return probeGitHub(out, errOut, gh, rec, sites)
+}
+
+// isMissing reports whether missing names the variable name.
+func isMissing(missing []providers.Missing, name string) bool {
+	return slices.ContainsFunc(missing, func(m providers.Missing) bool { return m.Var == name })
 }
 
 // printCredentialSources writes which provider answered each of the three variables loadEnv
@@ -351,13 +351,7 @@ func probeCloudflare(out io.Writer, cf *providers.Cloudflare, accountID string, 
 	worst := exitOK
 
 	run := func(endpoint, method, path string, call func() error) {
-		err := call()
-		var v verdict
-		if err != nil {
-			v = cloudflareVerdict(err)
-		} else {
-			v = okVerdict()
-		}
+		v := cloudflareVerdict(call())
 		worst = combineLevel(worst, v.level)
 		printEndpoint(out, endpoint, v, rec.lookup(method, path))
 	}
@@ -414,48 +408,33 @@ func probeGitHub(out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoun
 	}
 	var repos []repoLine
 
+	// report prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
+	// whatever shape the recorder captured for path, and folds its level into worst.
+	report := func(endpoint, owner, repo, path string, err error) verdict {
+		v := githubVerdict(err)
+		raise(v.level)
+		printEndpoint(out, fmt.Sprintf("%s (%s/%s)", endpoint, owner, repo), v, rec.lookup(http.MethodGet, path))
+		return v
+	}
+
 	probeRepo := func(owner, repo string) repoLine {
 		private, ownErr := gh.RepoOwnership(owner, repo)
-		v := okVerdict()
-		if ownErr != nil {
-			v = githubVerdict(ownErr)
-		}
-		raise(v.level)
-		path := fmt.Sprintf("/repos/%s/%s", owner, repo)
-		printEndpoint(out, fmt.Sprintf("repos (%s/%s)", owner, repo), v, rec.lookup(http.MethodGet, path))
-		return repoLine{label: fmt.Sprintf("%s/%s", owner, repo), v: v, private: private, known: ownErr == nil}
+		v := report("repos", owner, repo, fmt.Sprintf("/repos/%s/%s", owner, repo), ownErr)
+		return repoLine{label: owner + "/" + repo, v: v, private: private, known: ownErr == nil}
 	}
 
 	for _, s := range sites {
 		_, shaErr := gh.HeadSHA(s.owner, s.repo, "main")
-		shaVerdict := okVerdict()
-		if shaErr != nil {
-			shaVerdict = githubVerdict(shaErr)
-		}
-		raise(shaVerdict.level)
-		shaPath := fmt.Sprintf("/repos/%s/%s/commits/main", s.owner, s.repo)
-		printEndpoint(out, fmt.Sprintf("commits/main (%s/%s)", s.owner, s.repo), shaVerdict, rec.lookup(http.MethodGet, shaPath))
+		report("commits/main", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/commits/main", s.owner, s.repo), shaErr)
 
 		_, contentErr := gh.FileAtRef(s.owner, s.repo, "package.json", "main")
-		contentVerdict := okVerdict()
-		if contentErr != nil {
-			contentVerdict = githubVerdict(contentErr)
-		}
-		raise(contentVerdict.level)
-		contentPath := fmt.Sprintf("/repos/%s/%s/contents/package.json", s.owner, s.repo)
-		printEndpoint(out, fmt.Sprintf("contents/package.json (%s/%s)", s.owner, s.repo), contentVerdict, rec.lookup(http.MethodGet, contentPath))
+		report("contents/package.json", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/contents/package.json", s.owner, s.repo), contentErr)
 
 		repos = append(repos, probeRepo(s.owner, s.repo))
 	}
 
-	_, contentErr := gh.FileAtRef(engineOwner, engineRepo, "CHANGELOG.md", "main")
-	engineVerdict := okVerdict()
-	if contentErr != nil {
-		engineVerdict = githubVerdict(contentErr)
-	}
-	raise(engineVerdict.level)
-	enginePath := fmt.Sprintf("/repos/%s/%s/contents/CHANGELOG.md", engineOwner, engineRepo)
-	printEndpoint(out, fmt.Sprintf("contents/CHANGELOG.md (%s/%s)", engineOwner, engineRepo), engineVerdict, rec.lookup(http.MethodGet, enginePath))
+	_, engineErr := gh.FileAtRef(engineOwner, engineRepo, "CHANGELOG.md", "main")
+	report("contents/CHANGELOG.md", engineOwner, engineRepo, fmt.Sprintf("/repos/%s/%s/contents/CHANGELOG.md", engineOwner, engineRepo), engineErr)
 
 	repos = append(repos, probeRepo(engineOwner, engineRepo))
 

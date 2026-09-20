@@ -263,6 +263,12 @@ func TestProbeTokenDiscoversRepositoriesFromRegistryNoHardcodedList(t *testing.T
 	if !strings.Contains(errOut.String(), "unconfirmed") {
 		t.Errorf("stderr = %q, want the GitHub-scope-unconfirmed warning: every fixture repository above is public", errOut.String())
 	}
+	// A body-shape line proves the recorder lookup matched a probed endpoint. Without it, a
+	// path-format change inside providers would make every lookup miss and every shape line
+	// vanish, with the exit code and the repository lines above still green.
+	if !strings.Contains(out.String(), "keys: ") {
+		t.Errorf("output carries no \"keys:\" line, so no recorded body shape was found for any probed endpoint; output:\n%s", out.String())
+	}
 }
 
 func TestProbeTokenWarnsWhenEveryRepositoryIsPublic(t *testing.T) {

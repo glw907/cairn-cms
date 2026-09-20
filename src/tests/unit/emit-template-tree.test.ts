@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFile, mkdtemp, rm, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve, join, relative } from 'node:path';
 import { emitTemplate, isAlwaysSkippedPath } from '../../../scripts/build/emit-template.mjs';
@@ -211,13 +212,24 @@ describe('examples/showcase/wrangler.jsonc', () => {
 });
 
 describe('examples/showcase/.cairn-template.json', () => {
-  it('every exclude entry matches a path that exists in the showcase', async () => {
+  /**
+   * An exclude entry is valid when it exists on disk, or when `git check-ignore` reports it
+   * ignored: `.cairn` is a build:admin-css output the showcase's own .gitignore excludes, so a
+   * fresh checkout with no build run yet has no such directory, and an ignored path is exactly
+   * what a template exclude entry is for.
+   */
+  it('every exclude entry matches a path that exists in the showcase or is git-ignored', async () => {
     const manifest = JSON.parse(await readFile(resolve(SHOWCASE, '.cairn-template.json'), 'utf8')) as {
       exclude: string[];
     };
     expect(manifest.exclude.length).toBeGreaterThan(0);
     for (const entry of manifest.exclude) {
-      expect(existsSync(resolve(SHOWCASE, entry)), entry).toBe(true);
+      if (existsSync(resolve(SHOWCASE, entry))) continue;
+      // A trailing slash lets git match a directory-only ignore rule (e.g. `/.cairn/`) for an
+      // entry that does not exist yet; git-ignore rules cannot otherwise tell a missing
+      // directory from a missing file.
+      const result = spawnSync('git', ['check-ignore', '-q', `${entry}/`], { cwd: SHOWCASE });
+      expect(result.status, `${entry}: neither present on disk nor git-ignored`).toBe(0);
     }
   });
 });

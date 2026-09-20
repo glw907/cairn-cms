@@ -24,7 +24,7 @@ func readTestdata(t *testing.T, name string) []byte {
 // package does not fully understand, secrets included, must survive a
 // Parse/Marshal cycle byte for byte, key order and all.
 func TestParseMarshalRoundTrip(t *testing.T) {
-	for _, name := range []string{"v0-with-secrets.json", "v1-adopted.json"} {
+	for _, name := range []string{"v0-with-secrets.json", "v1-adopted.json", "v0-empty-objects.json"} {
 		t.Run(name, func(t *testing.T) {
 			original := readTestdata(t, name)
 			r, err := Parse(original)

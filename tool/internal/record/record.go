@@ -278,7 +278,7 @@ func decodeObject(data []byte) ([]string, map[string]json.RawMessage, error) {
 		return nil, nil, fmt.Errorf("record: expected a JSON object, got %v", tok)
 	}
 
-	var order []string
+	order := []string{}
 	values := make(map[string]json.RawMessage)
 	for dec.More() {
 		keyTok, err := dec.Token()

@@ -35,7 +35,7 @@ SKIP  Site config: no site.config.yaml found (looked in site.config.yaml, src/li
 PASS  Public origin: PUBLIC_ORIGIN is https://cairn-capture-scratch.glw907.workers.dev (wrangler vars)
 SKIP  Tidy API key: no site.config.yaml found, so tidy enablement is unknown
 PASS  Custom /admin mount: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-SKIP  admin-screens skill: the admin-screens skill is not installed at .claude/skills/cairn-admin-screens; run cairn-doctor --fix to install it
+[...]
 PASS  Dependency floors: @sveltejs/kit 2.70.2 and svelte 5.56.9 satisfy the engine peer ranges
 FAIL  Email sending domain: no zone named showcase.test is visible to this token
 FAIL  Always Use HTTPS: no zone named showcase.test is visible to this token
@@ -56,6 +56,11 @@ alongside PASS, FAIL, and SKIP. `INFO` marks a heuristic that couldn't see enoug
 advisory finding; it's never a deploy blocker. `UNCHECKED` marks a check that genuinely needed an
 input, like a lockfile or a config file, and found none of the candidates it looks for. That's
 different from a SKIP, which means the check doesn't apply at all.
+
+The elided line between the mount check and the dependency floors was a skill-install nudge the
+doctor no longer prints: that install now lives in
+[`cairn-guidance`](../reference/guidance.md), and the total below still counts it since the
+underlying capture predates the move.
 
 Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
 this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the
@@ -152,8 +157,6 @@ Match what your doctor printed to the section that explains it:
   `admin.mount-incomplete`
 - `Live admin login probe`—[Probe the deployed admin](#probe-the-deployed-admin),
   `admin.login-probe-failed`
-- `admin-screens skill`—[Refresh the admin-screens skill](#refresh-the-admin-screens-skill),
-  `skill.admin-screens-stale`
 
 Two more sections below cover a real blocker, but `cairn-doctor` never reports either one; your
 site answers with the refusal itself, the moment it happens:
@@ -448,10 +451,3 @@ more specific one.
 
 This check only runs when you pass `--probe`; a bare `npx cairn-doctor` never makes this request
 on its own.
-
-## Refresh the admin-screens skill
-
-**`skill.admin-screens-stale`, a warning.** A helper file cairn installs for coding assistants
-working on your site is missing or out of date. Nothing about your site itself is broken.
-
-**Act:** run `npx cairn-doctor --fix`.

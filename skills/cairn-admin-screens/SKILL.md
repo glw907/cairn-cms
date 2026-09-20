@@ -21,7 +21,7 @@ running dev server, both themes) runs thirty-four rules across two modes: sevent
 fifteen error tier and two advisory, and seventeen rendered, seven error and ten advisory. Full
 descriptions live in
 [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
-(the installed package's copy, reached from where this skill lives once `cairn-doctor --fix`
+(the installed package's copy, reached from where this skill lives once `cairn-guidance install`
 installs it at `.claude/skills/cairn-admin-screens/`).
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,

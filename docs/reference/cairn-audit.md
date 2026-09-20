@@ -22,8 +22,8 @@ without `--rendered`, scopes the static run the same way.
 
 A build agent points at these mechanical checks rather than holding their formulas in working
 memory. The packaged `cairn-admin-screens` skill names them by rule id and defers to the audit for
-the details. [`cairn-doctor --fix`](./doctor.md#the---fix-skill-install) installs and
-freshness-checks the skill in a consumer repo.
+the details. [`cairn-guidance install`](./guidance.md#install) installs and freshness-checks the
+skill in a consumer repo.
 
 ## What ships
 

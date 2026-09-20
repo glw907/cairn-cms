@@ -26,12 +26,11 @@ import {
   emailNormalization,
 } from './checks-cloudflare.js';
 import { githubApp } from './checks-github.js';
-import { skillFreshness } from './check-skill.js';
 import { postureEffective } from './check-posture.js';
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
 export const USAGE =
-  'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]] [--fix] [--help]';
+  'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]] [--help]';
 
 export interface DoctorArgs {
   from?: string;
@@ -42,11 +41,6 @@ export interface DoctorArgs {
    *  PUBLIC_ORIGIN input), absent when the flag never appeared (the probe does not run).
    */
   probe?: string | true;
-  /**
-   * Install or refresh the packaged admin-screens skill into `.claude/skills/` before the
-   *  checks run. Bare flag; absent when --fix never appeared.
-   */
-  fix?: boolean;
   /** `--help` printed `USAGE` and exited before any check ran. Bare flag. */
   help?: boolean;
 }
@@ -68,12 +62,6 @@ export function parseArgs(argv: string[]): DoctorArgs {
       const bare = value === undefined || value.startsWith('--');
       args.probe = bare ? true : value;
       i += bare ? 1 : 2;
-      continue;
-    }
-    // --fix is a bare boolean; it never takes a value.
-    if (flag === '--fix') {
-      args.fix = true;
-      i += 1;
       continue;
     }
     // --help is a bare boolean too; the bin prints USAGE and exits before running anything.
@@ -214,7 +202,6 @@ export function defaultChecks(): DoctorCheck[] {
     configTidyKey,
     configNoReferrerBlanket,
     adminMountShape,
-    skillFreshness,
     configDependencyFloors,
     emailSenderOnboarded,
     edgeHttpsForced,

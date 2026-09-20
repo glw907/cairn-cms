@@ -104,17 +104,17 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-five entries', () => {
+  it('pins the registry at twenty-four entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
-    // skill.admin-screens-stale for the packaged skill's doctor delivery, plus
     // config.no-referrer-blanket for the blanket no-referrer doctor check, minus the retired
     // edge.hsts-off, plus config.tidy-key-missing (its own condition id, no longer borrowing
     // config.bindings-missing), plus auth.store-unmigrated for the missing-0004 login fault the
     // store now names, plus auth.identity-unresolved and auth.identity-unknown for the identity
-    // seam. Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(25);
+    // seam, minus the retired skill-freshness condition (its install moved to cairn-guidance,
+    // which carries no condition of its own). Grow this count only with a registry change.
+    expect(allConditions()).toHaveLength(24);
   });
 
   it('resolves the tidy-key condition (its own id, no longer borrowing config.bindings-missing)', () => {
@@ -123,15 +123,6 @@ describe('condition registry', () => {
     expect(c.why).toMatch(/ANTHROPIC_API_KEY/);
     expect(c.remediation).toMatch(/wrangler secret put ANTHROPIC_API_KEY/);
     expect(c.docsAnchor).toBe('is-it-working.md#configure-the-tidy-api-key');
-    expect(c.logEvent).toBeUndefined();
-  });
-
-  it('resolves the skill-freshness condition (the packaged admin-screens skill delivery)', () => {
-    const c = condition('skill.admin-screens-stale');
-    expect(c.severity).toBe('warning');
-    expect(c.why).toMatch(/cairn-admin-screens/);
-    expect(c.remediation).toMatch(/cairn-doctor --fix/);
-    expect(c.docsAnchor).toBe('is-it-working.md#refresh-the-admin-screens-skill');
     expect(c.logEvent).toBeUndefined();
   });
 

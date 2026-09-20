@@ -457,6 +457,15 @@
 
 ### Removed
 
+- `cairn-doctor` loses `--fix`, the `skill.admin-screens` check, and the
+  `skill.admin-screens-stale` condition. The packaged skill install now lives in
+  `cairn-guidance`, which installs every packaged skill directory (not just this one), the
+  read-only review agent, and the `CLAUDE.md` fragment, and checks their freshness the same
+  way. See [The `cairn-guidance` CLI](docs/reference/guidance.md). Consumers must: run `npx
+  cairn-guidance install` after the bump; `cairn-doctor --fix` is gone. The recorded doctor
+  transcript `03-doctor-credentialed.txt` predates this retirement and stays as captured; `Is it
+  working?` elides its one retired line rather than hand-editing the fixture.
+
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
   horizontal scroll container, and nesting it inside `OfficeList`'s card frame duplicated that
   wrapper (`officelist-retired-for-one-scroll-owner`, `docs/internal/engine-rulings.md`). The
@@ -4322,7 +4331,9 @@ removal, nothing this list needs to carry.
   stale (by a content hash of both trees) reports advisory and never fails the run, and
   `cairn-doctor --fix` installs or refreshes the packaged skill into a consumer's own
   `.claude/skills/cairn-admin-screens/` before the checks run. See [the `cairn-audit`
-  CLI](./docs/reference/cairn-audit.md) and [`cairn-doctor`](./docs/reference/doctor.md#the---fix-skill-install).
+  CLI](./docs/reference/cairn-audit.md) and [`cairn-doctor`](./docs/reference/doctor.md). Both
+  the check and `--fix` later retired; see the `cairn-guidance` entry in this changelog's
+  Unreleased section.
 
 No consumer action is required for the entries above beyond the `badge-ghost` migration named
 above. No exported type, prop, or route contract changed otherwise.

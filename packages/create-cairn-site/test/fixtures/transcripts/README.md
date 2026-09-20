@@ -159,6 +159,16 @@ stay as recorded rather than being hand-edited to add a step never captured. `ch
 compares the docs pages' quoted blocks against these fixtures, not against the current
 scaffold's behavior, so it stays green either way.
 
+## Staleness note (2026-09-20)
+
+The doctor retired the `skill.admin-screens` check and its `--fix` flag; the skill install now
+lives in `cairn-guidance`. `03-doctor-credentialed.txt` still carries the retired check's `SKIP`
+line and folds it into the run's total, since this fixture predates the retirement and a fixture
+is never edited. `docs/admin/is-it-working.md` elides that one line from its quoted block with a
+`[...]` marker and says so in its own prose; the total after the block stays the fixture's own
+number. `check:transcripts` compares the quoted block against this fixture, not against the
+current doctor's check count, so it stays green either way.
+
 ## Identifiers
 
 Kept verbatim by ruling. The worker, both databases, the bucket, the App, and the repository

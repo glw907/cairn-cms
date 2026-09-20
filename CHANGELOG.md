@@ -1665,6 +1665,15 @@
   relative link and anchor under `skills/**/*.md` and `claude/**/*.md`, the two trees that ship
   in the tarball. No consumer action.
 
+- A new packaged skill, `cairn-extend`, routes an extending developer to the matching seam
+  before they invent a pattern from scratch. Its core opens with the DaisyUI question, then a
+  router table (what you are building, the atom, the seam, the showcase exemplar, the source
+  fact, and the ruling that is the why) and points at two references:
+  `references/daisyui-first.md`, the current state of every place a home-grown admin component
+  stands in for a stock DaisyUI one, with the ruling that names the defect; and
+  `references/preflight.md`, the checklist to run before calling extension work done. No
+  consumer action.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated

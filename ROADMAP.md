@@ -46,7 +46,8 @@ Readiness checklist:
 - [ ] **The public seams have held across an initiative or two with no breaking change**: the adapter and
   field schema, `render`, the admin mount (`createCairnAdmin`, the `CairnAdminShell` custom-route seam, the
   `navLayout` seam), the route factories (`createContentRoutes`, `createPublicRoutes`), the admin design
-  vocabulary (the `text-muted` / `text-subtle` role layer), and the log event names.
+  vocabulary (the `text-muted` / `text-subtle` role layer), the log event names, `/log`, and
+  `/admin-toolkit`.
 - [ ] **No known breaking change is pending** on the public surface, or each is consciously deferred to the
   first post-1.0 major. The SvelteKit `checkOrigin` removal (kit#15992) is the standing example: decide
   whether its fallback lands before 1.0 or becomes the first 2.0 driver.
@@ -876,11 +877,10 @@ the named human gates only):**
   already agrees); `AdminTable` takes an optional accessible-name prop and every engine screen
   passes one; and, from the daisyUI Blueprint audit (record
   `docs/internal/record/2026-09-13-blueprint-audit.md`), `EditPage`'s flash strip drops
-  `transition-all` for the two properties it animates. Two are extend-1 work because they reshape a pattern: the native `title`
-  tooltips (never shown on keyboard focus or touch, not dismissable, WCAG 1.4.13) give way to
-  one accessible tooltip primitive, which also retires the `cairn-btn-guarded` workaround; and
-  the batch-action pattern built fully inside `CairnMediaLibrary` graduates onto `AdminTable`
-  so a consumer's multi-select screen composes it rather than reinventing it. Two survey calls
+  `transition-all` for the two properties it animates. The remaining two, reshaping a pattern
+  rather than a few lines, shipped as extend-1 work instead: the native `title` tooltip and the
+  `CairnMediaLibrary`-only batch-action pattern (`docs/internal/engine-rulings.md`,
+  `tooltip-primitive` and `batch-actions-additive`). Two survey calls
   stand unless reopened: "sign in" stays over Carbon's "log in" (the editor docs grade under
   Microsoft), and Carbon Charts is rejected outright (its stylesheet force-loads IBM Plex);
   Carbon's chart guidance is a recipe reference only.
@@ -981,8 +981,14 @@ the named human gates only):**
   (guidance, with the docs rewrite it routes to). Draft spec:
   `~/.cache/cairn-overnight-2026-09-12/extend-design-DRAFT.md`; it lands at
   `docs/superpowers/specs/2026-09-12-extend-design.md` after step 2.
+  **extend-1 is done**: the gates layer (`log-event-grammar`, `log-secret-field`,
+  `stock-default-hazards`'s retired-class arm) and the atoms it ships (the public `/log`
+  subpath, `Tooltip` and `AdminTable`'s batch actions in `/admin-toolkit`, the site-owned
+  stylesheet seam), each recorded in `docs/internal/engine-rulings.md`, land at the next
+  merge to `main`. What remains open is extend-2's guidance layer alone.
   Site migration waits until ALL the extend work has landed (extend-1, the docs rewrite,
-  extend-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
+  extend-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** the
+  docs rewrite waits on extend-1 merged; extend-2 follows the rewrite.
   **Filed from the admin motion language pass (2026-09-15), four follow-ups for extend-1's gates
   layer:** (1) the rendered half of `motion-hover-gate`, triggered by a consumer's hand-authored
   `:hover` rule the static half cannot see because the motion sits on a descendant selector or a

@@ -8,6 +8,11 @@ constraints, and acceptance criteria per task, never implementation code.
 
 ## Geoff's rulings (2026-09-20), binding
 
+**Pre-approved (Geoff, 2026-09-20 10:06): "I'm pre-approving the recut."** The re-cut authored
+from this brief needs no further plan-approval read before B1 executes, provided it stays inside
+this brief. The three-lens plan review still runs on it. Anything the re-cut adds beyond this
+brief is outside the pre-approval and goes back to Geoff as one combined question.
+
 1. **Color and the TTY predicate: one predicate.** The module-wide ban on `term.IsTerminal` and
    `os.Stdout.Stat()` was written to keep a dead TUI launch gate (`shouldLaunchTUI`) out of 1.0.
    That reason does not reach color. Exactly one TTY check is allowed, in the render package's

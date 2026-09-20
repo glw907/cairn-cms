@@ -7,7 +7,10 @@ boundary per Geoff's versioning ruling of 2026-09-13.
 > **For agentic workers:** dispatch each task through `cairn-implementer` (Sonnet), review the
 > diff with `diff-reviewer`, and confirm the gate before the next dispatch. The gate for every
 > task in this plan is `make check` inside `tool/`, issued as
-> `cairn-run-gate 'make -C tool check'`. Tasks 3 and 17 are the two tasks that also run the Node
+> `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` (the light lane: this gate launches
+> no browser, so it takes its own lock and never queues behind another session's browser gate;
+> set `gateLane: "light"` in the runner's args; corrected 2026-09-20 after pass A queued for
+> hours without it). Tasks 3 and 17 are the two tasks that also run the Node
 > gate. Invoke `go-conventions` before writing any Go file and `golang-spf13-cobra` before any
 > `cmd/cairn` file. Invoke `vps-conventions` only for the one systemd unit in Task 24's
 > verification paragraph, which is Geoff's own installation of that task's documented unit; the
@@ -123,7 +126,8 @@ with `cairn-implementer` as the executor. This header is the opt-in. The Workflo
 `~/.claude/workflows` scriptPath, so copy `~/.claude/workflows/pass-execute.js` into the session
 scratchpad and run it from there. The Go gate is `make check` inside `tool/`, not the repo's npm
 gate, and `cairn-implementer` has the npm gate baked in, so every task below states its gate
-explicitly and the workflow's gate string is `make -C tool check`.
+explicitly and the workflow's gate string is `make -C tool check`, with `gateLane: "light"` in the
+runner's args.
 
 **Segments.** Pass A segments after Task 3, Task 6, and Task 9. Pass B segments after Task 15,
 Task 19, and Task 22. Every boundary sits on a commit the gate proved green.

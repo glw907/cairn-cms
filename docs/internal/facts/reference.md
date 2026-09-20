@@ -71,7 +71,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/components/CairnAdminShell.svelte:76`, `src/lib/components/MediaPicker.svelte:65`.
   [verified]
 - `AdminTable`'s `emptyColspan` defaults to `100`, relying on HTML's own `colspan` clamp to the
-  real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:54`. [verified]
+  real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:81`. [verified]
 - `StatusChip`'s `outline` register hairline is `color-mix(in oklab, currentColor 55%,
   transparent)`; cairn's five named call sites (ConceptList, EditPage, CairnAdminShell,
   ReferenceField, MediaCaptureCard, ManageEditors) all clear the 3:1 border-contrast floor, but a

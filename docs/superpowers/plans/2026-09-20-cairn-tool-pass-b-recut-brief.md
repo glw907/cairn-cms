@@ -30,6 +30,26 @@ brief is outside the pre-approval and goes back to Geoff as one combined questio
    Hidden `probe-token` becomes `auth probe`, and `auth unset` is added so a rotated token's
    stale keyring entry can be cleared. `health <site>` and `adopt` keep their shape.
 
+## Branch topology and the merge (Geoff, 2026-09-20 10:09)
+
+Geoff first authorized merging PR #60, then moved it: "extend-2 will be running for a while. You
+can add the merge to the next pass." So Pass A closes WITHOUT a merge, and the merge belongs to
+B1:
+
+- B1 runs in the existing worktree `.claude/worktrees/cairn-tool-a` on branch `cairn-tool-a`.
+  It does NOT branch from `main`: `main` carries no `tool/` tree until the merge. PR #60 stays a
+  draft and accumulates B1's commits. One executor per worktree still holds; verify it is idle
+  before dispatching.
+- B1's close task carries the merge: merge `main` into `cairn-tool-a` (extend-1 merged as PR #66
+  on 2026-09-20 and extend-2 is in flight, and all three passes write `CHANGELOG.md`,
+  `docs/STATUS.md`, and `ROADMAP.md`, so expect conflicts there and keep every pass's entries);
+  retitle PR #60 to cover Pass A and B1; take it out of draft; wait for every check green at the
+  final SHA, the three `make check` legs and the Node suite; merge; confirm `main` carries
+  `tool/`. Never merge over a red check. Coordinate with the extend-2 conductor if it is mid
+  close on the same three files: two conductors never both run a close on one branch, and a
+  merge into `main` while another pass is merging is the contended moment.
+- B2 then runs on its own worktree off `main`, the ordinary case.
+
 ## B1 opening task (new; runs before Task 12)
 
 One refactor task over packages Pass A accepted, before any check is built on them. No behavior

@@ -34,6 +34,16 @@
   and `MANIFEST`, that `VERSION` matches the installed package version, and that
   `.claude/agent-memory` and `.claude/worktrees` are absent. No consumer action.
 
+- A new `/admin-sources.css` subpath ships the engine's own Tailwind `@source` manifest for its
+  shipped admin markup, importable as one line so a site's `src/admin.css` never has to name the
+  engine's `dist` layout directly. The showcase, the scaffold template, and the scaffold's own bake
+  all replace their fifth `@source "../node_modules/@glw907/cairn-cms/dist";` line with
+  `@import "@glw907/cairn-cms/admin-sources.css";`, importing after the site's own admin-routes
+  line so the ordering fact from the original five-line form still holds: the compiled sheet stays
+  a superset of the engine's utility set in Tailwind's own generation order, keeping the engine's
+  responsive variants ahead of the site's own later-loading base utilities inside the shared
+  `utilities` cascade layer. The compiled output is unchanged, byte for byte. No consumer action.
+
 - A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
   built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
   and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A

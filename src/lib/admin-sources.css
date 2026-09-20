@@ -1,0 +1,11 @@
+/* cairn-cms: the engine's own Tailwind @source manifest for its shipped admin markup, exported at
+   the `/admin-sources.css` subpath so a site's own admin.css imports this one line instead of
+   naming the package's dist layout itself. Tailwind resolves `@source` paths relative to the file
+   that declares them, so this line resolves correctly wherever npm installs the package, and a
+   site never has to spell out `node_modules/@glw907/cairn-cms/dist`.
+
+   Import this AFTER your own admin routes' `@source` line: the ordering places the engine's
+   utilities later in Tailwind's own generation order, which makes the compiled sheet a superset
+   of the engine's utility set and keeps the engine's responsive variants (`sm:`, `lg:`, ...)
+   ahead of your own base utilities inside the shared `utilities` cascade layer. */
+@source ".";

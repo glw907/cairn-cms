@@ -175,6 +175,7 @@
       "types": "./dist/log/public.d.ts",
       "default": "./dist/log/public.js"
     },
+    "./admin-sources.css": "./dist/admin-sources.css",
     "./package.json": "./package.json"
   },
   "bin": {

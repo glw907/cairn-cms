@@ -321,7 +321,7 @@ measured 2026-09-14 against `main` at `f1c72dbf`, re-verified 2026-09-14 against
 | 6 | `packages/create-cairn-site/src/cloudflare/chapter2.mjs:84` | `export const TERMINAL_STEPS = ['email-live', 'paid-plan-declined'];` | Task 8 | Verified 2026-09-14 post-polish-C |
 | 7 | `packages/create-cairn-site/src/cloudflare/chapter3.mjs:70` | `export const CHAPTER3_TERMINAL_STEPS = ['builds-live', 'builds-connect-declined'];` | Task 8 | Verified 2026-09-14 post-polish-C |
 | 8 | `packages/create-cairn-site/src/cloudflare/chapter3.mjs:82` | `export const CHAPTER3_RESUMABLE_STEPS = ['builds-connected', 'config-reconciled'];` | Task 8 | Verified 2026-09-14 post-polish-C |
-| 9 | The `step: '...'` literal set | A naive grep over `packages/create-cairn-site/src` yields **25** distinct literals across eight non-test files, not the old plan's 18. Seven are not record steps (`install`, `installed`, `manifest`, `one`, `two`, `domain-account`, `domain-zone`). Task 8's grep must scope to the record write sites | Task 8 | Verified 2026-09-14 post-polish-C |
+| 9 | The `step: '...'` literal set | A naive grep over `packages/create-cairn-site/src` yields **25** distinct literals across eight non-test files, not the old plan's 18 (corrected by conductor ruling 2026-09-20: 'installed' is written through a computed local at `github/chapter.mjs:330`). **19** are record steps; six are not (`install`, `manifest`, `one`, `two`, `domain-account`, `domain-zone`). Task 8's grep must scope to the record write sites | Task 8 | Verified 2026-09-14 post-polish-C |
 | 10 | `packages/create-cairn-site/src/cloudflare/api.mjs` | `throwIfTokenInvalid` at `:247`, `throwMapped` at `:268`, `throwBuildsMapped` at `:350`, `OPERATION_CODES` at `:54`, `EMAIL_OPERATION_CODES` at `:63`. **The old plan's `buildsError` does not exist under that name**; the function is `throwBuildsMapped`. The file sets no client timeout and retries a GET once on `Retry-After` at `:30-34`, `:112`, `:217` | Tasks 6, 15 | Verified 2026-09-14 post-polish-C |
 | 11 | `packages/create-cairn-site/src/cloudflare/hostname.mjs` | `confirmHostname` exported at `:185`; the DNS diagnosis returning `hostname-records-absent` or `hostname-resolver-lagging` at `:148-160` | Task 13 | Verified 2026-09-14 post-polish-C |
 | 12 | `packages/create-cairn-site/src/cloudflare/zone.mjs:193` | `export async function checkDelegation({ record, api, resolveNs = systemResolveNs })`, four states at `:209` and `:213` | Task 13 | Verified 2026-09-14 post-polish-C (changed) |
@@ -738,9 +738,10 @@ Conditions` copied from `src/lib/diagnostics/conditions.ts`.
 **Acceptance:**
 - A test reads `packages/create-cairn-site/src` through `providers.RepoRoot` at test time and
   asserts the set of record-step literals equals the `Step` constants, so a Node-side addition
-  fails this test. The grep is scoped to record write sites, per reconciliation row 9: a naive
-  `step: '` grep yields 25 literals today, seven of which are not record steps, and the task
-  report states the scoping rule it used.
+  fails this test. The grep is scoped to record write sites, per reconciliation row 9 (corrected
+  by conductor ruling 2026-09-20: 'installed' is written through a computed local at
+  `github/chapter.mjs:330`): a naive `step: '` grep yields 25 literals today, six of which are
+  not record steps, and the task report states the scoping rule it used.
 - A test reads `src/lib/diagnostics/conditions.ts` through `providers.RepoRoot` and asserts every
   `Condition` constant whose id contains a dot exists there. The same test asserts
   `ConditionNone` is the only undotted value in the package. Checks the spec's table marks new,

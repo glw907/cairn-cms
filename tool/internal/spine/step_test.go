@@ -15,12 +15,30 @@ import (
 // record write uses (an updateSite or saveSite call's own argument object).
 var recordStepLiteral = regexp.MustCompile(`step:\s*'([a-z0-9-]+)'`)
 
+// constStepAssign matches a computed local named step, the second real record-write shape: a
+// hop that picks one of a small set of literals for the step it is about to persist
+// (github/chapter.mjs's `const step = resumeStep === 'repo-created' ? 'repo-created' :
+// 'installed';`).
+var constStepAssign = regexp.MustCompile(`const step = `)
+
+// quotedLiteral matches any single-quoted string literal on a line.
+var quotedLiteral = regexp.MustCompile(`'([a-z0-9-]+)'`)
+
+// bareStepUpdateSite matches an updateSite (or saveSite) call passed the step local by shorthand,
+// the form that turns a `const step = ...` assignment into a real record write rather than a
+// value that is only read or logged.
+var bareStepUpdateSite = regexp.MustCompile(`(updateSite|saveSite)\([^)]*\{\s*step[,}]`)
+
 // recordStepLiteralsUnder scans every non-test .mjs file under root for the record's own "step"
 // writes. The scope excludes two shapes that also match a naive "step: '...'" grep but name no
 // record step: a chapterError context object (browser-step-abandoned's own "step" key names
-// where a browser flow was abandoned, never persisted to a record) and a doc comment quoting a
-// step name for exposition. Both are recognized by the same line carrying "chapterError(" or a
-// "//" prefix; nothing under this package's own test data uses either shape for a real write.
+// where a browser flow was abandoned, never persisted to a record) and a comment quoting a step
+// name for exposition. Both are recognized by the same line carrying "chapterError(" or a "//"
+// or block-comment-continuation prefix ("*" or "/*"); nothing under this package's own test data
+// uses either shape for a real write. A third shape, a computed local named step whose literals
+// are only counted when the same file also passes that local to updateSite or saveSite by
+// shorthand, covers a hop that picks its step from a small set of literals rather than writing
+// one inline.
 func recordStepLiteralsUnder(root string) (map[string]bool, error) {
 	found := make(map[string]bool)
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
@@ -34,13 +52,21 @@ func recordStepLiteralsUnder(root string) (map[string]bool, error) {
 		if err != nil {
 			return err
 		}
-		for line := range strings.SplitSeq(string(data), "\n") {
+		content := string(data)
+		hasBareStepWrite := bareStepUpdateSite.MatchString(content)
+		for line := range strings.SplitSeq(content, "\n") {
 			trimmed := strings.TrimSpace(line)
-			if strings.HasPrefix(trimmed, "//") || strings.Contains(line, "chapterError(") {
+			if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "*") ||
+				strings.HasPrefix(trimmed, "/*") || strings.Contains(line, "chapterError(") {
 				continue
 			}
 			for _, m := range recordStepLiteral.FindAllStringSubmatch(line, -1) {
 				found[m[1]] = true
+			}
+			if hasBareStepWrite && constStepAssign.MatchString(line) {
+				for _, m := range quotedLiteral.FindAllStringSubmatch(line, -1) {
+					found[m[1]] = true
+				}
 			}
 		}
 		return nil

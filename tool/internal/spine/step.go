@@ -10,12 +10,13 @@ package spine
 // never derives status from it; the detail view shows it as lifecycle position only.
 type Step string
 
-// The record-step constants: the 18 strings the Node CLI's chapter orchestrators
+// The record-step constants: the 19 strings the Node CLI's chapter orchestrators
 // (packages/create-cairn-site/src/{scaffold,cloudflare/chapter,cloudflare/chapter2,
 // cloudflare/chapter3,github/chapter}.mjs) write to a site record's "step" field.
 const (
 	StepScaffolded            Step = "scaffolded"
 	StepAppCreated            Step = "app-created"
+	StepInstalled             Step = "installed"
 	StepAwaitingOrgApproval   Step = "awaiting-org-approval"
 	StepRepoCreated           Step = "repo-created"
 	StepPushed                Step = "pushed"
@@ -38,6 +39,7 @@ const (
 var allSteps = map[Step]bool{
 	StepScaffolded:            true,
 	StepAppCreated:            true,
+	StepInstalled:             true,
 	StepAwaitingOrgApproval:   true,
 	StepRepoCreated:           true,
 	StepPushed:                true,

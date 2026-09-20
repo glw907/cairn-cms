@@ -60,6 +60,12 @@ func TestFromKind(t *testing.T) {
 			code: "paid-plan-declined",
 			want: Outcome{State: OK, Detail: "paid-plan-declined"},
 		},
+		{
+			name: "an unrecognized kind becomes unknown with reason.not-observable",
+			kind: Kind("not-a-real-kind"),
+			code: "whatever",
+			want: Outcome{State: Unknown, Reason: ReasonNotObservable},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

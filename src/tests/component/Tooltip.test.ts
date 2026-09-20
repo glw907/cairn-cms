@@ -70,6 +70,41 @@ describe('Tooltip', () => {
     expect(bubble.textContent?.trim()).toBe('Insert a component');
   });
 
+  it('anchors the shown bubble above and horizontally overlapping its own trigger', async () => {
+    // Regression for a bubble that anchored to whatever ancestor happened to be positioned instead
+    // of its own trigger: renders two Tooltips side by side (mirroring a dense toolbar row) and
+    // asserts each bubble's rect sits above, and horizontally overlaps, ITS OWN trigger's rect,
+    // never a shared fixed spot the way a wrapper-relative `position: absolute` bubble did.
+    const first = await render(Tooltip, { text: 'First', children: trigger });
+    const second = await render(Tooltip, { text: 'Second', children: trigger });
+
+    const firstButton = first.container.querySelector('button')!;
+    const secondButton = second.container.querySelector('button')!;
+    const firstBubble = bubbleOf(first.container);
+    const secondBubble = bubbleOf(second.container);
+
+    await userEvent.hover(firstButton);
+    await userEvent.hover(secondButton);
+
+    const firstTriggerRect = firstButton.getBoundingClientRect();
+    const firstBubbleRect = firstBubble.getBoundingClientRect();
+    expect(firstBubbleRect.bottom).toBeLessThanOrEqual(firstTriggerRect.top);
+    expect(firstBubbleRect.right).toBeGreaterThan(firstTriggerRect.left);
+    expect(firstBubbleRect.left).toBeLessThan(firstTriggerRect.right);
+
+    const secondTriggerRect = secondButton.getBoundingClientRect();
+    const secondBubbleRect = secondBubble.getBoundingClientRect();
+    expect(secondBubbleRect.bottom).toBeLessThanOrEqual(secondTriggerRect.top);
+    expect(secondBubbleRect.right).toBeGreaterThan(secondTriggerRect.left);
+    expect(secondBubbleRect.left).toBeLessThan(secondTriggerRect.right);
+
+    // The two triggers occupy different rects (two independently rendered components stack
+    // vertically in the test DOM, not a shared position), so each bubble tracking its own trigger
+    // means the two bubble tops differ too, ruling out the collapse-to-one-spot failure (both
+    // bubbles landing at the same fixed coordinate) this test exists to catch.
+    expect(firstBubbleRect.top).not.toBe(secondBubbleRect.top);
+  });
+
   it('shows on a coarse-pointer tap and hides on the next tap outside', async () => {
     const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
     const button = screen.container.querySelector('button')!;

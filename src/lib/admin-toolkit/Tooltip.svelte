@@ -51,6 +51,7 @@ resolves everywhere else.
   const bubbleId = $derived(id ?? `${generatedId}-tooltip`);
 
   let wrapperEl: HTMLElement | null = null;
+  let bubbleEl: HTMLElement | null = null;
   let hoverOn = $state(false);
   let focusOn = $state(false);
   let tapOn = $state(false);
@@ -68,17 +69,26 @@ resolves everywhere else.
     const trigger = wrapperEl?.firstElementChild;
     if (!(trigger instanceof HTMLElement)) return;
     trigger.setAttribute('aria-describedby', bubbleId);
-    // The bubble positions off this element (`position: absolute`, see the style block below);
-    // the wrapper itself renders no box (`display: contents`, so it adds no width to a tight flex
-    // row -- see that rule's own comment), so the trigger has to be the positioned ancestor
-    // instead. Only forced when the trigger has no position of its own (every real sweep site's
-    // plain `.btn`/link), never overriding one a caller already set.
-    const addedPosition = getComputedStyle(trigger).position === 'static';
-    if (addedPosition) trigger.style.position = 'relative';
     return () => {
       trigger.removeAttribute('aria-describedby');
-      if (addedPosition) trigger.style.removeProperty('position');
     };
+  });
+
+  // Anchors the bubble to the trigger's own box rather than a CSS positioned-ancestor scheme: the
+  // wrapper renders no box of its own (`display: contents`, see the style block below), so the
+  // bubble's actual DOM parent for CSS containing-block purposes is whatever ancestor outside this
+  // component happens to be positioned, which the sweep's real call sites (EditorToolbar, EditPage)
+  // never guarantee. Reading the trigger's own `getBoundingClientRect()` and writing `left`/`top`
+  // in pixels on the fixed-positioned bubble (see the style block) ties the bubble to its own
+  // trigger regardless of what sits in between. Re-runs whenever the bubble becomes visible, since
+  // a hidden bubble's position never needs to track a trigger that might move under it while closed.
+  $effect(() => {
+    if (!visible || !bubbleEl) return;
+    const trigger = wrapperEl?.firstElementChild;
+    if (!(trigger instanceof HTMLElement)) return;
+    const rect = trigger.getBoundingClientRect();
+    bubbleEl.style.left = `${rect.left + rect.width / 2}px`;
+    bubbleEl.style.top = `${rect.top}px`;
   });
 
   // Cleans up the outside-tap listener a coarse-pointer tap registers below; re-run whenever tapOn
@@ -148,7 +158,13 @@ resolves everywhere else.
   onpointerup={handlePointerUp}
 >
   {@render children()}
-  <span id={bubbleId} role="tooltip" class="cairn-tooltip-bubble" class:cairn-tooltip-visible={visible}>
+  <span
+    bind:this={bubbleEl}
+    id={bubbleId}
+    role="tooltip"
+    class="cairn-tooltip-bubble"
+    class:cairn-tooltip-visible={visible}
+  >
     {text}
   </span>
 </span>
@@ -162,17 +178,22 @@ resolves everywhere else.
      format cluster past its 49rem fit cap. `display: contents` is the one value exempt from
      blockification: the wrapper generates no box of its own, and its children (the trigger, the
      bubble) become the flex container's real participants directly, exactly matching the
-     pre-Tooltip layout. The bubble is `position: absolute` regardless (excluded from flex layout
-     either way) and anchors off the trigger's own box instead of this now-boxless wrapper; see the
-     script's own effect that sets the trigger's `position`. */
+     pre-Tooltip layout. */
   .cairn-tooltip {
     display: contents;
   }
 
+  /* `position: fixed` rather than `position: absolute` off a positioned trigger: the wrapper is
+     boxless (`display: contents` above), so this bubble's own CSS containing block is whichever
+     ancestor OUTSIDE this component happens to be positioned, which a real sweep site (a plain
+     `.btn` inside EditorToolbar's flex row) never guarantees. A fixed-position box's containing
+     block is the viewport regardless of what sits between, so the script's own effect writes
+     `left`/`top` in viewport pixels straight from the trigger's `getBoundingClientRect()`, and this
+     rule only supplies the gap and the centering as a transform relative to that point. */
   .cairn-tooltip-bubble {
-    position: absolute;
-    bottom: calc(100% + 0.375rem);
-    left: 50%;
+    position: fixed;
+    left: 0;
+    top: 0;
     z-index: 20;
     width: max-content;
     max-width: 16rem;
@@ -181,7 +202,7 @@ resolves everywhere else.
     font-size: 0.75rem;
     line-height: 1.3;
     text-align: center;
-    transform: translateX(-50%);
+    transform: translate(-50%, calc(-100% - 0.375rem));
     opacity: 0;
     visibility: hidden;
     transition: opacity 120ms ease;

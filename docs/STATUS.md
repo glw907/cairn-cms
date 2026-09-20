@@ -64,12 +64,13 @@ container bullets via `site-docs/<site>-<pass>`; then one improvement release, t
 rebuilt from the container, then beta.
 
 **Go tool pass A is IN FLIGHT beside extend-1 (Geoff, 2026-09-19 21:00)** on `cairn-tool-a` (draft PR
-#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-19 23:10): **1, 2, 3, 4
-ACCEPTED** (4 after one ruled fix round); **5** committed (`8e64bda6`) and on a ruled fix round, then
-**6**, as run `wf_6215e2cb-979` (`tool-a-seg2c.js`); **7, 8, 9** queued (`tool-a-seg3.js`); **10**
+#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-20 00:05): **1, 2, 3, 4, 5
+ACCEPTED** (4 and 5 each after one ruled fix round; PR #60's three `make check` legs green at
+`8a39104b`); **6** committed (`0d877680`) and on a ruled fix round, then **7, 8, 9**, as run
+`wf_1d2a3b86-94b` (`tool-a-seg3b.js`); **10**
 queued (`tool-a-seg4.js`), its attended half DONE: Geoff minted both read tokens 2026-09-19, stored
 as `CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`, verified by curl, recorded in
-the dotfiles registry and the estate inventory. Then the Task 11 close. Spend about 1.2M of 8M.
+the dotfiles registry and the estate inventory. Then the Task 11 close. Spend about 1.9M of 8M.
 Scripts live in that session's scratchpad, built from
 `~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with args embedded in a copy of
 `~/.claude/workflows/pass-execute-chains.js` patched with a `noClassifier` flag. Rulings taken:
@@ -79,7 +80,9 @@ appends a non-zero typed key absent at parse time; `store.Dir` resolves env, the
 `~/.config/cairn/sites` when it exists, then `os.UserConfigDir`, since the Node CLI still writes
 the legacy path; the Cloudflare read token needs SEVEN groups (Zone Settings: Read added); a
 public repository proves nothing about a GitHub token's scope, so `probe-token` marks
-visibility.
+visibility; an unconnected worker is an EMPTY Builds trigger list, never error 12000, so the Deploy
+check assigns builds-not-connected; a direct `classifyReason` table stands in for corpus bodies the
+corpus does not carry (no invented fixtures).
 
 ## Parallel tracks
 

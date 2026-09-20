@@ -99,6 +99,117 @@ resolves in this order:
 
 ## Token scopes
 
-The permission groups each token needs, and the repositories a GitHub
-token must reach, are recorded here once the credential mint-and-probe
-task measures them.
+### Cloudflare
+
+`CAIRN_CF_READ_TOKEN` is a Cloudflare API token carrying read permission in
+seven dashboard-named groups, scoped to the account `CAIRN_CF_ACCOUNT_ID`
+pins plus all zones of that account:
+
+- Workers Scripts
+- Workers Builds Configuration
+- Workers Observability
+- Zone
+- Zone Settings
+- DNS
+- Email Sending
+
+Zone Settings is easy to omit: Workers Scripts and Zone alone read a zone's
+worker and domain state, but the HTTPS-forced check's own endpoints
+(`zones/{id}/settings/always_use_https` and
+`zones/{id}/settings/security_header`) answer 403 without it. A token minted
+with the first six groups only fails that one check forever, silently,
+since a 403 there reports UNKNOWN rather than a scope error.
+
+### GitHub
+
+`CAIRN_GH_READ_TOKEN` is a fine-grained personal access token with Contents
+and Metadata read on the repository of every site in the operator's
+registry, plus `glw907/cairn-cms` for the Engine check's own changelog read,
+at the shortest expiry the operator can live with. A narrower scope is a
+silent failure: a check that cannot read a repository returns UNKNOWN on
+403 forever, never CRITICAL, so nothing calls the gap out.
+
+**A probe over public repositories cannot confirm this scope.** GitHub
+serves a public repository's contents and commits with no token at all, so
+a 200 from `cairn probe-token` on a public repository proves only that the
+token is not actively rejected, not that its Contents permission is doing
+any work. `probe-token` reports each probed repository's visibility (the
+repos endpoint's own `private` field, read alongside the contents check)
+and prints a warning on stderr when every probed repository came back
+public, since that run has confirmed nothing about the token's own scope.
+An operator whose registry names at least one private repository gets a
+real confirmation the first time `probe-token` reaches it.
+
+A private repository the token cannot see answers 404, not 403, on every
+GitHub REST route this tool calls (commits, contents, and the repos
+route). `probe-token` and every 1.0 check that reads a repository classify
+a 404 as `not-found`, never `forbidden`; an operator who sees `not-found`
+on a repository they expect the token to reach should re-check the
+token's repository list before assuming the repository itself moved.
+
+### The repository scope is discovered, never hardcoded
+
+`cairn probe-token` reads the operator's registry, then verifies a
+contents read against every repository the registry names plus
+`glw907/cairn-cms`; no repository list is compiled into the binary. It
+prints one line per repository with the status and reason, and exits
+non-zero if any of them is not 200.
+
+## The credential mint-and-probe run (2026-09-19/20)
+
+Geoff minted both tokens for his own five repositories
+(`glw907/ecxc-ski`, `glw907/907-life`, `glw907/aksailingclub-org`,
+`glw907/xcathletes-org`, and `glw907/cairn-cms`) and stored the values
+through the workstation age store, per his own deployment's rules (not
+this product's storage path). `cairn probe-token` reached the following
+endpoints against the live tokens, with `xcathletes-org` private and the
+other four public:
+
+| Endpoint | Status | Reason |
+|---|---|---|
+| `user/tokens/verify` | 200 | ok |
+| `accounts/{id}/workers/scripts` | 200 | ok |
+| `accounts/{id}/workers/domains` | 200 | ok |
+| `accounts/{id}/workers/observability/telemetry/query` | 200 | ok |
+| `commits/main` (each of the four site repositories) | 200 | ok |
+| `contents/package.json` (each of the four site repositories) | 200 | ok |
+| `contents/CHANGELOG.md` (`glw907/cairn-cms`) | 200 | ok |
+| repos (each of the five repositories) | 200 | ok |
+
+The zone-scoped Zone Settings endpoints
+(`zones/{id}/settings/always_use_https`,
+`zones/{id}/settings/security_header`) were verified separately, by a
+direct API call against one of the operator's own zones rather than
+through `probe-token`: 1.0 has no `adopt` yet (Task 18), so no registry
+record before this pass carries a zone id `probe-token` could target
+generically. Both answered 403 before the Zone Settings group was added
+to the token and 200 after, which is the evidence behind the seven-group
+scope above.
+
+**A read-level Builds group exists.** `builds/tokens`,
+`builds/workers/{tag}/builds`, and `builds/workers/{tag}/triggers` all
+answered 200 under Workers Builds Configuration, so Task 15's Builds half
+does not degrade for this token.
+
+**Token verification used the user path, not the account path.**
+`accounts/{id}/tokens/verify` answered Cloudflare's generic error 1000 for
+this user-owned token; `user/tokens/verify` answered `active`. `cairn`'s
+Cloudflare client calls the user path for this reason.
+
+### Workers Logs retention
+
+`cairn probe-token`'s Observability query answered 200 for a one-hour
+window anywhere in the trailing 7 days, and 0 events (with no error) for
+the same one-hour window 8 or more days back, measured by narrowing the
+boundary directly: every window fully inside 7 days returned events, and
+every window at 8 days or older returned none, with no error from the API
+in either case, so the boundary is observed from the data rather than
+stated by Cloudflare. **This is the account plan's own retention window,
+not a fixed cairn constant.** Task 17 clamps `logs --since` to it; an
+operator on a different Cloudflare plan reads their own boundary the same
+way, since the API returns no retention value directly.
+
+### GitHub token expiry
+
+The GitHub token minted for this verification run carries a 30-day
+expiry.

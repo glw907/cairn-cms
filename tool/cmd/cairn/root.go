@@ -33,6 +33,7 @@ func newRootCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&f.showVersion, "version", false, "print the version and exit")
 	cmd.AddCommand(newAuthCmd())
+	cmd.AddCommand(newProbeTokenCmd())
 
 	return cmd
 }

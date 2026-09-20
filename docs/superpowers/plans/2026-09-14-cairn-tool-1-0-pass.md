@@ -871,8 +871,10 @@ Task 9's grep test already enforces.
   is therefore non-zero. No response body is written to a file or to a doc.
 - **The product's token scope, stated once and documented.** The Cloudflare token carries read
   permissions for Workers Scripts, Workers Builds, Workers Observability, Zone, DNS, and Email
-  Sending, scoped to the account the operator pins with `CAIRN_CF_ACCOUNT_ID` plus all zones of
-  that account. The GitHub token is fine-grained, with Contents and Metadata read on the
+  Sending (corrected to seven groups, adding Zone Settings, by conductor ruling 2026-09-19: the
+  HTTPS-forced check's own endpoints answer 403 without it), scoped to the account the operator
+  pins with `CAIRN_CF_ACCOUNT_ID` plus all zones of that account. The GitHub token is
+  fine-grained, with Contents and Metadata read on the
   repository of every site in the operator's registry, plus `glw907/cairn-cms` for the Engine
   check's changelog read, at the shortest expiry the operator can live with.
   `tool/docs/credentials.md` states both, with the reason a narrower GitHub scope is a silent

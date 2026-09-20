@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -163,6 +164,28 @@ func (gh *GitHub) FileAtRef(owner, repo, path, ref string) ([]byte, error) {
 		return nil, fmt.Errorf("providers: decode base64 content for %s: %w", path, err)
 	}
 	return decoded, nil
+}
+
+// RepoOwnership reports whether owner/repo is private, via GET /repos/{owner}/{repo}, alongside
+// the response body's top-level key set (names only, never values). A public repository answers
+// this route with no token at all, so a 200 here proves nothing about a token's own permissions;
+// probe-token uses Private to warn an operator whose verification set carries no private
+// repository that the token's scope stays unconfirmed.
+func (gh *GitHub) RepoOwnership(owner, repo string) (private bool, keys []string, err error) {
+	var raw map[string]json.RawMessage
+	path := fmt.Sprintf("/repos/%s/%s", owner, repo)
+	if err := gh.getJSON(path, &raw); err != nil {
+		return false, nil, err
+	}
+	keys = make([]string, 0, len(raw))
+	for k := range raw {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	if err := json.Unmarshal(raw["private"], &private); err != nil {
+		return false, keys, fmt.Errorf("providers: decode private field for %s/%s: %w", owner, repo, err)
+	}
+	return private, keys, nil
 }
 
 // Branch names one branch of a repository, with the last commit's date and the login of the

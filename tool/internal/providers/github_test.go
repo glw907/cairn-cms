@@ -203,6 +203,52 @@ func TestTokenExpiryReturnsZeroTimeWhenHeaderAbsent(t *testing.T) {
 	}
 }
 
+func TestRepoOwnershipReportsPrivateAndKeys(t *testing.T) {
+	body := []byte(`{"id":1,"full_name":"glw907/xcathletes-org","private":true}`)
+	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	private, keys, err := gh.RepoOwnership("glw907", "xcathletes-org")
+	if err != nil {
+		t.Fatalf("RepoOwnership: %v", err)
+	}
+	if !private {
+		t.Error("private = false, want true")
+	}
+	want := []string{"full_name", "id", "private"}
+	if len(keys) != len(want) {
+		t.Fatalf("keys = %v, want %v", keys, want)
+	}
+	for i, k := range want {
+		if keys[i] != k {
+			t.Errorf("keys[%d] = %q, want %q", i, keys[i], k)
+		}
+	}
+}
+
+func TestRepoOwnershipReportsPublicRepo(t *testing.T) {
+	body := []byte(`{"id":2,"full_name":"glw907/cairn-cms","private":false}`)
+	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	private, _, err := gh.RepoOwnership("glw907", "cairn-cms")
+	if err != nil {
+		t.Fatalf("RepoOwnership: %v", err)
+	}
+	if private {
+		t.Error("private = true, want false")
+	}
+}
+
+func TestRepoOwnershipClassifiesNotFound(t *testing.T) {
+	status, body, err := Corpus("github", "not_found.default.404.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	_, _, err = gh.RepoOwnership("glw907", "a-private-repo-this-token-cannot-see")
+	assertGitHubReason(t, err, status, ReasonNotFound)
+}
+
 func TestTokenExpiryParsesHeader(t *testing.T) {
 	h := make(http.Header)
 	h.Set(githubExpiryHeader, "2027-01-01 00:00:00 UTC")

@@ -39,9 +39,19 @@ improvement release; then **the docs rebuild** from the facts container, then be
 ACCEPTED** (4 to 8 and 10 each after one fix round; 9 clean); PR #60 green on all three `make check`
 legs at `25548463`. Task 10's attended half was Geoff's 2026-09-19 mint of both read tokens
 (`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; dotfiles registry and estate
-inventory carry them). **Task 11 close IN PROGRESS:** `code-simplifier` over `tool/`, then seven
-`go-architecture-reader` dispatches (record, store, providers, spine, secrets, version, cmd/cairn),
-one fold dispatch, the ritual. PR #60 then goes ready for review; the MERGE waits for Geoff. Spend about 4.2M of 8M.
+inventory carry them). **Task 11 close IN PROGRESS (2026-09-20 03:34):** `code-simplifier` landed (`85c2acac`, CI green);
+all seven `go-architecture-reader` reports are in (six sound with nits, `cmd/cairn` workmanlike, no
+credential leak found anywhere). The adjudicated fold runs as `wf_d3f65134-680` (`tool-a-fold.js`),
+three sequential tasks: record (type renames to `record.GitHub`/`GitHubRepo`/`Cloudflare`, key-set
+drift guard); store, spine, version (a Windows junction hole in `Load`, exported mutable slices to
+functions); secrets and cmd/cairn (`secrets.Env` disagreed with the live env provider on an empty
+variable; dropped `Resolve` errors) plus a module-wide sweep of process citations out of Go
+comments. Then the ritual; PR #60 goes ready for review; the MERGE waits for Geoff.
+**Left the pass, to be filed as a Pass B opening task:** the `providers` deduplication, `record`'s
+table-driven rewrite and file split, and the `cmd/cairn` logic moves (verdict algebra onto
+`spine.State`, `discoverSites` into `store`, the typed exit error), the last three into Tasks 19
+and 21's notes. **Open decision for Geoff:** Pass B goes 14 to 15 tasks, and the plan already names
+it the pass to watch. Spend about 5.0M of 8M in subagent tokens (the conductor's own turns uncounted).
 Scripts live in that session's scratchpad, built from
 `~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with args embedded in a copy of
 `~/.claude/workflows/pass-execute-chains.js` patched with a `noClassifier` flag. Rulings taken:

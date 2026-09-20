@@ -10,8 +10,8 @@ export default {
     // $chassis resolves the genre-free layer (src/chassis/): the plumbing and composition
     // primitives any cairn theme mounts onto. $theme resolves the Waymark theme's own content
     // (src/theme/): the chrome, the adapter config, the token values, the starter component
-    // looks (see src/chassis/README.md for the boundary rule). $lib is unused; the showcase
-    // keeps no src/lib.
+    // looks (see src/chassis/README.md for the boundary rule). $lib stays unwired as an alias;
+    // src/lib now holds the site's one logger, imported by relative path.
     alias: {
       $chassis: 'src/chassis',
       '$chassis/*': 'src/chassis/*',

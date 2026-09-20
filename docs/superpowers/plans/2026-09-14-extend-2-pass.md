@@ -97,7 +97,9 @@ write; site adoption.
 
 ## Token ceiling
 
-**5.4M.**
+**6.5M** (raised from 5.4M by Geoff, 2026-09-20, mid-execution, after the first run measured
+1.87M over four tasks; the raise buys the same ten tasks and the ritual, no added scope. The 80
+percent flag moves to 5.2M. The table below is the authoring forecast, kept as the record.)
 
 | Line item | Basis | Tokens |
 |---|---|---|

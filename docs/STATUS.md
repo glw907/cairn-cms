@@ -20,8 +20,8 @@ is DONE, 5 (one comment-only fix round), 6, and 7 ACCEPTED. Chain A halted at 1a
 whose one blocking finding was a false MANIFEST sentence in `docs/reference/guidance.md`, marked
 comment-only; the conductor ruled accept-after-fix, a direct `cairn-implementer` dispatch is
 landing it, and chain A then relaunches from 1b (1b, 2, 3a, 3b, 3c, 4) as a second workflow run.
-First run `wf_0d3513c9-bdb` spent 1.87M subagent tokens over four tasks, so the forecast lands
-near the 5.4M ceiling and the 80 percent flag (4.3M) will trip mid chain A. Rulings taken: the
+First run `wf_0d3513c9-bdb` spent 1.87M subagent tokens over four tasks, and Geoff raised the
+ceiling to 6.5M (2026-09-20; same scope, the 80 percent flag now 5.2M). Rulings taken: the
 gate per task is `gate-tier.mjs`'s computed string plus the checks the task's criteria name; a
 `package.json` touch computes the `full` tier, whose local e2e is green when its only failures
 are the 20 CI-canonical baseline files from `4de378ec`; the unknown-exclusion case prints the

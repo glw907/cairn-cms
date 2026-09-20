@@ -4,6 +4,17 @@
 
 ### Added
 
+- A new `cairn-guidance` bin installs and checks the package's shipped skills, review agent, and
+  `CLAUDE.md` fragment in a consumer repo. `cairn-guidance install` copies every directory under
+  `skills/`, the review agent, and the fragment into `.claude/`, writing `<dest>.orig` beside
+  anything an edit diverged from (never clobbering an existing `.orig`) and a `MANIFEST` of what
+  it wrote; every write is contained under `.claude/`, and a path the package stops shipping is
+  reported removable rather than deleted. `cairn-guidance check` reports the guidance tree's
+  freshness, the `CLAUDE.md` import line, the `check:cairn` script, `cairn-audit.config.json`,
+  the CI workflow, the `.claude/` Tailwind-source exclusion, and any leftover `.orig`; it exits 0
+  by default, and `--strict` exits 1 when the guidance tree is stale or missing. See
+  [The `cairn-guidance` CLI](docs/reference/guidance.md). No consumer action.
+
 - A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
   built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
   and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A

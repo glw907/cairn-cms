@@ -25,6 +25,7 @@ export const ALLOWLIST = new Set([
   'cli-flag:--template', // sv create's own flag, not create-cairn-site's
   'cli-flag:--types', // sv create's own flag, not create-cairn-site's
   'cli-flag:--no-add-ons', // sv create's own flag, not create-cairn-site's
+  'cli-flag:--strict', // cairn-guidance check's own flag, not create-cairn-site's
 
   // Illustrative binding and secret names a reader chooses for their own site: real D1
   // bindings, rate limiters, and GitHub Actions secrets a worked example names, never a cairn
@@ -136,6 +137,15 @@ export const ALLOWLIST = new Set([
   'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/build-a-site-by-hand.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
   'file-path:src/lib/access-identity.ts', // docs/extend/sign-in-through-your-organization.md's illustrative Access-verifier module, by convention
   'file-path:admin/__data.json', // docs/extend/sign-in-through-your-organization.md, SvelteKit's own data-only fetch path, never a file on disk
+  // docs/reference/guidance.md's own destination paths inside a CONSUMER repo's .claude/ and
+  // .github/ trees, never a path in this repo: cairn-guidance writes them, it does not ship them.
+  // The extractor's leading-dot trim strips the leading `.` off `.claude` and `.github` before
+  // this class resolves against the filesystem, which is why the token here carries neither.
+  'file-path:claude/agents/cairn-extension-reviewer.md',
+  'file-path:claude/cairn/CLAUDE.md',
+  'file-path:claude/settings.json',
+  'file-path:@.claude/cairn/CLAUDE.md', // the literal import-line value quoted in guidance.md's prose
+  'file-path:github/workflows/check.yml',
 
   // Real paths in a named production consumer site's own repo, not this repo's tree.
   // docs/extend/migration-notes.md's closing "upgrade order" subsection names them so a site

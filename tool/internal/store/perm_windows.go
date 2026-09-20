@@ -78,6 +78,30 @@ func setOwnerOnlyDACL(path string) error {
 	return nil
 }
 
+// checkNotReparsePoint reports ErrUnsafePerms when path is a symlink, a
+// junction, or any other reparse point. Go's os.Lstat already sets
+// ModeSymlink for IO_REPARSE_TAG_SYMLINK and IO_REPARSE_TAG_MOUNT_POINT
+// (a junction), but this also reads the FILE_ATTRIBUTE_REPARSE_POINT bit
+// directly, so a reparse tag Go does not surface through ModeSymlink is
+// still rejected.
+func checkNotReparsePoint(path string, info os.FileInfo) error {
+	if info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("store: %s: %w", path, ErrUnsafePerms)
+	}
+	pathp, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return fmt.Errorf("store: %s: %w", path, err)
+	}
+	attrs, err := windows.GetFileAttributes(pathp)
+	if err != nil {
+		return fmt.Errorf("store: %s: read attributes: %w", path, err)
+	}
+	if attrs&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+		return fmt.Errorf("store: %s: %w", path, ErrUnsafePerms)
+	}
+	return nil
+}
+
 // checkOwner reports ErrUnsafePerms when path's owner SID does not match
 // the current process token's user SID.
 func checkOwner(path string, _ os.FileInfo) error {

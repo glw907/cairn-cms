@@ -88,3 +88,26 @@ func TestCheckSafePermOwnerOnlyDACL(t *testing.T) {
 		t.Fatalf("checkSafePerm with an Everyone ACE = %v, want ErrUnsafePerms", err)
 	}
 }
+
+// TestCheckPathRejectsReparsePoint asserts checkPath refuses a directory
+// symlink (a junction proves the same FILE_ATTRIBUTE_REPARSE_POINT bit)
+// planted where the registry directory should be, the reparse-point half
+// of Load's directory-swap defense that POSIX's mode-bit check cannot
+// express. The runner needs SeCreateSymbolicLinkPrivilege (Developer Mode
+// or an elevated process) to create the symlink; without it the test skips
+// rather than reporting a false pass.
+func TestCheckPathRejectsReparsePoint(t *testing.T) {
+	base := t.TempDir()
+	real := filepath.Join(base, "real")
+	if err := os.Mkdir(real, 0o700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("create directory symlink (runner lacks SeCreateSymbolicLinkPrivilege): %v", err)
+	}
+
+	if err := checkPath(link); !errors.Is(err, ErrUnsafePerms) {
+		t.Fatalf("checkPath(reparse point) = %v, want ErrUnsafePerms", err)
+	}
+}

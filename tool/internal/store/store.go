@@ -63,6 +63,10 @@ func Open(dir string) (*Store, error) {
 // or parse is skipped and reported in the returned error slice instead of
 // failing the whole list.
 func (s *Store) List() ([]Entry, []error) {
+	if err := checkPath(s.dir); err != nil {
+		return nil, []error{fmt.Errorf("store: list %s: %w", s.dir, err)}
+	}
+
 	dirEntries, err := os.ReadDir(s.dir)
 	if err != nil {
 		return nil, []error{fmt.Errorf("store: list %s: %w", s.dir, err)}
@@ -95,30 +99,36 @@ func (s *Store) List() ([]Entry, []error) {
 	return entries, errs
 }
 
+// checkPath lstats path and rejects it when it is a symlink, a Windows
+// reparse point, or grants access beyond the owner. Load and List each
+// check the registry directory and the record file through this one
+// function, since a directory Open already verified can be swapped for a
+// symlink or a junction before a later operation reads through it.
+func checkPath(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if err := checkNotReparsePoint(path, info); err != nil {
+		return err
+	}
+	return checkSafePerm(path, info)
+}
+
 // Load reads and parses the record named id, refusing a registry directory
-// or record file that is a symlink or grants access beyond the owner.
+// or record file that is a symlink, a reparse point, or grants access
+// beyond the owner.
 func (s *Store) Load(id string) (record.Record, error) {
 	if err := record.ValidateSiteID(id); err != nil {
 		return record.Record{}, err
 	}
 
-	dirInfo, err := os.Lstat(s.dir)
-	if err != nil {
-		return record.Record{}, fmt.Errorf("store: %s: %w", id, err)
-	}
-	if err := checkSafePerm(s.dir, dirInfo); err != nil {
+	if err := checkPath(s.dir); err != nil {
 		return record.Record{}, fmt.Errorf("store: %s: %w", id, err)
 	}
 
 	path := filepath.Join(s.dir, id+".json")
-	info, err := os.Lstat(path)
-	if err != nil {
-		return record.Record{}, fmt.Errorf("store: %s: %w", id, err)
-	}
-	if info.Mode()&os.ModeSymlink != 0 {
-		return record.Record{}, fmt.Errorf("store: %s: %w", id, ErrUnsafePerms)
-	}
-	if err := checkSafePerm(path, info); err != nil {
+	if err := checkPath(path); err != nil {
 		return record.Record{}, fmt.Errorf("store: %s: %w", id, err)
 	}
 

@@ -8,10 +8,16 @@ package version
 
 import "runtime/debug"
 
-// Version is the binary's version, set by a repository build via -ldflags.
-var Version = "dev"
+// devVersion is Version's unset default, and the sentinel String checks before falling back to
+// the module version runtime/debug.ReadBuildInfo reports.
+const devVersion = "dev"
 
-// Commit is the binary's short commit SHA, set by a repository build via -ldflags.
+// Version is the binary's version, set by a repository build via -ldflags.
+var Version = devVersion
+
+// Commit is the binary's short commit SHA, set only by a repository build via -ldflags: a `go
+// install module@version` build carries no VCS stamp to fall back on, so Commit reads "none"
+// there by design.
 var Commit = "none"
 
 // mainModuleVersion reads the running binary's main module version, as
@@ -28,11 +34,11 @@ var mainModuleVersion = func() (string, bool) {
 // String reports the resolved version, following the package's stated
 // precedence.
 func String() string {
-	if Version != "dev" {
+	if Version != devVersion {
 		return Version
 	}
 	if v, ok := mainModuleVersion(); ok {
 		return v
 	}
-	return "dev"
+	return devVersion
 }

@@ -221,6 +221,35 @@ func TestOpenRefusesSymlinkedDirectory(t *testing.T) {
 	}
 }
 
+// TestLoadRefusesSymlinkedDirectory covers Load's own directory check,
+// distinct from Open's up-front check: a directory Open verified can be
+// swapped for a symlink afterward, and Load must still refuse it rather
+// than reading through the replacement.
+func TestLoadRefusesSymlinkedDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlink creation requires elevated privilege on Windows CI runners")
+	}
+	base := t.TempDir()
+	real := filepath.Join(base, "real")
+	if err := os.Mkdir(real, 0o700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	path := filepath.Join(real, "site-swapped-abcdef.json")
+	if err := os.WriteFile(path, []byte(`{"name":"x"}`), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	s := &Store{dir: link}
+	_, err := s.Load("site-swapped-abcdef")
+	if !errors.Is(err, ErrUnsafePerms) {
+		t.Fatalf("Load(through symlinked directory) = %v, want ErrUnsafePerms", err)
+	}
+}
+
 // TestSaveVersion0Upgrade covers the schema version contract: a version 0
 // record loads as SchemaVersion == 0, Save writes schemaVersion 1, and a
 // second Load observes 1, while every secret-bearing key Marshal never

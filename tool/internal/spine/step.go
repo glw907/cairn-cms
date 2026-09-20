@@ -1,9 +1,6 @@
-// Package spine holds the chapter vocabulary the Node CLI's provisioning chapters wrote first:
-// the site record's lifecycle step, the park codes a wait-kind outcome carries, the check
-// outcome shape every health check returns, and the cairn-doctor condition ids a check declares.
-// It is the read-side ground truth every layer above it (health, logs, the render seam) shares,
-// so a term coined once here never drifts between the CLI, the HUD, and the doctor.
 package spine
+
+import "slices"
 
 // Step is a site record's lifecycle position, one of the exact strings the Node CLI writes to a
 // record's "step" field. It is a single scalar shared across every chapter, so a health check
@@ -64,19 +61,32 @@ func ParseStep(s string) (Step, bool) {
 	return step, allSteps[step]
 }
 
+// terminalSteps backs TerminalSteps, ported from TERMINAL_STEPS in
+// packages/create-cairn-site/src/cloudflare/chapter2.mjs.
+var terminalSteps = []Step{StepEmailLive, StepPaidPlanDeclined}
+
 // TerminalSteps names the cloudflare chapter's own steps past which the pasted API token is
-// deleted, ported from TERMINAL_STEPS
-// (packages/create-cairn-site/src/cloudflare/chapter2.mjs:84). 2.0 seam kept on purpose: 1.0
-// deletes no token and reads no record for that purpose; 2.0's adopt-to-manage reads this to
-// decide whether a saved token still exists on a record it is about to act on.
-var TerminalSteps = []Step{StepEmailLive, StepPaidPlanDeclined}
+// deleted. 2.0 seam kept on purpose: TerminalSteps has no caller in 1.0 by design.
+func TerminalSteps() []Step {
+	return slices.Clone(terminalSteps)
+}
 
-// Chapter3TerminalSteps ports CHAPTER3_TERMINAL_STEPS
-// (packages/create-cairn-site/src/cloudflare/chapter3.mjs:70). 2.0 seam kept on purpose: 2.0's
-// builds detail view reads it to classify a builds record as finished.
-var Chapter3TerminalSteps = []Step{StepBuildsLive, StepBuildsConnectDeclined}
+// chapter3TerminalSteps backs Chapter3TerminalSteps, ported from CHAPTER3_TERMINAL_STEPS in
+// packages/create-cairn-site/src/cloudflare/chapter3.mjs.
+var chapter3TerminalSteps = []Step{StepBuildsLive, StepBuildsConnectDeclined}
 
-// Chapter3ResumableSteps ports CHAPTER3_RESUMABLE_STEPS
-// (packages/create-cairn-site/src/cloudflare/chapter3.mjs:82). 2.0 seam kept on purpose: 2.0's
-// resume logic reads it to skip the connect and trigger hops a record already passed.
-var Chapter3ResumableSteps = []Step{StepBuildsConnected, StepConfigReconciled}
+// Chapter3TerminalSteps names the cloudflare chapter's builds-finished steps. 2.0 seam kept on
+// purpose: Chapter3TerminalSteps has no caller in 1.0 by design.
+func Chapter3TerminalSteps() []Step {
+	return slices.Clone(chapter3TerminalSteps)
+}
+
+// chapter3ResumableSteps backs Chapter3ResumableSteps, ported from CHAPTER3_RESUMABLE_STEPS in
+// packages/create-cairn-site/src/cloudflare/chapter3.mjs.
+var chapter3ResumableSteps = []Step{StepBuildsConnected, StepConfigReconciled}
+
+// Chapter3ResumableSteps names the cloudflare chapter's steps a resume can skip past. 2.0 seam
+// kept on purpose: Chapter3ResumableSteps has no caller in 1.0 by design.
+func Chapter3ResumableSteps() []Step {
+	return slices.Clone(chapter3ResumableSteps)
+}

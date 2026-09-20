@@ -2,6 +2,7 @@ package spine
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
@@ -24,8 +25,10 @@ func (s State) String() string {
 		return "ok"
 	case Failing:
 		return "failing"
-	default:
+	case Unknown:
 		return "unknown"
+	default:
+		return "State(" + strconv.Itoa(int(s)) + ")"
 	}
 }
 
@@ -44,6 +47,13 @@ const (
 	ReasonNotRun        ReasonCode = "reason.not-run"
 	ReasonNotObservable ReasonCode = "reason.not-observable"
 )
+
+// allReasonCodes enumerates every fixed ReasonCode constant, so a test that needs the whole set
+// does not retype it.
+var allReasonCodes = []ReasonCode{
+	ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
+	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
+}
 
 // ParkReason builds the reason.park.<code> ReasonCode a wait-kind outcome carries.
 func ParkReason(code ParkCode) ReasonCode {
@@ -91,9 +101,8 @@ const (
 
 // FromKind maps a catalogue row's Kind and code onto an Outcome, the spec's table: wait becomes
 // Unknown with a park reason built from code, act and ask-someone become Failing with code as
-// Detail, and declined becomes OK with code as Detail. 2.0 seam kept on purpose: 1.0's checks are
-// new code with no catalogue row to classify; 2.0's act-step implementations, which do throw
-// catalogue rows, call this to report their own outcome.
+// Detail, and declined becomes OK with code as Detail. 2.0 seam kept on purpose: FromKind has no
+// caller in 1.0 by design.
 func FromKind(kind Kind, code string) Outcome {
 	switch kind {
 	case KindWait:

@@ -12,6 +12,16 @@ func openNoFollow(path string) (*os.File, error) {
 	return os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0o600)
 }
 
+// checkNotReparsePoint reports ErrUnsafePerms when path is a symlink. POSIX
+// has no reparse-point concept beyond the symlink bit Lstat already
+// reports.
+func checkNotReparsePoint(path string, info os.FileInfo) error {
+	if info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("store: %s: %w", path, ErrUnsafePerms)
+	}
+	return nil
+}
+
 // checkOwner reports ErrUnsafePerms when the current user does not own
 // path.
 func checkOwner(path string, info os.FileInfo) error {

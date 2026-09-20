@@ -180,9 +180,9 @@ finding `go-architecture-reader` would otherwise file at both closes.
 | The condition-to-remedy anchor map, re-homed out of `ui` | 20 | The HUD's detail view | Every anchor `Anchor` returns resolves to an actual heading in `docs/admin/is-it-working.md`, read at test time, and a second test covers the no-anchor branch. |
 | `logs.Query`, `logs.Entry`, `logs.Fetch` shaped for both a printed list and a scrolling view | 17 | The HUD's scrolling log screen | `Fetch` returns entries newest-first with fields unparsed as `json.RawMessage`, so no renderer choice is baked into the fetch. |
 | `spine.Discover`, `spine.Adopt`, `spine.AlreadyAdopted` as plain functions | 18 | The HUD's adopt dialog | `Discover` never writes, and adopting the same candidate twice yields one record. |
-| `spine.TerminalSteps`, `spine.Chapter3TerminalSteps`, `spine.Chapter3ResumableSteps` | 8 | The HUD's detail view, which shows an onboarding site's hold state | The step-literal drift test reads the Node constants at test time, so a Node-side edit fails the Go suite even with no 1.0 caller. |
+| `spine.TerminalSteps()`, `spine.Chapter3TerminalSteps()`, `spine.Chapter3ResumableSteps()` (Task 11 fold, 2026-09-20: functions returning a clone of an unexported backing slice, not vars) | 8 | The HUD's detail view, which shows an onboarding site's hold state | The step-literal drift test reads the Node constants at test time, so a Node-side edit fails the Go suite even with no 1.0 caller. |
 | `spine.FromKind` | 8 | The HUD's detail view, which renders a park state from the doctor's own kind | A table over every `Kind` asserts the spec's mapping, so the function is covered before 2.0 calls it. |
-| `spine.Conditions` | 8 | The HUD's condition filter on the sites table | The drift test against `src/lib/diagnostics/conditions.ts` is the var's only 1.0 reader, and the task states that. |
+| `spine.Conditions()` (Task 11 fold, 2026-09-20: a function returning a clone of an unexported backing slice, not a var) | 8 | The HUD's condition filter on the sites table | The drift test against `src/lib/diagnostics/conditions.ts` is the function's only 1.0 reader, and the task states that. |
 | `providers.NPM.Versions` | 7 | 2.0's engine detail view, which lists the skipped versions | A corpus-backed test over a packument asserts the ordering the detail view will read. |
 | The secret provider seam: `secrets.Provider` with the environment and keyring implementations | 9 | 2.0's third backend behind the same interface | A table runs the resolver over both providers with a fake keyring: environment wins when both hold a value, the keyring answers when the variable is absent, and a keyring that cannot be reached is a miss rather than an error. |
 
@@ -723,19 +723,21 @@ interface over `net.Resolver`.
 - Create: `tool/internal/spine/step.go`, `step_test.go`, `park.go`, `park_test.go`,
   `outcome.go`, `outcome_test.go`, `condition.go`, `condition_test.go`
 
-**Produces:** `type Step string` with the record-step constants and `ParseStep`. `var
-TerminalSteps`, `Chapter3TerminalSteps`, and `Chapter3ResumableSteps` ported from the Node
-constants named in reconciliation rows 6 through 8. `type ParkCode string` with the codes the
-hold loop and park pages use. `type State int` (`OK`, `Failing`, `Unknown`). `type Outcome
-struct{ State State; Reason ReasonCode; Detail string }` with `Validate` rejecting a non-Unknown
-state carrying a reason and an `Unknown` carrying none. `type ReasonCode string` with the
-catalogued set (`reason.cred-missing`, `reason.cred-forbidden`, `reason.cred-revoked`,
+**Produces:** `type Step string` with the record-step constants and `ParseStep`. `func
+TerminalSteps()`, `Chapter3TerminalSteps()`, and `Chapter3ResumableSteps()` (Task 11 fold,
+2026-09-20: functions returning `slices.Clone` of an unexported backing slice, not vars) ported
+from the Node constants named in reconciliation rows 6 through 8. `type ParkCode string` with the
+codes the hold loop and park pages use. `type State int` (`OK`, `Failing`, `Unknown`). `type
+Outcome struct{ State State; Reason ReasonCode; Detail string }` with `Validate` rejecting a
+non-Unknown state carrying a reason and an `Unknown` carrying none. `type ReasonCode string` with
+the catalogued set (`reason.cred-missing`, `reason.cred-forbidden`, `reason.cred-revoked`,
 `reason.cred-expiring`, `reason.timeout`, `reason.offline`, `reason.not-run`,
 `reason.not-observable`, `reason.park.<ParkCode>`, `reason.api.<Reason>`). `func FromKind(kind
 Kind, code string) Outcome` implementing the spec table: `wait` becomes Unknown with a park
 reason, `act` and `ask-someone` become Failing, `declined` becomes OK with a detail. `type
-Condition string`, the constant `ConditionNone` whose value is the empty string, and `var
-Conditions` copied from `src/lib/diagnostics/conditions.ts`.
+Condition string`, the constant `ConditionNone` whose value is the empty string, and `func
+Conditions()` (Task 11 fold, 2026-09-20: same functions-over-vars shape) copied from
+`src/lib/diagnostics/conditions.ts`.
 
 **Acceptance:**
 - A test reads `packages/create-cairn-site/src` through `providers.RepoRoot` at test time and
@@ -752,8 +754,8 @@ Conditions` copied from `src/lib/diagnostics/conditions.ts`.
 - Reason codes are not conditions. `hostname-not-serving`, `certificate-pending`, and the park
   codes are `ReasonCode` and `ParkCode` values, never `Condition` values, asserted by a test that
   no `Condition` constant collides with a `ReasonCode` constant.
-- **2.0 seams kept on purpose: `TerminalSteps`, `Chapter3TerminalSteps`,
-  `Chapter3ResumableSteps`, `FromKind`, and `Conditions`.** None has a 1.0 caller outside a test.
+- **2.0 seams kept on purpose: `TerminalSteps()`, `Chapter3TerminalSteps()`,
+  `Chapter3ResumableSteps()`, `FromKind`, and `Conditions()`.** None has a 1.0 caller outside a test.
   Each is named in the seams table with its 2.0 caller, and each carries its own test here, so
   the surface is covered before 2.0 calls it. A table over every `Kind` asserts `FromKind`
   against the spec's mapping.

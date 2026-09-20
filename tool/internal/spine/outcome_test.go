@@ -6,6 +6,28 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
+// TestStateString covers the three known verdicts plus an out-of-range value, which the default
+// branch renders rather than misreporting as "unknown".
+func TestStateString(t *testing.T) {
+	tests := []struct {
+		name string
+		s    State
+		want string
+	}{
+		{name: "ok", s: OK, want: "ok"},
+		{name: "failing", s: Failing, want: "failing"},
+		{name: "unknown", s: Unknown, want: "unknown"},
+		{name: "out of range", s: State(99), want: "State(99)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.String(); got != tt.want {
+				t.Errorf("State(%d).String() = %q, want %q", tt.s, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestOutcomeValidate(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -1,5 +1,7 @@
 package spine
 
+import "slices"
+
 // Condition is a cairn-doctor condition id, the shared identity the readiness checklist, the
 // doctor probe, and this tool's own checks draw from so the three surfaces agree. A Condition
 // value is always either ConditionNone or one of the Conditions constants; it is never a
@@ -42,11 +44,8 @@ const (
 	ConditionAdminLoginProbeFailed       Condition = "admin.login-probe-failed"
 )
 
-// Conditions is every known condition id, ported from src/lib/diagnostics/conditions.ts's
-// REGISTRY. 2.0 seam kept on purpose: 1.0's checks declare ConditionNone or one literal constant
-// above; 2.0's doctor-parity view walks this slice to render the checklist alongside a site's
-// live health.
-var Conditions = []Condition{
+// conditions backs Conditions, ported from src/lib/diagnostics/conditions.ts's REGISTRY.
+var conditions = []Condition{
 	ConditionEdgeHTTPSNotForced,
 	ConditionAuthCSRFTokenInvalid,
 	ConditionAuthCSRFOriginMismatch,
@@ -72,4 +71,10 @@ var Conditions = []Condition{
 	ConditionAuthIdentityUnresolved,
 	ConditionAuthIdentityUnknown,
 	ConditionAdminLoginProbeFailed,
+}
+
+// Conditions is every known condition id. 2.0 seam kept on purpose: Conditions has no caller in
+// 1.0 by design.
+func Conditions() []Condition {
+	return slices.Clone(conditions)
 }

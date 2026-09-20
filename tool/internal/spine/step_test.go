@@ -128,25 +128,23 @@ func TestParseStep(t *testing.T) {
 	}
 }
 
+// TestTerminalStepSeams asserts each of the three step-slice functions returns exactly its
+// documented steps, in order, which slices.Equal also proves.
 func TestTerminalStepSeams(t *testing.T) {
-	if !slices.Contains(TerminalSteps, StepEmailLive) || !slices.Contains(TerminalSteps, StepPaidPlanDeclined) {
-		t.Errorf("TerminalSteps = %v, want email-live and paid-plan-declined", TerminalSteps)
+	tests := []struct {
+		name string
+		got  []Step
+		want []Step
+	}{
+		{name: "TerminalSteps", got: TerminalSteps(), want: []Step{StepEmailLive, StepPaidPlanDeclined}},
+		{name: "Chapter3TerminalSteps", got: Chapter3TerminalSteps(), want: []Step{StepBuildsLive, StepBuildsConnectDeclined}},
+		{name: "Chapter3ResumableSteps", got: Chapter3ResumableSteps(), want: []Step{StepBuildsConnected, StepConfigReconciled}},
 	}
-	if len(TerminalSteps) != 2 {
-		t.Errorf("TerminalSteps has %d entries, want exactly 2", len(TerminalSteps))
-	}
-
-	if !slices.Contains(Chapter3TerminalSteps, StepBuildsLive) || !slices.Contains(Chapter3TerminalSteps, StepBuildsConnectDeclined) {
-		t.Errorf("Chapter3TerminalSteps = %v, want builds-live and builds-connect-declined", Chapter3TerminalSteps)
-	}
-	if len(Chapter3TerminalSteps) != 2 {
-		t.Errorf("Chapter3TerminalSteps has %d entries, want exactly 2", len(Chapter3TerminalSteps))
-	}
-
-	if !slices.Contains(Chapter3ResumableSteps, StepBuildsConnected) || !slices.Contains(Chapter3ResumableSteps, StepConfigReconciled) {
-		t.Errorf("Chapter3ResumableSteps = %v, want builds-connected and config-reconciled", Chapter3ResumableSteps)
-	}
-	if len(Chapter3ResumableSteps) != 2 {
-		t.Errorf("Chapter3ResumableSteps has %d entries, want exactly 2", len(Chapter3ResumableSteps))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !slices.Equal(tt.got, tt.want) {
+				t.Errorf("%s() = %v, want %v", tt.name, tt.got, tt.want)
+			}
+		})
 	}
 }

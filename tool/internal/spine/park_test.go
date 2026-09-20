@@ -68,20 +68,9 @@ func TestParkCodesMatchWaitKindCatalogueRows(t *testing.T) {
 	}
 	slices.Sort(nodeCodes)
 
-	goCodes := []string{
-		string(ParkDelegationPropagating),
-		string(ParkDelegationPending),
-		string(ParkHostnameRecordsAbsent),
-		string(ParkHostnameResolverLagging),
-		string(ParkCertificatePending),
-		string(ParkEmailNotReady),
-		string(ParkEmailSenderPropagating),
-		string(ParkEmailDailyLimit),
-		string(ParkBuildsAppNotAuthorized),
-		string(ParkBuildsRepoNotSelected),
-		string(ParkBuildNotStarted),
-		string(ParkBuildRunning),
-		string(ParkBuildsReconcileParked),
+	var goCodes []string
+	for _, c := range allParkCodes {
+		goCodes = append(goCodes, string(c))
 	}
 	slices.Sort(goCodes)
 

@@ -43,8 +43,8 @@ func conditionIDsIn(path string) (map[string]bool, error) {
 }
 
 // TestConditionsMatchRegistry reads src/lib/diagnostics/conditions.ts through providers.RepoRoot
-// and asserts the Conditions slice equals REGISTRY's own id set, so a condition id added or
-// renamed on the TypeScript side fails here.
+// and asserts Conditions() equals REGISTRY's own id set, so a condition id added or renamed on
+// the TypeScript side fails here.
 func TestConditionsMatchRegistry(t *testing.T) {
 	root, err := providers.RepoRoot()
 	if err != nil {
@@ -67,7 +67,7 @@ func TestConditionsMatchRegistry(t *testing.T) {
 	slices.Sort(tsIDs)
 
 	var goIDs []string
-	for _, c := range Conditions {
+	for _, c := range Conditions() {
 		goIDs = append(goIDs, string(c))
 	}
 	slices.Sort(goIDs)
@@ -83,7 +83,7 @@ func TestConditionNoneIsTheOnlyUndotted(t *testing.T) {
 	if ConditionNone != "" {
 		t.Fatalf("ConditionNone = %q, want the empty string", ConditionNone)
 	}
-	for _, c := range Conditions {
+	for _, c := range Conditions() {
 		if !strings.Contains(string(c), ".") {
 			t.Errorf("Condition %q carries no dot; only ConditionNone may be undotted", c)
 		}
@@ -94,30 +94,20 @@ func TestConditionNoneIsTheOnlyUndotted(t *testing.T) {
 // ReasonCode or a ParkCode is never mistaken for a Condition, since they answer different
 // questions (why a check could not observe a verdict, versus which known failure mode it named).
 func TestConditionsNeverCollideWithReasonOrParkCodes(t *testing.T) {
-	conditionSet := make(map[string]bool, len(Conditions)+1)
+	all := Conditions()
+	conditionSet := make(map[string]bool, len(all)+1)
 	conditionSet[string(ConditionNone)] = true
-	for _, c := range Conditions {
+	for _, c := range all {
 		conditionSet[string(c)] = true
 	}
 
-	reasonCodes := []ReasonCode{
-		ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
-		ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
-	}
-	for _, r := range reasonCodes {
+	for _, r := range allReasonCodes {
 		if conditionSet[string(r)] {
 			t.Errorf("ReasonCode %q collides with a Condition constant", r)
 		}
 	}
 
-	parkCodes := []ParkCode{
-		ParkDelegationPropagating, ParkDelegationPending, ParkHostnameRecordsAbsent,
-		ParkHostnameResolverLagging, ParkCertificatePending, ParkEmailNotReady,
-		ParkEmailSenderPropagating, ParkEmailDailyLimit, ParkBuildsAppNotAuthorized,
-		ParkBuildsRepoNotSelected, ParkBuildNotStarted, ParkBuildRunning,
-		ParkBuildsReconcileParked,
-	}
-	for _, p := range parkCodes {
+	for _, p := range allParkCodes {
 		if conditionSet[string(p)] {
 			t.Errorf("ParkCode %q collides with a Condition constant", p)
 		}

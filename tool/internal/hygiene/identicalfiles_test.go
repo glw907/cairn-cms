@@ -31,6 +31,9 @@ func TestGOOSPairsAreByteIdentical(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, "go.mod")); err != nil {
 		t.Fatalf("resolved root %s has no go.mod: %v", root, err)
 	}
+	if filepath.Base(root) != "tool" {
+		t.Fatalf("resolved root %s, want a directory named tool", root)
+	}
 
 	for _, pair := range identicalPairs {
 		a, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(pair[0])))

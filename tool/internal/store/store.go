@@ -50,6 +50,9 @@ func Open(dir string) (*Store, error) {
 	if !info.IsDir() {
 		return nil, fmt.Errorf("store: open %s: not a directory", dir)
 	}
+	if err := checkNotReparsePoint(dir, info); err != nil {
+		return nil, fmt.Errorf("store: open %s: %w", dir, err)
+	}
 	if err := checkOwner(dir, info); err != nil {
 		return nil, fmt.Errorf("store: open %s: %w", dir, err)
 	}

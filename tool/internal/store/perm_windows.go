@@ -83,10 +83,12 @@ func setOwnerOnlyDACL(path string) error {
 // ModeSymlink for IO_REPARSE_TAG_SYMLINK and IO_REPARSE_TAG_MOUNT_POINT
 // (a junction), but this also reads the FILE_ATTRIBUTE_REPARSE_POINT bit
 // directly, so a reparse tag Go does not surface through ModeSymlink is
-// still rejected.
+// still rejected. The message names "reparse point" explicitly so it
+// reads distinctly from checkSafePerm's rejection, which never names the
+// path.
 func checkNotReparsePoint(path string, info os.FileInfo) error {
 	if info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("store: %s: %w", path, ErrUnsafePerms)
+		return fmt.Errorf("store: %s: reparse point: %w", path, ErrUnsafePerms)
 	}
 	pathp, err := windows.UTF16PtrFromString(path)
 	if err != nil {
@@ -97,7 +99,7 @@ func checkNotReparsePoint(path string, info os.FileInfo) error {
 		return fmt.Errorf("store: %s: read attributes: %w", path, err)
 	}
 	if attrs&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-		return fmt.Errorf("store: %s: %w", path, ErrUnsafePerms)
+		return fmt.Errorf("store: %s: reparse point: %w", path, ErrUnsafePerms)
 	}
 	return nil
 }

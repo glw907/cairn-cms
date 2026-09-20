@@ -516,10 +516,12 @@ top-level object `{ "provenance": { "captured": "YYYY-MM-DD", "source": "<doc pa
   a malformed one)
 
 **Produces:** `type Record struct` with typed fields `Name`, `Step`, `Domain`, `SchemaVersion`,
-`Adopted`, `GitHub RecordGitHub` (`Repo`, `InstallationID`, identifiers only), `Cloudflare
-RecordCloudflare` (`AccountID`, `ZoneID`, `WorkerName`), and an
+`Adopted`, `GitHub GitHub` (`Repo`, `InstallationID`, identifiers only), `Cloudflare
+Cloudflare` (`AccountID`, `ZoneID`, `WorkerName`), and an
 ordered tail `Extra []ExtraField` where `ExtraField struct{ Key string; Value json.RawMessage }`.
-`RecordGitHub` and `RecordCloudflare` each carry the same ordered tail, so a nested object
+(Renamed from `RecordGitHub`/`RecordCloudflare` to `GitHub`/`Cloudflare` to drop the stutter with
+the `record` package name; Task 11 fold, 2026-09-20.)
+`GitHub` and `Cloudflare` each carry the same ordered tail, so a nested object
 round-trips too. `func Parse([]byte) (Record, error)` recording the key order it observed at each
 level. `func (r Record) Marshal() ([]byte, error)` emitting two-space indent, no HTML escaping, a
 trailing newline, and top-level and nested keys in the order `Parse` observed them, appending any

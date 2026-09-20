@@ -47,7 +47,7 @@ func TestParseMarshalRoundTrip(t *testing.T) {
 // TestVersion0HasNoSchemaVersion asserts Parse leaves SchemaVersion at its
 // zero value for a record with no schemaVersion key, the version 0 marker
 // the spec defines. Marshal must not synthesize the key: a record without
-// one stays without one until Task 5's store upgrades it on write.
+// one stays without one until the store package upgrades it on write.
 func TestVersion0HasNoSchemaVersion(t *testing.T) {
 	r, err := Parse(readTestdata(t, "v0-with-secrets.json"))
 	if err != nil {
@@ -364,5 +364,58 @@ func TestDecodeObjectRejectsTrailingData(t *testing.T) {
 	_, _, err := decodeObject([]byte(`{"a":1}{"b":2}`))
 	if err == nil {
 		t.Fatal("decodeObject succeeded on data with trailing bytes after the closing brace, want an error")
+	}
+}
+
+// TestTypedKeySetsAgree is the drift guard: for each typed object, the key
+// set Parse recognizes, the key set the marshal path can emit, and the
+// typed key-order slice must name the same keys. These are three separately
+// authored lists, so a key added to one switch, map, or order slice without
+// the matching edit to the other two is exactly the drift this test catches.
+func TestTypedKeySetsAgree(t *testing.T) {
+	keysOf := func(typed map[string]typedField) []string {
+		keys := make([]string, 0, len(typed))
+		for k := range typed {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+
+	cases := []struct {
+		name       string
+		parsed     []string
+		typedOrder []string
+		marshaled  []string
+	}{
+		{"Record", parsedTopLevelKeys, typedTopLevelKeys, keysOf(topLevelTypedFields(Record{}))},
+		{"GitHub", parsedGitHubKeys, typedGitHubKeys, keysOf(githubTypedFields(GitHub{}))},
+		{"GitHubRepo", parsedGitHubRepoKeys, typedGitHubRepoKeys, keysOf(githubRepoTypedFields(GitHubRepo{}))},
+		{"Cloudflare", parsedCloudflareKeys, typedCloudflareKeys, keysOf(cloudflareTypedFields(Cloudflare{}))},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assertSameKeySet(t, c.name, "parsed", c.parsed, "typed order", c.typedOrder)
+			assertSameKeySet(t, c.name, "typed order", c.typedOrder, "marshaled", c.marshaled)
+		})
+	}
+}
+
+// assertSameKeySet fails if aKeys and bKeys, named aName and bName, do not
+// name the same set of keys, or if either carries a duplicate.
+func assertSameKeySet(t *testing.T, typeName, aName string, aKeys []string, bName string, bKeys []string) {
+	t.Helper()
+	toSet := func(keys []string) map[string]bool {
+		set := make(map[string]bool, len(keys))
+		for _, k := range keys {
+			if set[k] {
+				t.Fatalf("%s: %s lists %q more than once", typeName, aName, k)
+			}
+			set[k] = true
+		}
+		return set
+	}
+	a, b := toSet(aKeys), toSet(bKeys)
+	if !reflect.DeepEqual(a, b) {
+		t.Errorf("%s: %s keys %v and %s keys %v disagree", typeName, aName, aKeys, bName, bKeys)
 	}
 }

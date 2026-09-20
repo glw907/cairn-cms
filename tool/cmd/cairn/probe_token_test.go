@@ -103,8 +103,8 @@ func openTestRegistry(t *testing.T, sites map[string][2]string) string {
 	for id, ownerRepo := range sites {
 		r := record.Record{
 			Name: id,
-			GitHub: record.RecordGitHub{
-				Repo: record.RecordGitHubRepo{Owner: ownerRepo[0], Repo: ownerRepo[1]},
+			GitHub: record.GitHub{
+				Repo: record.GitHubRepo{Owner: ownerRepo[0], Repo: ownerRepo[1]},
 			},
 		}
 		if err := s.Save(id, r); err != nil {

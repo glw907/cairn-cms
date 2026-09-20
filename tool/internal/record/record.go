@@ -16,15 +16,29 @@ import (
 // observed parse order: the struct's own field order.
 var typedTopLevelKeys = []string{"name", "step", "domain", "schemaVersion", "adopted", "github", "cloudflare"}
 
-// typedGitHubKeys is typedTopLevelKeys's counterpart for RecordGitHub.
+// parsedTopLevelKeys lists every key Parse recognizes as a typed top-level
+// field; any other key lands in Record.Extra. Kept in sync by hand with the
+// switch in Parse: TestTypedKeySetsAgree fails if it drifts from
+// typedTopLevelKeys or from the keys the marshal path can emit.
+var parsedTopLevelKeys = []string{"name", "step", "domain", "schemaVersion", "adopted", "github", "cloudflare"}
+
+// typedGitHubKeys is typedTopLevelKeys's counterpart for GitHub.
 var typedGitHubKeys = []string{"repo", "installationId"}
 
-// typedGitHubRepoKeys is typedTopLevelKeys's counterpart for
-// RecordGitHubRepo.
+// parsedGitHubKeys is parsedTopLevelKeys's counterpart for GitHub.
+var parsedGitHubKeys = []string{"repo", "installationId"}
+
+// typedGitHubRepoKeys is typedTopLevelKeys's counterpart for GitHubRepo.
 var typedGitHubRepoKeys = []string{"id", "owner", "repo", "defaultBranch"}
 
-// typedCloudflareKeys is typedTopLevelKeys's counterpart for RecordCloudflare.
+// parsedGitHubRepoKeys is parsedTopLevelKeys's counterpart for GitHubRepo.
+var parsedGitHubRepoKeys = []string{"id", "owner", "repo", "defaultBranch"}
+
+// typedCloudflareKeys is typedTopLevelKeys's counterpart for Cloudflare.
 var typedCloudflareKeys = []string{"accountId", "zoneId", "workerName"}
+
+// parsedCloudflareKeys is parsedTopLevelKeys's counterpart for Cloudflare.
+var parsedCloudflareKeys = []string{"accountId", "zoneId", "workerName"}
 
 // ExtraField is one key this package does not type, carried opaquely so
 // Marshal can reproduce it byte for byte. Value is the key's raw JSON, never
@@ -47,11 +61,11 @@ func (e ExtraField) GoString() string {
 	return e.String()
 }
 
-// RecordGitHubRepo carries the identifiers the Node CLI persists under
+// GitHubRepo carries the identifiers the Node CLI persists under
 // "github.repo" once a site's repository exists (see createRepo in
 // packages/create-cairn-site/src/github/repo.mjs). Every other key under
 // "github.repo" lands in Extra rather than a typed field.
-type RecordGitHubRepo struct {
+type GitHubRepo struct {
 	// ID is the repository's GitHub id.
 	ID int64
 	// Owner is the repository owner's login.
@@ -67,12 +81,12 @@ type RecordGitHubRepo struct {
 	order []string
 }
 
-// RecordGitHub carries a record's GitHub identifiers. Every other key under
+// GitHub carries a record's GitHub identifiers. Every other key under
 // "github", including every secret (clientSecret, pem, webhookSecret), lands
 // in Extra rather than a typed field.
-type RecordGitHub struct {
+type GitHub struct {
 	// Repo is the adopted repository's identifiers, once created.
-	Repo RecordGitHubRepo
+	Repo GitHubRepo
 	// InstallationID is the GitHub App installation covering Repo.
 	InstallationID int64
 	// Extra carries every key under "github" this package does not type,
@@ -82,10 +96,10 @@ type RecordGitHub struct {
 	order []string
 }
 
-// RecordCloudflare carries a record's Cloudflare identifiers. Every other
-// key under "cloudflare", including apiToken, lands in Extra rather than a
+// Cloudflare carries a record's Cloudflare identifiers. Every other key
+// under "cloudflare", including apiToken, lands in Extra rather than a
 // typed field.
-type RecordCloudflare struct {
+type Cloudflare struct {
 	// AccountID is the site's Cloudflare account id.
 	AccountID string
 	// ZoneID is the DNS zone id covering Domain.
@@ -117,9 +131,9 @@ type Record struct {
 	// site.
 	Adopted bool
 	// GitHub carries the record's GitHub identifiers.
-	GitHub RecordGitHub
+	GitHub GitHub
 	// Cloudflare carries the record's Cloudflare identifiers.
-	Cloudflare RecordCloudflare
+	Cloudflare Cloudflare
 	// Extra carries every top-level key this package does not type, in
 	// the order Parse observed them.
 	Extra []ExtraField
@@ -179,24 +193,24 @@ func Parse(data []byte) (Record, error) {
 	return r, nil
 }
 
-func parseGitHub(data []byte) (RecordGitHub, error) {
+func parseGitHub(data []byte) (GitHub, error) {
 	order, values, err := decodeObject(data)
 	if err != nil {
-		return RecordGitHub{}, fmt.Errorf("record: field %q: %w", "github", err)
+		return GitHub{}, fmt.Errorf("record: field %q: %w", "github", err)
 	}
-	gh := RecordGitHub{order: order}
+	gh := GitHub{order: order}
 	for _, key := range order {
 		raw := values[key]
 		switch key {
 		case "repo":
 			repo, err := parseGitHubRepo(raw)
 			if err != nil {
-				return RecordGitHub{}, err
+				return GitHub{}, err
 			}
 			gh.Repo = repo
 		case "installationId":
 			if err := json.Unmarshal(raw, &gh.InstallationID); err != nil {
-				return RecordGitHub{}, fmt.Errorf("record: field %q: %w", "github.installationId", err)
+				return GitHub{}, fmt.Errorf("record: field %q: %w", "github.installationId", err)
 			}
 		default:
 			gh.Extra = append(gh.Extra, ExtraField{Key: key, Value: raw})
@@ -205,30 +219,30 @@ func parseGitHub(data []byte) (RecordGitHub, error) {
 	return gh, nil
 }
 
-func parseGitHubRepo(data []byte) (RecordGitHubRepo, error) {
+func parseGitHubRepo(data []byte) (GitHubRepo, error) {
 	order, values, err := decodeObject(data)
 	if err != nil {
-		return RecordGitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo", err)
+		return GitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo", err)
 	}
-	repo := RecordGitHubRepo{order: order}
+	repo := GitHubRepo{order: order}
 	for _, key := range order {
 		raw := values[key]
 		switch key {
 		case "id":
 			if err := json.Unmarshal(raw, &repo.ID); err != nil {
-				return RecordGitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.id", err)
+				return GitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.id", err)
 			}
 		case "owner":
 			if err := json.Unmarshal(raw, &repo.Owner); err != nil {
-				return RecordGitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.owner", err)
+				return GitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.owner", err)
 			}
 		case "repo":
 			if err := json.Unmarshal(raw, &repo.Repo); err != nil {
-				return RecordGitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.repo", err)
+				return GitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.repo", err)
 			}
 		case "defaultBranch":
 			if err := json.Unmarshal(raw, &repo.DefaultBranch); err != nil {
-				return RecordGitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.defaultBranch", err)
+				return GitHubRepo{}, fmt.Errorf("record: field %q: %w", "github.repo.defaultBranch", err)
 			}
 		default:
 			repo.Extra = append(repo.Extra, ExtraField{Key: key, Value: raw})
@@ -237,26 +251,26 @@ func parseGitHubRepo(data []byte) (RecordGitHubRepo, error) {
 	return repo, nil
 }
 
-func parseCloudflare(data []byte) (RecordCloudflare, error) {
+func parseCloudflare(data []byte) (Cloudflare, error) {
 	order, values, err := decodeObject(data)
 	if err != nil {
-		return RecordCloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare", err)
+		return Cloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare", err)
 	}
-	cf := RecordCloudflare{order: order}
+	cf := Cloudflare{order: order}
 	for _, key := range order {
 		raw := values[key]
 		switch key {
 		case "accountId":
 			if err := json.Unmarshal(raw, &cf.AccountID); err != nil {
-				return RecordCloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare.accountId", err)
+				return Cloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare.accountId", err)
 			}
 		case "zoneId":
 			if err := json.Unmarshal(raw, &cf.ZoneID); err != nil {
-				return RecordCloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare.zoneId", err)
+				return Cloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare.zoneId", err)
 			}
 		case "workerName":
 			if err := json.Unmarshal(raw, &cf.WorkerName); err != nil {
-				return RecordCloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare.workerName", err)
+				return Cloudflare{}, fmt.Errorf("record: field %q: %w", "cloudflare.workerName", err)
 			}
 		default:
 			cf.Extra = append(cf.Extra, ExtraField{Key: key, Value: raw})
@@ -354,8 +368,10 @@ func nonZeroValue(v any) bool {
 	return !reflect.ValueOf(v).IsZero()
 }
 
-func (r Record) orderedFields() ([]string, []json.RawMessage, error) {
-	typed := map[string]typedField{
+// topLevelTypedFields is the set of keys the marshal path can emit for a
+// Record, named so TestTypedKeySetsAgree can read its keys directly.
+func topLevelTypedFields(r Record) map[string]typedField {
+	return map[string]typedField{
 		"name":          {marshal: func() (json.RawMessage, error) { return rawOf(r.Name) }, nonZero: nonZeroValue(r.Name)},
 		"step":          {marshal: func() (json.RawMessage, error) { return rawOf(r.Step) }, nonZero: nonZeroValue(r.Step)},
 		"domain":        {marshal: func() (json.RawMessage, error) { return rawOf(r.Domain) }, nonZero: nonZeroValue(r.Domain)},
@@ -364,50 +380,55 @@ func (r Record) orderedFields() ([]string, []json.RawMessage, error) {
 		"github":        {marshal: func() (json.RawMessage, error) { return marshalGitHub(r.GitHub) }, nonZero: nonZeroValue(r.GitHub)},
 		"cloudflare":    {marshal: func() (json.RawMessage, error) { return marshalCloudflare(r.Cloudflare) }, nonZero: nonZeroValue(r.Cloudflare)},
 	}
-	replay := r.order
-	if replay == nil {
-		replay = typedTopLevelKeys
-	}
-	return orderedFields(replay, typedTopLevelKeys, typed, r.Extra)
 }
 
-func marshalGitHub(gh RecordGitHub) (json.RawMessage, error) {
-	typed := map[string]typedField{
+func (r Record) orderedFields() ([]string, []json.RawMessage, error) {
+	return orderedFields(r.order, typedTopLevelKeys, topLevelTypedFields(r), r.Extra)
+}
+
+// githubTypedFields is topLevelTypedFields's counterpart for GitHub.
+func githubTypedFields(gh GitHub) map[string]typedField {
+	return map[string]typedField{
 		"repo":           {marshal: func() (json.RawMessage, error) { return marshalGitHubRepo(gh.Repo) }, nonZero: nonZeroValue(gh.Repo)},
 		"installationId": {marshal: func() (json.RawMessage, error) { return rawOf(gh.InstallationID) }, nonZero: nonZeroValue(gh.InstallationID)},
 	}
-	return marshalObject(gh.order, typedGitHubKeys, typed, gh.Extra)
 }
 
-func marshalGitHubRepo(repo RecordGitHubRepo) (json.RawMessage, error) {
-	typed := map[string]typedField{
+func marshalGitHub(gh GitHub) (json.RawMessage, error) {
+	return marshalObject(gh.order, typedGitHubKeys, githubTypedFields(gh), gh.Extra)
+}
+
+// githubRepoTypedFields is topLevelTypedFields's counterpart for GitHubRepo.
+func githubRepoTypedFields(repo GitHubRepo) map[string]typedField {
+	return map[string]typedField{
 		"id":            {marshal: func() (json.RawMessage, error) { return rawOf(repo.ID) }, nonZero: nonZeroValue(repo.ID)},
 		"owner":         {marshal: func() (json.RawMessage, error) { return rawOf(repo.Owner) }, nonZero: nonZeroValue(repo.Owner)},
 		"repo":          {marshal: func() (json.RawMessage, error) { return rawOf(repo.Repo) }, nonZero: nonZeroValue(repo.Repo)},
 		"defaultBranch": {marshal: func() (json.RawMessage, error) { return rawOf(repo.DefaultBranch) }, nonZero: nonZeroValue(repo.DefaultBranch)},
 	}
-	return marshalObject(repo.order, typedGitHubRepoKeys, typed, repo.Extra)
 }
 
-func marshalCloudflare(cf RecordCloudflare) (json.RawMessage, error) {
-	typed := map[string]typedField{
+func marshalGitHubRepo(repo GitHubRepo) (json.RawMessage, error) {
+	return marshalObject(repo.order, typedGitHubRepoKeys, githubRepoTypedFields(repo), repo.Extra)
+}
+
+// cloudflareTypedFields is topLevelTypedFields's counterpart for Cloudflare.
+func cloudflareTypedFields(cf Cloudflare) map[string]typedField {
+	return map[string]typedField{
 		"accountId":  {marshal: func() (json.RawMessage, error) { return rawOf(cf.AccountID) }, nonZero: nonZeroValue(cf.AccountID)},
 		"zoneId":     {marshal: func() (json.RawMessage, error) { return rawOf(cf.ZoneID) }, nonZero: nonZeroValue(cf.ZoneID)},
 		"workerName": {marshal: func() (json.RawMessage, error) { return rawOf(cf.WorkerName) }, nonZero: nonZeroValue(cf.WorkerName)},
 	}
-	return marshalObject(cf.order, typedCloudflareKeys, typed, cf.Extra)
 }
 
-// marshalObject orders a nested object's fields with orderedFields and encodes the
-// result as a compact JSON object. A nil observedOrder means the value was built
-// directly rather than by Parse, so typedOrder, the struct's own field order,
-// stands in for it.
+func marshalCloudflare(cf Cloudflare) (json.RawMessage, error) {
+	return marshalObject(cf.order, typedCloudflareKeys, cloudflareTypedFields(cf), cf.Extra)
+}
+
+// marshalObject orders a nested object's fields with orderedFields and
+// encodes the result as a compact JSON object.
 func marshalObject(observedOrder, typedOrder []string, typed map[string]typedField, extra []ExtraField) (json.RawMessage, error) {
-	replay := observedOrder
-	if replay == nil {
-		replay = typedOrder
-	}
-	keys, values, err := orderedFields(replay, typedOrder, typed, extra)
+	keys, values, err := orderedFields(observedOrder, typedOrder, typed, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -418,14 +439,21 @@ func marshalObject(observedOrder, typedOrder []string, typed map[string]typedFie
 	return buf.Bytes(), nil
 }
 
-// orderedFields replays replayOrder against typed and extra, then appends
-// any typed key replayOrder never named whose current value is non-zero (a
+// orderedFields replays observedOrder against typed and extra, then appends
+// any typed key observedOrder never named whose current value is non-zero (a
 // field a caller set after Parse, on a record whose source document never
 // carried that key), in typedOrder's order, and finally any extra entry
-// neither replayOrder nor that append step named. A key replayOrder names
-// that is neither typed nor present in extra was removed from the record
-// after Parse and is dropped rather than re-emitted with a stale value.
-func orderedFields(replayOrder []string, typedOrder []string, typed map[string]typedField, extra []ExtraField) ([]string, []json.RawMessage, error) {
+// neither observedOrder nor that append step named. A key observedOrder
+// names that is neither typed nor present in extra was removed from the
+// record after Parse and is dropped rather than re-emitted with a stale
+// value. A nil observedOrder means the value was built directly rather than
+// by Parse, so typedOrder, the struct's own field order, stands in for it.
+func orderedFields(observedOrder []string, typedOrder []string, typed map[string]typedField, extra []ExtraField) ([]string, []json.RawMessage, error) {
+	replayOrder := observedOrder
+	if replayOrder == nil {
+		replayOrder = typedOrder
+	}
+
 	extraByKey := make(map[string]json.RawMessage, len(extra))
 	for _, e := range extra {
 		extraByKey[e.Key] = e.Value

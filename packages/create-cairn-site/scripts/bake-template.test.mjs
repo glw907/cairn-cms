@@ -114,10 +114,14 @@ test('bake prunes showcase-only scripts and devDependencies, keeping the rest', 
   assert.ok('format:check' in pkg.scripts);
 });
 
-test('bake emits a tree with no showcase-only .claude directory, and scripts/ holds exactly dev.mjs', async (t) => {
+// The showcase excludes .claude/ from the copy (its own dev tooling stays out); the bake writes
+// its own .claude/ explicitly (the guidance tree), so the directory now exists but holds only
+// what writeGuidance wrote, never any showcase dev-tooling leftover.
+test('bake emits a tree with only the baked .claude guidance, and scripts/ holds exactly dev.mjs', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
-  await assert.rejects(() => access(path.join(to, '.claude')));
+  const claudeEntries = await readdir(path.join(to, '.claude'));
+  assert.deepEqual(claudeEntries.sort(), ['agents', 'cairn', 'skills']);
   const scriptsEntries = await readdir(path.join(to, 'scripts'));
   assert.deepEqual(scriptsEntries, ['dev.mjs']);
 });
@@ -231,4 +235,40 @@ test('pruneShowcaseOnlyPackageFields throws naming a missing expected devDepende
   };
   // @axe-core/playwright is missing from devDependencies.
   assert.throws(() => pruneShowcaseOnlyPackageFields(pkg), /@axe-core\/playwright/);
+});
+
+test('bake writes the guidance tree under .claude, VERSION equal to the resolved engine version', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  await access(path.join(to, '.claude', 'skills', 'cairn-admin-screens'));
+  await access(path.join(to, '.claude', 'agents', 'cairn-extension-reviewer.md'));
+  const fragment = await readFile(path.join(to, '.claude', 'cairn', 'CLAUDE.md'), 'utf8');
+  assert.ok(fragment.length > 0);
+  const version = await readFile(path.join(to, '.claude', 'cairn', 'VERSION'), 'utf8');
+  // engineSpec is "^0.94.0"; VERSION stamps the caret stripped.
+  assert.equal(version, '0.94.0');
+  const manifest = await readFile(path.join(to, '.claude', 'cairn', 'MANIFEST'), 'utf8');
+  assert.match(manifest, /\.claude\/cairn\/CLAUDE\.md/);
+});
+
+test("bake writes the template's root CLAUDE.md with the import line and a site section", async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const claudeMd = await readFile(path.join(to, 'CLAUDE.md'), 'utf8');
+  assert.match(claudeMd, /^@\.claude\/cairn\/CLAUDE\.md$/m);
+  assert.match(claudeMd, /# Your site/);
+});
+
+test('bake excludes .claude from the site\'s own Tailwind build', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const tokens = await readFile(path.join(to, 'src', 'chassis', 'tokens.css'), 'utf8');
+  assert.match(tokens, /@source not "\.\/\.claude";/);
+});
+
+test('the emitted gitignore ignores .claude/agent-memory/', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const gitignore = await readFile(path.join(to, '.gitignore'), 'utf8');
+  assert.match(gitignore, /\.claude\/agent-memory\//);
 });

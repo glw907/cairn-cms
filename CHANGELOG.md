@@ -21,6 +21,12 @@
   `cairn-audit.config.json`, `check.yml`, `settings-hook.json`, `claude-md-import.txt`). See
   [The `cairn-guidance` CLI](docs/reference/guidance.md). No consumer action.
 
+- A site scaffolded with `create-cairn-site` is now born with cairn's agent-facing guidance
+  already installed: `.claude/skills/`, `.claude/agents/cairn-extension-reviewer.md`,
+  `.claude/cairn/CLAUDE.md`, `.claude/cairn/VERSION`, `.claude/cairn/MANIFEST`, and a root
+  `CLAUDE.md` importing the fragment. The scaffold's own Tailwind entry excludes `.claude/` from
+  its source scan, and `.claude/agent-memory/` is gitignored. No consumer action.
+
 - A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
   built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
   and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A

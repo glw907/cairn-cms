@@ -453,3 +453,9 @@ test('the hand-over block names npm run check:cairn and the workflow that runs i
     'the hand-over block must tell the reader a workflow checks the site on every push',
   );
 });
+
+test('the hand-over block names the baked agent guidance and cairn-guidance check', () => {
+  const text = handoverText({ dir: 'alpine-club' });
+  assert.match(text, /cairn-guidance check/, 'the hand-over block must name cairn-guidance check');
+  assert.match(text, /\.claude\//, 'the hand-over block must name the baked .claude/ guidance');
+});

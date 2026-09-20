@@ -3,7 +3,7 @@
 // reference into the monorepo. Resolving the engine and dev-backend dependency specs from the
 // repo's own package.json versions keeps the baked template honest: it fails loud rather than
 // emit a dependency spec no registry can install, an unpublished 0.0.0 most of all.
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -141,6 +141,70 @@ export function pruneShowcaseOnlyPackageFields(pkg) {
   }
 }
 
+// The scaffolded site's own root CLAUDE.md: the import line every cairn-guidance-installed site
+// carries, plus a short section a developer's own project guidance goes in. install.ts never
+// touches this file (it only writes under .claude/), so this is the one place the bake writes it.
+const TEMPLATE_CLAUDE_MD = `@.claude/cairn/CLAUDE.md
+
+# Your site
+
+Add your own project-specific guidance here; \`cairn-guidance install\` only ever refreshes the imported fragment above, never this file.
+`;
+
+/**
+ * Read the guidance source straight from the monorepo's own \`skills/\` and \`claude/\` trees at
+ * \`repoRoot\`, never through the installed-package resolution install.ts's own readers use at
+ * runtime: this package carries no dependency on @glw907/cairn-cms, so nothing here can resolve
+ * "installed". The version stamped is parsed out of the resolved engine spec (the caret
+ * stripped), not the repo's own package.json version, since an overridden engineSpec should
+ * stamp what the template will actually depend on.
+ * @param {string} engineSpec the resolved engine dependency spec, `^x.y.z`
+ * @returns {Promise<import('../../../src/lib/guidance/install.js').GuidanceSource>} the guidance
+ *  source, ready for installGuidance
+ */
+async function readMonorepoGuidanceSource(engineSpec) {
+  const { walkPackagedTree } = await loadGuidanceInstall();
+  const skillsRoot = path.join(repoRoot, 'skills');
+  const skills = {};
+  for (const entry of await readdir(skillsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const { files } = await walkPackagedTree(path.join(skillsRoot, entry.name));
+    skills[entry.name] = files;
+  }
+  const { files: agents } = await walkPackagedTree(path.join(repoRoot, 'claude', 'agents'));
+  const fragment = await readFile(path.join(repoRoot, 'claude', 'CLAUDE.md'), 'utf8');
+  const version = engineSpec.replace(/^[\^~>=<\s]+/, '');
+  return { skills, agents, fragment, version, snippets: {} };
+}
+
+/**
+ * Load the compiled guidance install module, thrown with a clear instruction when `npm run
+ * package` has not run yet, so a missing `dist/` fails loud rather than with a bare
+ * ERR_MODULE_NOT_FOUND.
+ * @returns {Promise<typeof import('../../../src/lib/guidance/install.js')>} the compiled module
+ */
+async function loadGuidanceInstall() {
+  try {
+    return await import('../../../dist/guidance/install.js');
+  } catch (cause) {
+    throw new Error('bake: dist/guidance/install.js is missing. Run "npm run package" first.', { cause });
+  }
+}
+
+/**
+ * Write the guidance tree, the version stamp, and the manifest into the emitted template under
+ * `.claude/`, then write the template's own root `CLAUDE.md` importing the fragment.
+ * @param {string} emitted the emitted template's root
+ * @param {string} engineSpec the resolved engine dependency spec, used to stamp VERSION
+ * @returns {Promise<void>}
+ */
+async function writeGuidance(emitted, engineSpec) {
+  const { installGuidance } = await loadGuidanceInstall();
+  const source = await readMonorepoGuidanceSource(engineSpec);
+  await installGuidance(emitted, source);
+  await writeFile(path.join(emitted, 'CLAUDE.md'), TEMPLATE_CLAUDE_MD);
+}
+
 const ENGINE_PACKAGE_JSON = path.join(repoRoot, 'package.json');
 const DEV_PACKAGE_JSON = path.join(repoRoot, 'packages', 'cairn-cms-dev', 'package.json');
 
@@ -214,6 +278,7 @@ export async function bake({ to, engineSpec, devSpec }) {
   const emittedScriptsDir = path.join(emitted, 'scripts');
   await mkdir(emittedScriptsDir, { recursive: true });
   await writeFile(path.join(emittedScriptsDir, 'dev.mjs'), DEV_SHIM);
+  await writeGuidance(emitted, resolvedEngineSpec);
   return emitted;
 }
 

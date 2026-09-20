@@ -441,10 +441,11 @@ that does is reinventing a register `AdminTable` already carries.
       </tr>
     {/each}
   {/snippet}
+  {#snippet batchBar({ count, clear })}
+    <p>{count} selected</p>
+    <button type="button" class="btn btn-sm" onclick={clear}>Clear</button>
+  {/snippet}
 </AdminTable>
-{#if selectedIds.size > 0}
-  <!-- rendered by AdminTable's own batchBar snippet, shown here for the full recipe -->
-{/if}
 ```
 
 **The batch-actions recipe.** `selection.ids` is the caller's own `Set`, reassigned on every

@@ -5,7 +5,12 @@
   "schemaVersion": 1,
   "adopted": true,
   "github": {
-    "repo": "alpine-club/alpine-club-site",
+    "repo": {
+      "id": 123456789,
+      "owner": "alpine-club",
+      "repo": "alpine-club-site",
+      "defaultBranch": "main"
+    },
     "installationId": 20200042
   },
   "cloudflare": {

@@ -82,8 +82,17 @@ func TestVersion1AdoptedFields(t *testing.T) {
 	if r.Domain != "alpineclub.example" {
 		t.Errorf("Domain = %q, want alpineclub.example", r.Domain)
 	}
-	if r.GitHub.Repo != "alpine-club/alpine-club-site" {
-		t.Errorf("GitHub.Repo = %q, want alpine-club/alpine-club-site", r.GitHub.Repo)
+	if r.GitHub.Repo.ID != 123456789 {
+		t.Errorf("GitHub.Repo.ID = %d, want 123456789", r.GitHub.Repo.ID)
+	}
+	if r.GitHub.Repo.Owner != "alpine-club" {
+		t.Errorf("GitHub.Repo.Owner = %q, want alpine-club", r.GitHub.Repo.Owner)
+	}
+	if r.GitHub.Repo.Repo != "alpine-club-site" {
+		t.Errorf("GitHub.Repo.Repo = %q, want alpine-club-site", r.GitHub.Repo.Repo)
+	}
+	if r.GitHub.Repo.DefaultBranch != "main" {
+		t.Errorf("GitHub.Repo.DefaultBranch = %q, want main", r.GitHub.Repo.DefaultBranch)
 	}
 	if r.GitHub.InstallationID != 20200042 {
 		t.Errorf("GitHub.InstallationID = %d, want 20200042", r.GitHub.InstallationID)
@@ -146,7 +155,7 @@ func assertNoSecretFields(t *testing.T, typ reflect.Type, path string) {
 				}
 			}
 		}
-		if f.Type.Kind() == reflect.Struct && f.Type != reflect.TypeFor[ExtraField]() {
+		if f.Type.Kind() == reflect.Struct {
 			assertNoSecretFields(t, f.Type, path+"."+f.Name)
 		}
 	}
@@ -210,7 +219,12 @@ func TestMarshalFreshRecord(t *testing.T) {
 		"  \"schemaVersion\": 0,\n" +
 		"  \"adopted\": false,\n" +
 		"  \"github\": {\n" +
-		"    \"repo\": \"\",\n" +
+		"    \"repo\": {\n" +
+		"      \"id\": 0,\n" +
+		"      \"owner\": \"\",\n" +
+		"      \"repo\": \"\",\n" +
+		"      \"defaultBranch\": \"\"\n" +
+		"    },\n" +
 		"    \"installationId\": 0\n" +
 		"  },\n" +
 		"  \"cloudflare\": {\n" +
@@ -269,5 +283,86 @@ func TestParseHandlesRemovedKeyOnMarshal(t *testing.T) {
 	}
 	if bytes.Contains(got, []byte("secretRefs")) {
 		t.Errorf("Marshal re-emitted a key removed from Extra: %s", got)
+	}
+}
+
+// TestMarshalAppendsTypedFieldSetAfterParse asserts a typed field a caller
+// sets after Parse, whose key was absent from the source document, is
+// appended after the observed keys rather than dropped: the field now holds
+// a non-zero value, so it is no longer indistinguishable from an absent key
+// parsing to its zero value.
+func TestMarshalAppendsTypedFieldSetAfterParse(t *testing.T) {
+	t.Run("top-level SchemaVersion", func(t *testing.T) {
+		r, err := Parse(readTestdata(t, "v0-with-secrets.json"))
+		if err != nil {
+			t.Fatalf("Parse: %v", err)
+		}
+		r.SchemaVersion = 1
+
+		got, err := r.Marshal()
+		if err != nil {
+			t.Fatalf("Marshal: %v", err)
+		}
+		original, err := Parse(readTestdata(t, "v0-with-secrets.json"))
+		if err != nil {
+			t.Fatalf("Parse: %v", err)
+		}
+		originalBytes, err := original.Marshal()
+		if err != nil {
+			t.Fatalf("Marshal: %v", err)
+		}
+		appended := ",\n  \"schemaVersion\": 1"
+		if !strings.HasSuffix(string(got), appended+"\n}\n") {
+			t.Errorf("Marshal =\n%s\nwant it to end with %q", got, appended+"\n}\n")
+		}
+		withoutAppend := strings.Replace(string(got), appended, "", 1)
+		if withoutAppend != string(originalBytes) {
+			t.Errorf("appending schemaVersion changed an unrelated byte:\nwant (minus the append):\n%s\ngot:\n%s", originalBytes, withoutAppend)
+		}
+	})
+
+	t.Run("top-level Adopted", func(t *testing.T) {
+		r, err := Parse(readTestdata(t, "v0-with-secrets.json"))
+		if err != nil {
+			t.Fatalf("Parse: %v", err)
+		}
+		r.Adopted = true
+
+		got, err := r.Marshal()
+		if err != nil {
+			t.Fatalf("Marshal: %v", err)
+		}
+		wantSuffix := ",\n  \"adopted\": true\n}\n"
+		if !strings.HasSuffix(string(got), wantSuffix) {
+			t.Errorf("Marshal =\n%s\nwant it to end with %q", got, wantSuffix)
+		}
+	})
+
+	t.Run("nested Cloudflare identifier", func(t *testing.T) {
+		r, err := Parse(readTestdata(t, "v0-with-secrets.json"))
+		if err != nil {
+			t.Fatalf("Parse: %v", err)
+		}
+		// v0-with-secrets.json's cloudflare object carries apiToken and
+		// accountId, but never zoneId: a fresh key for this record.
+		r.Cloudflare.ZoneID = "9f8e7d6c5b4a39281706f5e4d3c2b1a0"
+
+		got, err := r.Marshal()
+		if err != nil {
+			t.Fatalf("Marshal: %v", err)
+		}
+		if !bytes.Contains(got, []byte(`"zoneId": "9f8e7d6c5b4a39281706f5e4d3c2b1a0"`)) {
+			t.Errorf("Marshal did not append the new zoneId key: %s", got)
+		}
+	})
+}
+
+// TestDecodeObjectRejectsTrailingData asserts decodeObject fails on a
+// document carrying bytes after the closing brace, syntactically valid or
+// not, rather than silently ignoring them.
+func TestDecodeObjectRejectsTrailingData(t *testing.T) {
+	_, _, err := decodeObject([]byte(`{"a":1}{"b":2}`))
+	if err == nil {
+		t.Fatal("decodeObject succeeded on data with trailing bytes after the closing brace, want an error")
 	}
 }

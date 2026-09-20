@@ -3,6 +3,7 @@ package providers
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 )
@@ -142,9 +143,17 @@ func TestLatestBotCommitReturnsZeroTimeWhenNone(t *testing.T) {
 	}
 }
 
+// TestLatestBotCommitReturnsNewestDate also asserts the request filters by committer rather than
+// author: the engine sets the committer to the App and the author to the editor
+// (src/lib/github/repo.ts), so an author filter would match no publish commit in production.
 func TestLatestBotCommitReturnsNewestDate(t *testing.T) {
 	body := []byte(`[{"commit":{"committer":{"date":"2026-09-10T12:00:00Z"}}}]`)
-	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+	var gotQuery url.Values
+	rt := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		gotQuery = req.URL.Query()
+		return fixtureRoundTripper{status: http.StatusOK, body: body}.RoundTrip(req)
+	})
+	gh := NewGitHub(Credential{}, rt)
 
 	when, err := gh.LatestBotCommit("glw907", "ecxc-ski", "main")
 	if err != nil {
@@ -153,6 +162,12 @@ func TestLatestBotCommitReturnsNewestDate(t *testing.T) {
 	want := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
 	if !when.Equal(want) {
 		t.Errorf("when = %v, want %v", when, want)
+	}
+	if got := gotQuery.Get("committer"); got != "cairn-cms[bot]" {
+		t.Errorf("committer query param = %q, want %q", got, "cairn-cms[bot]")
+	}
+	if gotQuery.Has("author") {
+		t.Errorf("author query param present, want none: got %q", gotQuery.Get("author"))
 	}
 }
 

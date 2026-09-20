@@ -22,8 +22,8 @@ const githubHost = "api.github.com"
 // githubBase is githubHost's REST root, prefixed onto every request this client sends.
 const githubBase = "https://" + githubHost
 
-// botLogin is the GitHub account name the CMS's own commits carry, the login LatestBotCommit
-// filters by.
+// botLogin is the GitHub account name the CMS's own commits carry, the committer login
+// LatestBotCommit filters by.
 const botLogin = "cairn-cms[bot]"
 
 // githubExpiryHeader is the header a fine-grained personal access token's response carries; the
@@ -215,8 +215,9 @@ func (gh *GitHub) Branches(owner, repo string) ([]Branch, error) {
 	return branches, nil
 }
 
-// LatestBotCommit returns the commit date of the newest commit botLogin authored on branch, or
-// the zero time with no error when it has none.
+// LatestBotCommit returns the commit date of the newest commit botLogin committed on branch, or
+// the zero time with no error when it has none. The engine sets the committer to the App and the
+// author to the editor, so this filters by committer rather than author.
 func (gh *GitHub) LatestBotCommit(owner, repo, branch string) (time.Time, error) {
 	var commits []struct {
 		Commit struct {
@@ -225,7 +226,7 @@ func (gh *GitHub) LatestBotCommit(owner, repo, branch string) (time.Time, error)
 			} `json:"committer"`
 		} `json:"commit"`
 	}
-	path := fmt.Sprintf("/repos/%s/%s/commits?sha=%s&author=%s&per_page=1", owner, repo, url.QueryEscape(branch), url.QueryEscape(botLogin))
+	path := fmt.Sprintf("/repos/%s/%s/commits?sha=%s&committer=%s&per_page=1", owner, repo, url.QueryEscape(branch), url.QueryEscape(botLogin))
 	if err := gh.getJSON(path, &commits); err != nil {
 		return time.Time{}, err
 	}

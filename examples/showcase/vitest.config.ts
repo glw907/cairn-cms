@@ -8,9 +8,12 @@ import path from 'node:path';
 export default defineConfig({
   resolve: {
     // Mirrors svelte.config.js's kit.alias so a cross-seam unit test (one importing both a
-    // $chassis and a $theme module) resolves outside the SvelteKit dev/build pipeline too.
+    // $chassis and a $theme module) resolves outside the SvelteKit dev/build pipeline too. `$lib`
+    // is SvelteKit's own built-in alias rather than one this site declares, and it needs restating
+    // here for the same reason: a route module under test reaches its site-owned helpers through it.
     alias: {
       $chassis: path.resolve('./src/chassis'),
+      $lib: path.resolve('./src/lib'),
       $theme: path.resolve('./src/theme'),
     },
   },

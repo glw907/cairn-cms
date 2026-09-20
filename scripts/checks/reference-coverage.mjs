@@ -551,6 +551,7 @@ export const CONFIG = [
   { subpath: '/vite', dts: 'dist/vite/index.d.ts', page: 'docs/reference/vite.md' },
   // Type-only: the module exports no names, so the entry asserts only that the page exists.
   { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
+  { subpath: '/log', dts: 'dist/log/public.d.ts', page: 'docs/reference/log.md' },
 ];
 
 // The full, unfiltered real-export set across every covered subpath. This is no longer the pool

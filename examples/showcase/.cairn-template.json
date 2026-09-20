@@ -6,6 +6,7 @@
     "src/members",
     "src/routes/members",
     "migrations-members",
+    ".cairn",
     "e2e",
     "playwright.config.ts",
     ".claude",

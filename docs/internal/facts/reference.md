@@ -71,7 +71,14 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/components/CairnAdminShell.svelte:76`, `src/lib/components/MediaPicker.svelte:65`.
   [verified]
 - `AdminTable`'s `emptyColspan` defaults to `100`, relying on HTML's own `colspan` clamp to the
-  real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:54`. [verified]
+  real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:96`. [verified]
+- `AdminTable`'s `selection` prop takes a `ReadonlySet<string>` and an `onchange` receiving a
+  `ReadonlySet<string>`; the component never mutates the set it is given. Its header checkbox
+  carries `aria-disabled="true"` while rows exist and nothing is selected, and its `aria-label`
+  reads "Clear selection" once something is. The batch region renders whenever `selection` is set,
+  as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
+  `clear` returns focus to the header checkbox. Source:
+  `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
 - `StatusChip`'s `outline` register hairline is `color-mix(in oklab, currentColor 55%,
   transparent)`; cairn's five named call sites (ConceptList, EditPage, CairnAdminShell,
   ReferenceField, MediaCaptureCard, ManageEditors) all clear the 3:1 border-contrast floor, but a
@@ -80,6 +87,31 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   descriptions in cairn-audit.md; not independently re-measured. [candidate: numeric contrast
   ratios (2.4:1, 2.97:1) are stated in the page and consistent with the audit's own documented
   floors, but no automated re-measurement was run in this harvest]
+- `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
+  coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
+  touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
+  no bubble, every hover/focus/tap mechanic a no-op). Its bubble is a manual popover placed by CSS
+  anchor positioning off an `anchor-name` written on the trigger, so the top layer keeps a
+  transformed, scaled, or `overflow: hidden` ancestor (an open daisyUI modal's box) from displacing
+  or clipping it. That write appends to any inline `anchor-name` the trigger already carries, since
+  `anchor-name` is a comma list and three swept admin triggers anchor a popover menu of their own;
+  replacing it would drop those menus to the UA's centered popover fallback. Source:
+  `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
+- `Tooltip` sets no `aria-describedby` when its `text` already equals the trigger's accessible name
+  (its `aria-label`, else its trimmed text content), since a screen reader would read the same words
+  as the name and again as the description; the bubble still renders, so a test asserting a reason
+  reads the bubble rather than the description. It also owns all three WCAG 1.4.13 bullets itself:
+  a `document`-level Escape listener (non-capturing, no `preventDefault`, so an enclosing dialog
+  still closes on the same press), and a bubble that takes pointer events, where a hover-leave from
+  the trigger holds it open for a 150ms grace before clearing it, since Chromium's hit-testing for
+  a top-layer popover does not extend into the gap between trigger and bubble. Activating an
+  enabled trigger hides the bubble;
+  a trigger marked `aria-disabled="true"` keeps it. Anchor positioning is a requirement, not an
+  enhancement: under `@supports not (anchor-name: --x)` the bubble is not rendered at all, so a
+  client-side feature test sets a native `title` on the trigger instead, a UA tooltip standing in
+  for the bubble a browser without anchor positioning cannot place (needed in the duplicate-name
+  case above all, since that case sets no `aria-describedby` either). Source:
+  `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
 
 ## docs/reference/ambient.md
 
@@ -170,7 +202,22 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   owner-capability rows, so the two cases can't be told apart). Source: `src/lib/auth/store.ts`
   function bodies at lines noted above; outcome unions confirmed present. [verified]
 
+- `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
+  reference `'<repeated>'`, and leaves a key at level four or deeper as written. Both sides of the
+  key comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
+  spells each name once; it now also carries `csrf` and `csrf_token` (both, since normalization maps
+  `csrf_token` to `csrftoken`, not `csrf`). `createLogger(options?: { redactKeys?: readonly string[]
+  })` unions a site's own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and
+  `CAIRN_LOG_EVENTS` are both frozen. A throwing getter anywhere in a call's own `fields` cannot
+  throw out of `log.info()`/`.warn()`/`.error()`: the record build runs inside a `try`/`catch`
+  wrapping `emit`, and a caught failure emits `{ level, event, timestamp, fields: '<unserializable>'
+  }` instead. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
+
 ## docs/reference/cairn-audit.md
+
+- `motion-property` splits a `transition` value's entries at the top level only, so a comma inside
+  `var()` or `cubic-bezier()` reads as a function argument, not as another transitioned property.
+  Source: `src/lib/audit/rules/static/motion-property.ts` (`topLevelEntries`). [verified]
 
 - Exactly 28 rules are registered: 12 static (all error tier) plus 16 rendered (7 error-tier, 9
   advisory-tier). Source: `grep -c "id: '" src/lib/audit/rules/static/*.ts` = 12,
@@ -573,7 +620,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   and Svelte's default `{expr}` binding rendering as text. [verified]
 - The edit page's preview frame is sandboxed (`sandbox=""`), so scripts never run there and the
   island runtime never mounts in the preview; verify a live island on the deployed page. Source:
-  `src/lib/components/EditPage.svelte:2116` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
+  `src/lib/components/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 

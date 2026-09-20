@@ -32,6 +32,7 @@ stays pinned at the row's right end, reachable at every width.
   import type { Snippet } from 'svelte';
   import type { FormatKind } from './markdown-format.js';
   import { deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
+  import { Tooltip } from '../admin-toolkit/index.js';
 
   interface Props {
     /** Apply a markdown transform to the editor's current selection. */
@@ -245,16 +246,17 @@ stays pinned at the row's right end, reachable at every width.
 {/snippet}
 
 {#snippet glyphButton(button: ToolButton)}
-  <button
-    type="button"
-    class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11 max-sm:shrink-0"
-    aria-label={button.label}
-    title={button.label}
-    disabled={mode === 'preview'}
-    onclick={() => format(button.kind)}
-  >
-    {@render strokeIcon(button.paths)}
-  </button>
+  <Tooltip text={button.label}>
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11 max-sm:shrink-0"
+      aria-label={button.label}
+      disabled={mode === 'preview'}
+      onclick={() => format(button.kind)}
+    >
+      {@render strokeIcon(button.paths)}
+    </button>
+  </Tooltip>
 {/snippet}
 
 {#snippet tab(m: 'write' | 'preview', label: string)}
@@ -355,18 +357,19 @@ stays pinned at the row's right end, reachable at every width.
              read-only content, gate on Preview individually. Without a host-supplied moreExtra
              this menu holds only formatting, so the trigger keeps its original
              Preview-disables-everything behavior. -->
-        <button
-          type="button"
-          class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11 max-sm:shrink-0"
-          aria-label="More formatting"
-          title="More formatting"
-          aria-expanded={moreOpen}
-          popovertarget="cairn-more-formatting-menu"
-          style="anchor-name:--cairn-more-formatting"
-          disabled={mode === 'preview' && !moreExtra}
-        >
-          {@render strokeIcon(ellipsisPaths)}
-        </button>
+        <Tooltip text="More formatting">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11 max-sm:shrink-0"
+            aria-label="More formatting"
+            aria-expanded={moreOpen}
+            popovertarget="cairn-more-formatting-menu"
+            style="anchor-name:--cairn-more-formatting"
+            disabled={mode === 'preview' && !moreExtra}
+          >
+            {@render strokeIcon(ellipsisPaths)}
+          </button>
+        </Tooltip>
       </div>
     </div>
     <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at display: flex,
@@ -431,18 +434,19 @@ stays pinned at the row's right end, reachable at every width.
         {@render tab('preview', 'Preview')}
       </div>
       {#if showDeviceTrigger}
-        <button
-          type="button"
-          class="btn btn-sm btn-ghost gap-1 rounded-l-none -ml-px"
-          title="Preview width"
-          aria-expanded={deviceOpen}
-          popovertarget="cairn-preview-device-menu"
-          style="anchor-name:--cairn-preview-device"
-        >
-          <span class="sr-only">Preview width:</span>
-          {activeDevice.label}
-          {@render strokeIcon(['m6 9 6 6 6-6'])}
-        </button>
+        <Tooltip text="Preview width">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1 rounded-l-none -ml-px"
+            aria-expanded={deviceOpen}
+            popovertarget="cairn-preview-device-menu"
+            style="anchor-name:--cairn-preview-device"
+          >
+            <span class="sr-only">Preview width:</span>
+            {activeDevice.label}
+            {@render strokeIcon(['m6 9 6 6 6-6'])}
+          </button>
+        </Tooltip>
       {/if}
     </div>
   </div>
@@ -482,16 +486,17 @@ stays pinned at the row's right end, reachable at every width.
        never disables: help is a reference, not an edit action, so it stays available in Preview
        and mid-tidy alike, the same posture the footer's link took. The visible glyph is
        aria-hidden; the sr-only span carries the accessible name. -->
-  <button
-    type="button"
-    class="btn btn-ghost btn-sm btn-square shrink-0 max-sm:min-h-11 max-sm:min-w-11"
-    title="Markdown help"
-    aria-haspopup="dialog"
-    onclick={() => onHelp?.()}
-  >
-    <span aria-hidden="true" class="type-body font-semibold">?</span>
-    <span class="sr-only">Markdown help</span>
-  </button>
+  <Tooltip text="Markdown help">
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-square shrink-0 max-sm:min-h-11 max-sm:min-w-11"
+      aria-haspopup="dialog"
+      onclick={() => onHelp?.()}
+    >
+      <span aria-hidden="true" class="type-body font-semibold">?</span>
+      <span class="sr-only">Markdown help</span>
+    </button>
+  </Tooltip>
 </div>
 
 <style>

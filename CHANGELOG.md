@@ -4,6 +4,39 @@
 
 ### Added
 
+- A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
+  built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
+  and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A
+  site that wants structured logs in the same shape as cairn's own writes
+  `createLogger<MySiteEvent>()` instead of a bespoke `console` wrapper. Redaction recurses three
+  levels into plain objects and arrays, so a secret inside a headers bag or a row array is caught
+  too, with a repeated reference marked `'<repeated>'` rather than walked twice and a key at level
+  four or deeper left as written. Both sides of the comparison normalize, lowercased with `-` and
+  `_` removed, so one spelling covers every separator form (`api_key` matches `apiKey` and
+  `API-KEY`), which is why the list now spells each name once and covers the `api_key`,
+  `private_key`, `set-cookie`, `session_token`, `access_token`, `refresh_token`, `auth_token`,
+  `client_secret`, `webhook_secret`, `bearer`, `jwt`, `csrf`, and `csrf_token` families.
+  `createLogger` takes an optional `{ redactKeys }` naming a site's own field names, which union
+  with `REDACTED_LOG_KEYS` and never replace it. Both exported arrays are frozen. A throwing getter
+  anywhere in a call's own fields can no longer throw out of `log.info()`/`.warn()`/`.error()`: the
+  record build is caught, and a failure emits a minimal `{ level, event, timestamp, fields:
+  '<unserializable>' }` envelope instead. A site that wants structured logs imports `createLogger`
+  from `@glw907/cairn-cms/log`; the engine's own records are unchanged. No consumer action.
+
+- `cairn-audit`'s static mode gains `log-event-grammar` and `log-secret-field`, two advisory
+  rules over `.ts`/`.svelte` source text (`static.sourceScope`, default `src`): a name heuristic
+  over `<ident>.info/.warn/.error(<string>)` calls that flags a first-argument literal colliding
+  with a `CairnLogEvent` name or not reading as `area[.subject].verb_phrase`, and a second rule
+  over the same calls' fields argument that flags a key whole-matching `REDACTED_LOG_KEYS` (the same
+  normalization the runtime uses, so `apiKey` and `api_key` resolve alike). That second rule is a
+  name-awareness notice and says so: it can't tell your logger from `console.info` or another
+  library's, so the value is already redacted at runtime only when the call goes through a cairn
+  `createLogger` instance, and the finding is there because the same value often lands in the
+  message string too, where redaction never runs, and because a secret-shaped field usually wants a
+  count or a boolean. Only the fields object's own
+  top-level keys are read, unlike the runtime's three-level walk. Both are registered at advisory
+  tier for one minor and promote to error tier in `0.98.0`. No consumer action.
+
 - `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
   `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
   computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still
@@ -317,6 +350,99 @@
   dropzone button itself, so its own icon and label spans do not flicker the paint off as a drag
   crosses them. The paint rides the button's existing `transition-colors`, so it resolves to the
   theme's `base` default like the same element's hover paint; no new CSS rule is added.
+
+- `Tooltip` (`/admin-toolkit`), the replacement for a native `title` attribute on an icon-only
+  action control: a native `title` never shows on `:focus-visible` and never shows on a touch
+  tap. Wraps the given trigger unchanged (`aria-describedby` on the trigger's own rendered root
+  element, a wrapper that renders no box of its own), shows on hover and on `:focus-visible`,
+  hides on Escape without moving focus off the trigger, and shows on a tap from any pointer that
+  reports no hover (read from the triggering event's own `pointerType`) and hides on the next tap
+  outside. An empty `text` opts out entirely, for a caller whose reason is conditional. The bubble
+  is hoverable, as WCAG 1.4.13 requires: it takes pointer events and bridges the gap to its trigger,
+  so a pointer can travel in and read it. Escape is listened for on the `document`, so the key works
+  wherever focus sits, and it neither calls `preventDefault()` nor stops propagation, so an enclosing dialog
+  still closes on the same press. `aria-describedby` is set only when the bubble text says more than
+  the trigger's own accessible name, since a description repeating the name is read twice; the
+  bubble renders either way. Activating an enabled trigger hides the bubble, while a trigger marked
+  `aria-disabled="true"` keeps it. The bubble's fade runs on the motion tokens, entering on
+  `--cairn-dur-base`/`--cairn-ease-entrance` and leaving one band down on
+  `--cairn-dur-quick`/`--cairn-ease-exit`, with a 75ms open delay for a hover-shown bubble inside a
+  `prefers-reduced-motion: no-preference` guard, and its text sits on the `--cairn-type-label`
+  scale. Every native `title` on an
+  admin action control across the engine's own components now routes through it. `cairn-audit`'s
+  `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces a
+  finding naming the class retired, reported at advisory tier until `0.98.0` promotes the finding
+  to error; the class itself stays compiled until a later release removes it, since its own
+  pointer-events restore still has a real consumer. Consumers must: nothing, unless your admin
+  copied the `cairn-btn-guarded` marker class from the engine's markup; no production site has. `motion-property`'s allowlist gains a conditional arm for Tooltip's own
+  popover exit fade: `display` and `overlay` pass when the same transition entry carries
+  `allow-discrete`, the CSS idiom that defers the discrete top-layer flip until the paired paint
+  transition finishes. The same rule now splits a transition list at the top level only, so a comma
+  inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned
+  property; a token read with a literal fallback no longer reports as a list of nonsense properties
+  over the three-property cap.
+
+- `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
+  `selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void; label:
+  string }` and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`. With `selection` set,
+  `AdminTable` renders the reserved header `<th>` and its own checkbox, indeterminate against
+  `rowCount` on a partial `selection.ids`; a caller renders each row's own checkbox `<td>` inside
+  `children`, reading the same id set. Because the header checkbox can only empty a selection, it
+  carries `aria-disabled="true"` while rows exist and nothing is selected, and its `aria-label`
+  reads "Clear selection" once something is. The batch region renders whenever `selection` is set,
+  as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` element with
+  the count, so the live region exists before the count it announces changes; `batchBar` renders
+  inside it while the set is non-empty, receiving the selected count and a `clear` callback that
+  empties the selection through `selection.onchange` and returns focus to the header checkbox.
+  `emptyColspan` counts the reserved selection column itself while `selection` is set. No consumer
+  action.
+
+- The showcase's two exemplar routes, the custom admin screen (`admin/signups`) and the public
+  form with a domain action (`members/login`), rewrite their diagnostic output onto `createLogger`
+  through one site-owned logger (`examples/showcase/src/lib/log.ts`). The signups load emits
+  `admin.signups.misconfigured` with `reason: 'db_not_bound'` in place of a bare `console.error`
+  call, and the login request action emits `members.login.requested` with `{ outcome }` from the
+  engine's own `ChannelRequestOutcome`, never the posted contact. Each route's header names its
+  archetype, the atoms it composes, and the recipe page it illustrates. No consumer action.
+
+- The showcase compiles its own site admin stylesheet and audits against it, alongside the
+  packaged one: `src/admin.css` is a five-line Tailwind v4 entry (no DaisyUI plugin, utilities
+  only) scoped to `src/routes/admin` with `@tailwindcss/cli`, compiled to `.cairn/admin.css`.
+  `cairn-audit.config.json` names both sheets, so `no-uncompiled-class` and the rest of the static
+  registry see every class a site route actually writes, not only the ones the packaged toolkit
+  compiles. New scripts: `build:admin-css`, `check:cairn` (compiles then audits), and
+  `check:cairn:rendered`; `precheck`/`prebuild`/`predev` compile the sheet ahead of `check`,
+  `build`, and `dev` so a stale `.cairn/` never ships. CI runs `check:cairn` after the showcase's
+  own `check`. The admin layout imports the compiled file so `@tailwindcss/vite` passes it through
+  as a hashed, route-split asset; `e2e/admin-sheet.spec.ts` proves that at the ritual against a
+  branch-point baseline, once the ritual writes the fixture (the spec stays inert until then). The
+  fifth line, `@source "../node_modules/@glw907/cairn-cms/dist"`, scans the engine's own dist
+  markup, because both sheets share one utilities cascade layer and the site sheet loading after
+  the engine sheet would otherwise re-emit the engine's shared base utilities ahead of their own
+  `sm:` variants and defeat them on every admin screen; the fix makes the site sheet a superset of
+  the engine's utility set in Tailwind's own emission order, so every shared base utility again
+  precedes its own variant. The new `@tailwindcss/cli` devDependency was surveyed against the
+  pinned `tailwindcss`/`@tailwindcss/vite` major and matches at `4.3.3`. No consumer action.
+
+- The `create-cairn-site` scaffold now bakes a GitHub Actions workflow
+  (`.github/workflows/check.yml`) into every new site: it installs, then runs `npm run check` and
+  `npm run check:cairn` on `ubuntu-latest` with Node 22, with a commented step for
+  `npx cairn-guidance check` marked for a later cairn version. The manifest's default permissions
+  gain `workflows: write` so the App's first push can carry that file. The scaffold's own
+  `scripts/dev.mjs` shim now also spawns `@tailwindcss/cli` in `--watch` mode beside the vite dev
+  server, killing it when the dev server exits, so the admin sheet stays compiled during local
+  development. No consumer action.
+
+- `create-site.yml`, the CI proof of a real `create-cairn-site` run, now asserts the scaffolded
+  site carries `.github/workflows/check.yml` and runs `npm run check:cairn` in the same job as its
+  own `check` and build steps.
+  The tool's own printed hand-over text names both, so a reader who never opens the workflow file
+  still learns what checks their site on every push. The transcripts fixtures predate this change
+  and are not re-captured this pass (the capture harness needs a live GitHub App and repository
+  creation outside this repo); `packages/create-cairn-site/test/fixtures/transcripts/README.md`
+  carries a dated staleness note, and `check:transcripts` stays green either way since it checks
+  the docs pages' quoted blocks against the fixtures, not against the current scaffold. No
+  consumer action.
 
 ### Removed
 

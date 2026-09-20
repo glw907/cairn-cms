@@ -149,6 +149,16 @@ No documentation block quotes these; `check:transcripts` treats this list as the
 - `02-doctor-bare.txt`, kept as the counterpart environment to the credentialed report the
   admin page does quote.
 
+## Staleness note (2026-09-19)
+
+The scaffold gained `.github/workflows/check.yml` and a baked `npm run check:cairn` script
+after this capture ran, so a fresh run today would show a step these transcripts do not: the
+tool's own printed hand-over now names the workflow and the `check:cairn` script. Re-capturing
+needs a live GitHub App and repository creation, a harness outside this repo, so these fixtures
+stay as recorded rather than being hand-edited to add a step never captured. `check:transcripts`
+compares the docs pages' quoted blocks against these fixtures, not against the current
+scaffold's behavior, so it stays green either way.
+
 ## Identifiers
 
 Kept verbatim by ruling. The worker, both databases, the bucket, the App, and the repository

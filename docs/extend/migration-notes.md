@@ -13,6 +13,12 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **`createLogger` (`/log`) takes an optional options bag.** Nothing to change: a
+  `createLogger<MyEvent>()` call is unaffected. `createLogger<MyEvent>({ redactKeys: ['memberNumber']
+  })` adds your own field names to the redaction, unioned with `REDACTED_LOG_KEYS` rather than
+  replacing it. Redaction also recurses three levels into plain objects and arrays now, so a record
+  that nested a secret inside a headers bag or a row array starts reading `<redacted>` where it used
+  to carry the value.
 - **`cairn-manifest` now exits 2 on an unrecognized command-line flag** instead of silently
   ignoring it, and all four engine bins (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`,
   `cairn-manifest`) now answer `--help`. A CI job piping `cairn-manifest`'s output no longer risks
@@ -368,6 +374,11 @@ The release step sets the version number at the cut and renames this section to 
   `transition-all`, `transition-[width]`, and `duration-[250ms]`. A site whose own markup carries
   any of the three was relying on the engine's sheet to compile it; add the class to that site's
   own Tailwind content or restate the declaration.
+- **A native `title` on an admin action control is replaced by `admin-toolkit`'s `Tooltip`.** No
+  action, unless your own admin copied the `cairn-btn-guarded` marker class from the engine's own
+  markup; no production site has. `cairn-audit`'s `stock-default-hazards` rule now names that
+  class retired, reported at advisory tier until `0.98.0` promotes the finding to error; the class
+  itself stays compiled until a later release removes it.
 
 ### The four sites' upgrade order
 

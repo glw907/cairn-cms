@@ -32,7 +32,7 @@ persistent "?" carries Markdown help).
   import ImageIcon from '@lucide/svelte/icons/image';
   import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
-  import { StatusChip } from '../admin-toolkit/index.js';
+  import { StatusChip, Tooltip } from '../admin-toolkit/index.js';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
@@ -1423,14 +1423,15 @@ persistent "?" carries Markdown help).
            CSS would show, so exactly one of the two renders at a time, driven by the live `narrow`
            match. -->
       <div class="flex min-w-0 flex-1 items-center gap-1.5">
-        <a
-          href={`/admin/${data.conceptId}`}
-          class="btn btn-ghost btn-square min-h-11 min-w-11 shrink-0"
-          aria-label={`Back to ${data.label}`}
-          title={`Back to ${data.label}`}
-        >
-          <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
-        </a>
+        <Tooltip text={`Back to ${data.label}`}>
+          <a
+            href={`/admin/${data.conceptId}`}
+            class="btn btn-ghost btn-square min-h-11 min-w-11 shrink-0"
+            aria-label={`Back to ${data.label}`}
+          >
+            <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
+          </a>
+        </Tooltip>
         <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
         <!-- The chip is now the toolkit's own StatusChip, which publishes no `role` and no
              `aria-label` prop, so both live on this wrapping span instead. `role="status"` gives
@@ -1500,35 +1501,37 @@ persistent "?" carries Markdown help).
            the sm cutoff the band has no room for both this trigger and the badge/actions beside
            it (the desk band collision fix, audit finding 2), so Details folds into the overflow
            menu below and the standalone trigger hides rather than overlapping its neighbors. -->
-      <button
-        bind:this={detailsTrigger}
-        type="button"
-        class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 max-sm:hidden"
-        aria-label="Details"
-        title="Details"
-        aria-expanded={detailsOpen}
-        onclick={toggleDetails}
-      >
-        <PanelRightIcon class="h-4 w-4" aria-hidden="true" />
-      </button>
+      <Tooltip text="Details">
+        <button
+          bind:this={detailsTrigger}
+          type="button"
+          class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 max-sm:hidden"
+          aria-label="Details"
+          aria-expanded={detailsOpen}
+          onclick={toggleDetails}
+        >
+          <PanelRightIcon class="h-4 w-4" aria-hidden="true" />
+        </button>
+      </Tooltip>
       <!-- The overflow menu is the same DaisyUI v5 popover dropdown recipe EditorToolbar's More
            menu uses (click to open, Escape/light-dismiss via the Popover API, anchor-name/
            position-anchor placement). -->
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 shrink-0"
-        aria-label="More actions"
-        title="More actions"
-        aria-expanded={actionsOpen}
-        popovertarget="cairn-edit-actions-menu"
-        style="anchor-name:--cairn-edit-actions"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12h.01" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
-        </svg>
-      </button>
+      <Tooltip text="More actions">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 shrink-0"
+          aria-label="More actions"
+          aria-expanded={actionsOpen}
+          popovertarget="cairn-edit-actions-menu"
+          style="anchor-name:--cairn-edit-actions"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
+          </svg>
+        </button>
+      </Tooltip>
       <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
            display: flex, which strips the implicit list role in WebKit/VoiceOver (cairn-audit's
            list-role rule, rendered mode). The two menu-divider <li> keep their own role="separator"
@@ -1610,28 +1613,30 @@ persistent "?" carries Markdown help).
              Publish reads as its peer. With nothing new to publish it guards rather than hides,
              on the figure-control pattern this repo already owns: aria-disabled (never the native
              attribute, so the control stays focusable and its reason reaches assistive technology),
-             the cairn-btn-guarded marker so the title tooltip survives DaisyUI's pointer-events
+             the cairn-btn-guarded marker so the tooltip survives DaisyUI's pointer-events
              kill, and a not-allowed cursor rather than .btn-disabled. DaisyUI's own [aria-disabled]
              rule supplies the dimming, so no opacity utility rides on top (a second dimming would
              halve the focus ring on this still-focusable control). Native disabled is reserved for
              busy (mid-submit), the one case the guidance sanctions, and aria-disabled is emitted
              only while guarded so the two never contradict. onPublishClick cancels a guarded click's
-             own submit, since aria-disabled alone blocks nothing. -->
-        <button
-          bind:this={publishButton}
-          type="submit"
-          form="cairn-edit-form"
-          formaction={publishFormAction}
-          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
-          class:cursor-not-allowed={!publishActionable}
-          aria-disabled={publishActionable ? undefined : true}
-          aria-label={publishGuardName}
-          title={publishGuardReason}
-          disabled={busy}
-          onclick={onPublishClick}
-        >
-          {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
-        </button>
+             own submit, since aria-disabled alone blocks nothing. The guard reason reaches a mouse
+             and a keyboard user through the wrapping Tooltip, never a native title attribute. -->
+        <Tooltip text={publishGuardReason ?? ''}>
+          <button
+            bind:this={publishButton}
+            type="submit"
+            form="cairn-edit-form"
+            formaction={publishFormAction}
+            class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
+            class:cursor-not-allowed={!publishActionable}
+            aria-disabled={publishActionable ? undefined : true}
+            aria-label={publishGuardName}
+            disabled={busy}
+            onclick={onPublishClick}
+          >
+            {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+          </button>
+        </Tooltip>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
         <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm tracking-small-semibold shrink-0" disabled={busy || (!dirty && !data.isNew)}>
@@ -1884,19 +1889,20 @@ persistent "?" carries Markdown help).
           <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
                dialogs themselves mount outside the edit form at the bottom of this component.
                Icon buttons like the format strip beside them: the labels live in aria-label and
-               the title tooltip, so the Insert group reads as part of one instrument strip. -->
+               a Tooltip, so the Insert group reads as part of one instrument strip. -->
           {#if hasComponents}
-            <button
-              type="button"
-              class="btn btn-sm btn-ghost btn-square"
-              aria-haspopup="dialog"
-              aria-label="Insert block"
-              title="Insert block"
-              disabled={insertDisabled}
-              onclick={() => insertDialog?.open()}
-            >
-              <BlocksIcon class="h-4 w-4" aria-hidden="true" />
-            </button>
+            <Tooltip text="Insert block">
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost btn-square"
+                aria-haspopup="dialog"
+                aria-label="Insert block"
+                disabled={insertDisabled}
+                onclick={() => insertDialog?.open()}
+              >
+                <BlocksIcon class="h-4 w-4" aria-hidden="true" />
+              </button>
+            </Tooltip>
             <!-- Edit block re-opens the component at the caret into the guided form. It is
                  unavailable while Preview shows (like the insert controls) and whenever the caret is
                  not on a safe, schema-bearing component; the tooltip names the reason in each state.
@@ -1904,85 +1910,91 @@ persistent "?" carries Markdown help).
                  control stays focusable and its reason reaches assistive technology; editBlock()
                  early-returns so the dead click is inert. cairn-btn-guarded and cursor-not-allowed
                  give the dimmed look (the Figure control's pattern below), never .btn-disabled, which
-                 sets pointer-events: none and would suppress the title tooltip a mouse user reads for
-                 the why. -->
-            <button
-              type="button"
-              class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-              class:cursor-not-allowed={editBlockUnavailable}
-              aria-haspopup="dialog"
-              aria-label={editBlockLabel}
-              title={editBlockLabel}
-              aria-disabled={editBlockUnavailable}
-              onclick={editBlock}
-            >
-              <SquarePenIcon class="h-4 w-4" aria-hidden="true" />
-            </button>
+                 sets pointer-events: none and would suppress the tooltip a mouse user reads for the
+                 why. That reason text is the wrapping Tooltip's, never a native title attribute. -->
+            <Tooltip text={editBlockLabel}>
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
+                class:cursor-not-allowed={editBlockUnavailable}
+                aria-haspopup="dialog"
+                aria-label={editBlockLabel}
+                aria-disabled={editBlockUnavailable}
+                onclick={editBlock}
+              >
+                <SquarePenIcon class="h-4 w-4" aria-hidden="true" />
+              </button>
+            </Tooltip>
           {/if}
-          <button
-            type="button"
-            class="btn btn-sm btn-ghost btn-square"
-            aria-haspopup="dialog"
-            aria-label="Web link (Ctrl+K)"
-            title="Web link (Ctrl+K)"
-            disabled={insertDisabled}
-            onclick={() => webLinkDialog?.open()}
-          >
-            <LinkIcon class="h-4 w-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm btn-ghost btn-square"
-            aria-haspopup="dialog"
-            aria-label="Link to page"
-            title="Link to page"
-            disabled={insertDisabled}
-            onclick={() => linkPicker?.open()}
-          >
-            <FileSymlinkIcon class="h-4 w-4" aria-hidden="true" />
-          </button>
-          {#if fragmentPickerAvailable}
+          <Tooltip text="Web link (Ctrl+K)">
             <button
               type="button"
               class="btn btn-sm btn-ghost btn-square"
               aria-haspopup="dialog"
-              aria-label="Include a fragment"
-              title="Include a fragment"
+              aria-label="Web link (Ctrl+K)"
               disabled={insertDisabled}
-              onclick={() => fragmentPicker?.open()}
+              onclick={() => webLinkDialog?.open()}
             >
-              <PuzzleIcon class="h-4 w-4" aria-hidden="true" />
+              <LinkIcon class="h-4 w-4" aria-hidden="true" />
             </button>
+          </Tooltip>
+          <Tooltip text="Link to page">
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost btn-square"
+              aria-haspopup="dialog"
+              aria-label="Link to page"
+              disabled={insertDisabled}
+              onclick={() => linkPicker?.open()}
+            >
+              <FileSymlinkIcon class="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Tooltip>
+          {#if fragmentPickerAvailable}
+            <Tooltip text="Include a fragment">
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost btn-square"
+                aria-haspopup="dialog"
+                aria-label="Include a fragment"
+                disabled={insertDisabled}
+                onclick={() => fragmentPicker?.open()}
+              >
+                <PuzzleIcon class="h-4 w-4" aria-hidden="true" />
+              </button>
+            </Tooltip>
           {/if}
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
-            disabled={insertDisabled}
-            aria-haspopup="dialog"
-            aria-label="Insert image"
-            title="Insert image"
-            onclick={() => mediaPopover?.open('chooser')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-            </svg>
-          </button>
+          <Tooltip text="Insert image">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
+              disabled={insertDisabled}
+              aria-haspopup="dialog"
+              aria-label="Insert image"
+              onclick={() => mediaPopover?.open('chooser')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+              </svg>
+            </button>
+          </Tooltip>
           {#if tidyEnabled}
             <!-- Tidy (spec 2.1): the single desk entry point for the light copy-edit. A labelled
                  accent-quiet action (something you invoke, not a format you toggle). Disabled in
                  Preview, while a review is open, and while a request is in flight. -->
-            <button
-              type="button"
-              class="btn btn-sm btn-ghost gap-1.5"
-              aria-label="Tidy"
-              title="Tidy: a light copy-edit you review before accepting"
-              disabled={insertDisabled || tidyController.tidyBusy}
-              onclick={tidyController.runTidy}
-            >
-              <SparklesIcon class="h-4 w-4" aria-hidden="true" />Tidy
-            </button>
+            <Tooltip text="Tidy: a light copy-edit you review before accepting">
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost gap-1.5"
+                aria-label="Tidy"
+                disabled={insertDisabled || tidyController.tidyBusy}
+                onclick={tidyController.runTidy}
+              >
+                <SparklesIcon class="h-4 w-4" aria-hidden="true" />Tidy
+              </button>
+            </Tooltip>
           {/if}
           <!-- The Figure control: always rendered, enabled only when the caret sits on a media image
                (and the Write surface is up). It never mounts or unmounts on caret movement; only its
@@ -1993,20 +2005,22 @@ persistent "?" carries Markdown help).
                background raise in cairn-admin.css for this ghost variant), like Publish; no opacity
                utility rides on top, since a second dimming here is what read as a rendering gap
                (audit finding 7). cursor-not-allowed still names the non-interactive state, and never
-               .btn-disabled, which sets pointer-events: none and would suppress the title tooltip a
-               mouse user reads for the why. -->
-          <button
-            type="button"
-            class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-            class:cursor-not-allowed={!figureEditor.figureAvailable}
-            aria-haspopup="dialog"
-            aria-label={figureEditor.figureLabel}
-            title={figureEditor.figureLabel}
-            aria-disabled={!figureEditor.figureAvailable}
-            onclick={openFigure}
-          >
-            <ImageIcon class="h-4 w-4" aria-hidden="true" />
-          </button>
+               .btn-disabled, which sets pointer-events: none and would suppress the tooltip a mouse
+               user reads for the why. That reason text is the wrapping Tooltip's, never a native
+               title attribute. -->
+          <Tooltip text={figureEditor.figureLabel}>
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
+              class:cursor-not-allowed={!figureEditor.figureAvailable}
+              aria-haspopup="dialog"
+              aria-label={figureEditor.figureLabel}
+              aria-disabled={!figureEditor.figureAvailable}
+              onclick={openFigure}
+            >
+              <ImageIcon class="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Tooltip>
         {/snippet}
         {#snippet moreExtra(closeMenu: () => void)}
           <!-- Below sm only: the toolbar's one overflow is where Write/Preview, the
@@ -2371,21 +2385,22 @@ persistent "?" carries Markdown help).
     hidden={!narrow}
     inert={!narrow}
   >
-    <button
-      bind:this={publishButton}
-      type="submit"
-      form="cairn-edit-form"
-      formaction={publishFormAction}
-      class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
-      class:cursor-not-allowed={!publishActionable}
-      aria-disabled={publishActionable ? undefined : true}
-      aria-label={publishGuardName}
-      title={publishGuardReason}
-      disabled={busy}
-      onclick={onPublishClick}
-    >
-      {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
-    </button>
+    <Tooltip text={publishGuardReason ?? ''}>
+      <button
+        bind:this={publishButton}
+        type="submit"
+        form="cairn-edit-form"
+        formaction={publishFormAction}
+        class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
+        class:cursor-not-allowed={!publishActionable}
+        aria-disabled={publishActionable ? undefined : true}
+        aria-label={publishGuardName}
+        disabled={busy}
+        onclick={onPublishClick}
+      >
+        {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+      </button>
+    </Tooltip>
     <button type="submit" form="cairn-edit-form" class="btn btn-primary tracking-small-semibold min-h-11 flex-1" disabled={busy || (!dirty && !data.isNew)}>
       {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
     </button>

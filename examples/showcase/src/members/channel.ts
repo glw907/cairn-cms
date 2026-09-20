@@ -1,7 +1,8 @@
 // The showcase's members login channel, the worked exemplar for
 // docs/extend/add-a-second-audience.md. Two named divergences from that page, stated here so
 // "living exemplar" does not overclaim: the module lives under src/members/ rather than
-// src/lib/server/ (the showcase keeps no src/lib), and `challenge` is `insecureTestChallenge`
+// src/lib/server/, grouped with the rest of the members feature instead of a generic server
+// folder, and `challenge` is `insecureTestChallenge`
 // rather than a real Turnstile verifier, since CI cannot reach challenges.cloudflare.com (see
 // that function's own header comment). `deliver` is the capture transport
 // (./capture-transport.js), the guide's own harness pattern. Every default clamp in

@@ -129,6 +129,19 @@ test('the dev shim names CAIRN_DEV_BACKEND', async (t) => {
   assert.match(shim, /CAIRN_DEV_BACKEND/);
 });
 
+// The dev shim must also keep the admin sheet compiled while the site runs, since a scaffolded
+// site ships no build step that would otherwise refresh .cairn/admin.css.
+test('the dev shim spawns the tailwindcss watch compile beside the vite child and kills it on exit', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const shim = await readFile(path.join(to, 'scripts', 'dev.mjs'), 'utf8');
+  assert.match(shim, /@tailwindcss\/cli/);
+  assert.match(shim, /src\/admin\.css/);
+  assert.match(shim, /\.cairn\/admin\.css/);
+  assert.match(shim, /--watch/);
+  assert.match(shim, /tailwind\.kill\(\)/);
+});
+
 test('bake rewrites package.json.scripts.dev to run the shim', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });

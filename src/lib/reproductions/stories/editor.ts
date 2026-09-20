@@ -47,15 +47,45 @@ function glyph(inner: string): string {
 }
 
 /**
- * One host insert control that opens a dialog, in the icon-button shape `EditPage` gives its own.
- * @param label - the control's accessible name and tooltip
- * @param inner - the icon's shapes
- * @returns one button's markup
+ * The sibling bubble markup Tooltip.svelte renders at rest (hidden, never shown, since this story
+ * never fires a hover or focus): a hand-typed duplicate of that component's own DOM shape, since a
+ * raw-HTML story cannot mount a real component. Known cost, not accidental drift-bait: the bubble
+ * is a manual popover, so the browser itself keeps it out of the rendering at rest with no style of
+ * this story's own, but Tooltip's scoped `<style>` still never reaches this hand-typed span (no
+ * Svelte scoping class to match), and a future change to Tooltip's own markup or class names has
+ * nothing that keeps this copy in sync automatically. The id is keyed by the control's own position
+ * in the strip rather than a slug of its label, since two controls can carry the same label text
+ * and a shared id would point two triggers at one bubble.
+ * @param index - the control's own position in the strip
+ * @returns the bubble element's id
  */
-function insertButton(label: string, inner: string): string {
+function tooltipBubbleId(index: number): string {
+  return `cairn-story-tooltip-${index}`;
+}
+
+/**
+ * One control's bubble span, the markup that follows its trigger inside Tooltip's own wrapper.
+ * @param label - the tooltip's own text
+ * @param index - the control's own position in the strip
+ * @returns the bubble span's markup
+ */
+function tooltipBubble(label: string, index: number): string {
+  return `<span id="${tooltipBubbleId(index)}" role="tooltip" popover="manual">${label}</span>`;
+}
+
+/**
+ * One host insert control that opens a dialog, in the icon-button shape `EditPage` gives its own.
+ * The control carries no `aria-describedby`: its label is both its accessible name and its Tooltip
+ * text, and Tooltip writes no description that only repeats the name a screen reader already reads.
+ * @param label - the control's accessible name and Tooltip text
+ * @param inner - the icon's shapes
+ * @param index - the control's own position in the strip
+ * @returns one button's markup, followed by its Tooltip bubble
+ */
+function insertButton(label: string, inner: string, index: number): string {
   return (
     '<button type="button" class="btn btn-sm btn-ghost btn-square" aria-haspopup="dialog" ' +
-    `aria-label="${label}" title="${label}">${glyph(inner)}</button>`
+    `aria-label="${label}">${glyph(inner)}</button>${tooltipBubble(label, index)}`
   );
 }
 
@@ -63,19 +93,30 @@ function insertButton(label: string, inner: string): string {
  * One host insert control at rest in its unavailable state, the way `EditPage` guards a control
  * whose target the caret has not reached: `aria-disabled` rather than the native attribute, so it
  * stays focusable, and the dimmed look from `cairn-btn-guarded` plus `cursor-not-allowed`, never
- * `btn-disabled`, whose `pointer-events: none` would suppress the title tooltip a mouse user reads
- * for the why.
- * @param label - the control's accessible name and tooltip, naming what the caret must reach
+ * `btn-disabled`, whose `pointer-events: none` would suppress the Tooltip a mouse user reads for
+ * the why.
+ * @param label - the control's accessible name and Tooltip text, naming what the caret must reach
  * @param inner - the icon's shapes
- * @returns one button's markup
+ * @param index - the control's own position in the strip
+ * @returns one button's markup, followed by its Tooltip bubble
  */
-function guardedButton(label: string, inner: string): string {
+function guardedButton(label: string, inner: string, index: number): string {
   return (
     '<button type="button" class="btn btn-sm btn-ghost btn-square cairn-btn-guarded cursor-not-allowed" ' +
-    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}" title="${label}">` +
-    `${glyph(inner)}</button>`
+    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}">` +
+    `${glyph(inner)}</button>${tooltipBubble(label, index)}`
   );
 }
+
+/**
+ * The standalone Tidy control's own Tooltip text, written by hand below (unlike
+ * `insertButton`/`guardedButton`, its own icon-plus-text markup does not route through either
+ * helper). This is the one control in the strip whose Tooltip says more than its accessible name
+ * ("Tidy"), so it is also the one that carries an `aria-describedby`.
+ */
+const TIDY_TOOLTIP_TEXT = 'Tidy: a light copy-edit you review before accepting';
+/** The Tidy control's own position in the strip, the key for its bubble id. */
+const TIDY_INDEX = 5;
 
 /**
  * The Insert group's contents, which the toolbar takes from its host rather than wiring itself.
@@ -93,6 +134,7 @@ const insertControls = createRawSnippet(() => ({
       'Insert block',
       '<path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"/>' +
         '<rect x="14" y="2" width="8" height="8" rx="1"/>',
+      0,
     ) +
     // Edit block, at rest: `hasComponents` opens the same gate that renders Insert block beside it,
     // and with no caret in a component the control is unavailable, guarded the same way as the
@@ -101,35 +143,40 @@ const insertControls = createRawSnippet(() => ({
       'Place the cursor in a component to edit it',
       '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>' +
         '<path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
+      1,
     ) +
     insertButton(
       'Web link (Ctrl+K)',
       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
         '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+      2,
     ) +
     insertButton(
       'Link to page',
       '<path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7"/>' +
         '<path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m10 18 3-3-3-3"/>',
+      3,
     ) +
     insertButton(
       'Insert image',
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
         '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+      4,
     ) +
-    '<button type="button" class="btn btn-sm btn-ghost gap-1.5" aria-label="Tidy" ' +
-    'title="Tidy: a light copy-edit you review before accepting">' +
+    `<button type="button" class="btn btn-sm btn-ghost gap-1.5" aria-label="Tidy" ` +
+    `aria-describedby="${tooltipBubbleId(TIDY_INDEX)}">` +
     glyph(
       '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>' +
         '<path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
     ) +
-    'Tidy</button>' +
+    `Tidy</button>${tooltipBubble(TIDY_TOOLTIP_TEXT, TIDY_INDEX)}` +
     // The figure control, at rest: always rendered, and unavailable until the caret sits on a media
     // image.
     guardedButton(
       'Place the cursor on an image to add a figure',
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
         '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+      6,
     ) +
     '</span>',
 }));

@@ -28,7 +28,7 @@ freshness-checks the skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 32
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 34
 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
 so conformance to cairn's design system is exactly the product being audited, not apparatus that
 measures the engine from outside.
@@ -70,26 +70,29 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Fifteen rules run, all error tier. (`motion-reduced-delay`, the rendered counterpart to the two
-vocabulary rules below, is advisory; see [The rules](#the-rules) under Rendered mode.)
+Seventeen rules run: fifteen error tier, and two advisory (`log-event-grammar`,
+`log-secret-field`, both below). (`motion-reduced-delay`, the rendered counterpart to the two
+vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rendered mode.)
 
 | ID | What it checks |
 |---|---|
 | `no-uncompiled-class` | Every class token a component's markup writes compiles into the built admin stylesheet, or is a name that component's own scoped `<style>` block defines. A class that reaches neither is in the author's mind and absent from what ships |
 | `type-scale` | Every font size a text-sizing class token resolves to comes from a `--cairn-type-*` role. The rule reads only Tailwind's own text-sizing namespace and the `type-*` role utilities. A daisyUI component class carries its own size as part of the control's chrome, a separate system with its own `btn-sm`-style modifiers |
 | `gap-scale` | An arbitrary margin, padding, or gap literal, a Tailwind bracket rather than a named step, resolves to a `--cairn-gap-*` role or lands on an exact half-step of Tailwind's spacing grid. A bracket whose value isn't a plain length, a viewport unit or a `calc()`, expresses geometry the spacing scale has no vocabulary for, so it falls outside the rule rather than failing it |
-| `stock-default-hazards` | Four stock daisyUI patterns cairn's own recipes replace: `badge-ghost`, the focus-driven bare `.dropdown`, a native `disabled` on a guarded button, and a flat `base-300` card border. Each finding names the refuted alternative and where the decision is recorded |
+| `stock-default-hazards` | Four stock daisyUI patterns cairn's own recipes replace: `badge-ghost`, the focus-driven bare `.dropdown`, a native `disabled` on a guarded button, and a flat `base-300` card border. A fifth arm names cairn's own retired marker class, `cairn-btn-guarded`, whose reason text belongs in a `Tooltip` around the control instead: that one finding is reported at **advisory** tier until `0.98.0` promotes it to error, while the class itself stays compiled until a later release removes it. Each finding names the refuted alternative and cites where the decision lives |
 | `token-colors` | No raw hex, `rgb()`, or named-color literal, and no pure achromatic, a color function whose chroma or saturation is exactly zero. `transparent` and `currentColor` are excluded: neither names a color the palette could have supplied. A file listed in `static.paletteFiles` is exempt, since writing literal values down is what a palette declaration site is for |
 | `grammar-boundary` | CSS never redeclares a grammar token. A site re-tunes the palette tokens freely; a grammar token names structure and holds across both themes |
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `70ms` to `400ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
-| `motion-property` | A transition or animation names only a property on the [motion allowlist](../internal/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. DaisyUI's own component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
+| `motion-property` | A transition or animation names only a property on the [motion allowlist](../internal/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. `display` and `overlay` also pass when the same transition entry carries `allow-discrete`, the CSS idiom that defers a popover or dialog's discrete top-layer exit until an accompanying paint transition finishes. The transition list splits at the top level only, so a comma inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned property. DaisyUI's own component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
 | `motion-vocabulary` | A transition or animation names its duration and easing with a `--cairn-dur-*` and `--cairn-ease-*` token rather than a literal value. The same DaisyUI and Tailwind exemption applies |
 | `motion-hover-gate` | A hand-authored `:hover` selector that declares a transition or animation, on its own or through the rule pairing it with `:focus-visible`, sits inside `@media (hover: hover)`. It does not reach a vendor component's own `:hover` rule |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
 | `stripe-trim-parity` | A striped row's `:nth-child` background pattern, or a `.table-zebra`-style class, never co-occurs with an unconditioned first/last-child padding trim on the same row class in the same source: the trim clips the stripe fill on an even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`). Applies to any row component, not only the admin's own tables |
 | `unlayered-font-clobber` | A scoped `<style>` block never declares `font-family`, `font-size`, `font-weight`, or the `font` shorthand outside an `@layer` on an element that also carries a font-affecting utility class (a `text-*` size or a `font-*` weight/family). Under the no-Preflight admin, a Svelte scoped style carries no layer of its own while Tailwind utilities sit in `@layer utilities`, so cascade layer precedence, not specificity, decides the winner; the finding names that mechanism and points at moving the typography onto the ancestor the control inherits from. Applies to any component, not only the admin's own |
 | `list-role` | A `<ul>`/`<ol>`/`<menu>` carries no role attribute while its marker is suppressed: either its own classes remove it, a `list-style`/`list-style-type: none` declaration such as Tailwind's `list-none`, or an item's classes change that item's rendered display away from `list-item` to another display that still renders the item, such as `flex`, `grid`, `block`, or `inline-flex`, the way daisyUI's own `.list-row` renders `display: grid`. `display: none` (Tailwind's `hidden` and its responsive variants) is excluded: a hidden item never reaches the accessibility tree, so it cannot strip the enclosing list's implicit role. WebKit/VoiceOver stop announcing a marker-suppressed list as a list once it loses its implicit role this way; the fix is `role="list"`, plus `role="listitem"` on the item whose class caused the change (HTML-AAM's implicit `li` mapping depends on the parent relationship that change already disrupts). A list already carrying a different explicit role stays exempt: the explicit role already overrides the implicit one on purpose, so a second, conflicting role would be the wrong remedy. Coverage is own-class only: the rule resolves an element's display from classes that element itself carries, so a descendant-selector rule that reshapes an item from the *list's* own class, daisyUI's `.menu :where(li)` or breadcrumbs' `> li`, sits outside what it can see. That gap is closed by the rendered-mode `list-role` rule below, which reads each item's actual computed display in a live browser instead |
+| `log-event-grammar` **advisory** | A name heuristic over `<ident>.info(`, `.warn(`, `.error(` calls whose first argument is a plain string literal: the literal collides with a name `CairnLogEvent` already reserves, or its shape doesn't read as `area[.subject].verb_phrase`. It has no way to tell your own logger from `console.info` or another library's, and it never resolves a computed event name, a template literal, or a re-exported logger, since none of those carry a string literal it can read. Scans `static.sourceScope`, not `static.scope`: a log call isn't confined to an admin surface |
+| `log-secret-field` **advisory** | The same call heuristic, over each call's second, fields argument: a property key that whole-matches (never a substring) a member of `REDACTED_LOG_KEYS` (`@glw907/cairn-cms/log`). It can't tell your logger from `console.info` or another library's: if the call goes through a cairn `createLogger` instance the runtime already redacts that field's value, but on a bare `console` call the value ships as written. Either way this rule exists for what redaction can't reach even when it applies, the same secret's value also written directly into the message string |
 
 `list-role`'s two halves are complementary, not redundant: the static mode is the cheap own-class
 check every run gets for free, and the rendered mode is the only one that sees a descendant-selector
@@ -131,7 +134,11 @@ Three properties make it honest, and each is its own error-tier finding when it 
 - **Neither of those errors can itself be suppressed.** A build that passes by suppression has to
   read as one.
 
-Both report under the rule id `suppression`.
+Both report under the rule id `suppression`. One exception: a file reached only through
+`static.sourceScope`, the plain-text walk that `log-event-grammar` and `log-secret-field` read,
+still honors a suppression directive but skips all three honesty checks, since scanning raw text
+can't tell a real directive from one that appears in a string, a fixture, or a comment about the
+feature itself.
 
 The counting contract is the other half. A suppressed finding leaves the exit-code math and stays in
 the report: the summary line always prints a suppression total, including when it's zero.
@@ -159,6 +166,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | Key | Default | What it names |
 |---|---|---|
 | `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
+| `static.sourceScope` | `src` | Directories `log-event-grammar` and `log-secret-field` walk for `.ts` and `.svelte` files, read as plain text rather than parsed markup |
 | `static.adminScope` | `src/routes/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those two defaults |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
@@ -170,6 +178,11 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 A default scan path your tree doesn't have is skipped, since the defaults span a library and a
 consumer site. A path you wrote in `static.scope` yourself fails the run when it doesn't exist: a
 typo that quietly narrows the audit to nothing is the silent green this engine exists to rule out.
+`static.sourceScope` carries the same rule.
+
+`sheet` behaves the same way from the other side: leave it unset and the run resolves it to a
+candidate on its own (your tree's own build, then the installed package), while naming a path
+yourself and getting it wrong fails the run, naming that path, rather than falling back silently.
 
 ## Rendered mode
 

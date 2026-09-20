@@ -101,12 +101,15 @@ describe('stock-default-hazards: bare .dropdown', () => {
 });
 
 describe('stock-default-hazards: native disabled on a guarded button', () => {
+  // Every cairn-btn-guarded element also carries its own retired-class advisory finding (see the
+  // "retired cairn-btn-guarded" describe block below), so these assertions read the error-tier
+  // finding specifically rather than the full list.
   it('flags a hardcoded disabled shorthand on a guarded button', () => {
     const file = parseComponent(
       'Fixture.svelte',
       '<button class="btn cairn-btn-guarded" disabled>Publish</button>\n'
     );
-    const findings = check(file);
+    const findings = check(file).filter((f) => f.tier === 'error');
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('aria-disabled');
   });
@@ -116,22 +119,62 @@ describe('stock-default-hazards: native disabled on a guarded button', () => {
       'Fixture.svelte',
       '<button class="btn cairn-btn-guarded" disabled={true}>Publish</button>\n'
     );
-    expect(check(file)).toHaveLength(1);
+    expect(check(file).filter((f) => f.tier === 'error')).toHaveLength(1);
   });
 
   // The one case the guidance sanctions: native disabled reserved for the mid-submit busy state,
-  // a bound condition rather than a hardcoded value.
+  // a bound condition rather than a hardcoded value. The class's own retirement advisory still
+  // fires, since it fires for cairn-btn-guarded unconditionally.
   it('passes a bound disabled expression, the sanctioned busy-state case', () => {
     const file = parseComponent(
       'Fixture.svelte',
       '<button class="btn cairn-btn-guarded" aria-disabled={true} disabled={busy}>Publish</button>\n'
     );
-    expect(check(file)).toEqual([]);
+    expect(check(file).filter((f) => f.tier === 'error')).toEqual([]);
   });
 
   it('passes native disabled on a button that is not a guarded button at all', () => {
     const file = parseComponent('Fixture.svelte', '<button class="btn" disabled>Cancel</button>\n');
     expect(check(file)).toEqual([]);
+  });
+});
+
+describe('stock-default-hazards: retired cairn-btn-guarded', () => {
+  it('flags the class at advisory tier, naming Tooltip and the promotion version', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn cairn-btn-guarded" aria-disabled={true}>Publish</button>\n'
+    );
+    const findings = check(file).filter((f) => f.message.includes('retired'));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('cairn-btn-guarded');
+    expect(findings[0].message).toContain('Tooltip');
+    expect(findings[0].message).toContain('0.98.0');
+  });
+
+  it('still flags the unrelated hardcoded-disabled hazard on the same element, at error tier', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn cairn-btn-guarded" disabled>Publish</button>\n'
+    );
+    const findings = check(file);
+    expect(findings).toHaveLength(2);
+    expect(findings.map((f) => f.tier).sort()).toEqual(['advisory', 'error']);
+  });
+
+  it('is suppressed by a directive naming the rule, and counted', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      [
+        '<!-- cairn-audit-disable-next-line stock-default-hazards -- migrating this button next -->',
+        '<button class="btn cairn-btn-guarded" aria-disabled={true}>Publish</button>',
+        '',
+      ].join('\n')
+    );
+    const split = applySuppressions(check(file), [file]);
+    expect(split.findings).toEqual([]);
+    expect(split.suppressed.map((f) => f.ruleId)).toEqual(['stock-default-hazards']);
   });
 });
 
@@ -198,11 +241,17 @@ describe('stock-default-hazards: cairn\'s own admin tree', () => {
       .map((path) => parseComponent(relative(ROOT, path), readFileSync(path, 'utf8')));
   }
 
-  it('finds no hazard across the whole tree, not only the retired badge-ghost class', () => {
+  it('finds no error-tier hazard across the whole tree, not only the retired badge-ghost class', () => {
     const files = realFiles();
     // A vacuous pass is the failure mode a skipped directory could hide, so the scan proves it
     // reached real components before it proves they are clean.
     expect(files.length).toBeGreaterThan(0);
-    expect(check(...files)).toEqual([]);
+    const findings = check(...files);
+    expect(findings.filter((f) => f.tier === 'error')).toEqual([]);
+    // The four cairn-btn-guarded sites the Tooltip sweep left in place (EditPage's Publish x2,
+    // Edit block, Figure) are the one hazard this tree still carries, and the finding is reported
+    // at advisory tier until the promotion version its own message names.
+    expect(findings.filter((f) => f.tier === 'advisory')).toHaveLength(4);
+    expect(findings.every((f) => f.message.includes('cairn-btn-guarded'))).toBe(true);
   });
 });

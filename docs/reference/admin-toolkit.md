@@ -192,7 +192,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, EmptyState, ExpandableRow, MediaPicker, Tooltip } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -338,7 +338,7 @@ incidental compile to an explicit safelist entry).
 Stability tier: Extension API.
 
 ```ts
-let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100 }: {
+let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100, selection, batchBar }: {
   density?: AdminTableDensity;
   zebra?: boolean;
   header: Snippet;
@@ -346,8 +346,12 @@ let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyCol
   rowCount: number;
   empty?: Snippet;
   emptyColspan?: number;
+  selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void; label: string };
+  batchBar?: Snippet<[{ count: number; clear: () => void }]>;
 };
 ```
+
+The `selection` and `batchBar` props are available since `0.97.0`.
 
 The table shell. `density` (defaults `'sm'`) names the two density tiers; `zebra` (defaults
 `false`) turns on alternating-row shading, off by default so a screen opts in rather than
@@ -356,7 +360,9 @@ inheriting a house style. `header` and `children` are snippets, a `<tr>` of `<th
 shape or a data contract: it carries no `rows: T[]` prop, and a caller's row markup is entirely its
 own template. `rowCount` switches the body to the `empty` snippet when `0` (omit `empty` for an
 empty `<tbody>` instead); `emptyColspan` (defaults `100`, which HTML's own `colspan` clamps to the
-real column count) sizes the empty-state cell's span.
+real column count) sizes the empty-state cell's span, and counts the reserved selection column
+itself while `selection` is set, so a caller states its own column count without re-deriving that
+column.
 
 Single-line enforcement is a contract, not a full mechanism. Every cell gets `white-space: nowrap`
 from this component's own scoped CSS, so a wrap never happens even if a caller forgets, but
@@ -365,10 +371,38 @@ responsibility, the same scoped-truncation model `StatusChip`'s `.status-chip-la
 component can't reach inside a snippet's own markup to add truncation there itself. The wrapper's
 `overflow-x: auto` is the horizontal-scroll fallback for a table wider than its viewport.
 
-**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, every one already compiled
-into the packaged `cairn-admin.css`.
+**Batch selection.** `selection` reserves the leading column: `AdminTable` renders that column's
+header `<th>` and its own checkbox, checked when every row is selected and indeterminate on a
+partial `selection.ids`, and a caller renders each row's own checkbox `<td>`, inside `children`,
+reading the same id set. `AdminTable` never holds the full set of selectable row ids (rows stay
+caller-rendered), so the header checkbox can only empty the selection through `selection.onchange`,
+never build one. It follows that the checkbox carries `aria-disabled="true"` while rows exist and
+nothing is selected, and that its `aria-label` reads "Clear selection" once something is, rather
+than `selection.label`, which names it only in the empty state. `aria-disabled` rather than the
+native attribute, because a natively disabled input cannot hold focus and this is the element
+`clear` hands focus back to; the component restates daisyUI's own disabled dimming for it. A caller
+wanting a select-all affordance supplies it itself. Select-all over caller-rendered rows stays
+open until a second engine screen adopts the pattern and shows what the contract should be.
 
-**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`.
+The batch region renders preceding the table whenever `selection` is set: a `role="group"` whose
+label is `Batch actions`, carrying a visually hidden `role="status"` element with the selected count. The
+region exists before the count changes, which is what makes the announcement land; a live region
+mounted at the same moment its text appears announces nothing. `batchBar` renders inside that region
+while `selection.ids` is non-empty, and receives the selected count and a `clear` callback that
+empties the selection through `selection.onchange` and returns focus to the header checkbox. Both
+props are additive: a caller passing neither gets the same table as before. Whether a row's own
+per-column actions stay active while a selection is open is the caller's own call, not this
+component's. Carbon's own data table takes the same position, for the same reason: only the caller
+knows which actions a partial selection makes unsafe.
+
+`selection.onchange` receives a new set on every change; `AdminTable` never mutates the set it is
+given. Store the new set in `$state`, or pass a `SvelteSet` from `svelte/reactivity` if your screen
+prefers a mutable reactive set of its own.
+
+**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`, every one already
+compiled into the packaged `cairn-admin.css`.
+
+**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`.
 
 ```svelte
 <AdminTable {density} zebra rowCount={rows.length}>
@@ -392,6 +426,48 @@ preceding example shows. The table's own scoped CSS (`.toolkit-admin-table-empty
 owns the register: centered text, `2.5rem`/`1rem` padding, the muted color, and normal (not
 single-line) wrapping. A caller adds no size, color, or alignment class of its own; a call site
 that does is reinventing a register `AdminTable` already carries.
+
+```svelte
+<AdminTable
+  rowCount={rows.length}
+  selection={{ ids: selectedIds, onchange: (next) => (selectedIds = next), label: 'Select households' }}
+>
+  {#snippet header()}
+    <th>Household</th>
+  {/snippet}
+  {#snippet children()}
+    {#each rows as row (row.id)}
+      <tr>
+        <td>
+          <input
+            type="checkbox"
+            class="checkbox"
+            aria-label={`Select ${row.household}`}
+            checked={selectedIds.has(row.id)}
+            onchange={(event) => {
+              const next = new Set(selectedIds);
+              event.currentTarget.checked ? next.add(row.id) : next.delete(row.id);
+              selectedIds = next;
+            }}
+          />
+        </td>
+        <td>{row.household}</td>
+      </tr>
+    {/each}
+  {/snippet}
+  {#snippet batchBar({ count, clear })}
+    <p>{count} selected</p>
+    <button type="button" class="btn btn-sm" onclick={clear}>Clear</button>
+  {/snippet}
+</AdminTable>
+```
+
+**The batch-actions recipe.** `selection.ids` is the caller's own set, reassigned on every change
+(never mutated in place) the same way `MediaOrphanTools`' own selection state is; `onchange` is
+where a caller stores the new set. A caller wanting a select-all control adds it to `batchBar`
+itself, since `AdminTable` can't build one without the full row-id list. `batchBar` words its own
+visible count; the component's own status region carries the count for assistive technology, so a
+caller doesn't add a second live region of its own.
 
 ### `ListToolbar`
 
@@ -839,6 +915,96 @@ which render only once the library holds more than one top-level content type.
 </script>
 
 <MediaPicker entries={data.assets} onselect={(selection) => (chosen = selection.ref)} />
+```
+
+### `Tooltip`
+
+Available since `0.97.0`.
+
+Stability tier: Extension API.
+
+```ts
+let { text, id, children }: {
+  text: string;
+  id?: string;
+  children: Snippet;
+};
+```
+
+The replacement for a native `title` attribute on an icon-only action control. A native `title`
+never reaches a keyboard user (no `:focus-visible` trigger, no Escape dismissal) and never reaches
+a touch user (no hover at all), so a control whose only accessible name comes from `aria-label`
+still leaves a sighted mouse user's own "why" undiscoverable on every other input mode. `Tooltip`
+wraps the given trigger unchanged, in a wrapper that renders no box of its own (`display:
+contents`), and sets `aria-describedby` on the trigger's own rendered root element.
+
+Shows on hover and on `:focus-visible` (a keyboard Tab, never a mouse click that merely focuses the
+trigger); hides on Escape without moving focus off the trigger. A pointer that reports no hover, a
+touchscreen or a pen, read from the triggering `PointerEvent`'s own `pointerType`, shows the bubble
+on tap and hides on the next tap outside. Activating an enabled trigger, by tap, click, or keyboard,
+also hides the bubble, so nothing is left over whatever the activation opened. A trigger marked
+`aria-disabled="true"` activates nothing, so its bubble stays. `text` accepts an empty string to opt
+out entirely (no `aria-describedby`, no bubble, every mechanic a no-op), for a caller whose reason is
+conditional, such as a guarded button's own explanation that is present only while guarded. `id`
+names the bubble element; omit it to use `$props.id()`'s own generated id.
+
+`children` renders the trigger control (a button or a link) unchanged: this component adds only
+`aria-describedby` and an `anchor-name` to the first element the snippet renders, never a class, a
+label, or a click handler. The snippet must render exactly one element, never bare text: the first
+element is the trigger, and a snippet with none gets a development-mode warning and no tooltip
+mechanics. The trigger keeps whatever else it already carries, including a caller's own `aria-label`,
+`disabled`/`aria-disabled` state, and an inline `anchor-name` of its own, which the component
+appends to rather than replaces, so a trigger that also anchors its own popover menu keeps that
+menu's anchor resolvable. The `anchor-name` is written as an inline style property, so a trigger
+whose own `style` attribute comes from a reactive expression loses it whenever Svelte rewrites that
+attribute; the component re-appends it on the next open, and a class avoids the round trip.
+
+**Name versus description.** When `text` is already the trigger's accessible name, its `aria-label`
+or its rendered text, the component sets no `aria-describedby`: a screen reader would read the same
+words twice, once as the name and once as the description. When `text` says more than the name, a
+guard reason on a control labelled with its action for one, the description is set and resolves
+after hydration, when the component's own effect has run. The bubble renders either way, so a test
+that asserts a reason reads the bubble rather than the description.
+
+The bubble is a manual popover placed by CSS anchor positioning above the trigger, flipping below
+it when the top edge has no room. Because a popover renders in the top layer, the bubble survives a
+transformed, scaled, or `overflow: hidden` ancestor, such as an open daisyUI modal's own box, which
+displaces or clips a bubble positioned any other way. Anchor positioning is a requirement, not an
+enhancement: a browser without it renders no bubble at all. `aria-describedby` carries the text to
+assistive technology there, except when `text` already equals the trigger's accessible name, where
+the component sets no `aria-describedby` at all; there, a native `title` on the trigger stands in
+for the bubble instead.
+
+The bubble takes pointer events, and a hover-leave from the trigger holds the bubble open for a
+150 ms grace before clearing it, so a pointer that pauses in the gap on its way to the bubble
+still has time to land there, meeting WCAG 1.4.13's Content on Hover or Focus rule. Escape is
+listened for on
+the `document`, so the key works wherever focus sits, and the listener neither calls
+`preventDefault()` nor stops propagation: an enclosing dialog still closes on the same press, which
+is the chosen behavior, since cairn treats dismissing the bubble and closing the dialog as one
+intent.
+
+**Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars directly
+inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only `<li>`),
+regardless of the wrapper's own `display: contents`. Wrap the control inside the cell or the list
+item, not the row or the list itself. A natively `disabled` control receives no pointer events in
+some browsers, so a reason that must reach a mouse user takes the `aria-disabled` guarded shape
+instead.
+
+**daisyUI assembly:** none; the bubble is this component's own scoped `<style>`, with a literal
+fallback preceding every `--cairn-*`/daisyUI custom-property read, since `admin-toolkit` promises
+no compiled-admin-CSS ancestor.
+
+```svelte
+<script lang="ts">
+  import { Tooltip } from '@glw907/cairn-cms/admin-toolkit';
+</script>
+
+<Tooltip text="Insert block">
+  <button type="button" class="btn btn-sm btn-ghost btn-square" aria-label="Insert block">
+    <svg aria-hidden="true"><!-- glyph --></svg>
+  </button>
+</Tooltip>
 ```
 
 ---

@@ -5,6 +5,8 @@ import { focusParity } from './focus-parity.js';
 import { gapScale } from './gap-scale.js';
 import { grammarBoundary } from './grammar-boundary.js';
 import { listRole } from './list-role.js';
+import { logEventGrammar } from './log-event-grammar.js';
+import { logSecretField } from './log-secret-field.js';
 import { motionBand } from './motion-band.js';
 import { motionHoverGate } from './motion-hover-gate.js';
 import { motionProperty } from './motion-property.js';
@@ -36,5 +38,7 @@ export function staticRules(): StaticRule[] {
     stripeTrimParity,
     unlayeredFontClobber,
     listRole,
+    logEventGrammar,
+    logSecretField,
   ];
 }

@@ -18,6 +18,12 @@ export const DEFAULT_STATIC_SCOPE = [
   'src/lib/components',
 ];
 
+// Where the source-text-family static rules (log-event-grammar, log-secret-field) walk for
+// `.ts` and `.svelte` files, read as plain text rather than parsed markup. Wider than
+// `DEFAULT_STATIC_SCOPE` on purpose: a log call is not confined to an admin surface, so the
+// default is the whole source tree a site actually keeps its own code in.
+export const DEFAULT_SOURCE_SCOPE = ['src'];
+
 // The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Narrower
 // on purpose: `DEFAULT_STATIC_SCOPE`'s middle root is where a consuming site keeps its shared
 // public components, and an admin-only motion rule reading that root would gate a site's own
@@ -84,6 +90,16 @@ export interface AuditConfig {
    * the silent-green failure this engine exists to avoid.
    */
   staticScopeFromConfig: boolean;
+  /**
+   * Directories the source-text-family static rules (`log-event-grammar`, `log-secret-field`)
+   * walk for `.ts` and `.svelte` files, recursively. Defaults to `DEFAULT_SOURCE_SCOPE`.
+   */
+  sourceScope: string[];
+  /**
+   * Whether the config file named `static.sourceScope` itself, the parallel flag
+   * `staticScopeFromConfig` carries for `static.scope`.
+   */
+  sourceScopeFromConfig: boolean;
   /**
    * Directories an `adminOnly` static rule resolves over instead of `staticScope`, across both
    * surfaces it reads: the components under these roots, and the `staticCssFiles` entries that
@@ -198,6 +214,8 @@ export function resolveConfig(
     root,
     staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
     staticScopeFromConfig: staticSection.scope !== undefined,
+    sourceScope: asPathList(staticSection.sourceScope, 'static.sourceScope', DEFAULT_SOURCE_SCOPE),
+    sourceScopeFromConfig: staticSection.sourceScope !== undefined,
     adminScope: asPathList(staticSection.adminScope, 'static.adminScope', DEFAULT_ADMIN_SCOPE),
     adminScopeFromConfig: staticSection.adminScope !== undefined,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),

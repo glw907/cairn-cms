@@ -26,7 +26,11 @@ test('buildManifest: the personal branch carries exactly the base permission pai
     ownerType: 'user',
     loopbackUrl: 'http://127.0.0.1:5555',
   });
-  assert.deepEqual(manifest.default_permissions, { contents: 'write', administration: 'write' });
+  assert.deepEqual(manifest.default_permissions, {
+    contents: 'write',
+    administration: 'write',
+    workflows: 'write',
+  });
   assert.equal(manifest.public, false);
   assert.equal(manifest.request_oauth_on_install, true);
   assert.deepEqual(manifest.default_events, []);
@@ -43,6 +47,7 @@ test('buildManifest: the org branch adds members read', () => {
   assert.deepEqual(manifest.default_permissions, {
     contents: 'write',
     administration: 'write',
+    workflows: 'write',
     members: 'read',
   });
 });

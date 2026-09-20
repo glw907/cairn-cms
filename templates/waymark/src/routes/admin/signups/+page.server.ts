@@ -1,3 +1,7 @@
+// Archetype: the custom admin screen over the site's own table.
+// Atoms: requireAccess, createSectionAction, createLogger.
+// Recipe: docs/extend/add-a-custom-admin-screen.md (the docs rewrite writes it).
+//
 // A developer's own custom admin screen, proving the extension seam. It is a concrete route
 // under /admin (so it wins over the catch-all), inherits the guard-populated locals.cairnEditor, renders
 // inside the shared CairnAdminShell from the parent layout, and reads and writes its own APP_DB
@@ -9,6 +13,7 @@ import type { PageServerLoad, Actions, RequestEvent } from './$types';
 import { createSectionAction, requireAccess } from '@glw907/cairn-cms/sveltekit';
 import { error, fail } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
+import { log } from '$lib/log.js';
 
 /** A signup row, the developer's own table shape, read from APP_DB. */
 interface SignupRow {
@@ -26,7 +31,7 @@ interface SignupRow {
 function requireAppDb(event: RequestEvent): D1Database {
   const db = event.platform?.env.APP_DB;
   if (!db) {
-    console.error('admin.signups.misconfigured', { reason: 'db_not_bound' });
+    log.error('admin.signups.misconfigured', { reason: 'db_not_bound' });
     error(500, 'This screen is not configured.');
   }
   return db;

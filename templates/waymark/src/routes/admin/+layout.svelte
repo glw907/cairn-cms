@@ -8,6 +8,7 @@ site adds render as the shell's children.
   import { CairnAdminShell } from '@glw907/cairn-cms/components';
   import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
   import type { Snippet } from 'svelte';
+  import '../../../.cairn/admin.css';
 
   interface Props {
     /** The shell payload from the sibling +layout.server.ts load. */

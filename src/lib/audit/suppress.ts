@@ -51,6 +51,17 @@ export interface SuppressionSource {
   source: string;
   /** Template nodes in document order, present when the source is a parsed component. */
   nodes?: SourceNode[];
+  /**
+   * Set on a source-text carrier entry (the plain-text walk the source-text-family rules read):
+   * a directive found here still silences a matching finding, but never itself produces a
+   * `suppression` finding. Raw source text cannot tell a real directive from a mention of one in
+   * a string literal, a test fixture, or a doc comment, so judging every occurrence as reasonless
+   * or dead would turn an advisory feature into an error-tier false positive on any tree that
+   * tests or documents its own suppressions, cairn's own included. A markup or CSS entry that
+   * happens to share a path with a source-text entry overrides it in the caller's dedup, which
+   * keeps both judgments unchanged for those two families.
+   */
+  suppressionsOnly?: boolean;
 }
 
 /** One run's findings split by whether a directive silenced them. */
@@ -223,6 +234,10 @@ function suppressionFinding(directive: Directive, message: string): Finding {
  * than judged: the run never executed that rule, so neither "matched" nor "dead" is a claim this
  * split can stand behind. Omit it, or pass the full registry, for the unscoped case, where every
  * directive is judged the way it always was.
+ *
+ * A source flagged `suppressionsOnly` still silences a matching finding, but raises none of the
+ * three directive-shape findings above for anything found in it: see the field's own doc comment
+ * for why.
  */
 export function applySuppressions(
   findings: Finding[],
@@ -236,10 +251,10 @@ export function applySuppressions(
     for (const directive of parseDirectives(source.file, source.source)) {
       const { ruleId } = directive;
       if (ruleId === null) {
-        reported.push(suppressionFinding(directive, NAMES_NO_RULE));
+        if (!source.suppressionsOnly) reported.push(suppressionFinding(directive, NAMES_NO_RULE));
         continue;
       }
-      if (directive.reason === null) {
+      if (directive.reason === null && !source.suppressionsOnly) {
         reported.push(suppressionFinding(directive, givesNoReason(ruleId)));
       }
       if (ranRuleIds && !ranRuleIds.has(ruleId)) continue;
@@ -251,7 +266,9 @@ export function applySuppressions(
           finding.start >= range.start &&
           finding.start < range.end
       );
-      if (matched.length === 0) reported.push(suppressionFinding(directive, isDead(ruleId)));
+      if (matched.length === 0 && !source.suppressionsOnly) {
+        reported.push(suppressionFinding(directive, isDead(ruleId)));
+      }
       for (const finding of matched) silenced.add(finding);
     }
   }

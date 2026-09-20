@@ -201,11 +201,15 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   function bodies at lines noted above; outcome unions confirmed present. [verified]
 
 - `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
-  reference `'<cycle>'`, and leaves a key at level four or deeper as written. Both sides of the key
-  comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
-  spells each name once. `createLogger(options?: { redactKeys?: readonly string[] })` unions a site's
-  own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and `CAIRN_LOG_EVENTS` are
-  both frozen. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
+  reference `'<repeated>'`, and leaves a key at level four or deeper as written. Both sides of the
+  key comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
+  spells each name once; it now also carries `csrf` and `csrf_token` (both, since normalization maps
+  `csrf_token` to `csrftoken`, not `csrf`). `createLogger(options?: { redactKeys?: readonly string[]
+  })` unions a site's own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and
+  `CAIRN_LOG_EVENTS` are both frozen. A throwing getter anywhere in a call's own `fields` cannot
+  throw out of `log.info()`/`.warn()`/`.error()`: the record build runs inside a `try`/`catch`
+  wrapping `emit`, and a caught failure emits `{ level, event, timestamp, fields: '<unserializable>'
+  }` instead. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
 
 ## docs/reference/cairn-audit.md
 

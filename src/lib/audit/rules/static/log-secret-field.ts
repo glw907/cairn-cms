@@ -1,11 +1,14 @@
 // cairn-audit's log-secret-field rule: the same `<ident>.info(`, `.warn(`, `.error(` name
 // heuristic log-event-grammar reads, this time over each call's second, fields argument. It is a
-// name-awareness advisory and nothing more. A property whose key matches a member of
-// `REDACTED_LOG_KEYS` (`src/lib/log/create.js`) already has its VALUE replaced at runtime, so the
-// finding never means a secret leaked. It means a secret-shaped key reached a log call, which is
-// worth a developer's attention for two reasons the runtime cannot cover: the same value is often
-// written into the message string beside the field, where no redaction runs, and a field named for
-// a secret usually wants a count or a boolean instead of the value at all.
+// name-awareness advisory and nothing more, and it cannot tell whether `<ident>` is a cairn
+// `createLogger` instance, `console`, or another library's logger: only when the call goes through
+// a cairn logger does a property whose key matches a member of `REDACTED_LOG_KEYS`
+// (`src/lib/log/create.js`) already have its VALUE replaced at runtime. On a bare `console` call
+// or another library's own logger, the value ships exactly as written. Either way the finding is
+// worth a developer's attention for two reasons the runtime redaction, where it applies, cannot
+// cover: the same value is often written into the message string beside the field, where no
+// redaction runs, and a field named for a secret usually wants a count or a boolean instead of the
+// value at all.
 //
 // Matching mirrors the runtime: the key is lowercased, its `-` and `_` separators are stripped, and
 // the result is compared whole, so `apiKey` and `x-api-key` resolve the same way they do in
@@ -13,7 +16,7 @@
 // key. Only the fields object's own top-level keys are read: the runtime redacts three levels deep,
 // and matching that here would mean parsing nested object literals out of source text, which is out
 // of scope for a heuristic this advisory.
-import { REDACTED_LOG_KEYS } from '../../../log/create.js';
+import { REDACTED_LOG_KEYS, normalizeKey } from '../../../log/create.js';
 import { lineAt } from '../../markup.js';
 import type { Finding, SourceFile, StaticRule } from '../../types.js';
 
@@ -22,14 +25,6 @@ import type { Finding, SourceFile, StaticRule } from '../../types.js';
 const PROMOTION_VERSION = '0.98.0';
 
 const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
-
-/**
- * The runtime's own comparison form (`src/lib/log/create.ts`, `normalizeKey`), restated here rather
- * than imported: `create.ts` exports the key list, not the normalizer.
- */
-function normalizeKey(key: string): string {
-  return key.toLowerCase().replace(/[-_]/g, '');
-}
 
 const REDACTED = new Set(REDACTED_LOG_KEYS.map(normalizeKey));
 
@@ -178,12 +173,14 @@ function findingsFor(file: SourceFile): Finding[] {
         start: key.start,
         end: key.end,
         message:
-          `the field "${key.name}" matches cairn's own REDACTED_LOG_KEYS list, so the runtime ` +
-          `already replaces its value with <redacted>: nothing leaked here. This is a ` +
-          `name-awareness notice, for the two things redaction cannot do, namely scrub the same ` +
-          `value out of the message string beside the field and turn a secret-shaped field into ` +
-          `the count or boolean it usually wants to be. Findings here stay advisory until ` +
-          `${PROMOTION_VERSION}`,
+          `the field "${key.name}" matches cairn's own REDACTED_LOG_KEYS list. If this call goes ` +
+          `through a cairn createLogger instance, the runtime already replaces the value with ` +
+          `<redacted>; this rule cannot tell your logger from console.info or another library's, ` +
+          `so on a bare console call the value ships as written. Either way, this is a ` +
+          `name-awareness notice, for the two things redaction cannot do even when it applies, ` +
+          `namely scrub the same value out of the message string beside the field and turn a ` +
+          `secret-shaped field into the count or boolean it usually wants to be. Findings here ` +
+          `stay advisory until ${PROMOTION_VERSION}`,
       });
     }
   }

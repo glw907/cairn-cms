@@ -41,6 +41,8 @@ export const REDACTED_LOG_KEYS: readonly string[] = Object.freeze([
   'private_key',
   'client_secret',
   'webhook_secret',
+  'csrf',
+  'csrf_token',
 ] as const);
 
 // How far into a record's own field values the redaction walks. A secret is routinely one level
@@ -49,8 +51,12 @@ export const REDACTED_LOG_KEYS: readonly string[] = Object.freeze([
 // at level four or deeper is left as written, which the /log reference page states as the cap.
 const MAX_REDACTION_DEPTH = 3;
 
-/** The whole-key comparison form: lowercased, with the two separator characters removed. */
-function normalizeKey(key: string): string {
+/**
+ * The whole-key comparison form: lowercased, with the two separator characters removed. Exported
+ * for internal reuse (never from the public `/log` subpath): `log-secret-field.ts` matches the
+ * runtime's own redaction this way rather than carrying a second copy of the same normalization.
+ */
+export function normalizeKey(key: string): string {
   return key.toLowerCase().replace(/[-_]/g, '');
 }
 
@@ -70,8 +76,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 // `level` is the level of the object or array this value was read FROM, so a container found here
 // would hold its own keys one level deeper; at the cap the value is returned as written. The seen
 // set spans the whole walk rather than one branch, so a second appearance of the same object reads
-// as '<cycle>' whether it is a true cycle or a reference shared between two branches: a log record
-// is not a serialization format, and bounding the walk matters more than reproducing a graph.
+// as '<repeated>' whether it is a true cycle or a reference shared between two branches: a log
+// record is not a serialization format, and bounding the walk matters more than reproducing a graph.
 function redactValue(
   value: unknown,
   level: number,
@@ -80,12 +86,12 @@ function redactValue(
 ): unknown {
   if (level >= MAX_REDACTION_DEPTH) return value;
   if (Array.isArray(value)) {
-    if (seen.has(value)) return '<cycle>';
+    if (seen.has(value)) return '<repeated>';
     seen.add(value);
     return value.map((item) => redactValue(item, level + 1, keys, seen));
   }
   if (isPlainObject(value)) {
-    if (seen.has(value)) return '<cycle>';
+    if (seen.has(value)) return '<repeated>';
     seen.add(value);
     return redactObject(value, level + 1, keys, seen);
   }
@@ -155,8 +161,17 @@ export function createLogger<Event extends string>(options?: { redactKeys?: read
   const redactedKeys: ReadonlySet<string> = options?.redactKeys?.length
     ? new Set([...DEFAULT_REDACTED_KEYS, ...options.redactKeys.map(normalizeKey)])
     : DEFAULT_REDACTED_KEYS;
+  // A throwing getter anywhere in `fields` (an accessor property that reads a closed-over value
+  // lazily and can fail) must not throw out of a `log.info()` call site: a logging call is never
+  // the thing that should crash a caller. The fallback envelope keeps `level`, `event`, and
+  // `timestamp`, the three keys a subscriber actually parses by shape, and reports the failure in
+  // place of the fields a `redactObject` walk could not finish reading.
   function emit(level: LogLevel, event: Event, fields: Record<string, unknown> = {}): void {
-    sinkByLevel[level](buildRecord(level, event, fields, redactedKeys));
+    try {
+      sinkByLevel[level](buildRecord(level, event, fields, redactedKeys));
+    } catch {
+      sinkByLevel[level]({ level, event, timestamp: new Date().toISOString(), fields: '<unserializable>' });
+    }
   }
   return {
     info: (event, fields) => emit('info', event, fields),

@@ -100,7 +100,18 @@ describe('createLogger', () => {
       'private_key',
       'client_secret',
       'webhook_secret',
+      'csrf',
+      'csrf_token',
     ]);
+  });
+
+  it('redacts csrf and csrf_token, both listed since whole-key normalization maps csrf_token to csrftoken', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    logger.info('widget.created', { csrf: 'raw', csrfToken: 'raw' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.csrf).toBe('<redacted>');
+    expect(record.csrfToken).toBe('<redacted>');
   });
 
   it('matches a key in any separator spelling, since both sides normalize', () => {
@@ -155,7 +166,25 @@ describe('createLogger', () => {
     node.self = node;
     logger.info('widget.created', { node });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
-    expect(record.node).toEqual({ name: 'root', self: '<cycle>' });
+    expect(record.node).toEqual({ name: 'root', self: '<repeated>' });
+  });
+
+  it('emits a minimal envelope instead of throwing when a getter two levels down throws', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const logger = createLogger<TestEvent>();
+    // `fields.headers` is level one; the getter fires when `redactObject` reads `headers`'s own
+    // enumerable properties at level two, inside the walk `buildRecord` runs on every call.
+    const headers = {
+      get poison(): string {
+        throw new Error('boom');
+      },
+    };
+    expect(() => logger.info('widget.created', { headers })).not.toThrow();
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record.level).toBe('info');
+    expect(record.event).toBe('widget.created');
+    expect(typeof record.timestamp).toBe('string');
+    expect(record.fields).toBe('<unserializable>');
   });
 
   it('keeps an own __proto__ field in the record rather than dropping it', () => {

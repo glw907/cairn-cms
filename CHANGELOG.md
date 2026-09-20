@@ -10,14 +10,17 @@
   site that wants structured logs in the same shape as cairn's own writes
   `createLogger<MySiteEvent>()` instead of a bespoke `console` wrapper. Redaction recurses three
   levels into plain objects and arrays, so a secret inside a headers bag or a row array is caught
-  too, with a repeated reference marked `'<cycle>'` rather than walked twice and a key at level four
-  or deeper left as written. Both sides of the comparison normalize, lowercased with `-` and `_`
-  removed, so one spelling covers every separator form (`api_key` matches `apiKey` and `API-KEY`),
-  which is why the list now spells each name once and covers the `api_key`, `private_key`,
-  `set-cookie`, `session_token`, `access_token`, `refresh_token`, `auth_token`, `client_secret`,
-  `webhook_secret`, `bearer`, and `jwt` families. `createLogger` takes an optional
-  `{ redactKeys }` naming a site's own field names, which union with `REDACTED_LOG_KEYS` and never
-  replace it. Both exported arrays are frozen. `Consumers must:` nothing
+  too, with a repeated reference marked `'<repeated>'` rather than walked twice and a key at level
+  four or deeper left as written. Both sides of the comparison normalize, lowercased with `-` and
+  `_` removed, so one spelling covers every separator form (`api_key` matches `apiKey` and
+  `API-KEY`), which is why the list now spells each name once and covers the `api_key`,
+  `private_key`, `set-cookie`, `session_token`, `access_token`, `refresh_token`, `auth_token`,
+  `client_secret`, `webhook_secret`, `bearer`, `jwt`, `csrf`, and `csrf_token` families.
+  `createLogger` takes an optional `{ redactKeys }` naming a site's own field names, which union
+  with `REDACTED_LOG_KEYS` and never replace it. Both exported arrays are frozen. A throwing getter
+  anywhere in a call's own fields can no longer throw out of `log.info()`/`.warn()`/`.error()`: the
+  record build is caught, and a failure emits a minimal `{ level, event, timestamp, fields:
+  '<unserializable>' }` envelope instead. `Consumers must:` nothing
   to change; a site that wants structured logs imports `createLogger` from
   `@glw907/cairn-cms/log`.
 
@@ -27,9 +30,11 @@
   with a `CairnLogEvent` name or not reading as `area[.subject].verb_phrase`, and a second rule
   over the same calls' fields argument that flags a key whole-matching `REDACTED_LOG_KEYS` (the same
   normalization the runtime uses, so `apiKey` and `api_key` resolve alike). That second rule is a
-  name-awareness notice and says so: the value is already redacted at runtime, and the finding is
-  there because the same value often lands in the message string too, where redaction never runs,
-  and because a secret-shaped field usually wants a count or a boolean. Only the fields object's own
+  name-awareness notice and says so: it can't tell your logger from `console.info` or another
+  library's, so the value is already redacted at runtime only when the call goes through a cairn
+  `createLogger` instance, and the finding is there because the same value often lands in the
+  message string too, where redaction never runs, and because a secret-shaped field usually wants a
+  count or a boolean. Only the fields object's own
   top-level keys are read, unlike the runtime's three-level walk. Both are registered at advisory
   tier for one minor and promote to error tier in `0.98.0`. No consumer action.
 

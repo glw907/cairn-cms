@@ -27,9 +27,10 @@ describe('log-secret-field', () => {
     expect(findings[0].ruleId).toBe('log-secret-field');
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('"token"');
-    expect(findings[0].message).toContain('already replaces its value with <redacted>');
-    // The message says plainly that nothing leaked: the rule is a name-awareness notice.
-    expect(findings[0].message).toContain('nothing leaked here');
+    // The message conditions the redaction claim on the call going through a cairn logger,
+    // since the rule cannot tell a `createLogger` instance from `console` or another library's.
+    expect(findings[0].message).toContain('already replaces the value with <redacted>');
+    expect(findings[0].message).toContain('cannot tell your logger from console.info');
   });
 
   it('passes tokenCount and tokens, neither of which whole-matches a redacted key', () => {

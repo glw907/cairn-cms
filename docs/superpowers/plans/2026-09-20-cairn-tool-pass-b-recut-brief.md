@@ -111,6 +111,22 @@ change except where stated. Deliverables:
   (doc and types), `parse.go`, and `marshal.go`. Every byte-equal round-trip test, the
   reflection test, and the sentinel test pass unchanged.
 
+- **Carried nits from Pass A's fold reviews** (all non-blocking, all small; take them in this
+  task since it already touches each file): `store.Open`'s doc comment names only a symlink and
+  ownership, and it now also refuses a Windows reparse point; `Open`'s inline `ModeSymlink` test
+  is redundant now that `checkNotReparsePoint` runs first; `perm_windows_test.go` shadows the
+  builtins `print` and `real`, and uses the pre-generics fixed-array cast where `unsafe.Slice`
+  says the same thing; the `providers` package doc still says "as later tasks add them", a
+  process citation the comment sweep's four patterns missed; `secrets.ResolveError.Error()`
+  formats the wrapped provider error with `%v`, so a backend that tainted its error text would
+  still expose it to a caller printing the error (the display path is safe; make the error
+  string safe too); `env.value(name)` silently returns empty for a secret variable, where a
+  split accessor would make a wrong call a compile error; `Provider.Get`'s doc says `Resolve`
+  wraps with `%w` while it now returns a `*ResolveError` with `Unwrap`.
+- **The Windows leg's per-test proof is not durable.** `go test` runs without `-v`, so a skip is
+  invisible and the junction test's proof rests on an unreferenced job log. Decide here whether
+  the Windows leg runs the `store` package verbosely.
+
 ## Amendments to existing tasks
 
 - **Task 12 (health skeleton):** either add an ordered `Fields` beside `Outcome.Detail` (same

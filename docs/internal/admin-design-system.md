@@ -1372,6 +1372,12 @@ and no selector key: the exception is keyed on the attribute plus the property. 
 property on the carrying element is a finding, and a second carrying element on the same screen is
 a finding on that second element.
 
+**The discrete-popover arm.** `display` and `overlay` also pass when the same transition entry
+carries `allow-discrete`: with it, the discrete flip defers to the end of the transition so the
+paint property beside it (typically `opacity`) finishes first, the documented CSS idiom for a
+popover or dialog leaving the top layer. Without `allow-discrete` on that entry, `display` and
+`overlay` remain outside the vocabulary.
+
 ### Enter and exit, with the floor
 
 An exit runs one duration band faster than its enter, on `--cairn-ease-exit`. `instant` is the

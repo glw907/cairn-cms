@@ -314,6 +314,38 @@ describe('motion-property: the frame-offset exception', () => {
   });
 });
 
+describe('motion-property: display and overlay under allow-discrete', () => {
+  it('passes a display/overlay pair carrying allow-discrete beside an allowlisted paint property', () => {
+    const findings = check([
+      component(
+        '<div class="mover"></div>',
+        '.mover { transition: opacity 120ms, display 120ms allow-discrete, overlay 120ms allow-discrete; }'
+      ),
+    ]);
+    expect(findings).toEqual([]);
+  });
+
+  it('still errors a display transition with no allow-discrete', () => {
+    const findings = check([component('<div class="mover"></div>', '.mover { transition: display 120ms; }')]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('display');
+  });
+
+  it('still errors an overlay transition with no allow-discrete', () => {
+    const findings = check([component('<div class="mover"></div>', '.mover { transition: overlay 120ms; }')]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('overlay');
+  });
+
+  it('still errors an unrelated layout property carrying allow-discrete, since the arm covers only display and overlay', () => {
+    const findings = check([
+      component('<div class="mover"></div>', '.mover { transition: height 120ms allow-discrete; }'),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('height');
+  });
+});
+
 describe('motion-property: admin scoping', () => {
   it('declares adminOnly, so it never reads a site\'s own public components', () => {
     expect(motionProperty.adminOnly).toBe(true);

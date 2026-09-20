@@ -64,6 +64,14 @@ const MARGIN_LONGHANDS = [
 ];
 const PADDING_LONGHANDS = MARGIN_LONGHANDS.map((name) => name.replace('margin', 'padding'));
 
+// `display` and `overlay` transition to a paint-safe verdict only when the same entry also names
+// the `allow-discrete` transition-behavior keyword: with it, the discrete flip defers to the end
+// of the transition so the paint property beside it (typically opacity) finishes first, the
+// documented CSS idiom for a popover or dialog leaving the top layer. Without `allow-discrete`
+// each remains an ordinary outside-the-allowlist finding.
+const DISCRETE_PROPERTIES = new Set(['display', 'overlay']);
+const ALLOW_DISCRETE_KEYWORD = 'allow-discrete';
+
 const NAMED_ERROR = new Set([
   'width',
   'height',
@@ -128,10 +136,16 @@ const ALLOWLIST_PHRASE = `cairn's motion property allowlist (${ALLOWLIST_NAMES.s
 
 type Verdict = 'ok' | 'named-error' | 'outside';
 
-/** Where one transition or animation property name sits against the closed allowlist. */
-function classifyProperty(name: string): Verdict {
+/**
+ * Where one transition or animation property name sits against the closed allowlist. A
+ * `display` or `overlay` entry additionally passes when its own declaration entry carries
+ * `allow-discrete`; every other caller (an animation keyframe declaration, a frame-offset
+ * property) passes `false`, since neither surface carries a transition-behavior keyword.
+ */
+function classifyProperty(name: string, hasAllowDiscrete = false): Verdict {
   const property = name.trim();
   if (PAINT_ALLOWLIST.has(property)) return 'ok';
+  if (DISCRETE_PROPERTIES.has(property) && hasAllowDiscrete) return 'ok';
   if (NAMED_ERROR.has(property)) return 'named-error';
   return 'outside';
 }
@@ -180,6 +194,29 @@ function propertyNamesIn(value: string): string[] {
   return names.length === 1 && (names[0] === 'all' || names[0] === 'none') ? [] : names;
 }
 
+/**
+ * One transitioned property name from a `transition`/`transition-property` value, alongside
+ * whether that same comma-separated entry names the `allow-discrete` transition-behavior
+ * keyword: `display 120ms allow-discrete` carries it, `display 120ms` does not.
+ */
+interface TransitionEntry {
+  name: string;
+  hasAllowDiscrete: boolean;
+}
+
+/**
+ * The transitioned entries a `transition`/`transition-property` value lists, `all` and `none`
+ * both cleared for the same reason `propertyNamesIn` clears them.
+ */
+function transitionEntriesIn(value: string): TransitionEntry[] {
+  const entries = value
+    .split(',')
+    .map((part) => part.trim().split(/\s+/).filter((word) => word.length > 0))
+    .filter((words) => words.length > 0)
+    .map((words) => ({ name: words[0], hasAllowDiscrete: words.includes(ALLOW_DISCRETE_KEYWORD) }));
+  return entries.length === 1 && (entries[0].name === 'all' || entries[0].name === 'none') ? [] : entries;
+}
+
 function isFrameOffsetSelector(selector: string): boolean {
   return selector.includes(FRAME_OFFSET_SELECTOR);
 }
@@ -196,12 +233,12 @@ function carriesFrameOffset(node: SourceNode): boolean {
  */
 function declarationMessages(decl: { property: string; value: string }): string[] {
   if (!isTransitionListProperty(decl.property)) return [];
-  const names = propertyNamesIn(decl.value);
+  const entries = transitionEntriesIn(decl.value);
   const messages: string[] = [];
-  if (names.length > 3) messages.push(capMessage(decl.property, decl.value, names.length));
-  for (const name of names) {
-    const verdict = classifyProperty(name);
-    if (verdict !== 'ok') messages.push(propertyMessage(decl.property, decl.value, name, verdict));
+  if (entries.length > 3) messages.push(capMessage(decl.property, decl.value, entries.length));
+  for (const entry of entries) {
+    const verdict = classifyProperty(entry.name, entry.hasAllowDiscrete);
+    if (verdict !== 'ok') messages.push(propertyMessage(decl.property, decl.value, entry.name, verdict));
   }
   return messages;
 }

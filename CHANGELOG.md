@@ -348,7 +348,10 @@
   to error; the class itself stays compiled until a later release removes it, since its own
   pointer-events restore still has a real consumer. Consumers must:
   nothing, unless your admin copied the `cairn-btn-guarded` marker class from the engine's markup;
-  no production site has.
+  no production site has. `motion-property`'s allowlist gains a conditional arm for Tooltip's own
+  popover exit fade: `display` and `overlay` pass when the same transition entry carries
+  `allow-discrete`, the CSS idiom that defers the discrete top-layer flip until the paired paint
+  transition finishes. No consumer action.
 
 - `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
   `selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string }` and

@@ -6046,3 +6046,24 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   admin page contain the chosen utility's declaration; the public pages' do not), run at the
   post-merge ritual against the branch-point fixture; the static half (`cairn-audit` fails on the
   utility with the packaged sheet alone, passes with both sheets), proved before the merge.
+
+## motion-discrete-popover: `display` and `overlay` pass the motion allowlist under `allow-discrete`  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept. `motion-property` convicted Tooltip.svelte's own manual-popover exit
+  fade, `transition: opacity 120ms ease, display 120ms allow-discrete, overlay 120ms
+  allow-discrete`, as two outside-the-allowlist findings on `display` and `overlay`. With
+  `allow-discrete` on the same transition entry, a `display` or `overlay` change does not
+  animate layout; it defers the discrete top-layer flip to the end of the transition so the
+  paint property beside it finishes first, the documented CSS idiom for a popover or dialog
+  leaving the top layer. The arm is conditional on the keyword, not a blanket allowance for the
+  two properties.
+- **Reopens on:** a transition of `display` or `overlay` reaching the sheet without
+  `allow-discrete` on that same entry, which stays convicted; that case is the fixture proof this
+  entry rests on, not a trigger to revisit it.
+- **Record:** Tooltip's popover exit fade.
+- **Any-site case:** a consumer's own manual popover or `<dialog>` leaving the top layer with a
+  paired opacity fade, the same shape as Tooltip.svelte's own bubble.
+- **Verified:** `src/tests/unit/audit/rules/motion-property.test.ts`'s discrete-popover cases (a
+  `display`/`overlay` pair carrying `allow-discrete` beside an allowlisted paint property passes;
+  either property without `allow-discrete` still errors; an unrelated layout property carrying
+  `allow-discrete` still errors, since the arm covers only `display` and `overlay`).

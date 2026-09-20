@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
@@ -8,7 +9,7 @@ import (
 )
 
 // osEnviron reads the process environment. Every command that needs a
-// live value takes this as loadEnv's env parameter instead of calling
+// live value takes this as loadEnv's envFn parameter instead of calling
 // os.Getenv itself, so this file is the only one under cmd/cairn holding
 // the literal call; a test greps the rest of the package to prove it.
 // Creating this chokepoint here, rather than in the cobra tree, is what
@@ -17,88 +18,147 @@ func osEnviron(name string) string {
 	return os.Getenv(name)
 }
 
-// envProvider turns a plain string-reading func into a secrets.Provider
-// named "environment", so loadEnv can put the caller's env func first in
-// every variable's resolution chain without depending on secrets.Env's own
-// call to the real process environment.
-type envProvider func(string) string
-
-func (envProvider) Name() string { return "environment" }
-
-func (p envProvider) Get(name string) (string, bool, error) {
-	v := p(name)
-	return v, v != "", nil
+// credentialVar names one of the three variables loadEnv resolves, and
+// whether its value is a credential env's typed accessors must wrap in
+// providers.Credential, versus a plain identifier like the account id.
+type credentialVar struct {
+	name   string
+	secret bool
 }
 
-// Env holds the three credential values a command needs before it calls
-// Cloudflare or GitHub, each paired with the provider that resolved it so
-// a command can report that without ever printing a value.
-type Env struct {
-	AccountID     string
-	AccountIDFrom string
-
-	CFToken     providers.Credential
-	CFTokenFrom string
-
-	GHToken     providers.Credential
-	GHTokenFrom string
+// credentialVars lists the three variables loadEnv resolves, in resolution
+// order. A fourth variable is a one-line addition here.
+var credentialVars = []credentialVar{
+	{name: "CAIRN_CF_ACCOUNT_ID"},
+	{name: "CAIRN_CF_READ_TOKEN", secret: true},
+	{name: "CAIRN_GH_READ_TOKEN", secret: true},
 }
 
-// authVariables lists the three variable names loadEnv resolves, in
-// resolution order, the same three cairn auth set and cairn auth list
-// operate on.
-var authVariables = []string{
-	"CAIRN_CF_ACCOUNT_ID",
-	"CAIRN_CF_READ_TOKEN",
-	"CAIRN_GH_READ_TOKEN",
+// authVariables lists the same three names, in the same order, for cairn
+// auth set's membership check.
+var authVariables = credentialNames(credentialVars)
+
+// credentialNames extracts each credentialVar's name, in order.
+func credentialNames(cs []credentialVar) []string {
+	names := make([]string, len(cs))
+	for i, c := range cs {
+		names[i] = c.name
+	}
+	return names
 }
 
-// loadEnv resolves CAIRN_CF_ACCOUNT_ID, CAIRN_CF_READ_TOKEN, and
-// CAIRN_GH_READ_TOKEN by trying env first and then each provider in p in
-// order, and reports which of the three it could not resolve from any of
-// them. It never returns a resolved value's source beyond the provider
-// name, so a caller can report where a credential came from without
-// touching the value itself.
-func loadEnv(env func(string) string, p ...secrets.Provider) (Env, []providers.Missing) {
-	chain := append([]secrets.Provider{envProvider(env)}, p...)
+// resolution holds one variable's resolved value and the line a caller
+// prints for it: the provider name on success, "<provider>: error" when
+// the provider itself failed, or empty when nothing resolved it (auth list
+// and probe-token both turn an empty display into "not set"). credential
+// holds the same value wrapped in providers.Credential when the variable
+// is secret, so a typed accessor never has to know which of the three
+// variables it is reading.
+type resolution struct {
+	name       string
+	value      string
+	credential providers.Credential
+	display    string
+}
 
-	var out Env
+// env holds every variable loadEnv resolved, keyed by name.
+type env struct {
+	resolutions []resolution
+}
+
+// value returns name's resolved value, or empty when name was not
+// resolved or is not one of the variables loadEnv handles.
+func (e env) value(name string) string {
+	for _, r := range e.resolutions {
+		if r.name == name {
+			return r.value
+		}
+	}
+	return ""
+}
+
+// accountID returns the resolved CAIRN_CF_ACCOUNT_ID value.
+func (e env) accountID() string {
+	return e.value("CAIRN_CF_ACCOUNT_ID")
+}
+
+// credential returns name's resolved value already wrapped in
+// providers.Credential, for one of the two secret variables.
+func (e env) credential(name string) providers.Credential {
+	for _, r := range e.resolutions {
+		if r.name == name {
+			return r.credential
+		}
+	}
+	return providers.Credential{}
+}
+
+// cfToken returns the resolved CAIRN_CF_READ_TOKEN value, wrapped so it
+// never prints by accident.
+func (e env) cfToken() providers.Credential {
+	return e.credential("CAIRN_CF_READ_TOKEN")
+}
+
+// ghToken returns the resolved CAIRN_GH_READ_TOKEN value, wrapped so it
+// never prints by accident.
+func (e env) ghToken() providers.Credential {
+	return e.credential("CAIRN_GH_READ_TOKEN")
+}
+
+// sourceLines returns e's resolutions with every empty display turned into
+// "not set", the one place cairn auth list and probe-token both get the
+// text they print for an unresolved variable.
+func (e env) sourceLines() []resolution {
+	lines := make([]resolution, len(e.resolutions))
+	for i, r := range e.resolutions {
+		if r.display == "" {
+			r.display = "not set"
+		}
+		lines[i] = r
+	}
+	return lines
+}
+
+// loadEnv resolves every variable in credentialVars by trying envFn first
+// and then each provider in p in order, and reports which ones it could
+// not resolve from any of them. It never returns a resolved value's source
+// beyond the provider name, so a caller can report where a credential came
+// from without touching the value itself.
+func loadEnv(envFn func(string) string, p ...secrets.Provider) (env, []providers.Missing) {
+	environment := secrets.NewEnvFromLookup(func(name string) (string, bool) {
+		return envFn(name), true
+	})
+	chain := append([]secrets.Provider{environment}, p...)
+
+	var out env
 	var missing []providers.Missing
 
-	if v, from, _ := secrets.Resolve("CAIRN_CF_ACCOUNT_ID", chain...); from != "" {
-		out.AccountID, out.AccountIDFrom = v, from
-	} else {
-		missing = append(missing, providers.Missing{Var: "CAIRN_CF_ACCOUNT_ID"})
-	}
-
-	if v, from, _ := secrets.Resolve("CAIRN_CF_READ_TOKEN", chain...); from != "" {
-		out.CFToken, out.CFTokenFrom = providers.NewCredential(v), from
-	} else {
-		missing = append(missing, providers.Missing{Var: "CAIRN_CF_READ_TOKEN"})
-	}
-
-	if v, from, _ := secrets.Resolve("CAIRN_GH_READ_TOKEN", chain...); from != "" {
-		out.GHToken, out.GHTokenFrom = providers.NewCredential(v), from
-	} else {
-		missing = append(missing, providers.Missing{Var: "CAIRN_GH_READ_TOKEN"})
+	for _, cv := range credentialVars {
+		v, from, err := secrets.Resolve(cv.name, chain...)
+		r := resolution{name: cv.name}
+		switch {
+		case err != nil:
+			r.display = errorDisplay(err)
+			missing = append(missing, providers.Missing{Var: cv.name})
+		case from == "":
+			missing = append(missing, providers.Missing{Var: cv.name})
+		default:
+			r.value, r.display = v, from
+			if cv.secret {
+				r.credential = providers.NewCredential(v)
+			}
+		}
+		out.resolutions = append(out.resolutions, r)
 	}
 
 	return out, missing
 }
 
-// resolution pairs a variable name with the provider that answered it, or
-// an empty from when no provider did.
-type resolution struct {
-	name string
-	from string
-}
-
-// resolutions reports the three variables loadEnv resolves in the same
-// order, for cairn auth list to print.
-func (e Env) resolutions() []resolution {
-	return []resolution{
-		{authVariables[0], e.AccountIDFrom},
-		{authVariables[1], e.CFTokenFrom},
-		{authVariables[2], e.GHTokenFrom},
+// errorDisplay reports the failing provider's name, never its error text,
+// which a future backend might use to carry the value it could not read.
+func errorDisplay(err error) string {
+	if resolveErr, ok := errors.AsType[*secrets.ResolveError](err); ok {
+		return resolveErr.Provider() + ": error"
 	}
+	return "error"
 }

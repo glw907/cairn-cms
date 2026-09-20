@@ -17,8 +17,8 @@ const npmHost = "registry.npmjs.org"
 // npmBase is npmHost's root, prefixed onto every request this client sends.
 const npmBase = "https://" + npmHost
 
-// NPM is the tool's read-only npm registry client: the Engine check (Task 16) reads a package's
-// latest published version, and 2.0's engine detail view reads every version it was skipped for.
+// NPM is the tool's read-only npm registry client: the Engine check reads a package's latest
+// published version, and 2.0's engine detail view reads every version it was skipped for.
 // The registry serves package metadata with no authentication, so every NPM client is
 // unauthenticated.
 type NPM struct {

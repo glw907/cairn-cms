@@ -12,8 +12,8 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/record"
 )
 
-// TestListSkipsMalformedAndRetired is the 2.0 seam test named in the ADR
-// and the plan's seams table: List over a directory of three live
+// TestListSkipsMalformedAndRetired is the 2.0 seam test named in the ADR's
+// seams table: List over a directory of three live
 // records, one malformed, and one retired returns three entries carrying
 // their ids, and one skip error naming the malformed file's id, rather
 // than failing the whole list.

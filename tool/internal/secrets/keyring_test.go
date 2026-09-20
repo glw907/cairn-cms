@@ -60,23 +60,22 @@ func TestKeyringMissWhenUnreachable(t *testing.T) {
 	}
 }
 
-// blockingBackend never returns from Get, standing in for a present bus
-// with a locked collection waiting on an unlock prompt with no timeout of
-// its own.
-type blockingBackend struct{}
-
-func (blockingBackend) Get(string, string) (string, error) {
-	select {}
-}
-
-func (blockingBackend) Set(string, string, string) error {
-	select {}
-}
-
+// TestKeyringDeadlineMiss swaps keyringGet for a func that never returns,
+// standing in for a present bus with a locked collection waiting on an
+// unlock prompt with no timeout of its own, and keyringDeadline for a
+// short bound so the test stays fast; NewKeyring uses the real two-second
+// deadline in production.
 func TestKeyringDeadlineMiss(t *testing.T) {
-	// A short deadline keeps the test fast; NewKeyring uses the real
-	// two-second keyringDeadline in production.
-	k := newKeyringWithBackend(blockingBackend{}, 20*time.Millisecond)
+	prevGet, prevDeadline := keyringGet, keyringDeadline
+	keyringGet = func(string, string) (string, error) {
+		select {}
+	}
+	keyringDeadline = 20 * time.Millisecond
+	t.Cleanup(func() {
+		keyringGet, keyringDeadline = prevGet, prevDeadline
+	})
+
+	k := NewKeyring()
 
 	start := time.Now()
 	v, ok, err := k.Get("CAIRN_GH_READ_TOKEN")

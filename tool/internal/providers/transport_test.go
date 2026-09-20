@@ -279,7 +279,7 @@ func TestCredentialAppliesAuthorizationHeader(t *testing.T) {
 }
 
 // TestZeroCredentialAppliesNoHeader asserts an unauthenticated (zero-value) Credential sends no
-// Authorization header, the behavior Task 7's unauthenticated GitHub and Probe clients rely on.
+// Authorization header, the behavior the unauthenticated GitHub and Probe clients rely on.
 func TestZeroCredentialAppliesNoHeader(t *testing.T) {
 	var c Credential
 	req, err := http.NewRequest(http.MethodGet, "https://example.com", nil)

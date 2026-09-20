@@ -7,10 +7,10 @@ import (
 )
 
 // packument is a hand-built npm packument, standing in for a corpus fixture: the fixture corpus
-// (packages/create-cairn-site/fixtures/) was extracted from the Node CLI's own fakes
-// (Task 3), and that CLI never calls the npm registry, so no npm body exists there to read
-// through Corpus. The "versions" object's key order below is the fact this test proves Versions
-// preserves: 0.1.0 before 0.2.0 before 1.0.0, the order a real registry packument writes them in.
+// (packages/create-cairn-site/fixtures/) was extracted from the Node CLI's own fakes, and that
+// CLI never calls the npm registry, so no npm body exists there to read through Corpus. The
+// "versions" object's key order below is the fact this test proves Versions preserves: 0.1.0
+// before 0.2.0 before 1.0.0, the order a real registry packument writes them in.
 const packument = `{
   "name": "@glw907/cairn-cms",
   "dist-tags": { "latest": "1.0.0" },

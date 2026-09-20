@@ -19,8 +19,8 @@ type Resolver interface {
 	LookupIP(ctx context.Context, network, host string) ([]net.IP, error)
 }
 
-// Probe is the tool's unauthenticated HTTP and DNS client, used by the checks (Task 13 onward)
-// that reach an arbitrary site's own domain rather than a fixed provider API. It carries no
+// Probe is the tool's unauthenticated HTTP and DNS client, used by the checks that reach an
+// arbitrary site's own domain rather than a fixed provider API. It carries no
 // Credential field and never sends an Authorization header, since a check probing a third
 // party's DNS or a custom domain has no business presenting this operator's own token to it.
 type Probe struct {
@@ -52,8 +52,8 @@ func (p *Probe) Get(rawURL string) (*http.Response, error) {
 }
 
 // GetNoFollow performs a GET against rawURL and returns a redirect response unfollowed, the
-// behavior the hostname and delegation checks (Task 13) want when the redirect itself, and its
-// Location, is the thing under test.
+// behavior the hostname and delegation checks want when the redirect itself, and its Location,
+// is the thing under test.
 func (p *Probe) GetNoFollow(rawURL string) (*http.Response, error) {
 	return p.do(p.noFollow, rawURL)
 }

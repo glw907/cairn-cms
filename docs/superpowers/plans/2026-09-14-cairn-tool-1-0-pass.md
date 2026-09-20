@@ -795,6 +795,18 @@ from, and a list of which are absent, never their values. Subcommand `cairn auth
 and `cairn auth list` printing each variable name with the provider that answers for it and no
 value.
 
+(`secrets.Env` gained an unexported `lookup func(string) (string, bool)` field and the exported
+`NewEnvFromLookup` constructor, so a set-but-empty variable is a miss the same way an unset one
+is; `cmd/cairn`'s separate `envProvider` adapter, which disagreed with `Env` on that point, is
+deleted, and `loadEnv` builds a `secrets.Env` directly. `Keyring`'s test-only backend seam
+(`keyringBackend`, `realBackend`, `newKeyringWithBackend`) collapsed to package-level vars
+(`keyringGet`, `keyringSet`, `keyringDeadline`) a test swaps. `cmd/cairn`'s exported `Env` type
+and its six flat fields are gone; `loadEnv` now walks one `credentialVars` table of `{name,
+secret bool}` and returns an unexported `env` holding a `[]resolution`, with `sourceLines`
+shared by `cairn auth list` and `probe-token` for the provider-name-or-"not set" text each
+prints. A `Resolve` failure is recorded rather than discarded: the source line reads
+"<provider>: error", the provider name only. Task 11 fold, 2026-09-20.)
+
 **Acceptance:**
 - **2.0 seam kept on purpose: the secret provider seam.** The interface takes one method to
   read and one to write, so a third backend is one implementation and no caller changes. A table

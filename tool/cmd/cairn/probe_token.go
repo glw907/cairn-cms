@@ -18,10 +18,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// The four exit codes probe-token reports, the same monitoring-plugin convention Task 21 wires
-// as the shared chokepoint for every other command. probe-token predates that chokepoint and
-// carries its own copy rather than waiting on it, since Geoff's own credential mint needs this
-// command before the rest of health exists.
+// The three exit codes probe-token reports, the same monitoring-plugin convention a future
+// aggregated health check runner will share. probe-token predates that runner and carries its
+// own copy rather than waiting on it, since Geoff's own credential mint needs this command
+// before the rest of health exists. WARNING (1) is the convention's fourth code, left unused
+// here: no check this command runs reports a soft warning, only ok, critical, or unknown.
 const (
 	exitOK       = 0
 	exitCritical = 2
@@ -29,7 +30,7 @@ const (
 )
 
 // engineOwner and engineRepo name the engine repository every registry, beyond its own sites,
-// must also grant read access to, for the Engine check's changelog read (Task 16).
+// must also grant read access to, for the Engine check's changelog read.
 const (
 	engineOwner = "glw907"
 	engineRepo  = "cairn-cms"
@@ -54,7 +55,7 @@ func defaultRegistryDir() (string, error) {
 // buildProbeTokenCmd builds cairn probe-token over injected dependencies, so a test can supply a
 // fake environment, a fake keyring, a fake registry directory, a routed RoundTripper, and a
 // captured exit function without touching a real credential, disk location, or network call.
-func buildProbeTokenCmd(env func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) *cobra.Command {
+func buildProbeTokenCmd(envFn func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) *cobra.Command {
 	return &cobra.Command{
 		Use:   "probe-token",
 		Short: "Verify the three credential values against Cloudflare and GitHub",
@@ -67,7 +68,7 @@ func buildProbeTokenCmd(env func(string) string, p secrets.Provider, rt http.Rou
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runProbeToken(cmd, env, p, rt, registryDir, exit)
+			return runProbeToken(cmd, envFn, p, rt, registryDir, exit)
 		},
 	}
 }
@@ -146,7 +147,7 @@ const (
 )
 
 // recordedBody captures a single 200 response body's shape by key names only, never its values,
-// the shape Task 17 synthesizes its query mock from. keys holds the top-level object's own key
+// the shape a test's query mock is synthesized from. keys holds the top-level object's own key
 // names, or an array's first element's key names when marker is markerArray. resultKeys holds
 // the "result" field's own key names, when the top level is an object carrying one: a Cloudflare
 // v4 envelope's own four keys (success, errors, result, result_info) carry none of its payload's
@@ -274,12 +275,12 @@ func discoverSites(dir string) ([]registrySite, error) {
 
 // runProbeToken is buildProbeTokenCmd's RunE body, split out so it reads as plain sequential
 // steps rather than a closure body.
-func runProbeToken(cmd *cobra.Command, env func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) error {
+func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) error {
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 	_, _ = fmt.Fprintln(errOut, "probe-token: output is identifiers only; it is implicitly verbose")
 
-	resolved, missing := loadEnv(env, p)
+	resolved, missing := loadEnv(envFn, p)
 	printCredentialSources(out, resolved)
 
 	rec := newRecordingRoundTripper(rt)
@@ -293,14 +294,14 @@ func runProbeToken(cmd *cobra.Command, env func(string) string, p secrets.Provid
 		_, _ = fmt.Fprintln(out, "Cloudflare: skipped, a credential is missing")
 		raise(exitUnknown)
 	} else {
-		raise(probeCloudflare(out, providers.NewCloudflare(resolved.AccountID, resolved.CFToken, rec), resolved.AccountID, rec))
+		raise(probeCloudflare(out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
 	}
 
 	if isMissing(missing, "CAIRN_GH_READ_TOKEN") {
 		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
 		raise(exitUnknown)
 	} else {
-		raise(probeRegistryGitHub(out, errOut, providers.NewGitHub(resolved.GHToken, rec), rec, registryDir))
+		raise(probeRegistryGitHub(out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, registryDir))
 	}
 
 	exit(worst)
@@ -331,21 +332,17 @@ func isMissing(missing []providers.Missing, name string) bool {
 
 // printCredentialSources writes which provider answered each of the three variables loadEnv
 // resolves, by name only, never the value.
-func printCredentialSources(out io.Writer, e Env) {
+func printCredentialSources(out io.Writer, e env) {
 	_, _ = fmt.Fprintln(out, "Credentials:")
-	for _, r := range e.resolutions() {
-		from := r.from
-		if from == "" {
-			from = "not set"
-		}
-		_, _ = fmt.Fprintf(out, "  %-20s %s\n", r.name, from)
+	for _, r := range e.sourceLines() {
+		_, _ = fmt.Fprintf(out, "  %-20s %s\n", r.name, r.display)
 	}
 }
 
-// probeCloudflare hits the account-scoped Cloudflare endpoints a Task 12 onward health check
-// uses with no per-site zone or worker to target, and returns the worst exit level among them.
-// Zone-scoped endpoints (settings, DNS, Email Sending) need a zone id no registry record carries
-// before Task 18's adopt exists; tool/docs/credentials.md records those as verified separately.
+// probeCloudflare hits the account-scoped Cloudflare endpoints a health check uses with no
+// per-site zone or worker to target, and returns the worst exit level among them. Zone-scoped
+// endpoints (settings, DNS, Email Sending) need a zone id no registry record carries before the
+// adopt command exists; tool/docs/credentials.md records those as verified separately.
 func probeCloudflare(out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) int {
 	_, _ = fmt.Fprintln(out, "Cloudflare:")
 	worst := exitOK

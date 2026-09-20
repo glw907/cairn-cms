@@ -20,9 +20,8 @@ const cloudflareHost = "api.cloudflare.com"
 // cloudflareBase is cloudflareHost's v4 API path, prefixed onto every request this client sends.
 const cloudflareBase = "https://" + cloudflareHost + "/client/v4"
 
-// Cloudflare is the tool's read-only Cloudflare API v4 client: the calls the health checks
-// (Task 12 onward) need to read a site's Worker, custom domain, zone, Builds, and Email Sending
-// state.
+// Cloudflare is the tool's read-only Cloudflare API v4 client: the calls the health checks need
+// to read a site's Worker, custom domain, zone, Builds, and Email Sending state.
 type Cloudflare struct {
 	accountID string
 	client    *client
@@ -305,8 +304,8 @@ func (cf *Cloudflare) EmailSendingSubdomains(zoneID string) ([]SendingSubdomain,
 	return getPaginated[SendingSubdomain](cf, path)
 }
 
-// ObservabilityResult is the count Task 21's error-rate query reads: how many log events
-// matched query, over the window query specified.
+// ObservabilityResult is the count an error-rate query reads: how many log events matched
+// query, over the window query specified.
 type ObservabilityResult struct {
 	Count int `json:"count"`
 }

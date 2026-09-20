@@ -9,8 +9,8 @@ import (
 
 // requestTimeout bounds every request this package makes. The Node CLI this ports from
 // (packages/create-cairn-site/src/cloudflare/api.mjs) sets no client timeout at all, so a
-// stalled TLS dial there can hang forever; a scheduled, unattended cairn run (Task 24) must
-// never wait on one dead connection for the rest of its life.
+// stalled TLS dial there can hang forever; the scheduled, unattended cairn run must never wait
+// on one dead connection for the rest of its life.
 const requestTimeout = 15 * time.Second
 
 // defaultRetryAfter is the wait used when a 429 or 503 carries no Retry-After header, matching

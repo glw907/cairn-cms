@@ -18,15 +18,38 @@ type Provider interface {
 	Name() string
 	// Get reports name's value and whether the backend holds one. A miss
 	// is (false, nil), not an error; only an unexpected failure returns a
-	// non-nil err.
+	// non-nil err. An implementation's err must never carry the value
+	// itself, since Resolve wraps it with %w and a caller may print that
+	// wrapped error.
 	Get(name string) (value string, ok bool, err error)
 }
 
-// Writer stores one named credential in a backend. Keyring is the only
-// implementation, which is why the environment provider cannot be written
-// to by mistake: there is no environment-backed Writer to call.
+// Writer stores one named credential in a backend.
 type Writer interface {
 	Set(name, value string) error
+}
+
+// ResolveError reports that a Provider's own Get call failed while Resolve
+// tried name, naming the provider without repeating its error, which might
+// carry more than is safe to print.
+type ResolveError struct {
+	provider string
+	err      error
+}
+
+// Provider names the backend whose Get call failed.
+func (e *ResolveError) Provider() string {
+	return e.provider
+}
+
+// Error implements the error interface.
+func (e *ResolveError) Error() string {
+	return fmt.Sprintf("secrets: resolve from %s: %v", e.provider, e.err)
+}
+
+// Unwrap exposes the underlying error to errors.Is and errors.As.
+func (e *ResolveError) Unwrap() error {
+	return e.err
 }
 
 // Resolve tries name against each provider in order and returns the first
@@ -37,7 +60,7 @@ func Resolve(name string, providers ...Provider) (value string, from string, err
 	for _, p := range providers {
 		v, ok, gerr := p.Get(name)
 		if gerr != nil {
-			return "", "", fmt.Errorf("secrets: resolve %s from %s: %w", name, p.Name(), gerr)
+			return "", "", &ResolveError{provider: p.Name(), err: gerr}
 		}
 		if ok {
 			return v, p.Name(), nil

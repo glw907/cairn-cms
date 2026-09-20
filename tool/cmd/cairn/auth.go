@@ -73,9 +73,9 @@ func newAuthSetCmd(readPassword func(*cobra.Command, string) (string, error), w 
 	}
 }
 
-// newAuthListCmd builds cairn auth list. env and p are parameters for the
+// newAuthListCmd builds cairn auth list. envFn and p are parameters for the
 // same reason as newAuthSetCmd's readPassword and w.
-func newAuthListCmd(env func(string) string, p ...secrets.Provider) *cobra.Command {
+func newAuthListCmd(envFn func(string) string, p ...secrets.Provider) *cobra.Command {
 	return &cobra.Command{
 		Use:           "list",
 		Short:         "Show which provider answers each credential variable",
@@ -83,13 +83,9 @@ func newAuthListCmd(env func(string) string, p ...secrets.Provider) *cobra.Comma
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			resolved, _ := loadEnv(env, p...)
-			for _, r := range resolved.resolutions() {
-				from := r.from
-				if from == "" {
-					from = "not set"
-				}
-				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", r.name, from); err != nil {
+			resolved, _ := loadEnv(envFn, p...)
+			for _, r := range resolved.sourceLines() {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", r.name, r.display); err != nil {
 					return err
 				}
 			}

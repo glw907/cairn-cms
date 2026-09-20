@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,12 +24,38 @@ func (f fakeProvider) Get(name string) (string, bool, error) {
 	return v, ok, nil
 }
 
+// fakeFailingProvider always returns an error from Get, standing in for a
+// backend that is present but broken, as opposed to a fakeProvider's plain
+// miss.
+type fakeFailingProvider struct {
+	name string
+	err  error
+}
+
+func (f fakeFailingProvider) Name() string { return f.name }
+
+func (f fakeFailingProvider) Get(string) (string, bool, error) {
+	return "", false, f.err
+}
+
 func fakeEnv(values map[string]string) func(string) string {
 	return func(name string) string { return values[name] }
 }
 
+// displayFor returns the display text loadEnv recorded for name, without
+// sourceLines' "not set" substitution, so a test can tell a plain miss
+// apart from a provider error.
+func displayFor(e env, name string) string {
+	for _, r := range e.resolutions {
+		if r.name == name {
+			return r.display
+		}
+	}
+	return ""
+}
+
 func TestLoadEnvEnvironmentWinsOverProvider(t *testing.T) {
-	env := fakeEnv(map[string]string{
+	envFn := fakeEnv(map[string]string{
 		"CAIRN_CF_ACCOUNT_ID": "env-account",
 		"CAIRN_CF_READ_TOKEN": "env-cf-token",
 		"CAIRN_GH_READ_TOKEN": "env-gh-token",
@@ -39,13 +66,13 @@ func TestLoadEnvEnvironmentWinsOverProvider(t *testing.T) {
 		"CAIRN_GH_READ_TOKEN": "keyring-gh-token",
 	}}
 
-	got, missing := loadEnv(env, keyring)
+	got, missing := loadEnv(envFn, keyring)
 
-	if got.AccountID != "env-account" || got.AccountIDFrom != "environment" {
-		t.Errorf("AccountID = (%q, %q), want (\"env-account\", \"environment\")", got.AccountID, got.AccountIDFrom)
+	if got.accountID() != "env-account" || displayFor(got, "CAIRN_CF_ACCOUNT_ID") != "environment" {
+		t.Errorf("accountID, from = (%q, %q), want (\"env-account\", \"environment\")", got.accountID(), displayFor(got, "CAIRN_CF_ACCOUNT_ID"))
 	}
-	if got.CFTokenFrom != "environment" || got.GHTokenFrom != "environment" {
-		t.Errorf("CFTokenFrom, GHTokenFrom = %q, %q, want both \"environment\"", got.CFTokenFrom, got.GHTokenFrom)
+	if displayFor(got, "CAIRN_CF_READ_TOKEN") != "environment" || displayFor(got, "CAIRN_GH_READ_TOKEN") != "environment" {
+		t.Errorf("CAIRN_CF_READ_TOKEN, CAIRN_GH_READ_TOKEN from = %q, %q, want both \"environment\"", displayFor(got, "CAIRN_CF_READ_TOKEN"), displayFor(got, "CAIRN_GH_READ_TOKEN"))
 	}
 	if len(missing) != 0 {
 		t.Errorf("missing = %v, want none", missing)
@@ -53,15 +80,15 @@ func TestLoadEnvEnvironmentWinsOverProvider(t *testing.T) {
 }
 
 func TestLoadEnvProviderAnswersWhenEnvironmentAbsent(t *testing.T) {
-	env := fakeEnv(nil)
+	envFn := fakeEnv(nil)
 	keyring := fakeProvider{name: "keyring", values: map[string]string{
 		"CAIRN_GH_READ_TOKEN": "keyring-gh-token",
 	}}
 
-	got, missing := loadEnv(env, keyring)
+	got, missing := loadEnv(envFn, keyring)
 
-	if got.GHTokenFrom != "keyring" {
-		t.Errorf("GHTokenFrom = %q, want %q", got.GHTokenFrom, "keyring")
+	if from := displayFor(got, "CAIRN_GH_READ_TOKEN"); from != "keyring" {
+		t.Errorf("CAIRN_GH_READ_TOKEN from = %q, want %q", from, "keyring")
 	}
 	if len(missing) != 2 {
 		t.Fatalf("missing = %v, want exactly CAIRN_CF_ACCOUNT_ID and CAIRN_CF_READ_TOKEN", missing)
@@ -76,8 +103,10 @@ func TestLoadEnvProviderAnswersWhenEnvironmentAbsent(t *testing.T) {
 func TestLoadEnvAllAbsentIsAllMissing(t *testing.T) {
 	got, missing := loadEnv(fakeEnv(nil))
 
-	if got.AccountIDFrom != "" || got.CFTokenFrom != "" || got.GHTokenFrom != "" {
-		t.Errorf("got = %+v, want every From field empty", got)
+	for _, name := range authVariables {
+		if from := displayFor(got, name); from != "" {
+			t.Errorf("%s from = %q, want empty", name, from)
+		}
 	}
 	if len(missing) != 3 {
 		t.Fatalf("missing = %v, want all three variables", missing)
@@ -89,8 +118,66 @@ func TestLoadEnvAllAbsentIsAllMissing(t *testing.T) {
 	}
 }
 
+// TestLoadEnvBlankExportedVariableIsMissing proves loadEnv and secrets.Env agree: an
+// exported-but-blank variable resolves as not set, exactly like one never exported, so auth
+// list never reports the environment as the source of a credential nobody actually set.
+func TestLoadEnvBlankExportedVariableIsMissing(t *testing.T) {
+	envFn := fakeEnv(map[string]string{"CAIRN_CF_READ_TOKEN": ""})
+
+	got, missing := loadEnv(envFn)
+
+	if from := displayFor(got, "CAIRN_CF_READ_TOKEN"); from != "" {
+		t.Errorf("CAIRN_CF_READ_TOKEN from = %q, want empty", from)
+	}
+	found := false
+	for _, m := range missing {
+		if m.Var == "CAIRN_CF_READ_TOKEN" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("missing does not list CAIRN_CF_READ_TOKEN, which was exported blank")
+	}
+
+	cmd := newAuthListCmd(envFn)
+	var out strings.Builder
+	cmd.SetOut(&out)
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("RunE() = %v, want nil", err)
+	}
+	if strings.Contains(out.String(), "CAIRN_CF_READ_TOKEN\tenvironment") {
+		t.Errorf("auth list output %q says the environment answered a blank variable", out.String())
+	}
+}
+
+// TestLoadEnvRecordsProviderError proves a failing provider's own error is never discarded: the
+// variable it was trying to answer is reported missing, and its display line names the failing
+// provider without repeating the error text.
+func TestLoadEnvRecordsProviderError(t *testing.T) {
+	broken := fakeFailingProvider{name: "keyring", err: errors.New("dbus: could not connect, secret leaked mid-message")}
+
+	got, missing := loadEnv(fakeEnv(nil), broken)
+
+	want := "keyring: error"
+	if from := displayFor(got, "CAIRN_GH_READ_TOKEN"); from != want {
+		t.Errorf("CAIRN_GH_READ_TOKEN from = %q, want %q", from, want)
+	}
+	if strings.Contains(displayFor(got, "CAIRN_GH_READ_TOKEN"), "leaked") {
+		t.Error("display line leaked the provider's own error text")
+	}
+	found := false
+	for _, m := range missing {
+		if m.Var == "CAIRN_GH_READ_TOKEN" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("missing does not list CAIRN_GH_READ_TOKEN, which the provider failed to answer")
+	}
+}
+
 // TestOSGetenvOnlyInEnvGo asserts no other file under cmd/cairn calls
-// os.Getenv directly. loadEnv's env parameter is the one chokepoint every
+// os.Getenv directly. loadEnv's envFn parameter is the one chokepoint every
 // command reads the environment through.
 func TestOSGetenvOnlyInEnvGo(t *testing.T) {
 	entries, err := os.ReadDir(".")
@@ -110,9 +197,10 @@ func TestOSGetenvOnlyInEnvGo(t *testing.T) {
 			t.Fatal(err)
 		}
 		if strings.Contains(string(data), "os.Getenv(") {
-			t.Errorf("%s calls os.Getenv directly; read through loadEnv's env parameter instead", name)
+			t.Errorf("%s calls os.Getenv directly; read through loadEnv's envFn parameter instead", name)
 		}
 	}
 }
 
 var _ secrets.Provider = fakeProvider{}
+var _ secrets.Provider = fakeFailingProvider{}

@@ -35,15 +35,15 @@ const githubExpiryHeader = "github-authentication-token-expiration"
 // timestamp rather than RFC 3339.
 const githubExpiryLayout = "2006-01-02 15:04:05 MST"
 
-// GitHub is the tool's read-only GitHub REST client: the calls the health checks (Task 12
-// onward) need to read a site's branches, publish commits, and package manifest.
+// GitHub is the tool's read-only GitHub REST client: the calls the health checks need to read a
+// site's branches, publish commits, and package manifest.
 type GitHub struct {
 	client *client
 }
 
 // NewGitHub returns a GitHub client authenticating with cred and sending every request through
-// rt. A zero Credential sends no Authorization header, which is how the probe (Task 10) verifies
-// an anonymous rate limit before a real token is minted.
+// rt. A zero Credential sends no Authorization header, which is how the probe verifies an
+// anonymous rate limit before a real token is minted.
 func NewGitHub(cred Credential, rt http.RoundTripper) *GitHub {
 	c := newClient(githubHost, cred)
 	c.httpClient.Transport = rt
@@ -259,7 +259,7 @@ func (gh *GitHub) LatestBotCommit(owner, repo, branch string) (time.Time, error)
 // TokenExpiry reads githubExpiryHeader off a lightweight authenticated request, returning the
 // zero time with no error when it is absent: an unauthenticated client, a classic PAT, and an
 // OAuth token all omit it, which is indistinguishable from a fine-grained PAT that never expires,
-// so Task 12's creds check reads a zero TokenExpiry as unknown rather than as "not expiring".
+// so the creds check reads a zero TokenExpiry as unknown rather than as "not expiring".
 func (gh *GitHub) TokenExpiry() (time.Time, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()

@@ -850,7 +850,31 @@ the named human gates only):**
 - **Re-source the page-only `[candidate]` bullets in `docs/internal/facts/` to code (docs-to-facts
   pass, 2026-09-15).** A bullet sourced only to a doc arm page, never traced to code, stays
   `[candidate]` until re-verified. Trigger: the docs rebuild after the site round, which reads
-  every arm bullet to rebuild the narrative pages.
+  every arm bullet to rebuild the narrative pages. The extend-1 close (2026-09-20) folds the docs
+  friction log's three verification-debt findings in here, each naming where the debt sits: the
+  three `docs/reference/sveltekit.md` sections read but not traced in the harvest
+  (`createAuthRoutes`/`bootstrapOwner`/identity modes, the media-actions vocabulary, and the
+  `NavLayoutEntry`/`NavIcon`/`ResolvedNavEntry` family); `docs/extend/migrate-existing-content.md`'s
+  validate-in-the-admin workflow, whose two mechanisms want `EditPage.svelte` and the field
+  validation call sites opened directly; and the candidate-tagged group across
+  `docs/reference/sveltekit.md`, `delivery.md`, and `delivery-data.md` (the `historyLoad` bound, the
+  preview mint and revoke sequence, `mintPreview`'s `ttlMs` bounds, the preview-row cascade,
+  `settingsLoad`'s key-health probe, `tidyAction`'s retryable statuses,
+  `NavLayoutSection.collapsed`, the `NavLayoutEntry` validation throws, `ContentIndex.all()`'s sort
+  order, `EntryData.heroImage`, and `CairnHead`'s `titleTemplate`/`markdownUrl`).
+
+- **A `[verified]` container anchor pinned to `path:line` in a component the same pass edits goes
+  stale inside that pass (extend-1, 2026-09-20).** `check:facts` re-reads the quoted anchor text at
+  the cited line, so task 4's own `AdminTable.svelte` edit invalidated two anchors it had just
+  written and cost a repoint commit (`cdfaafb8`). Candidate: let a bullet cite a quoted anchor with
+  no line number when the anchor text is unique in its file, so the pointer survives an edit above
+  it. Trigger: the next pass that files container bullets against a component it also edits.
+
+- **The showcase's `npm run dev` compiles the admin sheet once and does not watch it (extend-1,
+  2026-09-20).** Only the scaffold's baked `scripts/dev.mjs` shim carries the watch compile, so
+  editing `examples/showcase/src/admin.css` during a dev session has no effect until the next
+  `npm run build:admin-css`. Candidate: mirror the scaffold's shim in the showcase. Trigger: the
+  next pass that edits the showcase's own admin sheet.
 
 - **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (docs-to-facts pass,
   2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
@@ -2152,6 +2176,13 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **The showcase's own public route map is written nowhere a plan author reads (extend-1,
+  2026-09-20).** extend-1's stylesheet-seam proof was planned against a `/posts` archive route the
+  showcase does not serve; it serves `/` and `/archive/[page]`, which cost a fix round to discover.
+  Candidate: one sourced statement of the showcase's public routes in the facts container, so a
+  plan asserts against a read fact rather than an assumed convention. Trigger: the next pass whose
+  proof or e2e spec asserts a showcase public route.
 
 - **`npm run check:surface -- --update` sends the flag to the wrong command, and two places still
   print the pre-rider form (polish-C, 2026-09-14).** `package.json:40`'s `check:surface` script

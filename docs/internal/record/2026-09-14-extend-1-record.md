@@ -43,6 +43,51 @@ owner. 152 of 154 fired as advisories in that run. A consumer never scans the en
 self-audit (if one ever runs) needs a scope that excludes `src/lib`, before `0.98.0` promotes the
 rule to error tier. Recorded as that promotion's precondition, not as a blocker to this pass.
 
+**The Tooltip's popover exit fade tripped `motion-property` twice, and the fix widened the rule
+itself.** The bubble transitions `display` and `overlay` under `allow-discrete`, the CSS idiom that
+defers the discrete top-layer flip until the paired paint transition finishes, which the rule read
+as two non-animatable properties. The ruling is an allowlist arm, `motion-discrete-popover`, rather
+than an exemption for the component. The arm then exposed a second defect in the same rule: it split
+a transition list on every comma, so a `var()` or `cubic-bezier()` argument read as another
+transitioned property and a token with a literal fallback reported as a list of nonsense properties
+over the three-property cap. The rule now splits at the top level only.
+
+**`emit-template-tree.test.ts` failed on a fresh checkout because `.cairn/` is generated.** The
+showcase's template exclude list names the compiled-sheet directory, which does not exist until the
+first compile, and the test required every declared exclude to be present in the tree. The test now
+accepts a gitignored generated path as a valid exclude.
+
+**The seam proof's public-page assertion could not be a whole-bundle digest.** The showcase's own
+Tailwind scan carries an admin route's utilities into its public bundle, so a whole-bundle digest
+over a public page differed for a reason the seam did not cause. The assertion is restated as sheet
+identity: no stylesheet body a public page loads equals the site admin sheet the admin pages load.
+That is the invariant the seam actually promises, and it holds.
+
+**The pass-end accessibility read found six real defects across the two new components, all
+fixed.** The Tooltip bubble took no pointer events, so a pointer could not travel in to read it
+(WCAG 1.4.13); a hover-shown bubble listened for Escape on its own wrapper, so the key did nothing
+when focus sat elsewhere; its fade ran off the motion ladder; `AdminTable`'s header checkbox could
+neither select nor report why, and reverted silently. The re-read then caught two more: a cleared
+header checkbox stayed visually checked, because Svelte memoizes a `checked` write it believes it
+already made, and the focus ring was dimmed by an `opacity` on the same element. The shipped shape
+is a document-level Escape listener, a hide grace on pointer leave (Chromium's top-layer hit testing
+ignores a `::before` bridge, so the bridge alone does not hold the bubble open), tokens for the fade,
+a 75ms hover open delay, an `aria-disabled` header checkbox with direct state writes, and a
+`role="group"` batch region carrying a `role="status"` count.
+
+**The security read found redaction one level deep and matching on exact spelling.** Both were real
+holes: a secret inside a headers bag or a row array passed through, and `api_key` did not match
+`apiKey`. Redaction now walks three levels with key normalization (lowercased, `-` and `_`
+stripped), covers the `csrf` and `csrf_token` families, exposes `createLogger({ redactKeys })` for a
+site's own field names, freezes both exported lists, preserves an own `__proto__`, and catches a
+throwing getter so it cannot throw out of a log call. `log-secret-field`'s message now states that
+the runtime redaction applies only when the call goes through a cairn logger.
+
+**`check:cairn:rendered` over the engine's own admin screens is not deterministic.** Two identical
+runs reported 133 then 116 findings, all `border-contrast` and `viewport-overflow`. The
+nondeterminism is pre-existing and unrelated to this pass's rules; it is recorded as a showcase
+condition to stabilize before that script gates anything.
+
 ## What a later pass would be wrong to rediscover
 
 **The Tooltip's placement mechanism took three iterations to land, all recorded so extend-2 does
@@ -89,3 +134,44 @@ safe superset.
 stop killed dispatches mid-task during this pass; every one resumed cleanly from committed state,
 because each task commits at its own step boundaries rather than only at the end. The battery
 floor tripped once at 11 percent and the run stood down cleanly rather than losing work.
+
+**Two notes from the visual verifier, so neither reads as a defect later.** The signups screen's
+measured 72px shift came from the proof utility stacking on the page's existing spacing; the proof
+now uses `scroll-mt-14`, which has no visual effect, so the shift is moot. And a tooltip on a
+trigger near the viewport top opens below the trigger rather than above it, which is CSS anchor
+positioning's own flip, intended behavior rather than a placement bug.
+
+**A suffix-segment matcher for redaction keys is measured and held, not missed.** Matching a key's
+last segment would catch `x-api-key` and `installationToken`, which whole-key matching does not. It
+was measured false-positive-free against 59 engine field names and held for extend-2 or the cut
+window, so that measurement does not need repeating.
+
+**Redaction walks plain objects and arrays only.** A `Headers`, a `Map`, a `Set`, or a class
+instance passes through untouched. The reference page documents this with the
+`Object.fromEntries` remedy for a headers bag.
+
+**The `tooltip-primitive` ledger row's DaisyUI reasons are corrected, so the row is not re-argued
+from the wrong premise.** DaisyUI's `.tooltip` IS in the compiled theme inventory and does have a
+`.tooltip-content` child; those were not the reasons. The decisive defects are `pointer-events:
+none` on the content and hover-only visibility with no dismissal.
+
+**Select-all over caller-rendered rows is deliberately absent.** `AdminTable`'s header checkbox is
+clear-only by design, because the rows are the caller's markup and the table cannot know their ids.
+Select-all waits for a second screen adopting batch actions, which would supply the shape to design
+against.
+
+**Firefox keeps the native `title` when CSS anchor positioning is unsupported.** The Tooltip's
+fallback is the attribute it replaces, so a Firefox reader still gets the reason text. Verify it in
+Firefox at the next admin smoke rather than assuming from the code.
+
+**The showcase's `npm run dev` compiles the admin sheet once, and does not watch it.** Only the
+scaffold's own `scripts/dev.mjs` shim carries the watch compile; the showcase runs `predev` once and
+then `vite dev`. Editing `examples/showcase/src/admin.css` during a dev session therefore has no
+effect until the next `npm run build:admin-css`. A showcase shim mirroring the scaffold's is a small
+follow-up, not shipped here.
+
+**`check:cairn` runs before the build step in `create-site.yml`, not after it.** The plan asked for
+after; the assertion landed before `npm run build` in the same job. It is harmless, because
+`check:cairn` compiles the admin sheet itself through its own `build:admin-css` step, so the audit
+never reads a stale sheet. Recorded so a later reader does not treat the ordering as a defect or
+re-order it for no reason.

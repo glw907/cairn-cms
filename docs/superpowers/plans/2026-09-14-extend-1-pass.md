@@ -882,3 +882,34 @@ admin markup), `norms.yml`, `scaffold.yml` and `create-site.yml` (blocking for 8
 
 Written at the close: tokens against 6.7M, the planning-miss and execution-sitting counts, what the
 gate caught, and what a later pass would be wrong to rediscover.
+
+**Tokens.** About 8.7M against the 6.7M ceiling, raised to 9.0M by Geoff at the 84 percent
+checkpoint (2026-09-19). About 1.0M of the spend was interruption waste: three network drops, one
+usage-limit stop, one relayed-question misfire, and one redundant re-dispatch of an
+already-accepted task by a workflow resume. Review rounds: three on task 3, two each on tasks 2 and
+7, plus two accessibility reads and two security reads at the fold.
+
+**Counts.** Planning misses 2. (a) The seam proof assumed a `/posts` public route; the showcase
+serves its archive at `/` and `/archive/[page]`. (b) The proof utility `pt-14` has a real visual
+effect and ships into the scaffold template; a no-effect utility (`scroll-mt-14`) was the right
+proof. Execution sittings 1: the combined checkpoint question (the ceiling, the docs-infra plan,
+the seam's sources-file form). Nine tasks, all accepted; no task was cut.
+
+**What the gate caught.** The seam's four-line form defeated the engine's own `sm:` variants and
+moved 58 of 90 admin-visual baselines (fixed by a fifth `@source` line); the source-text walk judged
+the engine's own fixtures and comments as dead suppression directives; `log-event-grammar`'s
+collision arm fires on the engine's own call sites when the audit runs over the engine itself; the
+Tooltip's `allow-discrete` fade tripped `motion-property` and exposed a comma-splitting defect in
+it; the accessibility and security reads found eight defects between them, all fixed. Full detail:
+`docs/internal/record/2026-09-14-extend-1-record.md`.
+
+**What a later pass would be wrong to rediscover.** The Tooltip's placement mechanism and the two
+rejected alternatives; the load-order reason the site sheet must superset the engine's utility set;
+the two facts about `cairn-btn-guarded` being independent (advisory finding now, class compiled
+until a later release); redaction's plain-object-and-array scope and the held suffix-segment
+matcher; the showcase's `dev` script compiling the admin sheet once rather than watching it. Each
+is written out in the record file.
+
+**Blockers met.** Three hotspot network drops and one usage-limit stop killed dispatches mid-task;
+every one resumed from committed state, because each task commits at its own step boundaries. The
+battery floor tripped once at 11 percent and the run stood down cleanly.

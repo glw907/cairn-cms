@@ -20,9 +20,8 @@
   with `REDACTED_LOG_KEYS` and never replace it. Both exported arrays are frozen. A throwing getter
   anywhere in a call's own fields can no longer throw out of `log.info()`/`.warn()`/`.error()`: the
   record build is caught, and a failure emits a minimal `{ level, event, timestamp, fields:
-  '<unserializable>' }` envelope instead. `Consumers must:` nothing
-  to change; a site that wants structured logs imports `createLogger` from
-  `@glw907/cairn-cms/log`.
+  '<unserializable>' }` envelope instead. A site that wants structured logs imports `createLogger`
+  from `@glw907/cairn-cms/log`; the engine's own records are unchanged. No consumer action.
 
 - `cairn-audit`'s static mode gains `log-event-grammar` and `log-secret-field`, two advisory
   rules over `.ts`/`.svelte` source text (`static.sourceScope`, default `src`): a name heuristic
@@ -374,15 +373,14 @@
   `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces a
   finding naming the class retired, reported at advisory tier until `0.98.0` promotes the finding
   to error; the class itself stays compiled until a later release removes it, since its own
-  pointer-events restore still has a real consumer. Consumers must:
-  nothing, unless your admin copied the `cairn-btn-guarded` marker class from the engine's markup;
-  no production site has. `motion-property`'s allowlist gains a conditional arm for Tooltip's own
+  pointer-events restore still has a real consumer. Consumers must: nothing, unless your admin
+  copied the `cairn-btn-guarded` marker class from the engine's markup; no production site has. `motion-property`'s allowlist gains a conditional arm for Tooltip's own
   popover exit fade: `display` and `overlay` pass when the same transition entry carries
   `allow-discrete`, the CSS idiom that defers the discrete top-layer flip until the paired paint
   transition finishes. The same rule now splits a transition list at the top level only, so a comma
   inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned
   property; a token read with a literal fallback no longer reports as a list of nonsense properties
-  over the three-property cap. No consumer action.
+  over the three-property cap.
 
 - `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
   `selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void; label:
@@ -406,6 +404,7 @@
   call, and the login request action emits `members.login.requested` with `{ outcome }` from the
   engine's own `ChannelRequestOutcome`, never the posted contact. Each route's header names its
   archetype, the atoms it composes, and the recipe page it illustrates. No consumer action.
+
 - The showcase compiles its own site admin stylesheet and audits against it, alongside the
   packaged one: `src/admin.css` is a five-line Tailwind v4 entry (no DaisyUI plugin, utilities
   only) scoped to `src/routes/admin` with `@tailwindcss/cli`, compiled to `.cairn/admin.css`.
@@ -435,7 +434,8 @@
   development. No consumer action.
 
 - `create-site.yml`, the CI proof of a real `create-cairn-site` run, now asserts the scaffolded
-  site carries `.github/workflows/check.yml` and runs `npm run check:cairn` after its build step.
+  site carries `.github/workflows/check.yml` and runs `npm run check:cairn` in the same job as its
+  own `check` and build steps.
   The tool's own printed hand-over text names both, so a reader who never opens the workflow file
   still learns what checks their site on every push. The transcripts fixtures predate this change
   and are not re-captured this pass (the capture harness needs a live GitHub App and repository

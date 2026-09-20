@@ -7,6 +7,62 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## extend-1 pass, nine tasks, 2026-09-16 to 2026-09-20
+
+Branch `extend-1` with `extend-1-site` (chain B: tasks 7, 8a, 8b) merged into it; plan at
+`docs/superpowers/plans/2026-09-14-extend-1-pass.md`; spec at
+`docs/superpowers/specs/2026-09-12-extend-design.md` (revision 2); record at
+`docs/internal/record/2026-09-14-extend-1-record.md`. The pass gives a consumer site cairn's own
+gates over its own code and cairn's atoms to compose instead of reinventing. No new package, and no
+change to `cairn-doctor`.
+
+**What landed.** A public `/log` subpath exporting `createLogger`, `CAIRN_LOG_EVENTS`, and
+`REDACTED_LOG_KEYS`, with the engine's own logger as one instance and three-level key-normalized
+redaction. Two advisory `cairn-audit` static rules over source text, `log-event-grammar` and
+`log-secret-field`, resolved over a new `static.sourceScope`, both promoting to error tier at
+`0.98.0`. `Tooltip` in `/admin-toolkit`, replacing every native `title` on an admin action control
+and reporting `cairn-btn-guarded` as retired through `stock-default-hazards`. Additive batch
+actions on `AdminTable` (`selection` and `batchBar`), with no existing prop changed. The two
+showcase exemplar routes rewritten onto one site-owned `createLogger`. The site admin stylesheet
+seam on the showcase: a five-line Tailwind entry compiled to `.cairn/admin.css`, a
+`cairn-audit.config.json` naming both sheets, and a `check:cairn` step in CI. The scaffold wiring
+baked from it: a `.github/workflows/check.yml` in every new site, `workflows: write` on the App
+manifest, and a watch compile in the dev shim. Five rows in `docs/internal/engine-rulings.md`
+(`log-export`, `stylesheet-seam`, `tooltip-primitive`, `audit-rule-advisory-first-tier`,
+`batch-actions-additive`).
+
+**What the gate caught.** The seam's first four-line form defeated the engine's own `sm:` variants
+on every admin screen and moved 58 of 90 admin-visual baselines, fixed by a fifth `@source` line
+that makes the site sheet a superset of the engine's utility set in Tailwind's own emission order.
+The source-text walk judged the engine's own test fixtures and doc comments as dead suppression
+directives (41 false findings), fixed by `suppressionsOnly`. `log-event-grammar`'s collision arm
+fires on 152 of the engine's own 154 legitimate call sites when the audit runs over the engine
+itself, recorded as a precondition on the `0.98.0` promotion. The Tooltip's `allow-discrete` exit
+fade tripped `motion-property` and exposed a comma-splitting defect in that rule. The pass-end
+accessibility read found six real defects across `Tooltip` and `AdminTable`, and its re-read two
+more; the security read found redaction one level deep and matching on exact spelling. Detail for
+every one of these is in the record file.
+
+**What a later pass would be wrong to rediscover.** The Tooltip's placement took three mechanisms
+to land, and the shipped one is a native popover plus CSS anchor positioning with the trigger's
+`anchor-name` appended rather than replaced, so a trigger that already anchors a menu keeps both
+contracts. The stylesheet seam's superset requirement is a load-order fact about Tailwind's shared
+`utilities` layer, not a cairn quirk; the two follow-ups it leaves (an engine-owned sources file, a
+static gate for the superset invariant) are on the `stylesheet-seam` ledger row, and extend-2's
+2026-09-19 amendment takes the sources file. Advisory tier and compiled-until-removed are
+independent facts about `cairn-btn-guarded`: `0.98.0` promotes the finding, and a later release
+removes the class.
+
+**Budget score.** About 8.7M subagent tokens against a 9.0M ceiling, raised from 6.7M at the 84
+percent checkpoint; roughly 1.0M of that was interruption waste (three network drops, one
+usage-limit stop, one relayed-question misfire, one redundant re-dispatch by a workflow resume).
+Planning misses 2: the seam proof assumed a `/posts` public route the showcase does not serve (it
+serves `/` and `/archive/[page]`), and the proof utility first chosen had a real visual effect and
+shipped into the scaffold template, where a no-effect utility (`scroll-mt-14`) was right. Execution
+sittings 1: the combined checkpoint question (the ceiling, the docs-infra plan, the seam's
+sources-file form). Review rounds: three on task 3, two each on tasks 2 and 7, two a11y reads and
+two security reads at the fold. Merged as PR #66.
+
 ## Docs-to-facts pass, five tasks, 2026-09-15
 
 Branch `docs-to-facts`; plan at `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`;

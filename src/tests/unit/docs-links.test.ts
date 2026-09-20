@@ -1,17 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
   headingAnchors,
   linksIn,
   blankInlineCode,
   isExternal,
+  filesInScope,
   findBrokenLinks,
   hasUnreleasedHeading,
   unreleasedParityMismatch,
   legacyTarget,
   legacyMapProblems,
 } from '../../../scripts/checks/docs-links.mjs';
-import { resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 describe('headingAnchors', () => {
   it('slugs a heading GitHub-style and strips backticks and punctuation', () => {
@@ -64,6 +66,53 @@ describe('findBrokenLinks (the live docs gate)', () => {
   it('reports zero broken links across the real docs tree', () => {
     const broken = findBrokenLinks(resolve(__dirname, '../../..'));
     expect(broken).toEqual([]);
+  });
+});
+
+// skills/**/*.md and claude/**/*.md both ship in the tarball, so a dead link inside a packaged
+// skill is as real a gate failure as one under docs/.
+describe('scope over skills/ and claude/', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function fixtureRoot() {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-links-scope-'));
+    tmpDirs.push(dir);
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    return dir;
+  }
+
+  it('includes a skills/*/SKILL.md file in scope', () => {
+    const root = fixtureRoot();
+    mkdirSync(join(root, 'skills', 'a-skill'), { recursive: true });
+    writeFileSync(join(root, 'skills', 'a-skill', 'SKILL.md'), '# A skill\n');
+    expect(filesInScope(root)).toContain('skills/a-skill/SKILL.md');
+  });
+
+  it('includes a claude/**/*.md file in scope when the tree exists', () => {
+    const root = fixtureRoot();
+    mkdirSync(join(root, 'claude'), { recursive: true });
+    writeFileSync(join(root, 'claude', 'CLAUDE.md'), '# Fragment\n');
+    expect(filesInScope(root)).toContain('claude/CLAUDE.md');
+  });
+
+  it('omits claude/ from scope when the tree does not exist', () => {
+    const root = fixtureRoot();
+    expect(filesInScope(root).some((f) => f.startsWith('claude/'))).toBe(false);
+  });
+
+  it('fails a dead link inside a fixture skills/ tree', () => {
+    const root = fixtureRoot();
+    mkdirSync(join(root, 'skills', 'a-skill'), { recursive: true });
+    writeFileSync(
+      join(root, 'skills', 'a-skill', 'SKILL.md'),
+      '# A skill\n\nsee [gone](./nowhere.md)\n'
+    );
+    const broken = findBrokenLinks(root);
+    expect(broken).toHaveLength(1);
+    expect(broken[0]).toMatchObject({ file: 'skills/a-skill/SKILL.md', dest: './nowhere.md' });
   });
 });
 

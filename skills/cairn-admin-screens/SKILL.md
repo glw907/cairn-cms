@@ -45,7 +45,7 @@ differently on purpose; reported, never gating): `chip-ground-collision`, `borde
 
 `screen-anatomy` checks the negative half mechanically: one `PageHeader`, one `h1`, and no
 accent- or ink-filled action stray outside the header slot or the card region (desk routes are
-exempt; see [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md),
+exempt; see `docs/reference/cairn-audit.md`, at `../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`,
 the installed package's copy).
 
 The affirmative half is guidance, not a lint: **the primary action sits in the header slot.** The
@@ -64,7 +64,7 @@ A component's measured shape (control height, padding, border treatment, radius)
 prose to recall: `npx cairn-audit norms <role>` returns the measured band with its provenance,
 ratified against a written decision or observed-only. Query by role id (`button-primary`,
 `status-chip`, `card`, `table-cell`, `page-title`, and the rest; the full role table is in
-[`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
+`docs/reference/cairn-audit.md`, at `../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`
 (again, the installed package's copy)) before inventing a height or a padding value from
 scratch.
 

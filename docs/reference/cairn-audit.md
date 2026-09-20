@@ -134,7 +134,11 @@ Three properties make it honest, and each is its own error-tier finding when it 
 - **Neither of those errors can itself be suppressed.** A build that passes by suppression has to
   read as one.
 
-Both report under the rule id `suppression`.
+Both report under the rule id `suppression`. One exception: a file reached only through
+`static.sourceScope`, the plain-text walk that `log-event-grammar` and `log-secret-field` read,
+still honors a suppression directive but skips all three honesty checks, since scanning raw text
+can't tell a real directive from one that appears in a string, a fixture, or a comment about the
+feature itself.
 
 The counting contract is the other half. A suppressed finding leaves the exit-code math and stays in
 the report: the summary line always prints a suppression total, including when it's zero.

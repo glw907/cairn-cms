@@ -30,7 +30,7 @@ twenty-eight-file read would need.
 
 **Goal:** the release starts from the newest production version of every dependency, the four
 accepted admin defaults that belong to this window land, and the held majors plus the deferred
-survey items are recorded where the next cut and the borrow-1 pass will find them.
+survey items are recorded where the next cut and the extend-1 pass will find them.
 
 **Scope, ruled by Geoff on 2026-09-13; no task re-opens any of it:**
 
@@ -39,7 +39,7 @@ survey items are recorded where the next cut and the borrow-1 pass will find the
   results, both lockfiles reinstalled from scratch.
 - Three of the five accepted Carbon defaults (`ROADMAP.md:896-914`): the pagination current-page
   cue, the two destructive dialogs' backdrops, and the `AdminTable` accessible name. The other two, the
-  tooltip primitive and batch actions on `AdminTable`, are borrow-1 work and are out.
+  tooltip primitive and batch actions on `AdminTable`, are extend-1 work and are out.
 - The Blueprint audit's one FIX line, **if the motion pass has not already taken it**. See
   "The transition-all item" below; as planned it is already taken.
 
@@ -738,19 +738,19 @@ edits. Step 1's reconciliation is reported as a finding list, not as a red.
     scaffolder pass.
   - **The nav `<details>` groups moving to daisyUI `collapse`/`accordion`.** The survey's own words:
     "worth a future small pass, unrelated to this version range", and a consumer that scoped-overrode
-    `.cairn-caret` would need a `Consumers must:` line. Filed to ROADMAP beside the borrow-1 work.
+    `.cairn-caret` would need a `Consumers must:` line. Filed to ROADMAP beside the extend-1 work.
   - **The daisyUI `aria-checked="mixed"` mirror on `src/lib/components/MediaOrphanTools.svelte:55-79`.**
     The survey states the DOM-property approach still works and this is "not a code deletion today".
     Filed as a `ROADMAP.md` Someday line naming the component and the trigger (the next pass that
     touches `MediaOrphanTools`), since this task changes no code and a co-located `// WATCH:` comment
     would put a `src/lib` file in its diff.
-  - **The two Carbon defaults Geoff routed to borrow-1**, the tooltip primitive that retires
+  - **The two Carbon defaults Geoff routed to extend-1**, the tooltip primitive that retires
     `cairn-btn-guarded` and batch actions graduating onto `AdminTable`. Already in `ROADMAP.md`'s
     Next entry; this task confirms the entry still names them and leaves them there.
   - The survey's top-five items 2, 3, 4, and 5 are **not deferrals**. They are verification or
     awareness, and Task 1 discharged them; the record states their outcome.
 - **The `ROADMAP.md` Next entry closes for what this pass shipped.** Its five-defaults bullet
-  (`:896-914`) is rewritten to its borrow-1 remainder, since a pass that ships a roadmap item is not
+  (`:896-914`) is rewritten to its extend-1 remainder, since a pass that ships a roadmap item is not
   done until the roadmap stops listing it. The same bullet also carries two standing survey calls
   this pass did not reopen, "sign in" over Carbon's "log in" and the Carbon Charts rejection with its
   Chart-guidance-only note; both stay verbatim.
@@ -773,7 +773,7 @@ edits. Step 1's reconciliation is reported as a finding list, not as a red.
   consumer-line rulings (Task 1 carries one, Tasks 2 and 3 do not), and report each as matching or
   not. Confirm Task 1's `docs/extend/migration-notes.md` bullet is present.
 - [ ] **Step 2:** write `docs/internal/record/2026-09-14-pre-cut-window.md`.
-- [ ] **Step 3:** rewrite the `ROADMAP.md` Next bullet to its borrow-1 remainder, keeping the two
+- [ ] **Step 3:** rewrite the `ROADMAP.md` Next bullet to its extend-1 remainder, keeping the two
   standing survey calls verbatim; rewrite `ROADMAP.md:1422-1431` to drop its `Pagination` half; and
   file the three tripwires and every deferred item into the tier where each bites, with the
   `aria-checked="mixed"` mirror as a Someday line.
@@ -836,7 +836,7 @@ edits. Step 1's reconciliation is reported as a finding list, not as a red.
   available without a major, whose `## Unreleased` window is reconciled, whose baselines were
   regenerated on the canonical renderer after the toolchain moved, and whose held majors are recorded
   where the next cut will re-check them.
-- **To borrow-1:** the two Carbon defaults that reshape a pattern, still filed, plus the nav
+- **To extend-1:** the two Carbon defaults that reshape a pattern, still filed, plus the nav
   `collapse` adoption the survey found.
 - **To the next scaffolder pass:** the `@clack/prompts` async-validate rewrite of the Cloudflare
   token prompt, filed with its retry-cap caveat.

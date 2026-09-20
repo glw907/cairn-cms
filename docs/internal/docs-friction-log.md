@@ -3,7 +3,9 @@
 Writing a doc is also a design review. This file collects the design friction that documenting and
 building cairn surfaces, so a rough edge becomes a tracked candidate for work instead of a lost
 observation. Triage feeds `ROADMAP.md` and `docs/STATUS.md`; this repo keeps no separate backlog file.
-A finding here does not block the doc that found it.
+A finding here does not block the doc that found it. A hole in `docs/internal/facts/` (something a
+pass needed and didn't find, found wrong, or found only as an unverified `[candidate]`) is filed
+here too, the same as any other finding.
 
 Record each finding with its perspective and a short note. The perspective is one of the four
 audience tracks ([`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)): `editor`
@@ -19,19 +21,6 @@ history. The append-only prose that accumulated through 2026-06-26 was pruned on
 every open finding was verified against the code and then either shipped, filed into `ROADMAP.md`
 with its trigger, or found already resolved and pruned. Git history holds the full record of both
 clearings.
-
-## Live findings
-
-None open. The 2026-09-07 charter audit's five findings (record
-`docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the same day
-(Geoff accepted the routing): the two charter sentences rewritten (`what-cairn-is-and-is-not.md`,
-`CLAUDE.md`: the concept SET is the site's and the seams are disclosed, not enforced, until 1.0);
-the email-sender and backend "bring your own" doors and the auth-store widening promoted whole to
-`ROADMAP.md`'s identity-seam entry; the upgrade contract left on the 1.0 path where it already sits. The internals-pass whole-log triage (2026-09-03) cleared the four entries this
-section previously carried: the ASC CSRF 403 entry deleted (every named mechanism verified
-shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
-`fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS`
-all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
 ## Tombstones (decided, do not resurface)
 
@@ -57,12 +46,45 @@ all promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearin
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-None open. The identity-seam pass's own two findings, discovered and shipped in the same pass
+- **`contributor`.** Three sections of `docs/reference/sveltekit.md` were read in full but not
+  independently traced to source in the 2026-09-15 facts-container harvest, given the page's size
+  (2086 lines) against the harvest's budget: `createAuthRoutes`/`bootstrapOwner`/identity-mode
+  behavior (paragraphs around line 927-963), the full media-actions vocabulary detail (lines
+  210-276), and the `NavLayoutEntry`/`NavIcon`/`ResolvedNavEntry` family (lines 1585-1750). cairn-cms,
+  2026-09-15, engine 0.96.0.
+- **`contributor`.** `docs/extend/migrate-existing-content.md`'s claim that validating migrated
+  entries means starting the dev server against the local double and opening each migrated entry in
+  the admin, with a failing field showing its error inline, is a documented workflow recommendation
+  composed of two cairn mechanisms (the dev backend, inline field validation) neither of which was
+  traced to a specific symbol in the 2026-09-15 harvest. A follow-up should open
+  `src/lib/components/EditPage.svelte` and the field-validation call sites directly. cairn-cms,
+  2026-09-15, engine 0.96.0.
+- **`contributor`.** `docs/reference/sveltekit.md`, `delivery.md`, and `delivery-data.md` carry
+  candidate-tagged facts as a group, none independently re-traced to source in the 2026-09-15
+  harvest (the `historyLoad`/25-row bound and rename-restart caveat, the preview mint/revoke
+  authorization sequence, `mintPreview`'s `ttlMs` bounds, the preview-row-clearing cascade on
+  rename/delete/discard, `settingsLoad`'s Tidy key-health probe, `tidyAction`'s retryable-vs-not
+  status codes, `NavLayoutSection.collapsed`'s cookie-wins behavior, the `NavLayoutEntry.href`/icon
+  validation throws, `ContentIndex.all()`'s sort order, `EntryData.heroImage`'s undefined cases, and
+  `CairnHead`'s `titleTemplate`/`markdownUrl` behavior). Kept because each reads as precise and
+  internally consistent, not because it's confirmed. cairn-cms, 2026-09-15, engine 0.96.0.
+
+The identity-seam pass's own two findings, discovered and shipped in the same pass
 (the locals hand-off pattern from Task 2, the doctor probe's missing `redirect: 'manual'` from
 Task 4), are cleared already; the internals-C whole-log triage (2026-09-05) cleared the two
 entries this section previously carried: the `check:snippets` stub finding promoted whole to
 `ROADMAP.md`'s Later tier with its trigger, and the `ctx.logCommitFailed` call-style contradiction
-folded into `ROADMAP.md`'s existing polish-slice bullet. See Clearings below.
+folded into `ROADMAP.md`'s existing polish-slice bullet. The 2026-09-07 charter audit's five
+findings (record `docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md`) cleared the
+same day (Geoff accepted the routing): the two charter sentences rewritten
+(`what-cairn-is-and-is-not.md`, `CLAUDE.md`: the concept SET is the site's and the seams are
+disclosed, not enforced, until 1.0); the email-sender and backend "bring your own" doors and the
+auth-store widening promoted whole to `ROADMAP.md`'s identity-seam entry; the upgrade contract
+left on the 1.0 path where it already sits. The internals-pass whole-log triage (2026-09-03)
+cleared four earlier entries: the ASC CSRF 403 entry deleted (every named mechanism verified
+shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not here);
+`fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all
+promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
 ## Clearings
 

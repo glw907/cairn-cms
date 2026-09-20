@@ -14,7 +14,7 @@ from the other two, the other two win: both were rewritten against IBM Carbon af
 as the single reference, and the language record's sections (c) and (f) predate that choice.
 Supporting reads: `docs/internal/admin-design-system.md`, `docs/reference/cairn-audit.md`,
 `docs/internal/what-cairn-is-and-is-not.md`, and ROADMAP's Next-tier entries "A motion language for
-the admin" and "Borrowable patterns".
+the admin" and "Extend".
 
 **Numbering.** The motion pass is its own slice, after polish-C (slice 12) and before the release
 cut. The conductor writes the slice number into `docs/STATUS.md` when the plan is committed.
@@ -210,7 +210,7 @@ stays the vendor's vocabulary.
 
 1. **The two `@media (hover: hover)` guards on `.tooltip` and `.menu` are dropped.** Both components
    are recorded as vendor disagreements instead, and the touch-tooltip visibility defect (long-press
-   opens and sticks) is filed to the borrowable-patterns borrow-1 pass beside the rendered hover-gate
+   opens and sticks) is filed to the extend extend-1 pass beside the rendered hover-gate
    half, carrying the review's finding that a transition guard does not fix a visibility rule.
 2. **The drawer scoping to `isPersistentSidebar` is dropped.** The persistent drawer's vendor
    transition is recorded as a fifth vendor disagreement. The frame offset exception stands as
@@ -221,7 +221,7 @@ stays the vendor's vocabulary.
 The admin animates in a dozen places and no document says which state changes animate, which snap,
 at what duration, on what curve, or how each degrades under reduced motion. This pass writes that
 language, ships it as tokens the admin sheet carries, enforces it as `cairn-audit` rules, migrates
-the admin onto it, and hands the result to the borrowable-patterns work as the extend track's first
+the admin onto it, and hands the result to the extend work as the extend track's first
 per-pattern recipe.
 
 Three things bound the scope. The pass adds motion in exactly two places, each named here and
@@ -260,7 +260,7 @@ cites this spec by path and date and quotes the decision text below.
    The audit runs over the engine's own tree first, wired through
    `scripts/checks/check-invisible-craft.mjs`'s `RULE_IDS` and `CSS_FILES`. The reduced-motion rule is
    the CSSOM delay check at advisory tier; the rendered differential is out.
-6. **Borrow hand-off:** the pass writes the extend track's first per-pattern recipe page, beside the
+6. **Extend hand-off:** the pass writes the extend track's first per-pattern recipe page, beside the
    design system's Motion section, which the later `cairn-extend` skill routes to.
 7. **Sequencing:** its own pass, after polish-C merges and before the release cut, so the cut carries
    the tokens and the rules. Single release. The pass runs unread on its reviewed plan.
@@ -721,7 +721,7 @@ escalations were ruled (2026-09-13), it governs cairn's own authored rules and n
 | Exit, small element | Opacity, `--cairn-ease-exit` | Same | Opacity only | `quick` | per component |
 | Disclosure, accordion | `grid-template-rows` plus opacity | Same | Layout snaps, opacity stays | `quick` | DaisyUI `.collapse` (disagreement 4), NavTree |
 | Caret rotate on a disclosure | `rotate` only, no box change | Same | Snaps | `quick` | `cairn-admin.css:545`, `CairnAdminShell.svelte:1035` |
-| Tooltip | Opacity, 75ms delay; the vendor's `:hover` is ungated and stays so | Opens on long-press and sticks, a vendor defect filed to borrow-1 | The delay is authored inside a `(prefers-reduced-motion: no-preference)` guard, so none applies; the opacity snaps | `base` | DaisyUI `.tooltip` (disagreement 6) |
+| Tooltip | Opacity, 75ms delay; the vendor's `:hover` is ungated and stays so | Opens on long-press and sticks, a vendor defect filed to extend-1 | The delay is authored inside a `(prefers-reduced-motion: no-preference)` guard, so none applies; the opacity snaps | `base` | DaisyUI `.tooltip` (disagreement 6) |
 | Popover, menu | Opacity plus 4px from the trigger edge; `.menu`'s own `:hover` is ungated and stays so | Full-width bottom sheet below `sm` | Opacity only | `base`, `settle` below `sm` | `MediaInsertPopover.svelte`, DaisyUI `.menu` (disagreement 7) |
 | Command palette | Opacity plus 4px, centered | Pinned to the top edge, opacity plus 8px | Opacity only | `base` | `CairnAdminShell.svelte:822` |
 | Dialog | Opacity plus a 2% translate; the vendor scale is kept, see the DaisyUI decision | Same shape today; a bottom sheet would take `settle` | Opacity only, no geometry | `base` | DaisyUI `.modal` (disagreement 2); `DeleteDialog.svelte` and twenty-two siblings, twenty-three plain `.modal` dialogs in all, none `modal-bottom` |
@@ -859,7 +859,7 @@ exemption on rule 1's class join records instead of convicting.
    stopper that would have suppressed the drag case is cut, so every flip, dragged or scripted, shows
    the vendor slide, and the Motion section says so.
 6. **`.tooltip`, hover.** Ships an ungated `:hover` transition, so a coarse pointer can long-press
-   the tooltip open and strand it. Filed to the borrowable-patterns borrow-1 pass, beside the
+   the tooltip open and strand it. Filed to the extend extend-1 pass, beside the
    rendered half of `motion-hover-gate`, with the review's finding that fixing it means gating the
    visibility rather than the transition, which is a behavioral override of a vendor component and a
    decision in its own right.
@@ -959,7 +959,7 @@ object. Each has a fix, and the fix per site is the migration.
 | `CairnAdminShell.svelte:775`, `:971`, `:1024`, `:1035` | `transition-colors` and `transition-opacity`, bare | No edit. The theme default resolves them to `base` on the standard curve |
 | `CairnMediaLibrary.svelte:747`, `:845`, `ConceptList.svelte:400`, `MediaHeroField.svelte:450` | `transition-shadow` and `transition-colors`, bare | No edit, same reason. `MediaHeroField` additionally gains the drag-over paint state it has never had, on the `ondragover`/`ondrop` wiring at `:453-454` |
 | Three `animate-spin` uses | `spin 1s linear infinite` through `--animate-spin` | No edit. An `infinite` animation is exempt from the vocabulary and governed by the reduced-motion guard instead |
-| DaisyUI `.tooltip` and `.menu` | `:hover` transitions with no capability guard anywhere in the vendor file | **No edit.** Revision 1 proposed two pinned unlayered `@media (hover: hover)` guards; Geoff ruled against them (2026-09-13). Recorded as vendor disagreements 6 and 7, and the touch-tooltip defect filed to borrow-1 |
+| DaisyUI `.tooltip` and `.menu` | `:hover` transitions with no capability guard anywhere in the vendor file | **No edit.** Revision 1 proposed two pinned unlayered `@media (hover: hover)` guards; Geoff ruled against them (2026-09-13). Recorded as vendor disagreements 6 and 7, and the touch-tooltip defect filed to extend-1 |
 | DaisyUI `.drawer-side`, at the breakpoint flip | The vendor transition runs at every width, so the sidebar slides across `lg` and `xl` | **No edit.** Revision 1 proposed scoping it to `isPersistentSidebar`; Geoff ruled against it (2026-09-13), because the only form is a rule targeting `.drawer-side`. Recorded as vendor disagreement 5 |
 | The nine reduced-motion paint opt-back-ins | Nothing; the blanket block zeroes all nine today | **No edit.** The opt-back-in is a permission the policy grants, and cairn takes none of it this pass: each restatement costs one unlayered allowlist entry (`check-custom-surface.mjs:158` compares by length), and the paint still changes instantly under the floor. Owned by task 6a, which writes the case-table cells to match |
 | The hand-authored `:hover` and `:focus-visible` selector lists | One selector list per pair, ungated, declaring paint | **No edit.** The engine tree has no pair whose `:hover` alternative declares motion, so no guard is owed and none is added. The split remains the authoring step the fix message and the recipe page teach for a consumer whose own pair does declare motion, and the rule ships a fixture that fires on a `:focus-visible` alternative wrongly left inside the guard |
@@ -1185,11 +1185,11 @@ passes alongside); and a `:focus-visible` alternative declaring motion from insi
 The rendered half, which would reach DaisyUI's ten ungated components through a touch context, is
 **not in this pass**. It needs the same emulation axis rule 4 needs, it is advisory, and its remedy
 would be an override decision 4 declines. It is filed to ROADMAP's Next tier with its trigger: the
-borrow-1 pass, which owns the consumer-facing gates layer. **Two items travel with it**, both from
+extend-1 pass, which owns the consumer-facing gates layer. **Two items travel with it**, both from
 the 2026-09-13 ruling on the dropped hover guards: the `.tooltip` touch defect, where a long press
 opens the tooltip and strands it, and the finding that closing that defect means gating the
 tooltip's **visibility**, not its transition, which is a behavioral override of a vendor component
-and a decision borrow-1 has to take on its own terms. A guard on the transition would have changed
+and a decision extend-1 has to take on its own terms. A guard on the transition would have changed
 nothing a reader sees, which is why this pass files the defect instead of appearing to fix it.
 
 ### Rule 4: `motion-reduced-delay`, rendered, advisory

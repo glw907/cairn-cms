@@ -168,6 +168,40 @@ describe('resolveRenderedFindings', () => {
     expect(findings[0].message).toContain('guard refused');
     expect(exitCodeFor({ findings, suppressed: [], filesScanned: 1, ruleIds: ['probe'] })).toBe(0);
   });
+
+  // A `--rule`-scoped run's `ruleTiers` map (built from the rules it actually ran) carries no entry
+  // for a rule outside that scope, and the old code's `?? 'error'` treated that absence the same as
+  // "the entry names no rule at all", convicting every out-of-scope entry at error tier on a
+  // perfectly clean, merely narrower run. Naming `ranRuleIds` explicitly (mirroring the static
+  // runner's `applySuppressions`) lets the resolver tell "out of scope" from "in scope with no
+  // tier", so an out-of-scope entry raises nothing instead of gating.
+  it('skips an unspent entry naming a rule the run did not execute, rather than defaulting it to error', () => {
+    const visits: RenderedPageVisit[] = [{ page: '/admin/x', selectorsSeen: new Set() }];
+    const allowlist = [{ page: '/admin/x', selector: '.out-of-scope', reason: 'held', rule: 'viewport-overflow' }];
+    const { findings } = resolveRenderedFindings(
+      [],
+      visits,
+      allowlist,
+      new Map([['motion-reduced-delay', 'advisory' as const]]),
+      new Set(['motion-reduced-delay'])
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it('still convicts an unspent entry naming a rule the run did execute', () => {
+    const visits: RenderedPageVisit[] = [{ page: '/admin/x', selectorsSeen: new Set() }];
+    const allowlist = [{ page: '/admin/x', selector: '.in-scope', reason: 'held', rule: 'motion-reduced-delay' }];
+    const { findings } = resolveRenderedFindings(
+      [],
+      visits,
+      allowlist,
+      new Map([['motion-reduced-delay', 'advisory' as const]]),
+      new Set(['motion-reduced-delay'])
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].ruleId).toBe('rendered.allowlist-stale');
+    expect(findings[0].tier).toBe('advisory');
+  });
 });
 
 // A rendered rule can carry its own ratified exception, one no page+selector allowlist entry could
@@ -783,6 +817,157 @@ describe('runRendered against a fake browser', () => {
         loadPlaywright: async () => fakeBrowser({ ssrIdentity: LOGIN_IDENTITY, hydratedIdentity: LOGIN_IDENTITY }),
       });
       expect(report).toBeDefined();
+    });
+  });
+
+  // The emulation axis is a loop level ABOVE the context, opt-in per rule the way `states` is.
+  // These tests count real `newContext`/`newPage` calls (excluding the page-identity guard's own
+  // no-JS SSR context, which the axis never touches) rather than reasoning about the loop, since a
+  // count is falsifiable and a description of the loop is not.
+  describe('the emulation axis', () => {
+    /** A browser double that counts every INTERACTIVE context and page it opens. */
+    function countingBrowser(): { chromium: { launch: () => Promise<RenderedBrowser> }; counts: { contexts: number; pages: number } } {
+      const counts = { contexts: 0, pages: 0 };
+      function makePage(): RenderedPage {
+        return {
+          async goto() {
+            return { status: () => 200 };
+          },
+          async evaluate(fn: unknown, arg?: unknown) {
+            if (Array.isArray(arg)) return (arg as string[]).map(() => 'absent');
+            if (typeof fn === 'function' && fn.name === 'capturePageIdentity') return DEFAULT_IDENTITY;
+            if (typeof fn === 'function' && fn.name === 'waitForHydrationSettle') return undefined;
+            return false;
+          },
+          keyboard: { press: async () => {} },
+          async close() {},
+        } as unknown as RenderedPage;
+      }
+      function makeContext(countPages: boolean): RenderedContext {
+        return {
+          async addCookies() {},
+          async newPage() {
+            if (countPages) counts.pages += 1;
+            return makePage();
+          },
+          async close() {},
+        } as unknown as RenderedContext;
+      }
+      const browser = {
+        async newContext(options?: { javaScriptEnabled?: boolean }) {
+          // The page-identity guard's own SSR capture opens a `javaScriptEnabled: false` context,
+          // outside the axis loop entirely (`captureSsrIdentity` runs once per page/theme, before
+          // the axis loop starts, with its own single page load); neither its context nor its page
+          // load is counted here, since the axis's own effect on the interactive contexts and page
+          // loads is what these tests measure.
+          if (options?.javaScriptEnabled === false) return makeContext(false);
+          counts.contexts += 1;
+          return makeContext(true);
+        },
+        async close() {},
+      } as unknown as RenderedBrowser;
+      return { chromium: { launch: async () => browser }, counts };
+    }
+
+    it('opens the same context and page-load count as before an axis existed, when no rule declares one', async () => {
+      const config = configWith({ pages: ['/admin/x'] });
+      const restRule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+      const { chromium, counts } = countingBrowser();
+
+      await runRendered(config, [restRule], { isReachable: async () => true, loadPlaywright: async () => ({ chromium }) });
+
+      // 1 page * 2 themes * 1 axis ('default', the only one any rule here needs) = 2 contexts;
+      // 1 state ('rest') per context = 2 page loads. Both counts are exactly what this harness
+      // opened before the axis concept existed at all: report both counts before and after, this
+      // is "before" and "after" holding equal.
+      expect(counts.contexts).toBe(2);
+      expect(counts.pages).toBe(2);
+    });
+
+    it('opens twice the contexts and page loads once a second rule declares the reduced-motion axis', async () => {
+      const config = configWith({ pages: ['/admin/x'] });
+      const restRule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+      const axisRule: RenderedRule = {
+        id: 'axis-rule',
+        tier: 'advisory',
+        axes: ['reduced-motion'],
+        check: vi.fn(async () => []),
+      };
+      const { chromium, counts } = countingBrowser();
+
+      await runRendered(config, [restRule, axisRule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => ({ chromium }),
+      });
+
+      // 1 page * 2 themes * 2 axes ('default', which restRule needs; 'reduced-motion', which
+      // axisRule opted into) = 4 contexts; 1 state per context = 4 page loads. Reported: before
+      // (no axis-declaring rule) was 2 contexts / 2 page loads; after (one axis-declaring rule
+      // added) is 4 / 4.
+      expect(counts.contexts).toBe(4);
+      expect(counts.pages).toBe(4);
+      expect(restRule.check).toHaveBeenCalledTimes(2);
+      expect(axisRule.check).toHaveBeenCalledTimes(2);
+      const axesRestSaw = (restRule.check as ReturnType<typeof vi.fn>).mock.calls.map((call) => call[0].axis);
+      const axesAxisRuleSaw = (axisRule.check as ReturnType<typeof vi.fn>).mock.calls.map((call) => call[0].axis);
+      expect(new Set(axesRestSaw)).toEqual(new Set(['default']));
+      expect(new Set(axesAxisRuleSaw)).toEqual(new Set(['reduced-motion']));
+    });
+
+    it('produces two distinguishable findings for the same selector seen under two axis values', async () => {
+      const config = configWith({ pages: ['/admin/x'] });
+      // Declares both axes, so `RenderedRuleContext.axis` is the only thing telling the two calls
+      // apart; the rule echoes it into the message, and `ResolvedRenderedFinding` carrying the
+      // axis is what keeps the two resulting findings from collapsing into one.
+      const echoRule: RenderedRule = {
+        id: 'axis-echo',
+        tier: 'advisory',
+        axes: ['default', 'reduced-motion'],
+        check: vi.fn(async (ctx) => [
+          { ruleId: 'axis-echo', tier: 'advisory' as const, selector: '.same', message: `axis=${ctx.axis}` },
+        ]),
+      };
+      const { chromium } = countingBrowser();
+
+      const report = await runRendered(config, [echoRule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => ({ chromium }),
+      });
+
+      // `toFinding` prefixes the report's message with the finding's own selector (`.same: `), so
+      // the axis-bearing suffix is asserted with `toContain` rather than an exact match.
+      const messages = report.findings.filter((f) => f.ruleId === 'axis-echo').map((f) => f.message);
+      expect(messages.some((m) => m.endsWith('axis=default'))).toBe(true);
+      expect(messages.some((m) => m.endsWith('axis=reduced-motion'))).toBe(true);
+    });
+
+    // `--rule motion-reduced-delay` scopes the registry to one rule that declares only the
+    // reduced-motion axis, so before `neededAxes` seeded 'default' unconditionally, this run opened
+    // no default-axis pass at all: the allowlist probe (scoped to `axis === 'default'`) never ran,
+    // `visit.selectorsSeen` stayed empty, and a selector that genuinely exists on the page reported
+    // STALE (nothing ever matched it) rather than the truthful verdict, that it was seen but never
+    // flagged by the one rule this run selected.
+    it('still opens a default-axis pass, and probes the allowlist there, when the only selected rule declares a non-default axis', async () => {
+      const config = configWith({
+        pages: ['/admin/x'],
+        allowlist: [{ page: '/admin/x', selector: '.legacy', reason: 'held' }],
+      });
+      const axisOnlyRule: RenderedRule = {
+        id: 'axis-only',
+        tier: 'advisory',
+        axes: ['reduced-motion'],
+        check: vi.fn(async () => []),
+      };
+
+      const report = await runRendered(config, [axisOnlyRule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => fakeBrowser({ matchedSelectors: new Set(['.legacy']) }),
+      });
+
+      // Never stale: the default-axis pass this fix guarantees is what lets the probe see the
+      // selector at all. It is reported dead instead, since the one selected rule never raises
+      // anything for it in any axis, a different and correct verdict this test does not police.
+      expect(report.findings.some((f) => f.ruleId === 'rendered.allowlist-stale')).toBe(false);
     });
   });
 });

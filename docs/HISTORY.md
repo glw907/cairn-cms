@@ -7,6 +7,134 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Docs-to-facts pass, five tasks, 2026-09-15
+
+Branch `docs-to-facts`; plan at `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`;
+review record at `docs/internal/record/2026-09-15-facts-container-review/`. This pass gates the
+facts container instead of deleting the three narrative arms, the shape the three-lens
+adversarial review overturned before execution.
+
+**What landed.** Task 1 normalized every `docs/internal/facts/*.md` bullet to the colon-qualifier
+tag grammar, retagged the page-only-sourced bullets `[candidate]`, resolved the 14
+`[docs-drift]` bullets to 1 (the remainder is named in the container, a one-sentence fix would
+not suffice), fixed the drifted line pointers, folded the non-fact sections under
+`## Harvest record`, and deleted `gaps.md` into the friction log. Task 2 shipped
+`scripts/checks/check-facts.mjs`, wired into CI (`.github/workflows/test.yml`) and the `docs` gate tier, walking every bullet outside a
+`## Harvest record` section for a source, exactly one vocabulary tag, and a resolvable
+`path:line` pointer (with quoted-anchor text re-read against the cited line). Task 3 rewrote
+CLAUDE.md's docs section container-first (reference arm maintained and gated; the three
+narrative arms and why-cairn frozen against rewrites, open to a same-pass discovered-deficiency
+fix that is agent-facing, not register-graded; the cross-repo `site-docs/<site>-<pass>` batching
+path; migration-notes and upgrade-cairn outside the freeze), amended both extend plans' docs
+deliverables to file container bullets instead of editing frozen pages, and updated ROADMAP and
+CHANGELOG. Task 4 (dotfiles) carried the same rule into `cairn-pass`, `engine-consult`,
+`cairn-implementer`, and `site-implementer`. Task 5 shipped `scripts/checks/gate-tier.mjs`
+(the `docs`/`scripts`/`engine`/`admin-visual`/`full` classifier the pass-execute runner calls),
+its unit tests, and `docs/internal/pass-gate-tiers.md`.
+
+**What the gate and reviews caught.** T1's retag script missed `.css` as a code path and
+demoted 21 already-verified bullets to `[candidate]`, caught in the fix round. T3's implementer
+compressed six CLAUDE.md sections outside its own scope to clear the workstation
+claude-context-budget hook, dropping thirteen facts in the process; all thirteen restored in
+the fix round (CLAUDE.md now sits at about 6377 tokens, over the 6000 budget, filed to ROADMAP's
+Next tier rather than compressed again under this pass). T5 found the showcase's Playwright
+config has no named projects, so the `admin-visual` gate string runs the spec file directly, not
+a `--project` flag; the doc page and the gate string both record this. T2's first anchor check
+compared a bullet's quoted snippet against a whole file, which never failed; a 10-line window
+around the cited line replaced it and caught two real drifted container pointers (`EditPage.svelte:2076`, now `:2116`).
+
+**What a later pass would be wrong to rediscover.** The container's shape holds even though the
+review overturned the plan's original premise: the arms stay in the tree and the tarball
+(seven check scripts and about 25 shipped `docsAnchor` values read them), `docs/reference/`
+stays the maintained catalog, and the container is a gate, not a second source of truth. A
+`git commit -a` from the conductor (`bb2e2dc3`) swept an implementer's in-progress edits under
+an unrelated plan-amendment commit message, and three more index races followed before the pass
+settled into strict stage-by-path discipline; the standing rule holds, one executor per
+worktree or stage-by-path for every writer, and the conductor itself never runs `-a`.
+
+**Evidence.** Close-ritual full gate green: 387 unit/integration test files (5243 tests), 81
+component test files (1404 tests), `check:facts`, `check:docs`, `check:vale`, `check:reference`,
+`check:reference:signatures` all exit 0. Spend about 2.1M subagent tokens against a 2.5M
+ceiling (raised from 1.5M at the checkpoint); 0 planning misses, 1 execution sitting (the
+ceiling raise) against the attended-time score.
+
+**Two close-ritual findings.** The fold's full gate string omitted `check:arm-indexes`, so a new
+`docs/internal/` page (`pass-gate-tiers.md`) reached CI unindexed and failed there; the ritual's
+CI-only list should name it. And the conductor never armed the suspend inhibitor for a run that
+went unattended for hours; the kernel reported the charger offline while plugged in, GNOME applied
+the battery idle rule, and the machine slept twice (22:41 and 23:21) with a CI push stalled until
+07:43 the next morning. Arm the inhibitor before the first long dispatch, every time. Merged as
+PR #65.
+
+## Admin motion language pass, nine tasks (chain A) plus one (chain B), 2026-09-15
+
+Branch `admin-motion` (chain A) with `admin-motion-8` (chain B, task 8 alone) merged into it; plan
+at `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; spec at
+`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`. This pass writes the admin's
+motion vocabulary (five durations, three curves, all Carbon aliases), migrates the admin's
+seventeen shipped motion declarations onto it, ships three error-tier `cairn-audit` rules plus one
+advisory rendered rule, and hands the result to the extend track as its first per-pattern recipe.
+
+**What landed.** The token set on the two admin theme roots, with the two theme defaults
+(`--default-transition-duration`, `--default-transition-timing-function`) pointed at them and two
+shipped reduced-motion bugs fixed (`transition-delay`/`animation-delay` now zero under reduced
+motion). `motion-property`, `motion-vocabulary`, and `motion-hover-gate` (static, error tier) and
+`motion-reduced-delay` (rendered, advisory) join the audit, all three static rules `adminOnly` and
+resolved over the new `static.adminScope` config key. The frame offset, zen mode's first instance,
+gives a page-level mode change a neutral, borrowable motion case with one property allowance keyed
+on `data-cairn-motion="frame-offset"` plus `margin-left`. The dropzone gains a drag-over paint
+state it never had. Sixty new admin-visual baselines cover six surfaces at five widths in both
+schemes, rendered for the first time. Eleven DaisyUI vendor disagreements are recorded rather than
+fixed, and four named limitations join the design system's Motion section rather than being left
+to inference. Chain A's nine planned tasks (1, 2, 3, 4, 6a, 6b, 7, 10, 11) were joined by four
+conductor-inserted correction tasks (6a-fix, 7-fix, 10-fix, 11-fix).
+
+**Five things a later pass would be wrong to rediscover.**
+
+1. **The admin boundary is one mechanism, not two.** An `adminOnly` flag on the static rule type
+   resolves over the audit config's `static.adminScope` roots inside `runStatic`, while
+   `scopeReport` still filters a report by rule id alone and grew no path term of its own: a
+   post-run filter can only subtract from a report `runStatic` already produced, and it can never
+   restore a root the flag excluded upstream. A fold that left both standing side by side would
+   have made the migration tasks' zero-findings criterion vacuous.
+2. **`isReducedMotionGuarded` treated `(prefers-reduced-motion: no-preference)` as a guard.**
+   A 3000ms transition authored inside an inverse media-feature gate read as reduced-motion-safe
+   to `motion-band`, so it was exempt from the band check even though it never runs under reduced
+   motion in the first place; the predicate now requires the guard to be the `reduce` feature, not
+   its inverse.
+3. **A reduced-motion restatement ties the blanket block on specificity, and source order
+   decides.** The floor's selector, `[data-theme='cairn-admin'] *`, is `(0,1,0)`, the same
+   specificity as a class-bearing restatement; both carry `!important`, so the tie is broken by
+   which rule the built sheet places later. A consumer's own sheet loads after the engine's and
+   wins by default; an engine-authored restatement would have to sit after `cairn-admin.css`'s own
+   reduced-motion block in the same file. Measured in the built sheet, not asserted from the
+   source order alone.
+4. **`signature(el)` names a class of elements, not one element**, so the rendered differential
+   `motion-reduced-delay` reports has no join key back to a single offending line: 483 rendered
+   elements on `/admin/posts` collapse to 130 signatures, and a finding names the class and the
+   page rather than a source position. This is why the rule reports at advisory tier rather than
+   error.
+5. **The emulation axis multiplies rendered contexts by two.** `EmulationAxis` is `'default' |
+   'reduced-motion'`; registering one rule that declares the `reduced-motion` axis
+   (`motion-reduced-delay`) doubles the browser contexts `runRendered` opens per page and theme
+   combination, from one to two, since every other rule still runs under `'default'` alone and the
+   reduced-motion pass runs beside it rather than replacing it.
+
+**Two ritual findings from the close, for the next pass with a visual verifier.** The
+`capture-surfaces` script waits only for `toBeVisible`, which passes at opacity 0, so both verify
+capture sets shot every transient surface (zen, drawer overlay, delete dialog, command palette)
+mid-transition; the verifier settled the resting-state read with a live probe after a 1500ms
+settle, and a settle wait or `reducedMotion` emulation in the capture script would make the pairs
+self-sufficient. The four reviewers' blocking findings, nine across them with one duplicate, went
+to one fix dispatch, which cleared them in a single round; a list that wide is the accretion
+signal, and the next ritual should split a second fix verdict rather than re-dispatch it whole.
+
+**The live admin smoke is skipped, with the reason recorded here rather than omitted.** The pass
+runs unattended, `docs/internal/admin-smoke-test.md` is an interactive walk-through, and the
+motion it would exercise is proved instead by the two zen layout-count assertions, the sixty new
+CI-canonical baselines, and the fresh-context `visual-verifier`. If Geoff's own before-and-after
+read on the merged branch surfaces anything those three proofs missed, the smoke runs then.
+
 ## Polish-C (audit remediation slice 12, the breaking window), fifteen tasks complete on its worktree 2026-09-14
 
 Branch `polish-c`, executed on `.claude/worktrees/polish-c` off post-11b-ii `main`; plan at

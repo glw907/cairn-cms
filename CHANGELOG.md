@@ -4,6 +4,18 @@
 
 ### Added
 
+- `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
+  `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
+  computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still
+  makes a reader who asked for less motion wait before anything moves. Registered at advisory
+  tier: every offender the rule has found so far is a DaisyUI component default cairn ships no
+  override for. The rendered runner gains an opt-in emulation axis (`RenderedRule.axes`) rules
+  declare the way `states` already works, and `RenderedBrowser.newContext` gains `reducedMotion`
+  and `hasTouch` options for it. A new CI step in `.github/workflows/norms.yml` runs the rule
+  against a live showcase preview on its own port. The `cairn-audit` CLI gains `--rule <id>`
+  (repeatable) to narrow a static or rendered run to the named registered rule ids; the CI step
+  passes `--rule motion-reduced-delay` so it exercises that one advisory rule alone.
+
 - `previewRevoke` (`/sveltekit`) completes the pair `previewMint` opened: a site that mints a
   preview link from its own workflow route could not revoke one, since revocation lived only
   behind the engine's own `previewRevokeAction` route. `previewRevoke(runtime, event, { concept,
@@ -53,6 +65,13 @@
   `Record<string, MediaLibraryEntry>` shape. `MediaLibraryEntry`'s canonical home is
   `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
   existing re-export. Consumers must: nothing.
+
+- The packaged admin sheet (`cairn-admin.css`) gains three new classes: `sm:flex-nowrap`,
+  `sm:gap-3.5`, and `sm:items-center`, from `CairnMediaLibrary`'s selection-action bar splitting
+  into two flex rows below the `sm` breakpoint (count and scope on one row, the action buttons on
+  the next) so a narrow viewport no longer squeezes every button's text one word per line with
+  "Delete N" pushed past the edge; at `sm` and up the bar keeps its original single row. Consumers
+  must: nothing.
 
 - The packaged admin sheet (`cairn-admin.css`) gains two new classes: `cairn-text-warning` and
   `cairn-text-success`, the on-surface warning and success text idioms (`--cairn-warning-ink` and
@@ -273,6 +292,32 @@
   reachable under the dev backend, which replaces the guard rather than running beside it. Both
   parameters are optional and additive; no consumer action.
 
+- `cairn-audit` gains `motion-vocabulary`, static and error tier: every transition or animation
+  duration and easing curve a component declares, on both surfaces (hand-authored CSS and the
+  Tailwind class join), must resolve to one of the eight cairn motion tokens rather than a
+  literal, a bare `ease`/`linear` keyword, or a raw `cubic-bezier()`. The rule ships with a
+  companion assertion that the built sheet repoints `--default-transition-duration` and
+  `--default-transition-timing-function` at cairn tokens on both admin theme roots, so a class
+  that declares no explicit duration or easing can still be trusted to ride the default; when the
+  assertion fails, the rule reports the assertion rather than the relying element. An `infinite`
+  animation is exempt from the duration check only and must declare the literal `linear` easing.
+  Three shapes this rule's own parsing cannot resolve (a `var()` in the shorthand's property slot,
+  a `calc()` over a foreign variable, and a shorthand carrying an `allow-discrete` keyword) record
+  a note rather than a finding, joined by a fourth positive case: a `transition-duration` or
+  `animation-duration` of `0.01ms` inside `@media (prefers-reduced-motion: reduce)`, the shipped
+  reduced-motion floor, records a note rather than a finding too. The DaisyUI vendor-class
+  exemption widens to cover `.modal`, `.modal-box`, `.dropdown`, `.dropdown-content`, `.menu`,
+  `.select`, `.radio`, `.checkbox`, and `.card`, beside `.btn` and the drawer/filter/collapse/
+  toggle set, each measured against the shipped admin sheet's own literal duration or curve.
+  Resolves over `static.adminScope`, the same as `motion-property` and `motion-hover-gate`.
+
+- The hero image field's empty-state dropzone now paints a drag-over state: `MediaHeroField`
+  toggles the variant-free equivalents of its own `hover:border` and `hover:bg` classes on
+  `dragenter`/`dragover` and clears them on `drop` and on `dragleave` once the pointer leaves the
+  dropzone button itself, so its own icon and label spans do not flicker the paint off as a drag
+  crosses them. The paint rides the button's existing `transition-colors`, so it resolves to the
+  theme's `base` default like the same element's hover paint; no new CSS rule is added.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
@@ -340,7 +385,99 @@
   `xcathletes-org`, `cairn-pub`, and `aksailingclub-org`, import `headRow` and `iconSpan` in their
   own `src/chassis/render.ts`.
 
+- `cairn-audit` gains `motion-property` and `motion-hover-gate`, both static and error tier: the
+  first polices the admin's closed motion-property allowlist (paint only, nine named layout
+  properties, a three-property cap on one transition, and an `animate-*` utility checked through
+  its own `--animate-*` keyframes) with the one documented frame-offset exception, keyed on an
+  element's `data-cairn-motion="frame-offset"` attribute plus the `margin-left` property alone, and
+  a DaisyUI vendor-class exemption on the class join covering `.btn`, `.modal`, `.modal-box`,
+  `.dropdown`, `.dropdown-content`, `.menu`, `.checkbox`, `.card`, `.toggle`, `.drawer-side`,
+  `.filter`, and `.collapse`, each a recorded vendor disagreement rather than a convicted finding.
+  The rule's own `transition: none` idiom now clears to zero properties, the same as
+  `transition: all`, rather than reading "none" as a property name.
+  The second polices a hand-authored `:hover` state (whether the motion sits on the `:hover` rule
+  itself or on the base rule the same selector matches) for a missing `@media (hover: hover)` gate,
+  and a `:focus-visible` alternative that wrongly declares its own motion from inside that gate.
+  Both resolve over a new `static.adminScope` config key (`src/routes/admin` and
+  `src/lib/admin-toolkit` by default) rather than `static.scope`, so an admin-only motion rule
+  never reads a site's own public components; every other static rule is unaffected.
+
+- `cairn-audit` gains three error-tier static rules (`motion-property`, `motion-vocabulary`,
+  `motion-hover-gate`) and one advisory rendered rule (`motion-reduced-delay`). A custom admin
+  screen that transitions a layout property, writes `transition-all`, writes a literal duration or
+  easing, or declares an ungated hand-authored `:hover` transition now fails `npx cairn-audit`.
+  Consumers must: move onto the `--cairn-dur-*` and `--cairn-ease-*` tokens, or suppress with a
+  reason. One layout property is allowed, and only by the frame-offset key: an element carrying
+  `data-cairn-motion="frame-offset"`, at most one per screen, may transition `margin-left`.
+
 ### Changed
+
+- The admin sheet sets `--default-transition-duration` and `--default-transition-timing-function`
+  to cairn tokens on the admin root. A bare `transition` utility on a custom screen changes curve
+  from Tailwind's `cubic-bezier(0.4, 0, 0.2, 1)` to Carbon's productive standard
+  `cubic-bezier(0.2, 0, 0.38, 0.9)`. The duration is unchanged at 150ms. The admin's reduced-motion
+  block now zeroes `transition-delay` and `animation-delay`. Consumers must: a custom screen that
+  relied on a delay surviving a reduced-motion preference loses it, which is the fix.
+
+- `cairn-audit`'s `motion-band` band widens from 150ms to 250ms to 70ms to 400ms, and it no longer
+  reports a call site that references a token. A site relying on the narrow band loses that check;
+  the vocabulary rule is what replaces it. The motion predicate `motion-band` and `reduced-motion`
+  share also widens, so a `transition-delay` reaches `motion-band`'s band check and a rule declaring
+  only `transition-timing-function` now owes a reduced-motion sibling under `reduced-motion`.
+  Consumers must: an existing `cairn-audit-disable-next-line motion-band` directive that covered a
+  finding inside the old band and outside the new one now silences nothing, which `cairn-audit`
+  reports as a dead suppression at error tier that cannot itself be suppressed; delete the directive
+  on upgrade. `reduced-motion`'s own guard condition now also recognizes the bare boolean
+  `@media (prefers-reduced-motion)` form, CSS's own equivalent to `(prefers-reduced-motion: reduce)`,
+  alongside the named `reduce` value it already accepted. Consumers must: nothing; a site already
+  guarding with either form keeps passing, and this only widens which spellings a guard can take.
+
+- The rest of the admin's own shipped motion moves onto the `--cairn-dur-*`/`--cairn-ease-*`
+  tokens: the edit page's feedback strip, the `MarkdownEditor` fold chevron and unfold flash, the
+  `HelpHome` step and quiet-button hover pairs, and `cairn-admin.css`'s disclosure caret. The edit
+  page's preview pane no longer animates its width when the split changes. Consumers must: nothing;
+  the resize now snaps instead of easing.
+
+- `HelpHome`'s step-action and quiet-button hover paint now sits inside `@media (hover: hover)`,
+  so a coarse-pointer tap no longer leaves the hover tint stuck after release; the keyboard
+  `:focus-visible` state is unchanged and unguarded.
+
+- The upload progress fill no longer transitions its `width`, and no motion replaces it: the fill
+  snaps to each new value. The native `<progress>` element is unchanged and keeps its implicit
+  `progressbar` role and its `value`/`max` mapping, so nothing changes for assistive technology.
+  The reduced-motion pin on `::-webkit-progress-value` goes with the transition it pinned.
+  Consumers must: nothing; this changes only the packaged admin editor's own upload widget.
+
+- Three utility classes leave the packaged admin sheet, because their last call sites go:
+  `transition-all`, `transition-[width]`, and `duration-[250ms]`. Consumers must: a site whose own
+  markup carries any of the three was relying on the engine's sheet to compile it; add the class to
+  that site's own Tailwind content or restate the declaration.
+
+- Zen mode gains its motion: the persistent frame's margin now transitions, entering at 240ms on
+  the entrance curve and leaving one band faster at 150ms on the exit curve, through the same
+  `data-cairn-motion="frame-offset"` allowance a consumer's own admin screen can claim on one
+  element per screen, and only after one animation frame has elapsed since mount, so a zen
+  preference restored from localStorage snaps into place at first paint instead of animating it.
+  The topbar band, the document title, the editor footer strip, and the mobile action bar each
+  fade in at 110ms on the return from zen; the departure is instant, since each region leaves the
+  DOM outright rather than animating out of it. Neither fade plays on a plain page load, since the
+  shell marks the drawer content zen-used only once zen first turns on, and clears the mark again
+  on the next navigation (unless zen is still active), so a client-side navigation to a different
+  document never inherits the mark from an earlier one in the same session. The floating zen
+  chip's entrance carries a 110ms delay so it never leaps into a still-focused editor; its exit now
+  plays for real, at 110ms on the exit curve with no delay, since the chip stays mounted through
+  its own fade (with `pointer-events: none` for its duration, so its vacated corner never blocks a
+  click on the chrome returning underneath it) instead of vanishing with the rest of the chrome.
+  The editor card's own box is unchanged and does not transition.
+
+- `npm run check:invisible-craft` now runs `motion-property`, `motion-vocabulary`, and
+  `motion-hover-gate` beside its existing `gap-scale`, `token-colors`, and `motion-band`, over a
+  new `static.adminScope` naming the engine's own three admin roots (`src/lib/components`,
+  `src/lib/admin-toolkit`, and `examples/showcase/src/routes/admin`, the repo's one
+  consumer-shaped admin screen). `cairn-admin.css` joins the gate's scanned CSS files, so the
+  shipped declarations and
+  the frame-offset exception it carries are in reach of the three motion rules for the first time.
+  Internal to this repo's own gate; no package export changes.
 
 - **Breaking:** `createContentRoutes` and `createCairnAdmin` (`/sveltekit`) each take exactly one
   parameter, a config bag, and lose the positional `runtime` argument and the bag's own default.
@@ -1392,6 +1529,8 @@
   set is unchanged; only the two `event` strings change. Consumers must: rename
   `taxonomy.field_unmarked` to `content.field_unmarked` and `admin.action.sink_threw` to
   `audit.sink.call_failed` in any log filter, alert, or subscriber.
+
+- The facts container (`docs/internal/facts/`) is gated by `check:facts`. No consumer action.
 
 ### Documentation
 

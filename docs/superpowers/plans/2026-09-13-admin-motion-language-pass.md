@@ -207,7 +207,7 @@ Two blocking items and four smaller ones, all applied.
 the admin sheet carries, enforced as three error-tier static `cairn-audit` rules and one advisory
 rendered rule a consumer runs on its own screens with no configuration, with the two shipped
 reduced-motion bugs fixed, the seventeen shipped motion declarations migrated onto the tokens, the
-frame offset and zen's chrome given the one documented exception, and the result handed to the borrowable-patterns
+frame offset and zen's chrome given the one documented exception, and the result handed to the extend
 work as the extend track's first per-pattern recipe.
 
 **Spec:** `docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, revision 2 as folded
@@ -226,7 +226,7 @@ removed, merged, or split.
 ruleset differs from the other two, the other two win, per the spec's Inputs note. Supporting reads:
 `docs/internal/admin-design-system.md`, `docs/reference/cairn-audit.md`,
 `docs/internal/what-cairn-is-and-is-not.md`, and ROADMAP's Next-tier entries "A motion language for
-the admin" (`ROADMAP.md:886`) and "Borrowable patterns" (`:936`).
+the admin" (`ROADMAP.md:886`) and "Extend" (`:936`).
 
 **Task count:** ten, matching the spec's outline exactly. The ids are `1`, `2`, `3`, `4`, `6a`, `6b`,
 `7`, `8`, `10`, `11`. **The retired ids 5 and 9 are never reused**, per the spec's outline, so every
@@ -265,7 +265,7 @@ and quotes the decision text.
    audit runs over the engine's own tree first, wired through
    `scripts/checks/check-invisible-craft.mjs`'s `RULE_IDS` and `CSS_FILES`. The reduced-motion rule is
    the CSSOM delay check at advisory tier; the rendered differential is out.
-6. **Borrow hand-off:** the pass writes the extend track's first per-pattern recipe page, beside the
+6. **Extend hand-off:** the pass writes the extend track's first per-pattern recipe page, beside the
    design system's Motion section, which the later `cairn-extend` skill routes to.
 7. **Sequencing:** its own pass, after polish-C merges and before the release cut, so the cut carries
    the tokens and the rules. Single release. The pass runs unread on its reviewed plan.
@@ -274,7 +274,7 @@ and quotes the decision text.
 
 Two escalations of 2026-09-13 came back as rulings and bind the same way. **The two
 `@media (hover: hover)` guards on `.tooltip` and `.menu` are dropped**, recorded as vendor
-disagreements 6 and 7, with the touch-tooltip visibility defect filed to borrow-1. **The drawer
+disagreements 6 and 7, with the touch-tooltip visibility defect filed to extend-1. **The drawer
 scoping to `isPersistentSidebar` is dropped**, recorded as vendor disagreement 5. The frame offset
 exception stands as decided, on the attribute key decision 3's amendment gives it.
 
@@ -2178,9 +2178,9 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
 - **The ledger rows quote decisions 3 and 4 and the two escalation rulings of 2026-09-13**, each
   citing the spec by path and date. Rows take the ledger's own heading form.
 - **Five follow-ups are filed:** the rendered half of `motion-hover-gate` with its trigger (the
-  borrow-1 pass, which owns the consumer-facing gates layer); the `.tooltip` touch defect with the
+  extend-1 pass, which owns the consumer-facing gates layer); the `.tooltip` touch defect with the
   review's finding that closing it means gating the tooltip's **visibility**, not its transition, which
-  is a behavioral override of a vendor component and a decision borrow-1 takes on its own terms; the
+  is a behavioral override of a vendor component and a decision extend-1 takes on its own terms; the
   `.menu` gate with the same follow-up; the `modal-bottom` reopen trigger if it is not carried as a
   `WATCH:`; and **the resize stopper**, in ROADMAP's Later tier, carrying the finding that its
   specified form is a no-op on the bare theme wrapper and its working form is a universal descendant
@@ -2196,7 +2196,7 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
   checks whether `src/lib/audit/rules/rendered/motion-reduced-delay.ts` is in the tree before writing
   the line, and reports which version it wrote.
 - **ROADMAP's "A motion language for the admin" entry is closed and removed from the live tier.**
-  "Borrowable patterns" stays open, and this task adds the three filed follow-ups to it rather than
+  "Extend" stays open, and this task adds the three filed follow-ups to it rather than
   creating a fifth tier entry.
 - **The `## Unreleased` block is read whole.** This window carries seven `Consumers must:` lines, and
   this task writes the one the changelog table assigns to it and verifies all seven are present.
@@ -2625,13 +2625,13 @@ This plan's own two.
   it cheap to re-argue: its specified form is a no-op, because a class on the bare theme wrapper never
   matches the admin sheet's scoped rules and transition properties do not inherit, and its working
   form is a universal descendant rule costing one `unlayeredAllowlist` entry.
-- **To the borrowable-patterns work (borrow-1 and borrow-2), five things.** The three static rules and
+- **To the extend work (extend-1 and extend-2), five things.** The three static rules and
   the one rendered rule as the consumer-facing gates layer's first motion members;
   `docs/extend/animate-a-custom-screen.md` as the extend track's first per-pattern recipe, which the
   later `cairn-extend` skill routes to; the rendered half of `motion-hover-gate`, filed with its
   trigger; the `.tooltip` touch defect with the finding that closing it means gating the tooltip's
   visibility rather than its transition, which is a behavioral override of a vendor component and
-  borrow-1's own decision; and the `.menu` gate with the same follow-up.
+  extend-1's own decision; and the `.menu` gate with the same follow-up.
 - **To any later pass, a Motion section that is canonical.** The recipe page cites it by heading
   rather than restating it, and both documents say so, so a later pass edits one place.
 - **To a later pass, the `modal-bottom` reopen trigger**, carried as a `WATCH:` beside the recipe. If
@@ -2658,3 +2658,127 @@ This plan's own two.
 
 The `cairn-pass` ritual appends the post-mortem here at pass close, scoring both budgets against the
 ceiling and the interaction counts.
+
+**What was built.** The nine planned chain-A tasks (1, 2, 3, 4, 6a, 6b, 7, 10, 11) landed, each as its
+own commit, joined by five conductor-inserted correction tasks the plan did not name in advance
+(`6a-fix`, `7-fix`, `10-fix`, `11-fix`, and a second `11-fix` round). Chain B's task 8 landed on
+`admin-motion-8` and merged in (`5bcc2258`). Landed: the eight-token motion vocabulary (five
+durations, three curves, all Carbon aliases) on both admin theme roots; the two theme defaults
+pointed at it; two shipped reduced-motion bugs fixed (`transition-delay`/`animation-delay` now zero
+under reduced motion); three error-tier static `cairn-audit` rules (`motion-property`,
+`motion-vocabulary`, `motion-hover-gate`) and one advisory rendered rule (`motion-reduced-delay`),
+all `adminOnly` over the new `static.adminScope` config key; the admin's seventeen shipped motion
+declarations migrated onto the token language with zero findings; the dropzone's drag-over paint
+state; zen mode's frame offset, chrome fade, and chip motion; sixty new CI-canonical admin-visual
+baselines across six surfaces; the design system's Motion section, the extend track's
+`animate-a-custom-screen.md` recipe, and the audit reference's updated rows and counts. After the
+close ritual's own commit (`48fba6fe`) and its two correction rounds (`0d0ac921`, `721ee3f2`),
+pass-end review and the fresh-context visual verifier caught four more defects, fixed on top: the
+`cairn-audit --rule <id>` CLI flag, needed because the CI job for the one advisory rendered rule was
+running all seventeen rendered rules and failing on an unrelated pre-existing `viewport-overflow`
+defect (`7469c066`, `a87ef378`); a code-simplifier fold of the new rule code (`f9d062ad`,
+`ff876d1a`); the media library's selection-action bar overflowing at 320/390px, caught by the
+verifier's `after` capture and fixed with a two-row split, `after-round2` recapture confirming it
+(`85854d24`); and a bundle of pass-end review findings, the frame-offset transition gated behind a
+first-paint marker so a restored zen preference snaps instead of animating, the zen-used latch reset
+on real navigation, the zen chip made hit-transparent while exiting, and two rendered-audit scoping
+gaps in `resolveRenderedFindings`/`neededAxes` (`64afacac`). `admin-motion` is pushed to `origin` and
+clean; it is not yet merged to `main`, which is a later step outside this dispatch's scope.
+
+**What was verified, with evidence.** Per-task: `cairn-implementer` cleared its own gate on each
+commit; the `diff-reviewer` verdict pattern across the recorded chain runs is one clean accept on
+tasks 2 and 3, one fix round each on tasks 4, 6a, 6b, 7, and the task-11 docs commit (verdicts
+`fix` then `accept`, evidenced in workflow `wf_f43d9c7a-ade`'s `review:11-fix`/`review:11-fix:fix1`
+entries), and a conductor-ruled `escalate` on task 6a's first pass, resolved by widening the
+DaisyUI vendor exemptions rather than a second implementer round. The pass-end full gate ran twice
+(once duplicated by a runner error that discarded a killed run's partial work, `wf_5447b584-7b1`,
+and once clean in `wf_f43d9c7a-ade`'s `motion:gate` agent): "Full pass gate and from-scratch
+consumer build both green, with the sole red being the documented CI-baseline exception." The
+fresh-context visual verifier ran a before/after/after-round2 three-pass capture cycle
+(`~/.cache/cairn-admin-motion/verify/{before,after,after-round2}`, sixty full-page and sixty tile
+PNGs per capture set), catching the media-bar overflow between `after` and `after-round2`. CI's own
+`e2e` job regenerated and committed the sixty new CI-canonical baselines on `origin/admin-motion`
+before this close-out ran. This close-out ran `npm run check:docs` (419 files, every relative link
+and anchor resolves), `npm run check:vale` (0 errors/warnings/suggestions, 831 files), and `npm run
+check:rulings-format` (1 allowlisted, 0 unmigrated), all green on the first run via
+`cairn-run-gate`. `docs/internal/docs-friction-log.md`'s Live findings section reads "None open."
+The four review subagents named in this repo's tooling (`svelte-reviewer`,
+`cloudflare-workers-reviewer`, `web-auth-security-reviewer`, `daisyui-a11y-reviewer`) have no
+recorded dispatch in the workflow logs or commit trail this close-out could find; the pass-end
+review that caught the `64afacac` findings ran, but its own mechanism is not named in any artifact
+this close-out read, so it is reported as unverified rather than claimed.
+
+**Decisions locked in** (each already carries its own ledger row in
+`docs/internal/engine-rulings.md`, written by task 11): the DaisyUI vendor exemption widened on
+`motion-property` and `motion-vocabulary` to cover `btn`, `modal`, `dropdown`, and `toggle`, plus a
+reduced-motion-floor abstention, after the first compiled-sheet class join over
+`src/lib/components` convicted vendor CSS across 42 files; the plan's own contradiction on
+HelpHome's two `:hover` pairs resolved for the rule's side, adding the `@media (hover: hover)`
+guard the rule's own fix message teaches, superseding task 6a's "adds no guard" text; the
+frame-offset form (nested four-rule declaration, `data-cairn-frame-open` as the direction key)
+ratified from task 7, with chrome fades kept entrance-only but gated off first paint by a
+`data-cairn-zen-used`/`data-cairn-frame-ready` attribute pair; task 8's 60 CI-canonical baselines
+committed from this workstation on the `d882921c` precedent, since the ritual's own CI regen
+re-canonicalizes them; and the CI job for `motion-reduced-delay` scoped by the new `--rule <id>`
+flag rather than by suppressing or reworking `viewport-overflow`, whose 200 pre-existing findings
+were filed to `ROADMAP.md`'s Now tier as their own defect instead.
+
+**What the gate caught.** The plan's own risk lens named the shipped-violations risk in advance,
+and it fired exactly as predicted: `EditPage.svelte`'s preview frame and `MarkdownEditor.svelte`'s
+progress fill under `motion-property`, and `cairn-admin.css:545` under `motion-vocabulary`, the
+moment the new rules joined the registry, cleared by task 2's reconciliation before task 3 shipped
+the rules at error tier. Task 6a's own zero-findings gate then caught a second wave the plan had not
+named: DaisyUI's own vendor CSS and HelpHome's unguarded `:hover` pairs, both resolved by the `6a-fix`
+ruling above. CI caught what no local gate could: the `motion-reduced-delay` job's `--rule`-less
+invocation ran all seventeen rendered rules and failed on `viewport-overflow`'s pre-existing 200
+findings, an admin-route defect never before exercised in CI because no rendered rule had run there
+before. The fresh-context visual verifier caught the media-bar overflow at 320/390px that no unit or
+component test exercised, since it is a layout consequence of the split-row CSS only visible
+rendered. Pass-end review, after the records were first closed, caught a first-paint animation race
+(a restored zen preference animating instead of snapping), a dead-click window over the topbar the
+exiting zen chip's corner overlapped, and two rendered-audit scoping gaps
+(`resolveRenderedFindings` defaulting an out-of-scope allowlist entry to error tier instead of
+skipping it, and `neededAxes` failing to seed the default axis for a `--rule`-scoped non-default-axis
+run), none of which any named gate in the plan's own list was built to catch.
+
+**Budgets.** Tokens: the plan's own ceiling is 6.7M (80 percent, 5.4M); this dispatch was scoped
+against a reported ceiling of 5.3M. The execution spend the Workflow tool itself reported, summed
+across the six `cairn-motion`/`cairn-overnight-2` workflow runs this pass used
+(`wf_0c5004bd-52c` 899,212; `wf_1fb29c98-9c8` 689,891, killed; `wf_085689cc-81b` 549,562;
+`wf_5447b584-7b1` 338,386, killed on a runner error; `wf_f43d9c7a-ade` 733,580; `wf_789e2e80-07c`
+71,201, a single reverted preflight halt), is 3,281,832 tokens (about 3.28M). This total includes
+duplicated work from two killed runs (a runner error discarded `wf_5447b584-7b1`'s in-progress
+merge/simplify/gate sequence, redone in full inside `wf_f43d9c7a-ade`) and does not include the
+`--rule`-flag fix, the second code-simplifier fold, the media-bar fix, or the pass-end review round
+(`7469c066` through `64afacac`), none of which ran inside a logged Workflow invocation. Adding this
+close-out's own spend (about 0.42M) to the reported 3.28M gives a known total of about 3.70M against
+the 5.3M ceiling, with the unlogged direct-dispatch segment on top of that as an unmeasured but
+bounded remainder (six commits, none touching more than a dozen files). No overrun against either
+ceiling.
+
+Attended time: **0 planning misses.** No ambiguity surfaced after plan approval that a planning
+question would have caught; the one plan contradiction found during execution (HelpHome's `:hover`
+guard) was resolved by the conductor's own ruling authority, per this repo's re-dispatch rule,
+without a question back to Geoff. **2 execution sittings**, both evidenced in
+`~/.cache/cairn-overnight-2026-09-14/NIGHT-ledger.md` and `docs/STATUS.md`'s commit history on
+`main`: one at 2026-09-14 ~00:4x, Geoff's "continue to the launch" approving the relaunch after a
+session wind-down; one combined check-in at 2026-09-15 morning covering the per-task gate
+lightened for the rest of the run, extend-1 held out of this run, the Go tool branch dropped from
+this run, and the release-batching decision (one cut after extend-1 and extend-2 rather than a cut
+after this pass), counted once as a single combined question. Not counted as a sitting: the
+2026-09-14 16:03 desktop crash (`systemd-oomd` killed GNOME Shell, taking both conducting sessions),
+recovered by a fresh session's own initiative rather than a question to Geoff, and the CI-regen and
+preflight halts of 2026-09-15 12:0x-12:2x, both resolved by the conductor's own ruling (the `8-fix`
+task) or reverted as a false trigger, neither reaching Geoff for a decision.
+
+**Reviewer and verifier verdicts.** Per-task `diff-reviewer`: accept on tasks 2 and 3 with no fix
+round; one fix round each, then accept, on tasks 4, 6a (via the `6a-fix` ruling rather than a
+second implementer round), 6b, 7 (via `7-fix`), and the task-11 records commit (via `11-fix`, two
+rounds, `0d0ac921` then `721ee3f2`). `code-simplifier` ran twice: mid-pass (`263654d0`, folding the
+motion rules' duplicated helpers) and post-close (`f9d062ad` plus a further fold at `ff876d1a`).
+The fresh-context visual verifier's three-capture cycle (before/after/after-round2) found one
+defect (the media-bar overflow) and cleared on the round-2 recapture; no defect is recorded as
+unresolved. The four named review subagents' fan-out (`svelte-reviewer`,
+`cloudflare-workers-reviewer`, `web-auth-security-reviewer`, `daisyui-a11y-reviewer`) has no
+artifact this close-out could find recording that it ran; this is named here rather than silently
+assumed done.

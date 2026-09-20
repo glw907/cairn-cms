@@ -281,6 +281,18 @@ The original decision framing, for the record:
 
 ## Now
 
+- **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
+  and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
+  pass.** The unscoped run (`cairn-audit --rendered`, no `--rule`) had never actually run in CI
+  before that dispatch; all 200 findings are this one rule, on `/admin/editors`, `/admin/media`,
+  `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, example `div.flex-none: renders 405px
+  wide against a 390px viewport`. Hypothesis: the off-canvas drawer's transformed layer is being
+  measured (405px against a 390px viewport), since the admin-visual suite is green at those same
+  widths, so the defect may be the rule's transform handling rather than the actual layout. Next
+  step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
+  the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
+  hypothesis.
+
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API
@@ -829,12 +841,27 @@ the named human gates only):**
 
 ## Next
 
+- **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
+  until a site pass has filed about twenty facts by hand and the shape has stopped moving
+  (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
+  Trigger: twenty hand-filed facts.
+
+- **Re-source the page-only `[candidate]` bullets in `docs/internal/facts/` to code (docs-to-facts
+  pass, 2026-09-15).** A bullet sourced only to a doc arm page, never traced to code, stays
+  `[candidate]` until re-verified. Trigger: the docs rebuild after the site round, which reads
+  every arm bullet to rebuild the narrative pages.
+
+- **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (docs-to-facts pass,
+  2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
+  mechanically to clear it, which is not the right place to do a full pass. Trigger: a dedicated
+  trim task with its own `diff-reviewer` read, never a rider on another task.
+
 - **One register for cairn.pub and the admin; waymark stays neutral (Geoff, 2026-09-13).**
   cairn.pub adopts the admin's Warm Stone system (tokens, Bricolage Grotesque display and IBM Plex Sans body,
   the design-system recipes and voice) as a public reading surface; today its theme is byte-identical
   to waymark's unskinned default (record `docs/internal/record/2026-09-13-blueprint-design-spike.md`).
   That lands with the front-door rewrite after the docs rewrite. Waymark, the scaffold every site
-  reskins, stays neutral: its "not stock DaisyUI" work after borrow-1 is craft (type scale, spacing,
+  reskins, stays neutral: its "not stock DaisyUI" work after extend-1 is craft (type scale, spacing,
   restraint) graded against the public design standard, never a cairn identity a site would strip
   out; the spike's moves that would brand it (rotate its primary hue, adopt the admin type pairing)
   are out.
@@ -849,7 +876,7 @@ the named human gates only):**
   already agrees); `AdminTable` takes an optional accessible-name prop and every engine screen
   passes one; and, from the daisyUI Blueprint audit (record
   `docs/internal/record/2026-09-13-blueprint-audit.md`), `EditPage`'s flash strip drops
-  `transition-all` for the two properties it animates. Two are borrow-1 work because they reshape a pattern: the native `title`
+  `transition-all` for the two properties it animates. Two are extend-1 work because they reshape a pattern: the native `title`
   tooltips (never shown on keyboard focus or touch, not dismissable, WCAG 1.4.13) give way to
   one accessible tooltip primitive, which also retires the `cairn-btn-guarded` workaround; and
   the batch-action pattern built fully inside `CairnMediaLibrary` graduates onto `AdminTable`
@@ -880,9 +907,9 @@ the named human gates only):**
   search subcommand over the installed version so any agent reaches retrieval from Bash,
   and the MCP front end exposes that same search as a tool), each calling the same actions and reading the same records and
   results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
-  borrowable-patterns spec and plan, since the tool lives under its own module; (2) borrow-1; (3)
+  extend spec and plan, since the tool lives under its own module; (2) extend-1; (3)
   the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
-  (4) borrow-2; (5) site migration, once all the borrow work has landed. The tool precedes the
+  (4) extend-2; (5) site migration, once all the extend work has landed. The tool precedes the
   docs because it changes what the admin track describes and because building its checks
   surfaces what the operational contract leaves unsaid.
 
@@ -915,7 +942,7 @@ the named human gates only):**
   selector in the property-allowlist rule; the sidebar prior-art survey and cairn's own toggle
   measurement are the record. Ruling (Geoff, 2026-09-13): enforcement is the critical deliverable, since
   developers write custom admin screens; the motion rules ship as `cairn-audit` rules a consumer
-  runs on its own screens (the borrowable-patterns gates layer), which means the checker must
+  runs on its own screens (the extend gates layer), which means the checker must
   reach motion written as Tailwind utility classes in `class` attributes and the built sheet, not
   only a component's own `<style>` block, and the audit must run over the engine's own tree so
   cairn is held to the rules first. Sequence (Geoff, 2026-09-13): a second research read on the responsive
@@ -925,18 +952,18 @@ the named human gates only):**
   `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
   sweep of the admin components onto it. Borrowable by consumers through the audit and the
-  design tokens, per the borrowable-patterns architecture. **Borrow hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
-  borrowable-patterns work: each rule is specified for a consumer's tree as well as cairn's own
+  design tokens, per the extend architecture. **Extend hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
+  extend work: each rule is specified for a consumer's tree as well as cairn's own
   (what it reads, error versus advisory tier on first adoption, the fix message naming the cairn
   token), the DaisyUI component-class decision is written consumer-first, and the pass writes the
-  extend track's motion recipe page (the first per-pattern recipe borrow-2's `cairn-extend` skill
+  extend track's motion recipe page (the first per-pattern recipe extend-2's `cairn-extend` skill
   routes to). **Sequencing (Geoff, 2026-09-13):** its own pass, run after polish-C merges and BEFORE the
   release cut, so the cut carries the tokens and the audit rules; the C launch script now stops
   at C's merge and the cut fires after this pass merges. Spec through brainstorming and plan
   through writing-plans start when the revised research records land; both get an adversarial
   review, and the pass runs UNREAD on the reviewed plan as soon as C merges (Geoff, 2026-09-13).
 
-- **Borrowable patterns (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
+- **Extend (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
   developer extending cairn borrows the refined patterns instead of reinventing them.**
   Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three
   layers: gates a consumer runs on its own code (`cairn-audit` wired by the scaffold plus a new
@@ -950,21 +977,31 @@ the named human gates only):**
   evidence is the aksailingclub-org and ecxc-ski surveys (working examples, not exemplars).
   The pass opens in a FRESH session: (1) update the draft spec against post-C export names
   (C renames outcomes, verbs, and the log vocabulary), (2) an adversarial review of the
-  design, (3) `writing-plans` for borrow-1 (gates and atoms, a minor release) and borrow-2
+  design, (3) `writing-plans` for extend-1 (gates and atoms, a minor release) and extend-2
   (guidance, with the docs rewrite it routes to). Draft spec:
-  `~/.cache/cairn-overnight-2026-09-12/borrowable-patterns-design-DRAFT.md`; it lands at
-  `docs/superpowers/specs/2026-09-12-borrowable-patterns-design.md` after step 2.
-  Site migration waits until ALL the borrow work has landed (borrow-1, the docs rewrite,
-  borrow-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
+  `~/.cache/cairn-overnight-2026-09-12/extend-design-DRAFT.md`; it lands at
+  `docs/superpowers/specs/2026-09-12-extend-design.md` after step 2.
+  Site migration waits until ALL the extend work has landed (extend-1, the docs rewrite,
+  extend-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** polish-C merged and the release cut.
+  **Filed from the admin motion language pass (2026-09-15), four follow-ups for extend-1's gates
+  layer:** (1) the rendered half of `motion-hover-gate`, triggered by a consumer's hand-authored
+  `:hover` rule the static half cannot see because the motion sits on a descendant selector or a
+  base rule the class join does not resolve; (2) the DaisyUI `.tooltip` touch defect (long-press
+  opens and sticks), whose fix the review found is gating the tooltip's **visibility**, not its
+  transition, a behavioral override of a vendor component extend-1 decides on its own terms; (3)
+  the same follow-up for DaisyUI `.menu`; (4) the `.modal-box` scale override's reopen trigger,
+  carried as a `WATCH:` comment beside the recipe in `docs/internal/admin-design-system.md`'s
+  Motion section rather than filed here, since the trigger (the admin adopting `modal-bottom` at
+  narrow widths) is a markup change a future pass makes rather than an external event.
 
-- **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after borrow-1
+- **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after extend-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
   `docs/internal/record/2026-09-04-cairn-case/` is history, not an input. The rewrite follows
   the `docs-rebuild-not-edit` method (each page rebuilt from a brief, the old page mined for
-  facts, reference entries edited in place) and carries the borrowable-patterns recipe pages,
-  one per pattern with its engine ruling linked, that borrow-2's skills route to; borrow-2
-  lands in or just after it. Sequenced after borrow-1 so the extend track documents exports
-  that exist. **Trigger:** borrow-1 merged.
+  facts, reference entries edited in place) and carries the extend recipe pages,
+  one per pattern with its engine ruling linked, that extend-2's skills route to; extend-2
+  lands in or just after it. Sequenced after extend-1 so the extend track documents exports
+  that exist. **Trigger:** extend-1 merged.
 
 - **Two `showcase`-flavored strings survive in what a scaffolded site ships (chassis-B2's
   Task 7 read, filed rather than fixed since both sit outside a docs task's scope and one
@@ -2170,6 +2207,22 @@ the named human gates only):**
   to pass. Pin the local Playwright Chromium build and font set to the runner's, or run the e2e
   in a matching container, so local baselines are canonical again. Chore, not a pass; the gotcha
   is recorded in `CLAUDE.md`.
+
+- **The resize stopper (cut from the admin motion language pass, 2026-09-15).** The published
+  motion language's resize backstop, suppressing motion while a resize or drag is in progress, is
+  cut from that pass: its specified form is a no-op, since a class on the bare `data-theme`
+  element never matches the admin sheet's `:where([data-theme]) .thing` scoped rules and
+  `transition-*`/`animation-*` properties don't inherit, so even a matching rule on that one
+  element would suppress nothing on the drawer or the sidebar. Its working form is a universal
+  descendant rule in the reduced-motion block's own shape, which is unlayered and costs one
+  `unlayeredAllowlist` entry, a budget cost the motion pass declined everywhere else; the
+  components layer measured 19 selectors against a `componentsLayerCap` of 19 at that pass's
+  head, so the specified form had no room either. What holds the resize case meanwhile: every
+  layout property in the admin is on the motion language's named-error list, so a resize snaps
+  structurally, and the one residue is DaisyUI's own drawer transition running at the breakpoint
+  flip (recorded as a vendor disagreement, not fixed). **Trigger:** a pass willing to spend one
+  `unlayeredAllowlist` entry to suppress the drawer's transition at the breakpoint flip, or a
+  `componentsLayerCap` increase that gives the layered form room.
 
 - **The second-menu editing question (chassis-B2 harvest, engine consultation candidate).**
   `/admin/nav`'s `createNavRoutes` binds to one menu (`menus.primary`); chassis-B2 moved the

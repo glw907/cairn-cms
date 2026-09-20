@@ -15,6 +15,7 @@ discriminant, not the fields, gates the chrome).
 -->
 <script lang="ts">
   import { onMount, setContext, tick, untrack, type Component, type Snippet } from 'svelte';
+  import { beforeNavigate } from '$app/navigation';
   import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
@@ -537,6 +538,45 @@ discriminant, not the fields, gates the chrome).
   let topbar = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(topbar);
 
+  // Whether zen has been entered at least once since this shell mounted OR since the most recent
+  // navigation, whichever is more recent. Absent (false) at a page's first paint, so the chrome
+  // regions' entrance fade below never plays on a plain load; true from the first `topbar.zen`
+  // flip onward, so the fade plays only on the return trip out of zen. A SvelteKit client-side
+  // navigation reuses this same mounted shell instance (the layout never remounts), so without the
+  // reset below the flag would stay true for the rest of the SPA session once a reader used zen
+  // anywhere: navigating list -> edit would then fade in the document title, footer strip, and
+  // mobile action bar on an ordinary first mount of that document, which is not a return from zen.
+  // `beforeNavigate` fires only on a genuine SvelteKit navigation, unlike an effect keyed on the
+  // shell's own `data` prop (which also re-fires on a same-route data refresh, and in this
+  // component's own test harness on every rerender regardless of route), so it is what clears the
+  // flag unless zen is active right now, in which case a navigation that happens to land mid-zen
+  // never clears it out from under an active session.
+  let zenUsed = $state(false);
+  $effect(() => {
+    if (topbar.zen) zenUsed = true;
+  });
+  beforeNavigate(() => {
+    if (!topbar.zen) zenUsed = false;
+  });
+
+  // Whether the frame's first paint has already happened, so the frame-offset transition
+  // (cairn-admin.css) can be gated off it: `createEditorPreferences`-style localStorage-restored
+  // state (here, zen's own persisted flag reaching the shell through `topbar.zen`) flips inside an
+  // effect AFTER the first render, so a reader who left zen on carries an SSR/first-paint frame at
+  // its non-zen margin that then snaps to its zen margin the instant hydration's effects flush.
+  // With the transition rule unconditional, that snap became a 224px animated slide during
+  // hydration, which the spec's own case table rules must snap instead (first paint is never
+  // animated). One deferred animation frame after mount is enough separation from that first
+  // paint for the browser to have already committed it, so a user-driven toggle after this point
+  // is the only thing the transition ever plays for.
+  let frameReady = $state(false);
+  onMount(() => {
+    const raf = requestAnimationFrame(() => {
+      frameReady = true;
+    });
+    return () => cancelAnimationFrame(raf);
+  });
+
   // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
   // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
   // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
@@ -687,10 +727,22 @@ discriminant, not the fields, gates the chrome).
     <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
          pointer, keyboard, and assistive tech (the APG modal-dialog contract). Never inert
          at the persistent breakpoint, where the sidebar sits beside the document, not over it. -->
+    <!-- The frame-offset attribute below is the persistent-frame case of the motion language's
+         one documented allowance: an element carrying it may transition the margin cairn-admin.css
+         reads off it, the value the two margin toggles below choose. Its sibling boolean
+         attribute names which direction that rule is in (present once the persistent frame's
+         margin is restored, absent while zen has closed it): cairn-audit's class-join scan
+         resolves every class token a component uses, including these two margin toggles, so
+         keying the exit-vs-entrance split off them would rewrite what class-join finds for them
+         everywhere, not just here; a plain, unclassed attribute stays outside that scan. -->
     <div
       class="drawer-content flex flex-col"
       class:lg:ml-56={!isDeskRoute && !topbar.zen}
       class:xl:ml-56={isDeskRoute && !topbar.zen}
+      data-cairn-motion="frame-offset"
+      data-cairn-frame-open={!topbar.zen || undefined}
+      data-cairn-frame-ready={frameReady || undefined}
+      data-cairn-zen-used={zenUsed || undefined}
       inert={isDrawerOverlay}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
@@ -706,8 +758,17 @@ discriminant, not the fields, gates the chrome).
            overlay drawer, not a visible band to align against, so the alignment argument does not
            bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
            phone-desk band. Office routes keep the full 64px band at every width. -->
+      <!-- Chrome fade, the carve-out band: the band leaves but stays nearby, ready to reappear, so
+           it fades at quick on the theme's own standard curve (the admin root's
+           default-transition-timing-function) rather than taking the exit curve's one-band
+           reduction the offset itself takes. cairn-chrome-fade's rule (cairn-admin.css) keys the
+           transition and its @starting-style entrance under the drawer content's
+           data-cairn-zen-used marker, so the fade plays only on the way back out of zen, never on
+           a page's first paint, when this band mounts for the first time with nothing to return
+           from. The departure is instant, the same limitation that entry-only idiom already
+           carries, since the band leaves the DOM outright rather than animating out of it. -->
       <div
-        class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
+        class="cairn-chrome-fade navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
         class:max-sm:px-2={isDeskRoute}
         class:max-sm:h-12={isDeskRoute}
         class:max-sm:min-h-12={isDeskRoute}

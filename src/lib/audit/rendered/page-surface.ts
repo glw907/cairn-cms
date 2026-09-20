@@ -248,7 +248,119 @@ function installPageHelpers(): void {
     return allowsDark && (!allowsLight || prefersDark) ? '#121212' : '#ffffff';
   }
 
-  globalThis.__cairnAudit = { signature, isVisible, isScreenReaderOnly, paintLayers, canvasColor };
+  // Splits a selector list on its top-level commas, the only place a comma separates two whole
+  // selectors rather than sitting inside a functional pseudo-class's own argument list
+  // (`:is(a, b)`, `:where(a, b)`). Depth tracks parens only: CSS selector lists have no other
+  // bracket that legitimately nests a comma at this level.
+  function splitSelectorList(selectorList: string): string[] {
+    const parts: string[] = [];
+    let depth = 0;
+    let current = '';
+    for (const char of selectorList) {
+      if (char === '(') depth += 1;
+      else if (char === ')') depth -= 1;
+      if (char === ',' && depth === 0) {
+        parts.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    const last = current.trim();
+    if (last) parts.push(last);
+    return parts;
+  }
+
+  // A single selector's own trailing `::before`/`::after` (or the one-colon legacy form), split
+  // from its element-matching base, since `Element.matches()` only ever matches a real element.
+  function stripPseudoElement(selector: string): { base: string; pseudo: '' | '::before' | '::after' } {
+    const match = selector.match(/^(.*?)::?(before|after)$/);
+    if (!match) return { base: selector, pseudo: '' };
+    return { base: match[1], pseudo: match[2] === 'before' ? '::before' : '::after' };
+  }
+
+  /**
+   * Recorded against `el` (own body: no closure over anything outside this function, the same
+   * discipline every other page-side helper here follows), one match per style declaration whose
+   * selector reaches `el` under `pseudoElement` and which declares `property`.
+   *
+   * This walker is the LOCATOR, never the detector: a caller that already knows an element's
+   * computed value is wrong asks it to name the authored rule responsible, and it reads that
+   * rule's authored (not computed) `value` back only to decide which of several matching rules is
+   * the nonzero one. It never re-derives the defect itself. Measured, not assumed: `getPropertyValue`
+   * on an authored rule resolves every `var()` reference to its final value, the same as
+   * `getComputedStyle` does, so this walk can compare authored values but can never recover the
+   * token name (e.g. `--cairn-dur-quick`) a declaration actually cited.
+   */
+  function findAuthoredRules(
+    el: Element,
+    pseudoElement: '' | '::before' | '::after',
+    property: string
+  ): { selector: string; file: string; value: string }[] {
+    const matches: { selector: string; file: string; value: string }[] = [];
+
+    function record(selectorList: string, style: CSSStyleDeclaration, file: string): void {
+      const value = style.getPropertyValue(property);
+      if (!value) return;
+      for (const selector of splitSelectorList(selectorList)) {
+        const { base, pseudo } = stripPseudoElement(selector);
+        if (pseudo !== pseudoElement) continue;
+        try {
+          if (el.matches(base)) matches.push({ selector, file, value });
+        } catch {
+          // An unparseable or unsupported selector cannot be matched against; skipped rather than
+          // thrown, the same discipline `probeSelectors` follows for the allowlist.
+        }
+      }
+    }
+
+    // `inheritedSelector` is the nearest enclosing style rule's own selector, which a trailing
+    // `CSSNestedDeclarations` block (bare declarations after a nested rule, inside the same
+    // parent) has no selector of its own and inherits.
+    function walk(rules: Iterable<CSSRule>, inheritedSelector: string | null, file: string): void {
+      for (const rule of Array.from(rules)) {
+        const kind = rule.constructor ? rule.constructor.name : '';
+        if (kind === 'CSSStyleRule') {
+          const styleRule = rule as CSSStyleRule;
+          record(styleRule.selectorText, styleRule.style, file);
+          if (styleRule.cssRules) walk(styleRule.cssRules, styleRule.selectorText, file);
+        } else if (kind === 'CSSNestedDeclarations') {
+          if (inheritedSelector) record(inheritedSelector, (rule as unknown as { style: CSSStyleDeclaration }).style, file);
+        } else if (
+          kind === 'CSSSupportsRule' ||
+          kind === 'CSSContainerRule' ||
+          kind === 'CSSLayerBlockRule' ||
+          kind === 'CSSStartingStyleRule'
+        ) {
+          walk((rule as unknown as { cssRules: CSSRuleList }).cssRules, inheritedSelector, file);
+        }
+        // A @media block is deliberately never descended into; see this method's own doc comment.
+      }
+    }
+
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules: CSSRuleList;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        // A cross-origin or otherwise opaque sheet throws SecurityError reading its own cssRules;
+        // measured on this Chromium install with no other way to probe it, so the sheet is skipped
+        // rather than aborting the walk over every other sheet on the page.
+        continue;
+      }
+      walk(rules, null, sheet.href ?? 'inline style');
+    }
+    return matches;
+  }
+
+  globalThis.__cairnAudit = {
+    signature,
+    isVisible,
+    isScreenReaderOnly,
+    paintLayers,
+    canvasColor,
+    findAuthoredRules,
+  };
 }
 
 /**

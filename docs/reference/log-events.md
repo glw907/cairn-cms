@@ -107,5 +107,5 @@ The `email` on `auth.link.requested` is the raw submitted address, logged before
 check: cairn lowercases it, trims it, and caps it at 320 characters. Because the endpoint has no
 authentication, a flood of distinct addresses here signals a request flood that edge rate-limiting
 can throttle. `auth.identity.unknown`'s `email` is the second exception: an identity gate's own
-confirmed address, normalized and capped the same way, logged before the same allow-list check.
+confirmed address, normalized and capped the same way, logged after the allow-list check fails.
 Every other event's `email` fires only for an allow-listed editor.

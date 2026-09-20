@@ -2787,8 +2787,68 @@ describe('EditPage', () => {
   // Ctrl+Shift+. enter and exit; the band, the document title, the toolbar strip, and the footer
   // hide; a floating chip keeps the save state and the way out (the WordPress/Ghost rule).
   describe('zen', () => {
+    // The assertions below read the chip's computed transition-duration and transition-delay,
+    // and the admin duration tokens those declarations reference (--cairn-dur-quick,
+    // --cairn-dur-base) are declared only inside the compiled admin sheet's theme roots. This
+    // suite wires the same real-sheet, real-theme-root harness the guarded Figure/callout suites
+    // above use, so the tokens resolve to their real values rather than an unset 0s.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(() => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    });
+
     beforeEach(() => {
       localStorage.removeItem('cairn-editor-zen');
+    });
+
+    it("scopes the footer strip's entrance fade off first paint, keyed on the shell's zen-used marker", async () => {
+      // The footer strip carries cairn-chrome-fade; the compiled sheet's rule only fires under a
+      // data-cairn-zen-used ancestor (the shell sets it on the drawer content once zen first
+      // turns on), so a plain mount with no such ancestor gets no transition at all.
+      const screen = await render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const footer = screen.container.querySelector('[data-testid="cairn-editor-footer"]')!;
+      expect(getComputedStyle(footer).transitionDuration).toBe('0s');
+      // The same element under a data-cairn-zen-used ancestor (standing in for the shell's drawer
+      // content, a descendant of the data-theme root and an ancestor of the footer) picks up the
+      // rule's real quick-duration transition.
+      document.body.setAttribute('data-cairn-zen-used', '');
+      try {
+        expect(getComputedStyle(footer).transitionDuration).toBe('0.11s');
+      } finally {
+        document.body.removeAttribute('data-cairn-zen-used');
+      }
+    });
+
+    it("resolves the zen chip's cascade to the entrance timing on mount and the exit timing on exit", async () => {
+      // Proves ruling 4's cascade directly: the zen-active class (bound to prefs.zen) carries the
+      // direction, not the prefers-reduced-motion media query alone, so the base/entrance/110ms
+      // declaration wins while the chip is active and the quick/exit/no-delay declaration wins
+      // once zen-active is removed, with the chip still mounted to receive it.
+      const screen = await render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      const chip = () => screen.container.querySelector('.cairn-zen-chip') as HTMLElement;
+      await expect.poll(() => chip()).not.toBeNull();
+      const enteringStyle = getComputedStyle(chip());
+      expect(enteringStyle.transitionDuration).toBe('0.15s');
+      expect(enteringStyle.transitionDelay).toBe('0.11s');
+      await screen.getByRole('button', { name: /exit zen/i }).click();
+      // The chip is still mounted (the exit script keeps it through its own fade); its cascade
+      // has already switched to the exit declaration.
+      const exitingStyle = getComputedStyle(chip());
+      expect(exitingStyle.transitionDuration).toBe('0.11s');
+      expect(exitingStyle.transitionDelay).toBe('0s');
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).toBeNull();
     });
 
     it('hides the band, title, strip, and footer behind the chip when the footer Zen toggle enters', async () => {

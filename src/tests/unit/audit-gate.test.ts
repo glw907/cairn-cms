@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { scopeReport } from '../../../scripts/checks/audit-gate.mjs';
+import { ADMIN_SCOPE, CSS_FILES, SCAN_SCOPE } from '../../../scripts/checks/check-invisible-craft.mjs';
+import { resolveConfig } from '../../lib/audit/config.js';
+import { runStatic } from '../../lib/audit/run.js';
 import type { AuditReport } from '../../lib/audit/types.js';
 
 // Each rule's own behavioral coverage lives under src/tests/unit/audit/rules/. What is specific to
@@ -63,5 +69,50 @@ describe('scopeReport', () => {
     expect(scoped.suppressed.map((f) => f.ruleId)).toEqual(['no-uncompiled-class']);
     expect(scoped.ruleIds).toEqual(['no-uncompiled-class']);
     expect(scoped.filesScanned).toBe(50);
+  });
+});
+
+// The engine gate's own static.adminScope: without it, an adminOnly rule resolves over the
+// consumer default, which never reaches src/lib/components. This proves the gate's config wires
+// ADMIN_SCOPE in, using the gate's own exported lists (SCAN_SCOPE, ADMIN_SCOPE, CSS_FILES) over a
+// temporary root, the idiom src/tests/unit/audit/run.test.ts already uses. Both fixtures carry an
+// identical violation pair (a p-[13px] gap-scale hit, a scoped transition: width motion-property
+// hit); the only difference between them is which SCAN_SCOPE root each sits under, isolating the
+// admin-scope narrowing this test exists to prove.
+describe('the engine gate: static.adminScope narrows the admin-only motion rules, never gap-scale', () => {
+  let root: string;
+  const FIXTURE = '<div class="p-[13px]"></div>\n\n<style>\n.mover { transition: width 200ms ease; }\n</style>\n';
+
+  beforeAll(() => {
+    root = mkdtempSync(join(tmpdir(), 'cairn-invisible-craft-'));
+    for (const dir of SCAN_SCOPE) mkdirSync(join(root, dir), { recursive: true });
+    mkdirSync(join(root, 'examples/showcase/src/routes/admin'), { recursive: true });
+    mkdirSync(join(root, 'dist/components'), { recursive: true });
+    writeFileSync(join(root, 'dist/components/cairn-admin.css'), '.type-body { font-size: var(--cairn-type-body) }\n');
+    // CSS_FILES entries must exist for loadCssFiles to read them; harmless content keeps the
+    // count this test asserts free of an extra motion-property hit from the standalone sheet.
+    for (const cssFile of CSS_FILES) writeFileSync(join(root, cssFile), '.harmless { color: red }\n');
+    writeFileSync(join(root, 'src/lib/components/Fixture.svelte'), FIXTURE);
+    writeFileSync(join(root, 'examples/showcase/src/theme/Fixture.svelte'), FIXTURE);
+  });
+
+  afterAll(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('produces a motion-property finding under src/lib/components and none under the showcase theme, while gap-scale reports both', () => {
+    const config = resolveConfig(
+      root,
+      { static: { scope: SCAN_SCOPE, adminScope: ADMIN_SCOPE, cssFiles: CSS_FILES } },
+      (candidate) => existsSync(resolve(root, candidate))
+    );
+    const report = runStatic(config);
+    const motionPropertyFiles = report.findings.filter((f) => f.ruleId === 'motion-property').map((f) => f.file);
+    expect(motionPropertyFiles).toEqual(['src/lib/components/Fixture.svelte']);
+    const gapScaleFiles = report.findings.filter((f) => f.ruleId === 'gap-scale').map((f) => f.file).sort();
+    expect(gapScaleFiles).toEqual([
+      'examples/showcase/src/theme/Fixture.svelte',
+      'src/lib/components/Fixture.svelte',
+    ]);
   });
 });

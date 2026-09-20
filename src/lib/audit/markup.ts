@@ -47,6 +47,13 @@ export interface ElementAttribute {
   end: number;
   /** 1-based line of `start`. */
   line: number;
+  /**
+   * The attribute's literal string value, present only when it is a single static string
+   * (`data-cairn-motion="frame-offset"`). A bound or interpolated value (`data-x={expr}`) reads
+   * as absent, since a rule keyed on this value cares whether it is REACHABLE as written, not
+   * whether it could resolve to the right string at runtime.
+   */
+  value?: string;
 }
 
 /** One template node's identity and source range, the unit a suppression directive attaches to. */
@@ -486,6 +493,20 @@ function tokensInAttribute(attr: RawNode, res: Resolution): RawToken[] {
   });
 }
 
+/**
+ * An `Attribute` node's literal string value, present only when its value is exactly one static
+ * `Text` part. Any other shape (a boolean shorthand, an `ExpressionTag`, or several parts) reads
+ * as absent, since a rule keyed on this value cares whether the attribute names it as written.
+ */
+function literalValue(value: unknown): string | undefined {
+  if (!Array.isArray(value) || value.length !== 1) return undefined;
+  const part = value[0] as RawNode;
+  if (part.type !== 'Text') return undefined;
+  if (typeof part.raw === 'string') return part.raw;
+  if (typeof part.data === 'string') return part.data;
+  return undefined;
+}
+
 /** Whether an `Attribute` node's value is unconditionally on: a shorthand or a literal `true`. */
 function isHardcodedTrue(value: unknown): boolean {
   if (value === true) return true;
@@ -513,12 +534,14 @@ function attributesOf(node: RawNode, starts: number[]): ElementAttribute[] {
       continue;
     }
     if (attr.type === 'Attribute' && typeof attr.name === 'string') {
+      const value = literalValue(attr.value);
       out.push({
         name: attr.name,
         hardcodedTrue: isHardcodedTrue(attr.value),
         start: attr.start,
         end: attr.end,
         line: lineOfIndex(starts, attr.start),
+        ...(value === undefined ? {} : { value }),
       });
     }
   }

@@ -908,32 +908,39 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          content and never floats off it). It states the count, names the scope, offers Select all in
          view and Clear, and carries the reversible bulk Delete (a git-tracked removal of manifest
          rows, so the danger-OUTLINE register; the irreversible byte purge lives on a separate
-         surface and is never reachable from this bar). -->
+         surface and is never reachable from this bar). Below sm the count/scope group and the
+         action-button group stack into two rows (flex-col) so neither the description text nor the
+         button row is squeezed into the other's line; at sm and up they share the one row. -->
     <div
       role="region"
       aria-label="Selection actions"
-      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 card-shell px-4 py-3 card-shadow"
+      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] flex-col gap-2.5 card-shell px-4 py-3 card-shadow sm:flex-row sm:items-center sm:gap-3.5"
     >
-      <span class="shrink-0 type-subtitle font-bold tabular-nums">{selectedCount}</span>
-      <span class="min-w-0 type-meta leading-snug text-muted">
-        <b class="font-semibold text-base-content">{selectedCount} selected</b> in this view<br />
-        {selectionScope.noRefs} with no references, {selectionScope.used} still used
-      </span>
-      <span class="flex-1"></span>
-      {#if selectedCount < visible.length}
-        <button type="button" class="whitespace-nowrap px-1 py-1.5 type-meta font-medium text-primary hover:underline" onclick={selectAllVisible}>
-          Select all {visible.length}
+      <div class="flex min-w-0 items-center gap-3.5">
+        <span class="shrink-0 type-subtitle font-bold tabular-nums">{selectedCount}</span>
+        <span class="min-w-0 type-meta leading-snug text-muted">
+          <b class="font-semibold text-base-content">{selectedCount} selected</b> in this view<br />
+          {selectionScope.noRefs} with no references, {selectionScope.used} still used
+        </span>
+      </div>
+      <span class="hidden flex-1 sm:block"></span>
+      <div class="flex flex-wrap items-center gap-2.5 sm:flex-nowrap sm:gap-3.5">
+        {#if selectedCount < visible.length}
+          <button type="button" class="whitespace-nowrap px-1 py-1.5 type-meta font-medium text-primary hover:underline" onclick={selectAllVisible}>
+            Select all {visible.length}
+          </button>
+        {/if}
+        <button type="button" class="whitespace-nowrap rounded-lg border border-base-300 px-2.5 py-2 type-meta font-medium text-subtle" onclick={clearSelection}>
+          Clear
         </button>
-      {/if}
-      <button type="button" class="whitespace-nowrap rounded-lg border border-base-300 px-2.5 py-2 type-meta font-medium text-subtle" onclick={clearSelection}>
-        Clear
-      </button>
-      <!-- The reversible bulk Delete: a git-tracked removal of manifest rows, so the danger-OUTLINE
-           register (the irreversible byte purge lives on a separate surface and keeps the solid fill).
-           It opens the skip-and-report alertdialog over the current selection. -->
-      <button type="button" aria-haspopup="dialog" onclick={(e) => bulkDeleteDialog?.open([...selectedHashes], e.currentTarget as HTMLElement)} class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
-        <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Delete {selectedCount}
-      </button>
+        <!-- The reversible bulk Delete: a git-tracked removal of manifest rows, so the
+             danger-OUTLINE register (the irreversible byte purge lives on a separate surface and
+             keeps the solid fill). It opens the skip-and-report alertdialog over the current
+             selection. -->
+        <button type="button" aria-haspopup="dialog" onclick={(e) => bulkDeleteDialog?.open([...selectedHashes], e.currentTarget as HTMLElement)} class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
+          <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Delete {selectedCount}
+        </button>
+      </div>
     </div>
   {/if}
 

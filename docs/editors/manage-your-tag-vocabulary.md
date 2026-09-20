@@ -19,7 +19,9 @@ field. This is the version other entries reference internally, and it doesn't ch
 even if you rename the tag later. Select **Add tag** to add it to the list.
 
 A name needs at least one letter or number, and it can't duplicate a tag already on the
-list. If either is true, the field tells you why and nothing is added.
+list. If either is true, the field tells you why and nothing is added: **"That name has
+no letters or numbers to make a tag from."** or **"A tag is already stored as
+"<slug>"."**
 
 ## Renaming a tag
 

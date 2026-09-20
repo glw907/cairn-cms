@@ -6,6 +6,9 @@ import { gapScale } from './gap-scale.js';
 import { grammarBoundary } from './grammar-boundary.js';
 import { listRole } from './list-role.js';
 import { motionBand } from './motion-band.js';
+import { motionHoverGate } from './motion-hover-gate.js';
+import { motionProperty } from './motion-property.js';
+import { motionVocabulary } from './motion-vocabulary.js';
 import { noUncompiledClass } from './no-uncompiled-class.js';
 import { reducedMotion } from './reduced-motion.js';
 import { stockDefaultHazards } from './stock-default-hazards.js';
@@ -26,6 +29,9 @@ export function staticRules(): StaticRule[] {
     grammarBoundary,
     focusParity,
     motionBand,
+    motionProperty,
+    motionVocabulary,
+    motionHoverGate,
     reducedMotion,
     stripeTrimParity,
     unlayeredFontClobber,

@@ -10,57 +10,79 @@ the present.
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
-engine passes plus chassis-A/B1/B2 and polish-11a/11b-i/11b-ii/C unpublished under `##
-Unreleased`; the window holds for one cut after the admin motion pass (below). CI on `main` is
-green.
+engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass, and the
+docs-to-facts pass unpublished under `## Unreleased`; the window holds for one cut after
+extend-1/extend-2 (below). CI on `main` is green.
 
-## Immediate next action (2026-09-14)
+## Immediate next action (2026-09-15)
 
-**Polish-C is MERGED** (PR #59, CI green, merge commit `ece054b8`; entry and post-mortem in
-[`HISTORY.md`](HISTORY.md)). The conducting session closed here by design (2026-09-14 13:2x).
-**Next, a fresh session launches the admin motion pass** per
-`~/.cache/cairn-overnight-2026-09-12/LAUNCH.md` (its 2026-09-14 handoff section is the step list:
-copy `cairn-motion.js` and the chains script to the new scratchpad, rewrite `chainsScript`, arm the
-guards and the full inhibitor set, launch). The pass runs UNREAD on its reviewed plan
-(`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; Geoff, 2026-09-13). Then, on
-`main` with no worktree live, the **pre-cut window pass** on its APPROVED plan
-(`docs/superpowers/plans/2026-09-14-pre-cut-window-pass.md`: the dependency sweep through the
-`dependency-upgrade` skill, three accepted Carbon defaults, records; four per-task Agent chains,
-ceiling 3.30M). Then the cut as **0.97.0** via `cairn-release` (verify the number is free first).
-Held for Geoff after the release: cairn.pub's engine pin bump (a production deploy), the three
-dependency tripwires, the `blueprint-audit` dotfiles script, the post-mortem.
+**The docs-to-facts pass is MERGED** (PR #65); detail in [`docs/HISTORY.md`](HISTORY.md)
+("Docs-to-facts pass, five tasks, 2026-09-15"). ROADMAP's audit-remediation entry is the canonical
+routing record for this track; every slice through docs-to-facts is MERGED.
 
-After the cut, in fresh sessions: the Go tool 1.0 (below) in parallel with the borrowable-patterns
-spec's fresh read (cache draft, re-read against post-C `api-surface.md`), then the docs rewrite
-from pass 2a. Polish-C's run spent 7.2M subagent tokens (conductor-notes.md has the detail).
+**extend-1 is IN FLIGHT, HELD on an unstable link (2026-09-19 14:55 AKDT)** on
+`docs/superpowers/plans/2026-09-14-extend-1-pass.md`, workflow mode through
+`pass-execute-chains.js`. Worktrees: chain A `.claude/worktrees/extend-1` (branch `extend-1`), chain B
+`.claude/worktrees/extend-1-site` (branch `extend-1-site`), both off `22bc19b5`, both clean. Ceiling
+6.7M; **checkpoint 2026-09-19 19:20: about 5.6M spent (84 percent)**, of which about 1.0M went to
+three network drops, one usage-limit kill, one relayed-question misfire, and one redundant
+re-dispatch; task 3 ran three review rounds. Tasks 4, 5, 6 and the ritual are priced at about 3.0M.
+Geoff's checkpoint answer (2026-09-19 19:25, one execution sitting): **ceiling raised to 9.0M**, the
+pass runs to a merged PR; the engine-owned Tailwind sources file (so a site's admin.css never names
+the engine's `dist` path) is one small extend-2 task; the docs-infra currency pass
+(`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`) is APPROVED as
+written and queues after the one cut, before the site round. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
+`cairn-run-gate`'s machine lock.
+
+Task ledger (2026-09-19 19:20): **1, 2, 7, 8a, 8b ACCEPTED**; chain B is complete on `extend-1-site` (six commits,
+pushed, awaiting its CI read at the ritual). **3** committed (`f926830f`, `db0de8ca`) and on a third, conductor-ruled fix round on Opus:
+the bubble is placed with a popover plus CSS anchor positioning (the toolbar's recipe), since fixed
+positioning is displaced inside DaisyUI's transformed modal box. **4, 5, 6** queued behind it in chain A
+run `wf_32d77f80-9f9` from `extend-1-runA4.js`, whose task 6 notes carry the execution record items. Fold items for the
+ritual: 8b's `check:cairn` step in `create-site.yml` runs before the build rather than after, and
+the two facts bullets 8b filed could name task 7's `cairn-audit.config.json` and the two transcript
+fixtures. Rulings taken so far are in this file's history and the plan.
+
+Resume, from a session inside `cairn-cms` on a stable connection: the built scripts live in the
+launching session's scratchpad (`extend-1-runA4.js`, run `wf_32d77f80-9f9`, tasks 3 to 6), so from that session issue
+`Workflow({scriptPath, resumeFromRunId})` for each; from a new session, rebuild both from
+`~/.cache/cairn-overnight-2026-09-14/extend-1-args.json` with the rulings above folded into the
+task 2 and task 7 notes, and start each chain at its first unreviewed task. Arm the guards per
+`~/.claude/docs/unattended-work-guards.md`. Then the pass-end ritual in the plan.
+
+**Then extend-2** (`-extend-2-pass.md`, a worktree off `main`, the same chain). Their docs
+deliverables now file container bullets in `docs/internal/facts/extend.md` instead of editing
+the frozen `docs/extend/` pages; reference pages still update per task. extend-1's "Available
+since" reads `0.97.0`, advisory rules promote at `0.98.0` (`launch.json`).
+
+After both: **ONE cut** (the dependency sweep immediately before it; the site upgrade brief's
+tools section added to the pre-cut pass). No release before this. Then **the site round:**
+aksailingclub-org, ecxc-ski, and 907-life upgraded as model cairn sites, each pass filing
+container bullets via `site-docs/<site>-<pass>`; then one improvement release, the public docs
+rebuilt from the container, then beta.
+
+Held for the week of 2026-09-21: Go tool pass A at `cairn-tool-a` Task 3 (draft PR #60).
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1-7, chassis-A/B1/B2, and polish-11a/11b-i/11b-ii/C
-  all MERGED; the admin motion pass next (above), then ONE release cut. ROADMAP's
-  audit-remediation entry is the canonical routing record; the chassis quality bar equals the
-  engine's (Geoff, 2026-09-01).
-- **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only, under
+- **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
-- **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 as a product for any operator on Linux, macOS, and
-  Windows (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, APPROVED 2026-09-14).
+- **Go `cairn` tool, 1.0.** Re-cut 2026-09-14 for any operator on Linux, macOS, and Windows
+  (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, APPROVED 2026-09-14).
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.
 
 ## Open decisions
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026).
-- TypeScript 7 stays held until `svelte-check --tsgo` runs green; `tsgo.yml` checks weekly.
+- TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
 
 ## Active watches
 
 - A monthly Cloudflare capability-review routine (`trig_01GnFPkfx7EjrWKAuTBrXVdx`) reads
   `ROADMAP.md`'s "Platform watch: Cloudflare" section and emails a ranked report.
-- `install.test.mjs`'s concurrent-poll test flaked once in a 30x local loop (2026-08-29).
-  Trigger: its next CI failure gets the same mock-timer deflake as the grace-window tests.
+- `install.test.mjs`'s concurrent-poll test flaked once in a 30x local loop (2026-08-29); its
+  next CI failure gets the same mock-timer deflake as the grace-window tests.
 - A consumer `guard.rejected` record with `detail: 'mismatch'`, `witness: 'field'` can be the
   known double-mint residual, not a new mechanism; the discriminator names any genuinely new one.
-- Three ASC staging harvest docs are folded into cairn, slated for deletion in the ASC repo.
-  Trigger: the ASC `email-announce` branch settles.
-
-Everything else, every prior pass, release, and archived checkpoint, is in
-[`docs/HISTORY.md`](HISTORY.md).
+- Three ASC staging harvest docs are folded into cairn, slated for deletion in the ASC repo once
+  the ASC `email-announce` branch settles.

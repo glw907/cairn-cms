@@ -142,6 +142,35 @@ describe('Tooltip', () => {
     expect(bubbleRect.height).toBeGreaterThan(0);
   });
 
+  it('keeps an anchor-name the trigger already carries for its own popover menu', async () => {
+    // Several swept triggers open a popover menu of their own and declare that menu's
+    // `anchor-name` inline. `anchor-name` is a comma list, so appending keeps both names
+    // resolvable; replacing it would leave the menu's `position-anchor` unresolvable and drop the
+    // menu to the UA's centered fallback, which no closed-menu visual baseline can catch.
+    const menuTrigger = createRawSnippet(() => ({
+      render: () =>
+        '<button type="button" style="anchor-name: --cairn-more-formatting">More formatting</button>',
+    }));
+    const screen = await render(Tooltip, { text: 'More formatting', children: menuTrigger });
+    const button = screen.container.querySelector('button')!;
+
+    const names = button.style
+      .getPropertyValue('anchor-name')
+      .split(',')
+      .map((name) => name.trim());
+    expect(names).toContain('--cairn-more-formatting');
+    expect(names.some((name) => name.startsWith('--cairn-tooltip-'))).toBe(true);
+
+    // The appended name still anchors the bubble to this trigger.
+    screen.container.style.marginTop = '120px';
+    await userEvent.hover(button);
+    const triggerRect = button.getBoundingClientRect();
+    const bubbleRect = bubbleOf(screen.container).getBoundingClientRect();
+    expect(bubbleRect.bottom).toBeLessThanOrEqual(triggerRect.top);
+    expect(bubbleRect.right).toBeGreaterThan(triggerRect.left);
+    expect(bubbleRect.left).toBeLessThan(triggerRect.right);
+  });
+
   it('shows on a coarse-pointer tap and hides on the next tap outside', async () => {
     const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
     const button = screen.container.querySelector('button')!;

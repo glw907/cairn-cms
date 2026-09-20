@@ -110,9 +110,11 @@ function guardedButton(label: string, inner: string): string {
   );
 }
 
-/** The standalone Tidy control's own Tooltip parts, computed once since it is written by hand
- *  below (unlike `insertButton`/`guardedButton`, its own icon-plus-text markup does not route
- *  through either helper). */
+/**
+ * The standalone Tidy control's own Tooltip parts, computed once since it is written by hand
+ * below (unlike `insertButton`/`guardedButton`, its own icon-plus-text markup does not route
+ * through either helper).
+ */
 const tidyTooltip = tooltipParts('Tidy: a light copy-edit you review before accepting');
 
 /**

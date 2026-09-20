@@ -31,7 +31,8 @@ when there is no room above.
 first child once the `children` snippet mounts), not spread through a snippet parameter: the sweep
 this component exists for wraps existing buttons and links unchanged, so the trigger keeps
 whatever attributes it already carries and this component adds exactly one. The same effect writes
-the trigger's `anchor-name`, for the same reason.
+the trigger's `anchor-name`, for the same reason, appending to any inline `anchor-name` the trigger
+already declares for a popover menu of its own rather than replacing it.
 
 A closed popover is not rendered at all, but an element referenced by `aria-describedby` still
 contributes its text however it is hidden (the accessible-description computation traverses into a
@@ -79,15 +80,25 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   // whenever the wrapper, the bubble id, or the anchor name changes, and cleans up on unmount so a
   // later Tooltip reusing the same DOM node never inherits a stale value. A no-op while `text` is
   // empty (see the prop's own doc comment).
+  //
+  // `anchor-name` is a comma list and several swept triggers already declare one inline for a
+  // popover menu of their own, so this appends rather than replaces, and the teardown restores the
+  // captured prior value rather than clearing the property: overwriting it would leave that menu
+  // with an unresolvable `position-anchor` and drop it to the UA's centered fallback.
   $effect(() => {
     if (!hasText) return;
     const trigger = wrapperEl?.firstElementChild;
     if (!(trigger instanceof HTMLElement)) return;
+    const priorAnchorName = trigger.style.getPropertyValue('anchor-name');
     trigger.setAttribute('aria-describedby', bubbleId);
-    trigger.style.setProperty('anchor-name', anchorName);
+    trigger.style.setProperty(
+      'anchor-name',
+      priorAnchorName ? `${priorAnchorName}, ${anchorName}` : anchorName
+    );
     return () => {
       trigger.removeAttribute('aria-describedby');
-      trigger.style.removeProperty('anchor-name');
+      if (priorAnchorName) trigger.style.setProperty('anchor-name', priorAnchorName);
+      else trigger.style.removeProperty('anchor-name');
     };
   });
 

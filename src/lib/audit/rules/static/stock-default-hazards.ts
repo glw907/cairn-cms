@@ -76,9 +76,11 @@ function tokenNamed(
   );
 }
 
-/** A finding at a class token's or an attribute's own source range. Defaults to `error`, this
- *  rule's own overall tier; the guarded-retirement arm below passes `advisory` explicitly, since
- *  `Finding.tier` is read per finding, not inherited from the rule's own declared tier. */
+/**
+ * A finding at a class token's or an attribute's own source range. Defaults to `error`, this
+ * rule's own overall tier; the guarded-retirement arm below passes `advisory` explicitly, since
+ * `Finding.tier` is read per finding, not inherited from the rule's own declared tier.
+ */
 function findingAt(
   file: ParsedComponent,
   at: { start: number; end: number; line: number },

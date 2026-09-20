@@ -872,8 +872,10 @@ bubble element; omit it to use `$props.id()`'s own generated id.
 
 `children` renders the trigger control (a button or a link) unchanged: this component adds only
 `aria-describedby` and an `anchor-name`, never a class, a label, or a click handler. The trigger
-keeps whatever else it already carries, including a caller's own `aria-label` and
-`disabled`/`aria-disabled` state.
+keeps whatever else it already carries, including a caller's own `aria-label`,
+`disabled`/`aria-disabled` state, and an inline `anchor-name` of its own, which the component
+appends to rather than replaces, so a trigger that also anchors its own popover menu keeps that
+menu's anchor resolvable.
 
 The bubble is a manual popover placed by CSS anchor positioning above the trigger, flipping below
 it when the top edge has no room. Because a popover renders in the top layer, the bubble survives a

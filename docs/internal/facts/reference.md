@@ -86,7 +86,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   no bubble, every hover/focus/tap mechanic a no-op). Its bubble is a manual popover placed by CSS
   anchor positioning off an `anchor-name` written on the trigger, so the top layer keeps a
   transformed, scaled, or `overflow: hidden` ancestor (an open daisyUI modal's box) from displacing
-  or clipping it. Source: `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
+  or clipping it. That write appends to any inline `anchor-name` the trigger already carries, since
+  `anchor-name` is a comma list and three swept admin triggers anchor a popover menu of their own;
+  replacing it would drop those menus to the UA's centered popover fallback. Source:
+  `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
 
 ## docs/reference/ambient.md
 

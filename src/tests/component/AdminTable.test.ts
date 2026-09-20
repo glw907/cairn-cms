@@ -1,11 +1,41 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import AdminTable from '../../lib/admin-toolkit/AdminTable.svelte';
+import baselineHtml from './fixtures/admin-table-baseline.html?raw';
 
 /** A snippet with no render-time params, e.g. a header row or a fixed body. */
 function staticSnippet(html: string) {
   return createRawSnippet(() => ({ render: () => html }));
+}
+
+/** A `batchBar` snippet exposing its received `count` and a clickable `clear` trigger, so a test
+ *  can read the count from the DOM and fire `clear` through a real click rather than calling the
+ *  callback directly. */
+function batchBarSnippet() {
+  return createRawSnippet<[{ count: number; clear: () => void }]>((getParams) => ({
+    render: () =>
+      '<div><span data-testid="batch-count"></span><button type="button" data-testid="batch-clear">Clear</button></div>',
+    setup: (element) => {
+      const params = getParams();
+      element.querySelector('[data-testid="batch-count"]')!.textContent = String(params.count);
+      element
+        .querySelector('[data-testid="batch-clear"]')!
+        .addEventListener('click', () => params.clear());
+    },
+  }));
+}
+
+/** Strips the Svelte compiler's own scoped-style hash classes and empty block-anchor comments,
+ *  both compiled implementation detail rather than part of the rendered contract, so a fixture
+ *  comparison survives an unrelated change to this component's `<style>` block or its count of
+ *  conditional blocks. */
+function normalizeRenderedHtml(html: string) {
+  return html
+    .replace(/<!---->/g, '')
+    .replace(/\s*svelte-[a-z0-9]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 describe('AdminTable', () => {
@@ -102,5 +132,55 @@ describe('AdminTable', () => {
     });
     const cell = screen.container.querySelector('td')!;
     expect(getComputedStyle(cell).whiteSpace).toBe('nowrap');
+  });
+
+  it('renders exactly the branch-point markup when selection is omitted', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td></tr>'),
+      rowCount: 1,
+    });
+    expect(normalizeRenderedHtml(screen.container.innerHTML)).toBe(normalizeRenderedHtml(baselineHtml));
+  });
+
+  it('renders no batch bar while the selection set is empty', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td></tr>'),
+      rowCount: 1,
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+      batchBar: batchBarSnippet(),
+    });
+    expect(screen.container.querySelector('[role="toolbar"]')).toBeNull();
+  });
+
+  it('renders the batch bar with the selected count while the set is non-empty, and clear empties it through onchange', async () => {
+    const onchange = vi.fn();
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td><td>Diallo</td></tr>'),
+      rowCount: 2,
+      selection: { ids: new Set(['alvarez', 'diallo']), onchange, label: 'Select households' },
+      batchBar: batchBarSnippet(),
+    });
+    const bar = screen.container.querySelector('[role="toolbar"]');
+    expect(bar).not.toBeNull();
+    expect(bar!.querySelector('[data-testid="batch-count"]')?.textContent).toBe('2');
+    (bar!.querySelector('[data-testid="batch-clear"]') as HTMLButtonElement).click();
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange).toHaveBeenCalledWith(new Set());
+  });
+
+  it('renders the header checkbox as indeterminate on a partial selection, with the aria-label from selection.label', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td><td>Diallo</td></tr>'),
+      rowCount: 2,
+      selection: { ids: new Set(['alvarez']), onchange: vi.fn(), label: 'Select households' },
+    });
+    const checkbox = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    expect(checkbox.indeterminate).toBe(true);
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.getAttribute('aria-label')).toBe('Select households');
   });
 });

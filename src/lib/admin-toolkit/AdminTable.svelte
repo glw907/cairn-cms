@@ -17,10 +17,21 @@ ellipsis truncation of a specific long value is the calling cell's own responsib
 scoped-truncation model `StatusChip`'s `.status-chip-label` already carries; this component cannot
 see inside a snippet's own markup to add truncation there itself.
 
-Headroom for a future selection column is a reserved convention, not a built feature: because
-`header` and `children` are snippets rather than a column schema, adding a leading checkbox column
-later is a caller-side edit to those two snippets, never a structural change to this component or
-a breaking prop-shape change.
+The optional `selection` prop is the one column this component owns outright: with it set,
+`AdminTable` renders the reserved header `<th>` and its own select-all checkbox (`aria-label` from
+`selection.label`, indeterminate against `rowCount` on a partial `selection.ids`), while every
+row's own checkbox `<td>` stays the caller's, written inside `children` and bound to the same
+`Set`. This is the same split `header`/`children` already draw for the rest of the row: this
+component owns the table's chrome, a caller owns a row's own markup. `AdminTable` never sees the
+full set of selectable ids (rows are caller-rendered), so the header checkbox can only clear a
+selection, never build one; a caller wanting a select-all affordance supplies it itself, for
+example from `batchBar`. Selection is additive: a caller passing neither `selection` nor `batchBar`
+gets the same table as before.
+
+The optional `batchBar` snippet renders above the table, inside a `role="toolbar"` region, only
+while `selection` is set and its `ids` is non-empty. It receives the selected count and a `clear`
+callback that empties the selection through `selection.onchange`, so a caller's own batch-action
+buttons never reach into the `Set` directly.
 -->
 <script module lang="ts">
   /** The table's two named density tiers, matching `StatusChip`'s own `xs`/`sm` size vocabulary. */
@@ -47,24 +58,87 @@ a breaking prop-shape change.
      *  render an empty `<tbody>` instead. */
     empty?: Snippet;
     /** How many columns the empty-state cell should span. Defaults to `100`, which HTML's own
-     *  `colspan` clamps down to the table's real column count. */
+     *  `colspan` clamps down to the table's real column count. This component adds one to it
+     *  itself when `selection` is set, so a caller states its own column count without
+     *  re-deriving the reserved selection column. */
     emptyColspan?: number;
+    /** Reserves the leading selection column and renders its header select-all checkbox. Omit to
+     *  render no selection column at all; a caller renders each row's own checkbox `<td>` inside
+     *  `children`, bound to the same `ids` set. */
+    selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string };
+    /** The batch-action bar shown above the table while `selection` is set and non-empty, inside a
+     *  `role="toolbar"` region. */
+    batchBar?: Snippet<[{ count: number; clear: () => void }]>;
   }
 
-  let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100 }: Props = $props();
+  let {
+    density = 'sm',
+    zebra = false,
+    header,
+    children,
+    rowCount,
+    empty,
+    emptyColspan = 100,
+    selection,
+    batchBar,
+  }: Props = $props();
 
   const densityClass = $derived(density === 'xs' ? 'table-xs' : 'table-sm');
+  const effectiveEmptyColspan = $derived(selection ? emptyColspan + 1 : emptyColspan);
+
+  let selectAllCheckbox = $state<HTMLInputElement | null>(null);
+
+  // `indeterminate` is a DOM property, not an HTML attribute, so it is set imperatively here
+  // rather than through a template binding, the same pattern MediaOrphanTools' own select-all
+  // checkbox already carries.
+  $effect(() => {
+    if (!selectAllCheckbox || !selection) return;
+    const selectedCount = selection.ids.size;
+    selectAllCheckbox.checked = rowCount > 0 && selectedCount === rowCount;
+    selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < rowCount;
+  });
+
+  /** Clears the selection through `selection.onchange`. This is the header checkbox's only
+   *  interactive action: AdminTable never holds the full set of selectable row ids, so it cannot
+   *  build a select-all selection from here, only empty one. Ticking it while the selection is
+   *  already empty has no id set to select, so the click is reverted. */
+  function onSelectAllChange(event: Event) {
+    if (!selection) return;
+    if (selection.ids.size > 0) {
+      selection.onchange(new Set());
+    } else {
+      (event.currentTarget as HTMLInputElement).checked = false;
+    }
+  }
 </script>
 
+{#if selection && selection.ids.size > 0 && batchBar}
+  <div class="toolkit-admin-table-batch-bar" role="toolbar" aria-label={selection.label}>
+    {@render batchBar({ count: selection.ids.size, clear: () => selection.onchange(new Set()) })}
+  </div>
+{/if}
 <div class="toolkit-admin-table-wrap">
   <table class="table {densityClass} {zebra ? 'table-zebra' : ''}">
     <thead>
-      <tr>{@render header()}</tr>
+      <tr>
+        {#if selection}
+          <th>
+            <input
+              bind:this={selectAllCheckbox}
+              type="checkbox"
+              class="checkbox checkbox-sm"
+              aria-label={selection.label}
+              onchange={onSelectAllChange}
+            />
+          </th>
+        {/if}
+        {@render header()}
+      </tr>
     </thead>
     <tbody>
       {#if rowCount === 0 && empty}
         <tr class="toolkit-admin-table-empty-row">
-          <td colspan={emptyColspan}>{@render empty()}</td>
+          <td colspan={effectiveEmptyColspan}>{@render empty()}</td>
         </tr>
       {:else if rowCount !== 0}
         {@render children()}
@@ -92,5 +166,9 @@ a breaking prop-shape change.
     text-align: center;
     color: var(--color-muted);
     white-space: normal;
+  }
+
+  .toolkit-admin-table-batch-bar {
+    margin-bottom: 0.75rem;
   }
 </style>

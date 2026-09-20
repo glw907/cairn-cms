@@ -338,7 +338,7 @@ incidental compile to an explicit safelist entry).
 Stability tier: Extension API.
 
 ```ts
-let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100 }: {
+let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100, selection, batchBar }: {
   density?: AdminTableDensity;
   zebra?: boolean;
   header: Snippet;
@@ -346,8 +346,12 @@ let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyCol
   rowCount: number;
   empty?: Snippet;
   emptyColspan?: number;
+  selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string };
+  batchBar?: Snippet<[{ count: number; clear: () => void }]>;
 };
 ```
+
+The `selection` and `batchBar` props are available since `0.97.0`.
 
 The table shell. `density` (defaults `'sm'`) names the two density tiers; `zebra` (defaults
 `false`) turns on alternating-row shading, off by default so a screen opts in rather than
@@ -356,7 +360,9 @@ inheriting a house style. `header` and `children` are snippets, a `<tr>` of `<th
 shape or a data contract: it carries no `rows: T[]` prop, and a caller's row markup is entirely its
 own template. `rowCount` switches the body to the `empty` snippet when `0` (omit `empty` for an
 empty `<tbody>` instead); `emptyColspan` (defaults `100`, which HTML's own `colspan` clamps to the
-real column count) sizes the empty-state cell's span.
+real column count) sizes the empty-state cell's span, and counts the reserved selection column
+itself while `selection` is set, so a caller states its own column count without re-deriving that
+column.
 
 Single-line enforcement is a contract, not a full mechanism. Every cell gets `white-space: nowrap`
 from this component's own scoped CSS, so a wrap never happens even if a caller forgets, but
@@ -365,10 +371,24 @@ responsibility, the same scoped-truncation model `StatusChip`'s `.status-chip-la
 component can't reach inside a snippet's own markup to add truncation there itself. The wrapper's
 `overflow-x: auto` is the horizontal-scroll fallback for a table wider than its viewport.
 
-**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, every one already compiled
-into the packaged `cairn-admin.css`.
+**Batch selection.** `selection` reserves the leading column: `AdminTable` renders that column's
+header `<th>` and its own select-all checkbox (`aria-label` from `selection.label`, indeterminate
+against `rowCount` on a partial `selection.ids`), and a caller renders each row's own checkbox
+`<td>`, inside `children`, bound to the same `Set`. `AdminTable` never holds the full set of
+selectable row ids (rows stay caller-rendered), so the header checkbox can only empty the
+selection through `selection.onchange`, never build one; a caller wanting a select-all affordance
+supplies it itself. `batchBar` renders preceding the table, inside a `role="toolbar"` region, only
+while `selection.ids` is non-empty, and receives the selected count and a `clear` callback that
+empties the selection the same way. Both props are additive: a caller passing neither gets the same
+table as before. Whether a row's own per-column actions stay active while a selection is open is
+the caller's own call, not this component's. Carbon's own data table takes the same position, for
+the same reason: only the caller knows which actions a partial selection makes unsafe.
 
-**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`.
+**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`, `checkbox-sm`,
+every one already compiled into the packaged `cairn-admin.css`.
+
+**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`,
+`checkbox-sm`.
 
 ```svelte
 <AdminTable {density} zebra rowCount={rows.length}>
@@ -392,6 +412,45 @@ preceding example shows. The table's own scoped CSS (`.toolkit-admin-table-empty
 owns the register: centered text, `2.5rem`/`1rem` padding, the muted color, and normal (not
 single-line) wrapping. A caller adds no size, color, or alignment class of its own; a call site
 that does is reinventing a register `AdminTable` already carries.
+
+```svelte
+<AdminTable
+  rowCount={rows.length}
+  selection={{ ids: selectedIds, onchange: (next) => (selectedIds = next), label: 'Select households' }}
+>
+  {#snippet header()}
+    <th>Household</th>
+  {/snippet}
+  {#snippet children()}
+    {#each rows as row (row.id)}
+      <tr>
+        <td>
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            aria-label={`Select ${row.household}`}
+            checked={selectedIds.has(row.id)}
+            onchange={(event) => {
+              const next = new Set(selectedIds);
+              event.currentTarget.checked ? next.add(row.id) : next.delete(row.id);
+              selectedIds = next;
+            }}
+          />
+        </td>
+        <td>{row.household}</td>
+      </tr>
+    {/each}
+  {/snippet}
+</AdminTable>
+{#if selectedIds.size > 0}
+  <!-- rendered by AdminTable's own batchBar snippet, shown here for the full recipe -->
+{/if}
+```
+
+**The batch-actions recipe.** `selection.ids` is the caller's own `Set`, reassigned on every
+change (never mutated in place) the same way `MediaOrphanTools`' own selection state is; `onchange`
+is where a caller stores the new `Set`. A caller wanting a select-all control adds it to `batchBar`
+itself, since `AdminTable` can't build one without the full row-id list.
 
 ### `ListToolbar`
 

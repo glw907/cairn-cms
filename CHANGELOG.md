@@ -350,6 +350,17 @@
   nothing, unless your admin copied the `cairn-btn-guarded` marker class from the engine's markup;
   no production site has.
 
+- `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
+  `selection?: { ids: Set<string>; onchange: (ids: Set<string>) => void; label: string }` and
+  `batchBar?: Snippet<[{ count: number; clear: () => void }]>`. With `selection` set, `AdminTable`
+  renders the reserved header `<th>` and its own select-all checkbox (`aria-label` from
+  `selection.label`, indeterminate against `rowCount` on a partial `selection.ids`); a caller
+  renders each row's own checkbox `<td>` inside `children`, bound to the same `Set`. With
+  `selection.ids` non-empty, `batchBar` renders above the table inside a `role="toolbar"` region,
+  receiving the selected count and a `clear` callback that empties the selection through
+  `selection.onchange`. `emptyColspan` counts the reserved selection column itself while
+  `selection` is set. No consumer action.
+
 ### Removed
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one

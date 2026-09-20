@@ -15,12 +15,12 @@ const (
 	ReasonUnauthorized Reason = iota
 	ReasonForbidden
 	ReasonNotFound
-	// ReasonBuildsNotConnected is never produced by classifyReason: a live probe confirmed
+	// ReasonBuildsNotConnected is never produced by this package's own classification: a live probe confirmed
 	// GET /accounts/{id}/builds/workers/{tag}/triggers answers 200 with an empty trigger list
 	// for an unconnected worker, not a 404 with a distinct code. The caller that walks
 	// BuildsConnections is the one that assigns this Reason itself when the returned list is
-	// empty, so the constant stays for that caller even though this package never returns it as
-	// part of an *APIError.
+	// empty, so the constant stays for that caller even though this package never returns it in
+	// a provider-specific response failure type.
 	ReasonBuildsNotConnected
 	ReasonBuildsRepoNotSelected
 	ReasonBuildsAppNotAuthorized
@@ -53,8 +53,8 @@ func (r Reason) String() string {
 	}
 }
 
-// ProviderError is satisfied by APIError and GitHubError, the two response failures a caller
-// outside this package (cmd/cairn's probe-token verdict) classifies uniformly, through one
+// ProviderError is satisfied by this package's two provider-specific response failure types, a
+// caller outside this package (cmd/cairn's probe-token verdict) classifies uniformly, through one
 // function, without branching on which provider produced the failure.
 type ProviderError interface {
 	error
@@ -70,8 +70,8 @@ type ProviderError interface {
 // (x-ratelimit-remaining: 0), or a Retry-After header, classifies as rate-limited and never as a
 // forbidden credential, because misreading a rate limit as a forbidden credential would report a
 // fault an operator cannot fix. A 403 carrying neither header classifies as forbidden, as it does
-// today. Every other status classifies from the status alone, matching classifyGitHubReason's
-// former table and the status arm of classifyReason.
+// today. Every other status classifies from the status alone, matching the Cloudflare and GitHub
+// status tables this reasoning once lived in separately.
 func reasonForStatus(status int, header http.Header) Reason {
 	if status == http.StatusForbidden && rateLimitedHeaders(header) {
 		return ReasonRateLimited

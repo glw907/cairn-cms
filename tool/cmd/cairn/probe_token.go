@@ -90,25 +90,15 @@ func okVerdict() verdict {
 	return verdict{status: http.StatusOK, reason: "ok", level: exitOK}
 }
 
-// cloudflareVerdict reports the verdict a Cloudflare call's error carries, or okVerdict for a
-// nil err. An error this package cannot classify reports "unreachable" at exitUnknown.
-func cloudflareVerdict(err error) verdict {
+// providerVerdict reports the verdict a Cloudflare or GitHub call's error carries, or okVerdict
+// for a nil err, through the one providers.ProviderError contract both APIError and GitHubError
+// implement. An error this package cannot classify reports "unreachable" at exitUnknown.
+func providerVerdict(err error) verdict {
 	if err == nil {
 		return okVerdict()
 	}
-	if apiErr, ok := errors.AsType[*providers.APIError](err); ok {
-		return verdict{status: apiErr.Status, reason: apiErr.Reason.String(), level: reasonLevel(apiErr.Reason)}
-	}
-	return verdict{reason: "unreachable", level: exitUnknown}
-}
-
-// githubVerdict is cloudflareVerdict's counterpart for a GitHub call's error.
-func githubVerdict(err error) verdict {
-	if err == nil {
-		return okVerdict()
-	}
-	if ghErr, ok := errors.AsType[*providers.GitHubError](err); ok {
-		return verdict{status: ghErr.Status, reason: ghErr.Reason.String(), level: reasonLevel(ghErr.Reason)}
+	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
+		return verdict{status: pe.HTTPStatus(), reason: pe.ClassifiedReason().String(), level: reasonLevel(pe.ClassifiedReason())}
 	}
 	return verdict{reason: "unreachable", level: exitUnknown}
 }
@@ -353,7 +343,7 @@ func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflar
 	worst := exitOK
 
 	run := func(endpoint, method, path string, call func() error) {
-		v := cloudflareVerdict(call())
+		v := providerVerdict(call())
 		worst = combineLevel(worst, v.level)
 		printEndpoint(out, endpoint, v, rec.lookup(method, path))
 	}
@@ -413,7 +403,7 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 	// report prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
 	// whatever shape the recorder captured for path, and folds its level into worst.
 	report := func(endpoint, owner, repo, path string, err error) verdict {
-		v := githubVerdict(err)
+		v := providerVerdict(err)
 		raise(v.level)
 		printEndpoint(out, fmt.Sprintf("%s (%s/%s)", endpoint, owner, repo), v, rec.lookup(http.MethodGet, path))
 		return v

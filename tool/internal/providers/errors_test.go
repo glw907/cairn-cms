@@ -2,6 +2,8 @@ package providers
 
 import (
 	"net/http"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -59,5 +61,27 @@ func TestAPIErrorAndGitHubErrorSatisfyProviderError(t *testing.T) {
 	ghErr := &GitHubError{Status: http.StatusNotFound, Reason: ReasonNotFound}
 	if ghErr.ClassifiedReason() != ReasonNotFound || ghErr.HTTPStatus() != http.StatusNotFound {
 		t.Errorf("GitHubError: ClassifiedReason() = %v, HTTPStatus() = %d, want %v and %d", ghErr.ClassifiedReason(), ghErr.HTTPStatus(), ReasonNotFound, http.StatusNotFound)
+	}
+}
+
+// cloudflareSpecificNames lists the Cloudflare-only identifiers errors.go must not name: the
+// provider-agnostic Reason, reasonForStatus, and ProviderError moved there in the opening
+// refactor, while the v4 envelope shape and its APIError stayed in cloudflare.go.
+var cloudflareSpecificNames = []string{"APIError", "v4Error", "v4Envelope", "resultInfo", "classifyReason"}
+
+// TestErrorsGoNamesNoCloudflareSpecificType is a plain text scan asserting errors.go, the
+// provider-agnostic classification file, does not name any of the Cloudflare-only types or
+// functions that live in cloudflare.go, so a caller reading errors.go alone sees only the shared
+// contract.
+func TestErrorsGoNamesNoCloudflareSpecificType(t *testing.T) {
+	data, err := os.ReadFile("errors.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, name := range cloudflareSpecificNames {
+		if strings.Contains(content, name) {
+			t.Errorf("errors.go names %q, a Cloudflare-specific identifier that belongs in cloudflare.go", name)
+		}
 	}
 }

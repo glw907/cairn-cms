@@ -162,6 +162,47 @@ func TestProbeTokenPrintsCredentialSourcesNeverValues(t *testing.T) {
 	}
 }
 
+// TestProviderVerdictAgreesAcrossErrorTypes drives providerVerdict, the one function that
+// replaced cloudflareVerdict and githubVerdict, over a matched pair of errors per Reason, an
+// *providers.APIError and a *providers.GitHubError carrying the same Reason and status, and
+// asserts it returns the same level, status, and reason string for both: the guarantee that
+// collapsing the two call sites onto one function left probe-token's output unchanged.
+func TestProviderVerdictAgreesAcrossErrorTypes(t *testing.T) {
+	reasons := []providers.Reason{
+		providers.ReasonUnauthorized,
+		providers.ReasonForbidden,
+		providers.ReasonNotFound,
+		providers.ReasonRateLimited,
+		providers.ReasonUnknown,
+	}
+	for _, reason := range reasons {
+		t.Run(reason.String(), func(t *testing.T) {
+			status := http.StatusTeapot
+			apiErr := &providers.APIError{Status: status, Reason: reason}
+			ghErr := &providers.GitHubError{Status: status, Reason: reason}
+
+			apiVerdict := providerVerdict(apiErr)
+			ghVerdict := providerVerdict(ghErr)
+
+			if apiVerdict != ghVerdict {
+				t.Errorf("providerVerdict(APIError) = %+v, providerVerdict(GitHubError) = %+v, want equal for reason %v", apiVerdict, ghVerdict, reason)
+			}
+			if apiVerdict.status != status || apiVerdict.reason != reason.String() {
+				t.Errorf("providerVerdict = %+v, want status %d and reason %q", apiVerdict, status, reason.String())
+			}
+		})
+	}
+
+	if got := providerVerdict(nil); got != okVerdict() {
+		t.Errorf("providerVerdict(nil) = %+v, want okVerdict()", got)
+	}
+
+	unclassifiable := errors.New("boom")
+	if got := providerVerdict(unclassifiable); got.reason != "unreachable" || got.level != exitUnknown {
+		t.Errorf("providerVerdict(unclassifiable) = %+v, want reason \"unreachable\" and level exitUnknown", got)
+	}
+}
+
 func TestProbeTokenExitCriticalOnRejectedCloudflareToken(t *testing.T) {
 	env := testEnv()
 	dir := openTestRegistry(t, nil)

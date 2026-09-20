@@ -35,7 +35,11 @@ brief is outside the pre-approval and goes back to Geoff as one combined questio
 "Stop after the ritual and hand the re-cut to B1." Pass A's session closes at its ritual and does
 NOT author the re-cut. The fresh B1 session's FIRST step is plan authorship, in this order:
 
-1. One agent re-cuts `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` from this brief
+0. Verify the worktree is idle before anything else (the workstation's one-executor rule):
+   `pgrep -f .claude/worktrees/cairn-tool-a`, `git status` in the worktree for uncommitted work
+   you did not author, and this file's and STATUS's dates. Pass A's session closed 2026-09-20.
+1. One agent (general-purpose, `model: opus`; plan authorship is a high-effort turn) working in
+   the worktree, given this brief and the plan as it stands on the branch, re-cuts `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` from this brief
    into Pass B1 and Pass B2 (each with its own ceiling, checkpoint interval, segments, and close),
    and appends the dated addendum to the 2026-08-20 spec. Pre-approved by Geoff, within this
    brief's bounds (above).
@@ -47,10 +51,22 @@ NOT author the re-cut. The fresh B1 session's FIRST step is plan authorship, in 
    claims in seven tasks.
 4. Then execute B1.
 
+**Ceilings and checkpoints (the conductor's sizing, 2026-09-20; Geoff has not reviewed these
+numbers, so the re-cut states them and the B1 session names them in its first status note).**
+Pass A measured about 0.6M subagent tokens per task including its fix round, and about 2.4M for
+the close (simplifier, seven architecture reads, a four-task fold, the ritual). B1 is seven
+tasks (the opening refactor and Tasks 12 to 17) and touches about five packages at its close:
+ceiling 8M. B2 is eight tasks (18 to 25), with Task 19 the largest in the plan, plus release
+work and the merge of B1 already behind it: ceiling 10M. Checkpoint every four tasks in both.
+The original plan priced all of Pass B at 10M for fourteen tasks; the split prices it at 18M for
+fifteen tasks plus the audit amendments. That increase is real and is Geoff's to challenge.
+
 Two mechanics changed on 2026-09-20 and both apply to B1 and B2:
 
 - **The Go gate takes the light lane.** Every `tool/`-only gate is
-  `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. It has its own lock and a 3G cap,
+  `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. The plan's header on the branch
+  was corrected to say so at Pass A's close; the re-cut keeps it there, since the header is what
+  an executor reads. It has its own lock and a 3G cap,
   so it no longer queues behind another session's browser gate, which cost Pass A roughly two to
   three hours. Tasks that also run the Node gate (Task 17) use the default heavy lane for that
   half. Keep skipping `scripts/checks/gate-tier.mjs` for `tool/`-only diffs until it gains a

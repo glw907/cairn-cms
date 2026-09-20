@@ -25,6 +25,17 @@ not exist when this pass runs. Task 6's router table cites the showcase exemplar
 fragment points at the tarball's `docs/reference/README.md` as where the docs are. The docs
 rebuild adds the recipe column and the docs index later, as its own change to both artifacts.
 
+**2026-09-19 amendment (Geoff's checkpoint ruling during extend-1):** this pass gains one small task,
+placed at the end of chain A before task 4's close: **the engine-owned Tailwind sources file.** The
+engine ships a CSS file on a public subpath (for example `@glw907/cairn-cms/admin-sources.css`)
+whose body is the `@source` lines for the engine's shipped admin markup, resolved relative to that
+file; a site's `src/admin.css` imports it in place of the `@source "../node_modules/@glw907/cairn-cms/dist";`
+line extend-1 shipped, so no site ever names the engine's `dist` layout, and the showcase, the
+template, and the scaffold's bake all switch to the import. The five-line form stays five lines.
+Gates: `check:package`, `check:surface`, `check:template`, the showcase's `check:cairn`, and the
+admin-visual suite unchanged. Record the seam's ordering fact (extend-1's task 7 record) in the
+reference page's sentence for the file.
+
 **Goal:** a developer using Claude Code on a cairn site gets the engine's guidance from the
 package it already has: a `CLAUDE.md` fragment, three skills, one read-only review agent, and a
 `Stop` hook the fragment documents as a snippet, all shipped in the tarball, with the fragment,

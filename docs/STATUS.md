@@ -27,8 +27,11 @@ routing record for this track; every slice through docs-to-facts is MERGED.
 6.7M; **checkpoint 2026-09-19 19:20: about 5.6M spent (84 percent)**, of which about 1.0M went to
 three network drops, one usage-limit kill, one relayed-question misfire, and one redundant
 re-dispatch; task 3 ran three review rounds. Tasks 4, 5, 6 and the ritual are priced at about 3.0M.
-The combined checkpoint question to Geoff is open: raise the ceiling to finish, or cut after task 3
-(task 4 is the plan's designated cut candidate) and carry 4 to 6 forward. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
+Geoff's checkpoint answer (2026-09-19 19:25, one execution sitting): **ceiling raised to 9.0M**, the
+pass runs to a merged PR; the engine-owned Tailwind sources file (so a site's admin.css never names
+the engine's `dist` path) is one small extend-2 task; the docs-infra currency pass
+(`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`) is APPROVED as
+written and queues after the one cut, before the site round. Per-task gates come from `scripts/checks/gate-tier.mjs`, serialized on
 `cairn-run-gate`'s machine lock.
 
 Task ledger (2026-09-19 19:20): **1, 2, 7, 8a, 8b ACCEPTED**; chain B is complete on `extend-1-site` (six commits,

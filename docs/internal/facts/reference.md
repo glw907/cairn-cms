@@ -105,7 +105,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   still closes on the same press), a bubble that takes pointer events with a `::before` hit area
   bridging the gap to the trigger, and no timer. Activating an enabled trigger hides the bubble;
   a trigger marked `aria-disabled="true"` keeps it. Anchor positioning is a requirement, not an
-  enhancement: under `@supports not (anchor-name: --x)` the bubble is not rendered at all. Source:
+  enhancement: under `@supports not (anchor-name: --x)` the bubble is not rendered at all, so a
+  client-side feature test sets a native `title` on the trigger instead, a UA tooltip standing in
+  for the bubble a browser without anchor positioning cannot place (needed in the duplicate-name
+  case above all, since that case sets no `aria-describedby` either). Source:
   `src/lib/admin-toolkit/Tooltip.svelte`. [verified]
 
 ## docs/reference/ambient.md

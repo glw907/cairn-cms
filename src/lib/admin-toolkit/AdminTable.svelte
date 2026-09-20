@@ -101,12 +101,13 @@ caller's own batch-action buttons never reach into the id set directly.
   const densityClass = $derived(density === 'xs' ? 'table-xs' : 'table-sm');
   const effectiveEmptyColspan = $derived(selection ? emptyColspan + 1 : emptyColspan);
   const selectedCount = $derived(selection?.ids.size ?? 0);
-  // The header checkbox can only empty a selection, so with nothing selected it has nothing to do.
-  // Marked with `aria-disabled` rather than the native attribute, since a natively disabled input
-  // cannot take focus and this is exactly the element `clear` returns focus to: the state it lands
-  // in IS the empty one. The dimming and the not-allowed cursor are restated in this component's
-  // own scoped CSS, which daisyUI supplies for `:disabled` alone.
-  const headerInert = $derived(rowCount > 0 && selectedCount === 0);
+  // The header checkbox can only empty a selection, so with nothing selected (including an empty
+  // table) it has nothing to do. Marked with `aria-disabled` rather than the native attribute,
+  // since a natively disabled input cannot take focus and this is exactly the element `clear`
+  // returns focus to: the state it lands in IS the empty one. The dimming and the not-allowed
+  // cursor are restated in this component's own scoped CSS, which daisyUI supplies for
+  // `:disabled` alone.
+  const headerInert = $derived(selectedCount === 0);
 
   let headerCheckbox = $state<HTMLInputElement | null>(null);
 
@@ -119,15 +120,21 @@ caller's own batch-action buttons never reach into the id set directly.
     selection.onchange(new Set());
   }
 
-  /** The header checkbox's own change handler. While nothing is selected the checkbox is inert, so
-   *  the tick it just took is reverted rather than acted on: there is no id set here to select from.
-   */
-  function onHeaderChange(event: Event) {
-    if (headerInert) {
-      (event.currentTarget as HTMLInputElement).checked = false;
-      return;
-    }
-    clear();
+  /** The header checkbox's own click handler, for both a pointer click and a Space-key
+   *  activation: both fire the same `click` event. A click here can only ever clear a selection,
+   *  never build one, so the control's own `checked`/`indeterminate` are always `false` once this
+   *  handler returns; they are written here directly rather than left to the declarative
+   *  `checked`/`indeterminate` bindings above. The checkbox's own pre-click activation toggles
+   *  `checked` before this handler ever runs, and calling `preventDefault` to undo that toggle
+   *  reverts it to whatever it held BEFORE the click, which is `true` for a fully selected header,
+   *  the wrong answer for a click that just cleared the selection; leaving the toggle alone and
+   *  overwriting both properties here afterward is what stays correct in every starting state,
+   *  full, partial, or inert. */
+  function onHeaderClick(event: MouseEvent) {
+    const input = event.currentTarget as HTMLInputElement;
+    if (!headerInert) clear();
+    input.checked = false;
+    input.indeterminate = false;
   }
 </script>
 
@@ -160,7 +167,7 @@ caller's own batch-action buttons never reach into the id set directly.
               aria-disabled={headerInert ? 'true' : undefined}
               checked={rowCount > 0 && selectedCount === rowCount}
               indeterminate={selectedCount > 0 && selectedCount < rowCount}
-              onchange={onHeaderChange}
+              onclick={onHeaderClick}
             />
           </th>
         {/if}
@@ -208,9 +215,18 @@ caller's own batch-action buttons never reach into the id set directly.
     opacity: 0.2;
   }
 
-  /* The bar reserves its own space whether or not anything is selected, so a table does not jump
-     down the moment a first row is ticked. Its own status region is out of flow, so an unselected
-     bar is this margin and nothing else. */
+  /* `clear()` focuses this checkbox while it is inert (the state it lands in IS the empty one), and
+     daisyUI's only checkbox focus affordance is an outline, which the dimming above fades to
+     near-invisible. Restoring full opacity on focus keeps the outline visible without touching the
+     unfocused dimmed treatment. */
+  .toolkit-admin-table-select-all[aria-disabled='true']:focus-visible {
+    opacity: 1;
+  }
+
+  /* Only this margin is reserved, not the bar's own height: the `batchBar` snippet it wraps
+     renders only once `selectedCount` is non-empty, so the table still moves down by the bar's
+     height on the first tick (before that, the bar is this margin and its out-of-flow status
+     region alone). */
   .toolkit-admin-table-batch-bar {
     margin-bottom: 0.75rem;
   }

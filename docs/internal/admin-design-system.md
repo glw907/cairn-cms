@@ -426,10 +426,12 @@ alongside the component recipes above and below it.
     closes on the same press. Hoverable: the bubble takes pointer events and a `::before` hit area
     bridges the gap between trigger and bubble, so a pointer can travel in and read it. Persistent:
     nothing hides the bubble on a timer.
-  - **Where the wrapper can sit.** The wrapper is a `<span>` with `display: contents`, so it
-    cannot sit where only `<td>`, `<th>`, or `<li>` are valid children. Wrap the control inside the
-    cell, never the cell itself. A natively `disabled` control receives no pointer events in some
-    browsers, so a reason that must reach a mouse user takes the `aria-disabled` guarded shape.
+  - **Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars
+    directly inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only
+    `<li>`), regardless of the wrapper's own `display: contents`, a CSS property with no bearing on
+    HTML content-model validity. Wrap the control inside the cell or the list item, never the row
+    or the list itself. A natively `disabled` control receives no pointer events in some browsers,
+    so a reason that must reach a mouse user takes the `aria-disabled` guarded shape.
 - **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
   Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
   and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/

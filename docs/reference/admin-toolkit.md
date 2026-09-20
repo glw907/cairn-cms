@@ -970,8 +970,10 @@ The bubble is a manual popover placed by CSS anchor positioning above the trigge
 it when the top edge has no room. Because a popover renders in the top layer, the bubble survives a
 transformed, scaled, or `overflow: hidden` ancestor, such as an open daisyUI modal's own box, which
 displaces or clips a bubble positioned any other way. Anchor positioning is a requirement, not an
-enhancement: a browser without it renders no bubble at all, and `aria-describedby` carries the text
-on its own.
+enhancement: a browser without it renders no bubble at all. `aria-describedby` carries the text to
+assistive technology there, except when `text` already equals the trigger's accessible name, where
+the component sets no `aria-describedby` at all; there, a native `title` on the trigger stands in
+for the bubble instead.
 
 The bubble takes pointer events and bridges the gap to its trigger, so a pointer can travel in and
 read it without dismissing it (WCAG 1.4.13, Content on Hover or Focus). Escape is listened for on
@@ -980,10 +982,12 @@ the `document`, so the key works wherever focus sits, and the listener neither c
 is the chosen behavior, since cairn treats dismissing the bubble and closing the dialog as one
 intent.
 
-**Where the wrapper can sit.** The wrapper is a `<span>` with `display: contents`, so it cannot sit
-where only `<td>`, `<th>`, or `<li>` are valid children. Wrap the control inside the cell, not the
-cell itself. A natively `disabled` control receives no pointer events in some browsers, so a reason
-that must reach a mouse user takes the `aria-disabled` guarded shape instead.
+**Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars directly
+inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only `<li>`),
+regardless of the wrapper's own `display: contents`. Wrap the control inside the cell or the list
+item, not the row or the list itself. A natively `disabled` control receives no pointer events in
+some browsers, so a reason that must reach a mouse user takes the `aria-disabled` guarded shape
+instead.
 
 **daisyUI assembly:** none; the bubble is this component's own scoped `<style>`, with a literal
 fallback preceding every `--cairn-*`/daisyUI custom-property read, since `admin-toolkit` promises

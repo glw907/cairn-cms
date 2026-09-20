@@ -5993,13 +5993,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   its four sites; its rule restores `pointer-events` on an `aria-disabled` control and supplies
   the ghost button's resting fill, which `Tooltip` does not replace, so `stock-default-hazards`
   names the class retired at advisory tier rather than removing it.
-- **Why not DaisyUI's own `.tooltip`:** four reasons, each independent. The class is not in the
-  scaffold's compiled theme, so a site would carry it only by editing its own safelist. It is
-  CSS-only: the text lives in a `data-tip` attribute painted through a pseudo-element, so no
-  element exists for `aria-describedby` to point at and no key dismisses it. It is
-  `position: absolute` inside an `inline-block` wrapper, so any `overflow: hidden` ancestor clips
-  it, which the top-layer popover this component uses cannot be. And its own touch defect is
-  already filed: a long press opens the bubble and strands it (row
+- **Why not DaisyUI's own `.tooltip`:** two reasons, verified against
+  `node_modules/daisyui/components/tooltip.css`, each independent. Its content, whether painted
+  through the `data-tip` pseudo-element or rendered in the real `.tooltip-content` child element,
+  carries `pointer-events: none`, so a pointer travelling from the trigger into the bubble to read
+  it dismisses it instead, failing WCAG 1.4.13's hoverable bullet. And its visibility is driven
+  only by `:hover` and `:has(:focus-visible)` (plus the manual `.tooltip-open` class), with no key
+  or timeout that dismisses an open bubble, failing the dismissible bullet outright. Its own touch
+  defect is already filed: a long press opens the bubble and strands it (row
   `motion-tooltip-menu-hover-guards-dropped`).
 - **Reopens on:** a later pass removing `cairn-btn-guarded` from the sheet (its own budget edit),
   or the placement mechanism (a popover anchored by CSS anchor positioning, with the trigger's

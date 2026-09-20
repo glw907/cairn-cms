@@ -36,8 +36,10 @@ which a coordinate-writing scheme cannot promise (an open daisyUI modal's own bo
 descendants). Anchor positioning also tracks the trigger through scroll and resize with no
 listener of this component's own, and `position-try-fallbacks` flips the bubble below the trigger
 when there is no room above. A browser without anchor positioning would paint the bubble at an
-unplaced position, so there the bubble is not rendered at all and the description alone carries the
-text.
+unplaced position, so there the bubble is not rendered at all; `aria-describedby` carries the text
+to assistive technology, except in the duplicate-name case, where no `aria-describedby` is set at
+all (see `duplicatesName`), so the same client-side feature test sets a native `title` on the
+trigger instead, a UA tooltip standing in for the bubble this browser cannot place.
 
 `aria-describedby` is set imperatively on the trigger's own rendered root element (the wrapper's
 first child once the `children` snippet mounts), not spread through a snippet parameter: the sweep
@@ -51,6 +53,15 @@ contributes its text however it is hidden (the accessible-description computatio
 hidden referenced subtree by design), so the description resolves on a trigger this component's
 own hover/focus mechanics never opened, matching how `aria-describedby` resolves everywhere else.
 -->
+<script module lang="ts">
+  /** Whether this browser resolves CSS anchor positioning, tested once and cached at module scope
+   *  (every `Tooltip` instance shares the one answer, and the feature is a property of the browser,
+   *  not of any one instance). Undefined during SSR, where there is no `CSS` global to ask; the
+   *  fallback below only ever runs from a client effect, so that case never reads this constant. */
+  const supportsAnchorPositioning =
+    typeof CSS !== 'undefined' && CSS.supports('anchor-name: --x');
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
@@ -134,6 +145,19 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   }
 
   /**
+   * Sets a native `title` on the trigger for a browser with no CSS anchor positioning, where the
+   * bubble is not rendered at all (see the `@supports not` rule below): a UA tooltip beats no
+   * hover affordance whatsoever, including for the duplicate-name case where `describe` sets no
+   * `aria-describedby` at all.
+   * @returns the trigger's prior `title`, for a teardown to restore
+   */
+  function fallbackTitle(trigger: HTMLElement): string | null {
+    const prior = trigger.getAttribute('title');
+    if (prior !== text) trigger.setAttribute('title', text);
+    return prior;
+  }
+
+  /**
    * Appends this instance's anchor name to whatever the trigger already declares, once.
    * `anchor-name` is a comma list and several swept triggers already declare one inline for a
    * popover menu of their own, so appending keeps both names resolvable; replacing would leave
@@ -168,6 +192,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
     if (!trigger) return;
     const priorDescribedBy = describe(trigger);
     const priorAnchorName = anchor(trigger);
+    const priorTitle = supportsAnchorPositioning ? null : fallbackTitle(trigger);
     const expansionObserver = new MutationObserver(() => {
       if (trigger.getAttribute('aria-expanded') === 'true') escaped = true;
     });
@@ -178,6 +203,10 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
       else trigger.setAttribute('aria-describedby', priorDescribedBy);
       if (priorAnchorName) trigger.style.setProperty('anchor-name', priorAnchorName);
       else trigger.style.removeProperty('anchor-name');
+      if (!supportsAnchorPositioning) {
+        if (priorTitle === null) trigger.removeAttribute('title');
+        else trigger.setAttribute('title', priorTitle);
+      }
     };
   });
 
@@ -397,9 +426,13 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
 
   /* The exit, one band faster than the entrance and on the exit curve, since a dismissed bubble
      leaves and does not stay nearby. The shorthand also resets the hover open delay, which an
-     exit never takes. */
+     exit never takes. `pointer-events: none` while fading out: the popover stays in the DOM for
+     the transition's duration, and a bubble fading over whatever is under it would otherwise
+     swallow a click meant for that element; the open bubble above keeps taking pointer events,
+     since WCAG 1.4.13's hoverable bullet needs a pointer able to travel into it while it is shown. */
   .cairn-tooltip-bubble:not(:popover-open) {
     opacity: 0;
+    pointer-events: none;
     transition:
       opacity var(--cairn-dur-quick, 110ms) var(--cairn-ease-exit, cubic-bezier(0.2, 0, 1, 0.9)),
       display var(--cairn-dur-quick, 110ms) allow-discrete,

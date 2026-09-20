@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import AdminTable from '../../lib/admin-toolkit/AdminTable.svelte';
 import AdminTableSelectionHarness from './_AdminTableSelectionHarness.svelte';
 import baselineHtml from './fixtures/admin-table-baseline.html?raw';
@@ -239,5 +240,59 @@ describe('AdminTable', () => {
     header.click();
     expect(header.checked).toBe(false);
     expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+  });
+
+  it('keeps the header checkbox unchecked and non-indeterminate after clicking it clears a partial selection', async () => {
+    // Regression for the DOM-memo defect: the checkbox's own pre-click activation toggles
+    // `checked` before any handler runs, and Svelte's declarative `checked`/`indeterminate`
+    // bindings skip rewriting a property back to a value it already holds, so whenever that
+    // native toggle happened to already match the post-clear derived value, the browser's own
+    // toggle stood unreverted. `onclick` writes both properties directly rather than trusting the
+    // declarative bindings to catch up, so the DOM never diverges from "a click can only clear."
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [
+        { id: 'alvarez', household: 'Alvarez' },
+        { id: 'diallo', household: 'Diallo' },
+      ],
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    await screen.getByLabelText('Select Alvarez').click();
+    expect(header.indeterminate).toBe(true);
+
+    await header.click();
+    expect(header.checked).toBe(false);
+    expect(header.indeterminate).toBe(false);
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+  });
+
+  it('keeps the inert header checkbox\'s focus ring visible rather than dimmed to 0.2 opacity', async () => {
+    // `clear()` focuses this checkbox while it lands back in the inert state, and daisyUI's only
+    // checkbox focus affordance is an outline, which the inert dimming below would otherwise fade
+    // to near-invisible at the exact moment focus needs it. A real keyboard Tab, not a
+    // programmatic `.focus()`: Chromium's `:focus-visible` heuristic tracks the page's last input
+    // modality, not a per-element state, so a `.focus()` call after an earlier test's real pointer
+    // click can read as not focus-visible even on a freshly rendered element; Tab is itself a
+    // keyboard interaction, which is what the CSS rule keys off.
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet(''),
+      rowCount: 0,
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    await userEvent.tab();
+    expect(document.activeElement).toBe(header);
+    expect(getComputedStyle(header).opacity).toBe('1');
+  });
+
+  it('marks the header checkbox inert with no rows and no selection to clear', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet(''),
+      rowCount: 0,
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    expect(header.getAttribute('aria-disabled')).toBe('true');
   });
 });

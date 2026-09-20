@@ -102,8 +102,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   as the name and again as the description; the bubble still renders, so a test asserting a reason
   reads the bubble rather than the description. It also owns all three WCAG 1.4.13 bullets itself:
   a `document`-level Escape listener (non-capturing, no `preventDefault`, so an enclosing dialog
-  still closes on the same press), a bubble that takes pointer events with a `::before` hit area
-  bridging the gap to the trigger, and no timer. Activating an enabled trigger hides the bubble;
+  still closes on the same press), and a bubble that takes pointer events, where a hover-leave from
+  the trigger holds it open for a 150ms grace before clearing it, since Chromium's hit-testing for
+  a top-layer popover does not extend into the gap between trigger and bubble. Activating an
+  enabled trigger hides the bubble;
   a trigger marked `aria-disabled="true"` keeps it. Anchor positioning is a requirement, not an
   enhancement: under `@supports not (anchor-name: --x)` the bubble is not rendered at all, so a
   client-side feature test sets a native `title` on the trigger instead, a UA tooltip standing in

@@ -423,9 +423,13 @@ alongside the component recipes above and below it.
   - **All three WCAG 1.4.13 bullets are the component's own**, because it authors the bubble
     rather than leaving it to the user agent's `title` presentation. Dismissible: a
     `document`-level Escape listener, non-capturing and propagating, so an enclosing dialog still
-    closes on the same press. Hoverable: the bubble takes pointer events and a `::before` hit area
-    bridges the gap between trigger and bubble, so a pointer can travel in and read it. Persistent:
-    nothing hides the bubble on a timer.
+    closes on the same press. Hoverable: the bubble takes pointer events, and a hover-leave from
+    the trigger holds the bubble open for a 150ms grace (`HOVER_HIDE_GRACE_MS`, matching
+    `--cairn-dur-base`) before clearing it, since Chromium's hit-testing for a top-layer popover
+    does not extend into the gap between trigger and bubble, so a pointer that merely pauses there
+    would otherwise dismiss the bubble with nowhere to land. Persistent: the bubble stays open
+    until the input mode that opened it says otherwise; the grace only defers a hover-leave's own
+    dismissal, never dismisses on its own initiative.
   - **Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars
     directly inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only
     `<li>`), regardless of the wrapper's own `display: contents`, a CSS property with no bearing on

@@ -30,7 +30,9 @@ describe('Tooltip', () => {
     await userEvent.hover(button);
     expect(isVisible(bubble)).toBe(true);
 
+    // Past the hide grace, not immediately: see the hide-grace tests below for the grace itself.
     await userEvent.unhover(button);
+    await vi.waitUntil(() => !isVisible(bubble));
     expect(isVisible(bubble)).toBe(false);
   });
 
@@ -192,8 +194,8 @@ describe('Tooltip', () => {
   });
 
   it('stays open while the pointer travels from the trigger into the bubble', async () => {
-    // WCAG 1.4.13's hoverable bullet: the gap between trigger and bubble belongs to the bubble
-    // (its own ::before hit area), so a pointer moving in to read the text never dismisses it.
+    // WCAG 1.4.13's hoverable bullet: a pointer moving from the trigger into the bubble lands on
+    // the bubble well inside the hide grace, so it never dismisses.
     const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
@@ -206,6 +208,46 @@ describe('Tooltip', () => {
 
     await userEvent.hover(bubble);
     expect(isVisible(bubble)).toBe(true);
+  });
+
+  it('keeps the bubble open through the hide grace and cancels the hide on re-entry', async () => {
+    // The hit-testing gap this grace covers: Chromium reports the document, never the bubble, for
+    // every point in the space between trigger and bubble, so a real pointer pause there fires
+    // exactly this mouseleave with nothing underneath to catch it. Dispatched directly rather than
+    // through userEvent, which has no way to pause a real pointer mid-move without a hoverable
+    // element under it to land on.
+    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const button = screen.container.querySelector('button')!;
+    const wrapper = screen.container.querySelector('.cairn-tooltip')!;
+    const bubble = bubbleOf(screen.container);
+
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+
+    wrapper.dispatchEvent(new MouseEvent('mouseleave', { relatedTarget: document.body }));
+    await tick();
+    expect(isVisible(bubble)).toBe(true);
+
+    wrapper.dispatchEvent(new MouseEvent('mouseenter', { relatedTarget: document.body }));
+    await tick();
+    // Past the grace, to prove the re-entry cancelled the pending hide rather than merely
+    // outrunning it.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(isVisible(bubble)).toBe(true);
+  });
+
+  it('hides once the hide grace elapses with no re-entry', async () => {
+    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const button = screen.container.querySelector('button')!;
+    const wrapper = screen.container.querySelector('.cairn-tooltip')!;
+    const bubble = bubbleOf(screen.container);
+
+    await userEvent.hover(button);
+    expect(isVisible(bubble)).toBe(true);
+
+    wrapper.dispatchEvent(new MouseEvent('mouseleave', { relatedTarget: document.body }));
+    await vi.waitUntil(() => !isVisible(bubble));
+    expect(isVisible(bubble)).toBe(false);
   });
 
   it('hides on Escape with focus elsewhere, without moving focus', async () => {

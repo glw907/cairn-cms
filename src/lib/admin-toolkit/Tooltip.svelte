@@ -23,9 +23,12 @@ stays, which is the guarded-control case this component exists for.
 The three WCAG 1.4.13 (Content on Hover or Focus) bullets are all this component's own to meet,
 since it authors the bubble rather than leaving it to user-agent `title` presentation. Dismissible:
 a `document`-level Escape listener, so the key works wherever focus sits. Hoverable: the bubble
-takes pointer events and a `::before` hit area bridges the gap between trigger and bubble, so a
-pointer can travel into the bubble without closing it. Persistent: nothing hides the bubble on a
-timer.
+takes pointer events, and a hover-triggered `mouseleave` on the wrapper does not clear `hoverOn`
+right away; it starts the hide-grace timer (see `HOVER_HIDE_GRACE_MS`) so a pointer crossing the
+gap between trigger and bubble has time to land on either before the bubble closes. Persistent:
+the bubble stays open until the pointer, keyboard, or tap that opened it says otherwise; the hide
+grace only defers a hover-leave's own dismissal by that one short span, never dismisses on its own
+initiative while the pointer stays put.
 
 The bubble is a manual popover placed by CSS anchor positioning, the same recipe the editor
 toolbar's own menus use: the trigger carries an `anchor-name` unique to this instance and the
@@ -95,6 +98,24 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
 
   let wrapperEl = $state<HTMLElement | null>(null);
   let bubbleEl = $state<HTMLElement | null>(null);
+  /** The pause a hover-shown bubble tolerates between the wrapper's own `mouseleave` and clearing
+   *  `hoverOn`, matching `--cairn-dur-base`. Chromium's hit-testing for a top-layer popover does
+   *  not extend into the gap between trigger and bubble (every point there resolves to the
+   *  document, never the bubble), so a pointer that merely pauses in that gap fires the wrapper's
+   *  `mouseleave` with nothing underneath to catch it; without this grace WCAG 1.4.13's hoverable
+   *  bullet would fail for that pause alone, since the pointer never gets the chance to land on
+   *  the bubble. */
+  const HOVER_HIDE_GRACE_MS = 150;
+
+  /** The pending timer started by a hover-leave, undefined while none is pending. */
+  let hoverHideTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  function cancelHoverHide() {
+    if (hoverHideTimeout === undefined) return;
+    clearTimeout(hoverHideTimeout);
+    hoverHideTimeout = undefined;
+  }
+
   let hoverOn = $state(false);
   let focusOn = $state(false);
   let tapOn = $state(false);
@@ -261,14 +282,27 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
     };
   });
 
+  // Runs once, purely for its cleanup: an unmount mid-grace (a conditional block removing this
+  // Tooltip between a mouseleave and the timer firing) must not fire a stray hoverOn write against
+  // a torn-down instance.
+  $effect(() => {
+    return () => cancelHoverHide();
+  });
+
   function handleMouseEnter() {
+    cancelHoverHide();
     if (!hasText) return;
     escaped = false;
     hoverOn = true;
   }
 
+  // Does not clear hoverOn itself; see HOVER_HIDE_GRACE_MS above for why the clear waits.
   function handleMouseLeave() {
-    hoverOn = false;
+    cancelHoverHide();
+    hoverHideTimeout = setTimeout(() => {
+      hoverHideTimeout = undefined;
+      hoverOn = false;
+    }, HOVER_HIDE_GRACE_MS);
   }
 
   function handleFocusIn(event: FocusEvent) {
@@ -391,18 +425,6 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
     color: var(--color-neutral-content, oklch(96% 0.004 75));
     box-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
     box-shadow: var(--cairn-shadow, 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1));
-  }
-
-  /* The hoverable bridge: the 0.375rem gap between trigger and bubble belongs to the bubble, so a
-     pointer crossing it never leaves the wrapper and never dismisses the bubble (WCAG 1.4.13).
-     `inset-block` covers the gap on both sides at once, which is what survives
-     `position-try-fallbacks: flip-block` moving the bubble below its trigger, where the gap is on
-     the other edge. */
-  .cairn-tooltip-bubble::before {
-    content: '';
-    position: absolute;
-    inset-inline: 0;
-    inset-block: -0.375rem;
   }
 
   /* The entrance fade, keyed off the popover's own open state so the discrete display change

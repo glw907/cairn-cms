@@ -975,8 +975,10 @@ assistive technology there, except when `text` already equals the trigger's acce
 the component sets no `aria-describedby` at all; there, a native `title` on the trigger stands in
 for the bubble instead.
 
-The bubble takes pointer events and bridges the gap to its trigger, so a pointer can travel in and
-read it without dismissing it (WCAG 1.4.13, Content on Hover or Focus). Escape is listened for on
+The bubble takes pointer events, and a hover-leave from the trigger holds the bubble open for a
+150 ms grace before clearing it, so a pointer that pauses in the gap on its way to the bubble
+still has time to land there, meeting WCAG 1.4.13's Content on Hover or Focus rule. Escape is
+listened for on
 the `document`, so the key works wherever focus sits, and the listener neither calls
 `preventDefault()` nor stops propagation: an enclosing dialog still closes on the same press, which
 is the chosen behavior, since cairn treats dismissing the bubble and closing the dialog as one

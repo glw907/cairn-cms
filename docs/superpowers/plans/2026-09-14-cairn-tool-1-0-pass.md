@@ -1758,3 +1758,131 @@ which joins only when a rule the spec names needs a custom analyzer.
   `packages/create-cairn-site/package.json`
 - `src/lib/diagnostics/conditions.ts`, `src/lib/log/events.ts`,
   `docs/reference/log-events.md`, `docs/admin/is-it-working.md`
+
+## Pass cairn-tool-A post-mortem (2026-09-20)
+
+**What was built.** Tasks 1 to 10, on the `cairn-tool-a` worktree:
+
+1. The `tool/` Go module, its Makefile-driven build gate, and the three-leg CI matrix.
+2. ADR-0001 (the spine is the product, the portability ruling, the three dependency exceptions)
+   and the `CLAUDE.md` wiring for `go-conventions` and `golang-spf13-cobra`.
+3. The Cloudflare and GitHub fake fixture corpus, extracted from
+   `packages/create-cairn-site`'s test fakes into JSON files outside that package's `files`
+   allowlist.
+4. The `record` package: `Record`, `Parse`, `Marshal` with key-order preservation, and the
+   site-ID and domain validators.
+5. The `store` package: registry paths, atomic saves, and file permissions.
+6. The `providers` package: transport policy and the Cloudflare client.
+7. The `providers` package's GitHub, npm, and probe clients.
+8. The `spine` package: chapter vocabulary and outcome types.
+9. The `secrets` provider seam and the `cairn auth set`/`auth list` commands.
+10. `cairn probe-token`, Geoff's own credential mint-and-probe run.
+
+**What was verified.** PR #60 is green on all three `make check` legs (ubuntu, macos, windows)
+and on the Node checks, at `81e4d9fa`. A live `probe-token` run against Geoff's five repositories
+and the Cloudflare account answered 200 on every endpoint, with private `xcathletes-org`
+correctly reported private. The Windows reparse-point rejection is proven by CI, not merely
+written: the junction tests failed by name on windows-latest on two earlier pushes, and the
+final SHA's `store` package prints ok on that leg, so the test cannot silently skip.
+
+**Rulings taken during execution (the conductor's).**
+
+- `make -C tool check` is the gate; `scripts/checks/gate-tier.mjs` is skipped for `tool/`-only
+  diffs because it carries no `tool/` rule.
+- `record.Marshal` appends a non-zero typed key that was absent at parse time.
+- `store.Dir` resolves `CAIRN_STATE_DIR`, then the legacy `~/.config/cairn/sites` path when it
+  exists, then `os.UserConfigDir`, because the Node CLI still writes the legacy path.
+- An unconnected Cloudflare Workers Builds trigger reads as an empty trigger list, never as
+  error 12000.
+- A direct `classifyReason` table stands in for corpus bodies the corpus does not carry.
+- The `Step` enum is nineteen strings, because the Node GitHub chapter writes `installed`
+  through a computed local.
+- The Cloudflare read token needs seven read groups; Zone Settings: Read was missing from the
+  plan's original six.
+- A public repository proves nothing about a GitHub fine-grained token's scope, so
+  `probe-token` marks each repository public or private rather than inferring scope from
+  reachability.
+- `probe-token` records key names from the real HTTP body through a recording
+  `RoundTripper`, not from a re-marshaled shape.
+- A security test that can silently skip on the only platform it guards proves nothing, so the
+  Windows test creates a junction, which needs no elevated privilege.
+
+**The close.** `code-simplifier` ran at `85c2acac`. Seven `go-architecture-reader` dispatches
+ran, one per touched package (`record`, `store`, `providers`, `spine`, `secrets`, `version`,
+`cmd/cairn`): six came back "sound with nits" and `cmd/cairn` came back "workmanlike," with no
+path found on which a credential reaches argv, a log, an error string, or stdout. Four fold
+tasks followed: `7beb2014` (record renames and a key-set drift guard), `8ea19e9b` and
+`8dd326d9` (the store path checks, spine slices exposed as functions rather than vars, the
+version constant, and the junction proof), and `a7a709de` and `81e4d9fa` (the single
+`secrets.Env`, surfaced `Resolve` errors, one credential table, and a module-wide sweep of
+process citations out of Go comments).
+
+**Known residual from the fold.** The drift guard `7beb2014` added has a known gap: its parse
+side is four hand-maintained mirror slices, so a key added only to `Parse`'s switch still passes
+the guard undetected. The single-source rewrite that closes this gap is filed to Pass B1's
+opening task.
+
+**What left the pass, and its destination.** The `providers` package's remaining duplication,
+threading `context.Context` through every `providers` method, `State.Severity()` in `spine`,
+and `record`'s single-source rewrite and three-file split all move to Pass B1's opening task.
+`probe-token`'s private-verdict algebra, `discoverSites` moving into `store`, a typed exit
+error, and a dependencies struct for the command constructors move to Tasks 19 and 21 of the
+re-cut. The decision record for all of this is
+`docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md` on `main`: the re-cut of
+Pass B into B1 and B2 is authored by the B1 session from that brief, pre-approved by Geoff
+within the brief's bounds, and PR #60's merge belongs to B1's close.
+
+**What a later pass would be wrong to rediscover.**
+
+- A fine-grained GitHub token reads any public repository with no permissions granted, so
+  verifying a re-mint needs a check against a private repository (`xcathletes-org`), not a
+  public one.
+- Cloudflare's `accounts/{id}/tokens/verify` answers error 1000 for a user-owned token; use
+  `user/tokens/verify` instead.
+- Go 1.27 aliases `json.RawMessage` to a type whose Stringer prints raw bytes, which is why
+  `record.ExtraField` redacts in `String`/`GoString`.
+- `order := []string{}` in `record`'s `decodeObject` is load-bearing: `nil` is `Marshal`'s
+  never-parsed sentinel, and losing that distinction breaks round-tripping.
+- `os.Symlink` needs a privilege Windows CI runners lack, so a Windows reparse-point test has
+  to build a junction with `FSCTL_SET_REPARSE_POINT` instead.
+- `vcs.revision` is absent from a `go install module@version` build, so `version.Commit` reads
+  "none" there by design.
+- `cairn-run-gate` has a light lane (`CAIRN_GATE_LANE=light`) for a gate that launches no
+  browser, and this pass queued its own one-minute Go gate behind other sessions' browser gates
+  for two to three hours before anyone used it.
+
+**Both budgets.**
+
+Tokens: about 6.7M subagent tokens against the 8M ceiling (84 percent), the conductor's own
+turns uncounted. Of that: about 4.2M on Tasks 4 to 10 (every task from 4 to 8 and Task 10 took
+one fix round; Task 9 took none); about 0.2M the simplifier; about 0.55M the seven architecture
+reads; about 1.4M the fold; and about 0.3M on two research audits (CLI practice; bubbletea v2
+readiness) that are planning for Pass B rather than close work. The 80 percent checkpoint was
+crossed during the close, and the conductor said so and recommended finishing.
+
+Clock: about 15.5 hours, of which about 5 were lost to a network drop (`EAI_AGAIN`) at about
+04:00 that killed a fold implementer and left the conductor unwoken until Geoff's 09:16 message,
+and an estimated 2 to 3 to the gate lock.
+
+Attended time. Planning misses, six, each an error or contradiction in the plan that surfaced
+after approval and that a pre-flight check against the code would have caught: the `store.Dir`
+precedence whose legacy branch was unreachable as written; error 12000 read as "builds not
+connected"; a corpus-coverage criterion no fixture could satisfy; a step count of eighteen that
+was actually nineteen; six Cloudflare permission groups where seven are needed; and a
+module-wide ban on `term.IsTerminal`, written to stop a TUI launch gate, that also banned color
+detection. Execution sittings, two: Task 10's token mint, which the plan scheduled as Geoff's
+attended sitting (it ran longer than planned because of the missing seventh permission group and
+the public-repository gotcha), and one combined question of three decisions on 2026-09-20 (the
+color ruling, the B1/B2 split, the command grammar). Recorded also, as context and not as
+sittings: Geoff checked in several times on the morning of 2026-09-20 because the pass was
+running long, and redirected the close once (stop after the ritual; hand the re-cut to B1).
+
+**Three process changes the pass produced,** already landed in the workstation dotfiles on
+2026-09-20: the light gate lane in `cairn-run-gate`, with a note it prints when a heavy gate
+waits on the lock, and `gateLane` support in both `pass-execute` runners; a rule that any
+unattended run arms `/loop` at launch so a wake-up does not depend on the API link; a rule that
+a conductor runs a factual pre-flight over a segment's tasks before dispatch.
+
+**The friction log.** This pass touched no published docs arm and is a Go-module pass, so it did
+not run the friction log's whole-log triage; the extend-1 pass closed on 2026-09-20 and ran that
+triage hours earlier.

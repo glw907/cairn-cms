@@ -4,6 +4,16 @@
 
 ### Added
 
+- `packages/create-cairn-site`'s test fakes (`test/fake-cloudflare.mjs`, `test/fake-github.mjs`)
+  now load their response bodies from a JSON fixture corpus at
+  `packages/create-cairn-site/fixtures/`, one file per captured body, instead of carrying them as
+  inline object literals. The corpus is outside that package's `files` allowlist, so it is not
+  published. A new Go module at `tool/` (`github.com/glw907/cairn-cms/tool`) holds the foundation
+  of the `cairn` operator CLI: the `record`, `store`, `providers`, `spine`, `secrets`, and
+  `version` packages, and a `cmd/cairn` binary with `auth set`, `auth list`, and a hidden
+  `probe-token` subcommand. Nothing under `tool/` is reachable from `npm test` or the npm
+  tarball, and no command an operator would run ships yet.
+
 - `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
   `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
   computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still

@@ -886,9 +886,9 @@ the named human gates only):**
   Carbon's chart guidance is a recipe reference only.
 
 - **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
-  `cairn` tool Pass A (plan `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
-  its Reconciliation block re-verified against the post-C tree first, and the plan re-cut at
-  the CLI-versus-HUD boundary: Pass A ships the registry, the health checks, the cobra
+  `cairn` tool (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, re-cut from
+  `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md` at the CLI-versus-HUD
+  boundary): Pass A ships the registry, the health checks, the cobra
   subcommands, and the scheduled tripwire with every action usable from the shell; the
   tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
   TUI; its 2.0 adds the bubbletea HUD and multi-site management. The 1.0 architecture must
@@ -912,6 +912,22 @@ the named human gates only):**
   (4) extend-2; (5) site migration, once all the extend work has landed. The tool precedes the
   docs because it changes what the admin track describes and because building its checks
   surfaces what the operational contract leaves unsaid.
+
+  **Status (2026-09-20).** Pass A (Tasks 1 to 11) is complete on the `cairn-tool-a` worktree,
+  draft PR #60, not yet merged; the merge rides Pass B1's close, per Geoff's ruling that Pass A's
+  session stops after its close ritual and hands the re-cut to a fresh B1 session. Pass B is
+  re-cut into Pass B1 (the opening refactor task, then the checks and logs, old Tasks 12 to 17)
+  and Pass B2 (the CLI surface, old Tasks 18 to 25, with grammar amendments), per the brief at
+  `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, pre-approved by Geoff
+  within that brief's bounds.
+
+- **Two Go-tool CI gaps found closing Pass A (2026-09-20), for the B1/B2 re-cut to fold in.**
+  `scripts/checks/gate-tier.mjs` has no rule for `tool/` paths, so a Go-only diff resolves to the
+  full Node gate instead of the light Go-only lane; it should classify `tool/**` paths to the Go
+  gate on the light lane (`CAIRN_GATE_LANE=light`). Separately, the tool's CI runs `go test`
+  without `-v`, so a skipped test is invisible in the log; a verbose run of the security-relevant
+  packages on the Windows leg would make per-test proof (for example, the junction-based
+  reparse-point rejection) durable and visible rather than inferred from a green summary line.
 
 - **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
   browser).** The admin animates in places (the drawer's width, the palette's opacity, the

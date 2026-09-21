@@ -94,6 +94,13 @@ narrower reading, which reserved 2.0 for "executable fixes"; performing a fix an
 site are the same class of work, a read-only tool beginning to write, and provisioning is the
 larger and better-defined member of it.
 
+**Why it matters (Geoff, 2026-09-21):** provisioning is what makes the CLI earn its keep. Health
+checks and logs serve an operator who already has a site; provisioning gives cairn an easy,
+pleasant installation story, which is the first thing every new implementor meets. **For the time
+being the push is the CLI's 1.0, and the docs are written around what 1.0 does**: the scaffolder
+provisions, `cairn` verifies and watches. No docs page promises provisioning from `cairn` before
+it ships; the draft docs keep the install-first order open without describing it.
+
 **The journey 2.0 is judged against, in the owner's words (2026-09-21):** "A site implementor
 installs the Go tool locally, creates the correct permissions on Cloudflare and GitHub (with the
 CLI's guidance), answers some questions about the site, and then the tool does the work to create

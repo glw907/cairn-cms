@@ -118,6 +118,22 @@ answer first:
   agent-permission check sets the posture to build on: the operator's own `CLOUDFLARE_API_TOKEN`,
   read from the environment for one run and never stored. 2.0 decides whether that holds for a
   multi-step, resumable provisioning run.
+- **The second site is the design test for credentials (Geoff, 2026-09-21): "credentials should
+  be set so that it's maximally easier for a user to create a second site from the CLI."** The
+  first site pays the setup cost once; the second should need no trip to a provider's token page.
+  That constrains three choices the spec must make. Scope: the guidance has the implementor create
+  ACCOUNT-scoped tokens (every zone in the account, every repository the GitHub side must reach,
+  or an organisation-wide App installation), never tokens scoped to one zone or one repository,
+  because a narrowly scoped token has to be edited for each new site. Storage: the morning's
+  posture for the write token was "read from the environment for one run and never stored", which
+  is the safest form and the worst for a second site; the tool already has a keyring-backed
+  `secrets.Provider`, so the spec weighs a stored write credential (with `cairn auth unset`, an
+  expiry warning like the GitHub token's, and the scrubber covering it) against re-supplying it
+  per run, and states the trade plainly. Reuse: everything the interview learned that is about the
+  implementor and not the site (the account, the GitHub owner, the sender domain's parent, the
+  editor's address) is remembered, so the second site's interview asks only what is new. The 1.1
+  permission check should already report whether a token's scope will cover a NEXT site, not only
+  the current one.
 - **The permission manifest.** Built in 1.1 for the check; 2.0 consumes it on day one. That is
   the reason 1.1 comes first.
 - **Dry-run, resume, and rollback.** The scaffolder's chapters already park, hold, and resume;

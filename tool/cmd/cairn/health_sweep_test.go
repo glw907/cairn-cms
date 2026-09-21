@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -327,6 +328,79 @@ func TestHealthSweepBudgetCutReportsSettledAndNamesTheRest(t *testing.T) {
 	if !strings.Contains(got, "alpha.example") {
 		t.Errorf("output %q does not print the first (settled) site's own report", got)
 	}
+	if *code != int(spine.VerdictUnknown) {
+		t.Errorf("exit code = %d, want %d (%s)", *code, int(spine.VerdictUnknown), spine.VerdictUnknown)
+	}
+}
+
+// TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites pins the settled-loop's own
+// !f.asJSON guard (health_sweep.go's writeSeparator call ahead of each site still in the first
+// loop): a normal, uncancelled sweep over two sites still settles both, so this is the one
+// scenario where that guard's removal is observable, unlike a cut mid-first-site (where only one
+// site ever reaches the guard, so its own effect on wroteAny never surfaces downstream).
+func TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites(t *testing.T) {
+	d, _ := testDeps(t)
+	writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
+	writeTestRecord(t, d, "site-bravo-bbbbbb", "bravo.example", "bravo")
+
+	out, _, err := execTree(t, d, "health", "--json")
+	if err != nil {
+		t.Fatalf("cairn health --json: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("output %q has %d lines, want exactly 2 (one JSON object per settled site, no blank separator)", out, len(lines))
+	}
+	for _, line := range lines {
+		var payload map[string]any
+		if err := json.Unmarshal([]byte(line), &payload); err != nil {
+			t.Errorf("line %q does not unmarshal as JSON: %v", line, err)
+		}
+	}
+}
+
+// TestHealthSweepBudgetCutUnderJSONEmitsOnlyNewlineDelimitedJSON pins the unsettled-loop's own
+// !f.asJSON guard, which skips both the separator and the writeSweepTimeout row for every site
+// the sweep never reached: a budget cut mid-sweep still emits valid newline-delimited JSON, one
+// object per settled site, with no blank-line separator and no bare "UNKNOWN\tid\treason.timeout"
+// row that would corrupt it.
+func TestHealthSweepBudgetCutUnderJSONEmitsOnlyNewlineDelimitedJSON(t *testing.T) {
+	d, code := testDeps(t)
+	writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
+	writeTestRecord(t, d, "site-bravo-bbbbbb", "bravo.example", "bravo")
+	writeTestRecord(t, d, "site-charlie-cccccc", "charlie.example", "charlie")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	d.transport = &cancelOnFirstRequest{cancel: cancel}
+
+	cmd := newRootCmd(d)
+	var out, errOut strings.Builder
+	cmd.SetOut(&out)
+	cmd.SetErr(&errOut)
+	cmd.SetArgs([]string{"health", "--json"})
+
+	if err := cmd.ExecuteContext(ctx); err != nil {
+		t.Fatalf("cairn health --json cut by cancellation: %v, want nil after reporting a verdict", err)
+	}
+
+	got := out.String()
+	for line := range strings.SplitSeq(strings.TrimRight(got, "\n"), "\n") {
+		if line == "" {
+			t.Errorf("output %q contains a blank line, which corrupts newline-delimited JSON", got)
+			continue
+		}
+		if strings.Contains(line, "reason.timeout") {
+			t.Errorf("line %q is a bare UNKNOWN/reason.timeout row, not JSON; the unsettled-site guard is not honoring --json", line)
+			continue
+		}
+		var payload map[string]any
+		if err := json.Unmarshal([]byte(line), &payload); err != nil {
+			t.Errorf("line %q does not unmarshal as JSON: %v", line, err)
+		}
+	}
+
 	if *code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want %d (%s)", *code, int(spine.VerdictUnknown), spine.VerdictUnknown)
 	}

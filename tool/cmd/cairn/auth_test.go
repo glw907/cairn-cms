@@ -381,6 +381,7 @@ func TestNoCommandBlocksOnClosedStdin(t *testing.T) {
 		{"health"},
 		{"health", "ecxc-ski-a1b2c3"},
 		{"logs", "ecxc-ski-a1b2c3"},
+		{"adopt"},
 		{"adopt", "list"},
 		{"auth", "list"},
 		{"auth", "set", "CAIRN_CF_READ_TOKEN"},

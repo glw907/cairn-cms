@@ -134,6 +134,9 @@ unblocked line.
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
 Go tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.
 
-**Go tool Pass B2, segment 4** (launch inside `cairn-cms`): Continue Go tool Pass B2 per
-`docs/STATUS.md`'s Go tool entry: ask Geoff for the ceiling raise, then pre-flights, rulings
-commit, and segment 4 through `pass-execute.js`; stop before the tag.
+**Go tool Pass B2, to the close** (launch inside `cairn-cms`): Continue Go tool Pass B2 per
+`docs/STATUS.md`'s Go tool entry and `~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`: check
+the worktree for a live executor, finish segment 5 if any of its three tasks has not committed,
+then the conductor's real-terminal release candidate verification, then Tasks 22b, 23, 24b, and
+25 under Geoff's recorded go and the conductor's conditions. The close never writes that the cut
+is unblocked.

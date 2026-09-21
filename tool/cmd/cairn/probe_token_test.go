@@ -362,6 +362,39 @@ func TestProbeTokenNoWarningWhenARepositoryIsPrivate(t *testing.T) {
 	}
 }
 
+// TestProbeTokenExitCriticalOnMixedRepositoryResult pins the exit code for a run where one
+// repository reads fine and another rejects the token: every other probed endpoint answers 200,
+// so the Failing verdict reaches the exit code only through the Repositories section's own fold.
+// A run that stopped folding those lines would exit 0 here.
+func TestProbeTokenExitCriticalOnMixedRepositoryResult(t *testing.T) {
+	env := testEnv()
+	dir := openTestRegistry(t, map[string][2]string{
+		"readable-abc123": {"glw907", "readable-site"},
+		"rejected-abc123": {"glw907", "rejected-site"},
+	})
+	rt := mergeRoutes(
+		cloudflareOKRoutes(),
+		githubOKRoutesFor("readable-site", true),
+		githubOKRoutesFor("rejected-site", true),
+		githubOKRoutesForEngine(),
+		routeRoundTripper{
+			"/repos/glw907/rejected-site": {status: http.StatusUnauthorized, body: []byte(`{"message":"Bad credentials"}`)},
+		},
+	)
+
+	var code int
+	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("RunE: %v", err)
+	}
+	if code != exitCritical {
+		t.Errorf("exit code = %d, want exitCritical (%d)", code, exitCritical)
+	}
+}
+
 func TestProbeTokenExitUnknownWhenRegistryDirUnresolvable(t *testing.T) {
 	env := testEnv()
 	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutesForEngine())

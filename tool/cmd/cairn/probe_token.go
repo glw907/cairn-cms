@@ -20,11 +20,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// The three exit codes probe-token reports, the same monitoring-plugin convention a future
-// aggregated health check runner will share. probe-token predates that runner and carries its
-// own copy rather than waiting on it, since Geoff's own credential mint needs this command
-// before the rest of health exists. WARNING (1) is the convention's fourth code, left unused
-// here: no check this command runs reports a soft warning, only ok, critical, or unknown.
+// The three exit codes probe-token reports, the monitoring-plugin convention every aggregated
+// health check runner shares. WARNING (1) is the convention's fourth code, left unused here: no
+// check this command runs reports a soft warning, only ok, critical, or unknown.
 const (
 	exitOK       = 0
 	exitCritical = 2
@@ -394,18 +392,25 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 
 	var repos []repoLine
 
-	// report prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
-	// whatever shape the recorder captured for path, and folds its state into worst.
-	report := func(endpoint, owner, repo, path string, err error) verdict {
+	// probe prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
+	// whatever shape the recorder captured for path, and returns its verdict without folding it.
+	probe := func(endpoint, owner, repo, path string, err error) verdict {
 		v := providerVerdict(err)
-		raise(v.state)
 		printEndpoint(out, fmt.Sprintf("%s (%s/%s)", endpoint, owner, repo), v, rec.lookup(http.MethodGet, path))
 		return v
 	}
 
+	// report is probe for a line no later section folds again, so it folds the verdict here.
+	report := func(endpoint, owner, repo, path string, err error) {
+		raise(probe(endpoint, owner, repo, path, err).state)
+	}
+
+	// probeRepo reads one repository's visibility and prints its endpoint line, leaving the fold
+	// to printRepoLines: a repository's verdict reaches worst through the Repositories section,
+	// and folding it here as well would count the same verdict twice.
 	probeRepo := func(owner, repo string) repoLine {
 		private, ownErr := gh.RepoOwnership(ctx, owner, repo)
-		v := report("repos", owner, repo, fmt.Sprintf("/repos/%s/%s", owner, repo), ownErr)
+		v := probe("repos", owner, repo, fmt.Sprintf("/repos/%s/%s", owner, repo), ownErr)
 		return repoLine{label: owner + "/" + repo, v: v, private: private, known: ownErr == nil}
 	}
 

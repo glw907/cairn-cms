@@ -391,16 +391,11 @@ func assertNoDuplicateKeys(t *testing.T, typeName string, keys []string) {
 }
 
 // TestNoKeySwitchInParse is the closure test: Parse's key recognition runs entirely off the
-// field tables in record.go, never a switch on key-name literals. A switch case can be added
-// independently of any key-order slice a reviewer keeps in sync by hand, which is exactly how a
-// key recognized by Parse could once diverge, undetected, from the keys Marshal could emit. This
-// check fails the moment parse.go switches on a key string again, and passes only while Parse's
-// sole recognition mechanism is a field-table lookup.
-//
-// Run against the pre-rewrite record.go, a single file whose Parse, parseGitHub,
-// parseGitHubRepo, and parseCloudflare each held their own switch keyed by string literals (16
-// case arms in all), this check fails. Splitting Parse into parse.go closes it: parse.go has no
-// switch over a key name at all.
+// field tables in fields.go, never a switch on key-name literals. A switch case can be added
+// independently of the table Marshal emits from, which is how a key Parse recognizes could
+// diverge, undetected, from the keys Marshal can emit. This check fails the moment parse.go
+// switches on a key string, and passes only while Parse's sole recognition mechanism is a
+// field-table lookup.
 func TestNoKeySwitchInParse(t *testing.T) {
 	data, err := os.ReadFile("parse.go")
 	if err != nil {

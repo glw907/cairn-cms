@@ -104,12 +104,13 @@ test('at 768, a desk route recedes the sidebar behind the toggle, same as below 
   await expect(sidebar).toBeVisible();
 });
 
-// 3. Breadcrumb crumbs ellipsized with room to spare. daisyUI 5.7.21 gave `.breadcrumbs > ul` a
-//    `padding-inline-start: .25rem` and `.breadcrumbs` a matching `margin-inline-start: -.25rem`,
+// 3. Breadcrumb crumbs ellipsized with room to spare. daisyUI 5.7.28 gave `.breadcrumbs` a
+//    `margin-inline-start: -.25rem` against a `.breadcrumbs > ul` `padding-inline-start: .25rem`,
 //    so the crumb list's content box lost 4px inside a wrapper that sizes to the crumbs. The flex
 //    line then overflowed by exactly that 4px and every crumb shrank, which `truncate` turned into
-//    an ellipsis: "Posts" read "Pos..." beside free space. The fix resets both on this call site,
-//    the same opt-out the nav's own `p-0` already makes. Read against the real preview build,
+//    an ellipsis: "Posts" read "Pos..." beside free space. The fix cancels only the nav's own
+//    margin with `ms-0`, the same opt-out the nav's own `p-0` already makes; the list keeps its
+//    padding, the room the first crumb's focus ring needs. Read against the real preview build,
 //    since the component project loads the variables-only stylesheet and carries no daisyUI rules.
 test('at desktop width, a breadcrumb that fits is not ellipsized', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -129,4 +130,33 @@ test('at desktop width, a breadcrumb that fits is not ellipsized', async ({ page
     { text: 'Posts', overflowing: false },
     { text: '2026-06-hello', overflowing: false },
   ]);
+});
+
+// 4. The breadcrumb's own keyboard focus ring needs room on its left side: `.breadcrumbs` scroll-
+//    clips (overflow-x: auto), so a ring drawn flush against the nav's left padding-box edge has
+//    its left stroke clipped. The list's 4px inline padding (daisyUI's own `.breadcrumbs > ul`
+//    rule, kept once `ps-0` was removed from the call site) is what holds that room; this reads
+//    the admin sheet's real `:focus-visible` outline-width and outline-offset rather than a fixed
+//    pixel count, so the assertion tracks the rule instead of a guess at its values.
+test('at desktop width, the first breadcrumb crumb keeps room for its focus ring', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/admin/posts/2026-06-hello');
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+
+  const nav = page.locator('nav[aria-label="Breadcrumb"]');
+  const firstCrumb = nav.locator('a').first();
+  await firstCrumb.focus();
+  await expect(firstCrumb).toBeFocused();
+
+  const ring = await firstCrumb.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { width: parseFloat(style.outlineWidth), offset: parseFloat(style.outlineOffset) };
+  });
+  const ringReach = ring.width + ring.offset;
+
+  const navBox = (await nav.boundingBox())!;
+  const crumbBox = (await firstCrumb.boundingBox())!;
+  expect(crumbBox.x - navBox.x).toBeGreaterThanOrEqual(ringReach);
 });

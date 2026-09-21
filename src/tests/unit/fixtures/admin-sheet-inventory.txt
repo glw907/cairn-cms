@@ -530,7 +530,6 @@ pr-1
 pr-3
 progress
 prose
-ps-0
 pt-1
 pt-2
 pt-2.5

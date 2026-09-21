@@ -146,13 +146,13 @@ as the checkbox/badge fixes below.
 **Correction, 2026-09-21 (from the post-bump baseline regen).** Two claims above read the
 selectors too narrowly, and the visual regen is what surfaced both.
 
-- `ListToolbar.svelte`'s facet buttons are NOT out of reach. 5.7.38's selector reads
+- `src/lib/admin-toolkit/ListToolbar.svelte`'s facet buttons are NOT out of reach. 5.7.38's selector reads
   `.btn:is([aria-pressed=true],[aria-checked=true],[aria-current]:not([aria-current=false],[aria-current=""]))`,
   so `aria-checked` matches it as squarely as `aria-pressed` does. The outcome is still no visual
   move, but for a different reason than the one recorded: `ListToolbar.svelte:289` already writes
   `btn-active` on the same state, so daisyui's rule lands on a button that already had the
   treatment. The record's "does not reach it" was wrong; "changes nothing" is right.
-- 5.7.39-5.7.41 do reach a surface cairn uses. 5.7.41's `menu` `aria-current` styling adds a
+- 5.7.38 does reach a surface cairn uses. Its `menu` `aria-current` styling adds a
   visible depth shadow under the admin sidebar's active nav item
   (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`, `menu.css`), which is
   more than the `--menu-active-fg` color entry the norms check caught. Taken as daisyui's stock
@@ -180,15 +180,17 @@ Android drag-resize, validator colors, `dock`) touch surfaces cairn doesn't use.
 fresh visual read of that regen reported four regressions. Measured against the two committed
 baseline sets, the regen moved exactly three things, and only one of them is breakage:
 
-1. **The breadcrumb, real breakage.** 5.7.21 added
+1. **The breadcrumb, real breakage.** 5.7.28 added
    `.breadcrumbs { margin-inline-start: -.25rem }` and
    `.breadcrumbs > ul { padding-inline-start: .25rem }` (`breadcrumbs.css`). The pair nets to no
    visible shift, but it takes 4px out of the crumb list's content box inside a wrapper that
    sizes to its crumbs, so the flex line overflowed by 4px and every crumb ellipsized. Fixed by
-   `ms-0` and `ps-0` on the call site. The 40px of left inset the same change removed was the
+   `ms-0` alone on the call site's `nav`, cancelling the negative margin; the `ul`'s own padding
+   stays, since it is the room the first crumb's keyboard focus ring needs against the
+   `.breadcrumbs` scroll clip. The 40px of left inset the same change removed was the
    UA's own `<ul>` marker gutter, never authored; the band now starts at the topbar's own left
    padding, aligned with an office route's site name.
-2. **The active nav item's depth shadow, intended.** 5.7.41, above. Taken as stock.
+2. **The active nav item's depth shadow, intended.** 5.7.38, above. Taken as stock.
 3. **The media view toggle's pressed ring, not the bump at all.** The ring darkened from a 20%
    `base-content` mix to a 55% one. That is `2ca47771` (2026-09-12), which raised the pressed
    cue above the WCAG 1.4.11 3:1 floor, reaching a baseline for the first time; the previous

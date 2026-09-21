@@ -20,20 +20,35 @@ brief's tools section, landed in `f6af8133` and `41e04390`. Task 4, the Blueprin
 audit over all 48 components (49 files), ran in the conductor's own turns and landed in
 `49e21caa`, filing five findings and none taken (owner's ruling 3).
 
-**Halted before merge.** PR #69's CI is green on test, create-site, scaffold, design, and norms,
-but e2e failed on 33 `admin-visual` snapshots. A CI regen (`b4bd3a5f`) rewrote those baselines, and
-a fresh-context `visual-verifier` read then FAILED the regen: the daisyUI 5.7.20 to 5.7.42 bump
-from Task 1's dependency sweep shifts the edit-page and delete-dialog top-strip breadcrumb about
-40 px left with a truncated "Posts" label and a clipped entry id (ten files), narrows the `⌘K`
-hint box and shrinks its glyph to a smudge, gives the active nav item a bottom shadow against the
-design system's flat nav, and gives the media view-toggle's active button a ring or shadow. The
-pass is HALTED for an owner ruling on the fix; full detail in `docs/STATUS.md`'s HALTED section.
+**A fix round, resolved.** PR #69's CI is green on test, create-site, scaffold, design, and norms.
+The post-bump CI regen (`b4bd3a5f`) rewrote 33 `admin-visual` baselines, and a fresh-context
+`visual-verifier` read reported four apparent regressions; a bounded fix round measured each
+against the two committed baseline sets and found exactly one real regression. The daisyUI 5.7.28
+bump (Task 1's dependency sweep) pairs `.breadcrumbs { margin-inline-start: -.25rem }` with
+`.breadcrumbs > ul { padding-inline-start: .25rem }`, which nets to no visible shift but took 4px
+out of the crumb list's content box inside a wrapper that sizes to its crumbs, so the flex line
+overflowed by exactly those 4px and every crumb shrank behind `truncate`. Fixed with `ms-0` on the
+breadcrumb `nav`, cancelling only the negative margin; the `ul`'s own padding stays, since it is
+the room the first crumb's keyboard focus ring needs against `.breadcrumbs`'s own scroll clip. The
+other three reported items were not regressions from this bump: the 40px of left inset the same
+change also removed was the UA's default `<ul>` marker gutter, never authored, gone by design; the
+`⌘K` hint narrowing is not in the regen at all, the two baseline sets are pixel-identical there,
+and the difference is this workstation's font resolving `U+2318` differently from CI's, a local
+render compared against a CI baseline; the media view-toggle's ring is commit `2ca47771`'s WCAG
+1.4.11 contrast raise, first captured now because no regen had run since `3a5e2f3b`; and the nav
+depth shadow is daisyUI 5.7.38's stock `[aria-current]` `.menu` treatment, accepted by the owner
+as its native styling rather than an override target.
 
 **Lessons.** The investigator classified all 33 diffs as explained by the renderer from diff
 bounding boxes and called the breadcrumb shift "the top strip only"; only the fresh-context visual
-gate and a direct read of the crops caught it. The earlier local full e2e that "passed" all admin
-snapshots ran against a stale preview server. `e2e.yml` uploads no Playwright report artifact, so
-CI diffs cannot be viewed without a local reproduction.
+gate and a direct read of the crops caught the real regression, and only a second, more careful
+fresh-context read (measured against the two committed baseline sets rather than a bounding-box
+classification) separated it from the three non-regressions. The earlier local full e2e that
+"passed" all admin snapshots ran against a stale preview server. `e2e.yml` uploads no Playwright
+report artifact, so CI diffs cannot be viewed without a local reproduction. The prior baseline set
+spanned about 1,033 commits and three weeks, so "the old baseline" was never a clean reference to
+diff against; a regen after a long gap always carries every intended change since the last one,
+not only the change under test.
 
 **What the gate caught, and what it did not.** The first full gate died at `norms:check`
 because that check needs the showcase preview running on port 4173; it is not a standalone

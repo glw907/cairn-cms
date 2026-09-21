@@ -138,9 +138,9 @@ Three rules carry the model:
   toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
   hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save). The way
   back starts at the band's own left padding, the same edge an office route's site name starts at, so
-  the two bands share one left edge. The breadcrumb carries `ms-0` on its `nav` and `ps-0` on its
-  `ul` to hold that edge: daisyUI's `.breadcrumbs` recipe sets an inset of its own on both, and the
-  UA's default list gutter sits under it.
+  the two bands share one left edge; the breadcrumb's first crumb sits 4px inside that edge, the
+  list's own inline padding, which the crumb's keyboard focus ring needs. The breadcrumb carries
+  `ms-0` on its `nav` to cancel daisyUI's `.breadcrumbs` inset margin without touching that padding.
 - **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
   sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
   for desk routes (the desk rider, spec §5, 2026-07-14). A desk route no longer drops the sidebar
@@ -364,7 +364,7 @@ alongside the component recipes above and below it.
   them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
   replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
-  `font-medium text-subtle`. From daisyUI 5.7.41 the `.menu` recipe styles an `[aria-current]` item
+  `font-medium text-subtle`. From daisyUI 5.7.38 the `.menu` recipe styles an `[aria-current]` item
   natively, which adds its own depth shadow under the active item
   (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`). That shadow is the stock
   active treatment and the admin takes it; the utilities above still carry the fill and the ink.

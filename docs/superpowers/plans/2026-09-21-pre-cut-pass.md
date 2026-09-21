@@ -812,9 +812,20 @@ require a direct crop read before accepting a regen, not a bounding-box classifi
 
 ## Halt
 
-The pass HALTED before Task 6, with PR #69 open and not merged. Facts, the four regressions, and
-the open decision for the owner are recorded in `docs/STATUS.md`'s HALTED section; see that entry
-for the full detail rather than duplicating it here.
+The pass ran a fix round before Task 6, with PR #69 open pending a CI baseline regen, a fresh
+visual-verifier read, and merge. A fresh-context `visual-verifier` read of the post-bump CI regen
+(`b4bd3a5f`) reported four apparent regressions; measured against the two committed baseline sets,
+only one was a real regression: the daisyUI 5.7.28 bump's breadcrumb inset pair took 4px out of
+the crumb list's content box and truncated every crumb, fixed with `ms-0` on the breadcrumb `nav`.
+The other three were not regressions from this bump. The 40px of left inset the same change also
+removed was the UA's default `<ul>` marker gutter, never authored, gone by design. The `⌘K` hint
+was never a regression: the visual verifier's local render compared against a CI baseline, and
+fonts resolve `U+2318` differently between them. The media view-toggle's ring is commit
+`2ca47771`'s WCAG 1.4.11 contrast raise, first captured in this regen because no regen had run
+since `3a5e2f3b`. The nav depth shadow is daisyUI 5.7.38's stock `[aria-current]` `.menu`
+treatment, accepted by the owner as its native styling. The lesson stands regardless of the count:
+a bounding-box classification is not a visual read, and only a direct crop read against the
+committed baselines separates a real regression from an intended or unrelated change.
 
 **Execution sittings: none.** No pull-in after plan approval; the pass ran to completion under the
 rulings already settled in the header, up to the halt described above.

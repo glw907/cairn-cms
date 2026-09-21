@@ -800,19 +800,19 @@ discriminant, not the fields, gates the chrome).
                  (not the wrapper's own inline content), so a text-overflow rule on the wrapper
                  alone never renders one (audit finding). min-w-0 lets the flex-laid label shrink
                  past its content size so truncate can take effect. -->
-            <!-- ms-0 and ps-0 opt this call site out of daisyUI's own breadcrumb inset, the
-                 inline-axis half of the opt-out the nav's p-0 already makes on the block axis.
-                 daisyUI 5.7.21 pairs `.breadcrumbs { margin-inline-start: -.25rem }` with
-                 `.breadcrumbs > ul { padding-inline-start: .25rem }`, which nets to no visible
-                 shift but takes 4px out of the crumb list's content box. This wrapper sizes to
-                 its crumbs, so the flex line then overflowed by exactly those 4px and every
-                 crumb shrank into an ellipsis with room to spare. The band composes its own
-                 left inset from the topbar's padding, so it wants neither value. -->
+            <!-- ms-0 cancels only daisyUI's own breadcrumb margin, not its list padding: daisyUI
+                 5.7.28 pairs `.breadcrumbs { margin-inline-start: -.25rem }` with
+                 `.breadcrumbs > ul { padding-inline-start: .25rem }`, and the margin alone was
+                 what overflowed this wrapper's flex line by 4px and shrank every crumb into an
+                 ellipsis with room to spare. The list's own 4px padding stays: it is the room
+                 the first crumb's keyboard focus ring needs, since `.breadcrumbs` scroll-clips
+                 (overflow-x: auto) anything the ring would otherwise draw past the edge. The
+                 first crumb sits 4px inside the band's left edge as a result, which is accepted. -->
             <nav aria-label="Breadcrumb" class="breadcrumbs ms-0 min-w-0 max-w-full p-0 type-body">
               <!-- role="list"/"listitem": the .breadcrumbs > ul > li descendant selector renders
                    every crumb at display: flex, which strips the implicit list role in
                    WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode). -->
-              <ul class="min-w-0 ps-0" role="list">
+              <ul class="min-w-0" role="list">
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
                   <li class="min-w-0" role="listitem">
                     {#if crumb.href}

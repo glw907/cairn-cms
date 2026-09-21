@@ -3,48 +3,6 @@
 Where the work is now, what is next, and the open decisions; `cairn-pass` rewrites it at each
 pass-end. Durable orientation is `CLAUDE.md`; everything past tense is [`docs/HISTORY.md`](HISTORY.md).
 
-## HALTED: pre-cut pass, 2026-09-21
-
-Tasks 1 to 4 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md` are accepted through the
-review chain; Task 5's fold pushed as PR #69; Task 6 (the `0.97.0` cut) has NOT started. Nothing
-is published; `package.json` and `packages/cairn-cms-dev/package.json` still read `0.96.0`. PR
-#69's CI is green on test, create-site, scaffold, design, and norms, but e2e failed on 33
-`admin-visual` snapshots. A CI regen (`b4bd3a5f`) rewrote those 33 baselines, and a fresh-context
-`visual-verifier` read then FAILED that regen: the daisyUI 5.7.20 to 5.7.42 bump in Task 1's
-dependency sweep causes four regressions against `docs/internal/admin-design-system.md`:
-
-- STRUCTURAL: the edit-page and delete-dialog top-strip breadcrumb shifts about 40 px left, loses
-  its inset, truncates "Posts" to "Pos…" with free space beside it, and clips the entry id, across
-  ten snapshot files.
-- The `⌘K` hint box narrows from 31 px to 27 px and its glyph shrinks to a smudge.
-- The active nav item gains a bottom shadow because daisyUI 5.7.38 styles `[aria-current]` menu
-  items natively, against the design system's flat nav (`docs/internal/admin-design-system.md:364`).
-- The media view-toggle's active button gains a ring or shadow. (Text anti-aliasing also moved,
-  cosmetic only.)
-
-So `b4bd3a5f`'s baselines encode wrong states and must be regenerated on CI again after a fix,
-then re-read by a fresh `visual-verifier`, before PR #69 can merge. A do-not-merge comment is on
-the PR. Crops: `~/.cache/cairn-pre-cut/crops/` (`edit-strip-a/b.png`, `cmdk-light-a/b.png`,
-`nav-light-a/b.png`).
-
-**Open decision for the owner** (recommended: a): (a) authorize one bounded fix round (scoped
-overrides in `cairn-admin.css`'s `@layer components` or the affected components, restoring the
-breadcrumb inset and truncation, the `⌘K` hint, the flat active nav item, and the view toggle;
-test-first where a component test can pin it; then a CI regen, a fresh visual read, merge, and the
-cut); (b) pin `daisyui` back to `5.7.20` for this cut and file the upgrade as its own pass; (c)
-something else.
-
-**Lessons.** The investigator classified all 33 diffs as explained by the renderer from diff
-bounding boxes and called the breadcrumb shift "the top strip only"; only the fresh-context visual
-gate and a direct read of the crops caught it. The earlier local full e2e that "passed" all admin
-snapshots ran against a stale preview server. `e2e.yml` uploads no Playwright report artifact, so
-CI diffs cannot be viewed without a local reproduction.
-
-**Resume prompt:** Resume the pre-cut pass at its halt: read `docs/STATUS.md`'s HALTED section and
-`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`, take Geoff's ruling on the daisyUI
-regressions, then fix or pin, regenerate the admin baselines on CI, gate on a fresh
-visual-verifier read, merge PR #69, and run Task 6.
-
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
@@ -56,17 +14,18 @@ brief's tools section, and the Blueprint admin audit), unpublished under `## Unr
 window holds for one cut. Held majors: TypeScript 7, Vitest 5, `@types/node` 26, and now
 `devalue` 6 (new this sweep, no direct call site to migrate). Two `npm audit` findings (the
 `cookie` transitive under `@sveltejs/kit` and a `@cloudflare/vitest-pool-workers` transitive)
-are held, needing `--force` or a downgrade to clear. CI on `main` is green.
+are held, needing `--force` or a downgrade to clear. CI on `main` is green. PR #69 (the pre-cut
+pass) is open, its one real fix-round finding (the daisyUI 5.7.28 breadcrumb inset truncating
+the crumb trail by 4px) resolved with `ms-0`, and it is awaiting a CI baseline regen, a fresh
+`visual-verifier` read, and merge.
 
 ## Immediate next action
 
-The pre-cut pass is HALTED before merge; see the HALTED section above. PR #69 must clear a
-daisyUI-regression fix round, a CI baseline regen, and a fresh visual-verifier read before it can
-merge. Only after that does the one cut run (`cairn-release`, Task 6 of
-`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`). The pending version is `0.97.0`, verified
-free against the registry with `npm view @glw907/cairn-cms versions --json` at the cut. extend-1's
-two advisory audit rules (`log-event-grammar`, `log-secret-field`) promote to error tier at
-`0.98.0`.
+Regenerate PR #69's CI admin baselines, get a fresh `visual-verifier` read, and merge it. Then
+run the one cut (`cairn-release`, Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`).
+The pending version is `0.97.0`, verified free against the registry with `npm view
+@glw907/cairn-cms versions --json` at the cut. extend-1's two advisory audit rules
+(`log-event-grammar`, `log-secret-field`) promote to error tier at `0.98.0`.
 
 Then, in order: **the docs-infra currency pass**
 (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, APPROVED
@@ -156,10 +115,10 @@ container, then beta.
 
 Two tracks, one session each.
 
-**One cut:** the pre-cut pass is HALTED before merge (see the HALTED section above). Resolve the
-daisyUI-regression fix round, regenerate CI baselines, get a fresh visual-verifier read, and merge
-PR #69, then run Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md` (the `cairn-release`
-skill) to cut `0.97.0`.
+**One cut:** the pre-cut pass is on PR #69, awaiting a CI baseline regen, a fresh
+visual-verifier read, and merge. Regenerate CI baselines, get a fresh visual-verifier read, and
+merge PR #69, then run Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md` (the
+`cairn-release` skill) to cut `0.97.0`.
 
 **Go tool Pass B2** (launch inside `cairn-cms`): Conduct Go tool Pass B2 overnight per
 `docs/STATUS.md`'s Go tool entry: amendment, three-lens review, fold, pre-flights, execute,

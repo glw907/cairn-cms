@@ -34,19 +34,22 @@ container, then beta.
   (`7d06e29c`), the three-lens review folded (`2bb2cb3f`), segment 1's pre-flight applied
   (`35b6f97d`), all on the branch, unpushed. B1 is nine tasks: segment 1 (11b-i, 11b-ii, 12, 13)
   ran as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
-  close and the PR #60 merge. **Checkpoint (2026-09-20 17:30):** 11b-i and 11b-ii ACCEPTED (one
-  fix round each). **12 and 13 ESCALATED and ruled**, fixed by direct `cairn-implementer`
-  dispatches, 12 first, then 13, each with a `diff-reviewer` read. Rulings on 12: an expired
-  matching ack leaves `Acknowledged` false and sets `CheckResult.AckExpires`; a zero GitHub
-  `TokenExpiry` is OK with a Detail line, never Unknown, and the provider doc comment is
-  corrected; the non-verbose render is a key allowlist over `Fields`, never a regex over
-  `Detail`. Ruling on 13: `providers` gains an authoritative per-nameserver address lookup and
-  the unreachable diagnosis ports `hostname.mjs`'s apex read, defaulting to records-absent.
-  Then segment 2's pre-flight and launch. Runner args: `gate: "make -C tool check"`,
+  close and the PR #60 merge. **Checkpoint (2026-09-20 18:20):** segment 1 is done: 11b-i, 11b-ii, and 12
+  ACCEPTED; 13 fixed twice on conductor rulings (`ceddd1f8`, `3f9ce7a8`), its last
+  `diff-reviewer` read pending by SHA. **Segment 2 (14 to 17) is IN FLIGHT as run
+  `wf_afcd830b-427`.** Rulings, all recorded in the plan on the branch (`1798f71e`): an expired
+  matching ack leaves `Acknowledged` false and sets `AckExpires`; a zero GitHub `TokenExpiry` is
+  OK, never Unknown; the non-verbose render is a key allowlist over `Fields` (`count`, `age`,
+  `state`, and Task 15 adds its own keys plus two short-SHA fields), and `Detail` never carries
+  a verbose-only value; the unreachable diagnosis reads the apex at the authority, discovering
+  nameservers first and falling back to the saved pair. For the close: Go's resolver reads
+  `/etc/hosts` before the authoritative dial (recorded, not fixed); `tool/docs/*.md` cites task
+  numbers. Runner args: `gate: "make -C tool check"`,
   `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an unpinned task makes the
   runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings accepted by Geoff
-  2026-09-20: B1 8M, B2 10M. Spend: about 3.1M of 8M after four of nine tasks (1.1M plan work,
-  2.03M segment 1), so the 6.4M flag will likely trip inside segment 2. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
+  2026-09-20: B1 8M, B2 10M. Spend: about 3.9M of 8M after four of nine tasks (1.1M plan work,
+  2.03M segment 1, 0.8M fix rounds and reviews), so the 6.4M flag will likely trip inside
+  segment 2. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
   `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three
   `make check` legs. `main` carries NO `tool/` tree until the merge, and the merge rides B1's
   close (Geoff, 2026-09-20), so **B1 runs in that existing worktree on that branch, never on a

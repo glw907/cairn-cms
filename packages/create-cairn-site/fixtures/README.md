@@ -46,7 +46,9 @@ One file is the exception to "a real captured API response":
 `cloudflare/observability-telemetry-query.ok.json` carries a live-recorded envelope around three
 synthesized records, so one fixture covers three engine events and two levels. Its own
 `provenance.note` says which half is which, and
-`cloudflare/observability-telemetry-query.events.200.json` beside it is live all the way down.
+`cloudflare/observability-telemetry-query.events.200.json` beside it is live all the way down, and
+so is `cloudflare/observability-telemetry-query.mixed-lines.200.json`, which carries both kinds of
+line a Worker writes: one cairn engine record and one bare `console.error` line.
 
 ## One recorded response per route
 

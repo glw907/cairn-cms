@@ -210,20 +210,32 @@ func detailDeployCredMissing() string {
 	return "no Workers Builds credential to read the deployment with"
 }
 
-// The format templates detailErrorsCount and detailErrorsAboveThreshold render from.
+// The format templates detailErrorsCount and detailErrorsAboveThreshold render from. The two
+// "at least" forms carry a count the fetch truncated at its own limit: the window holds that many
+// records and possibly more, so the line says what was measured rather than passing a floor off as
+// an exact number. They extend the catalogue's section 3.4 rows, reported to the editorial gate
+// per section 4.6.
 const (
-	tmplErrorsCount          = "%d errors in %s"
-	tmplErrorsAboveThreshold = "%d errors in %s, above the %d the check allows"
+	tmplErrorsCount                 = "%d errors in %s"
+	tmplErrorsCountAtLeast          = "at least %d errors in %s"
+	tmplErrorsAboveThreshold        = "%d errors in %s, above the %d the check allows"
+	tmplErrorsAtLeastAboveThreshold = "at least %d errors in %s, above the %d the check allows"
 )
 
 // detailErrorsCount renders the errors check's OK verdict, catalogue section 3.4, carrying the
 // count and window a trusting reader needs rather than a judgment on them.
-func detailErrorsCount(count int, window time.Duration) string {
+func detailErrorsCount(count int, truncated bool, window time.Duration) string {
+	if truncated {
+		return fmt.Sprintf(tmplErrorsCountAtLeast, count, errorsWindow(window))
+	}
 	return fmt.Sprintf(tmplErrorsCount, count, errorsWindow(window))
 }
 
 // detailErrorsAboveThreshold renders the errors check's Failing verdict, catalogue section 3.4.
-func detailErrorsAboveThreshold(count int, window time.Duration, threshold int) string {
+func detailErrorsAboveThreshold(count int, truncated bool, window time.Duration, threshold int) string {
+	if truncated {
+		return fmt.Sprintf(tmplErrorsAtLeastAboveThreshold, count, errorsWindow(window), threshold)
+	}
 	return fmt.Sprintf(tmplErrorsAboveThreshold, count, errorsWindow(window), threshold)
 }
 
@@ -294,7 +306,9 @@ func Catalogue() []string {
 		detailAPIRequestRejected(),
 		detailDeployCredMissing(),
 		tmplErrorsCount,
+		tmplErrorsCountAtLeast,
 		tmplErrorsAboveThreshold,
+		tmplErrorsAtLeastAboveThreshold,
 		detailCredsGitHubNoExpiry(),
 		tmplCredsGitHubExpiring,
 		detailCredsUnauthorized(),

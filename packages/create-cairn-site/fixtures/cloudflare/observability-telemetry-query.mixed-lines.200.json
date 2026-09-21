@@ -1,0 +1,256 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "POST /accounts/{account_id}/workers/observability/telemetry/query",
+    "status": 200,
+    "note": "recorded live on 2026-09-21 from a 60 second window on a production Worker, queried with the worker-name filter alone so the response carries what the Worker logged rather than what the errors check asks for. The five events are the reason the errors check now filters on the engine's envelope: one is a cairn engine record (level warn, carrying the event/level/timestamp envelope src/lib/log writes) and one is the Worker's own console.error line for a 404 (level error, carrying no event key at all). A count of every error-level line counts the second and misses the first. Identifiers are scrubbed to the corpus's placeholder shapes, each event's $workers.event (the whole inbound request, with its client address and geography) is dropped, and result.events.fields and result.events.series are trimmed to two entries each."
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [
+      {
+        "message": "Successful request"
+      }
+    ],
+    "result": {
+      "run": {
+        "id": "2cwypg4cymf8o6o251wmy68u",
+        "query": {
+          "id": "cairn-logs",
+          "description": "",
+          "name": "",
+          "generated": false,
+          "parameters": {
+            "datasets": [
+              "cloudflare-workers"
+            ],
+            "filters": [
+              {
+                "key": "$metadata.service",
+                "operation": "eq",
+                "value": "example-site",
+                "type": "string"
+              }
+            ]
+          },
+          "workspaceId": "0000000000000000000000000000ex01",
+          "environmentId": "cloudflare",
+          "userId": "2226c21721211fbd01e997f1f4446572",
+          "created": "2026-09-21T23:03:40.808Z",
+          "updated": "2026-09-21T23:03:40.808Z"
+        },
+        "accountId": "0000000000000000000000000000ex01",
+        "timeframe": {
+          "from": 1789931402614,
+          "to": 1789931522614
+        },
+        "userId": "2226c21721211fbd01e997f1f4446572",
+        "status": "COMPLETED",
+        "granularity": 2000,
+        "dry": false,
+        "statistics": {
+          "elapsed": 0.321757458,
+          "rows_read": 497731,
+          "bytes_read": 43515311,
+          "abr_level": 1
+        }
+      },
+      "events": {
+        "events": [
+          {
+            "source": {
+              "level": "info",
+              "message": "POST https://example.test/about"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931462614,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless",
+              "outcome": "ok",
+              "wallTimeMs": 154,
+              "cpuTimeMs": 105
+            },
+            "$metadata": {
+              "id": "01M303N7YP0000000000000006",
+              "requestId": "2a51374153049af17593be6390da2093",
+              "rayId": "a3e3223708c83bc7",
+              "traceId": "1dd9246b21e42a42990ea11dc4141174",
+              "trigger": "POST /about",
+              "service": "example-site",
+              "level": "info",
+              "message": "POST https://example.test/about",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker-event",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "level": "warn",
+              "reason": "origin",
+              "path": "/about",
+              "event": "guard.rejected",
+              "timestamp": "2026-09-20T19:11:02.614Z"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931462614,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M303N7YP0000000000000004",
+              "requestId": "2a51374153049af17593be6390da2093",
+              "rayId": "a3e3223708c83bc7",
+              "traceId": "1dd9246b21e42a42990ea11dc4141174",
+              "spanId": "e83e79477d7614ba",
+              "trigger": "POST /about",
+              "service": "example-site",
+              "level": "warn",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "level": "info",
+              "message": "GET https://example.test/about"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931456896,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless",
+              "outcome": "ok",
+              "wallTimeMs": 80,
+              "cpuTimeMs": 61
+            },
+            "$metadata": {
+              "id": "01M303N2C00000000000000005",
+              "requestId": "dc909f693a10afb4f62ef84bd9c7ba22",
+              "rayId": "a3e3221429bd0c4f",
+              "traceId": "b56c1247d1d62133b24b62bada8aeeba",
+              "trigger": "GET /about",
+              "service": "example-site",
+              "level": "info",
+              "message": "GET https://example.test/about",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker-event",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "level": "info",
+              "message": "GET https://example.test/contact/"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931456172,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless",
+              "outcome": "ok",
+              "wallTimeMs": 87,
+              "cpuTimeMs": 71
+            },
+            "$metadata": {
+              "id": "01M303N1NC0000000000000006",
+              "requestId": "2db953b0dc7329f4d1a195a0d9294ec0",
+              "rayId": "a3e3220f5fd7b858",
+              "traceId": "3bd20e932c8bec026b1eb43d05e2b2db",
+              "trigger": "GET /contact/",
+              "service": "example-site",
+              "level": "info",
+              "message": "GET https://example.test/contact/",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker-event",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "level": "error",
+              "message": "\n\u001b[1;31m[404] GET /contact/\u001b[0m"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931456172,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M303N1NC0000000000000002",
+              "requestId": "2db953b0dc7329f4d1a195a0d9294ec0",
+              "rayId": "a3e3220f5fd7b858",
+              "traceId": "3bd20e932c8bec026b1eb43d05e2b2db",
+              "spanId": "a9ec25afa083d99d",
+              "trigger": "GET /contact/",
+              "service": "example-site",
+              "level": "error",
+              "error": "\n\u001b[1;31m[404] GET /contact/\u001b[0m",
+              "message": "\n\u001b[1;31m[404] GET /contact/\u001b[0m",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          }
+        ],
+        "fields": [
+          {
+            "type": "string",
+            "key": "level"
+          },
+          {
+            "type": "string",
+            "key": "$workers.scriptName"
+          }
+        ],
+        "count": 5,
+        "series": [
+          {
+            "time": "2026-09-20 19:10:06",
+            "data": []
+          },
+          {
+            "time": "2026-09-20 19:10:08",
+            "data": []
+          }
+        ]
+      },
+      "statistics": {
+        "elapsed": 0.321757458,
+        "rows_read": 497731,
+        "bytes_read": 43515311,
+        "abr_level": 1
+      }
+    }
+  }
+}

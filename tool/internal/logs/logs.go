@@ -53,7 +53,7 @@ type Entry struct {
 	Fields []Field `json:"fields"`
 }
 
-// ErrObservabilityOff is the sentinel Fetch and CountErrors return when a Worker's telemetry
+// ErrObservabilityOff is the sentinel Fetch and FetchRecords return when a Worker's telemetry
 // query answers 404. Every other classified reason passes through unchanged, so a caller reports
 // it the same way every sibling check does.
 //
@@ -78,10 +78,12 @@ const RetentionClamp = 7 * 24 * time.Hour
 // defaultLimit is fetch's own entry cap when Query.Limit is 0.
 const defaultLimit = 200
 
-// errorCountLimit bounds CountErrors's own query: high enough that a real site's error volume
-// over a LogWindow never silently truncates the count, since CountErrors's whole job is the count
-// itself rather than a page of entries to browse.
-const errorCountLimit = 1000
+// recordLimit bounds FetchRecords's own query. A page that fills to it is reported truncated
+// rather than counted as exact: the endpoint publishes no total of its own, and its
+// result.events.count saturates at the limit the query asked for. Measured live on 2026-09-21,
+// where a 24 hour level: error query against a healthy production Worker answered with count 1000
+// against a limit of 1000.
+const recordLimit = 1000
 
 // sinceGrammar is the message every ParseSince rejection names, so an operator sees the accepted
 // grammar rather than a bare "invalid value".
@@ -127,25 +129,37 @@ func clampSince(since time.Duration) time.Duration {
 // (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json).
 const filterType = "string"
 
+// filter is one leaf filter a caller adds to a telemetry query beyond the worker-name filter
+// every query carries. An operation taking no operand, "exists", carries an empty value, which
+// buildQuery then omits from the leaf.
+type filter struct {
+	key       string
+	operation string
+	value     string
+}
+
 // buildQuery constructs the Workers Logs telemetry query body Cloudflare's
 // accounts/{id}/workers/observability/telemetry/query endpoint expects, extending the confirmed
 // shape (queryId, timeframe, view, limit, parameters.datasets) with a worker-name filter on
-// "$metadata.service" and, when filterValue is set, one more equality filter on filterKey: "event"
-// for Fetch, "level" for CountErrors.
+// "$metadata.service" and each of extra's own leaves.
 //
 // The endpoint's filter schema is a union: an entry is either a group node carrying "kind":
 // "group" and a "filterCombination", or a leaf carrying "key", "type", "operation", and "value".
 // cairn sends leaves, which a live call on 2026-09-21 confirmed the endpoint accepts as a bare
 // array, combined with AND; wrapping them in a group would add a node with nothing to say.
-func buildQuery(worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) map[string]any {
+func buildQuery(worker string, since time.Duration, now time.Time, extra []filter, limit int) map[string]any {
 	if limit <= 0 {
 		limit = defaultLimit
 	}
 	filters := []map[string]any{
 		{"key": "$metadata.service", "type": filterType, "operation": "eq", "value": worker},
 	}
-	if filterValue != "" {
-		filters = append(filters, map[string]any{"key": filterKey, "type": filterType, "operation": "eq", "value": filterValue})
+	for _, f := range extra {
+		leaf := map[string]any{"key": f.key, "type": filterType, "operation": f.operation}
+		if f.value != "" {
+			leaf["value"] = f.value
+		}
+		filters = append(filters, leaf)
 	}
 	return map[string]any{
 		"queryId": "cairn-logs",
@@ -235,8 +249,8 @@ func parseEntry(raw json.RawMessage) (Entry, error) {
 // to report it (see ErrObservabilityOff's own doc comment for the split), and decoding the
 // returned events, sorting them newest first with entries that carry no timestamp last in
 // arrival order.
-func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) ([]Entry, error) {
-	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, filterKey, filterValue, limit))
+func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time, extra []filter, limit int) ([]Entry, error) {
+	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, extra, limit))
 	if err != nil {
 		if apiErr, ok := errors.AsType[*providers.APIError](err); ok {
 			if apiErr.Reason == providers.ReasonNotFound {
@@ -273,13 +287,17 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 
 // Fetch returns worker's log entries over the q.Since window ending at now (clamped to
 // RetentionClamp), newest first, narrowed to q.Event when set. It drops any entry the endpoint
-// returned whose own "event" does not equal q.Event, the same posture FetchLevel takes on the
+// returned whose own "event" does not equal q.Event, the same posture FetchRecords takes on the
 // level: the endpoint's filter is applied to a record cairn does not control the shape of, so a
 // caller trusts what each entry actually carries rather than the filter alone. now is a parameter, not a
 // system-clock read, so a caller replaying a query gets the same window every time. Every field
 // stays json.RawMessage with no rendering choice baked in.
 func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time) ([]Entry, error) {
-	entries, err := fetch(ctx, cf, q.Worker, q.Since, now, "event", q.Event, q.Limit)
+	var extra []filter
+	if q.Event != "" {
+		extra = append(extra, filter{key: "event", operation: "eq", value: q.Event})
+	}
+	entries, err := fetch(ctx, cf, q.Worker, q.Since, now, extra, q.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -289,25 +307,41 @@ func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time
 	return slices.DeleteFunc(entries, func(e Entry) bool { return e.Event != q.Event }), nil
 }
 
-// FetchLevel returns worker's log entries at level, over the since window ending at now (clamped
-// to RetentionClamp), newest first, dropping any entry the endpoint returned whose own "level"
-// does not equal level, for the reason Fetch states about its own narrowing. It is CountErrors's
-// own read path and returns the matched entries themselves, so a caller that needs both the count
-// and the entries reads them without a second, re-filtered query.
-func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) ([]Entry, error) {
-	entries, err := fetch(ctx, cf, worker, since, now, "level", level, errorCountLimit)
-	if err != nil {
-		return nil, err
-	}
-	return slices.DeleteFunc(entries, func(e Entry) bool { return e.Level != level }), nil
+// Records is one FetchRecords read: the engine records that matched, and whether the endpoint's
+// page filled to the fetch limit.
+type Records struct {
+	// Entries are the matching engine records, newest first.
+	Entries []Entry
+	// Truncated reports whether the page filled to the fetch limit, which means the window holds
+	// at least len(Entries) records and possibly many more. A caller counting them says "at
+	// least" rather than reporting the number as exact.
+	Truncated bool
 }
 
-// CountErrors returns the count of level: error records worker logged over the since window ending
-// at now, the health errors check's own signal.
-func CountErrors(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time) (int, error) {
-	entries, err := FetchLevel(ctx, cf, worker, "error", since, now)
+// FetchRecords returns the engine's own log records at level, over the since window ending at now
+// (clamped to RetentionClamp), newest first, and reports whether the page was truncated at the
+// fetch limit.
+//
+// An engine record is one a site's cairn engine wrote through src/lib/log, recognized by the
+// "event" key of its level/event/timestamp envelope; every other line a Worker logs, a bare
+// console call above all, carries no such key. The query asks the endpoint for the two conditions
+// directly, an equality filter on "level" and an existence filter on "event", which a live call on
+// 2026-09-21 confirmed it applies to the parsed record: the same 24 hour window answered with 1000
+// console error lines under the level filter alone and none at all once "event" had to exist. Each
+// returned entry is rechecked here anyway, the posture Fetch states about its own narrowing.
+//
+// The distinction is the whole point of the count. On a public site the Worker's own 404 logging
+// dwarfs the engine's records, so a count of every error-level line measures crawler traffic
+// rather than anything cairn did.
+func FetchRecords(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) (Records, error) {
+	entries, err := fetch(ctx, cf, worker, since, now, []filter{
+		{key: "level", operation: "eq", value: level},
+		{key: "event", operation: "exists"},
+	}, recordLimit)
 	if err != nil {
-		return 0, err
+		return Records{}, err
 	}
-	return len(entries), nil
+	truncated := len(entries) >= recordLimit
+	entries = slices.DeleteFunc(entries, func(e Entry) bool { return e.Level != level || e.Event == "" })
+	return Records{Entries: entries, Truncated: truncated}, nil
 }

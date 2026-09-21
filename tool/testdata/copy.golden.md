@@ -40,6 +40,8 @@ and commit the diff.
 - Turn on HSTS for the zone under SSL/TLS, Edge Certificates.
 - Turn on observability for the Worker in wrangler.jsonc, then deploy again.
 - Workers Builds is not connected to this Worker
+- at least %d errors in %s
+- at least %d errors in %s, above the %d the check allows
 - no DKIM record found for the sending subdomain
 - no DMARC record published for the domain
 - no Workers Builds credential to read the deployment with

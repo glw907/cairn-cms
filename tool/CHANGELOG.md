@@ -81,6 +81,14 @@ recorded from a live call in the fixture corpus with a test that decodes it.
   `reason.api.request-rejected` with a detail naming cairn as the faulty party, and the
   missing-dataset reading is narrowed to a 404. Live evidence: a Worker with observability unset
   answers 200 with zero events, so no status distinguishes that condition.
+- **The `errors` check counted the wrong thing.** It counted every error-level line a Worker
+  logged, which on a public site is mostly the site's own `console.error` output for crawler
+  404s. A live run read `1000 errors in 24h` for a healthy site, a number that was the query's own
+  limit and held no cairn record at all. The check now counts the records cairn's engine writes
+  through `src/lib/log`, recognized by the `event` key of their envelope and asked for in the
+  query itself, so a site's own logging cannot move the count. A count that still fills the page
+  limit reads `at least 1000 errors in 24h` rather than passing a floor off as a total, and
+  `--json` carries `errorCountTruncated` beside `errorCount` when it does.
 - **An adopted record now carries its zone id**, which discovery read off the Custom Domains
   route and then dropped. Without it the `https-forced` and `email` checks report unobservable on
   every adopted site.

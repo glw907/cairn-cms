@@ -150,6 +150,13 @@ the mark is what your own rule keys on. Nothing can stop the string arriving; th
 makes it nameable. Every other measured value sits under `fields`, keyed by name, and is a
 number, a boolean, or a word from cairn's own vocabulary.
 
+The `errors` check carries two of its own keys. `errorCount` counts the site's cairn engine
+records at error level over the window, never every error-level line the Worker logged: a public
+site's crawler 404s are the Worker's own `console.error` output, not cairn's. `errorCountTruncated`
+is `true` when the fetch filled its page limit, which makes `errorCount` a floor rather than a
+total, and the check's `detail` then reads `at least N errors in 24h`. The key is present only
+when it is true.
+
 ## The stream, for many sites
 
 Bare `cairn health --json` writes newline-delimited JSON, one object per site, flushed as each

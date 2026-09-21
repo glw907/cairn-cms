@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -161,39 +163,49 @@ func TestFetchOrdersEntriesNewestFirst(t *testing.T) {
 // on does not move between runs.
 var queryNow = time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC)
 
-// TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors asserts Fetch filters on the JSON
-// "event" key and CountErrors's own path filters on "level", the one distinction between them.
-func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
-	fetchQuery := buildQuery("site", time.Hour, queryNow, "event", "auth.link.send_failed", 0)
-	countQuery := buildQuery("site", time.Hour, queryNow, "level", "error", errorCountLimit)
+// queryFilters returns the parameters.filters array of a query buildQuery built.
+func queryFilters(t *testing.T, query map[string]any) []map[string]any {
+	t.Helper()
+	params, ok := query["parameters"].(map[string]any)
+	if !ok {
+		t.Fatal("query[\"parameters\"] is not a map[string]any")
+	}
+	filters, ok := params["filters"].([]map[string]any)
+	if !ok {
+		t.Fatal("the query's parameters.filters is not a []map[string]any")
+	}
+	return filters
+}
 
-	fetchParams, ok := fetchQuery["parameters"].(map[string]any)
-	if !ok {
-		t.Fatal("fetchQuery[\"parameters\"] is not a map[string]any")
-	}
-	fetchFilters, ok := fetchParams["filters"].([]map[string]any)
-	if !ok {
-		t.Fatal("fetchQuery's parameters.filters is not a []map[string]any")
-	}
-
-	countParams, ok := countQuery["parameters"].(map[string]any)
-	if !ok {
-		t.Fatal("countQuery[\"parameters\"] is not a map[string]any")
-	}
-	countFilters, ok := countParams["filters"].([]map[string]any)
-	if !ok {
-		t.Fatal("countQuery's parameters.filters is not a []map[string]any")
-	}
+// TestBuildQueryCarriesEachCallersOwnFilters asserts Fetch narrows on the JSON "event" key by
+// value, while FetchRecords asks for a level and for the "event" key to exist at all, which is
+// what excludes a Worker's own console lines from the errors check's count.
+func TestBuildQueryCarriesEachCallersOwnFilters(t *testing.T) {
+	fetchFilters := queryFilters(t, buildQuery("site", time.Hour, queryNow, []filter{
+		{key: "event", operation: "eq", value: "auth.link.send_failed"},
+	}, 0))
+	recordFilters := queryFilters(t, buildQuery("site", time.Hour, queryNow, []filter{
+		{key: "level", operation: "eq", value: "error"},
+		{key: "event", operation: "exists"},
+	}, recordLimit))
 
 	if fetchFilters[1]["key"] != "event" || fetchFilters[1]["value"] != "auth.link.send_failed" {
 		t.Errorf("Fetch's second filter = %v, want key event, value auth.link.send_failed", fetchFilters[1])
 	}
-	if countFilters[1]["key"] != "level" || countFilters[1]["value"] != "error" {
-		t.Errorf("CountErrors's second filter = %v, want key level, value error", countFilters[1])
+	if recordFilters[1]["key"] != "level" || recordFilters[1]["value"] != "error" {
+		t.Errorf("FetchRecords's second filter = %v, want key level, value error", recordFilters[1])
+	}
+	if recordFilters[2]["key"] != "event" || recordFilters[2]["operation"] != "exists" {
+		t.Errorf("FetchRecords's third filter = %v, want key event, operation exists", recordFilters[2])
+	}
+	// An operation taking no operand carries no value at all; the endpoint reads a filter by its
+	// operation, and a value beside "exists" would be a key it never asked for.
+	if _, ok := recordFilters[2]["value"]; ok {
+		t.Errorf("the exists filter %v carries a value", recordFilters[2])
 	}
 	// The endpoint refuses a leaf filter that declares no type, which is what it did to every
 	// query cairn sent before 2026-09-21.
-	for _, filters := range [][]map[string]any{fetchFilters, countFilters} {
+	for _, filters := range [][]map[string]any{fetchFilters, recordFilters} {
 		for i, f := range filters {
 			if f["type"] != filterType {
 				t.Errorf("filter %d = %v, want a %q type", i, f, filterType)
@@ -202,19 +214,67 @@ func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
 	}
 }
 
-// TestCountErrorsCountsLevelErrorRecords asserts CountErrors returns the count of level: error
-// records the fixture carries: one of the three fixture events is level: error, the other two are
-// warn and info, and the fixture's transport returns every event regardless of the request's own
-// level filter, so the true count comes from FetchLevel's own Entry.Level check.
-func TestCountErrorsCountsLevelErrorRecords(t *testing.T) {
-	cf := newFixtureClient(t)
-
-	count, err := CountErrors(context.Background(), cf, "example-site", 24*time.Hour, queryNow)
+// TestFetchRecordsCountsEngineRecordsAndIgnoresConsoleLines reads the live response recorded from
+// a 60 second window on a production Worker, which carries one cairn engine record (level warn,
+// with an "event" key) and one bare console.error line for a 404 (level error, with none). The
+// fixture's transport ignores the request body and returns every event, so only the Go-side
+// recheck can separate them: asking for the engine's warn record returns exactly it, and asking
+// for error level returns nothing, because the one error-level line in the window is not cairn's.
+func TestFetchRecordsCountsEngineRecordsAndIgnoresConsoleLines(t *testing.T) {
+	status, body, err := providers.Corpus("cloudflare", "observability-telemetry-query.mixed-lines.200.json")
 	if err != nil {
-		t.Fatalf("CountErrors: %v", err)
+		t.Fatal(err)
 	}
-	if count != 1 {
-		t.Errorf("count = %d, want 1", count)
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	warns, err := FetchRecords(context.Background(), cf, "example-site", "warn", 24*time.Hour, queryNow)
+	if err != nil {
+		t.Fatalf("FetchRecords(warn): %v", err)
+	}
+	if len(warns.Entries) != 1 {
+		t.Fatalf("len(warns.Entries) = %d, want 1", len(warns.Entries))
+	}
+	if warns.Entries[0].Event != "guard.rejected" {
+		t.Errorf("warns.Entries[0].Event = %q, want %q", warns.Entries[0].Event, "guard.rejected")
+	}
+
+	errs, err := FetchRecords(context.Background(), cf, "example-site", "error", 24*time.Hour, queryNow)
+	if err != nil {
+		t.Fatalf("FetchRecords(error): %v", err)
+	}
+	if len(errs.Entries) != 0 {
+		t.Errorf("FetchRecords(error) returned %d entries; the window's only error-level line is a console 404", len(errs.Entries))
+	}
+	if warns.Truncated || errs.Truncated {
+		t.Error("a five-event page reported itself truncated")
+	}
+}
+
+// TestFetchRecordsReportsATruncatedPage asserts a page that fills the fetch limit reports itself
+// truncated, so a caller says "at least" rather than passing a floor off as a total. This is the
+// 2026-09-21 live finding: a 24 hour query returned 1000 entries against a 1000 limit, and the
+// endpoint's own result.events.count read 1000 too, so nothing in the response says how many more
+// there were.
+func TestFetchRecordsReportsATruncatedPage(t *testing.T) {
+	events := make([]string, 0, recordLimit)
+	for i := range recordLimit {
+		events = append(events, fmt.Sprintf(
+			`{"timestamp":0,"source":{"level":"error","event":"commit.failed","timestamp":"2026-09-14T09:00:%02d.000Z"}}`,
+			i%60))
+	}
+	body := fmt.Appendf(nil, `{"success":true,"result":{"events":{"count":%d,"events":[%s]}}}`,
+		recordLimit, strings.Join(events, ","))
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	records, err := FetchRecords(context.Background(), cf, "example-site", "error", 24*time.Hour, queryNow)
+	if err != nil {
+		t.Fatalf("FetchRecords: %v", err)
+	}
+	if len(records.Entries) != recordLimit {
+		t.Fatalf("len(records.Entries) = %d, want %d", len(records.Entries), recordLimit)
+	}
+	if !records.Truncated {
+		t.Error("a page that filled the fetch limit did not report itself truncated")
 	}
 }
 

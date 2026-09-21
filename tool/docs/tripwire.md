@@ -399,6 +399,13 @@ exit: 1
 matching log events the `errors` check tolerates before it fails, instead of you acknowledging the
 same check every morning. It defaults to 5 over the run's `--since` window (24 hours, by default).
 
+What the check counts is cairn's own structured records at error level, the ones the engine writes
+through its log vocabulary. It ignores every other error-level line a Worker logs, above all the
+`console.error` line a site emits for a 404: a public site answers thousands of those a day to
+crawlers probing for WordPress, and counting them measures the crawlers rather than the site. When
+the count fills the fetch's page limit, the row reads `at least 1000 errors in 24h`, because the
+Workers Logs query publishes no total beyond the limit it was asked for.
+
 ## Why this page, and not a ROADMAP line or a cloud agent
 
 A scheduled unit like the ones above is the machine-detectable form of this watch: the timer

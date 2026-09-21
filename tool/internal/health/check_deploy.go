@@ -40,18 +40,21 @@ const (
 	buildRunning
 )
 
-// String names s for the check's own "lastBuild" field.
+// String names s for the check's own "lastBuild" field. A value outside the four reads as none,
+// the same as the zero value: this string reaches an operator's report, where a bare number
+// would say less than "no build".
 func (s buildState) String() string {
 	switch s {
+	case buildNone:
+		return "none"
 	case buildOK:
 		return "ok"
 	case buildFailed:
 		return "failed"
 	case buildRunning:
 		return "running"
-	default:
-		return "none"
 	}
+	return "none"
 }
 
 // deployDetail is deployCheck's own internal measurement, flattened into deployCheck's eleven

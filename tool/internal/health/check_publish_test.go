@@ -208,10 +208,10 @@ func TestPublishPathCheckFieldsCarryBranchCountAndAges(t *testing.T) {
 	c := publishClients(rt)
 	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 
-	if count := fieldInt(t, got.Fields, "openBranchCount"); count != 1 {
+	if count := fieldValue[int](t, got.Fields, "openBranchCount"); count != 1 {
 		t.Errorf("openBranchCount field = %d, want 1", count)
 	}
-	ages := fieldIntSlice(t, got.Fields, "branchAgeDays")
+	ages := fieldValue[[]int](t, got.Fields, "branchAgeDays")
 	if len(ages) != 1 {
 		t.Fatalf("branchAgeDays = %v, want 1 entry", ages)
 	}
@@ -244,7 +244,7 @@ func TestPublishPathCheckBranchAgeDaysIsOneOldestFirstField(t *testing.T) {
 		t.Fatalf("got %d branchAgeDays fields, want 1", count)
 	}
 
-	ages := fieldIntSlice(t, got.Fields, "branchAgeDays")
+	ages := fieldValue[[]int](t, got.Fields, "branchAgeDays")
 	if len(ages) != 2 {
 		t.Fatalf("branchAgeDays = %v, want 2 entries", ages)
 	}
@@ -261,38 +261,4 @@ func (rateLimitedRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 	header := make(http.Header)
 	header.Set("x-ratelimit-remaining", "0")
 	return &http.Response{StatusCode: http.StatusForbidden, Body: io.NopCloser(bytes.NewReader([]byte(`{"message":"rate limited"}`))), Header: header, Request: req}, nil
-}
-
-// fieldInt decodes fields' entry named key as an int, failing the test if none exists.
-func fieldInt(t *testing.T, fields []spine.OutcomeField, key string) int {
-	t.Helper()
-	for _, f := range fields {
-		if f.Key != key {
-			continue
-		}
-		var v int
-		if err := json.Unmarshal(f.Value, &v); err != nil {
-			t.Fatalf("unmarshal field %q: %v", key, err)
-		}
-		return v
-	}
-	t.Fatalf("no field named %q", key)
-	return 0
-}
-
-// fieldIntSlice decodes fields' entry named key as a []int, failing the test if none exists.
-func fieldIntSlice(t *testing.T, fields []spine.OutcomeField, key string) []int {
-	t.Helper()
-	for _, f := range fields {
-		if f.Key != key {
-			continue
-		}
-		var v []int
-		if err := json.Unmarshal(f.Value, &v); err != nil {
-			t.Fatalf("unmarshal field %q: %v", key, err)
-		}
-		return v
-	}
-	t.Fatalf("no field named %q", key)
-	return nil
 }

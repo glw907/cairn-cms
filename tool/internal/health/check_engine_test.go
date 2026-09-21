@@ -97,7 +97,7 @@ func TestEngineCheckCurrentVersionIsOK(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
-	if behind := fieldInt(t, got.Fields, "releasesBehind"); behind != 0 {
+	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 0 {
 		t.Errorf("releasesBehind field = %d, want 0", behind)
 	}
 }
@@ -112,10 +112,10 @@ func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
-	if behind := fieldInt(t, got.Fields, "releasesBehind"); behind != 2 {
+	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 2 {
 		t.Errorf("releasesBehind field = %d, want 2", behind)
 	}
-	if state := fieldBool(t, got.Fields, "consumersMust"); state {
+	if state := fieldValue[bool](t, got.Fields, "consumersMust"); state {
 		t.Error("consumersMust field is true, want false: no skipped release carries an actionable Consumers must: line")
 	}
 }
@@ -130,10 +130,10 @@ func TestEngineCheckBehindWithConsumersMustIsFailing(t *testing.T) {
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", got.State)
 	}
-	if behind := fieldInt(t, got.Fields, "releasesBehind"); behind != 2 {
+	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 2 {
 		t.Errorf("releasesBehind field = %d, want 2", behind)
 	}
-	if state := fieldBool(t, got.Fields, "consumersMust"); !state {
+	if state := fieldValue[bool](t, got.Fields, "consumersMust"); !state {
 		t.Error("consumersMust field is false, want true: a skipped release carries an actionable Consumers must: line")
 	}
 }

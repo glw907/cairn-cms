@@ -10,7 +10,10 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-func TestAcksMatch(t *testing.T) {
+// TestApplyAckAcknowledgesOnlyAnUnexpiredEntry covers the three ways a check id meets an Acks
+// set: an unexpired entry acknowledges the result, an expired one does not, and an id no entry
+// names leaves the result untouched.
+func TestApplyAckAcknowledgesOnlyAnUnexpiredEntry(t *testing.T) {
 	now := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	acks := Acks{
 		{CheckID: "deploy", Expires: now.Add(24 * time.Hour)},
@@ -18,18 +21,20 @@ func TestAcksMatch(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		id     string
-		wantOK bool
+		name string
+		id   string
+		want bool
 	}{
-		{"an unexpired ack matches", "deploy", true},
-		{"an expired ack does not match", "email", false},
-		{"a check id with no ack does not match", "engine", false},
+		{"an unexpired ack acknowledges", "deploy", true},
+		{"an expired ack does not acknowledge", "email", false},
+		{"a check id with no ack does not acknowledge", "engine", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, ok := acks.Match(tt.id, now); ok != tt.wantOK {
-				t.Errorf("Match(%q) ok = %v, want %v", tt.id, ok, tt.wantOK)
+			result := CheckResult{ID: tt.id}
+			applyAck(&result, acks, now)
+			if result.Acknowledged != tt.want {
+				t.Errorf("Acknowledged for %q = %v, want %v", tt.id, result.Acknowledged, tt.want)
 			}
 		})
 	}

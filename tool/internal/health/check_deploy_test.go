@@ -3,7 +3,6 @@ package health
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -163,7 +162,7 @@ func TestDeployCheckHaveBuildsFalseDegradesToWorkerExists(t *testing.T) {
 	if got.State != spine.Unknown || got.Reason != spine.ReasonCredMissing {
 		t.Errorf("Outcome = %+v, want Unknown/reason.cred-missing", got)
 	}
-	if !fieldBool(t, got.Fields, "workerExists") {
+	if !fieldValue[bool](t, got.Fields, "workerExists") {
 		t.Error("workerExists field is false, want true")
 	}
 }
@@ -194,7 +193,7 @@ func TestDeployCheckStoppedWithNoOutcomeYetIsUnknown(t *testing.T) {
 	if got.State != spine.Unknown || got.Reason != want {
 		t.Errorf("Outcome = %+v, want Unknown/%s", got, want)
 	}
-	if got := fieldString(t, got.Fields, "lastBuild"); got != "running" {
+	if got := fieldValue[string](t, got.Fields, "lastBuild"); got != "running" {
 		t.Errorf("lastBuild field = %q, want %q", got, "running")
 	}
 }
@@ -206,10 +205,10 @@ func TestDeployCheckFailedBuildIsFailing(t *testing.T) {
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", got.State)
 	}
-	if got := fieldString(t, got.Fields, "lastBuild"); got != "failed" {
+	if got := fieldValue[string](t, got.Fields, "lastBuild"); got != "failed" {
 		t.Errorf("lastBuild field = %q, want %q", got, "failed")
 	}
-	if got := fieldString(t, got.Fields, "buildId"); got != "build-uuid" {
+	if got := fieldValue[string](t, got.Fields, "buildId"); got != "build-uuid" {
 		t.Errorf("buildId field = %q, want %q", got, "build-uuid")
 	}
 }
@@ -225,7 +224,7 @@ func TestDeployCheckFailedBuildIsFailingDespiteGitHubOutage(t *testing.T) {
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing even when GitHub errors", got.State)
 	}
-	if got := fieldString(t, got.Fields, "lastBuild"); got != "failed" {
+	if got := fieldValue[string](t, got.Fields, "lastBuild"); got != "failed" {
 		t.Errorf("lastBuild field = %q, want %q", got, "failed")
 	}
 }
@@ -238,7 +237,7 @@ func TestDeployCheckOKEqualSHAsIsOKNotBehind(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
-	if fieldBool(t, got.Fields, "behind") {
+	if fieldValue[bool](t, got.Fields, "behind") {
 		t.Error("behind field is true, want false for matching SHAs")
 	}
 }
@@ -250,7 +249,7 @@ func TestDeployCheckOKDifferingSHAsIsOKAndBehind(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
-	if !fieldBool(t, got.Fields, "behind") {
+	if !fieldValue[bool](t, got.Fields, "behind") {
 		t.Error("behind field is false, want true for differing SHAs")
 	}
 }
@@ -314,39 +313,4 @@ func TestDeployCheckNonVerboseRenderDropsVerboseOnlyValues(t *testing.T) {
 	if !strings.Contains(string(verbose), `"Key":"buildId","Value":"build-uuid"`) {
 		t.Errorf("verbose render dropped buildId: %s", verbose)
 	}
-}
-
-// fieldBool decodes fields' entry named key as a bool, failing the test if no such entry exists.
-func fieldBool(t *testing.T, fields []spine.OutcomeField, key string) bool {
-	t.Helper()
-	for _, f := range fields {
-		if f.Key != key {
-			continue
-		}
-		var v bool
-		if err := json.Unmarshal(f.Value, &v); err != nil {
-			t.Fatalf("unmarshal field %q: %v", key, err)
-		}
-		return v
-	}
-	t.Fatalf("no field named %q", key)
-	return false
-}
-
-// fieldString decodes fields' entry named key as a string, failing the test if no such entry
-// exists.
-func fieldString(t *testing.T, fields []spine.OutcomeField, key string) string {
-	t.Helper()
-	for _, f := range fields {
-		if f.Key != key {
-			continue
-		}
-		var v string
-		if err := json.Unmarshal(f.Value, &v); err != nil {
-			t.Fatalf("unmarshal field %q: %v", key, err)
-		}
-		return v
-	}
-	t.Fatalf("no field named %q", key)
-	return ""
 }

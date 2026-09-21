@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/glw907/cairn-cms/tool/internal/record"
@@ -103,17 +104,6 @@ func baseVersion(rng string) string {
 		rng = rng[:i]
 	}
 	return strings.TrimLeft(rng, "^~=<> ")
-}
-
-// indexOfVersion returns version's position in versions, or -1 when versions carries no exact
-// match.
-func indexOfVersion(versions []string, version string) int {
-	for i, v := range versions {
-		if v == version {
-			return i
-		}
-	}
-	return -1
 }
 
 // changelogSections splits changelog into the text of each release section, keyed by its own
@@ -216,8 +206,8 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 
-	siteIndex := indexOfVersion(versions, siteVersion)
-	latestIndex := indexOfVersion(versions, latest)
+	siteIndex := slices.Index(versions, siteVersion)
+	latestIndex := slices.Index(versions, latest)
 	if siteIndex < 0 || latestIndex < 0 {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "site or latest version not found in the published version list"}
 	}

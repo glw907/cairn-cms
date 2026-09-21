@@ -3,11 +3,9 @@ package health
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -110,18 +108,4 @@ func looksLikeCloudflareNS(actual []*net.NS) bool {
 // fully-qualified form compares equal to Cloudflare's own unqualified nameserver names.
 func normalizeNS(host string) string {
 	return strings.ToLower(strings.TrimSuffix(host, "."))
-}
-
-// apiErrorOutcome classifies a Cloudflare or GitHub API failure, shared by every check that
-// reads one of those APIs but does not itself measure the credential (delegation,
-// HTTPS-forced, HSTS, email, deploy). Unlike credsCheck, a 401 or 403 here is Unknown with its
-// own reason.api.<Reason> code rather than Failing: only the creds check treats a rejected
-// credential as the fault under test. An error this package cannot classify at all (a dial
-// failure, a context deadline) is Unknown with reason.timeout.
-func apiErrorOutcome(err error) spine.Outcome {
-	var pe providers.ProviderError
-	if !errors.As(err, &pe) {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}
-	}
-	return spine.Outcome{State: spine.Unknown, Reason: spine.APIReason(pe.ClassifiedReason())}
 }

@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
@@ -90,14 +89,6 @@ func shortSHA(sha string) string {
 		return sha
 	}
 	return sha[:7]
-}
-
-// field wraps value as a spine.OutcomeField named key. Every value this file passes through it
-// is a bool, a string, or a time.Time, each one of json.Marshal's own built-in cases, so the
-// error return is unreachable here and ignored rather than threaded back through every caller.
-func field(key string, value any) spine.OutcomeField {
-	data, _ := json.Marshal(value)
-	return spine.OutcomeField{Key: key, Value: data}
 }
 
 // fields flattens d into the eleven ordered spine.OutcomeField entries every deployCheck outcome

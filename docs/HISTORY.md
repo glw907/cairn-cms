@@ -7,6 +7,40 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Go tool pass B1 (`cairn-tool-B1`), nine tasks, 2026-09-20
+
+Branch `cairn-tool-a`, PR #60, MERGED with Pass A as `efc75093`. Plan and full post-mortem:
+`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`. Spend about 8.9M of a 10M ceiling
+(raised from 8M mid-pass).
+
+**What landed.** Context threaded through every `providers` call; the `health` package with a
+pure sweep (`Run` returns `(Report, error)`, the clock is `Options.Now`) and nine checks
+(`creds`, `serving`, `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`,
+`errors`); the `logs` package; an authoritative per-nameserver DNS lookup; one severity table in
+`spine`; `record` on single-source field tables. No command exposes the checks yet.
+
+**What the gate caught, and what it did not.** Every implementer first pass cleared the gate.
+Every task but one then needed a reviewer-driven fix round, and six of nine were escalated for
+conductor rulings the plan had not made. Review, never the gate, found: a DMARC `p=None` read as
+OK; a DNS outage reported Failing; a GitHub outage masking a failed build; the build id dropped;
+every telemetry API error read as "observability off"; an error count trusting an unverified
+server filter; `credsCheck` reading the wall clock through `time.Until` past a hygiene test that
+only banned `time.Now`; the non-verbose allowlist silently dropping `topEvents`; `Keyring.Set`
+unbounded by the deadline `Get` had. CI, not the local gate, caught a stale condition mirror
+after merging `main`: the drift tests read files outside the Go module, so `go test` served a
+cached pass. `tool/Makefile` now runs `go test -count=1 ./...`.
+
+**What a later pass would be wrong to rediscover.** A verdict's condition lives on
+`spine.Outcome.Condition`, and most verdicts declare none. Field visibility is set where a field
+is produced (`verboseField`), never in a parallel allowlist. `Detail` never carries a
+verbose-only value. A rate limit is never Failing. Email's DNS half needs no credential. The
+`Consumers must:` rule is a leading whole word "nothing", each clause bounded at the next
+lead-in, a backticked lead-in a mention; the first, stricter ruling would have failed most
+sites. A publish-path stale branch is not `github.app-unreachable`. The root `npm test` launches
+Chromium and must not take the light gate lane. A decision the plan leaves open costs a full
+escalation round, so rule on open decisions before dispatch. One terminal window per screenshot
+is not acceptable on the owner's desktop.
+
 ## Go tool pass A (`cairn-tool-A`), eleven tasks, 2026-09-14 to 2026-09-20
 
 Branch `cairn-tool-a`, draft PR #60, UNMERGED at close by Geoff's ruling (the merge rides Pass

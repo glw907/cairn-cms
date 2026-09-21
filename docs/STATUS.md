@@ -29,66 +29,41 @@ container, then beta.
 
 ## Parallel tracks
 
-- **Go `cairn` tool, 1.0: Pass B1 is IN FLIGHT (launched 2026-09-20 15:30), one executor in
-  `.claude/worktrees/cairn-tool-a`; check it is idle before touching it.** The re-cut is done
-  (`7d06e29c`), the three-lens review folded (`2bb2cb3f`), segment 1's pre-flight applied
-  (`35b6f97d`), all on the branch, unpushed. B1 is nine tasks: segment 1 (11b-i, 11b-ii, 12, 13)
-  ran as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
-  close and the PR #60 merge. **Checkpoint (2026-09-20 21:30): eight of nine B1 tasks ACCEPTED; only
-  17b (the close and the PR #60 merge) remains.** Segment 2's four escalations were ruled and
-  fixed by direct dispatches, closing review read, final round `7ef6112f` gate-green; the plan
-  on the branch records everything as landed (`6a051532`), so 17b and B2 read true text. What
-  a cold session must know: a verdict's condition is `spine.Outcome.Condition`; the sweep's
-  clock is `Options.Now` and a hygiene test bans `time.Now/Since/Until` in `health` and `logs`;
-  `Fields` keys are named; nine checks (`creds`, `serving`, `delegation`, `https-forced`,
-  `email`, `deploy`, `publish-path`, `engine`, `errors`). Owner items filed in the plan: an
-  `edge.hsts-off` condition id and a publish-path condition id. **Next: 17b's factual
-  pre-flight, then the close (simplifier, one `go-architecture-reader` per touched package, one
-  fold, the ritual, merge `main` in, PR #60 green at the final SHA, merge).** extend-2 merged
-  as PR #67, so `main` moved; re-measure the conflict set. **The UI track (Geoff, 2026-09-20:
-  best-quality CLI UI is a top priority; agent usability and production-grade language are
-  part of it).** All in `~/.cache/cairn-tool-b2/`: the Charm v2 survey (also on the branch at
-  `tool/docs/design/`), iteration 1 mockups, six adversarial reviews in `reviews/` (beauty,
-  charm-stack, usability, family, robustness, agent-usability), `iteration-2-brief.md`,
-  iteration 2 building in `mockups-2/`, and a copy standard plus string catalogue building at
-  `reviews/copy.md`. They feed ONE B2 plan amendment for Geoff's approval before B2's segment
-  2: Task 20 takes `lipgloss/v2`, `colorprofile`, `x/ansi`, one design system with three bodies
-  (single site, many sites, plain text whenever stdout is not a terminal), sanitizing at the
-  render seam, named width rungs, a sectioned frame; Task 21 gets a real WARNING tier, zero
-  checks as UNKNOWN, a usage-error falsification table; the `--json` contract gets string
-  state enums (today `State` marshals as a Go int that inverts against exit codes), camelCase
-  keys, a structured remedy, RFC 3339 only; all operator-facing strings in one reviewed table.
-  Outside the brief, his call: `health --all --json` as NDJSON, an `actor` field on the engine's
-  condition registry, renaming the `engine` check id before the tag freezes it, `cairn help
-  agents` plus a shipped skill. Captures never pop one kitty window per frame (memory
-  `terminal-captures-no-popover`). PR #68 (`gate-tier` tool tier) is open, reviewed, fixed,
-  awaiting Geoff's merge word; after it merges, B2 drops the `gateTier` pin. Runner args: `gate: "make -C tool check"`,
-  `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an unpinned task makes the
-  runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings (Geoff, 2026-09-20): **B1 raised to 10M** (the flag is
-  now 8M), B2 10M. **B2 decisions taken (Geoff, 2026-09-20), owed to the plan at the segment
-  boundary:** Task 20's glyph tier is Unicode by default and ASCII when output is not a TTY,
-  `TERM=dumb` is set, or the Windows console refuses virtual-terminal mode; Task 22 generates a
-  man page with cobra's doc generator and ships it in the release archives. **Chore in flight:**
-  a `tool/**` rule for `gate-tier.mjs` on `chore/gate-tier-tool-rule`
-  (`.claude/worktrees/gate-tier-tool`, off `origin/main`), so B2 drops the `gateTier` pin. Spend: about 6.8M of 10M with the close left (1.1M plan work, 2.03M segment 1, 0.8M its
-  fixes, 1.54M segment 2, 1.3M its fixes and reviews); the UI track and PR #68 are about 2.3M
-  outside B1. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
-  `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three
-  `make check` legs. `main` carries NO `tool/` tree until the merge, and the merge rides B1's
-  close (Geoff, 2026-09-20), so **B1 runs in that existing worktree on that branch, never on a
-  new worktree off `main`**. B1's first step is plan authorship: re-cut Pass B into B1 and B2
-  from `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md` (on `main`;
-  pre-approved by Geoff within the brief's bounds), then the three-lens plan review, one fold, a
-  factual pre-flight per segment, then execute. The brief carries Geoff's three rulings (one TTY
-  predicate for color only; the B1/B2 split; the full grammar cleanup), the B1 opening refactor
-  task, every task amendment, what was declined, and the 2.0 spec addendum. Gate:
-  `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` (`gateLane: "light"` in the
-  runner's args); skip `gate-tier.mjs` for `tool/`-only diffs until it gains a `tool/**` rule
-  (filed in ROADMAP on the branch). Arm `/loop` at launch. Credentials are minted and stored
-  (`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token expires
-  2026-10-19). Plan, with pass A's post-mortem: `-cairn-tool-1-0-pass.md` ON THE BRANCH (the copy
-  on `main` predates the pass). Pass A's record: [`docs/HISTORY.md`](HISTORY.md).
-  **Open decision for Geoff:** none blocking; the re-cut is pre-approved.
+- **Go `cairn` tool, 1.0: Pass A and B1 are MERGED (PR #60, `efc75093`, 2026-09-20); `main`
+  carries `tool/`. Pass B2 is next and runs OVERNIGHT 2026-09-20 to 21 in a fresh session.**
+  Worktree `.claude/worktrees/cairn-tool-b2`, branch `cairn-tool-b2` off `main`. Check it for a
+  live executor first (`pgrep -f cairn-tool-b2`, `git status`, `git log`). Order of work:
+  (1) the B2 plan amendment, pre-approved by Geoff within the bounds in
+  `~/.cache/cairn-tool-b2/b2-amendment-prompt.md` (the verbatim dispatch prompt). If
+  `git log main..cairn-tool-b2` already shows a `docs(plans)` amendment commit, an earlier
+  session's agent finished it: skip to (2). Otherwise dispatch one `general-purpose` agent,
+  `model: opus`, with that file's text as the prompt. (2) The three-lens plan review in
+  parallel (`model: opus`), one fold. (3) Per segment: a factual pre-flight AND a
+  decision pre-flight (one `opus` read listing every decision the segment's tasks leave open;
+  the conductor rules before dispatch, which is what B1's escalations cost 0.5M each to learn).
+  (4) Execute through `pass-execute.js` (copy to the scratchpad), `gate: "make -C tool check"`,
+  `gateLane: "light"`, per-task `model: "opus"` on the cobra tree, the render bodies, the JSON
+  contract, and the exit codes; Sonnet elsewhere. Arm `claude-wf-guard` (its idle alarm after
+  a clean finish is a false positive), hour-long `/loop` heartbeats, no note per notification.
+  **Hard stops: never push the `tool/v1.0.0` tag, never cut release artifacts, never merge
+  B2's PR. Those are OWNER-GATED: Geoff runs the release candidate in his own terminal first.**
+  Stop at the 80 percent flag of the 14M ceiling (11.2M) with one combined question. Machine:
+  on AC, inhibitors `cairn-tool-b2` held to 09:00, battery watchdog armed by the closing
+  session (re-arm in the new one; stand down at 10 percent). Captures never open one kitty
+  window per frame (memory `terminal-captures-no-popover`). Geoff's rulings for B2 (2026-09-20):
+  best-quality CLI UI is a top priority, with agent usability and production-grade language
+  part of it; mockup picks are no rail, glyph-only rows in the colour tier, the labelled strip
+  with the table as narrow fallback, two fail severities; multi-site `health` enters 1.0; the
+  fix's `actor` lives in the Go tool's own messages table, never `conditions.ts`; `cairn help
+  agents` yes, a shipped skill later, MCP never, `fang` declined; the check id stays `engine`,
+  the command stays `adopt`, the plain body's key is `fix:`. Inputs, all under
+  `~/.cache/cairn-tool-b2/`: `reviews/` (seven), `mockups-3/` (the chosen design),
+  `iteration-2-brief.md`, `arch/` (eight reads); the amendment lands them under
+  `tool/docs/design/`. PR #68 (`gate-tier` tool tier) is approved by Geoff to merge once its
+  re-run is green (`gh pr checks 68`, then `gh pr merge 68 --merge`); after it merges, B2 tasks
+  run unpinned and ROADMAP's gate-tier entry is removed. Credentials are stored
+  (`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token
+  expires 2026-10-19). Pass B1's record: [`docs/HISTORY.md`](HISTORY.md).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.
@@ -123,6 +98,6 @@ Two tracks, one session each.
 
 **One cut:** Cut the one release (`cairn-release` skill), starting with the dependency sweep.
 
-**Go tool Pass B1** (launch inside `cairn-cms`; work in `.claude/worktrees/cairn-tool-a`): Start Go tool
-Pass B1: re-cut Pass B from `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`,
-review it, then execute B1 on branch `cairn-tool-a`.
+**Go tool Pass B2** (launch inside `cairn-cms`): Conduct Go tool Pass B2 overnight per
+`docs/STATUS.md`'s Go tool entry: amendment, three-lens review, fold, pre-flights, execute,
+stop before the tag.

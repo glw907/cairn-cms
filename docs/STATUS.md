@@ -36,7 +36,12 @@ container, then beta.
   rulings and six fact corrections, in each task's "Segment 4 rulings" block). Run
   `wf_af96445e-ea1` (20b-iii, 20c, 21, 22a, 24a; `opus` on 20c and 21), script in session
   `aa9eb162`'s scratchpad. A cold resume checks `git log` on the worktree for which tasks
-  committed, then relaunches the rest with the same args shape. Spend at launch about 11M.**
+  committed, then relaunches the rest with the same args shape. Spend at launch about 11M.
+  Geoff ruled the whole owner list on 2026-09-21: `~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`
+  (a fifth wire word `unknown`, holds restore own severity, quiet sweep silent when all OK,
+  `--theme dark|light`; rate-limited stays UNKNOWN; Windows CI suffices). At the segment 4
+  boundary, fold that file into the plan and cut Task 21b from it, to run before the RC is
+  handed over. The dotfiles runner fix landed (`75caf88`).**
   **Earlier ledger (2026-09-21 07:00): the overnight run STOPPED CLEAN at the named cut after
   20b-ii, about 10.5M of the 14M ceiling.** Segments 1 to 3 are DONE and accepted on
   `cairn-tool-b2` (pushed, HEAD `76364ca2`, gate green): 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii |

@@ -32,10 +32,19 @@ Every write is contained under `.claude/`; a destination that would resolve outs
 and named rather than written. `install` never writes `.claude/settings.json`, `CLAUDE.md` at the
 repo root, `package.json`, or anything under `.github/`.
 
+The boundary is the real directory `.claude` in the working directory, not the name. `install`
+refuses a destination whose path passes through a symlink at any point, and it refuses a
+destination that is itself a symlink. A `.claude` that is a symlink refuses the whole tree,
+because the files would land somewhere these rules do not cover. A working directory reached
+through a symlinked parent is fine and installs normally. A refusal names the path, repairs
+nothing, and the run continues with the remaining files.
+
 When a destination's existing content differs from what the package now ships, `install` writes
 `<destination>.orig` beside it before overwriting, so an edit is recoverable. An existing `.orig`
 is never rewritten: the first divergence is what gets preserved, and a later install keeps
-refreshing the destination without touching it again. `.orig` files are meant to be read and
+refreshing the destination without touching it again. A symlink at the `.orig` path is refused by
+name, and the destination beside it is left alone in that run: the recovery copy could not be
+made, so the edit stays as the site left it. `.orig` files are meant to be read and
 deleted, not ignored, and the whole guidance tree belongs in the site's own commit, so an upgrade's
 guidance change is a reviewable diff in the site's repo.
 
@@ -131,7 +140,11 @@ and the shipped agent carries no tool that can write or execute
 and `.claude/agents/` once they exist, so the honest statement is that installing the package's
 guidance is the consent, and the one deliberate act that removes all of it is deleting
 `.claude/skills/cairn-*`, `.claude/agents/cairn-extension-reviewer.md`, and `.claude/cairn/`.
-Everything `install` writes is committed to the site's own repository, so it is diffable.
+Everything `install` writes is committed to the site's own repository, so it is diffable. A third
+rule holds the write side: `install` resolves every destination against the real `.claude`
+directory and refuses any path that reaches it through a symlink, so a link committed in the
+site's own repository cannot redirect the tree, or a `.orig` copy, onto a file elsewhere on the
+machine.
 
 ## See also
 

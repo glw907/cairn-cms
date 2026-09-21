@@ -1848,6 +1848,17 @@
 
 ### Fixed
 
+- `cairn-guidance install` now resolves every destination against the real `.claude` directory
+  instead of trusting a lexical path: a destination reached through a symlink, a destination that
+  is itself a symlink, a `.claude` that is a symlink, and a destination that already exists as a
+  directory are each refused by name, with the run continuing on the remaining files. A symlink at
+  a `<dest>.orig` path is refused too, and the destination beside it keeps the site's edit, since
+  the recovery copy could not be made; the `.orig` itself is created exclusively, so a dangling
+  link can no longer be written through. A previous `MANIFEST` line naming anything outside
+  `.claude/` is dropped rather than printed as removable, and a packaged entry the source walk
+  refused is now reported instead of discarded. A project directory reached through a symlinked
+  parent still installs. No consumer action.
+
 - The showcase's Signups admin screen, and the Waymark template that mirrors it, give the create
   form's Name and Email fields a visible label in place of the `sr-only` pair: each control now
   sits inside a `<label>` carrying a `type-body font-medium` span above it, the same stacked

@@ -4,10 +4,10 @@
 // and the `claude/CLAUDE.md` fragment. The containment and `.orig` rules here are the write-side
 // twin of doctor/bin.ts's `readFileUnderCwd`.
 import { createHash } from 'node:crypto';
-import type { Dirent } from 'node:fs';
+import { constants, type Dirent, type Stats } from 'node:fs';
 import { createRequire } from 'node:module';
-import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { lstat, mkdir, open, readdir, readFile, realpath } from 'node:fs/promises';
+import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 /** Where cairn-guidance writes into a consumer repo, relative to its working directory. */
 export const GUIDANCE_ROOT = '.claude';
@@ -98,28 +98,37 @@ export async function walkPackagedTree(root: string): Promise<WalkResult> {
   return { files, refused };
 }
 
+/** Every directory under `skills/` the package ships, plus the entries its walk refused. */
+export interface PackagedSkills {
+  skills: Record<string, Record<string, string>>;
+  /** Refused entries, each prefixed with the packaged path it was found under. */
+  refused: string[];
+}
+
 /** One directory under `skills/` the package ships, keyed by directory name. */
-export async function readPackagedSkills(): Promise<Record<string, Record<string, string>>> {
+export async function readPackagedSkills(): Promise<PackagedSkills> {
   const root = resolveSourceRoot('skills');
   let entries: Dirent[];
   try {
     entries = await readdir(root, { withFileTypes: true });
   } catch {
-    return {};
+    return { skills: {}, refused: [] };
   }
   const skills: Record<string, Record<string, string>> = {};
+  const refused: string[] = [];
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const { files } = await walkPackagedTree(join(root, entry.name));
-    skills[entry.name] = files;
+    const walked = await walkPackagedTree(join(root, entry.name));
+    skills[entry.name] = walked.files;
+    refused.push(...walked.refused.map((relPath) => `skills/${entry.name}/${relPath}`));
   }
-  return skills;
+  return { skills, refused };
 }
 
 /** The packaged review agent markdown files, keyed by filename under `claude/agents/`. */
-export async function readPackagedAgents(): Promise<Record<string, string>> {
-  const { files } = await walkPackagedTree(resolveSourceRoot('claude/agents'));
-  return files;
+export async function readPackagedAgents(): Promise<WalkResult> {
+  const walked = await walkPackagedTree(resolveSourceRoot('claude/agents'));
+  return { files: walked.files, refused: walked.refused.map((p) => `claude/agents/${p}`) };
 }
 
 /** The packaged `CLAUDE.md` fragment's content, or null when the package ships none yet. */
@@ -139,9 +148,9 @@ export async function readPackagedFragment(): Promise<string | null> {
  *  item when it is not present. Degrades to `{}`, the same as `readPackagedAgents`, when the
  *  directory does not exist yet.
  */
-export async function readPackagedSnippets(): Promise<Record<string, string>> {
-  const { files } = await walkPackagedTree(resolveSourceRoot('claude/snippets'));
-  return files;
+export async function readPackagedSnippets(): Promise<WalkResult> {
+  const walked = await walkPackagedTree(resolveSourceRoot('claude/snippets'));
+  return { files: walked.files, refused: walked.refused.map((p) => `claude/snippets/${p}`) };
 }
 
 /** Every packaged tree cairn-guidance installs, resolved against the installed package. */
@@ -156,6 +165,12 @@ export interface GuidanceSource {
   version: string;
   /** The packaged `check` snippets, keyed by filename under `claude/snippets/`. */
   snippets: Record<string, string>;
+  /**
+   * Packaged entries the source walk refused because they are not regular files. Carried on the
+   *  source so the install reports them: a refusal here means the package itself is malformed,
+   *  which the site should see rather than silently install around.
+   */
+  refused: string[];
 }
 
 /** Read every packaged tree off the real filesystem, resolved against the installed package. */
@@ -166,7 +181,14 @@ export async function readGuidanceSource(): Promise<GuidanceSource> {
     readPackagedFragment(),
     readPackagedSnippets(),
   ]);
-  return { skills, agents, fragment: fragment ?? '', version: resolveInstalledVersion(), snippets };
+  return {
+    skills: skills.skills,
+    agents: agents.files,
+    fragment: fragment ?? '',
+    version: resolveInstalledVersion(),
+    snippets: snippets.files,
+    refused: [...skills.refused, ...agents.refused, ...snippets.refused],
+  };
 }
 
 /**
@@ -189,11 +211,23 @@ export function flattenGuidanceTree(source: GuidanceSource): Record<string, stri
   return out;
 }
 
+/**
+ * True when a path names something inside `.claude/` without leaving a working directory: it is
+ *  relative, and normalizing it leaves it under `.claude`. Applied both to a destination before
+ *  any write and to a line read back out of a previous `MANIFEST`, which is attacker-editable and
+ *  whose lines are printed as removable.
+ */
+export function isGuidancePath(destPath: string): boolean {
+  if (isAbsolute(destPath)) return false;
+  const normalized = normalize(destPath).split(sep).join('/').replace(/\/$/, '');
+  return normalized === GUIDANCE_ROOT || normalized.startsWith(`${GUIDANCE_ROOT}/`);
+}
+
 /** True when a destination path, resolved against cwd, stays inside `<cwd>/.claude`. */
 export function isContained(cwd: string, destRelPath: string): boolean {
   const root = resolve(cwd, GUIDANCE_ROOT);
   const resolved = resolve(cwd, destRelPath);
-  return resolved === root || resolved.startsWith(root + sep);
+  return isGuidancePath(destRelPath) && (resolved === root || resolved.startsWith(root + sep));
 }
 
 async function readIfExists(absPath: string): Promise<string | null> {
@@ -205,13 +239,57 @@ async function readIfExists(absPath: string): Promise<string | null> {
   }
 }
 
-async function pathExists(absPath: string): Promise<boolean> {
+async function lstatOrNull(absPath: string): Promise<Stats | null> {
   try {
-    await access(absPath);
-    return true;
-  } catch {
-    return false;
+    return await lstat(absPath);
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'ENOTDIR') return null;
+    throw err;
   }
+}
+
+// O_NOFOLLOW is POSIX; Windows does not define it. Where it is missing the lstat of the
+// destination is the whole defense, which is why that check runs on every platform and this flag
+// only hardens the window between the check and the open.
+const noFollow = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
+const OVERWRITE_FLAGS = constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | noFollow;
+const CREATE_NEW_FLAGS = constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | noFollow;
+
+async function writeWithoutFollowing(absPath: string, content: string, flags: number): Promise<void> {
+  const handle = await open(absPath, flags);
+  try {
+    await handle.writeFile(content, 'utf8');
+  } finally {
+    await handle.close();
+  }
+}
+
+/**
+ * Resolve one destination to the absolute path the install may write, or null to refuse it. The
+ *  boundary is the real directory `<cwd>/.claude`: `cwd` is resolved with realpath first, so a
+ *  project reached through a symlinked parent still installs, and every path component from
+ *  `.claude` down is then lstat-ed, so a symlinked `.claude`, a symlink anywhere below it, or a
+ *  directory sitting where a file belongs is refused rather than followed or repaired. A
+ *  component that does not exist ends the walk: `mkdir` creates real directories from there down.
+ */
+async function resolveWritableDest(
+  cwd: string,
+  realCwd: string,
+  destRelPath: string
+): Promise<string | null> {
+  const segments = relative(cwd, resolve(cwd, destRelPath)).split(sep).filter(Boolean);
+  if (segments.length === 0) return null;
+  let current = realCwd;
+  for (let index = 0; index < segments.length; index += 1) {
+    current = join(current, segments[index]);
+    const stats = await lstatOrNull(current);
+    if (stats === null) return join(realCwd, ...segments);
+    if (stats.isSymbolicLink()) return null;
+    const isLast = index === segments.length - 1;
+    if (isLast ? !stats.isFile() : !stats.isDirectory()) return null;
+  }
+  return current;
 }
 
 /** What one `installGuidance` run did, for the bin to print and `check` to read back later. */
@@ -224,17 +302,25 @@ export interface InstallReport {
   origWritten: string[];
   /** `<dest>.orig` paths already present, left untouched. */
   origPresent: string[];
-  /** Destinations refused because they resolved outside `<cwd>/.claude`. */
+  /**
+   * Destinations refused, by name: outside `<cwd>/.claude`, reached through a symlink, a symlink
+   *  themselves, already a directory, or a `.orig` path whose recovery copy could not be made.
+   */
   refused: string[];
   /** Paths the previous MANIFEST listed that this run's package no longer ships. */
   removable: string[];
+  /** Packaged entries the source walk refused, carried through from {@link GuidanceSource}. */
+  sourceRefused: string[];
 }
 
 /**
- * Copy a guidance source into a consumer repo. Never writes outside `<cwd>/.claude` (a
- *  destination that would resolve outside it is refused by name and nothing else in that entry
- *  is written); never clobbers an existing `.orig`; never deletes a path the package stopped
- *  shipping, listing it as removable instead. Writes {@link MANIFEST_DEST} every run.
+ * Copy a guidance source into a consumer repo. Never writes outside the real directory
+ *  `<cwd>/.claude`, and never through a symlink at any point of a destination's path (either is
+ *  refused by name, with nothing else in that entry written and the run continuing); never
+ *  clobbers an existing `.orig`, and refuses the destination too when the `.orig` beside it
+ *  cannot be made, so an edit is never overwritten without its recovery copy; never deletes a
+ *  path the package stopped shipping, listing it as removable instead. Writes
+ *  {@link MANIFEST_DEST} every run.
  */
 export async function installGuidance(cwd: string, source: GuidanceSource): Promise<InstallReport> {
   const tree = flattenGuidanceTree(source);
@@ -245,9 +331,12 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
     origPresent: [],
     refused: [],
     removable: [],
+    sourceRefused: [...source.refused],
   };
 
-  const previousManifestText = await readIfExists(resolve(cwd, MANIFEST_DEST));
+  const realCwd = await realpath(cwd);
+  const manifestAbs = await resolveWritableDest(cwd, realCwd, MANIFEST_DEST);
+  const previousManifestText = manifestAbs === null ? null : await readIfExists(manifestAbs);
   const previousManifest = previousManifestText
     ? previousManifestText.split('\n').map((line) => line.trim()).filter(Boolean)
     : [];
@@ -258,34 +347,83 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
       report.refused.push(destRelPath);
       continue;
     }
-    writtenPaths.add(destRelPath);
-    const destAbs = resolve(cwd, destRelPath);
+    const destAbs = await resolveWritableDest(cwd, realCwd, destRelPath);
+    if (destAbs === null) {
+      report.refused.push(destRelPath);
+      continue;
+    }
     const existing = await readIfExists(destAbs);
     if (existing === content) {
+      writtenPaths.add(destRelPath);
       report.unchanged.push(destRelPath);
       continue;
     }
-    if (existing !== null) {
-      const origAbs = `${destAbs}.orig`;
-      if (await pathExists(origAbs)) {
-        report.origPresent.push(`${destRelPath}.orig`);
-      } else {
-        await mkdir(dirname(origAbs), { recursive: true });
-        await writeFile(origAbs, existing, 'utf8');
-        report.origWritten.push(`${destRelPath}.orig`);
-      }
+    if (existing !== null && !(await preserveOriginal(destAbs, destRelPath, existing, report))) {
+      continue;
     }
     await mkdir(dirname(destAbs), { recursive: true });
-    await writeFile(destAbs, content, 'utf8');
+    try {
+      await writeWithoutFollowing(destAbs, content, OVERWRITE_FLAGS);
+    } catch {
+      report.refused.push(destRelPath);
+      continue;
+    }
+    writtenPaths.add(destRelPath);
     report.written.push(destRelPath);
   }
 
-  report.removable = previousManifest.filter((path) => !writtenPaths.has(path));
+  const shipped = new Set(Object.keys(tree));
+  report.removable = previousManifest.filter((path) => !shipped.has(path) && isGuidancePath(path));
 
-  const manifestAbs = resolve(cwd, MANIFEST_DEST);
+  if (manifestAbs === null) {
+    report.refused.push(MANIFEST_DEST);
+    return report;
+  }
   await mkdir(dirname(manifestAbs), { recursive: true });
   const manifestLines = [...writtenPaths].sort();
-  await writeFile(manifestAbs, `${manifestLines.join('\n')}\n`, 'utf8');
+  await writeWithoutFollowing(manifestAbs, `${manifestLines.join('\n')}\n`, OVERWRITE_FLAGS);
 
   return report;
+}
+
+/**
+ * Hold the first divergence at `<dest>.orig` and report whether the destination may now be
+ *  overwritten. A `.orig` that already exists is left exactly as it is, since the first
+ *  divergence is the one worth keeping. A symlink there is refused rather than written through,
+ *  and refusing it also refuses the destination: without a recovery copy, overwriting would
+ *  destroy the site's edit.
+ */
+async function preserveOriginal(
+  destAbs: string,
+  destRelPath: string,
+  existing: string,
+  report: InstallReport
+): Promise<boolean> {
+  const origAbs = `${destAbs}.orig`;
+  const origRelPath = `${destRelPath}.orig`;
+  const stats = await lstatOrNull(origAbs);
+  if (stats?.isSymbolicLink()) {
+    report.refused.push(origRelPath);
+    return false;
+  }
+  if (stats !== null) {
+    report.origPresent.push(origRelPath);
+    return true;
+  }
+  try {
+    await writeWithoutFollowing(origAbs, existing, CREATE_NEW_FLAGS);
+  } catch {
+    // The exclusive create lost a race, or landed on a symlink that appeared since the lstat.
+    // A path that is now a plain file is someone else's copy of the same divergence; anything
+    // else is refused, destination included.
+    const raced = await lstatOrNull(origAbs);
+    if (raced === null || !raced.isFile()) {
+      report.refused.push(origRelPath);
+      return false;
+    }
+    report.origPresent.push(origRelPath);
+    return true;
+  }
+  report.origWritten.push(origRelPath);
+  return true;
 }

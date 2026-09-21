@@ -30,7 +30,11 @@ describe('packed tarball (needs dist/index.js; run npm run package to unskip)', 
     const packed = new Set(parsePackFilePaths(out.stdout));
 
     expect(packed.has('claude/CLAUDE.md')).toBe(true);
-    expect(packed.has('claude/agents/cairn-extension-reviewer.md')).toBe(true);
+    // The whole agent set, not just membership: a second agent is a second thing the consumer's
+    // session auto-discovers, so it has to be a deliberate change here, never a quiet addition.
+    expect([...packed].filter((path) => path.startsWith('claude/agents/')).sort()).toEqual([
+      'claude/agents/cairn-extension-reviewer.md',
+    ]);
     for (const name of [
       'check-cairn.json',
       'cairn-audit.config.json',

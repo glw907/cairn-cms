@@ -7,6 +7,7 @@ import {
   MANIFEST_DEST,
   flattenGuidanceTree,
   hashFileTree,
+  isGuidancePath,
   type GuidanceSource,
 } from './install.js';
 
@@ -142,7 +143,11 @@ export async function runGuidanceCheck(
   const manifestPaths = manifestText
     ? manifestText.split('\n').map((line) => line.trim()).filter(Boolean)
     : [];
-  const removable = manifestPaths.filter((path) => !destPaths.includes(path));
+  // A previous MANIFEST is an editable file in the site's own repo, and these lines get printed,
+  // so a line naming anything outside .claude/ is dropped rather than shown as removable.
+  const removable = manifestPaths.filter(
+    (path) => !destPaths.includes(path) && isGuidancePath(path)
+  );
 
   const rootClaudeMd = await readFile('CLAUDE.md');
   const importPresent = rootClaudeMd !== null && rootClaudeMd.includes(IMPORT_LINE);

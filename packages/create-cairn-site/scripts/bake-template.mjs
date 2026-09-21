@@ -166,15 +166,23 @@ async function readMonorepoGuidanceSource(engineSpec) {
   const { walkPackagedTree } = await loadGuidanceInstall();
   const skillsRoot = path.join(repoRoot, 'skills');
   const skills = {};
+  const refused = [];
   for (const entry of await readdir(skillsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    const { files } = await walkPackagedTree(path.join(skillsRoot, entry.name));
-    skills[entry.name] = files;
+    const walked = await walkPackagedTree(path.join(skillsRoot, entry.name));
+    skills[entry.name] = walked.files;
+    refused.push(...walked.refused.map((rel) => `skills/${entry.name}/${rel}`));
   }
-  const { files: agents } = await walkPackagedTree(path.join(repoRoot, 'claude', 'agents'));
+  const agentsWalk = await walkPackagedTree(path.join(repoRoot, 'claude', 'agents'));
+  refused.push(...agentsWalk.refused.map((rel) => `claude/agents/${rel}`));
+  // The source here is the monorepo itself, so an entry the walk refuses is a repo bug (a stray
+  // symlink or device node under a tree meant to be plain markdown), not a hostile package.
+  if (refused.length > 0) {
+    throw new Error(`bake: refused non-regular guidance entries: ${refused.join(', ')}`);
+  }
   const fragment = await readFile(path.join(repoRoot, 'claude', 'CLAUDE.md'), 'utf8');
   const version = engineSpec.replace(/^[\^~>=<\s]+/, '');
-  return { skills, agents, fragment, version, snippets: {} };
+  return { skills, agents: agentsWalk.files, fragment, version, snippets: {}, refused };
 }
 
 /**

@@ -23,6 +23,7 @@ const source: GuidanceSource = {
     'cairn-audit.config.json': '{}',
     'check.yml': 'name: check\n',
   },
+  refused: [],
 };
 
 function readFileFrom(files: Record<string, string>): ReadFile {
@@ -166,6 +167,18 @@ describe('runGuidanceCheck', () => {
     };
     const report = await runGuidanceCheck(readFileFrom(files), source);
     expect(report.tree.removable).toContain('.claude/skills/retired/SKILL.md');
+  });
+
+  it('never prints a MANIFEST line that is absolute or traverses out of .claude as removable', async () => {
+    const packaged = flattenGuidanceTree(source);
+    const files: Record<string, string> = {
+      ...packaged,
+      '.claude/cairn/MANIFEST': '/etc/passwd\n../../x\n.claude/skills/retired/SKILL.md\n',
+    };
+    const report = await runGuidanceCheck(readFileFrom(files), source);
+    expect(report.tree.removable).toEqual(['.claude/skills/retired/SKILL.md']);
+    expect(report.tree.detail).not.toContain('/etc/passwd');
+    expect(report.tree.detail).not.toContain('../../x');
   });
 });
 

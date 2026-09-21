@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync, readFileSync, existsSync, lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -12,6 +12,7 @@ import {
   hashFileTree,
   installGuidance,
   isContained,
+  isGuidancePath,
   readPackagedSkills,
   readPackagedSnippets,
   resolveInstalledVersion,
@@ -23,6 +24,22 @@ import {
 function tmpDir(prefix: string): string {
   return mkdtempSync(join(tmpdir(), prefix));
 }
+
+// A Windows host without Developer Mode cannot create a symlink at all, so the symlink cases
+// below announce that reason rather than failing as if the refusal had not happened.
+function canSymlink(): boolean {
+  const probe = mkdtempSync(join(tmpdir(), 'cairn-guidance-symlink-probe-'));
+  try {
+    symlinkSync(join(probe, 'target'), join(probe, 'link'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(probe, { recursive: true, force: true });
+  }
+}
+
+const SYMLINKS = canSymlink();
 
 describe('hashFileTree', () => {
   it('is order-independent', () => {
@@ -87,15 +104,16 @@ describe('walkPackagedTree (real filesystem)', () => {
 
 describe('readPackagedSkills (real filesystem)', () => {
   it('enumerates every directory under skills/, fixtured by whatever the repo actually ships', async () => {
-    const skills = await readPackagedSkills();
+    const { skills, refused } = await readPackagedSkills();
     expect(Object.keys(skills)).toContain('cairn-admin-screens');
     expect(skills['cairn-admin-screens']['SKILL.md']).toContain('cairn-admin-screens');
+    expect(refused).toEqual([]);
   });
 });
 
 describe('readPackagedSnippets (real filesystem)', () => {
   it('returns a flat map of snippet contents, empty when claude/snippets/ is not shipped', async () => {
-    const snippets = await readPackagedSnippets();
+    const { files: snippets } = await readPackagedSnippets();
     for (const value of Object.values(snippets)) {
       expect(typeof value).toBe('string');
     }
@@ -119,6 +137,21 @@ describe('isContained', () => {
   });
 });
 
+describe('isGuidancePath', () => {
+  it('accepts a relative path under .claude', () => {
+    expect(isGuidancePath('.claude/cairn/CLAUDE.md')).toBe(true);
+  });
+
+  it('refuses an absolute path', () => {
+    expect(isGuidancePath('/etc/passwd')).toBe(false);
+  });
+
+  it('refuses a relative path that traverses out of .claude', () => {
+    expect(isGuidancePath('../../x')).toBe(false);
+    expect(isGuidancePath('.claude/../../x')).toBe(false);
+  });
+});
+
 describe('flattenGuidanceTree', () => {
   const source: GuidanceSource = {
     skills: { foo: { 'SKILL.md': 'core' } },
@@ -126,6 +159,7 @@ describe('flattenGuidanceTree', () => {
     fragment: 'fragment text',
     version: '1.2.3',
     snippets: {},
+    refused: [],
   };
 
   it('maps every packaged tree to its destination under .claude', () => {
@@ -145,6 +179,7 @@ describe('installGuidance', () => {
       fragment: 'fragment v1',
       version: '1.0.0',
       snippets: {},
+      refused: [],
       ...overrides,
     };
   }
@@ -247,6 +282,151 @@ describe('installGuidance', () => {
       expect(existsSync(join(dir, '.claude/skills/foo/SKILL.md'))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('drops a previous MANIFEST line that is absolute or traverses out, printing neither as removable', async () => {
+    const dir = tmpDir('cairn-guidance-manifest-lines-');
+    try {
+      mkdirSync(join(dir, CAIRN_DIR), { recursive: true });
+      writeFileSync(
+        join(dir, MANIFEST_DEST),
+        ['/etc/passwd', '../../x', '.claude/skills/retired/SKILL.md', ''].join('\n')
+      );
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.removable).toEqual(['.claude/skills/retired/SKILL.md']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports packaged entries the source walk refused, so a non-regular file in the package is named', async () => {
+    const dir = tmpDir('cairn-guidance-source-refused-');
+    try {
+      const report = await installGuidance(dir, source({ refused: ['skills/foo/linked.md'] }));
+      expect(report.sourceRefused).toEqual(['skills/foo/linked.md']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a destination that exists as a directory, and installs everything else', async () => {
+    const dir = tmpDir('cairn-guidance-eisdir-');
+    try {
+      mkdirSync(join(dir, '.claude/skills/foo/SKILL.md'), { recursive: true });
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.refused).toContain('.claude/skills/foo/SKILL.md');
+      expect(report.written).toContain(FRAGMENT_DEST);
+      expect(readFileSync(join(dir, FRAGMENT_DEST), 'utf8')).toBe('fragment v1');
+      expect(readFileSync(join(dir, '.claude/skills/foo/references/README.md'), 'utf8')).toBe('index');
+      expect(readFileSync(join(dir, MANIFEST_DEST), 'utf8')).not.toContain('.claude/skills/foo/SKILL.md\n');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!SYMLINKS)('installs normally when the project directory is reached through a symlinked parent', async () => {
+    const parent = tmpDir('cairn-guidance-linked-parent-');
+    try {
+      const real = join(parent, 'real-site');
+      mkdirSync(real);
+      symlinkSync(real, join(parent, 'site'));
+
+      const report = await installGuidance(join(parent, 'site'), source());
+
+      expect(report.refused).toEqual([]);
+      expect(readFileSync(join(real, '.claude/skills/foo/SKILL.md'), 'utf8')).toBe('core v1');
+      expect(existsSync(join(real, MANIFEST_DEST))).toBe(true);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!SYMLINKS)('refuses every destination when .claude itself is a symlink, writing nothing through it', async () => {
+    const dir = tmpDir('cairn-guidance-link-root-');
+    const outside = tmpDir('cairn-guidance-link-root-target-');
+    try {
+      symlinkSync(outside, join(dir, GUIDANCE_ROOT));
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.written).toEqual([]);
+      expect(report.refused).toContain('.claude/skills/foo/SKILL.md');
+      expect(report.refused).toContain(FRAGMENT_DEST);
+      expect(report.refused).toContain(VERSION_DEST);
+      expect(report.refused).toContain(MANIFEST_DEST);
+      expect(existsSync(join(outside, 'skills'))).toBe(false);
+      expect(existsSync(join(outside, 'cairn'))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!SYMLINKS)('refuses destinations under a symlinked .claude/skills, and installs the rest', async () => {
+    const dir = tmpDir('cairn-guidance-link-skills-');
+    const outside = tmpDir('cairn-guidance-link-skills-target-');
+    try {
+      mkdirSync(join(dir, GUIDANCE_ROOT));
+      symlinkSync(outside, join(dir, `${GUIDANCE_ROOT}/skills`));
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.refused).toContain('.claude/skills/foo/SKILL.md');
+      expect(report.refused).toContain('.claude/skills/foo/references/README.md');
+      expect(existsSync(join(outside, 'foo'))).toBe(false);
+      expect(readFileSync(join(dir, FRAGMENT_DEST), 'utf8')).toBe('fragment v1');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!SYMLINKS)('refuses a destination that is itself a symlink, leaving the link and its target untouched', async () => {
+    const dir = tmpDir('cairn-guidance-link-dest-');
+    const outside = tmpDir('cairn-guidance-link-dest-target-');
+    try {
+      const target = join(outside, 'settings.json');
+      writeFileSync(target, '{"host":true}');
+      mkdirSync(join(dir, '.claude/skills/foo'), { recursive: true });
+      symlinkSync(target, join(dir, '.claude/skills/foo/SKILL.md'));
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.refused).toContain('.claude/skills/foo/SKILL.md');
+      expect(readFileSync(target, 'utf8')).toBe('{"host":true}');
+      expect(lstatSync(join(dir, '.claude/skills/foo/SKILL.md')).isSymbolicLink()).toBe(true);
+      expect(existsSync(join(dir, '.claude/skills/foo/SKILL.md.orig'))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!SYMLINKS)('refuses a symlink at the .orig path, creating nothing at its target and leaving the edited destination as it was', async () => {
+    const dir = tmpDir('cairn-guidance-link-orig-');
+    const outside = tmpDir('cairn-guidance-link-orig-target-');
+    try {
+      await installGuidance(dir, source());
+      const dest = join(dir, '.claude/skills/foo/SKILL.md');
+      writeFileSync(dest, 'the site edit');
+      const victim = join(outside, 'victim.json');
+      symlinkSync(victim, `${dest}.orig`);
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.refused).toContain('.claude/skills/foo/SKILL.md.orig');
+      expect(existsSync(victim)).toBe(false);
+      expect(readFileSync(dest, 'utf8')).toBe('the site edit');
+      expect(lstatSync(`${dest}.orig`).isSymbolicLink()).toBe(true);
+      expect(report.origWritten).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
     }
   });
 });

@@ -88,7 +88,12 @@ async function main(): Promise<void> {
     for (const path of report.written) console.log(`wrote ${path}`);
     for (const path of report.origWritten) console.log(`wrote ${path}`);
     for (const path of report.origPresent) console.log(`left existing ${path}`);
-    for (const path of report.refused) console.error(`refused ${path}: resolves outside .claude/`);
+    for (const path of report.sourceRefused) {
+      console.error(`refused packaged entry ${path}: not a regular file`);
+    }
+    for (const path of report.refused) {
+      console.error(`refused ${path}: outside .claude/, a symlink, or not a regular file`);
+    }
     for (const path of report.removable) console.log(`removable (no longer shipped): ${path}`);
     console.log(
       '\nThe guidance tree belongs in your commit. .orig files are meant to be read and deleted, not ignored.'

@@ -344,8 +344,9 @@ registry entries, the cairn-pub link); then the STATUS line, in the commit that 
 0. This spec and the two plans land on `main` by PR from `doctor-retirement`.
 1. B2 closes: `tool/v1.0.0` tagged, merged, released. B2's worktree is never touched.
 2. Pre-task, branch `doctor-pretask`, merges. It adds one Go constant for the new condition id,
-   since the tool's drift test asserts id-set equality with `conditions.ts`, so it never runs
-   before B2's merge.
+   since the tool's drift test asserts id-set equality with `conditions.ts`. B2's branch touches
+   none of the pre-task's files, so the pre-task may execute before B2 merges, but its PR merges
+   only after, so the tree tagged as 1.0 carries nothing of it.
 3. retire-1, branch `doctor-go`: verified, then merged to `main` **without a tool tag**. It has
    no tag task and no release task.
 4. Draft docs pass A (the docs conductor's pass,

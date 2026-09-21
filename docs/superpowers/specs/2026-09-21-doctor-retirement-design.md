@@ -263,8 +263,11 @@ time; install with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
 release page, whose URL is written literally. The chapter 2 line drops `--from` and
 `--send-test`, keeps the fact that the installer just sent a test message, and names
 `cairn adopt` then `cairn health` for the https and email checks. Transcripts `02` and `03`
-leave; `01-create-cairn-site.txt` and `01d-resume.txt` are regenerated; the README's doctor prose
-is rewritten. The string-assertion tests and `substitute.test.mjs`'s twin assertion follow.
+leave. `01-create-cairn-site.txt` and `01d-resume.txt` stay byte-identical: they are real pty
+captures of a live 2026-08-17 run against a torn-down site, and the fixtures README forbids edits
+and invented output, so the README gains a note that they predate the retirement and still print
+the old reminder. That directory is the removal predicate's one carve-out. The README's other
+doctor prose is rewritten. The string-assertion tests and `substitute.test.mjs`'s twin assertion follow.
 
 ### Docs
 

@@ -18,17 +18,23 @@ Bin target: `./dist/guidance/bin.js`. Copies the package's shipped skills, the
 `<dest>.orig` beside anything the site had edited, so the edit is never overwritten without a
 recovery copy, and a `MANIFEST` of what it wrote. It never deletes.
 
-The install report distinguishes three outcomes per destination:
+The install report can print any of these lines, quoted exactly from `src/lib/guidance/bin.ts`:
 
-- `wrote <path>` / `left existing <path>.orig` / `wrote <path>.orig`: a normal write, or the
-  `.orig` bookkeeping around a diverged edit.
-- `refused <path>: outside .claude/, a symlink, or not a regular file`: a containment refusal.
-  When a destination's `.orig` could not be made, the destination itself is also listed here,
-  alongside the `.orig` path, so the site sees which files were left stale.
+- `wrote <path>` / `left existing <path>` / `wrote <path>`: a normal write, or the `.orig`
+  bookkeeping around a diverged edit.
+- `refused packaged entry <path>: not a regular file` (`bin.ts:92`): the packaged source itself is
+  not a regular file, so nothing was written for that destination.
+- `refused <path>: outside .claude/, a symlink, or not a regular file` (`bin.ts:95`): a
+  containment refusal on write. When a destination's `.orig` could not be made, the destination
+  itself is also listed here, alongside the `.orig` path, so the site sees which files were left
+  stale.
 - `write error <path>: <code>`: the write failed with a disk error (an `ENOSPC`, an `EACCES`,
   ...) rather than a containment refusal, carrying the failed write's error code. This is kept
   separate from a refusal so the site knows to check disk space or permissions, not the
   containment rules.
+- `removable (no longer shipped): <path>` (`bin.ts:100`): a destination the package previously
+  shipped but no longer does. This matters on the 0.96 to 0.97 upgrade: a site should read each
+  `removable` line and decide whether to delete the file.
 
 ### `npx cairn-guidance check`
 
@@ -41,15 +47,19 @@ tree landed clean, and again after resolving any `.orig` files to confirm none r
 
 ### `npx cairn-doctor`
 
-Bin target: `./dist/doctor/bin.js`. The adoption and configuration check
-`docs/extend/upgrade-cairn.md:50` already names. A site upgrade runs this after bumping the
-`@glw907/cairn-cms` pin to confirm the site's own configuration still matches what the new
-version expects.
+Bin target: `./dist/doctor/bin.js`. Run it as `docs/extend/upgrade-cairn.md:50` does: `npx
+cairn-doctor --from editor@your-site.com --repo you/your-site`. A bare `npx cairn-doctor` leaves
+its checks unchecked and exits 3 (`src/lib/doctor/bin.ts:5-6`: a failed check exits 1, an
+unchecked check with no failure exits 3, a clean run exits 0). A site upgrade runs it, addressed,
+after bumping the `@glw907/cairn-cms` pin to confirm the site's own configuration still matches
+what the new version expects.
 
 ### `npx cairn-audit`
 
-Bin target: `./dist/audit/bin.js`. The admin-surface audit. A site upgrade runs this to confirm
-no custom admin route or component has drifted from the surface the new version ships.
+Bin target: `./dist/audit/bin.js`. The design-language audit: static rules over the admin
+surfaces by default, a `--rendered` mode against a running admin, and a `norms` subcommand that
+looks up a measured norm (`docs/reference/cairn-audit.md:3-13`). It is not an admin-route or
+component surface-drift check.
 
 ### `npx cairn-manifest`
 
@@ -58,9 +68,10 @@ A site upgrade runs this if the manifest format moved, per the release's `Consum
 
 ### `npx cairn-media-seed`
 
-Bin target: `./dist/media-seed/bin.js`. Seeds media entries. A site upgrade runs this only if the
-release's `Consumers must:` list calls for a media re-seed; otherwise it is not part of a routine
-upgrade.
+Bin target: `./dist/media-seed/bin.js`. Seeds wrangler's local R2 simulator with every
+media-library object from a deployed cairn site, so `vite dev` serves real media with no deploy
+(`docs/reference/cli-cairn-media-seed.md:3-13`). Requires `--from <base-url>`
+(`src/lib/media-seed/assemble.ts:9-10`).
 
 ### Out of scope
 

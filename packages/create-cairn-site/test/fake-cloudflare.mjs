@@ -21,10 +21,10 @@
 //    broken wrong-nameserver check pass, because there would be nothing for it to get wrong.
 //    Randomizing per zone gives a wrong-nameserver test something real to fail against. Do not
 //    "fix" this to match reality; that would silently disarm the test it exists for.
-// 2. `success: false` under HTTP 200 is expressible through `failNext`, even though this pass's
-//    spike never observed that shape live (every observed failure carried a matching non-2xx
-//    status). The v4 envelope allows it, and the API seam must not treat HTTP 200 as success on
-//    its own, so this fake supports it defensively rather than leaving it unreachable.
+// 2. A false success flag under HTTP 200 is expressible through `failNext`, even though this
+//    pass's spike never observed that shape live (every observed failure carried a matching
+//    non-2xx status). The v4 envelope allows it, and the API seam must not treat HTTP 200 as
+//    success on its own, so this fake supports it defensively rather than leaving it unreachable.
 //
 // The zone-already-exists body (error 1061) IS captured now, from the estate account
 // (docs/internal/2026-08-11-t4a-domain-spike.md, "Addendum: the minted spike token"): 1061
@@ -40,7 +40,16 @@
 // amendment 16 found no create response was ever observed populating it, so ensureZone must
 // re-read the zone rather than trust the create response, and this fake makes trusting it fail.
 import { randomBytes, randomUUID } from 'node:crypto';
-import { compile, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
+import { compile, loadFixture, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
+
+/** The captured zone-not-found body, reused by every route that 404s on an unknown zone id. */
+const ZONE_NOT_FOUND_BODY = loadFixture('cloudflare', 'zone.not-found.404');
+
+/** The captured body for a request matching no route in this fake's own table. */
+const UNMATCHED_ROUTE_BODY = loadFixture('cloudflare', 'dispatcher.unmatched.404');
+
+/** The captured `messages` array a token-verify success carries alongside its result. */
+const TOKEN_VERIFY_MESSAGES = loadFixture('cloudflare', 'user_token_verify.success.200').messages;
 
 /**
  * @typedef {object} FakeCloudflare
@@ -260,7 +269,7 @@ function makeHandler(routes, { requests, failNextMap }) {
 
     const { match, params } = matchRoute(routes, req.method, url.pathname);
     if (!match) {
-      sendJson(res, 404, { success: false, errors: [{ code: 7003, message: 'Not found' }], messages: [], result: null });
+      sendJson(res, 404, UNMATCHED_ROUTE_BODY);
       return;
     }
 
@@ -423,7 +432,7 @@ function createZoneGetHandler(ctx) {
   return async (_req, res, params) => {
     const zone = ctx.state.zones.find((candidate) => candidate.id === params.zoneId);
     if (!zone) {
-      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      sendJson(res, 404, ZONE_NOT_FOUND_BODY);
       return;
     }
     sendSuccess(res, 200, zone);
@@ -440,7 +449,7 @@ function createDnsRecordCreateHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const zoneId = params.zoneId;
     if (!ctx.state.dnsRecords.has(zoneId)) {
-      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      sendJson(res, 404, ZONE_NOT_FOUND_BODY);
       return;
     }
     const now = new Date().toISOString();
@@ -474,7 +483,7 @@ function createDnsRecordListHandler(ctx) {
   return async (_req, res, params, url) => {
     const records = ctx.state.dnsRecords.get(params.zoneId);
     if (!records) {
-      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      sendJson(res, 404, ZONE_NOT_FOUND_BODY);
       return;
     }
     const { pageItems, resultInfo } = paginate(records, url);
@@ -532,25 +541,10 @@ function createWorkersDomainListHandler(ctx) {
 //    the same ambiguity and is scripted the same way.
 
 /** The captured create response, minus `name`/`return_path_domain`, which the handler echoes. */
-const EMAIL_SUBDOMAIN_CREATE_FIXTURE = {
-  id: 'fcf72bf1ef26439884d8110a1825e142',
-  tag: 'fcf72bf1ef26439884d8110a1825e142',
-  name: 'carin-test.org',
-  enabled: true,
-  preview_enabled: true,
-  return_path_domain: 'cf-bounce.carin-test.org',
-  dkim_selector: 'cf-bounce',
-  created: '2026-08-12T08:12:02.593597Z',
-  modified: '2026-08-12T08:12:02.593597Z',
-};
+const EMAIL_SUBDOMAIN_CREATE_FIXTURE = loadFixture('cloudflare', 'email_subdomain_create.success.200');
 
 /** The captured send-success result: an empty-arrays body, not the documented recipient-naming shape. */
-const EMAIL_SEND_SUCCESS_FIXTURE = {
-  message_id: '<lQGT3PVeEuGfGBb7ykKdFeEdh7ztvmGEchGM@carin-test.org>',
-  delivered: [],
-  queued: [],
-  permanent_bounces: [],
-};
+const EMAIL_SEND_SUCCESS_FIXTURE = loadFixture('cloudflare', 'email_send.success.200');
 
 /**
  * The second sender-not-ready send refusal, captured live 2026-08-12 alongside the 10203 body
@@ -559,12 +553,7 @@ const EMAIL_SEND_SUCCESS_FIXTURE = {
  * sending subdomain entry returned different codes). A test drives it the same way as the 10203
  * body, via `cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY)`.
  */
-export const SENDER_NOT_CONFIGURED_REFUSED_BODY = {
-  success: false,
-  errors: [{ code: 10204, message: 'email.sending.error.email.sender_not_configured' }],
-  messages: [],
-  result: null,
-};
+export const SENDER_NOT_CONFIGURED_REFUSED_BODY = loadFixture('cloudflare', 'email_send.refused-sender-not-configured.403');
 
 /**
  * Build the `GET /zones/:zoneId/email/sending/subdomains` handler: a plain paginated list over
@@ -575,7 +564,7 @@ function createEmailSubdomainListHandler(ctx) {
   return async (_req, res, params, url) => {
     const subdomains = ctx.state.emailSubdomains.get(params.zoneId);
     if (!subdomains) {
-      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      sendJson(res, 404, ZONE_NOT_FOUND_BODY);
       return;
     }
     const { pageItems, resultInfo } = paginate(subdomains, url);
@@ -594,7 +583,7 @@ function createEmailSubdomainListHandler(ctx) {
 function createEmailSubdomainCreateHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     if (!ctx.state.emailSubdomains.has(params.zoneId)) {
-      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      sendJson(res, 404, ZONE_NOT_FOUND_BODY);
       return;
     }
     const name = body?.name ?? EMAIL_SUBDOMAIN_CREATE_FIXTURE.name;
@@ -652,61 +641,24 @@ function createEmailSendHandler() {
  * The first authorization refusal, captured live for `mojombo/grit`: the owner's GitHub account
  * has never authorized Cloudflare's GitHub App at all. HTTP 404, not 403.
  */
-export const APP_NOT_AUTHORIZED_REFUSED_BODY = {
-  success: false,
-  errors: [
-    {
-      code: 8000008,
-      message:
-        'This project is disconnected from your Git account, this may cause deployments to ' +
-        'fail. Refer to https://developers.cloudflare.com/pages/platform/git-integration/' +
-        '#this-project-is-disconnected-from-your-git-account-this-may-cause-deployments-to-fail',
-    },
-  ],
-  messages: [],
-  result: null,
-};
+export const APP_NOT_AUTHORIZED_REFUSED_BODY = loadFixture('cloudflare', 'builds_connection_put.app-not-authorized.404');
 
 /**
  * The second authorization refusal, captured live for `glw907/cairn-t4c-spike` before it was
  * added to the App's repository selection: the App is authorized, but this repository is not
  * selected. HTTP 404, not 403.
  */
-export const REPO_NOT_SELECTED_REFUSED_BODY = {
-  success: false,
-  errors: [
-    {
-      code: 8000012,
-      message:
-        'The project is linked to a repository that no longer exists, this may cause ' +
-        'deployments to fail. Refer to https://developers.cloudflare.com/pages/platform/' +
-        'git-integration/#the-project-is-linked-to-a-repository-that-no-longer-exists-this-may' +
-        '-cause-deployments-to-fail',
-    },
-  ],
-  messages: [],
-  result: null,
-};
+export const REPO_NOT_SELECTED_REFUSED_BODY = loadFixture('cloudflare', 'builds_connection_put.repo-not-selected.404');
 
 /**
  * The captured build-token create response shape (`build_token_uuid`, `owner_type`,
  * `build_token_name`, `cloudflare_token_id`); an empty-body create is rejected with this shape
  * (spike Step 4: "confirmed by three rejected bodies returning 12002").
  */
-const INVALID_REQUEST_BODY_FIXTURE = {
-  success: false,
-  errors: [{ code: 12002, message: 'Invalid request body' }],
-  messages: [],
-  result: null,
-};
+const INVALID_REQUEST_BODY_FIXTURE = loadFixture('cloudflare', 'builds.invalid-request-body.400');
 
 /** The captured logs body, seeded onto a kicked build's `state.buildLogs` entry. */
-export const BUILD_LOGS_FIXTURE = {
-  cursor: 'WzAsMzRd',
-  truncated: false,
-  lines: [[1784052295481, 'Initializing build environment...']],
-  events: [{ type: 'initializing', started_on: '2026-08-13T02:34:29.793Z', ended_on: '2026-08-13T02:34:35.117Z' }],
-};
+export const BUILD_LOGS_FIXTURE = loadFixture('cloudflare', 'builds_logs.default.200');
 
 /** Write a Builds route's 404: the v4 failure envelope carrying one numeric error. */
 function sendBuildsNotFound(res, code, message) {
@@ -876,12 +828,7 @@ function createBuildTokenCreateHandler(ctx) {
  */
 function createUserTokenVerifyHandler(ctx) {
   return async (_req, res) => {
-    sendSuccess(
-      res,
-      200,
-      { id: ctx.tokenVerifyId, status: 'active' },
-      { messages: [{ code: 10000, message: 'This API Token is valid and active', type: null }] },
-    );
+    sendSuccess(res, 200, { id: ctx.tokenVerifyId, status: 'active' }, { messages: TOKEN_VERIFY_MESSAGES });
   };
 }
 

@@ -32,6 +32,10 @@ Every skill the TUI work needs is user-scoped and loads in any repo:
 
 ## Task 1: wire CLAUDE.md
 
+**Done**, in this commit (pass `2026-09-14-cairn-tool-1-0-pass.md`, Task 2). `CLAUDE.md`'s tooling section
+now wires `go-conventions` as mandatory for `tool/` and `golang-spf13-cobra` as
+mandatory for `tool/cmd/cairn`.
+
 Add the TUI skill lines to this repo's CLAUDE.md, next to the
 existing Svelte wiring. Keep it to two or three lines: CLAUDE.md sits
 at its context budget, and the global CLAUDE.md already mandates
@@ -43,6 +47,11 @@ CLAUDE.md knows which skill is mandatory for a Go file and which for
 TUI layout work.
 
 ## Task 2: settle the architecture before forking elm-conventions
+
+**Done**, in this commit (pass `2026-09-14-cairn-tool-1-0-pass.md`, Task 2). ADR-0001 defers the
+component-architecture choice below to the 2.0 pass, written against poplar as it
+stands when the HUD work starts, and records why deferring is correct: the choice
+describes a TUI's internals and 1.0 has no TUI.
 
 Do not copy poplar's `elm-conventions` skill into this repo as-is.
 (Reconciled 2026-08-20: the design spec had banked poplar's shape as a
@@ -67,6 +76,10 @@ the cairn variant unchanged.
 
 ## Task 3: let the tool choose its own input model
 
+**Stays open, 2.0 work.** 1.0 has no TUI and no keybinding surface to decide; this
+task lands at the 2.0 brainstorm alongside the component-architecture ADR that
+Task 2 defers.
+
 Poplar's modifier-free single-key constraint is a poplar product
 decision, not workstation doctrine. This tool decides its own
 keybinding philosophy at brainstorm time, and the `tui-design`
@@ -74,6 +87,13 @@ plugin's discoverability patterns (footer hints, `?` help, command
 palettes, leader keys) are live options here, not excluded ones.
 
 ## Task 4: gate Go comment prose with Vale, on the Go side
+
+**Done**, commit `22842269` (pass `2026-09-14-cairn-tool-1-0-pass.md`, Task 1).
+`tool/Makefile`'s `check` target runs `vale-comments`
+(`tool/scripts/vale-comments.sh`) over every tracked and untracked `.go` file,
+and `tool/.vale.ini` extracts Go comment text through the vendored `glw907`
+overlay. `npm run check:vale` still scans only `docs`, `README.md`, and the
+showcase `README.md`, unchanged.
 
 This repo already runs Vale over docs (`check:vale` in package.json,
 in-tree `.vale.ini`), but that script passes explicit doc paths, so a

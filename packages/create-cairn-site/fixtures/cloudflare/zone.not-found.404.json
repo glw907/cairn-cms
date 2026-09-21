@@ -1,0 +1,14 @@
+{
+  "provenance": {
+    "captured": "2026-08-11",
+    "source": "packages/create-cairn-site/test/fake-cloudflare.mjs:10-11",
+    "status": 404,
+    "note": "no per-body capture comment"
+  },
+  "body": {
+    "success": false,
+    "errors": [{ "code": 1001, "message": "Zone not found" }],
+    "messages": [],
+    "result": null
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "provenance": {
+    "captured": "2026-08-12",
+    "source": "docs/internal/record/2026-08-11-t4b-email-spike.md (\"There is a second refusal code\")",
+    "status": 403
+  },
+  "body": {
+    "success": false,
+    "errors": [{ "code": 10204, "message": "email.sending.error.email.sender_not_configured" }],
+    "messages": [],
+    "result": null
+  }
+}

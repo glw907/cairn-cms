@@ -1,0 +1,25 @@
+{
+  "name": "Alpine Club",
+  "step": "live",
+  "domain": "alpineclub.example",
+  "schemaVersion": 1,
+  "adopted": true,
+  "github": {
+    "repo": {
+      "id": 123456789,
+      "owner": "alpine-club",
+      "repo": "alpine-club-site",
+      "defaultBranch": "main"
+    },
+    "installationId": 20200042
+  },
+  "cloudflare": {
+    "accountId": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+    "zoneId": "9f8e7d6c5b4a39281706f5e4d3c2b1a0",
+    "workerName": "alpine-club-site"
+  },
+  "secretRefs": {
+    "github.clientSecret": "keyring://cairn/alpine-club-a1b2c3/clientSecret",
+    "cloudflare.apiToken": "keyring://cairn/alpine-club-a1b2c3/apiToken"
+  }
+}

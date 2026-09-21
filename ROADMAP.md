@@ -928,9 +928,9 @@ the named human gates only):**
   Carbon's chart guidance is a recipe reference only.
 
 - **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
-  `cairn` tool Pass A (plan `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
-  its Reconciliation block re-verified against the post-C tree first, and the plan re-cut at
-  the CLI-versus-HUD boundary: Pass A ships the registry, the health checks, the cobra
+  `cairn` tool (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, re-cut from
+  `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md` at the CLI-versus-HUD
+  boundary): Pass A ships the registry, the health checks, the cobra
   subcommands, and the scheduled tripwire with every action usable from the shell; the
   tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
   TUI; its 2.0 adds the bubbletea HUD and multi-site management. The 1.0 architecture must
@@ -954,6 +954,41 @@ the named human gates only):**
   (4) extend-2; (5) site migration, once all the extend work has landed. The tool precedes the
   docs because it changes what the admin track describes and because building its checks
   surfaces what the operational contract leaves unsaid.
+
+  **Status (2026-09-20).** Pass A (Tasks 1 to 11) landed on the `cairn-tool-a` worktree. Pass B1
+  (Tasks 11b-i, 11b-ii, 12 to 17, 17b) shipped the `health` package's nine checks (`creds`,
+  `serving`, `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`),
+  the `logs` package, `context.Context` threaded through every `providers` call, an authoritative
+  DNS lookup in `providers`, and the `spine`/`record` refactors (one severity table, single-source
+  record field tables). No command exposes the health checks yet; Pass B2 (old Tasks 18 to 25,
+  with grammar amendments per the recut brief) adds the CLI surface, the `render` package, exit
+  codes, and the 1.0 cut. The recut brief is
+  `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, pre-approved by Geoff
+  within that brief's bounds.
+
+- **The Go-tool CI gate-tier gap found closing Pass A (2026-09-20).** `scripts/checks/gate-tier.mjs`
+  had no rule for `tool/` paths, so a Go-only diff resolved to the full Node gate instead of the
+  light Go-only lane. PR #68 implements the fix (a sixth `tool` gate tier, plus a `<npm
+  tier>+tool` shape for a mixed diff) and is open, awaiting merge.
+
+- **Items filed at Pass B1's close (2026-09-20), for Pass B2 or a later pass.**
+  - The engine's condition registry (`tool/internal/spine/condition.go`, ported from
+    `src/lib/diagnostics/conditions.ts`) has no condition id for an HSTS-off finding (the
+    `https-forced` check reports it under `ConditionNone`) and none for a stale publish-path
+    draft (the publish-path check declares no condition at all). Both need an owner decision on
+    the id and its registry entry before a check can carry one.
+  - Go's resolver consults `/etc/hosts` before the authoritative dial
+    `providers.Probe.LookupAuthoritative` performs, so a machine with a local hosts-file override
+    for the probed domain sees a diagnosis that does not reflect the live DNS.
+  - A DNS transport failure (a down resolver, an offline machine) reports Unknown under
+    `reason.timeout` in every check that reads `providers.Probe`, which misdescribes a resolver
+    that is refusing rather than timing out; the two failure modes share one reason today.
+  - The engine check's releases-behind count reads the declared dependency range's base version
+    from `package.json` rather than the resolved version a lockfile would carry, so a site pinned
+    loosely reports behind-ness relative to its floor, not its installed version.
+  - `logs.ErrObservabilityOff`'s trigger is unconfirmed against a live Worker that never enabled
+    observability; it needs a real-Worker check before the errors check's classification can be
+    trusted.
 
 - **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
   browser).** The admin animates in places (the drawer's width, the palette's opacity, the

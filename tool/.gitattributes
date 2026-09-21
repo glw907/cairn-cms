@@ -1,0 +1,6 @@
+# Force LF line endings on every text file under tool/ regardless of the
+# checkout platform. Windows CI runners default to core.autocrlf=true, which
+# checks .go files out with CRLF; gofmt -l then reports every line of every
+# file as changed. Normalizing the checkout keeps fmt-check meaningful on
+# every leg of the CI matrix.
+* text=auto eol=lf

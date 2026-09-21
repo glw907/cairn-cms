@@ -4,6 +4,27 @@
 
 ### Added
 
+- `packages/create-cairn-site`'s test fakes (`test/fake-cloudflare.mjs`, `test/fake-github.mjs`)
+  now load their response bodies from a JSON fixture corpus at
+  `packages/create-cairn-site/fixtures/`, one file per captured body, instead of carrying them as
+  inline object literals. The corpus is outside that package's `files` allowlist, so it is not
+  published. A new Go module at `tool/` (`github.com/glw907/cairn-cms/tool`) holds the foundation
+  of the `cairn` operator CLI: the `record`, `store`, `providers`, `spine`, `secrets`, and
+  `version` packages, and a `cmd/cairn` binary with `auth set`, `auth list`, and a hidden
+  `probe-token` subcommand. Nothing under `tool/` is reachable from `npm test` or the npm
+  tarball, and no command an operator would run ships yet.
+
+- The `tool/` module's `health` package gains nine checks (`creds`, `serving`, `delegation`,
+  `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`), each a pure function
+  over a site record and a set of providers. A new `logs` package fetches and classifies
+  Cloudflare Workers Logs entries for the errors check. `context.Context` now threads through
+  every `providers` method call, and `providers` gains an authoritative DNS lookup the serving
+  and email checks use. The `spine` and `record` packages each got a refactor: `spine` now
+  carries one severity table instead of a duplicated one, and `record`'s field tables read from a
+  single source instead of hand-maintained mirror slices. No command exposes the health checks
+  yet; they run only under their own package tests. Consumers must: nothing, since the `tool/`
+  module is not part of the npm package a site installs.
+
 - A new `cairn-guidance` bin installs and checks the package's shipped skills, review agent, and
   `CLAUDE.md` fragment in a consumer repo. `cairn-guidance install` copies every directory under
   `skills/`, the review agent, and the fragment into `.claude/`, writing `<dest>.orig` beside

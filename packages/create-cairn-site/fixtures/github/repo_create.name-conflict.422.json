@@ -1,0 +1,12 @@
+{
+  "provenance": {
+    "captured": "2026-08-10",
+    "source": "packages/create-cairn-site/test/fake-github.mjs:372-377",
+    "status": 422,
+    "note": "no per-body capture comment"
+  },
+  "body": {
+    "message": "Repository creation failed.",
+    "errors": [{ "resource": "Repository", "code": "custom", "field": "name", "message": "name already exists on this account" }]
+  }
+}

@@ -689,6 +689,17 @@ cut. The cut also expects a `CHANGELOG.md` `## Unreleased` entry on `main` for t
 carrying its install line and the statement that the binary is not in the npm tarball; if that
 entry is missing, **stop**, because the release body is rolled from that window.
 
+**A third gate (Geoff, 2026-09-21): the doctor is retired before `0.97.0`.** The "unblocked" line
+is written by the doctor-retirement pass's close, which lands last, never by Pass B2's close;
+B2's line says only that the tool's 1.0 is merged, tagged, and released. The cut starts only when
+the unblocked line is present AND the doctor is gone from `origin/main`: `src/lib/doctor` no
+longer exists at `origin/main` (`git ls-tree origin/main src/lib/doctor` prints nothing, and
+`git log origin/main -- src/lib/doctor` shows the removal), `package.json`'s `bin` carries no
+`cairn-doctor` key, and `packages/create-cairn-site` prints no `npx cairn-doctor`. The removal's
+`Consumers must:` line sits in the same `CHANGELOG.md` entry, and the release then announces the
+tool at the version the retirement shipped (`tool/v1.1.0` as planned). If any of these fails,
+**stop and say so**.
+
 **Runs through the `cairn-release` skill**, which re-derives the release size and the number from
 the window's contents. `check:version` enforces the `release-size` marker against the CHANGELOG,
 and the `## Unreleased` block currently carries `<!-- release-size: minor -->` (`CHANGELOG.md:3`).

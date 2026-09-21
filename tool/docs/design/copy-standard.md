@@ -2,6 +2,17 @@
 
 Editorial review, 2026-09-20. Read-only on every repo.
 
+> **Plan rulings that override this catalogue (2026-09-20, three-lens review of Pass B2).** This
+> document is binding on grammar and register. Where a row below disagrees with the ruled
+> vocabulary in `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, the plan wins and the
+> row stands only as the editorial reasoning that produced it. Three rows are overridden today.
+> The command is `adopt`, never `add` (sections 2.9 and 3.8). The GitHub variable is
+> `CAIRN_GH_READ_TOKEN`, never `CAIRN_GH_TOKEN` (sections 3.6 and 3.8). A rate-limited run's
+> verdict is UNKNOWN, not the `WARNING, never CRITICAL` the 3.8 rate-limited row asserts, because
+> a throttled run did not observe the site. Task 19c-i carries tests that stop an implementer from
+> copying a superseded row, and the last two of the three are open questions for the owner under
+> "Outside the amendment, for the owner" in that plan.
+
 **Status: binding.** Adopted by the Pass B2 amendment of 2026-09-20 as the standard every
 operator-facing string in `tool/` is written to. Section 2 is the standard, section 3 is the
 catalogue the messages tables are seeded from, and section 4 is the production mechanism the plan

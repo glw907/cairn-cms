@@ -1869,6 +1869,17 @@
 
 ### Fixed
 
+- The admin's nav panel no longer stays compositor-promoted while it is showing. daisyUI's drawer
+  recipe promotes the off-canvas panel with `will-change: transform` so it is ready to slide, then
+  releases it with a rule whose prelude is wrapped in `:where()`; that wrapper zeroes the prelude's
+  specificity, so the release measures (0,1,0) against the base rule's (0,2,0) in the same layer
+  and never applies, and the `drawer-open` persistent forms have no release at all. A promoted
+  layer is where Chromium picks its text raster, and it re-picks per run, so the same admin screen
+  rendered two discrete images across repeated captures. `cairn-admin.css` now re-asserts daisyUI's
+  own intended `will-change: auto` on every showing panel, the overlay drawer and both persistent
+  breakpoints alike. Only `will-change` is touched, so the drawer's open slide still animates.
+  Admin-internal only; no consumer action.
+
 - The admin topbar's breadcrumb no longer ellipsizes a crumb that fits. daisyUI 5.7.28 took 4px
   out of `.breadcrumbs > ul`'s content box (a `padding-inline-start: .25rem` against a matching
   negative margin on the wrapper), and the breadcrumb's own wrapper sizes to its crumbs, so the

@@ -828,7 +828,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 13 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 14 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -850,7 +850,7 @@
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
    halved this control's visibility again on top of daisyUI's own dimming.
-   PINNED unlayered rule 2 of 13 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 14 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
@@ -869,7 +869,7 @@
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
-   PINNED unlayered rule 3 of 13 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 3 of 14 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the persistent desktop sidebar drifting with the page scroll. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -881,10 +881,39 @@
    generates the `xl:drawer-open` utility from this component's own class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
-   PINNED unlayered rule 4 of 13 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 4 of 14 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the desk route's persistent sidebar drifting with the page scroll at xl. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
+}
+
+/* Re-asserts daisyUI's OWN intended reset, which its own selector cannot deliver. Its base rule
+   `.drawer-side > :not(.drawer-overlay)` sets `will-change: transform` so the off-canvas panel is
+   promoted and ready to slide, specificity (0,2,0). Its release,
+   `:where(.drawer-toggle:checked ~ .drawer-side) { & > :not(.drawer-overlay) { will-change: auto } }`,
+   wraps the whole prelude in `:where()`, which zeroes it, so the nested selector measures (0,1,0)
+   and loses to the base rule in the same layer; the panel therefore stays compositor-promoted for
+   as long as the drawer is open. The persistent forms have no release at all: in `drawer-open` mode
+   the toggle is never checked, so the resting desktop sidebar carries the same promotion
+   permanently. A promoted layer is where Chromium chooses LCD versus grayscale text raster, and it
+   re-picks per run, so the admin's nav text rendered two discrete images across repeated captures
+   of the same screen (measured on the drawer overlay at 390px: 4 of 10 runs one image, 6 the
+   other). Restoring `auto` on every showing panel settles it to one. Only `will-change` is touched;
+   `translate`, `transform`, and the transition stay daisyUI's, so the open slide still animates.
+   Present unchanged in daisyUI 5.7.20 and 5.7.42, so this is a latent upstream defect, not a bump
+   regression; it retires when upstream drops the `:where()` wrapper or raises the reset's
+   specificity. Deliberately UNLAYERED, the same mechanism as the four rules above: daisyUI's drawer
+   recipe compiles into the utilities layer, which no layered rule can outrank.
+   PINNED unlayered rule 5 of 14 (gate match: `.drawer-toggle:checked ~ .drawer-side`); bug it
+   prevents: the nav panel's text raster changing between renders of the same screen. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+  :is(
+    .drawer-toggle:checked ~ .drawer-side,
+    .lg\:drawer-open > .drawer-toggle ~ .drawer-side,
+    .xl\:drawer-open > .drawer-toggle ~ .drawer-side
+  )
+  > :not(.drawer-overlay) {
+  will-change: auto;
 }
 
 /* The three ratified chip registers, second generation (2026-08-24 owner probe, Geoff's own
@@ -920,7 +949,7 @@
    rule`, engine-rulings.md) pending a chroma-aware repair that can tell a hue-distinct low-contrast
    tint from a truly invisible one; that repair is not reopened here, the position is only recorded
    so a measured "violation" here reads as expected rather than as a regression.
-   PINNED unlayered rule 5 of 13 (gate match: `.cairn-chip-outline`); bug it prevents: a hand-built
+   PINNED unlayered rule 6 of 14 (gate match: `.cairn-chip-outline`); bug it prevents: a hand-built
    chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-outline {
   font-weight: 400;
@@ -928,7 +957,7 @@
   border-color: color-mix(in oklab, currentColor 55%, transparent);
 }
 
-/* PINNED unlayered rule 6 of 13 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
+/* PINNED unlayered rule 7 of 14 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
    either melting into its ground (badge-ghost's old failure) or keeping a border that competes
    with an attention state rendered next to it. Retuned from the first generation's flat 14% mix
    into base-300 (which measured 1.68-2.03:1 against the four theme/ground cells, above this
@@ -948,7 +977,7 @@
   background-color: color-mix(in oklab, var(--color-base-content) var(--cairn-chip-quiet-mix), var(--color-base-200));
 }
 
-/* PINNED unlayered rule 7 of 13 (gate match: `.cairn-chip-warning`); bug it prevents: a state that
+/* PINNED unlayered rule 8 of 14 (gate match: `.cairn-chip-warning`); bug it prevents: a state that
    needs attention (an unpublished-changes marker, a needs-alt notice) reading as visually identical
    to a settled quiet chip. The fill tints `--color-warning` into the same base-200 anchor the quiet
    recipe mixes into (so both registers share one anchor and differ only by hue and per-theme
@@ -980,7 +1009,7 @@
    lets a consumer nest a compact row (a flex wrapper holding two or more narrower controls side
    by side) inside a stacked label and keep that row's own width choice; a descendant selector
    reached through the wrapper and forced every nested control to 100% regardless.
-   PINNED unlayered rule 8 of 13 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
+   PINNED unlayered rule 9 of 14 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
    field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
    fields' controls in the same column stop sharing a left AND right edge once the cell exceeds
    20rem. */
@@ -1040,7 +1069,7 @@
    control's own text utility too (`btn btn-active text-error` painted `--btn-fg` instead of
    `text-error`'s ink on dark). The outline/dash rule below carries that declaration, scoped to
    the forms that need it.
-   PINNED unlayered rule 9 of 13 (gate match:
+   PINNED unlayered rule 10 of 14 (gate match:
    `[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
    bug it prevents: a segmented control's selected state reading as visually identical to its unselected
    siblings on the dark theme, or a variant selected control losing its accent. */
@@ -1073,7 +1102,7 @@
    utilities-layer declarations (`@layer daisyui.l1.l2` / `daisyui.l1.l2.l3`), which a
    components-layer rule cannot outrank regardless of specificity; UNLAYERED for the same reason
    as the rule above.
-   PINNED unlayered rule 10 of 13 (gate match:
+   PINNED unlayered rule 11 of 14 (gate match:
    `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
    bug it prevents: an outline or dashed selected control painting its own ink on its own fill,
    on either theme. */
@@ -1098,7 +1127,7 @@
    is stock, so nothing there needs repairing. Gated on `@media (hover: hover)`, the same guard
    daisyUI puts on its own button hover recipes, so a touch device does not strand the lighter
    fill on the last-tapped segment.
-   PINNED unlayered rule 11 of 13 (gate match: the rule 9 selector plus `:hover`, inside
+   PINNED unlayered rule 12 of 14 (gate match: the rule 10 selector plus `:hover`, inside
    `@media (hover: hover)`);
    bug it prevents: a selected control giving no visible feedback on hover. */
 @media (hover: hover) {
@@ -1139,7 +1168,7 @@
    ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
    again (status-chip-register-tuning.test.ts's sibling proof,
    interactive-control-edge-contrast.test.ts, carries this exact break-and-restore).
-   PINNED unlayered rule 12 of 13 (gate match: `.checkbox:not(:checked, :indeterminate,
+   PINNED unlayered rule 13 of 14 (gate match: `.checkbox:not(:checked, :indeterminate,
    [aria-checked='true']), .radio:not(:checked, [aria-checked='true'])`); bug it prevents: an
    unchecked checkbox or radio's edge sitting under the WCAG 1.4.11 non-text contrast floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
@@ -1179,11 +1208,11 @@
    Every field additionally excludes `:disabled`/`[disabled]` and daisyUI's own error family
    (`.validator:user-invalid`, its `[aria-invalid]:not([aria-invalid="false"])` sibling selector
    (the accessible, no-real-interaction-needed way to mark a field invalid daisyUI's own rule
-   already matches on), and `.input-error`/`.select-error`/`.textarea-error`): unlike rule 12
+   already matches on), and `.input-error`/`.select-error`/`.textarea-error`): unlike rule 13
    above, this rule carried no disabled exclusion of its own before this fix round, so it silently
    repainted a disabled field's edge to the same 55% mix as an enabled one, overriding daisyUI's
    own `:disabled` base-200 border (a distinct, lower-salience state this rule has no business
-   touching, the same WCAG 1.4.11 disabled exemption rule 12's own comment already carries) and,
+   touching, the same WCAG 1.4.11 disabled exemption rule 13's own comment already carries) and,
    separately, an invalid field's own red error border (`--input-color: var(--color-error)`, which
    this rule's own longhand `border-color` always outranks regardless of that variable's value,
    since a longhand set after a shorthand wins at equal specificity/layer): a semantic signal this
@@ -1193,7 +1222,7 @@
    ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
    again (interactive-control-edge-contrast.test.ts carries this exact break-and-restore for the
    field family, plus the disabled/error non-repaint cases the same file adds alongside it).
-   PINNED unlayered rule 13 of 13 (gate match: `.input:not(:focus, :focus-within, :disabled,
+   PINNED unlayered rule 14 of 14 (gate match: `.input:not(:focus, :focus-within, :disabled,
    [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid=
    "false"])), .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled],
    .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid="false"])),

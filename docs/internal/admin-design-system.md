@@ -81,6 +81,9 @@ Calibration (Geoff, 2026-07-15):
   `cairn-admin.css`. One deliberate exception: the `.menu` focus override is unlayered on purpose,
   because DaisyUI's own utilities-layer rule quiets `:focus-visible` on menu items and only an
   unlayered rule outranks it. Do not add another unlayered rule without the same forcing reason.
+  The set has grown to fourteen pinned rules on that reason; the newest re-asserts `will-change:
+  auto` on a showing drawer panel, which daisyUI's own `:where()`-wrapped reset cannot win
+  (`daisyui-drawer-will-change-where-wrapper` in the rulings ledger).
 - **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
   `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
   prepends the scope to the front of every rule and would sever a nested combinator selector
@@ -228,7 +231,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
   variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
   dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A pinned unlayered rule in
-  `cairn-admin.css` (rule 12 of 13) raises the unchecked edge to a 55% mix, the same one already
+  `cairn-admin.css` (rule 13 of 14) raises the unchecked edge to a 55% mix, the same one already
   locked for the scrollbar thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle`
   needed no change; its own construction already mixes 50% and clears the floor unaided.
 - **Unfocused `.input`/`.select`/`.textarea` edge (2026-08-27, extends the checkbox/radio fix
@@ -236,7 +239,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   through the same `--input-color` 20%-mix fallback (`border: var(--border) solid var(--input-color,
   transparent)`), and no admin call site supplies a color variant. Measured against the compiled
   sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A pinned
-  unlayered rule in `cairn-admin.css` (rule 13 of 13) raises the edge to the same 55% mix already
+  unlayered rule in `cairn-admin.css` (rule 14 of 14) raises the edge to the same 55% mix already
   locked above: 3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
   underlying `base-content`/`base-100` pair is the same. Scoped to `:not(:focus, :focus-within)`,
   since a focused field already sets `--input-color` to full `base-content` (a much stronger edge)

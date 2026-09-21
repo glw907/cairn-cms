@@ -842,6 +842,23 @@ the named human gates only):**
 
 ## Next
 
+- **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
+  `components/drawer.css` releases its open panel's `will-change` through a rule whose prelude is
+  wrapped in `:where()`, which zeroes the prelude, so the release measures (0,1,0) against its own
+  base rule's (0,2,0) in the same layer and never applies; the `drawer-open` persistent forms carry
+  no release at all. Present unchanged in 5.7.20 and 5.7.42. cairn carries a pinned unlayered
+  override (`daisyui-drawer-will-change-where-wrapper` in the rulings ledger), which retires the day
+  upstream fixes it. Trigger: this is a standing item until the issue is filed.
+
+- **Decide whether `e2e.yml`'s baseline regen should stay on Playwright's `changed` preset (pre-cut,
+  2026-09-21).** The `changed` preset skips a baseline that still passes its threshold, and the
+  `admin drawer overlay` cases carry a local `maxDiffPixels: 1000` rather than the suite's 120. When
+  the drawer's raster moved, four of the six affected baselines still passed at 1000, so the regen
+  would have left them stale and only a hand `git rm` forced them to be rewritten. The alternative
+  is a delete-then-regen by spec, which costs a full rewrite of every baseline the named spec owns.
+  Trigger: the next regen that a pass has to hand-force, or a third stale baseline found in a
+  loose-threshold spec.
+
 - **`cairn-guidance install` write-hardening candidates, from the security re-read (extend-2,
   2026-09-20).** The blocking read that found the symlink-containment defect (fixed in `9aa7765a`)
   also named six smaller items, verified against the code as it stands after that fix. Two of the

@@ -74,6 +74,34 @@ test('at mobile width, the drawer still opens on demand and auto-closes after a 
   await expect(sidebar).toBeHidden();
 });
 
+// daisyUI's own open-drawer reset of `will-change` loses to its own base rule on specificity, so
+// without cairn's override the open panel stays compositor-promoted and Chromium re-picks its text
+// raster per run. cairn-admin.css restores `will-change: auto`; these two read the computed value
+// against the real preview build, the one surface where the packaged sheet and daisyUI meet.
+
+test('at mobile width, the open drawer panel is not left compositor-promoted', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/admin/posts');
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Site content' })).toBeVisible();
+
+  const panel = page.locator('.drawer-side > :not(.drawer-overlay)').first();
+  await expect
+    .poll(() => panel.evaluate((el) => getComputedStyle(el).willChange))
+    .toBe('auto');
+});
+
+test('at 1440, the persistent sidebar panel is not left compositor-promoted', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/admin/posts');
+  await expect(page.locator('.drawer-side')).toBeVisible();
+
+  const panel = page.locator('.drawer-side > :not(.drawer-overlay)').first();
+  await expect
+    .poll(() => panel.evaluate((el) => getComputedStyle(el).willChange))
+    .toBe('auto');
+});
+
 // 3. The desk rider (spec §5): a desk route (the edit page) persists its sidebar one breakpoint
 //    wider than an office route, at `xl` (1280px) instead of `lg` (1024px), receding behind the
 //    toggle through the `lg`-`xl` tablet band and staying an overlay below `lg` as before.

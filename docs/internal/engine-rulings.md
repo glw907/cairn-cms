@@ -6159,3 +6159,34 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `display`/`overlay` pair carrying `allow-discrete` beside an allowlisted paint property passes;
   either property without `allow-discrete` still errors; an unrelated layout property carrying
   `allow-discrete` still errors, since the arm covers only `display` and `overlay`).
+
+## daisyui-drawer-will-change-where-wrapper: daisyUI's open-drawer `will-change` reset loses to its own base rule  (accept, 2026-09-21, pre-cut)
+
+- **Verdict:** accept a pinned unlayered override in `cairn-admin.css` that re-asserts daisyUI's own
+  intended reset. `components/drawer.css` sets the base
+  `.drawer-side>:not(.drawer-overlay){will-change:transform;transition:translate .3s ease-out,width
+  .2s ease-out;translate:-100%}` and releases it with
+  `:where(.drawer-toggle:checked~.drawer-side){&>:not(.drawer-overlay){will-change:auto;transform:none}}`.
+  The release wraps its whole prelude in `:where()`, which zeroes that prelude's specificity, so the
+  nested selector measures (0,1,0) against the base rule's (0,2,0) in the same cascade layer and
+  loses. The panel therefore stays compositor-promoted for as long as the drawer is open, and the
+  `drawer-open` persistent forms never reach the release at all, since their toggle is never
+  checked. Measured on the admin's own open drawer after an 800ms settle: `willChange` reads
+  `transform` at 320, 390, 768, 1440, and 2560, in both themes. A promoted layer is where Chromium
+  picks LCD versus grayscale text raster, and it re-picks per run, so the same screen rendered two
+  discrete images across repeated captures (4 of 10 runs one image, 6 the other, at 390px);
+  restoring `will-change: auto` gave 10 of 10 byte-identical. The override touches `will-change`
+  alone, so the open slide still animates on daisyUI's own `translate` transition.
+- **Reopens on:** an upstream fix, which is the only thing that retires the override: daisyUI
+  dropping the `:where()` wrapper from the release, raising the release's specificity above the base
+  rule's, or moving the release into a later layer. Checked against 5.7.20 and 5.7.42, which carry
+  the identical rule pair, so this is a latent upstream defect rather than a bump regression; a
+  version that changes the pair is the trigger to re-measure and delete the rule.
+- **Record:** `src/lib/components/cairn-admin.css`, pinned unlayered rule 5 of 14;
+  `examples/showcase/e2e/admin-shell-sidebar.spec.ts`, the two computed-`will-change` guards.
+- **Any-site case:** any consumer whose admin drawer is open, at any width, on any theme: the nav
+  panel's own text raster changes between renders of the same screen, which shows up as visual-test
+  flake on the consumer's own baselines before it shows up as anything a reader notices.
+- **Verified:** the two e2e guards, failing on `transform` before the rule and passing on `auto`
+  after, read against the real preview build; and a 10-run repeat capture of the light drawer at
+  390px, all ten byte-identical.

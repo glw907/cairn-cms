@@ -104,6 +104,13 @@ describe('resolveTier', () => {
     expect(resolveTier(['package.json'])).toEqual({ tier: 'full', decidingPaths: ['package.json'] });
   });
 
+  it('treats a non-tool unclassified path as full even alongside tool/** in the diff (resolveTier itself is unaware of the tool tier; decideGate is the one that splits tool/** off first)', () => {
+    expect(resolveTier(['package.json', 'tool/main.go'])).toEqual({
+      tier: 'full',
+      decidingPaths: ['package.json', 'tool/main.go'],
+    });
+  });
+
   it('treats an unclassified showcase src/lib path as full too, with no dedicated rule for it', () => {
     expect(resolveTier(['examples/showcase/src/lib/PostCard.svelte'])).toEqual({
       tier: 'full',
@@ -150,6 +157,49 @@ describe('decideGate', () => {
   it('throws on an unknown --pin tier', () => {
     expect(() => decideGate(['docs/admin/README.md'], { pin: 'nope' })).toThrow(/unknown --pin tier/);
   });
+
+  it('resolves a tool-only diff to the tool tier and its standalone gate string', () => {
+    const decision = decideGate(['tool/internal/spine/chapter.go']);
+    expect(decision).toEqual({
+      tier: 'tool',
+      reason: 'computed',
+      decidingPaths: ['tool/internal/spine/chapter.go'],
+      gate: 'make -C tool check',
+    });
+  });
+
+  it('counts a tool/**/*.md path as tool, not docs', () => {
+    const decision = decideGate(['tool/docs/getting-started.md']);
+    expect(decision.tier).toBe('tool');
+    expect(decision.gate).toBe('make -C tool check');
+  });
+
+  it('resolves a mixed tool and npm diff to "<npm tier>+tool" and runs both gate strings', () => {
+    const decision = decideGate(['src/lib/log/index.ts', 'tool/internal/spine/chapter.go']);
+    expect(decision.tier).toBe('engine+tool');
+    expect(decision.reason).toBe('computed');
+    expect(decision.decidingPaths).toEqual(['src/lib/log/index.ts', 'tool/internal/spine/chapter.go']);
+    expect(decision.gate).toBe(`${TIER_GATES.engine} && make -C tool check`);
+  });
+
+  it('applies the paint floor to the npm half of a mixed diff, then still appends the tool gate', () => {
+    const decision = decideGate(['scripts/checks/check-idioms.mjs', 'tool/main.go'], { paint: 'yes' });
+    expect(decision.tier).toBe('admin-visual+tool');
+    expect(decision.reason).toBe('paint floor');
+    expect(decision.gate).toBe(`${TIER_GATES['admin-visual']} && make -C tool check`);
+  });
+
+  it('does not apply the paint floor to a tool-only diff, since paint is an npm-admin concept', () => {
+    const decision = decideGate(['tool/main.go'], { paint: 'yes' });
+    expect(decision.tier).toBe('tool');
+    expect(decision.reason).toBe('computed');
+    expect(decision.gate).toBe('make -C tool check');
+  });
+
+  it('accepts --pin tool and prints its gate string', () => {
+    const decision = decideGate(['docs/admin/README.md'], { pin: 'tool' });
+    expect(decision).toEqual({ tier: 'tool', reason: 'pin', decidingPaths: [], gate: 'make -C tool check' });
+  });
 });
 
 describe('parseArgs', () => {
@@ -180,13 +230,19 @@ describe('TIER_ORDER and TIER_GATES', () => {
     expect(TIER_GATES.scripts).toBe(TIER_GATES.engine);
   });
 
-  it('every tier above docs is a strict superset of the tier below it', () => {
+  it('every npm tier above docs is a strict superset of the npm tier below it', () => {
     expect(TIER_GATES.scripts.startsWith(TIER_GATES.docs)).toBe(true);
     expect(TIER_GATES.scripts.length).toBeGreaterThan(TIER_GATES.docs.length);
     expect(TIER_GATES['admin-visual'].startsWith(TIER_GATES.scripts)).toBe(true);
     expect(TIER_GATES['admin-visual'].length).toBeGreaterThan(TIER_GATES.scripts.length);
     expect(TIER_GATES.full.startsWith(TIER_GATES['admin-visual'])).toBe(true);
     expect(TIER_GATES.full.length).toBeGreaterThan(TIER_GATES['admin-visual'].length);
+  });
+
+  it('the tool gate stands outside the npm superset chain, sharing no prefix with any npm tier', () => {
+    expect(TIER_GATES.tool).toBe('make -C tool check');
+    expect(TIER_GATES.full.startsWith(TIER_GATES.tool)).toBe(false);
+    expect(TIER_GATES.docs.startsWith(TIER_GATES.tool)).toBe(false);
   });
 
   it('the docs gate names every docs-tier check, including check:reference:signatures', () => {

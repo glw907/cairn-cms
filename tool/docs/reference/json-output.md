@@ -126,8 +126,9 @@ An expired hold is reported rather than dropped, so an operator can see the one 
 ### `fields` and `observed`
 
 `detail` is cairn's own sentence, from the tool's messages table. Anything lifted from a site's
-own response, log field, or repository metadata goes under `observed`, and each value carries its
-`source`, either `cloudflare` or `github`:
+own response, log field, or repository metadata goes under `observed`. Each entry there is an
+object of two keys: the `value` itself, and the `source` it came from, either `cloudflare` or
+`github`.
 
 ```json
 "observed": { "mainShortSHA": { "value": "a91f2c7", "source": "github" } }

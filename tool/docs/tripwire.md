@@ -218,10 +218,10 @@ exit $LASTEXITCODE
 schtasks /create /tn "cairn health" /tr "powershell.exe -File C:\Users\operator\bin\cairn-health-run.ps1" /sc daily /st 08:00 /ru "%USERNAME%"
 ```
 
-**A deviation from the plan draft, worth stating plainly:** `schtasks /create` has no flag that
-caps a single run's execution time; its own `/et` sets the end time of a *repeating* schedule
-window (used with `/ri`), not a per-run cap. The real mechanism is the task definition's
-`<ExecutionTimeLimit>` element, settable only by importing XML:
+`schtasks /create` has no flag that caps a single run's execution time; its own `/et` sets the
+end time of a *repeating* schedule window (used with `/ri`), not a per-run cap. The mechanism
+that actually caps one run is the task definition's `<ExecutionTimeLimit>` element, settable only
+by importing XML:
 
 ```xml
 <Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
@@ -239,8 +239,8 @@ schtasks /create /tn "cairn health" /xml C:\Users\operator\bin\cairn-health-task
 ## Prefer the bare sweep; the per-site loop is for a per-site exit code
 
 Every example above runs `cairn health --quiet` bare, sweeping every site the registry holds in
-one command and one exit code, because the 2026-09-20 amendment brought the sweep into 1.0. This
-is what an operator wants from a scheduled routine: one page, and one place to look.
+one command and one exit code. This is what an operator wants from a scheduled routine: one page,
+and one place to look.
 
 The alternative is a per-site loop, useful only when you want a distinct exit code per site
 rather than the sweep's single worst-of-all verdict, for example routing one site's alert to a
@@ -293,9 +293,10 @@ exit: 2
 ```
 
 The complementary `OK` path, byte-empty stdout and stderr on a fully green run, needs real
-Cloudflare and GitHub credentials against a live site this task should not reach for on its own;
-it is proved by `TestQuietWritesNothingOnAnOKRun` in `cmd/cairn/health_test.go` today, and by
-Geoff's own terminal at Task 24b.
+Cloudflare and GitHub credentials against a live site to prove directly; `TestQuietWritesNothingOnAnOKRun`
+in `cmd/cairn/health_test.go` proves the same rule with a synthetic passing report, and running
+this exact invocation against your own adopted sites once, before you trust the scheduled job, is
+worth doing before you rely on the silence.
 
 ## `--timeout`: most operators pass none
 

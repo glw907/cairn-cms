@@ -184,7 +184,7 @@ func anyDegraded(rs []health.Report) bool {
 // budget or a signal ended it first. No health.Report exists for a site the sweep never started,
 // so this is not writeHealthBody's per-check shape; the three columns (verdict, id, reason) are
 // new to cmd/cairn's operator-facing strings, not yet in cmd/cairn/messages.go, which Task 19c-ii
-// creates, and are owed to Task 22a's editorial gate.
+// creates, and are reviewed at the 1.0 editorial gate.
 func writeSweepTimeout(w io.Writer, id string) error {
 	_, err := fmt.Fprintf(w, "%s\t%s\t%s\n", spine.VerdictUnknown, id, spine.ReasonTimeout)
 	return err

@@ -3,7 +3,26 @@
 ## Status
 
 Accepted, 2026-09-21 (Task 20a); amended the same day at the segment 3 review,
-which took the fourth dependency and built the second width table.
+which took the fourth dependency and built the second width table; amended
+again by Task 22a (segment 4 conductor ruling, 2026-09-21) to record the man
+generator's own indirect requires below, in this file rather than a third ADR,
+per that ruling.
+
+## Addendum: the man generator's indirect requires (Task 22a)
+
+`tool/cmd/mangen` imports `github.com/spf13/cobra/doc`, a subpackage of the
+already-direct `github.com/spf13/cobra` requirement, so it adds no fifth entry
+to this ADR's own four render dependencies above; the direct-require count
+those four describe is unchanged. `cobra/doc` itself pulls three modules in as
+indirect requires: `github.com/cpuguy83/go-md2man/v2` and
+`github.com/russross/blackfriday/v2` for its man-page renderer, and
+`go.yaml.in/yaml/v3` for its (unused here) YAML doc generator. `go mod tidy`
+added all three as `// indirect` in `go.mod`; none is imported by `cmd/cairn`
+or any `internal/` package (`cmd/mangen/main_test.go`'s
+`TestCmdCairnImportsNoCobraDoc` holds the first half of that), which is the
+whole reason `mangen` is a second command: linking `go-md2man` and
+`blackfriday` into the operator binary for a file it never reads would cost
+every install a dependency it has no use for.
 
 ## Context
 

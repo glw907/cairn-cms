@@ -77,6 +77,7 @@ and commit the diff.
 Run the command again in %s
 - %s %s
 
+- %s (%s), go%s, %s/%s
 - %s added as %s
 
 - %s deleted from the keyring

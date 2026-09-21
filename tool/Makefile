@@ -12,7 +12,7 @@ VERSION := $(shell git describe --tags --match 'tool/v*' --dirty --always 2>/dev
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/internal/version.Commit=$(COMMIT)'
 
-.PHONY: all build test vet install check clean golden \
+.PHONY: all build test vet install check clean golden man \
 	tidy-check fmt-check lint vulncheck vale-comments \
 	copy-list check-copy copy-review \
 	build-golangci-lint build-govulncheck
@@ -31,8 +31,16 @@ test:
 vet:
 	go vet ./...
 
-install: build
+# man writes every man page to man/, fresh from a build it runs itself: cmd/mangen harvests the
+# tree from the real binary's own --help text rather than importing cmd/cairn (a package main,
+# which Go forbids importing), so it always builds cairn before reading it.
+man:
+	go run ./cmd/mangen man
+
+install: build man
 	install -m 0755 $(BINARY) "$(HOME)/.local/bin/$(BINARY)"
+	install -d "$(HOME)/.local/share/man/man1"
+	install -m 0644 man/*.1 "$(HOME)/.local/share/man/man1/"
 
 check: tidy-check fmt-check vet lint vulncheck vale-comments check-copy test
 

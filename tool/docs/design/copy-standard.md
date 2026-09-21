@@ -624,6 +624,13 @@ The render's fleet body, its log body, and its status line each needed a fragmen
 does not carry. Each is the plainest form satisfying 2.4 through 2.8, written to the fixed
 vocabulary of 2.9, and each is **owed to the Task 22a editorial gate** rather than adopted here.
 
+**Correction (Task 22a, 2026-09-21):** this table does not carry the segment 2 strings, against
+an earlier report's claim that it did. `auth unset`'s seven ack refusals
+(`tmplAckFlagInvalid` through `tmplAckFileUnreadable`, `cmd/cairn/messages.go`, marked by one
+block comment above all seven) and the sweep's partial-result line (`writeSweepTimeout`,
+`cmd/cairn/health_sweep.go`) are owed but were never rows here; the editorial gate read them
+from the code comments marking them instead, not from this section alone.
+
 | where | string | why it was needed |
 |---|---|---|
 | status line, a token the run could not find | `CAIRN_GH_READ_TOKEN is not set, so deploy, engine and publish-path could not run` | 3.3 deletes the old degraded notice and says "the rows name the checks", which a site listing has no rows to do |

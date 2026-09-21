@@ -17,14 +17,14 @@
 //
 // This table is the program's own strings, never the published docs. tool/README.md,
 // tool/docs/credentials.md, tool/docs/tripwire.md, and the reference pages are documentation an
-// operator reads outside the binary: they are not listed by `copy-list`, they are linted by the
-// repository's own Vale configuration, and they are read at Task 22a's editorial gate. Do not
-// route a doc sentence through this table.
+// operator reads outside the binary: they are not listed by `copy-list`, and they are linted by
+// the repository's own Vale configuration instead. Do not route a doc sentence through this
+// table.
 //
-// A comment reading "new to this table, owed to Task 22a's editorial gate" marks a string the
-// catalogue in copy-standard.md carries no row for: it is drafted to the standard's sections 2.4
-// through 2.7 rather than copied, per this task's conductor ruling of 2026-09-21, and reported
-// under "New operator-facing strings" so the conductor can batch it into one editorial dispatch.
+// A comment reading "new to this table" marks a string the catalogue in copy-standard.md
+// carries no row for: it is drafted to the standard's sections 2.4 through 2.7 rather than
+// copied. Section 4.5's own editorial gate has run once, before 1.0's tag; after that, a new
+// string's own review happens as a diff, in the commit that adds it to this file.
 package main
 
 import (
@@ -51,16 +51,21 @@ const (
 	flagQuietHelp   = "print nothing when the run is OK"
 	flagColorHelp   = "when to colour the output: auto, always, or never"
 	flagAckFileHelp = "path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)"
-	// flagWidthHelp is new to this table, owed to Task 22a's editorial gate: copy-standard.md
+	// flagWidthHelp is new to this table, reviewed at the 1.0 editorial gate: copy-standard.md
 	// carries no row for a --width flag, so this is drafted to section 2.4's grammar (what the
 	// flag does, in the operator's terms) rather than copied.
 	flagWidthHelp = "columns to render at, instead of the terminal's own width"
 )
 
+// tmplVersion is cairn --version's own line, cobra's Version field composed by root.go's
+// versionLine: the tool version, the commit it built from, the Go toolchain, and the platform.
+// New to this table, reviewed at the 1.0 editorial gate.
+const tmplVersion = "%s (%s), go%s, %s/%s"
+
 // The root command's own Short, Long, and Example. The Long's three lines are the contract a
 // program that reached only `cairn --help` still needs: where the whole contract is, how to ask
-// for a machine-readable payload, and what the process exit codes mean. New to this table, owed
-// to Task 22a's editorial gate.
+// for a machine-readable payload, and what the process exit codes mean. New to this table,
+// reviewed at the 1.0 editorial gate.
 const (
 	shortRoot = "Operate a cairn-cms production site"
 	longRoot  = "Operate a cairn-cms production site.\n\n" +
@@ -73,7 +78,7 @@ const (
 // tmplFlagError is the shape every flag parse failure reaches the operator in: cobra's own
 // refusal, then the help of the command the flag was given to rather than the root's. Adapted
 // from catalogue section 3.8's usage row, whose second line is already "Run `cairn health
-// --help` for usage". New to this table, owed to Task 22a's editorial gate.
+// --help` for usage". New to this table, reviewed at the 1.0 editorial gate.
 const tmplFlagError = "cairn: %v.\nRun `%s --help` for usage"
 
 // flagError renders tmplFlagError for cobra's own message and the full command path the flag
@@ -84,7 +89,7 @@ func flagError(path string, cause error) error {
 
 // tmplAuthNoSubcommand is cairn auth's refusal of a run naming no subcommand. A command group
 // with nothing to run is a usage error rather than a help request, so it exits 3 and writes its
-// help to stderr. New to this table, owed to Task 22a's editorial gate.
+// help to stderr. New to this table, reviewed at the 1.0 editorial gate.
 const tmplAuthNoSubcommand = "cairn: cairn auth names a subcommand.\nRun `cairn auth --help` for the subcommands"
 
 // authNoSubcommandError renders tmplAuthNoSubcommand.
@@ -106,7 +111,7 @@ func commandCrashedMessage(path, valueType string) string {
 // tmplCheckProgress is the --verbose per-check line health prints to stderr as each check
 // settles, so a slow sweep is visibly progressing rather than apparently hung. Two identifiers
 // and no prose, the form section 2.3 asks for where a label would add nothing. New to this
-// table, owed to Task 22a's editorial gate.
+// table, reviewed at the 1.0 editorial gate.
 const tmplCheckProgress = "%s %s\n"
 
 // checkProgressLine renders tmplCheckProgress for one settled check's id and its wire word.
@@ -117,7 +122,7 @@ func checkProgressLine(id, word string) string {
 // tmplScrubSkipped is the --verbose notice naming credentials too short for the output scrubber
 // to match. Redacting a very short value would replace ordinary words throughout the report, so
 // the scrubber leaves it and says so rather than silently dropping the protection. New to this
-// table, owed to Task 22a's editorial gate.
+// table, reviewed at the 1.0 editorial gate.
 const tmplScrubSkipped = "cairn: %d stored credential values are under %d characters and are left as written in this output"
 
 // scrubSkippedNotice renders tmplScrubSkipped for the count of skipped values and the minimum
@@ -141,7 +146,7 @@ func colorInvalidError(color string) error {
 }
 
 // tmplWidthInvalid is root.go's refusal of a --width value that is non-positive or above
-// widthMax. New to this table, owed to Task 22a's editorial gate: copy-standard.md carries no
+// widthMax. New to this table, reviewed at the 1.0 editorial gate: copy-standard.md carries no
 // row for a --width value error, so this is drafted to sections 2.4 through 2.7 rather than
 // copied.
 const tmplWidthInvalid = "cairn: --width %d is not a usable column count.\nName a whole number greater than 0 and at most %d"
@@ -162,7 +167,7 @@ const (
 
 // help_agents.go's own Short, Example, and the page itself. The page is verbatim in the binary
 // because `go install` reaches no tool/docs tree, so --help is the only contract surface an
-// agent can discover in band. Every line is new to this table, owed to Task 22a's editorial
+// agent can discover in band. Every line is new to this table, reviewed at the 1.0 editorial
 // gate; it is drafted to section 2.2's person and mood and section 2.9's fixed vocabulary.
 const (
 	shortAgents   = "Print the contract a program or an agent reads"
@@ -205,7 +210,7 @@ To check every site cairn knows, run: cairn health --json`
 
 // health.go's own Short, Long, Example, and flag help. The Long's second paragraph repeats the
 // exit codes and the --json pointer so an agent that reached only this command still meets the
-// contract. New to this table, owed to Task 22a's editorial gate.
+// contract. New to this table, reviewed at the 1.0 editorial gate.
 const (
 	longHealth = "Run the read-only health checks against one site, or every site when none is named.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
@@ -239,7 +244,7 @@ func invalidSinceError(s string) error {
 
 // tmplHealthTooManyArgs is cairn health's refusal of more than one positional site argument,
 // catalogue section 3.8's arity example rewritten for this command's own noun. New to this
-// table, owed to Task 22a's editorial gate.
+// table, reviewed at the 1.0 editorial gate.
 const tmplHealthTooManyArgs = "cairn: cairn health takes at most one site.\nRun `cairn health --help` for usage"
 
 // healthTooManyArgsError renders tmplHealthTooManyArgs.
@@ -268,7 +273,7 @@ const (
 )
 
 // tmplAdoptNoWorker is cairn adopt's refusal of a run with no --worker named. New to this table,
-// owed to Task 22a's editorial gate.
+// reviewed at the 1.0 editorial gate.
 const tmplAdoptNoWorker = "cairn: cairn adopt names one Worker.\nRun `cairn adopt list` to see the Workers on the account"
 
 // adoptNoWorkerError renders tmplAdoptNoWorker.
@@ -277,7 +282,7 @@ func adoptNoWorkerError() error {
 }
 
 // tmplAdoptUnknownWorker is cairn adopt's refusal of a --worker name absent from the account's
-// own Workers. New to this table, owed to Task 22a's editorial gate.
+// own Workers. New to this table, reviewed at the 1.0 editorial gate.
 const tmplAdoptUnknownWorker = "cairn: no Worker named %q on this account.\nRun `cairn adopt list` to see the Workers on the account"
 
 // adoptUnknownWorkerError renders tmplAdoptUnknownWorker for the name the operator gave.
@@ -344,7 +349,7 @@ func authNotStoredMessage(name string) string {
 // because the keyring itself could not be reached, distinct from "not set": the operator's
 // credential may well be sitting in the keyring, unreadable right now rather than absent.
 // Adapted from copy-standard.md section 3.8's "keyring unavailable" row for one status-line word
-// rather than that row's own three-line boundary error. New to this table, owed to Task 22a's
+// rather than that row's own three-line boundary error. New to this table, reviewed at the 1.0
 // editorial gate.
 const keyringUnavailableDisplay = "the OS keyring did not open, set in the environment instead"
 
@@ -358,8 +363,8 @@ func keyringUnavailableError(name string) error {
 	return translated(fmt.Errorf(tmplKeyringUnavailable, name))
 }
 
-// tmplEmptyPipedValue is auth set's refusal of an empty piped value. New to this table, owed to
-// Task 22a's editorial gate.
+// tmplEmptyPipedValue is auth set's refusal of an empty piped value. New to this table, reviewed
+// at the 1.0 editorial gate.
 const tmplEmptyPipedValue = "cairn: %s is empty.\nPipe a non-empty value: printf %%s \"$v\" | cairn auth set %s"
 
 // emptyPipedValueError renders tmplEmptyPipedValue for the variable name the operator was
@@ -386,19 +391,19 @@ const (
 	// authProbeVerboseNotice is auth probe's own implicitly-verbose notice, distinct from
 	// pasteNotice's not-safe-to-paste wording since auth probe's whole output is diagnostic
 	// identifiers for whoever is minting the three credentials, not a listing an operator pastes
-	// elsewhere. New to this table, owed to Task 22a's editorial gate.
+	// elsewhere. New to this table, reviewed at the 1.0 editorial gate.
 	authProbeVerboseNotice = "auth probe: output is identifiers only; it is implicitly verbose"
 	authProbeCFSkipped     = "Cloudflare: skipped, a credential is missing"
 	authProbeGHSkipped     = "GitHub: skipped, a credential is missing"
 
 	// authProbeAllReposPublic is printRepoLines's own warning when every probed repository came
 	// back confirmed-public, the condition that leaves a fine-grained token's own scope
-	// unconfirmed. New to this table, owed to Task 22a's editorial gate.
+	// unconfirmed. New to this table, reviewed at the 1.0 editorial gate.
 	authProbeAllReposPublic = "auth probe: every probed repository is public; the GitHub token's scope is unconfirmed"
 )
 
 // ack.go's seven refusals. The catalogue carries no row for an acknowledgement file or flag, since
-// acknowledgements are new to 1.0's grammar; every one is new to this table, owed to Task 22a's
+// acknowledgements are new to 1.0's grammar; every one is new to this table, reviewed at the 1.0
 // editorial gate.
 const (
 	tmplAckFlagInvalid        = "cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.\nName the check and an expiry date, for example deploy=2026-10-01"

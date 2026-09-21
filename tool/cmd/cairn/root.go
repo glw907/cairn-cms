@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -44,8 +45,6 @@ const (
 // values and hands the struct to each newXCmd, so a subcommand reads --quiet without looking
 // its own parent up.
 type rootFlags struct {
-	// showVersion prints the version instead of the help text.
-	showVersion bool
 	// timeout is the whole run's wall-clock deadline.
 	timeout time.Duration
 	// timeoutSet reports whether the operator passed --timeout explicitly, as opposed to the
@@ -109,6 +108,14 @@ func commandContext(cmd *cobra.Command) context.Context {
 	return context.Background()
 }
 
+// versionLine renders tmplVersion for the running binary's own build identity: internal/version
+// resolves the tool version and the commit, and runtime reports the toolchain that built it and
+// the platform it targets.
+func versionLine() string {
+	goVersion := strings.TrimPrefix(runtime.Version(), "go")
+	return fmt.Sprintf(tmplVersion, version.String(), version.Commit, goVersion, runtime.GOOS, runtime.GOARCH)
+}
+
 // newRootCmd builds the cairn command tree over d.
 func newRootCmd(d deps) *cobra.Command {
 	f := &rootFlags{}
@@ -140,15 +147,20 @@ func newRootCmd(d deps) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if f.showVersion {
-				_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s (%s)\n", version.String(), version.Commit)
-				return err
-			}
 			return cmd.Help()
 		},
 	}
 
-	cmd.Flags().BoolVarP(&f.showVersion, "version", "V", false, flagVersionHelp)
+	// cmd.Version, rather than a hand-rolled flag, is what makes cobra register and serve
+	// --version: its own execute() checks c.Version != "" and prints it before
+	// PersistentPreRunE runs, which is why the timeout and width validation above never sees a
+	// --version invocation. The four parts (tool version, commit, Go toolchain, GOOS/GOARCH) are
+	// composed once, here, not read from any literal.
+	cmd.Version = versionLine()
+	// The bool flag is registered explicitly, with cairn's own -V shorthand and help text,
+	// before InitDefaultVersionFlag would otherwise add an unshorthanded one: cobra skips adding
+	// a "version" flag that already exists, so this is what makes -V (not just --version) work.
+	cmd.Flags().BoolP("version", "V", false, flagVersionHelp)
 
 	p := cmd.PersistentFlags()
 	p.DurationVarP(&f.timeout, "timeout", "t", defaultTimeout, flagTimeoutHelp)

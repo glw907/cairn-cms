@@ -174,4 +174,4 @@ func excludeAckFile(entries []store.Entry, errs []error, dir string, rf *rootFla
 // The six errors above (ackFlagError, ackFileNotFoundError, ackFileMalformedError,
 // ackFileMissingCheckIDError, ackFileMissingExpiryError, ackFileMalformedDateError) are defined
 // in cmd/cairn/messages.go: the catalogue carries no row for a malformed or missing
-// acknowledgement entry, so each is new to that table and owed to Task 22a's editorial gate.
+// acknowledgement entry, so each is new to that table, reviewed at the 1.0 editorial gate.

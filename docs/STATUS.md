@@ -21,9 +21,13 @@ clear. CI on `main` is green.
 
 **The `0.97.0` cut HOLDS on two things (Geoff, 2026-09-21): the Go tool's 1.0, and the retirement of
 `cairn-doctor` into `cairn`** (the bin and `src/lib/doctor` removed inside the `0.97.0` window with a
-`Consumers must:` line, the Go tool carrying the replacement checks as `tool/v1.1.0`). The docs
-conductor specs the retirement pass; sizing and the open credential questions are in
-`~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`. B2's close writes that the tool's 1.0 is
+`Consumers must:` line, the Go tool carrying the replacement checks as `tool/v1.1.0`). The pre-cut
+pass is closed and merged (PR #69, `2e2f2235`); the next engine pass is the doctor retirement. A
+fresh tool session conducts it (Geoff, 2026-09-21), with its own brainstorm, spec, and plan; its
+inputs are `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` (the engine-side
+survey) and `docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md` (the tool-side
+sizing and open credential questions), and the docs conductor supplies that session the docs
+consequences. B2's close writes that the tool's 1.0 is
 merged, tagged, and released; ONLY the retirement pass's close writes "the `0.97.0` cut is
 unblocked", since it lands last. A cut session that finds no such line does not cut. No publish,
 no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
@@ -120,11 +124,15 @@ container, then beta.
 
 ## Resume prompt
 
-Two tracks, one session each.
+Three tracks, one session each.
 
-**One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once
-the Go tool's 1.0 close line names the `tool/v1.0.0` tag and the merge SHA on `origin/main` and
-says the cut is unblocked; verify that first.
+**Doctor retirement:** In a fresh tool session, brainstorm, spec, and plan the doctor-retirement
+pass, starting from `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` and
+`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`; its close writes the cut's
+unblocked line.
+
+**One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
+Go tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.
 
 **Go tool Pass B2, segment 4** (launch inside `cairn-cms`): Continue Go tool Pass B2 per
 `docs/STATUS.md`'s Go tool entry: ask Geoff for the ceiling raise, then pre-flights, rulings

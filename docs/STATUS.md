@@ -19,16 +19,18 @@ clear. CI on `main` is green.
 
 ## Immediate next action
 
-**The `0.97.0` cut HOLDS on the Go tool's 1.0, the retirement of `cairn-doctor` into `cairn`, draft
-docs pass A (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`, which moves the tool's
-contract pages and schemas under `docs/reference/` so the `0.97.0` tarball carries them), and a
-`tool/v1.1.0` tag (Geoff, 2026-09-21).** THE ORDER AMONG THE LAST THREE IS BEING SETTLED between
-Geoff, the retirement conductor, and the docs conductor (the retirement's approved spec splits it
-into a Go half and an engine half, and the engine half removes the bin only after `tool/v1.1.0`
-is released). Until that lands here: B2's close writes only that 1.0 is released; "the `0.97.0`
-cut is unblocked" is written ONLY by the close of whichever of those lands LAST, and by no other
-close; and every mechanical gate in Task 6 of the pre-cut plan must pass whatever any line says.
-A cut session that finds no such line does not cut. No publish,
+**The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the Go tool's 1.0 (B2); the
+doctor retirement's Go half (pass retire-1), merged WITHOUT a tool tag; draft docs pass A
+(`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`), which moves the tool's contract pages
+and schemas under `docs/reference/`; one `tool/v1.1.0`, tagged and released from a commit carrying
+both; the retirement's engine half (pass retire-2), which removes the `cairn-doctor` bin only once
+that release exists. B2's close writes that 1.0 is released; retire-1's close writes that `cairn
+doctor` is merged; pass A's close writes that the pages are merged; ONLY retire-2's close writes
+"the `0.97.0` cut is unblocked", since it lands last. A cut session that finds no such line does
+not cut, and every mechanical gate in Task 6 must pass whatever any line says. Who conducts the
+`tool/v1.1.0` tag is unruled; ask Geoff. The retirement's spec is
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, on branch `doctor-retirement`
+until its PR merges. No publish,
 no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
 conductor the go for the tag, the release, his timer, and B2's close and merge, on the
 conditions in the Go tool entry below. **The engine cut includes the tool's
@@ -90,7 +92,7 @@ container, then beta.
   `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`. **The cairn CLI is an
   assumed part of the system, and all docs are single-source on cairn.pub (Geoff,
   2026-09-21):** `tool/docs/` is the interim copy for 1.0; the draft-docs pass moves its four
-  public pages under `docs/` and a `tool/v1.0.1` repoints the links. A docs conductor session
+  public pages under `docs/` and `tool/v1.1.0` repoints the links. A docs conductor session
   plans that pass in parallel. Credentials are stored (`CAIRN_CF_READ_TOKEN`,
   `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token expires 2026-10-19).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
@@ -125,11 +127,11 @@ container, then beta.
 
 Three tracks, one session each.
 
-**Doctor retirement:** In a fresh tool session, brainstorm, spec, and plan the doctor-retirement
-pass, starting from `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` and
-`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`; read the
-hold paragraph under "Immediate next action" for the order and for which close may write the
-unblocked line.
+**Doctor retirement:** The spec is approved. The plans are
+`docs/superpowers/plans/2026-09-21-doctor-pretask.md` and
+`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`, on branch `doctor-retirement` (in
+review); retire-1's plan is drafted after B2 merges. Read the hold paragraph under "Immediate next
+action" for the five-step order; retire-2's close writes the cut's unblocked line.
 
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
 Go tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.

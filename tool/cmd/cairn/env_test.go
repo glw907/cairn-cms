@@ -176,6 +176,26 @@ func TestLoadEnvRecordsProviderError(t *testing.T) {
 	}
 }
 
+// TestLoadEnvReadsNoColorAndTerm is criterion 16 (Task 20a): loadEnv resolves NO_COLOR and TERM
+// straight from envFn, carrying no Missing entry for either since neither is a credential.
+func TestLoadEnvReadsNoColorAndTerm(t *testing.T) {
+	envFn := fakeEnv(map[string]string{"NO_COLOR": "1", "TERM": "xterm-256color"})
+
+	got, missing := loadEnv(envFn)
+
+	if got.noColorValue() != "1" {
+		t.Errorf("noColorValue() = %q, want %q", got.noColorValue(), "1")
+	}
+	if got.termValue() != "xterm-256color" {
+		t.Errorf("termValue() = %q, want %q", got.termValue(), "xterm-256color")
+	}
+	for _, m := range missing {
+		if m.Var == "NO_COLOR" || m.Var == "TERM" {
+			t.Errorf("missing lists %s, which carries no Missing entry", m.Var)
+		}
+	}
+}
+
 // TestOSGetenvOnlyInEnvGo asserts no other file under cmd/cairn calls
 // os.Getenv directly. loadEnv's envFn parameter is the one chokepoint every
 // command reads the environment through.

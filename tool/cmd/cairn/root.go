@@ -50,6 +50,10 @@ type rootFlags struct {
 	quiet bool
 	// color is one of colorAuto, colorAlways, or colorNever.
 	color string
+	// width overrides the terminal column count render/profile.go's DetectProfile would
+	// otherwise read. Zero means unset: the operator's own terminal width applies. Task 20a
+	// reads the chosen value and carries it; the seam that composes a frame to it is Task 20b-i.
+	width int
 	// ackFile names the acknowledgement file health reads and sites list skips. Empty means the
 	// default, ackFilePath's own <registry directory>/acknowledgements.json.
 	ackFile string
@@ -119,6 +123,7 @@ func newRootCmd(d deps) *cobra.Command {
 	p.BoolVarP(&f.verbose, "verbose", "v", false, flagVerboseHelp)
 	p.BoolVarP(&f.quiet, "quiet", "q", false, flagQuietHelp)
 	p.StringVar(&f.color, "color", colorAuto, flagColorHelp)
+	p.IntVar(&f.width, "width", 0, flagWidthHelp)
 	p.StringVar(&f.ackFile, "ack-file", "", flagAckFileHelp)
 	cmd.MarkFlagsMutuallyExclusive("quiet", "verbose")
 

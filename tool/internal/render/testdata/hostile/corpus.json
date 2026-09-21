@@ -1,0 +1,14 @@
+[
+  {"name": "newline", "input": "before\nafter"},
+  {"name": "carriage_return", "input": "before\rafter"},
+  {"name": "tab", "input": "before\tafter"},
+  {"name": "csi_clear_screen", "input": "before\u001b[2Jafter"},
+  {"name": "csi_red", "input": "before\u001b[31mafter"},
+  {"name": "csi_forged_verdict", "input": "detail \u001b[42;30mOK\u001b[0m more detail"},
+  {"name": "osc_window_title", "input": "before\u001b]0;evil title\u0007after"},
+  {"name": "osc_hyperlink", "input": "before\u001b]8;;https://evil.example\u0007link text\u001b]8;;\u0007after"},
+  {"name": "lone_escape", "input": "before\u001bafter"},
+  {"name": "javascript_scheme_url", "input": "javascript:alert(1)"},
+  {"name": "url_with_control_byte", "input": "https://example.com/\u0007path"},
+  {"name": "url_text_target_mismatch", "input": "https://safe.example -> https://evil.example"}
+]

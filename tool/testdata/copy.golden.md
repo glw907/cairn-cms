@@ -157,6 +157,7 @@ This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: the OS keyring did not open.
 Set %s in the environment instead
 - cairn: this output carries identifiers and is not safe to paste in public.
+- columns to render at, instead of the terminal's own width
 - error records in the window that still report OK
 - lookback window for the error count: a whole number of m, h, or d
 - lookback window: a whole number of m, h, or d

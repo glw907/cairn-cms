@@ -38,6 +38,15 @@ const (
 	varGHReadToken = "CAIRN_GH_READ_TOKEN" // secret-guard-allow: a variable name, not a value
 )
 
+// varNoColor and varTerm are the two variables loadEnv reads for render.DetectProfile (Task
+// 20a). Neither is a credential: they carry no Missing entry and are read directly from envFn
+// rather than through secrets.Resolve's provider chain, which is for the three CAIRN_ variables
+// above alone.
+const (
+	varNoColor = "NO_COLOR"
+	varTerm    = "TERM"
+)
+
 // credentialVars lists the three variables loadEnv resolves, in resolution
 // order. A fourth variable is a one-line addition here.
 var credentialVars = []credentialVar{
@@ -74,9 +83,23 @@ type resolution struct {
 	display    string
 }
 
-// env holds every variable loadEnv resolved, keyed by name.
+// env holds every variable loadEnv resolved, keyed by name, plus the two plain environment
+// reads render.DetectProfile takes (Task 20a): noColor and term. Both come straight from envFn,
+// never from a secrets.Provider, since neither is a credential.
 type env struct {
 	resolutions []resolution
+	noColor     string
+	term        string
+}
+
+// noColorValue returns the resolved NO_COLOR value, empty when unset.
+func (e env) noColorValue() string {
+	return e.noColor
+}
+
+// termValue returns the resolved TERM value, empty when unset.
+func (e env) termValue() string {
+	return e.term
 }
 
 // nonSecretVar enumerates loadEnv's variables whose resolved value is a plain string, never
@@ -167,6 +190,9 @@ func loadEnv(envFn func(string) string, p ...secrets.Provider) (env, []providers
 
 	var out env
 	var missing []providers.Missing
+
+	out.noColor = envFn(varNoColor)
+	out.term = envFn(varTerm)
 
 	for _, cv := range credentialVars {
 		v, from, err := secrets.Resolve(cv.name, chain...)

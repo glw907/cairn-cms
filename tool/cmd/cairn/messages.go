@@ -51,6 +51,10 @@ const (
 	flagQuietHelp   = "print nothing when the run is OK"
 	flagColorHelp   = "when to colour the output: auto, always, or never"
 	flagAckFileHelp = "path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)"
+	// flagWidthHelp is new to this table, owed to Task 22a's editorial gate: copy-standard.md
+	// carries no row for a --width flag, so this is drafted to section 2.4's grammar (what the
+	// flag does, in the operator's terms) rather than copied.
+	flagWidthHelp = "columns to render at, instead of the terminal's own width"
 )
 
 // The root command's own Short and Example.

@@ -211,7 +211,7 @@ func TestPublishPathCheckFieldsCarryCountAndAges(t *testing.T) {
 	c := publishClients(rt)
 	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, Options{})
 
-	if count := fieldInt(t, got.Fields, "count"); count != 1 {
+	if count := fieldCount(t, got.Fields); count != 1 {
 		t.Errorf("count field = %d, want 1", count)
 	}
 	var ages int
@@ -235,9 +235,11 @@ func (rateLimitedRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 	return &http.Response{StatusCode: http.StatusForbidden, Body: io.NopCloser(bytes.NewReader([]byte(`{"message":"rate limited"}`))), Header: header, Request: req}, nil
 }
 
-// fieldInt decodes fields' entry named key as an int, failing the test if no such entry exists.
-func fieldInt(t *testing.T, fields []spine.OutcomeField, key string) int {
+// fieldCount decodes fields' "count" entry as an int, failing the test if none exists: every
+// check in this package that carries a "count" field carries exactly one.
+func fieldCount(t *testing.T, fields []spine.OutcomeField) int {
 	t.Helper()
+	const key = "count"
 	for _, f := range fields {
 		if f.Key != key {
 			continue

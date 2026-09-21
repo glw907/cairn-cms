@@ -100,7 +100,7 @@ func TestEngineCheckCurrentVersionIsOK(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
-	if behind := fieldInt(t, got.Fields, "count"); behind != 0 {
+	if behind := fieldCount(t, got.Fields); behind != 0 {
 		t.Errorf("count field = %d, want 0", behind)
 	}
 }
@@ -115,7 +115,7 @@ func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
-	if behind := fieldInt(t, got.Fields, "count"); behind != 2 {
+	if behind := fieldCount(t, got.Fields); behind != 2 {
 		t.Errorf("count field = %d, want 2", behind)
 	}
 	if state := fieldBool(t, got.Fields, "state"); state {
@@ -133,7 +133,7 @@ func TestEngineCheckBehindWithConsumersMustIsFailing(t *testing.T) {
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", got.State)
 	}
-	if behind := fieldInt(t, got.Fields, "count"); behind != 2 {
+	if behind := fieldCount(t, got.Fields); behind != 2 {
 		t.Errorf("count field = %d, want 2", behind)
 	}
 	if state := fieldBool(t, got.Fields, "state"); !state {

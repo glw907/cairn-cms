@@ -19,14 +19,16 @@ clear. CI on `main` is green.
 
 ## Immediate next action
 
-**The `0.97.0` cut HOLDS on four things, in order (Geoff, 2026-09-21):** the Go tool's 1.0; the
-retirement of `cairn-doctor` into `cairn`, which merges WITHOUT a tool tag; draft docs pass A
-(`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`), which moves the tool's contract pages
-and schemas under `docs/reference/` so the `0.97.0` tarball carries them; and one `tool/v1.1.0`
-tag cut after pass A merges, carrying the retirement and the repointed links. B2's close writes
-that 1.0 is released; the retirement's close writes that the doctor is gone; pass A's close writes
-that the pages are merged; ONLY the `tool/v1.1.0` tag's close writes "the `0.97.0` cut is
-unblocked", since it lands last. A cut session that finds no such line does not cut. No publish,
+**The `0.97.0` cut HOLDS on the Go tool's 1.0, the retirement of `cairn-doctor` into `cairn`, draft
+docs pass A (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`, which moves the tool's
+contract pages and schemas under `docs/reference/` so the `0.97.0` tarball carries them), and a
+`tool/v1.1.0` tag (Geoff, 2026-09-21).** THE ORDER AMONG THE LAST THREE IS BEING SETTLED between
+Geoff, the retirement conductor, and the docs conductor (the retirement's approved spec splits it
+into a Go half and an engine half, and the engine half removes the bin only after `tool/v1.1.0`
+is released). Until that lands here: B2's close writes only that 1.0 is released; "the `0.97.0`
+cut is unblocked" is written ONLY by the close of whichever of those lands LAST, and by no other
+close; and every mechanical gate in Task 6 of the pre-cut plan must pass whatever any line says.
+A cut session that finds no such line does not cut. No publish,
 no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
 conductor the go for the tag, the release, his timer, and B2's close and merge, on the
 conditions in the Go tool entry below. **The engine cut includes the tool's
@@ -37,7 +39,7 @@ its install line. The binary still ships by `go install` and the tag's release a
 inside the npm tarball (the Pass A tarball guard); confirm that reading with Geoff at the cut if
 he meant bundling (confirmed 2026-09-21: not bundled). **When B2's merge to `main` completes, whoever conducts Task 25 writes here that the tool's 1.0 is
 merged, tagged, and released, naming the tag and the merge SHA, and tells any live session. That
-line never says the cut is unblocked; the `tool/v1.1.0` tag's close writes that.** After that, the one cut
+line never says the cut is unblocked; the last-landing pass's close writes that (see above).** After that, the one cut
 (`cairn-release`), with the dependency sweep (the `dependency-upgrade`
 skill) and the site upgrade brief's tools section landing in the pre-cut pass. The pending
 version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms
@@ -125,8 +127,9 @@ Three tracks, one session each.
 
 **Doctor retirement:** In a fresh tool session, brainstorm, spec, and plan the doctor-retirement
 pass, starting from `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` and
-`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`; it merges WITHOUT a
-tool tag, and its close writes that the doctor is gone, never that the cut is unblocked.
+`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`; read the
+hold paragraph under "Immediate next action" for the order and for which close may write the
+unblocked line.
 
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
 Go tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.

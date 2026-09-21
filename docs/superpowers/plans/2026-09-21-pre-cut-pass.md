@@ -691,8 +691,9 @@ carrying its install line and the statement that the binary is not in the npm ta
 entry is missing, **stop**, because the release body is rolled from that window.
 
 **A third gate (Geoff, 2026-09-21): the doctor is retired before `0.97.0`.** The "unblocked" line
-is written ONLY by the `tool/v1.1.0` tag's close, which lands last (see the fourth gate), never
-by Pass B2's close, the retirement's close, or draft docs pass A's close;
+is written ONLY by the close of whichever of the retirement, draft docs pass A, and the
+`tool/v1.1.0` tag lands last (their order is being settled, 2026-09-21; `docs/STATUS.md` names
+it), never by Pass B2's close;
 B2's line says only that the tool's 1.0 is merged, tagged, and released. The cut starts only when
 the unblocked line is present AND the doctor is gone from `origin/main`: `src/lib/doctor` no
 longer exists at `origin/main` (`git ls-tree origin/main src/lib/doctor` prints nothing, and
@@ -705,7 +706,8 @@ tool at the version the retirement shipped (`tool/v1.1.0` as planned). If any of
 packages/create-cairn-site/src` finds no printed command.
 
 **A fourth gate (Geoff, 2026-09-21): the tool's contract pages ship in the `0.97.0` tarball, and
-one tool tag follows them.** The retirement merges WITHOUT a tool tag; draft docs pass A
+one tool tag follows them.** (The order among the retirement's halves, pass A, and the tag is being settled; the checks
+below hold under any order.) Draft docs pass A
 (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) then moves the tool's contract pages
 and its six schemas under `docs/reference/`; then one `tool/v1.1.0` tag is cut, carrying the
 retirement and the repointed links, so the binary `0.97.0` announces never names a deleted path.

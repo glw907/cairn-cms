@@ -7,6 +7,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/logs"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
@@ -107,7 +108,7 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	}
 
 	verdict := spine.ExitCode([]spine.SiteVerdicts{siteVerdicts(report)}, nil, 0)
-	if err := writeHealth(cmd, report, verdict, f, rf); err != nil {
+	if err := writeHealth(cmd, d, report, verdict, f, rf); err != nil {
 		return err
 	}
 
@@ -136,7 +137,7 @@ func siteVerdicts(r health.Report) spine.SiteVerdicts {
 // invocation looks like. --quiet writes nothing at all on an OK run, which is what makes a
 // cron-driven green run silent and mail-free, and on any other verdict writes the verdict word
 // and the failing checks only.
-func writeHealth(cmd *cobra.Command, r health.Report, verdict spine.Verdict, f healthFlags, rf *rootFlags) error {
+func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verdict, f healthFlags, rf *rootFlags) error {
 	if f.asJSON {
 		data, err := r.JSON(rf.verbose)
 		if err != nil {
@@ -148,36 +149,69 @@ func writeHealth(cmd *cobra.Command, r health.Report, verdict spine.Verdict, f h
 	if rf.quiet && verdict == spine.VerdictOK {
 		return nil
 	}
-	return writeHealthBody(cmd.OutOrStdout(), r, verdict, rf.quiet)
+	return writeHealthBody(cmd.OutOrStdout(), d, rf, r, verdict, rf.quiet)
 }
 
-// writeHealthBody writes the verdict word and one line per check. internal/render lands two
-// segments later and takes this over; until then the body is the verdict word plus each check's
-// own measured detail, which the health messages table wrote, and no prose composed here.
-// failingOnly drops every check that did not fail, which is the --quiet body.
-func writeHealthBody(w io.Writer, r health.Report, verdict spine.Verdict, failingOnly bool) error {
-	if _, err := fmt.Fprintf(w, "%s\t%s\n", verdict, r.Site); err != nil {
-		return err
+// writeHealthBody writes one report through the render seam, which owns every layout decision:
+// the body for the scope and the stream, the ranking, the section grammar, and the fix format.
+// failingOnly hands the seam a report cut down to its failures, which is the --quiet body.
+func writeHealthBody(w io.Writer, d deps, rf *rootFlags, r health.Report, verdict spine.Verdict, failingOnly bool) error {
+	if failingOnly {
+		r = onlyFailures(r)
 	}
-	for _, c := range r.Checks {
-		if failingOnly && c.Outcome.State != spine.Failing {
-			continue
-		}
-		word := spine.StateWord(c.Outcome.State, c.Acknowledged)
-		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\n", word, c.ID, checkDetail(c)); err != nil {
+	frame := render.Render(renderInput(d, rf, []health.Report{r}, verdict))
+	for _, line := range frame.Lines() {
+		if _, err := fmt.Fprintln(w, line); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// checkDetail returns the line a check contributes: its measured detail, or the reason it could
-// not run when it has no detail at all.
-func checkDetail(c health.CheckResult) string {
-	if c.Outcome.Detail != "" {
-		return c.Outcome.Detail
+// onlyFailures returns r carrying its failing checks alone, so --quiet on a non-OK run prints
+// what the operator has to act on and nothing else.
+func onlyFailures(r health.Report) health.Report {
+	kept := make([]health.CheckResult, 0, len(r.Checks))
+	for _, c := range r.Checks {
+		if c.Outcome.State == spine.Failing {
+			kept = append(kept, c)
+		}
 	}
-	return string(c.Outcome.Reason)
+	r.Checks = kept
+	return r
+}
+
+// renderInput builds the one input the render seam reads. This function and the detector it
+// calls are the whole impure boundary: render itself reads no environment, no terminal, and no
+// clock.
+//
+// The width is the operator's own --width when they set one, the terminal's measured column
+// count when stdout is a terminal, and otherwise the seam's own default. The body follows the
+// run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
+// colour into a pipe still gets the plain body, in colour.
+func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict) render.RenderInput {
+	resolved, _ := loadEnv(d.env)
+	term := render.DetectProfile(d.stdout, render.Env{
+		NoColor: resolved.noColorValue(),
+		Term:    resolved.termValue(),
+		Color:   rf.color,
+	})
+
+	width := rf.width
+	if width <= 0 {
+		width = term.Columns
+	}
+	return render.RenderInput{
+		View:    render.ViewHealth,
+		Body:    render.SelectBody(len(reports), term.TTY),
+		Width:   width,
+		Dark:    true,
+		Profile: term.Profile,
+		ASCII:   term.ASCII,
+		Reports: reports,
+		Verdict: verdict,
+		Now:     d.now(),
+	}
 }
 
 // parseSince resolves a --since value through logs.ParseSince, the one grammar health and logs

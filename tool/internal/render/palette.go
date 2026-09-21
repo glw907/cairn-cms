@@ -112,6 +112,30 @@ func (t Theme) Style(role Role) lipgloss.Style {
 	return s.Foreground(t.color(role))
 }
 
+// Strong returns role's style at bold weight, for the two things a frame emphasizes: the verdict
+// word and the subject it names. It is a Theme method rather than a setter a body chains, which
+// is what keeps criterion 8's rule (Style and Sized are the only ways out of here) intact.
+func (t Theme) Strong(role Role) lipgloss.Style {
+	return t.Style(role).Bold(true)
+}
+
+// SizedStrong returns Strong's style constrained to a fixed-width cell, the pairing a bold
+// column field needs.
+func (t Theme) SizedStrong(role Role, w int) lipgloss.Style {
+	if w < 0 {
+		w = 0
+	}
+	return t.Strong(role).Width(w).MaxWidth(w)
+}
+
+// Link returns role's style carrying url as an OSC 8 hyperlink. A terminal that understands the
+// sequence makes the text clickable and one that does not prints the text unchanged, which is why
+// every caller passes the URL itself as the text: the two terminals then show the same
+// destination. Callers gate this on the colour profile, since a pipe has no use for the sequence.
+func (t Theme) Link(role Role, url string) lipgloss.Style {
+	return t.Style(role).Hyperlink(url)
+}
+
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), the
 // construction go-conventions names for this package and Task 20b's bodies (padding inside the
 // styled block, cut at the same width, so a selected row can later take a full-width ground).

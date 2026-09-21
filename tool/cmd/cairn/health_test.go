@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -60,11 +61,12 @@ func failingReport() health.Report {
 // writeHealthTo runs writeHealth over a command whose streams are buffers, and returns both.
 func writeHealthTo(t *testing.T, r health.Report, verdict spine.Verdict, f healthFlags, rf *rootFlags) (stdout, stderr string) {
 	t.Helper()
+	d, _ := testDeps(t)
 	var out, errOut bytes.Buffer
 	cmd := &cobra.Command{}
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
-	if err := writeHealth(cmd, r, verdict, f, rf); err != nil {
+	if err := writeHealth(cmd, d, r, verdict, f, rf); err != nil {
 		t.Fatalf("writeHealth: %v", err)
 	}
 	return out.String(), errOut.String()
@@ -251,5 +253,30 @@ func TestSignalCancelsTheRunAndExitsUnknown(t *testing.T) {
 
 	if *code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want %d (%s)", *code, int(spine.VerdictUnknown), spine.VerdictUnknown)
+	}
+}
+
+// TestPrintedVerdictWordMatchesTheExitCode covers the rule that keeps an operator reading the
+// line and a routine reading the code from disagreeing: the word the body prints and the code
+// the body's own exit line carries are the same verdict, for all four values.
+func TestPrintedVerdictWordMatchesTheExitCode(t *testing.T) {
+	for _, v := range []spine.Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
+		stdout, _ := writeHealthTo(t, failingReport(), v, healthFlags{}, &rootFlags{})
+		lines := strings.Split(strings.TrimRight(stdout, "\n"), "\n")
+		if len(lines) < 2 {
+			t.Fatalf("verdict %v: body is %q", v, stdout)
+		}
+
+		last := lines[len(lines)-1]
+		code, err := strconv.Atoi(strings.TrimPrefix(last, "exit: "))
+		if err != nil {
+			t.Fatalf("verdict %v: last line %q carries no exit code: %v", v, last, err)
+		}
+		if code != int(v) {
+			t.Errorf("verdict %v: exit line reports %d", v, code)
+		}
+		if word := spine.Verdict(code).String(); !strings.Contains(lines[0], word) {
+			t.Errorf("exit code %d means %s, but the first line reads %q", code, word, lines[0])
+		}
 	}
 }

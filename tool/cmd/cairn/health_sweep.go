@@ -95,7 +95,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			continue
 		}
 		verdict := spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)
-		if err := writeHealthBody(out, report, verdict, rf.quiet); err != nil {
+		if err := writeHealthBody(out, d, rf, report, verdict, rf.quiet); err != nil {
 			return err
 		}
 	}

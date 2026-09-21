@@ -1,0 +1,24 @@
+[1mCRITICAL[m  [1m907.life[m  3 failing - 2 could not run - 1 held - 3 passing
+checked 4m ago (2026-09-20 14:28-08:00)
+
+-- failing -----------------------------------------------------------------------------------------
+  ! fail  [1mdeploy[m        build failed 26m ago (3f0ba18), main is 2 commits ahead
+    > Read the build log in the Cloudflare dashboard, then push a fix.
+  * fail  [1mcreds[m         Cloudflare token not found; GitHub token read from the keyring
+    > Create a new token, then run `cairn auth set` naming the credential.
+  * fail  [1mengine[m        0.71.0 installed, 0.78.0 latest, 7 releases behind
+    > Raise the @glw907/cairn-cms range in package.json, then deploy again.
+
+-- could not run -----------------------------------------------------------------------------------
+  ? skip  [1memail[m         reason.cred-missing
+  ? skip  [1merrors[m        reason.cred-missing
+
+-- held --------------------------------------------------------------------------------------------
+  o held  [1mhttps-forced[m  Always Use HTTPS is off for the zone
+                        held until 2026-09-25, 5 days left
+    > Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
+      https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge  edge.https-not-forced
+
++ 3 passing  serving - delegation - publish-path
+
+[1mCRITICAL[m  [1m907.life[m  3 failing - 2 could not run - 1 held - 3 passing

@@ -56,6 +56,11 @@ type deps struct {
 	// a field here, not a package-level variable, so a test can supply a fixture stream without
 	// touching the process's real stdin.
 	stdin io.Reader
+	// stdout is the process stream render.DetectProfile probes for its colour profile, its
+	// column count, and its TTY-ness. Nothing writes to it: a command still writes through
+	// cmd.OutOrStdout, and the detection needs a file descriptor that an io.Writer cannot
+	// carry. main.go fills it; a test leaves it nil, which DetectProfile reads as a pipe.
+	stdout *os.File
 	// exit ends the process with a monitoring-plugin verdict code. It is os.Exit in production,
 	// carried here so a test can observe the code and so os.Exit itself is named in main.go
 	// alone.

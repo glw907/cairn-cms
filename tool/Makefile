@@ -12,7 +12,7 @@ VERSION := $(shell git describe --tags --match 'tool/v*' --dirty --always 2>/dev
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/internal/version.Commit=$(COMMIT)'
 
-.PHONY: all build test vet install check clean \
+.PHONY: all build test vet install check clean golden \
 	tidy-check fmt-check lint vulncheck vale-comments \
 	copy-list check-copy copy-review \
 	build-golangci-lint build-govulncheck
@@ -71,6 +71,12 @@ check-copy:
 # 22a runs once before the 1.0 tag (copy-standard.md section 4.5).
 copy-review:
 	tellgrader --register editor testdata/copy.golden.md
+
+# golden recuts every committed render frame from the current renderer. Run it and read the
+# diff whenever a body changes; `make test` compares the committed frames on every run, so a
+# frame that changed without this step is a failing test rather than a silent drift.
+golden:
+	go test ./internal/render -run TestGolden -update
 
 build-golangci-lint:
 	go build -C tools -o ../$(GOLANGCI) github.com/golangci/golangci-lint/v2/cmd/golangci-lint

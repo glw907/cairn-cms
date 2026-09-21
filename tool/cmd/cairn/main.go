@@ -21,6 +21,13 @@ func processWriters() (out, errOut io.Writer) {
 	return os.Stdout, os.Stderr
 }
 
+// processStdout returns the stdout handle render's terminal detection probes. It is the
+// *os.File rather than the io.Writer above because a colour profile, a column count, and a TTY
+// check each need the file descriptor. Nothing writes through it.
+func processStdout() *os.File {
+	return os.Stdout
+}
+
 // notifyContext returns a context cancelled on SIGINT or SIGTERM. Windows delivers neither the
 // way a Unix shell does and has no SIGTERM at all, so a run there is cancelled by its parent
 // closing the context instead; both paths reach the same code, which is why this is one
@@ -34,7 +41,9 @@ func main() {
 	defer stop()
 
 	out, errOut := processWriters()
-	cmd := newRootCmd(newDeps())
+	d := newDeps()
+	d.stdout = processStdout()
+	cmd := newRootCmd(d)
 	cmd.SetOut(out)
 	cmd.SetErr(errOut)
 

@@ -51,6 +51,12 @@ func content(w int) int {
 // first exercises a wide terminal against real content rather than render's own fixed glyphs, is
 // where that dependency tradeoff belongs.
 func (t Theme) Width(s string) int {
+	return textWidth(s)
+}
+
+// textWidth is Theme.Width's receiver-free form, so the wrap and cut primitives in layout.go
+// measure with the one table rather than reaching for a second.
+func textWidth(s string) int {
 	return ansi.StringWidth(s)
 }
 

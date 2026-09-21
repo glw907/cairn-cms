@@ -82,17 +82,38 @@ func TestNoColorAloneForcesNoColorProfile(t *testing.T) {
 // stdout is not a terminal, so with no NO_COLOR set the profile is ProfileNoColor and the tier is
 // ASCII, and the function does not panic reading a real *os.File.
 func TestDetectProfileRealStdout(t *testing.T) {
-	profile, columns, ascii := DetectProfile(os.Stdout, Env{Color: "auto"})
+	got := DetectProfile(os.Stdout, Env{Color: "auto"})
 	if os.Getenv("NO_COLOR") == "" && !isRealTTY() {
-		if profile != ProfileNoColor {
-			t.Errorf("profile = %v, want ProfileNoColor for a non-TTY stdout", profile)
+		if got.Profile != ProfileNoColor {
+			t.Errorf("Profile = %v, want ProfileNoColor for a non-TTY stdout", got.Profile)
 		}
-		if !ascii {
-			t.Error("ascii = false, want true for a non-TTY stdout")
+		if !got.ASCII {
+			t.Error("ASCII = false, want true for a non-TTY stdout")
 		}
-		if columns != 0 {
-			t.Errorf("columns = %d, want 0 for a non-TTY stdout", columns)
+		if got.Columns != 0 {
+			t.Errorf("Columns = %d, want 0 for a non-TTY stdout", got.Columns)
 		}
+		if got.TTY {
+			t.Error("TTY = true, want false for a non-TTY stdout")
+		}
+	}
+}
+
+// TestDetectProfileNilStdout covers the stream-less caller: a command built with no process
+// stdout must read as a pipe rather than probing a nil file descriptor.
+func TestDetectProfileNilStdout(t *testing.T) {
+	got := DetectProfile(nil, Env{Color: "always"})
+	if got.TTY {
+		t.Error("TTY = true, want false with no stdout")
+	}
+	if got.Columns != 0 {
+		t.Errorf("Columns = %d, want 0 with no stdout", got.Columns)
+	}
+	if !got.ASCII {
+		t.Error("ASCII = false, want true with no stdout")
+	}
+	if got.Profile != ProfileTrueColor {
+		t.Errorf("Profile = %v, want ProfileTrueColor: --color=always forces colour", got.Profile)
 	}
 }
 

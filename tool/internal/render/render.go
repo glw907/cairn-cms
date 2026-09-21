@@ -5,20 +5,80 @@
 // points, and lipgloss's package-level Writer and Print family are forbidden everywhere in this
 // package except profile.go, the one file that reads the environment and queries the terminal.
 //
-// This task (20a) supplies the foundations a body is built out of: the colour Profile (profile.go),
-// the Warm Stone Theme and its palette (palette.go), the glyph set (glyph.go), the named width
-// rungs (width.go), and the sanitizer every dynamic string passes through (sanitize.go). Task
-// 20b's bodies compose these into the frames an operator reads; Task 20c marshals the same inputs
-// to JSON without touching either.
+// The foundations a body is built out of are the colour Profile (profile.go), the Warm Stone
+// Theme and its palette (palette.go), the glyph set (glyph.go), the named width rungs (width.go),
+// and the sanitizer every dynamic string passes through (sanitize.go). One shared layer
+// (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the one
+// severity ranking, and the bodies (body_single.go, body_plain.go) compose them into the frames
+// an operator reads.
 package render
 
-import "time"
+import (
+	"time"
 
-// RenderInput carries render.Render's input. This task defines the fields its own foundations
-// fill or consume; Task 20b widens it with the report, log, and verdict data a body composes.
+	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/logs"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
+)
+
+// Verdict is spine's own run verdict, re-exported so a body names the vocabulary without a
+// second declaration of it. The spine computes a verdict; this package only paints one.
+type Verdict = spine.Verdict
+
+// View names which of the tool's surfaces a frame renders.
+type View int
+
+const (
+	// ViewHealth renders a health sweep's reports.
+	ViewHealth View = iota
+	// ViewLogs renders a site's log entries.
+	ViewLogs
+)
+
+// Body names the layout a frame composes into. SelectBody picks one from the run's scope and
+// whether stdout is a terminal; nothing else decides it.
+type Body int
+
+const (
+	// BodySingle is one site on a terminal: rows grouped by what the operator must do.
+	BodySingle Body = iota
+	// BodyMany is more than one site on a terminal.
+	BodyMany
+	// BodyPlain is what a pipe, a cron mail, a CI log, and an agent receive.
+	BodyPlain
+)
+
+// defaultWidth is the column budget a run composes into when the operator named none and stdout
+// is not a terminal to measure: the width a mail body, a CI log, and a paste all assume.
+const defaultWidth = 80
+
+// SelectBody returns the body a run of sites reports composes into. A pipe always takes the
+// plain body, at any scope: plain is the default for a pipe exactly as --json is, never a
+// variant an operator opts into. Colour never enters the choice, so forcing colour into a pipe
+// yields the plain body in colour, and a ProfileNoColor terminal still gets a terminal body.
+func SelectBody(sites int, tty bool) Body {
+	switch {
+	case !tty:
+		return BodyPlain
+	case sites > 1:
+		return BodyMany
+	default:
+		return BodySingle
+	}
+}
+
+// RenderInput carries render.Render's input. It is the whole of what a frame is composed from:
+// Render reads nothing else, so the same value always produces the same bytes.
 type RenderInput struct {
-	// Width is the terminal column budget a frame composes into.
+	// View names the surface to render.
+	View View
+	// Body is the layout to compose into, from SelectBody.
+	Body Body
+	// Width is the terminal column budget a frame composes into. Zero means defaultWidth.
 	Width int
+	// Height is the row budget, and 0 means unbounded, which is what the CLI always passes. It
+	// exists for the 2.0 HUD's viewport, which bounds the body it scrolls.
+	Height int
 	// Dark reports whether Theme should read the palette's dark branch.
 	Dark bool
 	// Profile is the colour profile to paint with.
@@ -27,10 +87,40 @@ type RenderInput struct {
 	// function that fills it (criterion 13); render.Render reads the field and never re-derives
 	// it, since purity forbids a second TTY check anywhere else in this package.
 	ASCII bool
+	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
+	// render owns the ranking; nothing upstream re-orders.
+	Reports []health.Report
+	// Entries holds a log query's records, newest first, for ViewLogs.
+	Entries []logs.Entry
+	// Verdict is the run's aggregate verdict, computed by spine.ExitCode at the call site, so an
+	// operator reading the word and a routine reading the exit code cannot disagree.
+	Verdict Verdict
 	// Now is the instant every timestamp in the frame is formatted against. A caller wanting
 	// "now" passes time.Now() itself: render never calls the system clock (criterion 24), which
 	// is what keeps a replay of the same input byte-identical regardless of when it runs.
 	Now time.Time
+}
+
+// width returns the column budget this input composes into: the requested width honoured
+// exactly, capped at WidthCap, with an unset width falling back to defaultWidth.
+func (in RenderInput) width() int {
+	if in.Width <= 0 {
+		return content(defaultWidth)
+	}
+	return content(in.Width)
+}
+
+// Render composes in into a Frame. It is pure: no I/O, no clock, no environment, no terminal.
+//
+// BodyMany draws the first report through the single-site body and nothing else. The status
+// strip that body is for is Task 20b-ii's, and until it lands cmd/cairn sweeps many sites by
+// calling Render once per site rather than handing the whole set to one frame.
+func Render(in RenderInput) Frame {
+	t := NewTheme(in.Dark, in.Profile)
+	if in.Body == BodyPlain {
+		return renderPlain(t, in)
+	}
+	return renderSingle(t, in)
 }
 
 // Frame is render.Render's result, sectioned the way the 2.0 HUD pins it: a header that never

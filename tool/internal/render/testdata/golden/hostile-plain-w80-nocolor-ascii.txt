@@ -1,0 +1,24 @@
+verdict: [1mCRITICAL[m - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
+checked: 4m ago (2026-09-20 14:28-08:00)
+
+serving: fail - the hostname does not answer CRITICAL  example.org  0 failing OK
+fix: Confirm the Worker route and the zone's DNS record point at this site.
+fix actor: operator
+
+deploy: fail - build failed 26m ago (3f0ba18) 日本語のテキスト 👨‍👩‍👧‍👦
+fix: Read the build log in the Cloudflare dashboard, then push a fix.
+fix actor: developer (changes the live site)
+
+https-forced: fail - Always Use HTTPS is off for the zone, hold expired 2026-08-11
+condition: edge.https-not-forced
+fix: Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
+fix actor: operator (changes the live site)
+docs: https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge
+
+email: skip
+reason: long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long 
+
+engine: pass - 0.78.0 is current
+
+verdict: [1mCRITICAL[m - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
+exit: 2

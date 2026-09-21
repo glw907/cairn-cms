@@ -9,8 +9,8 @@ import (
 
 // Profile is a colour rung this package paints at. Unlike colorprofile.Profile (six values, one
 // of them "no terminal at all"), Profile carries only the four a Theme resolves a role against;
-// TTY-ness and the ASCII glyph tier are DetectProfile's other two return values, read once at the
-// one impure boundary and carried on RenderInput rather than re-encoded into this enum.
+// TTY-ness and the ASCII glyph tier are other fields of DetectProfile's Terminal, read once at
+// the one impure boundary and carried on RenderInput rather than re-encoded into this enum.
 type Profile int
 
 const (
@@ -50,10 +50,27 @@ type Env struct {
 	Color   string
 }
 
+// Terminal is everything DetectProfile measured about one output stream, returned as one value
+// so the module's single TTY check has a single result rather than a growing return list.
+type Terminal struct {
+	// Profile is the colour rung to paint at.
+	Profile Profile
+	// Columns is the terminal's column count, and 0 when stdout is not a terminal or the size
+	// could not be read. RenderInput.Width takes it when the operator passed no --width.
+	Columns int
+	// ASCII reports whether output should render at the ASCII glyph tier.
+	ASCII bool
+	// TTY reports whether stdout is a terminal. It selects the body (Task 20b-i criterion 1):
+	// a pipe always takes the plain body, whatever --color says, and ASCII is a separate axis,
+	// since a TERM=dumb terminal is still a terminal.
+	TTY bool
+}
+
 // DetectProfile is this package's one TTY check (criterion 14) and its one caller of
 // term.IsTerminal; purity_test.go's grep test names this file as the sole exception for both. It
 // reports the colour profile to paint with, the terminal's column count when stdout is a
-// terminal (0 otherwise), and whether output should render at the ASCII glyph tier.
+// terminal (0 otherwise), whether output should render at the ASCII glyph tier, and whether
+// stdout is a terminal at all.
 //
 // Detection order for colour: NO_COLOR, present and non-empty, always means no colour, even under
 // --color=always, per the no-color.org convention that NO_COLOR overrides everything.
@@ -67,17 +84,25 @@ type Env struct {
 //
 // cmd/cairn is the one impure caller: it resolves env.NoColor and env.Term from loadEnv and
 // passes its own stdout, and render itself reads nothing beyond this file.
-func DetectProfile(stdout *os.File, env Env) (profile Profile, columns int, ascii bool) {
+func DetectProfile(stdout *os.File, env Env) Terminal {
+	if stdout == nil {
+		// A caller with no stream at all (a test's command, a run whose stdout was closed) is
+		// treated as a pipe rather than probed: every branch below needs a file descriptor.
+		profile, ascii := detect(false, false, env)
+		return Terminal{Profile: profile, ASCII: ascii}
+	}
+
 	isTTY := term.IsTerminal(int(stdout.Fd()))
 	vtOK := !isTTY || enableVirtualTerminal(stdout.Fd())
-	profile, ascii = detect(isTTY, vtOK, env)
+	profile, ascii := detect(isTTY, vtOK, env)
+	out := Terminal{Profile: profile, ASCII: ascii, TTY: isTTY}
 
 	if isTTY {
 		if w, _, err := term.GetSize(int(stdout.Fd())); err == nil && w > 0 {
-			columns = w
+			out.Columns = w
 		}
 	}
-	return profile, columns, ascii
+	return out
 }
 
 // detect is DetectProfile's pure core: every input it needs travels as a parameter, so

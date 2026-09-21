@@ -262,11 +262,11 @@ func TestHealthAckSoftensAFailingCheckToWarning(t *testing.T) {
 	if *code == int(spine.VerdictCritical) {
 		t.Errorf("exit code with every failing check acknowledged is still %d (CRITICAL)", *code)
 	}
-	if strings.Contains(stdout, "\tfail\t") {
+	if strings.Contains(stdout, ": fail") {
 		t.Errorf("body %q still names a failed check once every failure carries an acknowledgement", stdout)
 	}
 	for _, checkID := range []string{"serving", "email"} {
-		if !strings.Contains(stdout, "held\t"+checkID) {
+		if !strings.Contains(stdout, checkID+": held") {
 			t.Errorf("body %q does not read %s as held", stdout, checkID)
 		}
 	}
@@ -298,7 +298,7 @@ func TestHealthAckAppliesAcrossEverySiteInASweep(t *testing.T) {
 	if *code == int(spine.VerdictCritical) {
 		t.Errorf("exit code with every failing check acknowledged is still %d (CRITICAL)", *code)
 	}
-	if strings.Count(stdout, "held\tserving") != 2 {
+	if strings.Count(stdout, "serving: held") != 2 {
 		t.Errorf("body %q does not read serving as held on both sites", stdout)
 	}
 }
@@ -326,7 +326,7 @@ func TestHealthAckFileEntriesApply(t *testing.T) {
 		t.Errorf("exit code with a default ack file is still %d (CRITICAL)", *code)
 	}
 	for _, checkID := range []string{"serving", "email"} {
-		if !strings.Contains(stdout, "held\t"+checkID) {
+		if !strings.Contains(stdout, checkID+": held") {
 			t.Errorf("body %q does not read %s as held", stdout, checkID)
 		}
 	}

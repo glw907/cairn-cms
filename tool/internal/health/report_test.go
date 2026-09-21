@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -310,14 +309,5 @@ func TestCheckFieldSources(t *testing.T) {
 				t.Errorf("copied fields = %v, want %v", got, tt.want)
 			}
 		})
-	}
-}
-
-// TestCredsCheckMarksTheTokenExpiryAsCopied covers the one field the creds check adds, which
-// the table above cannot reach: its outcome is built inside Run rather than by a detail struct.
-func TestCredsCheckMarksTheTokenExpiryAsCopied(t *testing.T) {
-	f := observedField(FieldGitHubTokenExpiry, time.Time{}, spine.SourceGitHub)
-	if f.Source != spine.SourceGitHub {
-		t.Errorf("the GitHub token expiry declares source %q, want %q", f.Source, spine.SourceGitHub)
 	}
 }

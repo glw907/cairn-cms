@@ -192,10 +192,12 @@ func TestCredsCheckExpiryVerdictFollowsOptionsNow(t *testing.T) {
 	}
 }
 
-// TestCredsCheckHealthyTokenAttachesGitHubExpiry is criterion 4: a GitHub token that verifies
-// clean and is not within credExpiryWindow still carries its own expiry on the combined
-// outcome's Fields, alongside the engine outcome's own installed-version field, so the command
-// layer can put the date on the run's status line without a second request.
+// TestCredsCheckHealthyTokenAttachesGitHubExpiry asserts a GitHub token that verifies clean and
+// is not within credExpiryWindow still carries its own expiry on the combined outcome's Fields,
+// so the command layer can put the date on the run's status line without a second request. The
+// field is a date copied out of GitHub's own response, so the outcome must also declare GitHub as
+// its source: that declaration is what moves the value under observedValue at the marshal
+// boundary, and nothing else in the suite reaches this check's Run to prove it.
 func TestCredsCheckHealthyTokenAttachesGitHubExpiry(t *testing.T) {
 	c := credsCheck{}
 	expiry := fixedNow().Add(20 * 24 * time.Hour)
@@ -218,6 +220,9 @@ func TestCredsCheckHealthyTokenAttachesGitHubExpiry(t *testing.T) {
 			continue
 		}
 		found = true
+		if f.Source != spine.SourceGitHub {
+			t.Errorf("%s declares source %q, want %q", FieldGitHubTokenExpiry, f.Source, spine.SourceGitHub)
+		}
 		var got time.Time
 		if err := json.Unmarshal(f.Value, &got); err != nil {
 			t.Fatalf("unmarshal %s: %v", FieldGitHubTokenExpiry, err)

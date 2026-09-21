@@ -64,7 +64,7 @@ func withEngineVersion(c health.CheckResult, installed string) health.CheckResul
 		panic(err)
 	}
 	c.Outcome.Fields = append(c.Outcome.Fields,
-		spine.OutcomeField{Key: health.FieldEngineInstalledVersion, Value: data})
+		spine.OutcomeField{Key: health.FieldEngineInstalledVersion, Value: data, Source: spine.SourceGitHub})
 	return c
 }
 

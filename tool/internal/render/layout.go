@@ -144,8 +144,13 @@ func relative(d time.Duration) string {
 //
 // A lapsed hold reports when it expired and escalates nothing: the check is already back among
 // the failures, which is a louder signal than any ink.
+//
+// Only a failing check carries the field at all. health.applyAck stamps AckExpires onto any
+// result whose id matches an ack entry, including one that has since recovered or could not run,
+// and a hold is a decision about a failure: printed beside a passing or skipped row it would
+// state a decision the row contradicts.
 func holdField(c health.CheckResult, now time.Time) (text string, escalating bool) {
-	if c.AckExpires.IsZero() {
+	if c.Outcome.State != spine.Failing || c.AckExpires.IsZero() {
 		return "", false
 	}
 	if !c.Acknowledged {

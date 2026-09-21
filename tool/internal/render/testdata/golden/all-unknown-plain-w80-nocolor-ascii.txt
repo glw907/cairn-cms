@@ -1,4 +1,4 @@
-verdict: [1mUNKNOWN[m - topo.907.life, 9 could not run, 0 passing
+verdict: UNKNOWN - topo.907.life, 9 could not run, 0 passing
 checked: 4m ago (2026-09-20 14:28-08:00)
 
 delegation: skip
@@ -28,5 +28,5 @@ reason: reason.cred-missing
 engine: skip
 reason: the installed or latest version is not in the published version list
 
-verdict: [1mUNKNOWN[m - topo.907.life, 9 could not run, 0 passing
+verdict: UNKNOWN - topo.907.life, 9 could not run, 0 passing
 exit: 3

@@ -115,7 +115,14 @@ func (t Theme) Style(role Role) lipgloss.Style {
 // Strong returns role's style at bold weight, for the two things a frame emphasizes: the verdict
 // word and the subject it names. It is a Theme method rather than a setter a body chains, which
 // is what keeps criterion 8's rule (Style and Sized are the only ways out of here) intact.
+//
+// At ProfileNoColor it returns the zero style unchanged, bold included: that rung is what
+// NO_COLOR, --color=never, and a plain pipe all resolve to, and its readers (a cron mail, a CI
+// log, an agent) get no escape bytes at all, not merely no colour.
 func (t Theme) Strong(role Role) lipgloss.Style {
+	if t.profile == ProfileNoColor {
+		return t.Style(role)
+	}
 	return t.Style(role).Bold(true)
 }
 

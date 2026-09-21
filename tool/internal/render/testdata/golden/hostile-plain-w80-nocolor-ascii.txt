@@ -1,4 +1,4 @@
-verdict: [1mCRITICAL[m - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
+verdict: CRITICAL - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
 checked: 4m ago (2026-09-20 14:28-08:00)
 
 serving: fail - the hostname does not answer CRITICAL  example.org  0 failing OK
@@ -20,5 +20,5 @@ reason: long long long long long long long long long long long long long long lo
 
 engine: pass - 0.78.0 is current
 
-verdict: [1mCRITICAL[m - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
+verdict: CRITICAL - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
 exit: 2

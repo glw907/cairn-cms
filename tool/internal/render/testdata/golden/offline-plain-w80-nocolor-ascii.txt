@@ -1,4 +1,4 @@
-verdict: [1mUNKNOWN[m - 907.life, 9 could not run, 0 passing
+verdict: UNKNOWN - 907.life, 9 could not run, 0 passing
 checked: 4m ago (2026-09-20 14:28-08:00)
 
 delegation: skip
@@ -28,5 +28,5 @@ reason: reason.offline
 engine: skip
 reason: reason.offline
 
-verdict: [1mUNKNOWN[m - 907.life, 9 could not run, 0 passing
+verdict: UNKNOWN - 907.life, 9 could not run, 0 passing
 exit: 3

@@ -1,4 +1,4 @@
-verdict: [1mCRITICAL[m - 907.life, 3 failing, 2 could not run, 1 held, 3 passing
+verdict: CRITICAL - 907.life, 3 failing, 2 could not run, 1 held, 3 passing
 checked: 4m ago (2026-09-20 14:28-08:00)
 
 deploy: fail - build failed 26m ago (3f0ba18), main is 2 commits ahead
@@ -29,5 +29,5 @@ serving: pass - 200 in 132ms
 delegation: pass - nameservers match the zone
 publish-path: pass - App installed, branch writable
 
-verdict: [1mCRITICAL[m - 907.life, 3 failing, 2 could not run, 1 held, 3 passing
+verdict: CRITICAL - 907.life, 3 failing, 2 could not run, 1 held, 3 passing
 exit: 2

@@ -404,6 +404,41 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	}
 }
 
+// TestHoldFieldOnlyOnFailures pins the other half of criterion 12's grammar. health.applyAck
+// stamps AckExpires onto any result whose id matches an ack entry, so a check that recovered or
+// could not run while its hold is still live, and one whose hold has lapsed, both reach the
+// renderer carrying a hold. Neither row is a failure, so neither may state a decision about one.
+func TestHoldFieldOnlyOnFailures(t *testing.T) {
+	// serving passes and errors could not run; the live hold and the lapsed one land on them.
+	reports := fixtures.OneSick()
+	for i, c := range reports[0].Checks {
+		switch c.ID {
+		case "serving":
+			reports[0].Checks[i].Acknowledged = true
+			reports[0].Checks[i].AckExpires = fixtures.Now().Add(5 * 24 * time.Hour)
+		case "errors":
+			reports[0].Checks[i].AckExpires = fixtures.Now().Add(-3 * 24 * time.Hour)
+		}
+	}
+
+	bodies := []struct {
+		name string
+		body Body
+	}{{"single", BodySingle}, {"plain", BodyPlain}}
+	for _, b := range bodies {
+		t.Run(b.name, func(t *testing.T) {
+			for _, l := range plainLines(input(reports, b.body, 120, ProfileTrueColor, false, spine.VerdictCritical)) {
+				if !strings.Contains(l, "serving") && !strings.Contains(l, "errors") {
+					continue
+				}
+				if strings.Contains(l, "held until") || strings.Contains(l, "hold expired") {
+					t.Errorf("a row that is not failing carries a hold: %q", l)
+				}
+			}
+		})
+	}
+}
+
 // plainKey matches the stable lowercase key every plain-body line leads with.
 var plainKey = regexp.MustCompile(`^[a-z][a-z0-9 .,-]*: `)
 

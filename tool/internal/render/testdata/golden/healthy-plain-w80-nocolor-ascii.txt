@@ -1,4 +1,4 @@
-verdict: [1mOK[m - ecxc.ski, 9 passing
+verdict: OK - ecxc.ski, 9 passing
 checked: 4m ago (2026-09-20 14:28-08:00)
 
 creds: pass - Cloudflare and GitHub tokens read from the keyring
@@ -11,5 +11,5 @@ publish-path: pass - App installed, branch writable
 engine: pass - 0.78.0 is current
 errors: pass - 0 errors in 24h
 
-verdict: [1mOK[m - ecxc.ski, 9 passing
+verdict: OK - ecxc.ski, 9 passing
 exit: 0

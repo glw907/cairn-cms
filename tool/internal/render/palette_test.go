@@ -176,14 +176,28 @@ func TestANSI256RungIsNamed(t *testing.T) {
 	}
 }
 
-// TestStyleZeroAtNoColor is Style's own rule: every role returns the zero style at ProfileNoColor,
-// so a body leaning on colour alone fails visibly here rather than in production.
+// TestStyleZeroAtNoColor is the rung's own rule: every way out of this file returns the zero
+// style at ProfileNoColor, so a body leaning on colour alone fails visibly here rather than in
+// production, and no reader of the plain body (a cron mail, a CI log, an agent) receives an
+// escape byte. Strong and SizedStrong are covered because bold is an escape sequence too.
 func TestStyleZeroAtNoColor(t *testing.T) {
 	th := NewTheme(true, ProfileNoColor)
-	for role := RoleText; role <= RoleRule; role++ {
-		if got := th.Style(role).Render("x"); got != zeroStyleRender {
-			t.Errorf("role %d at ProfileNoColor renders %q, want the zero style's %q", role, got, zeroStyleRender)
-		}
+	ways := []struct {
+		name  string
+		style func(Role) lipgloss.Style
+	}{
+		{"Style", th.Style},
+		{"Strong", th.Strong},
+		{"SizedStrong", func(r Role) lipgloss.Style { return th.SizedStrong(r, 1) }},
+	}
+	for _, w := range ways {
+		t.Run(w.name, func(t *testing.T) {
+			for role := RoleText; role <= RoleRule; role++ {
+				if got := w.style(role).Render("x"); got != zeroStyleRender {
+					t.Errorf("role %d at ProfileNoColor renders %q, want the zero style's %q", role, got, zeroStyleRender)
+				}
+			}
+		})
 	}
 }
 
